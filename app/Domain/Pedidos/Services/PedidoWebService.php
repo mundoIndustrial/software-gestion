@@ -500,8 +500,17 @@ class PedidoWebService
                 $observaciones = empty($observaciones) ? null : $observaciones;
             }
 
+            // Obtener UID del proceso (IMPORTANTE para mapeo posterior de imágenes)
+            $procesoUID = $procesoData['uid'] ?? $datosProceso['uid'] ?? null;
+
+            // ASEGURAR que el UID se incluya en $datosProceso para guardarlo
+            if ($procesoUID && !isset($datosProceso['uid'])) {
+                $datosProceso['uid'] = $procesoUID;
+            }
+
             Log::debug('[PedidoWebService] Creando proceso', [
                 'tipo' => $tipoProceso,
+                'uid' => $procesoUID,
                 'ubicaciones_raw' => $ubicaciones,
                 'observaciones_raw' => $observaciones,
                 'tallas_count' => isset($datosProceso['tallas']) ? count($datosProceso['tallas']) : 0,
@@ -521,6 +530,7 @@ class PedidoWebService
             Log::info('[PedidoWebService] Proceso creado', [
                 'proceso_id' => $procesoPrenda->id,
                 'tipo' => $tipoProceso,
+                'uid' => $procesoUID,
                 'ubicaciones_guardadas' => $procesoPrenda->ubicaciones,
                 'observaciones_guardadas' => $procesoPrenda->observaciones,
             ]);

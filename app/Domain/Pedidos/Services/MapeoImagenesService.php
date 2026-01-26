@@ -118,7 +118,7 @@ class MapeoImagenesService
         array $mapeoUidARuta
     ): void {
         // Obtener prendas creadas en BD
-        $prendas = \App\Models\PrendaProduccion::where('pedido_produccion_id', $pedidoId)
+        $prendas = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId)
             ->with('coloresTelas', 'procesos.tipoProceso')
             ->get();
 
@@ -211,20 +211,39 @@ class MapeoImagenesService
             $procesosEnPrenda = $prenda->procesos()->get();
             foreach ($prendaDTO['procesos'] as $procesoIdx => $procesoDTO) {
                 $procesoUID = $procesoDTO['uid'];
-                $nombreProcesoDTO = strtoupper($procesoDTO['nombre']);
                 
-                // Buscar proceso en BD por nombre
+                // Buscar proceso en BD por UID guardado en datos_adicionales
+                // (El UID se guardó en PedidoWebService::crearProcesosCompletos)
                 $procesoEnBD = $procesosEnPrenda
-                    ->first(function ($p) use ($nombreProcesoDTO) {
-                        return strtoupper($p->tipoProceso->nombre ?? '') === $nombreProcesoDTO;
+                    ->first(function ($p) use ($procesoUID) {
+                        $datosAdicionales = $p->datos_adicionales ?? [];
+                        return ($datosAdicionales['uid'] ?? null) === $procesoUID;
                     });
+
+                if (!$procesoEnBD) {
+                    // Si no encuentra por UID, intentar búsqueda alternativa por tipo de proceso
+                    // (Por si el UID no se guardó correctamente)
+                    $nombreProcesoDTO = strtoupper($procesoDTO['nombre'] ?? '');
+                    if ($nombreProcesoDTO) {
+                        $procesoEnBD = $procesosEnPrenda
+                            ->first(function ($p) use ($nombreProcesoDTO) {
+                                return strtoupper($p->tipoProceso->nombre ?? '') === $nombreProcesoDTO;
+                            });
+                    }
+                }
 
                 if (!$procesoEnBD) {
                     Log::warning('[MapeoImagenesService] Proceso no encontrado en BD', [
                         'prenda_id' => $prenda->id,
                         'procesoIdx' => $procesoIdx,
-                        'nombre' => $nombreProcesoDTO,
                         'uid' => $procesoUID,
+                        'procesos_disponibles' => $procesosEnPrenda->map(function ($p) {
+                            return [
+                                'id' => $p->id,
+                                'tipo' => $p->tipoProceso->nombre ?? 'desconocido',
+                                'uid_guardado' => $p->datos_adicionales['uid'] ?? 'no-guardado',
+                            ];
+                        })->toArray(),
                     ]);
                     continue;
                 }

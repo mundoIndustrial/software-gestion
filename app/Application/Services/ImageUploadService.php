@@ -53,6 +53,9 @@ class ImageUploadService
         // Validar imagen
         $this->validateImage($file);
 
+        // NORMALIZAR $tipo: Quitar barras finales y espacios
+        $tipo = trim($tipo, "/ \t\n\r\0\x0B");
+
         // Generar nombre único si no se proporciona
         $filename = $customFilename ?? $this->generateUniqueFilename($tipo);
         

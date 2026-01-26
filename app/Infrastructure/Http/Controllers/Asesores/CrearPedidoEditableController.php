@@ -461,23 +461,23 @@ class CrearPedidoEditableController extends Controller
         $pedidoId = null;
 
         try {
-            Log::info('[CrearPedidoEditableController] Iniciando creación transaccional', [
+            Log::info('[CrearPedidoEditableController] 🚀 Iniciando creación transaccional', [
                 'has_pedido_json' => !!$request->input('pedido'),
                 'archivos_count' => count($request->allFiles()),
             ]);
             
             // DEBUG: Mostrar qué archivos se recibieron en FormData
+            // DEBUG: Ver TODOS los files recibidos (incluyendo anidados)
+            $allInputs = $request->all();
             $archivosRecibidos = [];
-            foreach ($request->allFiles() as $key => $file) {
-                $archivosRecibidos[] = [
-                    'key' => $key,
-                    'name' => $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientOriginalName() : 'unknown',
-                    'size' => $file instanceof \Illuminate\Http\UploadedFile ? $file->getSize() : 0
-                ];
-            }
             
-            Log::debug('[CrearPedidoEditableController] Archivos en FormData', [
-                'archivos' => $archivosRecibidos
+            // Buscar archivos en TODOS los inputs (esto incluye archivos anidados como prendas[0][imagenes][0])
+            $this->buscarArchivosAnidados($allInputs, '', $archivosRecibidos);
+            
+            Log::debug('[CrearPedidoEditableController] 📤 Archivos en FormData', [
+                'total_archivos' => count($archivosRecibidos),
+                'archivos' => $archivosRecibidos,
+                'nota' => 'Si archivos está vacío aquí, el problema está en el frontend (FormData no se construyó correctamente)'
             ]);
 
             // ====== PASO 1: Decodificar JSON del frontend ======
@@ -1542,7 +1542,10 @@ class CrearPedidoEditableController extends Controller
     private function crearCarpetasPedido(int $pedidoId): void
     {
         $basePath = "pedidos/{$pedidoId}";
-        $carpetas = ['prendas', 'telas', 'procesos', 'epps'];
+        // IMPORTANTE: Usar singular para coincidir con ImageUploadService::guardarImagenDirecta()
+        // que convierte plural a singular con rtrim($tipo, 's')
+        // Ejemplos: prendas → prenda, telas → tela, procesos → proceso
+        $carpetas = ['prenda', 'tela', 'proceso', 'epp'];
 
         foreach ($carpetas as $carpeta) {
             $rutaCompleta = "{$basePath}/{$carpeta}";
@@ -1566,6 +1569,27 @@ class CrearPedidoEditableController extends Controller
         }
     }
     
+    /**
+     * Buscar archivos anidados en la estructura de inputs
+     * Los archivos con claves como "prendas[0][imagenes][0]" necesitan búsqueda recursiva
+     */
+    private function buscarArchivosAnidados($datos, $prefijo = '', &$archivos = []): void
+    {
+        foreach ($datos as $key => $valor) {
+            $nuevaPrefijo = $prefijo ? "{$prefijo}[{$key}]" : $key;
+            
+            if ($valor instanceof \Illuminate\Http\UploadedFile) {
+                $archivos[] = [
+                    'key' => $nuevaPrefijo,
+                    'name' => $valor->getClientOriginalName(),
+                    'size' => $valor->getSize()
+                ];
+            } elseif (is_array($valor)) {
+                $this->buscarArchivosAnidados($valor, $nuevaPrefijo, $archivos);
+            }
+        }
+    }
+
     /**
      * Validar que el JSON del frontend NO contiene objetos File (indicaría error de serialización)
      */

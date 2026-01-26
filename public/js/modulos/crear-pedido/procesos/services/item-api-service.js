@@ -167,6 +167,92 @@ class ItemAPIService {
                     Object.values(p.procesos).reduce((s, proc) => s + proc.length, 0), 0)
             });
 
+            // PASO 1.5: ACTUALIZAR pedidoData CON METADATOS de archivos extraídos
+            // Para que la normalización tenga uid y formdata_key
+            console.debug('[crearPedido] PASO 1.5: Inyectando metadatos en pedidoData...');
+            filesExtraidos.prendas.forEach((prendaExtraida, prendaIdx) => {
+                if (pedidoData.prendas && pedidoData.prendas[prendaIdx]) {
+                    const prenda = pedidoData.prendas[prendaIdx];
+                    
+                    // Reemplazar imagenes de prenda con estructura enriquecida
+                    prendaExtraida.imagenes.forEach((imgEnriquecida, imgIdx) => {
+                        if (prenda.imagenes && prenda.imagenes[imgIdx]) {
+                            prenda.imagenes[imgIdx] = {
+                                file: imgEnriquecida.file,
+                                formdata_key: imgEnriquecida.formdata_key,
+                                uid: imgEnriquecida.uid
+                            };
+                        }
+                    });
+                    
+                    // Reemplazar imagenes de telas
+                    prendaExtraida.telas.forEach((telaEnriquecida, telaIdx) => {
+                        if (prenda.telas && prenda.telas[telaIdx] && Array.isArray(telaEnriquecida)) {
+                            telaEnriquecida.forEach((imgEnriquecida, imgIdx) => {
+                                if (prenda.telas[telaIdx].imagenes && prenda.telas[telaIdx].imagenes[imgIdx]) {
+                                    prenda.telas[telaIdx].imagenes[imgIdx] = {
+                                        file: imgEnriquecida.file,
+                                        formdata_key: imgEnriquecida.formdata_key,
+                                        uid: imgEnriquecida.uid
+                                    };
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Reemplazar imagenes de procesos
+                    Object.entries(prendaExtraida.procesos).forEach(([procesoKey, procesosEnriquecidos]) => {
+                        if (prenda.procesos && prenda.procesos[procesoKey] && Array.isArray(procesosEnriquecidos)) {
+                            console.debug(`[crearPedido] INYECTANDO procesos[${procesoKey}]:`, {
+                                procesosEnriquecidos_length: procesosEnriquecidos.length,
+                                procesos_exists: !!prenda.procesos[procesoKey],
+                                proceso_estructura: prenda.procesos[procesoKey]
+                            });
+                            procesosEnriquecidos.forEach((imgEnriquecida, imgIdx) => {
+                                // Intentar inyectar en datos.imagenes PRIMERO (estructura más común)
+                                if (prenda.procesos[procesoKey].datos?.imagenes && Array.isArray(prenda.procesos[procesoKey].datos.imagenes)) {
+                                    if (prenda.procesos[procesoKey].datos.imagenes[imgIdx]) {
+                                        prenda.procesos[procesoKey].datos.imagenes[imgIdx] = {
+                                            file: imgEnriquecida.file,
+                                            formdata_key: imgEnriquecida.formdata_key,
+                                            uid: imgEnriquecida.uid
+                                        };
+                                        console.debug(`[crearPedido] Inyectado en datos.imagenes[${imgIdx}]`);
+                                    }
+                                }
+                                // Fallback: intentar en imagenes directo
+                                else if (prenda.procesos[procesoKey].imagenes && Array.isArray(prenda.procesos[procesoKey].imagenes)) {
+                                    if (prenda.procesos[procesoKey].imagenes[imgIdx]) {
+                                        prenda.procesos[procesoKey].imagenes[imgIdx] = {
+                                            file: imgEnriquecida.file,
+                                            formdata_key: imgEnriquecida.formdata_key,
+                                            uid: imgEnriquecida.uid
+                                        };
+                                        console.debug(`[crearPedido] Inyectado en imagenes[${imgIdx}]`);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // EPPs también
+            filesExtraidos.epps.forEach((eppExtraida, eppIdx) => {
+                if (pedidoData.epps && pedidoData.epps[eppIdx]) {
+                    const epp = pedidoData.epps[eppIdx];
+                    eppExtraida.imagenes.forEach((imgEnriquecida, imgIdx) => {
+                        if (epp.imagenes && epp.imagenes[imgIdx]) {
+                            epp.imagenes[imgIdx] = {
+                                file: imgEnriquecida.file,
+                                formdata_key: imgEnriquecida.formdata_key,
+                                uid: imgEnriquecida.uid
+                            };
+                        }
+                    });
+                }
+            });
+
             // PASO 2: Normalizar el pedido (elimina Files del JSON, evita ciclos)
             console.debug('[crearPedido] PASO 2: Normalizando...');
             
@@ -203,6 +289,19 @@ class ItemAPIService {
             
             const formData = window.PayloadNormalizer.buildFormData(pedidoNormalizado, filesExtraidos);
             console.debug('[crearPedido] PASO 3 completo');
+
+            // DEBUG: Verificar qué contiene FormData antes de enviar
+            console.log('[crearPedido] 📋 Inspeccionando FormData antes de fetch:');
+            let formDataDebug = [];
+            for (let [key, value] of formData.entries()) {
+                formDataDebug.push({
+                    key: key,
+                    tipo: value instanceof File ? 'File' : typeof value,
+                    nombre: value instanceof File ? value.name : value.substring(0, 50),
+                    size: value instanceof File ? value.size : 'N/A'
+                });
+            }
+            console.log('[crearPedido] FormData entries:', formDataDebug);
 
             // PASO 4: Enviar
             console.debug('[crearPedido] PASO 4: Enviando POST a /crear');
@@ -513,7 +612,27 @@ class ItemAPIService {
      */
     extraerFilesDelPedido(pedidoData) {
         console.debug('[extraerFilesDelPedido] INICIO');
-        const estructura = { prendas: [], epps: [] };
+        console.debug('[extraerFilesDelPedido] ESTRUCTURA PEDIDO DATA:', {
+            prendas_count: pedidoData.prendas?.length,
+            prenda_0: pedidoData.prendas?.[0] ? {
+                uid: pedidoData.prendas[0].uid,
+                procesos_keys: Object.keys(pedidoData.prendas[0].procesos || {}),
+                procesos_reflectivo: pedidoData.prendas[0].procesos?.reflectivo ? {
+                    tipo: pedidoData.prendas[0].procesos.reflectivo.tipo,
+                    uid: pedidoData.prendas[0].procesos.reflectivo.uid,
+                    tiene_datos_key: !!pedidoData.prendas[0].procesos.reflectivo.datos,
+                    datos_imagenes: pedidoData.prendas[0].procesos.reflectivo.datos?.imagenes,
+                    imagenes_directo: pedidoData.prendas[0].procesos.reflectivo.imagenes
+                } : 'NO EXISTE'
+            } : 'NO EXISTE'
+        });
+        
+        const estructura = { 
+            prendas: [], 
+            epps: [],
+            // Mapeo de formdata_key a File object (para que buildFormData pueda acceder luego)
+            archivosMap: {}
+        };
 
         // NUEVA ESTRUCTURA: prendas y epps separados
         if (Array.isArray(pedidoData.prendas)) {
@@ -529,10 +648,17 @@ class ItemAPIService {
                 // 1. IMÁGENES DE PRENDA
                 // ==========================================
                 if (Array.isArray(item.imagenes)) {
-                    item.imagenes.forEach((img) => {
+                    item.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            prendaData.imagenes.push(img);
-                            console.debug(`[extraerFiles] Prenda[${prendaIdx}].imagenes = ${img.name}`);
+                            // Generar formdata_key y guardarlo para referencia
+                            const formdataKey = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;
+                            prendaData.imagenes.push({
+                                file: img,
+                                formdata_key: formdataKey,
+                                uid: item.uid || null  // ← AGREGADO: Capturar UID de la prenda
+                            });
+                            estructura.archivosMap[formdataKey] = img;
+                            console.debug(`[extraerFiles] Prenda[${prendaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${item.uid || 'N/A'})`);
                         }
                     });
                 }
@@ -547,10 +673,16 @@ class ItemAPIService {
                         }
 
                         if (Array.isArray(tela.imagenes)) {
-                            tela.imagenes.forEach((img) => {
+                            tela.imagenes.forEach((img, imgIdx) => {
                                 if (img instanceof File) {
-                                    prendaData.telas[telaIdx].push(img);
-                                    console.debug(`[extraerFiles] Prenda[${prendaIdx}].telas[${telaIdx}].imagenes = ${img.name}`);
+                                    const formdataKey = `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`;
+                                    prendaData.telas[telaIdx].push({
+                                        file: img,
+                                        formdata_key: formdataKey,
+                                        uid: tela.uid || null  // ← AGREGADO: Capturar UID de la tela
+                                    });
+                                    estructura.archivosMap[formdataKey] = img;
+                                    console.debug(`[extraerFiles] Prenda[${prendaIdx}].telas[${telaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${tela.uid || 'N/A'})`);
                                 }
                             });
                         }
@@ -575,10 +707,16 @@ class ItemAPIService {
                             imagenes = proceso.imagenes;
                         }
 
-                        imagenes.forEach((img) => {
+                        imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
-                                prendaData.procesos[procesoKey].push(img);
-                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}] = ${img.name}`);
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][${imgIdx}]`;
+                                prendaData.procesos[procesoKey].push({
+                                    file: img,
+                                    formdata_key: formdataKey,
+                                    uid: img.uid || null  // ← AGREGADO: Capturar UID de la imagen del proceso si existe
+                                });
+                                estructura.archivosMap[formdataKey] = img;
+                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
                             }
                         });
                     });
@@ -598,10 +736,16 @@ class ItemAPIService {
 
                 // Extraer imágenes de EPP
                 if (Array.isArray(epp.imagenes)) {
-                    epp.imagenes.forEach((img) => {
+                    epp.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            eppData.imagenes.push(img);
-                            console.debug(`[extraerFiles] EPP[${eppIdx}].imagenes = ${img.name}`);
+                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            eppData.imagenes.push({
+                                file: img,
+                                formdata_key: formdataKey,
+                                uid: epp.uid || null  // ← AGREGADO: Capturar UID del EPP
+                            });
+                            estructura.archivosMap[formdataKey] = img;
+                            console.debug(`[extraerFiles] EPP[${eppIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${epp.uid || 'N/A'})`);
                         }
                     });
                 }
@@ -621,9 +765,11 @@ class ItemAPIService {
                 };
 
                 if (Array.isArray(item.imagenes)) {
-                    item.imagenes.forEach((img) => {
+                    item.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
-                            prendaData.imagenes.push(img);
+                            const formdataKey = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;
+                            prendaData.imagenes.push({ file: img, formdata_key: formdataKey });
+                            estructura.archivosMap[formdataKey] = img;
                         }
                     });
                 }
@@ -635,9 +781,11 @@ class ItemAPIService {
                         }
 
                         if (Array.isArray(tela.imagenes)) {
-                            tela.imagenes.forEach((img) => {
+                            tela.imagenes.forEach((img, imgIdx) => {
                                 if (img instanceof File) {
-                                    prendaData.telas[telaIdx].push(img);
+                                    const formdataKey = `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`;
+                                    prendaData.telas[telaIdx].push({ file: img, formdata_key: formdataKey });
+                                    estructura.archivosMap[formdataKey] = img;
                                 }
                             });
                         }
@@ -659,9 +807,11 @@ class ItemAPIService {
                             imagenes = proceso.imagenes;
                         }
 
-                        imagenes.forEach((img) => {
+                        imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
-                                prendaData.procesos[procesoKey].push(img);
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][${imgIdx}]`;
+                                prendaData.procesos[procesoKey].push({ file: img, formdata_key: formdataKey });
+                                estructura.archivosMap[formdataKey] = img;
                             }
                         });
                     });
@@ -671,10 +821,39 @@ class ItemAPIService {
             });
         }
 
-        console.debug('[extraerFiles] RESUMEN:', {
+        // Contar archivos extraídos
+        let totalArchivos = 0;
+        estructura.prendas.forEach(prenda => {
+            totalArchivos += prenda.imagenes.length;
+            prenda.telas.forEach(telaImgs => {
+                if (Array.isArray(telaImgs)) {
+                    totalArchivos += telaImgs.length;
+                }
+            });
+            Object.values(prenda.procesos).forEach(procesoImgs => {
+                if (Array.isArray(procesoImgs)) {
+                    totalArchivos += procesoImgs.length;
+                }
+            });
+        });
+        
+        estructura.epps.forEach(epp => {
+            totalArchivos += epp.imagenes.length;
+        });
+
+        console.log('[extraerFilesDelPedido] ✅ EXTRACCIÓN COMPLETADA:', {
             prendas: estructura.prendas.length,
             epps: estructura.epps.length,
-            imagenes_epp: estructura.epps.reduce((sum, e) => sum + e.imagenes.length, 0)
+            archivos_totales: totalArchivos,
+            archivos_en_map: Object.keys(estructura.archivosMap).length,
+            estructura: estructura.prendas.map(p => ({
+                imagenes_prenda: p.imagenes.length,
+                imagenes_telas: p.telas.reduce((sum, t) => sum + (Array.isArray(t) ? t.length : 0), 0),
+                procesos: Object.keys(p.procesos).map(k => ({
+                    tipo: k,
+                    imagenes: p.procesos[k].length
+                }))
+            }))
         });
 
         return estructura;

@@ -348,6 +348,14 @@ class PedidoCompletoUnificado {
     }
 
     /**
+     * Generar UID único para prendas, telas, procesos, imágenes
+     * @private
+     */
+    _generateUID() {
+        return 'uid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
+    }
+
+    /**
      * Establecer cliente
      */
     setCliente(cliente) {
@@ -401,6 +409,7 @@ class PedidoCompletoUnificado {
      */
     _sanitizarPrenda(raw) {
         return {
+            uid: raw.uid || this._generateUID(),  // ← NUEVO: UID único
             tipo: raw.tipo || 'prenda_nueva',
             nombre_prenda: SanitizadorDefensivo.cleanString(raw.nombre_prenda || raw.nombre_producto),
             descripcion: SanitizadorDefensivo.cleanString(raw.descripcion),
@@ -517,12 +526,13 @@ class PedidoCompletoUnificado {
         return raw
             .filter(tela => tela && typeof tela === 'object')
             .map(tela => ({
+                uid: tela.uid || this._generateUID(),  // ← NUEVO: UID único
                 tela: SanitizadorDefensivo.cleanString(tela.tela),
                 color: SanitizadorDefensivo.cleanString(tela.color),
                 referencia: SanitizadorDefensivo.cleanString(tela.referencia),
                 tela_id: SanitizadorDefensivo.cleanInt(tela.tela_id),
                 color_id: SanitizadorDefensivo.cleanInt(tela.color_id),
-                imagenes: SanitizadorDefensivo.cleanStringArray(tela.imagenes || [])
+                imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : []  // CRÍTICO: Mantener File objects
             }))
             .filter(tela => tela.tela || tela.color); // Al menos tela o color
     }
@@ -563,6 +573,7 @@ class PedidoCompletoUnificado {
                 const datos = raw[tipo].datos || raw[tipo];
                 
                 cleaned[tipo] = {
+                    uid: raw[tipo].uid || this._generateUID(),  // ← NUEVO: UID único
                     tipo: tipo,
                     datos: this._sanitizarDatosProceso(datos, tipo)
                 };
@@ -586,7 +597,7 @@ class PedidoCompletoUnificado {
             ubicaciones: this._sanitizarUbicaciones(raw.ubicaciones),
             observaciones: SanitizadorDefensivo.cleanString(raw.observaciones),
             tallas: this._sanitizarTallasProceso(raw.tallas),
-            imagenes: SanitizadorDefensivo.cleanStringArray(raw.imagenes || [])
+            imagenes: Array.isArray(raw.imagenes) ? raw.imagenes : []  // CRÍTICO: Mantener File objects
         };
     }
 

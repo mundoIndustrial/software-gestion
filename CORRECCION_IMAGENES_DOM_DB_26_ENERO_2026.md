@@ -2,7 +2,20 @@
 
 **Fecha:** 26 Enero 2026  
 **Problema:** Las imágenes llegaban como `{}` al backend (File objects en JSON)  
-**Solución:** Separar JSON (metadatos) de FormData (archivos reales)
+**Solución:** Separar JSON (metadatos + UIDs) de FormData (archivos reales)
+
+---
+
+## 🎯 Resumen de Cambios
+
+| Archivo | Descripción | Líneas |
+|---------|-------------|--------|
+| **form-data-builder.js** | Generar UIDs + formdata_key para cada imagen | +120 |
+| **PedidoCompletoUnificado.js** | Generar UIDs en prendas, telas, procesos | +25 |
+| **ResolutorImagenesService.php** | Resolver archivos por formdata_key | +15 |
+| **PedidoNormalizadorDTO.php** | Procesar y preservar formdata_key | +3 |
+| **CrearPedidoEditableController.php** | Validación + logging de archivos | +65 |
+| **ImageDeduplicationService.php** | **NUEVO** - Evitar duplicados con MD5 | +120 |
 
 ---
 
@@ -33,21 +46,23 @@ FormData {
   "pedido": JSON.stringify({
     cliente: "Acme",
     items: [{
-      uid: "uuid-5678",
+      uid: "uid-abc123",
       imagenes: [{
-        uid: "uuid-9012",
+        uid: "uid-xyz789",
         nombre_archivo: "tela.jpg",
         formdata_key: "files_prenda_0_0"  // ← CLAVE PARA RESOLVER
       }]
     }],
-    _uuid_to_formkey: {  // Mapeo auxiliar
-      "uuid-9012": "files_prenda_0_0"
+    _uuid_to_formkey: {  // Mapeo auxiliar (opcional)
+      "uid-xyz789": "files_prenda_0_0"
     }
   }),
   
   // Archivos reales:
   "files_prenda_0_0": File object (tela.jpg)
   "files_prenda_0_1": File object (otra-tela.jpg)
+  "files_tela_0_0_0": File object (detalle-tela.jpg)
+}
   "files_tela_0_0_0": File object (detalle-tela.jpg)
 }
 ```
@@ -76,6 +91,77 @@ if (!$archivo) {
 2. **Si no encuentra, intentar formato antiguo** → `prendas.0.imagenes.0`
 3. **Si encuentra archivo**, procesar y guardar
 4. **Registrar UID → ruta** en mapeo para crear registros en BD
+
+---
+
+## ✅ 2.5. PedidoCompletoUnificado - Generar UIDs en Frontend
+
+### Cambios Principales
+
+Ahora el builder genera UIDs **para cada elemento**:
+
+```javascript
+// Prendas
+_sanitizarPrenda(raw) {
+    return {
+        uid: raw.uid || this._generateUID(),  // ← NUEVO UID
+        ...
+    };
+}
+
+// Telas
+_sanitizarTelas(raw) {
+    return raw.map(tela => ({
+        uid: tela.uid || this._generateUID(),  // ← NUEVO UID
+        ...
+        imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : []  // ← Mantener File objects
+    }))
+}
+
+// Procesos
+_sanitizarProcesos(raw) {
+    tiposProceso.forEach(tipo => {
+        cleaned[tipo] = {
+            uid: raw[tipo].uid || this._generateUID(),  // ← NUEVO UID
+            tipo: tipo,
+            ...
+        };
+    });
+}
+
+// Método helper para generar UIDs
+_generateUID() {
+    return 'uid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
+}
+```
+
+### Resultado
+```javascript
+// Payload generado:
+{
+    cliente: "ACME Corp",
+    items: [{
+        uid: "uid-abc123-xxxxx",  // ← UID de prenda
+        nombre_prenda: "Camisa",
+        telas: [{
+            uid: "uid-def456-yyyyy",  // ← UID de tela
+            imagenes: [
+                File object (mantiene el File, NO serializa)
+            ]
+        }],
+        procesos: {
+            bordado: {
+                uid: "uid-ghi789-zzzzz",  // ← UID de proceso
+                datos: {
+                    imagenes: [
+                        File object
+                    ]
+                }
+            }
+        }
+    }]
+}
+```
 
 ---
 

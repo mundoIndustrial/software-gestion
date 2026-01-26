@@ -137,16 +137,32 @@ class ItemFormCollector {
                         const datosProceso = proceso.datos || proceso;
                         
                         // EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
+                        // MANTENER ESTRUCTURA CON UID PARA POSTERIOR ENRIQUECIMIENTO
                         if (datosProceso.imagenes && Array.isArray(datosProceso.imagenes)) {
                             datosProceso.imagenes = datosProceso.imagenes.map(img => {
-                                // Si tiene propiedad file (objeto con {nombre, data, file})
-                                if (img.file instanceof File) return img.file;
-                                // Si es un File directo
-                                if (img instanceof File) return img;
-                                // Si es una ruta (foto existente)
-                                if (typeof img === 'string') return img;
-                                // Si tiene data URL
-                                if (img.data) return img.data;
+                                let file = null;
+                                
+                                // Extraer el File object
+                                if (img.file instanceof File) {
+                                    file = img.file;
+                                } else if (img instanceof File) {
+                                    file = img;
+                                } else if (typeof img === 'string') {
+                                    // Ruta existente, devolver como está
+                                    return img;
+                                } else if (img.data) {
+                                    file = img.data;
+                                }
+                                
+                                // Si tenemos un File, devolverlo con estructura enriquecida
+                                // (similar a prenda e imagenes de telas)
+                                if (file) {
+                                    return {
+                                        file: file,
+                                        uid: img.uid || null  // Preservar UID si existe
+                                    };
+                                }
+                                
                                 return img;
                             }).filter(Boolean);
                         }
@@ -243,11 +259,15 @@ class ItemFormCollector {
             epps: epps
         };
         
+        // AGREGAR UIDs a prendas, telas, procesos y EPPs (CRÍTICO)
+        this.agregarUIDsAlPedido(pedidoFinal);
+        
         // DEBUG: Verificar estructura
         console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
         console.log('📦 Prendas:', prendas.length);
         prendas.forEach((item, idx) => {
             console.log(`  Prenda ${idx}:`, {
+                uid: item.uid,  // ← NUEVO: Mostrar UID
                 tipo: item.tipo,
                 nombre: item.nombre_prenda,
                 tiene_imagenes: !!item.imagenes,
@@ -258,6 +278,7 @@ class ItemFormCollector {
         console.log('🛡️ EPPs:', epps.length);
         epps.forEach((epp, idx) => {
             console.log(`  EPP ${idx}:`, {
+                uid: epp.uid,  // ← NUEVO: Mostrar UID
                 epp_id: epp.epp_id,
                 nombre: epp.nombre_epp,
                 cantidad: epp.cantidad,
@@ -267,6 +288,91 @@ class ItemFormCollector {
         console.groupEnd();
 
         return pedidoFinal;
+    }
+    
+    /**
+     * Agregar UIDs únicos a prendas, telas, procesos y EPPs
+     * @private
+     */
+    agregarUIDsAlPedido(pedidoFinal) {
+        // Agregar UIDs a prendas
+        if (pedidoFinal.prendas && Array.isArray(pedidoFinal.prendas)) {
+            pedidoFinal.prendas.forEach(prenda => {
+                if (!prenda.uid) {
+                    prenda.uid = this.generarUID();
+                }
+                
+                // UIDs a imagenes de prenda
+                if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                    prenda.imagenes.forEach(img => {
+                        if (!img.uid) {
+                            img.uid = this.generarUID();
+                        }
+                    });
+                }
+                
+                // UIDs a telas
+                if (prenda.telas && Array.isArray(prenda.telas)) {
+                    prenda.telas.forEach(tela => {
+                        if (!tela.uid) {
+                            tela.uid = this.generarUID();
+                        }
+                        
+                        // UIDs a imagenes de tela
+                        if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach(img => {
+                                if (!img.uid) {
+                                    img.uid = this.generarUID();
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // UIDs a procesos
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.values(prenda.procesos).forEach(proceso => {
+                        if (!proceso.uid) {
+                            proceso.uid = this.generarUID();
+                        }
+                        
+                        // UIDs a imagenes dentro de procesos.datos.imagenes
+                        if (proceso.datos?.imagenes && Array.isArray(proceso.datos.imagenes)) {
+                            proceso.datos.imagenes.forEach(img => {
+                                if (!img.uid) {
+                                    img.uid = this.generarUID();
+                                }
+                            });
+                        }
+                        // Fallback si imagenes está directamente en proceso
+                        else if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                            proceso.imagenes.forEach(img => {
+                                if (!img.uid) {
+                                    img.uid = this.generarUID();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Agregar UIDs a EPPs
+        if (pedidoFinal.epps && Array.isArray(pedidoFinal.epps)) {
+            pedidoFinal.epps.forEach(epp => {
+                if (!epp.uid) {
+                    epp.uid = this.generarUID();
+                }
+            });
+        }
+    }
+    
+    /**
+     * Generar UID único
+     * @private
+     */
+    generarUID() {
+        return 'uid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
     }
 
     /**

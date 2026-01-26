@@ -45,18 +45,24 @@ class ResolutorImagenesService
     ): array {
         $mapeoUidARuta = [];
 
+        // CLAVE: Buscar archivos anidados en todos los inputs (no solo allFiles())
+        $todosLosArchivos = $this->buscarArchivosAnidados($request->all());
+        $archivosTotal = count($todosLosArchivos);
+        
         Log::info('[ResolutorImagenesService] Iniciando extracción de imágenes', [
             'pedido_id' => $pedidoId,
             'prendas_count' => count($datosPrendas),
-            'archivos_en_request' => count($request->allFiles()),
+            'archivos_en_request' => $archivosTotal,
+            'keys_request' => array_keys($todosLosArchivos),
         ]);
 
         // Validación: Verificar que hay archivos en la request si hay imágenes en el DTO
         $totalImagenesEnDTO = $this->contarImagenesEnDTO($datosPrendas);
-        if ($totalImagenesEnDTO > 0 && count($request->allFiles()) === 0) {
-            Log::warning('[ResolutorImagenesService] Advertencia: Se esperan imágenes en FormData pero Request vacío', [
+        if ($totalImagenesEnDTO > 0 && $archivosTotal === 0) {
+            Log::error('[ResolutorImagenesService] ❌ ERROR CRÍTICO: Se esperan imágenes pero FormData vacío', [
                 'imagenes_en_dto' => $totalImagenesEnDTO,
-                'archivos_en_request' => count($request->allFiles()),
+                'archivos_en_request' => $archivosTotal,
+                'esto_explicaría_por_qué_no_se_guardan_imágenes' => 'Los archivos no llegaron en FormData'
             ]);
         }
 
@@ -72,16 +78,19 @@ class ResolutorImagenesService
             }
 
             // IMÁGENES DE PRENDA
-            $this->procesarImagenesDeGrupo(
-                $request,
-                $pedidoId,
-                "prendas.{$prendaIdx}.imagenes",
-                'prendas',
-                $prenda['imagenes'] ?? [],
-                $prendaUID,
-                $mapeoUidARuta,
-                $registrarUID
-            );
+            if (!empty($prenda['imagenes'])) {
+                $this->procesarImagenesDeGrupo(
+                    $request,
+                    $todosLosArchivos,
+                    $pedidoId,
+                    "prendas.{$prendaIdx}.imagenes",
+                    'prendas',
+                    $prenda['imagenes'],
+                    $prendaUID,
+                    $mapeoUidARuta,
+                    $registrarUID
+                );
+            }
 
             // IMÁGENES DE TELAS
             if (!empty($prenda['telas'])) {
@@ -96,16 +105,20 @@ class ResolutorImagenesService
                         continue;
                     }
 
-                    $this->procesarImagenesDeGrupo(
-                        $request,
-                        $pedidoId,
-                        "prendas.{$prendaIdx}.telas.{$telaIdx}.imagenes",
-                        'telas',
-                        $tela['imagenes'] ?? [],
-                        $telaUID,
-                        $mapeoUidARuta,
-                        $registrarUID
-                    );
+                    // IMÁGENES DE TELAS - Solo procesar si hay imágenes
+                    if (!empty($tela['imagenes'])) {
+                        $this->procesarImagenesDeGrupo(
+                            $request,
+                            $todosLosArchivos,
+                            $pedidoId,
+                            "prendas.{$prendaIdx}.telas.{$telaIdx}.imagenes",
+                            'telas',
+                            $tela['imagenes'],
+                            $telaUID,
+                            $mapeoUidARuta,
+                            $registrarUID
+                        );
+                    }
                 }
             }
 
@@ -113,7 +126,6 @@ class ResolutorImagenesService
             if (!empty($prenda['procesos'])) {
                 foreach ($prenda['procesos'] as $procesoIdx => $proceso) {
                     $procesoUID = $proceso['uid'] ?? null;
-                    $nombreProceso = $proceso['nombre'] ?? 'proceso';
                     
                     if (!$procesoUID) {
                         Log::warning('[ResolutorImagenesService] Proceso sin UID', [
@@ -123,23 +135,32 @@ class ResolutorImagenesService
                         continue;
                     }
 
-                    $this->procesarImagenesDeGrupo(
-                        $request,
-                        $pedidoId,
-                        "prendas.{$prendaIdx}.procesos.{$procesoIdx}.imagenes",
-                        "procesos/{$nombreProceso}",
-                        $proceso['imagenes'] ?? [],
-                        $procesoUID,
-                        $mapeoUidARuta,
-                        $registrarUID
-                    );
+                    // IMÁGENES DE PROCESOS - Solo procesar si hay imágenes
+                    if (!empty($proceso['imagenes'])) {
+                        // IMPORTANTE: No usar nombre del proceso como subcarpeta
+                        // Usar solo 'procesos' para evitar rutas duplicadas
+                        // El mapeo se hace por UID, no por nombre
+                        $this->procesarImagenesDeGrupo(
+                            $request,
+                            $todosLosArchivos,
+                            $pedidoId,
+                            "prendas.{$prendaIdx}.procesos.{$procesoIdx}.imagenes",
+                            'procesos',
+                            $proceso['imagenes'],
+                            $procesoUID,
+                            $mapeoUidARuta,
+                            $registrarUID
+                        );
+                    }
                 }
             }
         }
 
-        Log::info('[ResolutorImagenesService] Extracción completada', [
+        Log::info('[ResolutorImagenesService] ✅ Extracción completada', [
             'pedido_id' => $pedidoId,
             'imagenes_procesadas' => count($mapeoUidARuta),
+            'imagenes_esperadas' => $totalImagenesEnDTO,
+            'diferencia' => $totalImagenesEnDTO - count($mapeoUidARuta),
         ]);
 
         return $mapeoUidARuta;
@@ -159,6 +180,7 @@ class ResolutorImagenesService
      */
     private function procesarImagenesDeGrupo(
         $request,
+        array $todosLosArchivos,
         int $pedidoId,
         string $formPrefix,
         string $carpetaTipo,
@@ -184,12 +206,12 @@ class ResolutorImagenesService
                 continue;
             }
 
-            // Intentar obtener archivo de Request
+            // Intentar obtener archivo de FormData
             // Primero intentar con formdata_key (generado por frontend)
             $archivo = null;
             
-            if ($formDataKey) {
-                $archivo = $request->file($formDataKey);
+            if ($formDataKey && isset($todosLosArchivos[$formDataKey])) {
+                $archivo = $todosLosArchivos[$formDataKey];
             }
             
             // Si no encontró con formdata_key, intentar formato antiguo
@@ -264,5 +286,26 @@ class ResolutorImagenesService
         }
         
         return $total;
+    }
+
+    /**
+     * Buscar archivos anidados recursivamente en la estructura de inputs
+     * Los archivos con claves como "prendas[0][imagenes][0]" se devuelven con su clave completa
+     */
+    private function buscarArchivosAnidados($datos, $prefijo = ''): array
+    {
+        $archivos = [];
+        
+        foreach ($datos as $key => $valor) {
+            $nuevaPrefijo = $prefijo ? "{$prefijo}[{$key}]" : $key;
+            
+            if ($valor instanceof UploadedFile) {
+                $archivos[$nuevaPrefijo] = $valor;
+            } elseif (is_array($valor)) {
+                $archivos = array_merge($archivos, $this->buscarArchivosAnidados($valor, $nuevaPrefijo));
+            }
+        }
+        
+        return $archivos;
     }
 }

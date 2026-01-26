@@ -31,11 +31,13 @@
     function normalizarEpp(eppRaw) {
         if (!eppRaw || typeof eppRaw !== 'object') return {};
         return {
+            uid: eppRaw.uid || null,  // ← NUEVO: Preservar UID del EPP
             epp_id: eppRaw.epp_id,
             nombre_epp: eppRaw.nombre_epp || '',
             categoria: eppRaw.categoria || '',
             cantidad: eppRaw.cantidad || 1,
-            observaciones: eppRaw.observaciones || ''
+            observaciones: eppRaw.observaciones || '',
+            imagenes: normalizarImagenes(eppRaw.imagenes || [])
         };
     }
 
@@ -62,11 +64,38 @@
         if (!Array.isArray(telasRaw) || telasRaw.length === 0) return [];
         return telasRaw.map(function(tela) {
             return {
+                uid: tela.uid || null,  // ← NUEVO: Preservar UID
                 tela_id: tela.tela_id,
                 color_id: tela.color_id,
                 tela_nombre: tela.tela_nombre || tela.tela || '',
                 color_nombre: tela.color_nombre || tela.color || '',
-                referencia: tela.referencia || ''
+                referencia: tela.referencia || '',
+                imagenes: normalizarImagenes(tela.imagenes || [])
+            };
+        });
+    }
+
+    function normalizarImagenes(imagenesRaw) {
+        if (!Array.isArray(imagenesRaw)) return [];
+        
+        return imagenesRaw.filter(function(img) {
+            return img !== null && img !== undefined;
+        }).map(function(img) {
+            // Manejar tanto { file, formdata_key } como { uid, nombre_archivo, formdata_key }
+            if (img.file instanceof File) {
+                // Formato nuevo de extraerFilesDelPedido
+                return {
+                    uid: img.uid || null,  // ← AGREGADO: Preservar UID si existe
+                    formdata_key: img.formdata_key || null,
+                    nombre_archivo: img.file.name || ''
+                };
+            }
+            
+            // Formato antiguo o del DTO
+            return {
+                uid: img.uid || null,
+                nombre_archivo: img.nombre_archivo || img.name || '',
+                formdata_key: img.formdata_key || null
             };
         });
     }
@@ -91,11 +120,12 @@
             let observaciones = (datosReales.observaciones || datoProceso.observaciones || '').trim();
             
             procesosNorm[tipoProceso] = {
+                uid: datoProceso.uid || null,  // ← NUEVO: Preservar UID del proceso
                 tipo: datosReales.tipo || datoProceso.tipo || tipoProceso,
                 ubicaciones: ubicaciones,
                 observaciones: observaciones,
                 tallas: normalizarTallas(datosReales.tallas || datoProceso.tallas || {}),
-                imagenes: []
+                imagenes: normalizarImagenes(datoProceso.imagenes || datosReales.imagenes || [])
             };
             
             console.log('[PayloadNormalizer]  Proceso ' + tipoProceso + ' normalizado con ubicaciones=' + JSON.stringify(ubicaciones) + ' y observaciones="' + observaciones + '"');
@@ -106,6 +136,7 @@
     function normalizarItem(item) {
         if (!item || typeof item !== 'object') return {};
         return {
+            uid: item.uid || null,  // ← CRÍTICO: Preservar UID
             tipo: item.tipo || 'prenda_nueva',
             nombre_prenda: item.nombre_prenda || '',
             descripcion: item.descripcion || '',
@@ -115,7 +146,7 @@
             cantidad_talla: normalizarTallas(item.cantidad_talla || {}),
             variaciones: item.variaciones || {},
             telas: normalizarTelas(item.telas || []),
-            imagenes: []
+            imagenes: normalizarImagenes(item.imagenes || [])
         };
     }
 
@@ -152,18 +183,166 @@
         const jsonLimpio = limpiarFiles(pedidoNormalizado);
         formData.append('pedido', JSON.stringify(jsonLimpio)); // ← 'pedido', no 'payload'
         
-        // Agregar archivos
+        // DEBUG: Contar archivos antes de agregar
+        let archivosAgregados = 0;
+        const archivosDebug = [];
+        
+        // CRÍTICO: Obtener el mapa de archivos desde filesExtraidos
+        const archivosMap = filesExtraidos?.archivosMap || {};
+        
+        console.log('[buildFormData] filesExtraidos estructura:', {
+            tiene_prendas: !!filesExtraidos?.prendas,
+            prendas_count: filesExtraidos?.prendas?.length,
+            tiene_epps: !!filesExtraidos?.epps,
+            epps_count: filesExtraidos?.epps?.length,
+            archivosMap_size: Object.keys(archivosMap).length,
+            sample_prendas: filesExtraidos?.prendas?.[0] ? {
+                idx: filesExtraidos.prendas[0].idx,
+                imagenes: filesExtraidos.prendas[0].imagenes?.map(i => ({
+                    has_file: !!i.file,
+                    formdata_key: i.formdata_key,
+                    file_name: i.file?.name,
+                    file_size: i.file?.size
+                })),
+                telas_count: filesExtraidos.prendas[0].telas?.length,
+                procesos_keys: Object.keys(filesExtraidos.prendas[0].procesos || {})
+            } : 'N/A'
+        });
+        
+        // Agregar archivos desde la estructura extraída
         if (filesExtraidos && typeof filesExtraidos === 'object') {
-            Object.entries(filesExtraidos).forEach(function([categoria, archivos]) {
-                if (Array.isArray(archivos)) {
-                    archivos.forEach(function(file, idx) {
-                        if (file instanceof File) {
-                            formData.append('files_' + categoria + '_' + idx, file);
-                        }
-                    });
-                }
-            });
+            // ==========================================
+            // PROCESAR PRENDAS
+            // ==========================================
+            if (Array.isArray(filesExtraidos.prendas)) {
+                filesExtraidos.prendas.forEach(function(prenda, prendaIdx) {
+                    // IMÁGENES DE PRENDA
+                    if (Array.isArray(prenda.imagenes)) {
+                        prenda.imagenes.forEach(function(imgObj, imgIdx) {
+                            // Manejar tanto format antiguo (File) como nuevo ({ file, formdata_key })
+                            const file = imgObj.file || imgObj;
+                            const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][imagenes][' + imgIdx + ']');
+                            
+                            if (file instanceof File) {
+                                formData.append(formdataKey, file);
+                                archivosAgregados++;
+                                archivosDebug.push({
+                                    tipo: 'prenda_imagen',
+                                    key: formdataKey,
+                                    nombre: file.name,
+                                    size: file.size
+                                });
+                                console.debug('[buildFormData] ✅ Agregado archivo prenda:', {
+                                    key: formdataKey,
+                                    nombre: file.name,
+                                    size: file.size
+                                });
+                            } else {
+                                console.warn('[buildFormData] ⚠️ Prenda[' + prendaIdx + '].imagenes[' + imgIdx + '] NO es File:', {
+                                    tipo: typeof file,
+                                    es_file: file instanceof File,
+                                    tiene_propiedades: Object.keys(file || {})
+                                });
+                            }
+                        });
+                    }
+                    
+                    // IMÁGENES DE TELAS
+                    if (Array.isArray(prenda.telas)) {
+                        prenda.telas.forEach(function(telaImgs, telaIdx) {
+                            if (Array.isArray(telaImgs)) {
+                                telaImgs.forEach(function(imgObj, imgIdx) {
+                                    const file = imgObj.file || imgObj;
+                                    const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][telas][' + telaIdx + '][imagenes][' + imgIdx + ']');
+                                    
+                                    if (file instanceof File) {
+                                        formData.append(formdataKey, file);
+                                        archivosAgregados++;
+                                        archivosDebug.push({
+                                            tipo: 'tela_imagen',
+                                            key: formdataKey,
+                                            nombre: file.name,
+                                            size: file.size
+                                        });
+                                        console.debug('[buildFormData] ✅ Agregado archivo tela:', {
+                                            key: formdataKey,
+                                            nombre: file.name,
+                                            size: file.size
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // IMÁGENES DE PROCESOS
+                    if (prenda.procesos && typeof prenda.procesos === 'object') {
+                        Object.entries(prenda.procesos).forEach(function([procesoKey, procesoImgs]) {
+                            if (Array.isArray(procesoImgs)) {
+                                procesoImgs.forEach(function(imgObj, imgIdx) {
+                                    const file = imgObj.file || imgObj;
+                                    const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][' + imgIdx + ']');
+                                    
+                                    if (file instanceof File) {
+                                        formData.append(formdataKey, file);
+                                        archivosAgregados++;
+                                        archivosDebug.push({
+                                            tipo: 'proceso_imagen',
+                                            key: formdataKey,
+                                            nombre: file.name,
+                                            size: file.size
+                                        });
+                                        console.debug('[buildFormData] ✅ Agregado archivo proceso:', {
+                                            key: formdataKey,
+                                            proceso: procesoKey,
+                                            nombre: file.name,
+                                            size: file.size
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // ==========================================
+            // PROCESAR EPPs
+            // ==========================================
+            if (Array.isArray(filesExtraidos.epps)) {
+                filesExtraidos.epps.forEach(function(epp, eppIdx) {
+                    if (Array.isArray(epp.imagenes)) {
+                        epp.imagenes.forEach(function(imgObj, imgIdx) {
+                            const file = imgObj.file || imgObj;
+                            const formdataKey = imgObj.formdata_key || ('epps[' + eppIdx + '][imagenes][' + imgIdx + ']');
+                            
+                            if (file instanceof File) {
+                                formData.append(formdataKey, file);
+                                archivosAgregados++;
+                                archivosDebug.push({
+                                    tipo: 'epp_imagen',
+                                    key: formdataKey,
+                                    nombre: file.name,
+                                    size: file.size
+                                });
+                                console.debug('[buildFormData] ✅ Agregado archivo EPP:', {
+                                    key: formdataKey,
+                                    nombre: file.name,
+                                    size: file.size
+                                });
+                            }
+                        });
+                    }
+                });
+            }
         }
+        
+        console.log('[buildFormData] FormData construido COMPLETO:', {
+            json_size: JSON.stringify(jsonLimpio).length,
+            archivos_totales: archivosAgregados,
+            archivos_debug: archivosDebug,
+            verificacion: 'Si archivos_totales === 0 pero se esperaban, revisar estructura de filesExtraidos'
+        });
         
         return formData;
     }

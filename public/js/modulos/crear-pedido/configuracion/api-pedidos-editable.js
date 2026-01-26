@@ -125,68 +125,245 @@ class PedidosEditableWebClient {
     }
 
     /**
-     * Crear el pedido
-     *  CRÍTICO: Usar FormData para soportar archivos de procesos
+     * Crear el pedido - VERSION CORREGIDA CON formdata_key
+     * CRÍTICO: Usa convertirPedidoAFormData() existente pero preserva formdata_key en JSON
      */
     async crearPedido(pedidoData) {
         try {
-
+            // PASO 1: Agregar formdata_key a prendas/epps (ANTES de convertir a FormData)
+            const pedidoConFormDataKey = this.agregarFormDataKeyAlPedido(pedidoData);
             
-            // Detectar si hay procesos con archivos
-            const tieneArchivos = this.tieneArchivosEnPedido(pedidoData);
-
+            // PASO 2: Convertir a FormData (esto construye la estructura correcta)
+            const formData = this.convertirPedidoAFormData(pedidoConFormDataKey);
             
-            let fetchConfig;
+            // PASO 3: Agregar JSON separado con formdata_key (para backend)
+            formData.append('pedido_json', JSON.stringify({
+                cliente: pedidoConFormDataKey.cliente,
+                asesora: pedidoConFormDataKey.asesora,
+                forma_de_pago: pedidoConFormDataKey.forma_de_pago,
+                prendas: this.extraerEstructuraConFormDataKey(pedidoConFormDataKey.prendas || []),
+                epps: this.extraerEstructuraConFormDataKey(pedidoConFormDataKey.epps || [])
+            }));
             
-            if (tieneArchivos) {
-                //  Usar FormData cuando hay archivos (procesos, imágenes, etc)
-                const formData = this.convertirPedidoAFormData(pedidoData);
-                fetchConfig = {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': this.csrfToken,
-                        //  NO incluir Content-Type: FormData lo establece automáticamente
-                    },
-                    body: formData,
-                };
-
-            } else {
-                //  Usar JSON cuando no hay archivos (más simple)
-                fetchConfig = {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken,
-                    },
-                    body: JSON.stringify(pedidoData),
-                };
-
-            }
-            
-            const response = await fetch(`${this.baseUrl}/crear`, fetchConfig);
+            // PASO 4: Enviar
+            const response = await fetch(`${this.baseUrl}/crear`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    // NO incluir Content-Type, FormData lo hace
+                },
+                body: formData,
+            });
 
             const data = await response.json();
 
             if (!response.ok) {
-                // Mostrar errores detallados
-
-
-                
-                if (data.errores && typeof data.errores === 'object') {
-                    // Errores por campo
-                    Object.entries(data.errores).forEach(([field, messages]) => {
-
-                    });
-                }
-                
-                throw new Error(data.message || data.errores?.join(', ') || 'Error al crear pedido');
+                throw new Error(data.message || 'Error al crear pedido');
             }
 
             return data;
         } catch (error) {
-
+            console.error('[crearPedido] Error:', error);
             throw error;
         }
+    }
+
+    /**
+     * NUEVO: Agregar formdata_key a cada archivo (ANTES de convertir a FormData)
+     * Esto genera las claves que usará convertirPedidoAFormData()
+     * DEBUG: Mostrar estructura del pedido
+     */
+    agregarFormDataKeyAlPedido(pedidoData) {
+        console.log('[agregarFormDataKeyAlPedido] Estructura recibida:', {
+            tiene_prendas: !!pedidoData.prendas,
+            prendas_count: pedidoData.prendas?.length,
+            prendas_sample: pedidoData.prendas?.[0] ? {
+                keys: Object.keys(pedidoData.prendas[0]),
+                imagenes_count: pedidoData.prendas[0].imagenes?.length,
+                imagenes_sample: pedidoData.prendas[0].imagenes?.[0] ? Object.keys(pedidoData.prendas[0].imagenes[0]) : 'N/A'
+            } : 'N/A'
+        });
+        
+        const pedidoMod = JSON.parse(JSON.stringify(pedidoData)); // Deep copy
+        
+        // Procesar prendas
+        if (pedidoMod.prendas && Array.isArray(pedidoMod.prendas)) {
+            pedidoMod.prendas.forEach((prenda, prendaIdx) => {
+                // Imágenes de prenda
+                if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                    console.log(`[agregarFormDataKey] Prenda ${prendaIdx} tiene ${prenda.imagenes.length} imágenes`);
+                    prenda.imagenes.forEach((img, imgIdx) => {
+                        console.log(`[agregarFormDataKey] Prenda ${prendaIdx} img ${imgIdx} tipo:`, typeof img, 'es File?', img instanceof File, 'tiene .file?', img?.file instanceof File);
+                        
+                        if (img instanceof File) {
+                            // Si es File directo, convertir a objeto
+                            const file = img;
+                            prenda.imagenes[imgIdx] = {
+                                file: file,
+                                formdata_key: `prendas[${prendaIdx}][imagenes][${imgIdx}]`,
+                                uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                            };
+                            console.log(`✅ [agregarFormDataKey] Prenda imagen convertida: ${prenda.imagenes[imgIdx].formdata_key}`, {
+                                nombre: file.name,
+                                size: file.size
+                            });
+                        } else if (img.file && img.file instanceof File) {
+                            img.formdata_key = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;
+                            img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                            console.log(`✅ [agregarFormDataKey] Prenda imagen: ${img.formdata_key}`, {uid: img.uid});
+                        } else {
+                            console.log(`⚠️ [agregarFormDataKey] Prenda ${prendaIdx} img ${imgIdx} no es un File válido:`, img);
+                        }
+                    });
+                }
+                
+                // Imágenes de telas
+                if (prenda.telas && Array.isArray(prenda.telas)) {
+                    prenda.telas.forEach((tela, telaIdx) => {
+                        if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                            console.log(`[agregarFormDataKey] Tela ${telaIdx} tiene ${tela.imagenes.length} imágenes`);
+                            tela.imagenes.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    const file = img;
+                                    tela.imagenes[imgIdx] = {
+                                        file: file,
+                                        formdata_key: `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`,
+                                        uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                                    };
+                                    console.log(`✅ [agregarFormDataKey] Tela imagen convertida: ${tela.imagenes[imgIdx].formdata_key}`);
+                                } else if (img.file && img.file instanceof File) {
+                                    img.formdata_key = `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`;
+                                    img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                    console.log(`✅ [agregarFormDataKey] Tela imagen: ${img.formdata_key}`);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Imágenes de procesos
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.entries(prenda.procesos).forEach(([procKey, procData]) => {
+                        if (procData.imagenes && Array.isArray(procData.imagenes)) {
+                            console.log(`[agregarFormDataKey] Proceso ${procKey} tiene ${procData.imagenes.length} imágenes`);
+                            procData.imagenes.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    const file = img;
+                                    procData.imagenes[imgIdx] = {
+                                        file: file,
+                                        formdata_key: `prendas[${prendaIdx}][procesos][${procKey}][imagenes][${imgIdx}]`,
+                                        uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                                    };
+                                    console.log(`✅ [agregarFormDataKey] Proceso imagen convertida: ${procData.imagenes[imgIdx].formdata_key}`);
+                                } else if (img.file && img.file instanceof File) {
+                                    img.formdata_key = `prendas[${prendaIdx}][procesos][${procKey}][imagenes][${imgIdx}]`;
+                                    img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                    console.log(`✅ [agregarFormDataKey] Proceso imagen: ${img.formdata_key}`);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Procesar EPPs
+        if (pedidoMod.epps && Array.isArray(pedidoMod.epps)) {
+            pedidoMod.epps.forEach((epp, eppIdx) => {
+                if (epp.imagenes && Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach((img, imgIdx) => {
+                        if (img instanceof File) {
+                            const file = img;
+                            epp.imagenes[imgIdx] = {
+                                file: file,
+                                formdata_key: `epps[${eppIdx}][imagenes][${imgIdx}]`,
+                                uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                            };
+                            console.log(`✅ [agregarFormDataKey] EPP imagen convertida: ${epp.imagenes[imgIdx].formdata_key}`);
+                        } else if (img.file && img.file instanceof File) {
+                            img.formdata_key = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                            console.log(`✅ [agregarFormDataKey] EPP imagen: ${img.formdata_key}`);
+                        }
+                    });
+                }
+            });
+        }
+        
+        console.log('[agregarFormDataKeyAlPedido] Pedido modificado lista para FormData');
+        return pedidoMod;
+    }
+
+    /**
+     * NUEVO: Extraer estructura de prendas/epps removiendo Files (para JSON)
+     */
+    extraerEstructuraConFormDataKey(items) {
+        return items.map(item => {
+            const itemCopia = {};
+            
+            // Copiar propiedades básicas
+            Object.keys(item).forEach(key => {
+                if (key !== 'imagenes' && key !== 'telas' && key !== 'procesos' && key !== 'file') {
+                    itemCopia[key] = item[key];
+                }
+            });
+            
+            // Procesar imagenes (solo formdata_key y uid)
+            if (item.imagenes && Array.isArray(item.imagenes)) {
+                itemCopia.imagenes = item.imagenes.map(img => ({
+                    formdata_key: img.formdata_key || null,
+                    uid: img.uid || null,
+                    nombre_archivo: img.file?.name || null
+                }));
+            }
+            
+            // Procesar telas
+            if (item.telas && Array.isArray(item.telas)) {
+                itemCopia.telas = item.telas.map(tela => {
+                    const telaCopia = {};
+                    Object.keys(tela).forEach(key => {
+                        if (key !== 'imagenes' && key !== 'file') {
+                            telaCopia[key] = tela[key];
+                        }
+                    });
+                    
+                    if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                        telaCopia.imagenes = tela.imagenes.map(img => ({
+                            formdata_key: img.formdata_key || null,
+                            uid: img.uid || null,
+                            nombre_archivo: img.file?.name || null
+                        }));
+                    }
+                    
+                    return telaCopia;
+                });
+            }
+            
+            // Procesar procesos
+            if (item.procesos && typeof item.procesos === 'object') {
+                itemCopia.procesos = {};
+                Object.entries(item.procesos).forEach(([procKey, procData]) => {
+                    const procCopia = {};
+                    Object.keys(procData).forEach(key => {
+                        if (key !== 'imagenes' && key !== 'file') {
+                            procCopia[key] = procData[key];
+                        }
+                    });
+                    
+                    if (procData.imagenes && Array.isArray(procData.imagenes)) {
+                        procCopia.imagenes = procData.imagenes.map(img => ({
+                            formdata_key: img.formdata_key || null,
+                            uid: img.uid || null,
+                            nombre_archivo: img.file?.name || null
+                        }));
+                    }
+                    
+                    itemCopia.procesos[procKey] = procCopia;
+                });
+            }
+            
+            return itemCopia;
+        });
     }
 
     /**     *  DETECTAR SI PEDIDO CONTIENE ARCHIVOS

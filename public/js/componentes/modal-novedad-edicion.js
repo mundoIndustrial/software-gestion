@@ -238,18 +238,17 @@ class ModalNovedadEdicion {
             title: ' ¡Éxito!',
             html: '<p>Prenda actualizada correctamente</p>',
             icon: 'success',
-            confirmButtonText: 'Ver lista de prendas',
+            confirmButtonText: 'Cerrar',
             confirmButtonColor: '#3b82f6',
             allowOutsideClick: false,
             allowEscapeKey: false,
             didOpen: () => this.forzarZIndexMaximo()
         }).then((result) => {
             if (result.isConfirmed) {
+                // IMPORTANTE: Solo cerrar el modal de prenda, NO abrir otro modal
+                // El usuario estaba editando dentro del modal de prenda y ya finalizó
                 if (typeof window.cerrarModalPrendaNueva === 'function') {
                     window.cerrarModalPrendaNueva();
-                }
-                if (typeof window.abrirEditarPrendas === 'function') {
-                    window.abrirEditarPrendas();
                 }
             }
         });
