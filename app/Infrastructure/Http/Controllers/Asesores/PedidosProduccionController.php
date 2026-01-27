@@ -1252,7 +1252,6 @@ class PedidosProduccionController
             Log::info('[PedidosProduccionController] GET /api/prenda-pedido/{prendaId}/colores-telas', [
                 'prenda_id' => $prendaId
             ]);
-
             $coloresTelas = DB::table('prenda_pedido_colores_telas')
                 ->leftJoin('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
                 ->leftJoin('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
@@ -1262,7 +1261,7 @@ class PedidosProduccionController
                     'colores_prenda.nombre as color',
                     'colores_prenda.codigo as codigo_color',
                     'telas_prenda.nombre as tela',
-                    'telas_prenda.referencia as referencia_tela'
+                    'prenda_pedido_colores_telas.referencia as referencia_tela'
                 )
                 ->get();
 

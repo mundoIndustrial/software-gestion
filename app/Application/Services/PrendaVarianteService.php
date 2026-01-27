@@ -25,6 +25,7 @@ class PrendaVarianteService
         mixed $cantidadTalla,
         ?int $colorId = null,
         ?int $telaId = null,
+        ?string $referencia = null,
         ?int $tipoMangaId = null,
         ?int $tipoBrocheBotonId = null,
         string $mangaObs = '',
@@ -77,12 +78,14 @@ class PrendaVarianteService
                     'prenda_pedido_id' => $prendaId,
                     'color_id' => $colorId,
                     'tela_id' => $telaId,
+                    'referencia' => $referencia,
                 ]);
                 
                 Log::info(' [PrendaVarianteService] Color y tela guardados en tabla separada', [
                     'prenda_id' => $prendaId,
                     'color_id' => $colorId,
                     'tela_id' => $telaId,
+                    'referencia' => $referencia,
                 ]);
             }
 

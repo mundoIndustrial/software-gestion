@@ -240,7 +240,8 @@ class PedidoProduccionRepository
                         // Obtener tela y referencia
                         if ($colorTela->tela_id && $colorTela->tela) {
                             $telaNombre = $colorTela->tela->nombre ?? null;
-                            $telaReferencia = $colorTela->tela->referencia ?? null;
+                            // CAMBIO: La referencia ahora está en $colorTela->referencia, no en $colorTela->tela->referencia
+                            $telaReferencia = $colorTela->referencia ?? null;
                             
                             if ($telaNombre && !in_array($telaNombre, $telas)) {
                                 $telas[] = $telaNombre;
@@ -659,7 +660,7 @@ class PedidoProduccionRepository
                         'prenda_pedido_colores_telas.id as color_tela_id',
                         'colores_prenda.nombre as color_nombre',
                         'telas_prenda.nombre as tela_nombre',
-                        'telas_prenda.referencia'
+                        'prenda_pedido_colores_telas.referencia'
                     )
                     ->first();
                 
@@ -806,7 +807,7 @@ class PedidoProduccionRepository
                         'prenda_pedido_colores_telas.id as color_tela_id',
                         'colores_prenda.nombre as color_nombre',
                         'telas_prenda.nombre as tela_nombre',
-                        'telas_prenda.referencia'
+                        'prenda_pedido_colores_telas.referencia'
                     )
                     ->first();
                 

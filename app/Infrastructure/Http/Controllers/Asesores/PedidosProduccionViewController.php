@@ -286,7 +286,7 @@ class PedidosProduccionViewController
                         'prenda_pedido_colores_telas.id as color_tela_id',
                         'colores_prenda.nombre as color_nombre',
                         'telas_prenda.nombre as tela_nombre',
-                        'telas_prenda.referencia'
+                        'prenda_pedido_colores_telas.referencia'
                     )
                     ->get();
                 

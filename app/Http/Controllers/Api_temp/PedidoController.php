@@ -742,13 +742,14 @@ class PedidoController extends Controller
      * GET /asesores/api/telas
      * 
      * Obtener lista de telas activas
-     * Array de { id, nombre, referencia }
+     * Array de { id, nombre }
+     * NOTA: referencia ahora está en prenda_pedido_colores_telas, no en telas_prenda
      */
     public function obtenerTelas(): JsonResponse
     {
         try {
             $telas = \App\Models\TelaPrenda::where('activo', true)
-                ->select('id', 'nombre', 'referencia')
+                ->select('id', 'nombre')
                 ->orderBy('nombre')
                 ->get();
 

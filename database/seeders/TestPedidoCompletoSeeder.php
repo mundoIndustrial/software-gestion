@@ -65,7 +65,7 @@ class TestPedidoCompletoSeeder extends Seeder
                 ->where('prenda_pedido_id', $prenda->id)
                 ->join('telas_prenda', 'prenda_pedido_colores_telas.tela_id', '=', 'telas_prenda.id')
                 ->join('colores_prenda', 'prenda_pedido_colores_telas.color_id', '=', 'colores_prenda.id')
-                ->select('prenda_pedido_colores_telas.id', 'telas_prenda.nombre as tela_nombre', 'colores_prenda.nombre as color_nombre', 'telas_prenda.referencia')
+                ->select('prenda_pedido_colores_telas.id', 'telas_prenda.nombre as tela_nombre', 'colores_prenda.nombre as color_nombre', 'prenda_pedido_colores_telas.referencia')
                 ->get();
             
             Log::info("     TELAS: {$telas->count()} telas");

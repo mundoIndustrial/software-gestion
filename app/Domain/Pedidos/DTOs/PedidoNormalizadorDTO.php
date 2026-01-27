@@ -112,6 +112,7 @@ class PedidoNormalizadorDTO
                 'color_id' => intval($tela['color_id'] ?? 0),
                 'nombre' => trim($tela['nombre'] ?? ''),
                 'color' => trim($tela['color'] ?? ''),
+                'referencia' => trim($tela['referencia'] ?? ''),
                 'imagenes' => self::normalizarImagenes($tela['imagenes'] ?? [])
             ];
         }, $telas);

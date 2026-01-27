@@ -86,28 +86,19 @@ class AtributosPrendaHelper
     /**
      * Obtener la referencia de la tela a partir del ID
      * 
+     * NOTA: La referencia ahora está en prenda_pedido_colores_telas
+     * Este método devuelve vacío porque la referencia es específica por pedido
+     * 
      * @param int|null $telaId
      * @return string
      */
     public static function obtenerReferenciaTela(?int $telaId): string
     {
-        if (!$telaId || $telaId === 0) {
-            return '';
-        }
-
-        // Verificar cache primero
-        if (isset(self::$telasCache[$telaId]['referencia'])) {
-            return self::$telasCache[$telaId]['referencia'];
-        }
-
-        try {
-            $tela = TelaPrenda::find($telaId);
-            $referencia = $tela?->referencia ?? '';
-            
-            if (!isset(self::$telasCache[$telaId])) {
-                self::$telasCache[$telaId] = [];
-            }
-            self::$telasCache[$telaId]['referencia'] = $referencia;
+        // La referencia ya no está en telas_prenda
+        // Se encuentra en prenda_pedido_colores_telas para cada pedido
+        // Este método devuelve vacío para mantener compatibilidad
+        return '';
+    }
             
             return $referencia;
         } catch (\Exception $e) {

@@ -14,6 +14,7 @@ class PrendaPedidoColorTela extends Model
         'prenda_pedido_id',
         'color_id',
         'tela_id',
+        'referencia',
     ];
 
     /**

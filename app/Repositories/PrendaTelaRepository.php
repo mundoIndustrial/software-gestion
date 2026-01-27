@@ -68,7 +68,9 @@ class PrendaTelaRepository
             return '';
         }
 
-        return TelaPrenda::find($telaId)?->referencia ?? '';
+        // La referencia ahora está en prenda_pedido_colores_telas
+        // Este método devuelve vacío para mantener compatibilidad
+        return '';
     }
 
     /**

@@ -241,6 +241,7 @@ class PedidoWebService
                 'prenda_pedido_id' => $prenda->id,
                 'color_id' => $colorTela['color_id'] ?? null,
                 'tela_id' => $colorTela['tela_id'] ?? null,
+                'referencia' => $colorTela['referencia'] ?? null,
             ]);
         }
     }
@@ -266,6 +267,7 @@ class PedidoWebService
                     'prenda_pedido_id' => $prenda->id,
                     'color_id' => $telaData['color_id'],
                     'tela_id' => $telaData['tela_id'],
+                    'referencia' => $telaData['referencia'] ?? null,
                 ]);
                 $telasCreadasCount++;
 
@@ -273,6 +275,7 @@ class PedidoWebService
                     'prenda_id' => $prenda->id,
                     'tela_id' => $telaData['tela_id'],
                     'color_id' => $telaData['color_id'],
+                    'referencia' => $telaData['referencia'] ?? null,
                     'color_tela_id' => $colorTela->id,
                 ]);
 
@@ -305,6 +308,7 @@ class PedidoWebService
                         'prenda_pedido_id' => $prenda->id,
                         'color_id' => $colorId,
                         'tela_id' => $telaId,
+                        'referencia' => $telaData['referencia'] ?? null,
                     ]);
                     $telasCreadasCount++;
 
@@ -314,6 +318,7 @@ class PedidoWebService
                         'color_nombre' => $telaData['color'] ?? 'N/A',
                         'tela_id' => $telaId,
                         'color_id' => $colorId,
+                        'referencia' => $telaData['referencia'] ?? null,
                     ]);
 
                     //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
