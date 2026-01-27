@@ -26,6 +26,8 @@ class PedidoProduccionRepository
             'prendas.variantes.tipoBroche',
             'prendas.fotos',
             'prendas.fotosTelas',
+            'prendas.coloresTelas.color',  // NUEVO: Cargar colores y telas desde tabla intermedia
+            'prendas.coloresTelas.tela',   // NUEVO: Cargar telas con sus detalles (nombre, referencia)
             'prendas.tallas',  // NUEVA: Cargar tallas relacionales
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
@@ -130,9 +132,6 @@ class PedidoProduccionRepository
                 \Log::info('[FACTURA] Procesando prenda', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_prenda]);
                 
                 $cantidadTotal = 0;
-                $colores = [];
-                $telas = [];
-                $referencias = [];
                 $variantes_formateadas = [];
 
                 // Obtener especificaciones de la PRIMERA variante (manga, broche, bolsillos son globales por prenda)
@@ -212,10 +211,63 @@ class PedidoProduccionRepository
                     }
                 }
 
-                // Extraer telas y colores de variantes (si existen en colores/telas)
+                // Extraer telas y colores de la relación coloresTelas (TABLA INTERMEDIA)
+                // Esta es la fuente CORRECTA de telas y colores
+                $colores = [];
+                $telas = [];
+                $referencias = [];
+                
+                if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
+                    foreach ($prenda->coloresTelas as $colorTela) {
+                        \Log::info('[FACTURA-COLOR-TELA] Procesando desde tabla intermedia', [
+                            'color_tela_id' => $colorTela->id,
+                            'color_id' => $colorTela->color_id,
+                            'tela_id' => $colorTela->tela_id,
+                        ]);
+                        
+                        // Obtener color
+                        if ($colorTela->color_id && $colorTela->color) {
+                            $colorNombre = $colorTela->color->nombre ?? null;
+                            if ($colorNombre && !in_array($colorNombre, $colores)) {
+                                $colores[] = $colorNombre;
+                                \Log::info('[FACTURA-COLOR] Agregado desde coloresTelas', [
+                                    'color_id' => $colorTela->color_id,
+                                    'nombre' => $colorNombre,
+                                ]);
+                            }
+                        }
+                        
+                        // Obtener tela y referencia
+                        if ($colorTela->tela_id && $colorTela->tela) {
+                            $telaNombre = $colorTela->tela->nombre ?? null;
+                            $telaReferencia = $colorTela->tela->referencia ?? null;
+                            
+                            if ($telaNombre && !in_array($telaNombre, $telas)) {
+                                $telas[] = $telaNombre;
+                            }
+                            
+                            if ($telaReferencia && !in_array($telaReferencia, $referencias)) {
+                                $referencias[] = $telaReferencia;
+                            }
+                            
+                            \Log::info('[FACTURA-TELA] Agregada desde coloresTelas', [
+                                'tela_id' => $colorTela->tela_id,
+                                'nombre' => $telaNombre,
+                                'referencia' => $telaReferencia,
+                            ]);
+                        }
+                    }
+                } else {
+                    \Log::warning('[FACTURA] Prenda sin coloresTelas', [
+                        'prenda_id' => $prenda->id,
+                        'prenda_nombre' => $prenda->nombre_prenda,
+                    ]);
+                }
+
+                // Extraer telas y colores de variantes también (como fallback si existen)
                 if ($prenda->variantes) {
                     foreach ($prenda->variantes as $variante) {
-                        // Extraer telas y colores de variante si existen
+                        // Extraer telas y colores de variante si existen (fallback)
                         if ($variante->tela_id) {
                             try {
                                 $telaData = \DB::table('telas_prenda')
@@ -232,7 +284,7 @@ class PedidoProduccionRepository
                                     }
                                 }
                             } catch (\Exception $e) {
-                                \Log::debug('[FACTURA] Error tela', ['error' => $e->getMessage()]);
+                                \Log::debug('[FACTURA] Error tela variante', ['error' => $e->getMessage()]);
                             }
                         }
                         
@@ -241,11 +293,12 @@ class PedidoProduccionRepository
                                 $color = \DB::table('colores_prenda')
                                     ->where('id', $variante->color_id)
                                     ->value('nombre');
+                                
                                 if ($color && !in_array($color, $colores)) {
                                     $colores[] = $color;
                                 }
                             } catch (\Exception $e) {
-                                \Log::debug('[FACTURA] Error color', ['error' => $e->getMessage()]);
+                                \Log::debug('[FACTURA] Error color variante', ['error' => $e->getMessage()]);
                             }
                         }
                     }
@@ -398,6 +451,16 @@ class PedidoProduccionRepository
                 
                 $datos['prendas'][] = $prendasFormato;
                 $datos['total_items'] += $cantidadTotal;
+                
+                \Log::info('[FACTURA-PRENDA-FINAL] Datos enviados al frontend', [
+                    'nombre' => $prenda->nombre_prenda,
+                    'tela' => $prendasFormato['tela'],
+                    'color' => $prendasFormato['color'],
+                    'ref' => $prendasFormato['ref'],
+                    'telas_array' => $telas,
+                    'colores_array' => $colores,
+                    'referencias_array' => $referencias,
+                ]);
                 
                 \Log::info('[FACTURA] Prenda procesada', [
                     'nombre' => $prenda->nombre_prenda,

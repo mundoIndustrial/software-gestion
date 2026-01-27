@@ -530,6 +530,16 @@ function capturarPrendas() {
             let colorCapturado = prenda.color || variantes.color || '';
             let refCapturada = prenda.ref || '';
             
+            // DEBUG: Verificar qué se está capturando
+            console.log('[CAPTURA-TELA-COLOR] Prenda:', prenda.nombre, {
+                telaServidor: prenda.tela,
+                colorServidor: prenda.color,
+                refServidor: prenda.ref,
+                telaCapturada,
+                colorCapturado,
+                refCapturada
+            });
+            
             if (!refCapturada || !telaCapturada || !colorCapturado) {
                 if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
                     const primeTela = prenda.telasAgregadas[0];
