@@ -250,7 +250,7 @@
         }
     }
 
-    // Crear menú emergente dinámico para PDF
+    // Crear menú emergente dinámico para PDF (Lee los datos JSON guardados)
     function createPDFDropdown(cotizacionId) {
         // Verificar si ya existe un dropdown
         const existingDropdown = document.querySelector(`.pdf-menu-dropdown[data-cot-id="${cotizacionId}"]`);
@@ -259,18 +259,33 @@
             return;
         }
 
-        // Crear dropdown
+        // Obtener datos de botones PDF desde el JSON incrustado
+        const pdfDataScript = document.querySelector(`.pdf-buttons-data[data-cot-id="${cotizacionId}"]`);
+        let pdfButtons = [];
+        
+        if (pdfDataScript) {
+            try {
+                pdfButtons = JSON.parse(pdfDataScript.textContent);
+            } catch (e) {
+                console.error('Error parsing PDF buttons data:', e);
+            }
+        }
+
+        // Crear dropdown dinámicamente
         const dropdown = document.createElement('div');
         dropdown.className = 'pdf-menu-dropdown';
         dropdown.dataset.cotId = cotizacionId;
-        dropdown.innerHTML = `
-            <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'prenda'); return false;" class="pdf-menu-option">
-                 PDF Prenda
-            </a>
-            <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'logo'); return false;" class="pdf-menu-option">
-                 PDF Logo
-            </a>
-        `;
+        
+        let dropdownHTML = '';
+        pdfButtons.forEach(btn => {
+            dropdownHTML += `
+                <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, '${btn.tipo}'); return false;" class="pdf-menu-option">
+                    <i class="fas ${btn.icon}"></i> ${btn.label}
+                </a>
+            `;
+        });
+        
+        dropdown.innerHTML = dropdownHTML;
 
         // Buscar el botón PDF
         const pdfButton = document.querySelector(`.pdf-menu-btn[data-cot-id="${cotizacionId}"]`);
@@ -304,9 +319,25 @@
         });
     });
 
-    // Abrir PDF en nueva pestaña
+    // Abrir PDF en nueva pestaña según el tipo
     function abrirPDFEnPestana(cotizacionId, tipoPDF) {
-        const url = `/asesores/cotizacion/${cotizacionId}/pdf?tipo=${tipoPDF}`;
+        let url = '';
+        
+        // Construir la URL según el tipo de PDF
+        switch(tipoPDF) {
+            case 'prenda':
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
+                break;
+            case 'reflectivo':
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/reflectivo`;
+                break;
+            case 'logo':
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/logo`;
+                break;
+            default:
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
+        }
+        
         window.open(url, '_blank');
         
         // Cerrar el dropdown si está abierto

@@ -141,6 +141,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con reflectivos por prenda (PASO 4 - Reflectivos por Prenda)
+     */
+    public function reflectivoPrendas(): HasMany
+    {
+        return $this->hasMany(ReflectivoCotizacion::class, 'cotizacion_id')->whereNotNull('prenda_cot_id');
+    }
+
+    /**
      * Relación con fotos de logo (logo_fotos_cot)
      */
     public function logoFotos(): HasMany

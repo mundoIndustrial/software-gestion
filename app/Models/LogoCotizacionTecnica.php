@@ -8,19 +8,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LogoCotizacionTecnica extends Model
 {
-    protected $table = 'logo_cotizacion_tecnicas';
+    protected $table = 'logo_cotizacion_tecnica_prendas';
 
     protected $fillable = [
         'logo_cotizacion_id',
-        'tipo_logo_cotizacion_id',
-        'observaciones_tecnica',
-        'instrucciones_especiales',
-        'orden',
-        'activo',
+        'tipo_logo_id',
+        'prenda_cot_id',
+        'observaciones',
+        'ubicaciones',
+        'talla_cantidad',
+        'variaciones_prenda',
+        'grupo_combinado',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'ubicaciones' => 'array',
+        'talla_cantidad' => 'array',
+        'variaciones_prenda' => 'array',
     ];
 
     /**
@@ -28,47 +32,48 @@ class LogoCotizacionTecnica extends Model
      */
     public function logoCotizacion(): BelongsTo
     {
-        return $this->belongsTo(LogoCotizacion::class);
+        return $this->belongsTo(LogoCotizacion::class, 'logo_cotizacion_id');
     }
 
     /**
-     * Relación: Pertenece a un TipoLogoCotizacion
+     * Relación: Pertenece a un TipoLogoCotizacion (técnica)
      */
-    public function tipo(): BelongsTo
+    public function tipoLogo(): BelongsTo
     {
-        return $this->belongsTo(TipoLogoCotizacion::class, 'tipo_logo_cotizacion_id');
+        return $this->belongsTo(TipoLogoCotizacion::class, 'tipo_logo_id');
     }
 
     /**
-     * Relación: Una técnica puede tener múltiples prendas
+     * Relación: Pertenece a una PrendaCot
      */
-    public function prendas(): HasMany
+    public function prendaCot(): BelongsTo
     {
-        return $this->hasMany(LogoCotizacionTecnicaPrenda::class)
-            ->orderBy('orden');
+        return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
     }
 
     /**
-     * Scope: Solo registros activos
+     * Relación: Tiene muchas fotos
      */
-    public function scopeActivos($query)
+    public function fotos(): HasMany
     {
-        return $query->where('activo', true);
+        return $this->hasMany(LogoCotizacionTecnicaPrendaFoto::class, 'logo_cotizacion_tecnica_prenda_id');
     }
 
     /**
-     * Obtener nombre de la técnica
+     * Obtener ubicaciones como string
      */
-    public function getNombreTecnicaAttribute()
+    public function getUbicacionesTextAttribute()
     {
-        return $this->tipo->nombre ?? 'Desconocida';
+        $ubicaciones = $this->ubicaciones ?? [];
+        return is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
     }
 
     /**
-     * Obtener color de la técnica
+     * Obtener tallas como string
      */
-    public function getColorAttribute()
+    public function getTallasTextAttribute()
     {
-        return $this->tipo->color ?? '#3498db';
+        $tallas = $this->talla_cantidad ?? [];
+        return is_array($tallas) ? implode(', ', array_keys($tallas)) : $tallas;
     }
 }

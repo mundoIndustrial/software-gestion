@@ -106,44 +106,76 @@
                                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.3)'">
                                                 <i class="fas fa-eye" style="font-size: 1rem;"></i>
                                             </a>
-                                            <!-- Botón PDF con menú dinámico emergente -->
-                                                @if($cot->tipo === 'PL')
-                                                    <!-- Combinada: mostrar botón con dropdown emergente -->
-                                                    <button class="pdf-menu-btn" data-cot-id="{{ $cot->id }}" data-tipo="PL" 
-                                                        title="Descargar PDF"
+                                            
+                                            <!-- Botones PDF dinámicos según tipo y relaciones -->
+                                            @php
+                                                $pdfButtons = [];
+                                                
+                                                // Verificar si tiene prendas
+                                                $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
+                                                if ($tienePrendas) {
+                                                    $pdfButtons[] = [
+                                                        'tipo' => 'prenda',
+                                                        'label' => 'PDF Prenda',
+                                                        'icon' => 'fa-file-pdf'
+                                                    ];
+                                                }
+                                                
+                                                // Verificar si tiene reflectivo
+                                                $tieneReflectivo = false;
+                                                if ($cot->tipo === 'RF') {
+                                                    $tieneReflectivo = true;
+                                                } else {
+                                                    // Para cotizaciones combinadas, verificar si hay reflectivo_prendas
+                                                    $tieneReflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cot->id)->whereNotNull('prenda_cot_id')->exists();
+                                                }
+                                                
+                                                if ($tieneReflectivo) {
+                                                    $pdfButtons[] = [
+                                                        'tipo' => 'reflectivo',
+                                                        'label' => 'PDF Reflectivo',
+                                                        'icon' => 'fa-file-pdf'
+                                                    ];
+                                                }
+                                                
+                                                // Verificar si tiene logo
+                                                $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
+                                                if ($tieneLogo) {
+                                                    $pdfButtons[] = [
+                                                        'tipo' => 'logo',
+                                                        'label' => 'PDF Logo',
+                                                        'icon' => 'fa-file-pdf'
+                                                    ];
+                                                }
+                                            @endphp
+                                            
+                                            @if(count($pdfButtons) > 0)
+                                                @if(count($pdfButtons) === 1)
+                                                    <!-- Un solo botón PDF -->
+                                                    @php $btn = $pdfButtons[0]; @endphp
+                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, '{{ $btn['tipo'] }}')" 
+                                                        title="Descargar {{ $btn['label'] }}"
                                                         style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
-                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
-                                                    </button>
-                                                @elseif($cot->tipo === 'RF')
-                                                    <!-- Reflectivo: botón directo a PDF Prenda -->
-                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
-                                                        title="Descargar PDF"
-                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
-                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
-                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
-                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
-                                                    </button>
-                                                @elseif($cot->tipo === 'L')
-                                                    <!-- Logo: botón directo a PDF Logo -->
-                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo')" 
-                                                        title="Descargar PDF"
-                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
-                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
-                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
-                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                                                        <i class="fas {{ $btn['icon'] }}" style="font-size: 1rem;"></i>
                                                     </button>
                                                 @else
-                                                    <!-- Otro tipo: PDF Prenda por defecto -->
-                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
+                                                    <!-- Múltiples botones PDF con menú emergente -->
+                                                    <button class="pdf-menu-btn" data-cot-id="{{ $cot->id }}" data-tipo="multiple" 
                                                         title="Descargar PDF"
                                                         style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
                                                         <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
+                                                    <!-- Datos para generar menú dinámicamente -->
+                                                    <script type="application/json" class="pdf-buttons-data" data-cot-id="{{ $cot->id }}">
+                                                        {!! json_encode($pdfButtons) !!}
+                                                    </script>
                                                 @endif
+                                            @endif
+                                            
                                             @if($cot->estado !== 'Anulada')
                                             <a href="#" onclick="confirmarAnularCotizacion({{ $cot->id }}, '{{ $cot->numero_cotizacion }}'); return false;" 
                                                 title="Anular Cotización"

@@ -19,6 +19,8 @@ use App\Infrastructure\Http\Controllers\CotizacionController;
 use App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController;
 use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Http\Controllers\PDFCotizacionController;
+use App\Http\Controllers\PDFPrendaController;
+use App\Http\Controllers\PDFReflectivoController;
 use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
@@ -113,7 +115,14 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/cotizaciones/filtros/valores', [CotizacionesFiltrosController::class, 'valores'])->name('cotizaciones.filtros.valores');
     Route::post('/cotizaciones', [CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [CotizacionController::class, 'update'])->name('cotizaciones.update');
-    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    
+    // ========================================
+    // PDF GENERATION - NEW REFACTORED STRUCTURE
+    // ========================================
+    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
+    Route::get('/cotizacion/{id}/pdf/reflectivo', [PDFReflectivoController::class, 'generate'])->name('cotizacion.pdf.reflectivo');
+    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf'); // Legacy route
+    
     Route::delete('/cotizaciones/imagenes/prenda/{id}', [ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');
     Route::delete('/cotizaciones/imagenes/tela/{id}', [ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
     Route::delete('/cotizaciones/imagenes/logo/{id}', [ImagenBorradorController::class, 'borrarLogo'])->name('cotizaciones.imagen.borrar-logo');

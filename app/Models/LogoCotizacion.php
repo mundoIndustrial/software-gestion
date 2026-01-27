@@ -59,8 +59,7 @@ class LogoCotizacion extends Model
     public function tecnicas(): HasMany
     {
         // Retorna una colección vacía para compatibilidad
-        return $this->hasMany(LogoCotizacionTecnica::class)
-            ->orderBy('orden');
+        return $this->hasMany(LogoCotizacionTecnica::class);
     }
 
     /**

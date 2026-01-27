@@ -41,7 +41,8 @@ final class CotizacionesViewController extends Controller
                     'prendas.variantes',
                     'prendas.telas',
                     'logoCotizacion.fotos',
-                    'reflectivo.fotos'
+                    'reflectivo.fotos',
+                    'reflectivoPrendas'
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
