@@ -98,8 +98,25 @@ final class ActualizarPrendaCompletaUseCase
             $datosActualizar['de_bodega'] = $dto->deBodega;
         }
 
+        \Log::info('[ActualizarPrendaCompletaUseCase] Actualizando campos básicos', [
+            'prenda_id' => $prenda->id,
+            'datos_a_actualizar' => $datosActualizar,
+            'de_bodega_tipo' => gettype($dto->deBodega),
+            'de_bodega_valor' => $dto->deBodega,
+            'de_bodega_es_null' => is_null($dto->deBodega),
+        ]);
+
         if (!empty($datosActualizar)) {
             $prenda->update($datosActualizar);
+            // Recargar desde BD para asegurar que tiene el valor guardado
+            $prenda->refresh();
+            
+            \Log::info('[ActualizarPrendaCompletaUseCase] Campos básicos actualizados', [
+                'prenda_id' => $prenda->id,
+                'de_bodega_guardado_en_bd' => $prenda->de_bodega,
+                'de_bodega_tipo' => gettype($prenda->de_bodega),
+                'de_bodega_entero' => (int) $prenda->de_bodega,
+            ]);
         }
     }
 
@@ -147,14 +164,11 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
 
-        //  Eliminar solo fotos que NO estÃ¡n en la nueva lista
-        foreach ($fotosExistentes as $ruta => $fotoRecord) {
-            if (!isset($fotosNuevas[$ruta])) {
-                $fotoRecord->delete();
-            }
-        }
-
-        //  Insertar solo fotos nuevas (las que ya existen no se tocan)
+        // 🔧 CAMBIO CLAVE: En edición, SOLO INSERTAR fotos nuevas sin eliminar las antiguas
+        // Las fotos antiguas permanecen, solo se eliminan si el usuario las elimina manualmente
+        // desde el modal de galería o si vienen explícitamente marcadas para eliminar
+        
+        // SOLO insertar fotos nuevas (las que ya existen se mantienen)
         foreach ($fotosNuevas as $ruta => $datosFoto) {
             if (!isset($fotosExistentes[$ruta])) {
                 $prenda->fotos()->create($datosFoto);
@@ -555,6 +569,7 @@ final class ActualizarPrendaCompletaUseCase
             'nombre_prenda' => $prenda->nombre_prenda,
             'descripcion' => $prenda->descripcion,
             'de_bodega' => (bool) $prenda->de_bodega,
+            'origen' => $prenda->de_bodega ? 'bodega' : 'confeccion',  // Incluir origen para frontend
             'variantes' => $variantes,
             'tallas' => $prenda->tallas->groupBy('genero')->map(function($tallasPorGenero) {
                 return $tallasPorGenero->mapWithKeys(function($talla) {

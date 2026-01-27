@@ -142,17 +142,17 @@
                     </label>
                     
                     <!-- Vista Desktop (tabla) -->
-                    <div class="overflow-x-auto variaciones-tabla-desktop" style="display: none;">
-                        <table style="width: 100%; border-collapse: collapse; background: white; dark:bg-gray-700; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                    <div class="variaciones-tabla-desktop" style="display: none; overflow-x: auto; border-radius: 6px; border: 1px solid #ddd;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; min-width: 600px;">
                             <thead>
-                                <tr style="background: linear-gradient(135deg, #0066cc, #0052a3); border-bottom: 2px solid #0066cc;">
-                                    <th style="padding: 14px 12px; text-align: center; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 60px;">
+                                <tr style="background: linear-gradient(135deg, #0066cc, #0052a3);">
+                                    <th style="padding: 14px 12px; text-align: center; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 8%; min-width: 50px;">
                                         <i class="fas fa-check-circle"></i>
                                     </th>
-                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 160px;">
+                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 20%; min-width: 120px;">
                                         <i class="fas fa-list"></i> Variación
                                     </th>
-                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white;">
+                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white; width: 72%; min-width: 300px;">
                                         <i class="fas fa-comment"></i> Observación
                                     </th>
                                 </tr>
@@ -166,8 +166,8 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-shirt"></i> Manga
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" id="manga-input" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                    <td style="padding: 14px 12px; word-break: break-word;">
+                                        <input type="text" id="manga-input" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options" style="width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; dark:bg-gray-700 dark:text-white" disabled>
                                         <datalist id="manga-options">
                                             <!-- Las opciones se cargarán dinámicamente desde el API -->
                                         </datalist>
@@ -182,8 +182,8 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-square"></i> Bolsillos
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    <td style="padding: 14px 12px; word-break: break-word;">
+                                        <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; dark:bg-gray-700 dark:text-white">
                                     </td>
                                 </tr>
                                 
@@ -195,13 +195,15 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-link"></i> Broche/Botón
                                     </td>
-                                    <td style="padding: 14px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                        <select id="broche-tipo" class="broche-tipo-select" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
-                                            <option value="">-- Selecciona --</option>
-                                            <option value="1">Broche</option>
-                                            <option value="2">Botón</option>
-                                        </select>
-                                        <input type="text" class="broche-obs-input" placeholder="Ej: metálicos, 5mm..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                    <td style="padding: 14px 12px; word-break: break-word;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+                                            <select id="broche-tipo" class="broche-tipo-select" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; dark:bg-gray-700 dark:text-white" disabled>
+                                                <option value="">-- Selecciona --</option>
+                                                <option value="1">Broche</option>
+                                                <option value="2">Botón</option>
+                                            </select>
+                                            <input type="text" class="broche-obs-input" placeholder="Ej: metálicos, 5mm..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; dark:bg-gray-700 dark:text-white" disabled>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -213,8 +215,8 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-ring"></i> Puño
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    <td style="padding: 14px 12px; word-break: break-word;">
+                                        <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; dark:bg-gray-700 dark:text-white">
                                     </td>
                                 </tr>
 
@@ -226,8 +228,8 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-cogs"></i> Proceso
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    <td style="padding: 14px 12px; word-break: break-word;">
+                                        <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; dark:bg-gray-700 dark:text-white">
                                     </td>
                                 </tr>
                             </tbody>
@@ -237,71 +239,151 @@
                     <!-- Vista Mobile (cards) -->
                     <div class="variaciones-cards-mobile" style="display: none;">
                         <!-- MANGA -->
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow: hidden; word-wrap: break-word; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInputMobile(this)">
-                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-shirt"></i> Manga</label>
+                                <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInputMobile(this)">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1; overflow: hidden; word-break: break-word;"><i class="fas fa-shirt"></i> Manga</label>
                             </div>
-                            <input type="text" id="manga-input-mobile" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options-mobile" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                            <input type="text" id="manga-input-mobile" class="manga-input" placeholder="Ej: manga larga, corta..." list="manga-options-mobile" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white" disabled>
                             <datalist id="manga-options-mobile">
                                 <!-- Las opciones se cargarán dinámicamente desde el API -->
                             </datalist>
                         </div>
 
                         <!-- BOLSILLOS -->
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow: hidden; word-wrap: break-word; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-bolsillos" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-square"></i> Bolsillos</label>
+                                <input type="checkbox" class="aplica-bolsillos" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1; overflow: hidden; word-break: break-word;"><i class="fas fa-square"></i> Bolsillos</label>
                             </div>
-                            <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                            <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white">
                         </div>
 
                         <!-- BROCHE/BOTÓN -->
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow: hidden; word-wrap: break-word; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleBrocheInputsMobile(this)">
-                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-link"></i> Broche/Botón</label>
+                                <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: #0066cc;" onchange="toggleBrocheInputsMobile(this)">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1; overflow: hidden; word-break: break-word;"><i class="fas fa-link"></i> Broche/Botón</label>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <select id="broche-tipo-mobile" class="broche-tipo-select" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; box-sizing: border-box;">
+                                <select id="broche-tipo-mobile" class="broche-tipo-select" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white" disabled>
                                     <option value="">-- Selecciona --</option>
                                     <option value="1">Broche</option>
                                     <option value="2">Botón</option>
                                 </select>
-                                <input type="text" class="broche-obs-input" placeholder="Ej: metálicos, 5mm..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                                <input type="text" class="broche-obs-input" placeholder="Ej: metálicos..." style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; opacity: 0.5; pointer-events: none; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white" disabled>
                             </div>
                         </div>
 
                         <!-- PUÑO -->
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow: hidden; word-wrap: break-word; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-puno" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-ring"></i> Puño</label>
+                                <input type="checkbox" class="aplica-puno" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1; overflow: hidden; word-break: break-word;"><i class="fas fa-ring"></i> Puño</label>
                             </div>
-                            <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                            <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white">
                         </div>
 
                         <!-- PROCESO -->
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow: hidden; word-wrap: break-word; dark:bg-gray-700;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <input type="checkbox" class="aplica-proceso" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-cogs"></i> Proceso</label>
+                                <input type="checkbox" class="aplica-proceso" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1; overflow: hidden; word-break: break-word;"><i class="fas fa-cogs"></i> Proceso</label>
                             </div>
-                            <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                            <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; word-break: break-word; dark:bg-gray-600 dark:text-white">
                         </div>
                     </div>
 
                     <style>
-                        @media (max-width: 768px) {
+                        * {
+                            box-sizing: border-box;
+                        }
+
+                        .variaciones-tabla-desktop {
+                            overflow-x: auto;
+                            -webkit-overflow-scrolling: touch;
+                            border-radius: 6px;
+                            border: 1px solid #ddd;
+                        }
+
+                        .variaciones-tabla-desktop table {
+                            width: 100%;
+                            min-width: 600px;
+                            border-collapse: collapse;
+                        }
+
+                        .variaciones-tabla-desktop table th,
+                        .variaciones-tabla-desktop table td {
+                            overflow-wrap: break-word;
+                            word-wrap: break-word;
+                            word-break: break-word;
+                            hyphens: auto;
+                        }
+
+                        .variaciones-tabla-desktop input,
+                        .variaciones-tabla-desktop select {
+                            max-width: 100%;
+                            box-sizing: border-box;
+                        }
+
+                        .variaciones-cards-mobile {
+                            display: none;
+                            width: 100%;
+                        }
+
+                        .variaciones-cards-mobile > div {
+                            width: 100%;
+                            box-sizing: border-box;
+                            overflow-wrap: break-word;
+                            word-wrap: break-word;
+                            word-break: break-word;
+                        }
+
+                        .variaciones-cards-mobile input,
+                        .variaciones-cards-mobile select {
+                            max-width: 100%;
+                            box-sizing: border-box;
+                            overflow-wrap: break-word;
+                            word-wrap: break-word;
+                        }
+
+                        /* Dispositivos pequeños: hasta 768px */
+                        @media (max-width: 640px) {
                             .variaciones-tabla-desktop {
                                 display: none !important;
                             }
                             .variaciones-cards-mobile {
                                 display: block !important;
                             }
+
+                            .variaciones-cards-mobile > div {
+                                padding: 10px;
+                                margin-bottom: 10px;
+                            }
+
+                            .variaciones-cards-mobile input,
+                            .variaciones-cards-mobile select {
+                                font-size: 16px;
+                                padding: 10px 12px;
+                            }
                         }
-                        @media (min-width: 769px) {
+
+                        /* Tablets: 641px a 1024px */
+                        @media (min-width: 641px) and (max-width: 1024px) {
+                            .variaciones-tabla-desktop {
+                                display: block !important;
+                            }
+                            .variaciones-cards-mobile {
+                                display: none !important;
+                            }
+
+                            .variaciones-tabla-desktop table {
+                                min-width: 100%;
+                            }
+                        }
+
+                        /* Escritorio: 1025px en adelante */
+                        @media (min-width: 1025px) {
                             .variaciones-tabla-desktop {
                                 display: block !important;
                             }

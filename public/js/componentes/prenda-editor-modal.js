@@ -261,7 +261,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             nombre_prenda: prendaCompleta.nombre_prenda || '',
             nombre_producto: prendaCompleta.nombre_prenda || '',
             descripcion: prendaCompleta.descripcion || '',
-            origen: prenda.origen || 'bodega',
+            origen: prendaCompleta.origen || prenda.origen || 'bodega',
+            de_bodega: prendaCompleta.de_bodega !== undefined ? prendaCompleta.de_bodega : prenda.de_bodega,
             imagenes: (prendaCompleta.imagenes || []).map(img => {
                 const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
                 return {
@@ -331,6 +332,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
         console.log('🖼️ [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
         console.log('📊 [EDITAR-PRENDA] Respuesta completa del servidor:', resultado.prenda);
+        console.log('🏢 [EDITAR-PRENDA] de_bodega del servidor:', resultado.prenda?.de_bodega, '(1=bodega, 0=confeccion)');
         
         // Cerrar el modal de seleccionar prenda
         Swal.close();
@@ -704,7 +706,17 @@ function cargarPrendaEnFormularioModal(prendaData) {
     
     if (nombreField) nombreField.value = prendaData.nombre_producto || prendaData.nombre_prenda || '';
     if (descripcionField) descripcionField.value = prendaData.descripcion || '';
-    if (origenSelect) origenSelect.value = prendaData.origen || 'bodega';
+    if (origenSelect) {
+        // Si viene de_bodega de la BD: 1/true = bodega, 0/false = confeccion
+        if (prendaData.de_bodega !== undefined && prendaData.de_bodega !== null) {
+            const origen = (prendaData.de_bodega == 1 || prendaData.de_bodega === true) ? 'bodega' : 'confeccion';
+            console.log('🏢 [CARGAR-PRENDA] Asignando origen desde de_bodega:', {de_bodega: prendaData.de_bodega, origen: origen});
+            origenSelect.value = origen;
+        } else {
+            console.log('🏢 [CARGAR-PRENDA] de_bodega no encontrado, usando fallback');
+            origenSelect.value = prendaData.origen || 'confeccion';
+        }
+    }
     
 
     

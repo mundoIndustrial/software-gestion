@@ -510,10 +510,11 @@ class ObtenerPedidoDetalleService
                       ->orderBy('created_at', 'desc');
                 },
                 'fotos' => function ($q) {
-                    $q->withTrashed();  //  INCLUIR SOFT-DELETED
+                    // 🔧 CAMBIO: NO incluir fotos eliminadas (deleted_at) en el modal de edición
+                    $q->whereNull('deleted_at');  // Solo fotos activas
                 },
                 'fotosTelas' => function ($q) {
-                    $q->withTrashed();  //  INCLUIR SOFT-DELETED
+                    $q->whereNull('deleted_at');  // Solo fotos de telas activas
                 },
                 'variantes' => function ($q) {
                     $q->with(['tipoManga', 'tipoBroche']);
@@ -558,6 +559,9 @@ class ObtenerPedidoDetalleService
         ]);
 
         $prendaArray = $prenda->toArray();
+
+        // 🔧 FIX: Convertir de_bodega a origen para que el frontend tenga ambos formatos
+        $prendaArray['origen'] = $prendaArray['de_bodega'] == 1 ? 'bodega' : 'confeccion';
 
         // Procesos
         $procesos = [];

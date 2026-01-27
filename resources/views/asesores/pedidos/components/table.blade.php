@@ -8,7 +8,7 @@
             color: white;
             padding: 0.75rem 1rem;
             display: grid;
-            grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
+            grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 120px 140px 110px 120px 130px' : '120px 120px 120px 140px 110px 120px 130px 130px 130px' }};
             gap: 1.2rem;
             font-weight: 600;
             font-size: 0.8rem;
@@ -44,12 +44,6 @@
             <div class="th-wrapper">
                 <span>Cliente</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Cliente">
-                    <span class="material-symbols-rounded">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper">
-                <span>Descripción</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Descripción">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>

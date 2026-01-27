@@ -82,18 +82,6 @@ class EppModalManager {
             console.warn(' [ModalManager] Elemento nombreProductoEPP NO ENCONTRADO');
         }
         
-        // Mostrar imagen si existe
-        const imagenElement = document.getElementById('imagenProductoEPP');
-        console.log(' [ModalManager] Elemento imagenProductoEPP encontrado:', !!imagenElement);
-        if (imagenElement && producto.imagen) {
-            imagenElement.src = producto.imagen;
-            console.log(' [ModalManager] Imagen establecida:', producto.imagen);
-        } else if (imagenElement) {
-            // Mostrar placeholder si no hay imagen
-            imagenElement.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23e5e7eb" width="100" height="100"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ESin imagen%3C/text%3E%3C/svg%3E';
-            console.log(' [ModalManager] Mostrando placeholder (sin imagen)');
-        }
-        
         const productoCard = document.getElementById('productoCardEPP');
         console.log(' [ModalManager] Elemento productoCardEPP encontrado:', !!productoCard);
         if (productoCard) {
@@ -221,23 +209,27 @@ class EppModalManager {
         const listaImagenes = document.getElementById('listaImagenesSubidas');
         
         if (!contenedor || !listaImagenes) {
-
+            console.warn('⚠️ [ModalManager] Contenedor o listaImagenes no encontrados');
             return;
         }
         
         contenedor.innerHTML = '';
 
         if (imagenes && imagenes.length > 0) {
+            console.log(`📸 [ModalManager] mostrarImagenes: ${imagenes.length} imagen(es) para mostrar`);
             listaImagenes.style.display = 'block';
             imagenes.forEach((img, idx) => {
                 try {
+                    console.log(`   Imagen ${idx}:`, img);
                     const card = this._crearCardImagen(img);
                     contenedor.appendChild(card);
+                    console.log(`   ✅ Imagen ${idx} agregada al DOM`);
 
                 } catch (e) {
-
+                    console.error(`   ❌ Error al crear card para imagen ${idx}:`, e);
                 }
             });
+            console.log(`✅ [ModalManager] ${imagenes.length} imagen(es) mostrada(s)`);
 
         } else {
             // IMPORTANTE: No ocultar el contenedor cuando está vacío
@@ -344,7 +336,7 @@ class EppModalManager {
      */
     _crearCardImagen(imagen) {
         // Manejar tanto strings como objetos
-        const imagenUrl = typeof imagen === 'string' ? imagen : (imagen.preview || imagen.url || imagen.ruta_web || '');
+        const imagenUrl = typeof imagen === 'string' ? imagen : (imagen.preview || imagen.url || imagen.ruta_web || imagen.ruta_webp || imagen.ruta_original || '');
         const imagenId = typeof imagen === 'string' ? `img-${Math.random()}` : (imagen.id || `img-${Math.random()}`);
         
         const card = document.createElement('div');

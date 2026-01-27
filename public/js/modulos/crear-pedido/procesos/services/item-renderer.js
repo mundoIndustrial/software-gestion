@@ -149,7 +149,7 @@ class ItemRenderer {
         const numeroItem = eppCount + 1;
         
         return `
-            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp-card" data-epp-index="${index}" data-epp-id="${epp.epp_id}" data-pedido-epp-id="${epp.id || epp.pedido_epp_id || epp.epp_id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                     <div>

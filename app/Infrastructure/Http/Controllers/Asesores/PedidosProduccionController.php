@@ -798,6 +798,13 @@ class PedidosProduccionController
         try {
             Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/actualizar-prenda', ['id' => $id]);
 
+            // 🔍 DEBUG: Ver qué datos recibe el request
+            Log::info('[PedidosProduccionController] Request raw data', [
+                'origen' => $request->input('origen'),
+                'de_bodega' => $request->input('de_bodega'),
+                'all_inputs' => $request->all()
+            ]);
+
             // Validar datos básicos
             $validated = $request->validate([
                 'prenda_id' => 'required|numeric|min:1',
@@ -872,6 +879,8 @@ class PedidosProduccionController
 
             // Usar Use Case DDD
             Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
+                'origen_recibido' => $validated['origen'] ?? 'NO ENVIADO',
+                'de_bodega_recibido' => $validated['de_bodega'] ?? 'NO ENVIADO',
                 'tallas_recibidas' => $validated['tallas'] ?? 'NO ENVIADAS',
                 'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',

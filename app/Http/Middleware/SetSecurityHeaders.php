@@ -25,16 +25,23 @@ class SetSecurityHeaders
         // Detectar si estamos en desarrollo
         $isDevelopment = app()->environment('local');
         
-        // Agregar localhost:5173 (Vite dev server) solo en desarrollo
-        $viteSources = $isDevelopment ? " http://localhost:5173 ws://localhost:5173" : "";
+        // En desarrollo, usar el hostname actual para Vite y Reverb
+        $serverHost = $request->getHost();
+        $serverIp = $request->ip();
+        $serverPort = $request->getPort();
+        
+        // Para desarrollo local, permitir localhost, 127.0.0.1, hostname y la IP actual
+        $viteSources = $isDevelopment ? " http://localhost:5173 ws://localhost:5173 http://{$serverHost}:5173 ws://{$serverHost}:5173 http://{$serverIp}:5173 ws://{$serverIp}:5173" : "";
+        $connectSources = $isDevelopment ? " ws://localhost:8080 ws://{$serverHost}:8080 wss://{$serverHost}:8080 ws://{$serverIp}:8080 wss://{$serverIp}:8080" : "";
 
         // Content Security Policy (CSP) - More permissive for Laravel Echo and CDNs
         $csp = "default-src 'self'; "
             . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com{$viteSources}; "
+            . "worker-src 'self' blob:; "
             . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.bunny.net{$viteSources}; "
             . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net; "
             . "img-src 'self' data: https: blob:; "
-            . "connect-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com ws://servermi:8080 wss://servermi:8080 ws: wss: https: ws://localhost:8080{$viteSources}; "
+            . "connect-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com ws: wss: https:{$connectSources}; "
             . "frame-ancestors 'none'; "
             . "base-uri 'self'; "
             . "form-action 'self'; "

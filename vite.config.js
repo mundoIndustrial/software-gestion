@@ -1,7 +1,30 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import fs from 'fs';
+
+// Leer variables del .env.development
+let hmrHost = 'localhost';
+let hmrPort = 5173;
+
+try {
+    const envPath = '.env.development';
+    if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf-8');
+        const hmrMatch = envContent.match(/VITE_HMR_HOST=(.+)/);
+        if (hmrMatch) {
+            hmrHost = hmrMatch[1].trim();
+        }
+    }
+} catch (e) {
+    console.log('⚠️  No se pudo leer .env.development, usando localhost');
+}
+
+// Fallback a variable de entorno si está disponible
+hmrHost = process.env.VITE_HMR_HOST || hmrHost;
 
 const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_ENV === 'production';
+
+console.log('🔧 Vite Config - HMR:', hmrHost + ':' + hmrPort);
 
 export default defineConfig({
     server: {
@@ -9,8 +32,8 @@ export default defineConfig({
         port: 5173,
         strictPort: false,
         hmr: isProduction ? false : {
-            host: process.env.VITE_HMR_HOST || 'localhost',
-            port: process.env.VITE_HMR_PORT || 5173,
+            host: hmrHost,
+            port: hmrPort,
             protocol: 'http',
         },
         cors: {

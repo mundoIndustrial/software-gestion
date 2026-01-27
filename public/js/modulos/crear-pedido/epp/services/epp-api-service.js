@@ -150,6 +150,31 @@ class EppApiService {
     }
 
     /**
+     * Actualizar pedido_epp en BD
+     */
+    async actualizarPedidoEpp(pedidoEppId, datos) {
+        try {
+            const response = await fetch(`${this.baseUrl}/pedido-epp/${pedidoEppId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this._obtenerCsrfToken()
+                },
+                body: JSON.stringify(datos)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error al actualizar pedido EPP: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('[EppApiService] Error actualizarPedidoEpp:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Subir imagen de EPP durante creación del pedido
      * Guarda directamente en pedidos/{pedido_id}/epp/
      * Retorna ruta webp en el servidor

@@ -3,6 +3,8 @@
  * Mostrar, navegar y eliminar imágenes de prendas con modal
  */
 
+console.log('✅ [galeria-imagenes-prenda.js] ARCHIVO CARGADO - Definiendo window.mostrarGaleriaImagenesPrenda');
+
 /**
  * Mostrar galería de imágenes de prenda
  * @param {Array} imagenes - Array de imágenes de la prenda
@@ -10,11 +12,17 @@
  * @param {number} indiceInicial - Índice inicial a mostrar
  */
 window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
-
+    console.log('🖼️ [galeria-imagenes-prenda] ABRIENDO GALERÍA...');
+    console.log('   - imagenes recibidas:', imagenes?.length || 0);
+    console.log('   - prendaIndex:', prendaIndex);
+    console.log('   - indiceInicial:', indiceInicial);
     
     //  Detectar si estamos creando o editando
     const estamosCriando = window.gestionItemsUI?.prendaEditIndex === null;
     const estamoEditando = window.gestionItemsUI?.prendaEditIndex !== null && window.gestionItemsUI?.prendaEditIndex !== undefined;
+
+    console.log('   - estamosCriando:', estamosCriando);
+    console.log('   - estamoEditando:', estamoEditando);
 
     
     let imagenesActuales = [];
@@ -42,8 +50,8 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     }
     
     //  Siempre sincronizar con imágenes temporales del storage
-    if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerTodas) {
-        const imagenesTemporales = window.imagenesPrendaStorage.obtenerTodas();
+    if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
+        const imagenesTemporales = window.imagenesPrendaStorage.obtenerImagenes();
 
         
         if (imagenesTemporales && imagenesTemporales.length > 0) {
@@ -70,11 +78,14 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     //  Si estamos CREANDO y no hay storage, usar las que pasaron como parámetro
     if (estamosCriando && imagenesActuales.length === 0 && imagenes && imagenes.length > 0) {
         imagenesActuales = imagenes;
-
+        console.log('   ✓ Usando imágenes del parámetro (creando)');
     }
     
+    console.log('   - imagenesActuales finales:', imagenesActuales?.length || 0);
+    
     if (!imagenesActuales || imagenesActuales.length === 0) {
-
+        console.warn('❌ [galeria-imagenes-prenda] No hay imágenes para mostrar');
+        window.__galeriaPrendaAbierta = false;
         return;
     }
     
@@ -91,11 +102,22 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     const imagenesConBlobUrl = imagenesActuales.map((img, idx) => {
         let blobUrl;
         if (img.file instanceof File || img.file instanceof Blob) {
+            // CASO 1: Imagen nueva (tiene File/Blob)
             blobUrl = URL.createObjectURL(img.file);
         } else if (img.blobUrl && img.blobUrl.startsWith('blob:')) {
+            // CASO 2: Ya tiene blob URL
             blobUrl = img.blobUrl;
+        } else if (img.previewUrl) {
+            // CASO 3: Imagen de BD con previewUrl
+            blobUrl = img.previewUrl;
+        } else if (img.url) {
+            // CASO 4: Imagen de BD con url
+            blobUrl = img.url;
+        } else if (img.ruta) {
+            // CASO 5: Imagen de BD con ruta
+            blobUrl = img.ruta;
         } else {
-
+            console.warn('[galeria-imagenes-prenda] ⚠️ Imagen sin URL válida:', img);
             return null;
         }
         return {
@@ -105,10 +127,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     }).filter(img => img !== null);
     
     if (imagenesConBlobUrl.length === 0) {
-
+        console.warn('[galeria-imagenes-prenda] ⚠️ No se encontraron imágenes válidas para mostrar');
         window.__galeriaPrendaAbierta = false;
         return;
     }
+    
+    console.log('✅ [galeria-imagenes-prenda] Creando modal con', imagenesConBlobUrl.length, 'imágenes');
     
     let indiceActual = indiceInicial;
     

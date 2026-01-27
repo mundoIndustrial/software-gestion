@@ -281,44 +281,68 @@ function generarTarjetaProceso(tipo, datos) {
 
 /**
  * Editar un proceso existente (desde modal de edición de prenda)
+ * 
+ * FLUJO:
+ * 1. Detecta que es edición (el proceso ya existe en window.procesosSeleccionados)
+ * 2. Inicia buffer de edición en procesosEditor
+ * 3. Abre modal en modo EDICIÓN
+ * 4. Cuando se guarda, aplica cambios sin duplicar
  */
 window.editarProcesoDesdeModal = function(tipo) {
-    console.log(' [EDITAR-PROCESO] Iniciando edición del proceso:', tipo);
+    console.log('✏️ [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
 
-    // Obtener datos del proceso ANTES de abrir el modal
+    // Obtener datos del proceso
     const proceso = window.procesosSeleccionados[tipo];
     
-    console.log('📦 [EDITAR-PROCESO] Datos del proceso:', {
+    console.log('📦 [EDITAR-PROCESO-MODAL] Datos encontrados:', {
         tipo: tipo,
         procesoExiste: !!proceso,
         tieneDatos: !!proceso?.datos,
-        datosKeys: proceso?.datos ? Object.keys(proceso.datos) : 'N/A'
+        procesoId: proceso?.datos?.id,
+        tieneUbicaciones: !!proceso?.datos?.ubicaciones,
+        countUbicaciones: Array.isArray(proceso?.datos?.ubicaciones) ? proceso.datos.ubicaciones.length : 0,
+        countImagenes: (proceso?.datos?.imagenes?.length || 0)
     });
 
     if (!proceso?.datos) {
-        console.error(' [EDITAR-PROCESO] No hay datos para el proceso:', tipo);
+        console.error('❌ [EDITAR-PROCESO-MODAL] No hay datos para el proceso:', tipo);
         return;
     }
     
-    console.log('✅ [EDITAR-PROCESO] Datos encontrados, cargando en modal...');
-    
-    // IMPORTANTE: Cargar datos ANTES de abrir el modal (que limpia las variables)
-    cargarDatosProcesoEnModal(tipo, proceso.datos);
-    
-    // AHORA abrir el modal en modo EDICIÓN (preservará los datos cargados)
-    if (window.abrirModalProcesoGenerico) {
-        console.log('🪟 [EDITAR-PROCESO] Abriendo modal genérico de proceso en modo edición');
-        window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
-    } else {
-        console.error(' [EDITAR-PROCESO] No existe window.abrirModalProcesoGenerico');
+    // ✅ PASO 1: Iniciar el gestor de edición (marca como "en edición")
+    if (window.gestorEditacionProcesos) {
+        window.gestorEditacionProcesos.iniciarEdicion(tipo, false); // false = no es nuevo
+        console.log('✅ [EDITAR-PROCESO-MODAL] Gestor de edición iniciado para:', tipo);
     }
     
-    // Re-renderizar
-    window.renderizarTarjetasProcesos();
+    // ✅ PASO 2: Iniciar editor de procesos (captura estado original)
+    if (window.procesosEditor) {
+        const exito = window.procesosEditor.iniciarEdicion(tipo, proceso.datos);
+        if (!exito) {
+            console.error('❌ [EDITAR-PROCESO-MODAL] No se pudo iniciar editor de procesos');
+            return;
+        }
+        console.log('✅ [EDITAR-PROCESO-MODAL] Editor de procesos iniciado en modo EDICIÓN');
+    }
     
-    // Actualizar resumen
-    if (window.actualizarResumenProcesos) {
-        window.actualizarResumenProcesos();
+    // ✅ PASO 3: Cargar datos en el modal ANTES de abrirlo
+    console.log('📊 [EDITAR-PROCESO-MODAL] Cargando datos en modal...');
+    cargarDatosProcesoEnModal(tipo, proceso.datos);
+    
+    // ✅ PASO 4: Abrir modal en modo EDICIÓN
+    if (window.abrirModalProcesoGenerico) {
+        console.log('🪟 [EDITAR-PROCESO-MODAL] Abriendo modal genérico en modo EDICIÓN');
+        window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
+        
+        // Marcar claramente que estamos en modo edición
+        const modalProceso = document.getElementById('modal-proceso-generico');
+        if (modalProceso) {
+            modalProceso.setAttribute('data-modo-edicion', 'true');
+            modalProceso.setAttribute('data-tipo-proceso-editando', tipo);
+            console.log('🏷️ [EDITAR-PROCESO-MODAL] Modal marcado como modo edición');
+        }
+    } else {
+        console.error('❌ [EDITAR-PROCESO-MODAL] No existe window.abrirModalProcesoGenerico');
     }
 };
 

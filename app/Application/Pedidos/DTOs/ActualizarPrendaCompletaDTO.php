@@ -21,7 +21,7 @@ final class ActualizarPrendaCompletaDTO
         public readonly int|string $prendaId,
         public readonly ?string $nombrePrenda = null,
         public readonly ?string $descripcion = null,
-        public readonly ?bool $deBodega = null,
+        public readonly ?int $deBodega = null,  // Cambiar a INT: 1=bodega, 0=confección
         public readonly ?array $imagenes = null,
         public readonly ?array $imagenesExistentes = null,  // URLs de imágenes existentes a preservar
         public readonly ?array $cantidadTalla = null,                  // { GENERO: { TALLA: CANTIDAD } }
@@ -134,7 +134,7 @@ final class ActualizarPrendaCompletaDTO
             nombrePrenda: $data['nombre_prenda'] ?? null,
             descripcion: $data['descripcion'] ?? null,
             deBodega: isset($data['de_bodega']) 
-                ? (bool) $data['de_bodega'] 
+                ? (int) $data['de_bodega']  // Convertir a INT, no a BOOL
                 : (isset($data['origen']) ? ($data['origen'] === 'bodega' ? 1 : 0) : null),
             imagenes: $imagenes,
             imagenesExistentes: $imagenesExistentes,

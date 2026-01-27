@@ -15,41 +15,50 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 /**
- * Detectar entorno (desarrollo vs producción)
- * En desarrollo: usa localhost:8080 (HTTP)
- * En producción: usa sistemamundoindustrial.online:443 (HTTPS)
+ * WebSocket Configuration for Reverb
+ * 
+ * DEVELOPMENT: Always use the current browser hostname
+ * PRODUCTION: Use sistemamundoindustrial.online
  */
-const isProduction = import.meta.env.MODE === 'production' || 
-                     import.meta.env.VITE_ENV === 'production' ||
-                     window.location.hostname !== 'localhost' && 
-                     window.location.hostname !== '127.0.0.1';
+const hostname = window.location.hostname;
+const port = window.location.port;
+const protocol = window.location.protocol;
 
-// Valores por defecto según el entorno
-const defaults = {
-    dev: {
-        host: 'localhost',
-        port: 8080,
-        scheme: 'http'
-    },
-    prod: {
-        host: 'sistemamundoindustrial.online',
-        port: 443,
-        scheme: 'https'
-    }
-};
+// Only treat as production if explicitly accessing the production domain
+const isProduction = hostname === 'sistemamundoindustrial.online';
 
-const env = isProduction ? defaults.prod : defaults.dev;
+// WebSocket host and port configuration
+let wsHost = hostname;
+let wsPort = 8080;
+let wsScheme = 'http';
 
+if (isProduction) {
+    wsHost = 'sistemamundoindustrial.online';
+    wsPort = 443;
+    wsScheme = 'https';
+}
+
+// Echo configuration
 const echoConfig = {
     broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY || 'dummy-key',
-    wsHost: import.meta.env.VITE_REVERB_HOST || env.host,
-    wsPort: import.meta.env.VITE_REVERB_PORT || env.port,
-    wssPort: import.meta.env.VITE_REVERB_PORT || env.port,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME || env.scheme) === 'https',
+    key: 'mundo-industrial-key', // fallback key
+    wsHost: wsHost,
+    wsPort: wsPort,
+    wssPort: wsPort,
+    forceTLS: wsScheme === 'https',
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
 };
+
+// Debug logging
+if (!isProduction) {
+    console.log('[Reverb] Connecting to development server:', {
+        wsHost,
+        wsPort,
+        wsScheme,
+        url: `${wsScheme}://${wsHost}:${wsPort}`
+    });
+}
 
 window.Echo = new Echo(echoConfig);
 

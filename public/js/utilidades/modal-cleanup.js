@@ -298,6 +298,25 @@ class ModalCleanup {
     }
 
     /**
+     * Actualizar dinámicamente el título del modal
+     * @param {string} modo - 'agregar' o 'editar'
+     */
+    static actualizarTituloModal(modo = 'agregar') {
+        // Buscar el título en el modal
+        const modal = document.getElementById('modal-agregar-prenda-nueva');
+        if (!modal) return;
+        
+        const modalTitle = modal.querySelector('.modal-title');
+        if (!modalTitle) return;
+        
+        if (modo === 'editar') {
+            modalTitle.innerHTML = '<span class="material-symbols-rounded">edit</span>Edición de Prenda';
+        } else {
+            modalTitle.innerHTML = '<span class="material-symbols-rounded">add_box</span>Agregar Prenda Nueva';
+        }
+    }
+
+    /**
      * Preparar modal para creación de NUEVA prenda
      */
     static prepararParaNueva() {
@@ -326,10 +345,7 @@ class ModalCleanup {
         window.prendaEditIndex = null;
         
         // Cambiar título del modal a "Agregar Prenda Nueva"
-        const modalTitle = document.querySelector('.modal-title');
-        if (modalTitle) {
-            modalTitle.innerHTML = '<span class="material-symbols-rounded">add_box</span>Agregar Prenda Nueva';
-        }
+        this.actualizarTituloModal('agregar');
 
     }
 
@@ -352,10 +368,7 @@ class ModalCleanup {
         window.prendaEditIndex = prendaIndex;
         
         // Cambiar título del modal a "Edición de Prenda"
-        const modalTitle = document.querySelector('.modal-title');
-        if (modalTitle) {
-            modalTitle.innerHTML = '<span class="material-symbols-rounded">edit</span>Edición de Prenda';
-        }
+        this.actualizarTituloModal('editar');
 
     }
 

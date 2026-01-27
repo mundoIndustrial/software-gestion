@@ -15,6 +15,7 @@ use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Application\Services\ImageUploadService;
+use App\Domain\Pedidos\Services\ProcesoImagenService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -524,6 +525,20 @@ class PedidoWebService
                 'imagenes_count' => isset($datosProceso['imagenes']) ? count($datosProceso['imagenes']) : 0,
             ]);
 
+            // VERIFICAR si el proceso ya existe para evitar duplicados
+            $procesoExistente = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
+                ->where('tipo_proceso_id', $tipoProcesoId)
+                ->first();
+
+            if ($procesoExistente) {
+                Log::warning('[PedidoWebService] Proceso ya existe, eliminando el anterior', [
+                    'prenda_pedido_id' => $prenda->id,
+                    'tipo_proceso_id' => $tipoProcesoId,
+                    'proceso_id' => $procesoExistente->id,
+                ]);
+                $procesoExistente->delete();
+            }
+
             // CREAR CON DATOS EXTRACTADOS Y VALIDADOS
             $procesoPrenda = PedidosProcesosPrendaDetalle::create([
                 'prenda_pedido_id' => $prenda->id,
@@ -567,10 +582,26 @@ class PedidoWebService
                 ]);
             }
 
-            // Crear imágenes del proceso
-            if (isset($datosProceso['imagenes']) && is_array($datosProceso['imagenes'])) {
-                //  NO LLAMAR: Imágenes ya procesadas en controller
-                // $this->guardarImagenesProceso($procesoPrenda, $datosProceso['imagenes']);
+            // Crear imágenes del proceso usando ProcesoImagenService
+            if (isset($datosProceso['imagenes']) && is_array($datosProceso['imagenes']) && !empty($datosProceso['imagenes'])) {
+                \Log::info('[PedidoWebService] Guardando imágenes del proceso', [
+                    'proceso_id' => $procesoPrenda->id,
+                    'cantidad_imagenes' => count($datosProceso['imagenes']),
+                ]);
+                
+                try {
+                    $procesoImagenService = app(ProcesoImagenService::class);
+                    $procesoImagenService->guardarImagenesProcesos(
+                        $procesoPrenda->id,
+                        $prenda->pedido_produccion_id,
+                        $datosProceso['imagenes']
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('[PedidoWebService] Error guardando imágenes del proceso', [
+                        'proceso_id' => $procesoPrenda->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
 

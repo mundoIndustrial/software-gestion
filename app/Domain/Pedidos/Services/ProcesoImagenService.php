@@ -106,6 +106,17 @@ class ProcesoImagenService
                     ]);
                     continue;
                 }
+                // CASO 5: Array del frontend sin ruta (uid, nombre_archivo, formdata_key) → IGNORAR
+                // Estas son referencias a archivos pendientes de carga que no tienen ruta real
+                elseif (is_array($imagenData) && isset($imagenData['uid'])) {
+                    Log::info(' Imagen sin ruta real ignorada (pendiente de procesar)', [
+                        'proceso_detalle_id' => $procesoDetalleId,
+                        'index' => $index,
+                        'uid' => $imagenData['uid'] ?? null,
+                        'nombre' => $imagenData['nombre_archivo'] ?? null,
+                    ]);
+                    continue;
+                }
 
                 if ($archivo) {
                     $directorio = storage_path("app/public/pedidos/{$pedidoId}/procesos/{$tipoProcesoNombre}");

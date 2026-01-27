@@ -52,7 +52,7 @@ class EppService {
         }
 
         // Resetear estado y marcar como edición
-        this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, false); // false = está en formulario, no en BD
+        this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, true, eppData.pedido_epp_id || eppData.id);
         
         // Obtener nombre (nombre_completo o nombre)
         const nombre = eppData.nombre_completo || eppData.nombre || '';
@@ -317,45 +317,72 @@ class EppService {
     _guardarEPPFormulario(producto, valores, imagenes) {
         try {
             const eppId = this.stateManager.getEditandoId();
+            const pedidoEppId = this.stateManager.getPedidoEppId();
 
-            // Si estamos editando, actualizar item existente
-            if (eppId) {
-                console.log('[EppService] 🔄 Actualizando EPP existente:', eppId);
+            // Si estamos editando, actualizar en BD
+            if (eppId && pedidoEppId) {
+                console.log('[EppService] 🔄 Actualizando pedido_epp en BD:', pedidoEppId);
                 
-                // Actualizar la tarjeta en el DOM
-                this.itemManager.actualizarItem(eppId, {
+                // Actualizar en BD
+                this.apiService.actualizarPedidoEpp(pedidoEppId, {
                     cantidad: valores.cantidad,
-                    observaciones: valores.observaciones,
-                    imagenes: imagenes
+                    observaciones: valores.observaciones
+                }).then(resultado => {
+                    console.log('[EppService] ✅ pedido_epp actualizado en BD:', resultado);
+                    
+                    // Actualizar la tarjeta en el DOM
+                    this.itemManager.actualizarItem(eppId, {
+                        cantidad: valores.cantidad,
+                        observaciones: valores.observaciones,
+                        imagenes: imagenes
+                    });
+
+                    // Actualizar en window.itemsPedido si existe
+                    if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
+                        const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
+                        if (index !== -1) {
+                            window.itemsPedido[index] = {
+                                ...window.itemsPedido[index],
+                                cantidad: valores.cantidad,
+                                observaciones: valores.observaciones,
+                                imagenes: imagenes
+                            };
+                        }
+                    }
+
+                    if (window.eppNotificationService) {
+                        window.eppNotificationService.mostrarExito(
+                            '✅ EPP Actualizado',
+                            'Los cambios fueron guardados correctamente'
+                        );
+                    }
+
+                    this.cerrarModal();
+                    this.stateManager.finalizarEdicion();
+                }).catch(error => {
+                    console.error('[EppService] ❌ Error al actualizar pedido_epp:', error);
+                    if (window.eppNotificationService) {
+                        window.eppNotificationService.mostrarError(
+                            '❌ Error',
+                            'No se pudo guardar los cambios'
+                        );
+                    }
                 });
 
-                // Actualizar en window.itemsPedido si existe
-                if (window.itemsPedido && Array.isArray(window.itemsPedido)) {
-                    const index = window.itemsPedido.findIndex(item => item.tipo === 'epp' && item.epp_id === eppId);
-                    if (index !== -1) {
-                        window.itemsPedido[index] = {
-                            ...window.itemsPedido[index],
-                            cantidad: valores.cantidad,
-                            observaciones: valores.observaciones,
-                            imagenes: imagenes
-                        };
-                    }
-                }
-
-                console.log('[EppService] EPP actualizado correctamente');
-            } else {
-                // Si NO estamos editando, crear nuevo item
-                console.log('[EppService] ➕ Creando nuevo EPP');
-                
-                this.itemManager.crearItem(
-                    producto.id,
-                    producto.nombre_completo || producto.nombre,
-                    producto.categoria,
-                    valores.cantidad,
-                    valores.observaciones,
-                    imagenes
-                );
+                return;
             }
+
+            // Si NO estamos editando, crear nuevo item
+            console.log('[EppService] ➕ Creando nuevo EPP');
+            
+            this.itemManager.crearItem(
+                producto.id,
+                producto.nombre_completo || producto.nombre,
+                producto.categoria,
+                valores.cantidad,
+                valores.observaciones,
+                imagenes
+            );
 
             // Crear objeto EPP (solo campos necesarios)
             const eppData = {
@@ -384,8 +411,6 @@ class EppService {
                     }
                     window.itemsPedido.push(eppData);
                 }
-            } else {
-                console.log('[EppService] 🔄 EPP en edición - no se agrega a estado');
             }
 
             this.cerrarModal();

@@ -79,9 +79,13 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         const iconEl = document.getElementById('modal-proceso-icon');
         const btnTextoEl = document.getElementById('modal-btn-texto');
         
-        if (titleEl) titleEl.textContent = config.titulo;
+        // Determinar el texto basado en el modo (crear o editar)
+        const textoTitulo = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.titulo;
+        const textoBtnTexto = esEdicion ? `Editar ${nombresProcesos[tipoProceso] || tipoProceso}` : config.btnTexto;
+        
+        if (titleEl) titleEl.textContent = textoTitulo;
         if (iconEl) iconEl.textContent = config.icon;
-        if (btnTextoEl) btnTextoEl.textContent = config.btnTexto;
+        if (btnTextoEl) btnTextoEl.textContent = textoBtnTexto;
         
         // SOLO limpiar formulario si NO es edición
         if (!esEdicion) {
@@ -168,6 +172,13 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         
     } else if (modoActual === 'editar' && procesoGuardado) {
         console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
+        
+        // NUEVO: Guardar cambios en el gestor de edición
+        if (window.gestorEditacionProcesos) {
+            console.log('[EDICIÓN] 💾 Guardando cambios en gestorEditacionProcesos...');
+            window.gestorEditacionProcesos.guardarCambiosActuales();
+            console.log('[EDICIÓN] ✅ Cambios guardados en gestorEditacionProcesos');
+        }
     }
     
     // NUEVO: Reset de variables después de cerrar
@@ -345,19 +356,25 @@ window.renderizarListaUbicaciones = function() {
                             <strong style="display: block; margin-bottom: 0.25rem;">📍 ${ubicacionTexto}</strong>
                             <small style="color: #4b7c0f;">${desc}</small>
                         </div>
-                        <button type="button" onclick="removerUbicacionProceso(${ubicacionKey})" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center; flex-shrink: 0;">
+                        <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center; flex-shrink: 0;">
                             <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
                         </button>
                     </div>
                 `;
+                // Agregar evento sin usar onclick inline
+                const btnClose = tag.querySelector('button');
+                btnClose.addEventListener('click', () => removerUbicacionProceso(ubicacionKey));
             } else {
                 tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
                 tag.innerHTML = `
                     <span>📍 ${ubicacionTexto}</span>
-                    <button type="button" onclick="removerUbicacionProceso(${ubicacionKey})" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
+                    <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
                         <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
                     </button>
                 `;
+                // Agregar evento sin usar onclick inline
+                const btnClose = tag.querySelector('button');
+                btnClose.addEventListener('click', () => removerUbicacionProceso(ubicacionKey));
             }
         } else {
             // Es un string simple
@@ -366,10 +383,13 @@ window.renderizarListaUbicaciones = function() {
             tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
             tag.innerHTML = `
                 <span>📍 ${ubicacionTexto}</span>
-                <button type="button" onclick="removerUbicacionProceso('${ubicacionKey}')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
+                <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
                 </button>
             `;
+            // Agregar evento sin usar onclick inline
+            const btnClose = tag.querySelector('button');
+            btnClose.addEventListener('click', () => removerUbicacionProceso(ubicacionKey));
         }
         
         container.appendChild(tag);
@@ -992,7 +1012,7 @@ window.agregarProcesoAlPedido = function() {
         // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
         const datos = {
             tipo: procesoActual,
-            ubicaciones: ubicacionesProcesoSeleccionadas,
+            ubicaciones: window.ubicacionesProcesoSeleccionadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
                 dama: window.tallasCantidadesProceso?.dama || {},
@@ -1025,11 +1045,36 @@ window.agregarProcesoAlPedido = function() {
             }
             
         } else if (modoActual === 'editar') {
-            // EDICIÓN: Guardar TEMPORALMENTE en buffer (NO en procesosSeleccionados)
-            // Los cambios se aplicarán cuando el usuario haga click en "GUARDAR CAMBIOS" de la prenda
+            // EDICIÓN: Usar el nuevo sistema de ProcesosEditor
+            console.log('✏️ [EDICIÓN] Guardando cambios del proceso con ProcesosEditor');
+            
+            // Registrar cambios en el editor
+            if (window.procesosEditor) {
+                // Registrar ubicaciones (reemplazo completo)
+                window.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
+                
+                // Registrar imágenes (reemplazo completo)
+                window.procesosEditor.registrarCambioImagenes(datos.imagenes);
+                
+                // Registrar observaciones
+                window.procesosEditor.registrarCambioObservaciones(datos.observaciones);
+                
+                // Registrar tallas
+                window.procesosEditor.registrarCambioTallas(datos.tallas);
+                
+                // Guardar cambios en window.procesosSeleccionados
+                window.procesosEditor.guardarEnWindowProcesos();
+                
+                console.log('✅ [EDICIÓN] Cambios registrados y guardados en window.procesosSeleccionados');
+            }
+            
+            // También mantener buffer para compatibilidad
             cambiosProceso = datos;
-            console.log('[EDICIÓN-BUFFER] Cambios del proceso guardados temporalmente:', cambiosProceso);
-            console.log('[EDICIÓN-BUFFER] ⚠️ procesosSeleccionados NO ha sido actualizado aún');
+            
+            // Renderizar tarjetas actualizadas
+            if (window.renderizarTarjetasProcesos) {
+                window.renderizarTarjetasProcesos();
+            }
         }
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente

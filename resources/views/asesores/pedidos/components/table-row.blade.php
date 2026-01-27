@@ -53,7 +53,7 @@
      data-procesos-info="{{ $procesosJson }}"
      style="
     display: grid;
-    grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
+    grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 120px 140px 110px 120px 130px' : '120px 120px 120px 140px 110px 120px 130px 130px 130px' }};
     gap: 1.2rem;
     padding: 0.75rem 1rem;
     align-items: center;
@@ -140,26 +140,6 @@
         box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
     " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
         <i class="fas fa-edit"></i>
-    </button>
-
-    <!-- Botón Eliminar -->
-    <button onclick="eliminarPedido({{ $pedido->id }})" title="Eliminar Pedido" style="
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        border: none;
-        padding: 0.5rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
-    " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
-        <i class="fas fa-trash"></i>
     </button>
 </div>
 
@@ -255,40 +235,6 @@
 <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
     @php
         echo $pedido->cliente ?? '-';
-    @endphp
-</div>
-
-<!-- Descripción -->
-@php
-    $descripcionConTallas = '';
-    
-    // Verificar si es LogoPedido
-    if (get_class($pedido) === 'App\Models\LogoPedido') {
-        // Para LogoPedido, mostrar el campo descripción directamente
-        $descripcionConTallas = $pedido->descripcion ?? 'Logo personalizado';
-    } else {
-        // Para PedidoProduccion, usar descripcion_prendas tal como viene del backend
-        // Ya incluye formatos correctos (con o sin "PRENDA X:" según el total de prendas)
-        $descripcionConTallas = $pedido->descripcion_prendas ?? '';
-    }
-    
-    if (empty($descripcionConTallas)) {
-        $descripcionConTallas = get_class($pedido) === 'App\Models\LogoPedido' ? 'Logo personalizado' : '-';
-    }
-@endphp
-<div style="display: flex; align-items: center; color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalDescripcion({{ $pedido->id }}, '{{ get_class($pedido) === 'App\\Models\\LogoPedido' ? 'logo' : 'prenda' }}')" title="Click para ver completo">
-    @php
-        if (get_class($pedido) === 'App\Models\LogoPedido') {
-            echo 'Logo personalizado <span style="color: #3b82f6; font-weight: 600;">...</span>';
-        } elseif ($pedido->prendas && $pedido->prendas->count() > 0) {
-            $prendasInfo = $pedido->prendas->map(function($prenda) {
-                return $prenda->nombre_prenda ?? 'Prenda sin nombre';
-            })->unique()->toArray();
-            $descripcion = !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
-            echo $descripcion . ' <span style="color: #3b82f6; font-weight: 600;">...</span>';
-        } else {
-            echo '-';
-        }
     @endphp
 </div>
 

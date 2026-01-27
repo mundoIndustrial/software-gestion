@@ -11,7 +11,7 @@ class EppItemManager {
     /**
      * Crear item visual de EPP
      */
-    crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = []) {
+    crearItem(id, nombre, categoria, cantidad, observaciones, imagenes = [], pedidoEppId = null) {
         const listaItems = document.getElementById(this.listaItemsId);
         if (!listaItems) {
 
@@ -21,7 +21,7 @@ class EppItemManager {
         const galeriaHTML = this._crearGaleriaHTML(nombre, imagenes);
         
         const itemHTML = `
-            <div class="item-epp" data-item-id="${id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp" data-item-id="${id}" data-pedido-epp-id="${pedidoEppId || id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
                 <!-- Header con menú contextual -->
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                     <div style="flex: 1;">

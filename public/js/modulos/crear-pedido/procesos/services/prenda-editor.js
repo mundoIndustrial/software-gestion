@@ -100,51 +100,91 @@ class PrendaEditor {
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
 
-
+        console.log('[llenarCamposBasicos] DEBUG Elementos encontrados:', {
+            nombreField: !!nombreField,
+            descripcionField: !!descripcionField,
+            origenField: !!origenField,
+            origenFieldTagName: origenField?.tagName,
+            origenFieldOptions: origenField?.options?.length
+        });
         
         if (nombreField) nombreField.value = prenda.nombre_prenda || '';
         if (descripcionField) descripcionField.value = prenda.descripcion || '';
+        
         if (origenField) {
-
-
+            console.log('[llenarCamposBasicos] Datos de origen:', {
+                prendaOrigen: prenda.origen,
+                prendaDeBodega: prenda.de_bodega,
+                tipoDeBodega: typeof prenda.de_bodega
+            });
             
             // Función para normalizar texto (remover acentos)
             const normalizarTexto = (texto) => {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Determinar origen desde de_bodega o desde el campo origen
-            let origen = prenda.origen || 'bodega';
+            // Determinar origen: prioridad: origen > de_bodega
+            let origen = prenda.origen;
             
-            // Si viene de_bodega (integer desde BD), convertir a string
-            if (prenda.de_bodega !== undefined && prenda.origen === undefined) {
-                origen = prenda.de_bodega === 1 ? 'bodega' : 'confeccion';
+            // Si NO viene origen del servidor, convertir de_bodega (boolean/integer) a origen (string)
+            if (!origen) {
+                if (prenda.de_bodega === true || prenda.de_bodega === 1 || prenda.de_bodega === '1') {
+                    origen = 'bodega';
+                } else if (prenda.de_bodega === false || prenda.de_bodega === 0 || prenda.de_bodega === '0') {
+                    origen = 'confeccion';
+                } else {
+                    origen = 'bodega';  // default
+                }
             }
+            
+            console.log('[llenarCamposBasicos] Origen determinado:', {
+                origen: origen,
+                normalizado: normalizarTexto(origen)
+            });
             
             const origenNormalizado = normalizarTexto(origen);
             let encontrado = false;
+            
+            // DEBUG: Mostrar todas las opciones disponibles
+            console.log('[llenarCamposBasicos] Opciones disponibles en SELECT:');
+            for (let i = 0; i < origenField.options.length; i++) {
+                const opt = origenField.options[i];
+                const optTextNormalizado = normalizarTexto(opt.textContent);
+                const optValueNormalizado = normalizarTexto(opt.value);
+                console.log(`  [${i}] value="${opt.value}" (${optValueNormalizado}) | text="${opt.textContent}" (${optTextNormalizado})`);
+            }
             
             for (let opt of origenField.options) {
                 const optTextNormalizado = normalizarTexto(opt.textContent);
                 const optValueNormalizado = normalizarTexto(opt.value);
                 
                 if (optValueNormalizado === origenNormalizado || optTextNormalizado === origenNormalizado) {
+                    console.log('[llenarCamposBasicos] ✅ Opción encontrada:', {
+                        optValue: opt.value,
+                        optText: opt.textContent,
+                        asignando: opt.value
+                    });
                     origenField.value = opt.value;
                     encontrado = true;
-
                     break;
                 }
             }
             
             if (!encontrado) {
-
+                console.log('[llenarCamposBasicos] ❌ Opción NO encontrada, asignando directo:', origen);
                 origenField.value = origen;
             }
+            
+            console.log('[llenarCamposBasicos] SELECT después de asignación:', {
+                selectValue: origenField.value,
+                selectSelectedIndex: origenField.selectedIndex,
+                selectSelectedOption: origenField.options[origenField.selectedIndex]?.value
+            });
             
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
         } else {
-
+            console.error('[llenarCamposBasicos] ❌ SELECT #nueva-prenda-origen-select NO encontrado en el DOM');
         }
     }
 
@@ -882,7 +922,7 @@ class PrendaEditor {
     cambiarBotonAGuardarCambios() {
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.innerHTML = ' Guardar Cambios';
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded">save</span>Guardar Cambios';
             btnGuardar.setAttribute('data-editing', 'true');
         }
     }
@@ -895,7 +935,7 @@ class PrendaEditor {
         
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.innerHTML = '➕ Guardar Prenda';
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
             btnGuardar.removeAttribute('data-editing');
         }
     }

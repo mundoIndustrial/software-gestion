@@ -146,13 +146,23 @@ class ModalNovedadEdicion {
             formData.append('nombre_prenda', this.prendaData.nombre_prenda);
             formData.append('descripcion', this.prendaData.descripcion);
             
-            // Enviar de_bodega (1=bodega, 0=confección)
-            // Si viene origen, convertir a de_bodega; si ya es de_bodega, usar directamente
-            if (this.prendaData.de_bodega !== undefined) {
-                formData.append('de_bodega', this.prendaData.de_bodega);
-            } else if (this.prendaData.origen) {
-                formData.append('de_bodega', this.prendaData.origen === 'bodega' ? 1 : 0);
-            }
+            // 🔧 FIX: Leer origen del SELECT actualizado en el modal (NO de this.prendaData que es estático)
+            const origenSelect = document.getElementById('nueva-prenda-origen-select');
+            const origenActual = origenSelect?.value || this.prendaData.origen || 'bodega';
+            const deBodegaValue = origenActual === 'bodega' ? 1 : 0;
+            
+            formData.append('origen', origenActual);
+            formData.append('de_bodega', deBodegaValue);
+            
+            console.log('[modal-novedad-edicion] ✅ Origen guardado:', {
+                origenActual: origenActual,
+                de_bodega: deBodegaValue,
+                deBodegaType: typeof deBodegaValue,
+                selectValue: origenSelect?.value,
+                prendaDataOrigen: this.prendaData.origen,
+                prendaDataDeBodega: this.prendaData.de_bodega,
+                tipoDeSelect: typeof origenSelect?.value
+            });
             
             // IMPORTANTE: Leer tallas ACTUALIZADAS del modal (window.tallasRelacionales)
             // NO del this.prendaData inicial que puede estar desactualizado
@@ -383,7 +393,49 @@ class ModalNovedadEdicion {
             }
             
 
-
+            // ==================== NUEVO: APLICAR CAMBIOS DE PROCESOS EDITADOS ====================
+            // ANTES de guardar la prenda, aplicamos los PATCH de procesos editados
+            const procesosEditados = window.gestorEditacionProcesos?.obtenerProcesosEditados();
+            if (procesosEditados && procesosEditados.length > 0) {
+                console.log('[modal-novedad-edicion] 🔄 Aplicando cambios de procesos editados ANTES de guardar prenda:', procesosEditados);
+                
+                const prendaIdInt = parseInt(this.prendaData.prenda_pedido_id || this.prendaData.id);
+                
+                // Ejecutar PATCH de cada proceso de forma secuencial
+                for (const procesoEditado of procesosEditados) {
+                    try {
+                        console.log('[modal-novedad-edicion] 📤 Enviando PATCH para proceso:', {
+                            prendaId: prendaIdInt,
+                            procesoId: procesoEditado.id,
+                            cambios: procesoEditado.cambios
+                        });
+                        
+                        const patchResponse = await fetch(`/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify(procesoEditado.cambios)
+                        });
+                        
+                        const patchResult = await patchResponse.json();
+                        
+                        if (!patchResponse.ok) {
+                            throw new Error(`Error PATCH: ${patchResult.message || 'Desconocido'}`);
+                        }
+                        
+                        console.log('[modal-novedad-edicion] ✅ PATCH aplicado exitosamente para proceso:', procesoEditado.id);
+                    } catch (error) {
+                        console.error('[modal-novedad-edicion] ❌ Error al aplicar PATCH:', error);
+                        throw error; // Detener el proceso si algún PATCH falla
+                    }
+                }
+                
+                // Limpiar gestor de edición después de aplicar
+                window.gestorEditacionProcesos?.limpiar();
+                console.log('[modal-novedad-edicion] 🧹 Gestor de edición limpiado');
+            }
 
             const response = await fetch(`/asesores/pedidos/${this.pedidoId}/actualizar-prenda`, {
                 method: 'POST',
@@ -392,7 +444,17 @@ class ModalNovedadEdicion {
             });
             
             const resultado = await response.json();
-            if (!response.ok || !resultado.success) throw new Error(resultado.message);
+            console.log('[modal-novedad-edicion] Response del servidor:', {
+                ok: response.ok,
+                status: response.status,
+                success: resultado.success,
+                message: resultado.message,
+                resultado: resultado
+            });
+            
+            if (!response.ok || !resultado.success) {
+                throw new Error(resultado.message || 'Error desconocido al actualizar la prenda');
+            }
             
 
 
@@ -433,7 +495,11 @@ class ModalNovedadEdicion {
             
             this.mostrarExito();
         } catch (error) {
-
+            console.error('[modal-novedad-edicion] Error al actualizar prenda:', {
+                message: error.message,
+                stack: error.stack,
+                error: error
+            });
             this.mostrarError(error.message);
         }
     }

@@ -9,6 +9,7 @@ class EppStateManager {
             productoSeleccionado: null,
             imagenesSubidas: [],
             editandoId: null,
+            pedidoEppId: null,
             editandoDesdeDB: false,
             itemsData: {}
         };
@@ -75,9 +76,10 @@ class EppStateManager {
     /**
      * Iniciar edición
      */
-    iniciarEdicion(eppId, desdeDB = false) {
+    iniciarEdicion(eppId, desdeDB = false, pedidoEppId = null) {
         this.estado.editandoId = eppId;
         this.estado.editandoDesdeDB = desdeDB;
+        this.estado.pedidoEppId = pedidoEppId;
 
     }
 
@@ -86,6 +88,13 @@ class EppStateManager {
      */
     getEditandoId() {
         return this.estado.editandoId;
+    }
+
+    /**
+     * Obtener pedido_epp_id siendo editado
+     */
+    getPedidoEppId() {
+        return this.estado.pedidoEppId;
     }
 
     /**
@@ -100,6 +109,7 @@ class EppStateManager {
      */
     finalizarEdicion() {
         this.estado.editandoId = null;
+        this.estado.pedidoEppId = null;
         this.estado.editandoDesdeDB = false;
         this.limpiarImagenesSubidas();
 
@@ -134,6 +144,7 @@ class EppStateManager {
             productoSeleccionado: null,
             imagenesSubidas: [],
             editandoId: null,
+            pedidoEppId: null,
             editandoDesdeDB: false,
             itemsData: {}
         };

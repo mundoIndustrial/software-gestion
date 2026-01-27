@@ -513,13 +513,114 @@ function limpiarFormulario() {
 
 /**
  * WRAPPER: Mostrar galería de imágenes de prenda (modal)
- * Nota: La función real se define en funciones-prenda-sin-cotizacion.js
- * Este es un placeholder que será sobrescrito cuando se cargue ese módulo
+ * Versión simplificada para edición de prendas
  */
-window.mostrarGaleriaImagenesPrenda = function(imagenes, indiceInicial = 0) {
-
-    // La función real será definida por funciones-prenda-sin-cotizacion.js
-};
+if (!window.mostrarGaleriaImagenesPrenda) {
+    window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Abriendo galería con', imagenes?.length || 0, 'imágenes');
+        
+        if (!imagenes || imagenes.length === 0) {
+            console.warn('⚠️ No hay imágenes para mostrar');
+            return;
+        }
+        
+        let indiceActual = indiceInicial;
+        const imagenesValidas = imagenes.map(img => ({
+            src: img.previewUrl || img.url || img.ruta || img.blobUrl || '',
+            ...img
+        })).filter(img => img.src);
+        
+        if (imagenesValidas.length === 0) {
+            console.warn('⚠️ No hay imágenes con URLs válidas');
+            return;
+        }
+        
+        // Crear modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100001; 
+            padding: 0; margin: 0;
+        `;
+        
+        const imgElement = document.createElement('img');
+        imgElement.src = imagenesValidas[indiceActual].src;
+        imgElement.style.cssText = `
+            max-width: 90vw; max-height: 80vh; object-fit: contain; 
+            border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        `;
+        
+        // Toolbar
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText = `
+            display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem;
+            padding: 1rem; background: rgba(0,0,0,0.8); border-radius: 8px;
+        `;
+        
+        const contador = document.createElement('span');
+        contador.style.cssText = 'color: white; font-size: 1rem; min-width: 80px; text-align: center;';
+        
+        const actualizarUI = () => {
+            imgElement.src = imagenesValidas[indiceActual].src;
+            contador.textContent = (indiceActual + 1) + ' de ' + imagenesValidas.length;
+        };
+        
+        // Botón anterior
+        const btnAnterior = document.createElement('button');
+        btnAnterior.textContent = '◀';
+        btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnAnterior.onclick = () => {
+            indiceActual = (indiceActual - 1 + imagenesValidas.length) % imagenesValidas.length;
+            actualizarUI();
+        };
+        toolbar.appendChild(btnAnterior);
+        
+        toolbar.appendChild(contador);
+        
+        // Botón siguiente
+        const btnSiguiente = document.createElement('button');
+        btnSiguiente.textContent = '▶';
+        btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnSiguiente.onclick = () => {
+            indiceActual = (indiceActual + 1) % imagenesValidas.length;
+            actualizarUI();
+        };
+        toolbar.appendChild(btnSiguiente);
+        
+        // Botón cerrar
+        const btnCerrar = document.createElement('button');
+        btnCerrar.textContent = '✕';
+        btnCerrar.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnCerrar.onclick = () => modal.remove();
+        toolbar.appendChild(btnCerrar);
+        
+        modal.appendChild(imgElement);
+        modal.appendChild(toolbar);
+        
+        // Cerrar con ESC
+        const cerrarConEsc = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', cerrarConEsc);
+            }
+        };
+        document.addEventListener('keydown', cerrarConEsc);
+        
+        // Cerrar con click en el fondo
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                document.removeEventListener('keydown', cerrarConEsc);
+            }
+        };
+        
+        document.body.appendChild(modal);
+        actualizarUI();
+        
+        console.log('✅ Galería abierta con', imagenesValidas.length, 'imágenes');
+    };
+}
 
 
 

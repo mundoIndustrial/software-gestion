@@ -98,12 +98,15 @@ window.EppMenuHandlers = {
      */
     _editarEpp(btn) {
         const itemId = btn.dataset.itemId;
-
+        
         // Obtener el item EPP
         const item = btn.closest('.item-epp') || btn.closest('.item-epp-card');
         if (!item) {
             return;
         }
+
+        // Obtener pedido_epp_id del DOM si está disponible
+        const pedidoEppId = item.dataset.pedidoEppId || itemId;
 
         // OPCIÓN 1: Intentar obtener del DOM (tarjeta)
         let eppData = this._extraerDatosDelDOM(item, itemId);
@@ -117,6 +120,11 @@ window.EppMenuHandlers = {
         if (!eppData || Object.keys(eppData).length < 3) {
             this._traerEPPDelaBD(itemId, item);
             return; // El resto de la lógica se ejecutará cuando lleguen los datos de la DB
+        }
+
+        // Agregar pedido_epp_id a los datos
+        if (eppData && !eppData.pedido_epp_id) {
+            eppData.pedido_epp_id = pedidoEppId;
         }
 
         // Si ya tenemos los datos, proceder a editar

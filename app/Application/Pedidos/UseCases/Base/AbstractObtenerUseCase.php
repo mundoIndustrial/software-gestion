@@ -144,6 +144,12 @@ abstract class AbstractObtenerUseCase
             ])
             ->get()
             ->toArray();
+        
+        \Log::debug('[obtenerPrendas] QUERY RESULT', [
+            'pedido_id' => $pedidoId,
+            'prendas_count' => count($prendas),
+            'prendas' => $prendas
+        ]);
 
         // Agregar telas_array a cada prenda construido desde coloresTelas
         foreach ($prendas as &$prenda) {

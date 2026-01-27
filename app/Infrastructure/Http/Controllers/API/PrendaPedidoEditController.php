@@ -396,4 +396,280 @@ class PrendaPedidoEditController extends Controller
             ], 500);
         }
     }
+
+    public function actualizarProcesoEspecifico(int $prendaId, int $procesoId, Request $request): JsonResponse
+    {
+        try {
+            // Validar que la prenda existe
+            $prenda = PrendaPedido::findOrFail($prendaId);
+
+            // Obtener el proceso
+            $proceso = $prenda->procesos()->findOrFail($procesoId);
+
+            // Limpieza y preparación de datos ANTES de validar
+            $data = $request->all();
+
+            // Limpiar imágenes: convertir a strings, eliminar nulls/vacíos
+            if (isset($data['imagenes']) && is_array($data['imagenes'])) {
+                $imagenesLimpias = [];
+                
+                foreach ($data['imagenes'] as $img) {
+                    // Saltar nulls y vacíos
+                    if ($img === null || $img === '') {
+                        continue;
+                    }
+                    
+                    // Si es un string, usar directamente
+                    if (is_string($img)) {
+                        if (!empty($img) && $img !== 'null') {
+                            $imagenesLimpias[] = $img;
+                        }
+                        continue;
+                    }
+                    
+                    // Si es un objeto, intentar obtener ruta_webp
+                    if (is_object($img)) {
+                        if (isset($img->ruta_webp) && !empty($img->ruta_webp)) {
+                            $imagenesLimpias[] = (string)$img->ruta_webp;
+                        }
+                        continue;
+                    }
+                    
+                    // Si es un array, intentar obtener la ruta
+                    if (is_array($img)) {
+                        if (isset($img['ruta_webp']) && !empty($img['ruta_webp'])) {
+                            $imagenesLimpias[] = (string)$img['ruta_webp'];
+                        } elseif (isset($img[0]) && is_string($img[0]) && !empty($img[0])) {
+                            $imagenesLimpias[] = (string)$img[0];
+                        }
+                        continue;
+                    }
+                }
+                
+                $data['imagenes'] = $imagenesLimpias;
+            }
+
+            // Validar manualmente con datos limpios (no usar $request->validate para evitar validar request original)
+            $validator = \Validator::make($data, [
+                'tipo_proceso_id' => 'nullable|integer|exists:tipos_proceso,id',
+                'ubicaciones' => 'nullable|array',
+                'ubicaciones.*' => 'string|nullable',
+                'imagenes' => 'nullable|array',
+                'imagenes.*' => 'string|nullable',
+                'observaciones' => 'nullable|string|max:1000',
+                'tallas' => 'nullable|array',
+                'tallas.dama' => 'nullable|array',
+                'tallas.caballero' => 'nullable|array',
+            ]);
+
+            if ($validator->fails()) {
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
+
+            $validated = $validator->validated();
+
+            \Log::info('[PROCESOS-ACTUALIZAR] Actualizando proceso:', [
+                'prenda_id' => $prendaId,
+                'proceso_id' => $procesoId,
+                'cambios' => array_keys($validated)
+            ]);
+
+            // Actualizar ubicaciones (REEMPLAZO completo, no merge)
+            if (isset($validated['ubicaciones'])) {
+                $ubicacionesLimpias = array_filter($validated['ubicaciones']);
+                $proceso->ubicaciones = json_encode($ubicacionesLimpias);
+                \Log::info('[PROCESOS-ACTUALIZAR] Ubicaciones actualizadas:', [
+                    'nuevas' => $ubicacionesLimpias
+                ]);
+            }
+
+            // Actualizar observaciones
+            if (isset($validated['observaciones'])) {
+                $proceso->observaciones = $validated['observaciones'];
+            }
+
+            // Actualizar tipo_proceso_id si se proporciona
+            if (isset($validated['tipo_proceso_id'])) {
+                $proceso->tipo_proceso_id = $validated['tipo_proceso_id'];
+            }
+
+            // Guardar cambios en tabla principal
+            $proceso->save();
+
+            // ============ ACTUALIZAR IMÁGENES (EN TABLA SEPARADA) ============
+            if (isset($validated['imagenes'])) {
+                // Obtener imágenes actuales
+                $imagenesActuales = \DB::table('pedidos_procesos_imagenes')
+                    ->where('proceso_prenda_detalle_id', $proceso->id)
+                    ->pluck('ruta_webp')
+                    ->toArray();
+
+                $imagenesNuevas = array_filter($validated['imagenes']);
+                
+                // Eliminar SOLO las imágenes que ya no están en la nueva lista
+                $imagenesAEliminar = array_diff($imagenesActuales, $imagenesNuevas);
+                if (!empty($imagenesAEliminar)) {
+                    \DB::table('pedidos_procesos_imagenes')
+                        ->where('proceso_prenda_detalle_id', $proceso->id)
+                        ->whereIn('ruta_webp', $imagenesAEliminar)
+                        ->delete();
+                }
+
+                // Agregar SOLO las imágenes nuevas que no existen
+                $imagenesAAgregar = array_diff($imagenesNuevas, $imagenesActuales);
+                if (!empty($imagenesAAgregar)) {
+                    $proximoOrden = \DB::table('pedidos_procesos_imagenes')
+                        ->where('proceso_prenda_detalle_id', $proceso->id)
+                        ->max('orden') ?? 0;
+
+                    foreach ($imagenesAAgregar as $idx => $ruta) {
+                        if ($ruta) {
+                            \DB::table('pedidos_procesos_imagenes')->insert([
+                                'proceso_prenda_detalle_id' => $proceso->id,
+                                'ruta_original' => null,
+                                'ruta_webp' => $ruta,
+                                'orden' => $proximoOrden + $idx + 1,
+                                'es_principal' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                        }
+                    }
+                }
+
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes actualizadas:', [
+                    'eliminadas' => count($imagenesAEliminar),
+                    'agregadas' => count($imagenesAAgregar),
+                    'total_final' => count($imagenesNuevas)
+                ]);
+            }
+
+            // ============ ACTUALIZAR TALLAS (EN TABLA SEPARADA) ============
+            if (isset($validated['tallas'])) {
+                // Obtener tallas actuales organizadas por género
+                $tallasActuales = \DB::table('pedidos_procesos_prenda_tallas')
+                    ->where('proceso_prenda_detalle_id', $proceso->id)
+                    ->get()
+                    ->groupBy('genero')
+                    ->map(function ($grupo) {
+                        return $grupo->pluck('cantidad', 'talla')->toArray();
+                    })
+                    ->toArray();
+
+                $tallasDama = $validated['tallas']['dama'] ?? [];
+                $tallasHombre = $validated['tallas']['caballero'] ?? [];
+                $tallasActualDama = $tallasActuales['DAMA'] ?? [];
+                $tallasActualHombre = $tallasActuales['CABALLERO'] ?? [];
+
+                // DAMA: Eliminar tallas que ya no existen o quedaron en 0
+                foreach ($tallasActualDama as $talla => $cantidad) {
+                    if (!isset($tallasDama[$talla]) || $tallasDama[$talla] == 0) {
+                        \DB::table('pedidos_procesos_prenda_tallas')
+                            ->where('proceso_prenda_detalle_id', $proceso->id)
+                            ->where('genero', 'DAMA')
+                            ->where('talla', $talla)
+                            ->delete();
+                    }
+                }
+
+                // DAMA: Insertar/Actualizar tallas nuevas o modificadas
+                foreach ($tallasDama as $talla => $cantidad) {
+                    if ($cantidad > 0) {
+                        \DB::table('pedidos_procesos_prenda_tallas')
+                            ->updateOrInsert(
+                                [
+                                    'proceso_prenda_detalle_id' => $proceso->id,
+                                    'genero' => 'DAMA',
+                                    'talla' => $talla
+                                ],
+                                [
+                                    'cantidad' => (int)$cantidad,
+                                    'updated_at' => now()
+                                ]
+                            );
+                    }
+                }
+
+                // CABALLERO: Eliminar tallas que ya no existen o quedaron en 0
+                foreach ($tallasActualHombre as $talla => $cantidad) {
+                    if (!isset($tallasHombre[$talla]) || $tallasHombre[$talla] == 0) {
+                        \DB::table('pedidos_procesos_prenda_tallas')
+                            ->where('proceso_prenda_detalle_id', $proceso->id)
+                            ->where('genero', 'CABALLERO')
+                            ->where('talla', $talla)
+                            ->delete();
+                    }
+                }
+
+                // CABALLERO: Insertar/Actualizar tallas nuevas o modificadas
+                foreach ($tallasHombre as $talla => $cantidad) {
+                    if ($cantidad > 0) {
+                        \DB::table('pedidos_procesos_prenda_tallas')
+                            ->updateOrInsert(
+                                [
+                                    'proceso_prenda_detalle_id' => $proceso->id,
+                                    'genero' => 'CABALLERO',
+                                    'talla' => $talla
+                                ],
+                                [
+                                    'cantidad' => (int)$cantidad,
+                                    'updated_at' => now()
+                                ]
+                            );
+                    }
+                }
+
+                \Log::info('[PROCESOS-ACTUALIZAR] Tallas actualizadas:', [
+                    'tallas' => $validated['tallas']
+                ]);
+            }
+
+            \Log::info('[PROCESOS-ACTUALIZAR] Proceso actualizado exitosamente:', [
+                'proceso_id' => $procesoId,
+                'prenda_id' => $prendaId
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso actualizado correctamente',
+                'data' => [
+                    'id' => $proceso->id,
+                    'tipo' => $proceso->tipo_proceso,
+                    'actualizados' => array_keys($validated)
+                ]
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('[PROCESOS-ACTUALIZAR] Proceso no encontrado:', [
+                'prenda_id' => $prendaId,
+                'proceso_id' => $procesoId
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Proceso no encontrado en la prenda especificada',
+            ], 404);
+
+        } catch (ValidationException $e) {
+            \Log::warning('[PROCESOS-ACTUALIZAR] Error de validación:', [
+                'errores' => $e->errors()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('[PROCESOS-ACTUALIZAR] Error inesperado:', [
+                'error' => $e->getMessage(),
+                'stack' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al actualizar el proceso: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
