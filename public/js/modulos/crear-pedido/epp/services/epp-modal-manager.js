@@ -96,8 +96,15 @@ class EppModalManager {
      * Limpiar producto card
      */
     limpiarProductoCard() {
-        document.getElementById('productoCardEPP').style.display = 'none';
-        document.getElementById('mensajeSelecccionarEPP').style.display = 'block';
+        const productoCard = document.getElementById('productoCardEPP');
+        if (productoCard) {
+            productoCard.style.display = 'none';
+        }
+        
+        const mensaje = document.getElementById('mensajeSelecccionarEPP');
+        if (mensaje) {
+            mensaje.style.display = 'block';
+        }
     }
 
     /**
@@ -374,9 +381,12 @@ class EppModalManager {
      * Obtener valores del formulario
      */
     obtenerValoresFormulario() {
+        const cantidadInput = document.getElementById('cantidadEPP');
+        const observacionesInput = document.getElementById('observacionesEPP');
+        
         return {
-            cantidad: parseInt(document.getElementById('cantidadEPP').value) || 0,
-            observaciones: document.getElementById('observacionesEPP').value.trim() || null
+            cantidad: cantidadInput ? (parseInt(cantidadInput.value) || 0) : 0,
+            observaciones: observacionesInput ? (observacionesInput.value.trim() || null) : null
         };
     }
 

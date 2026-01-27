@@ -76,16 +76,11 @@ function _inicializarEventListeners() {
 }
 
 /**
- * Funciones globales para compatibilidad con el modal existente
+ * Funciones globales para compatibilidad
+ * Nota: abrirModalAgregarEPP() y cerrarModalAgregarEPP() 
+ * están definidas en el template Blade (modal-agregar-epp.blade.php)
+ * No las definimos aquí para no sobrescribir las del template
  */
-
-function abrirModalAgregarEPP() {
-    window.eppService?.abrirModalAgregar();
-}
-
-function cerrarModalAgregarEPP() {
-    window.eppService?.cerrarModal();
-}
 
 function agregarEPPAlPedido() {
     window.eppService?.guardarEPP();

@@ -163,6 +163,7 @@
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-agregar-reflectivo')
 @include('asesores.pedidos.modals.modal-proceso-generico')
+@include('asesores.pedidos.modals.modal-agregar-epp')
 
 @endsection
 
@@ -216,8 +217,7 @@
     <!-- EPP Initialization -->
     <script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ time() }}"></script>
     
-    <!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}?v={{ time() }}"></script>
+    <!-- Modal EPP se incluye como Blade template (línea 166) -->
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
     

@@ -518,6 +518,8 @@ class PrendaEditor {
             tallas: prenda.tallas,
             tiene_generosConTallas: !!prenda.generosConTallas,
             generosConTallas: prenda.generosConTallas,
+            tiene_cantidad_talla: !!prenda.cantidad_talla,
+            cantidad_talla: prenda.cantidad_talla,
             tiene_tallas_disponibles: !!prenda.tallas_disponibles,
             tallas_disponibles: prenda.tallas_disponibles,
             tiene_genero_id: !!prenda.variantes?.genero_id,
@@ -535,8 +537,11 @@ class PrendaEditor {
         
         console.log('[cargarTallasYCantidades] 👥 Género seleccionado:', generoActual);
 
-        // CARGAR TALLAS DESDE generosConTallas (edición de BD)
-        // O desde tallas_disponibles (prendas nuevas)
+        // CARGAR TALLAS DESDE:
+        // 1. generosConTallas (edición de BD)
+        // 2. cantidad_talla (prendas nuevas creadas en formulario)
+        // 3. tallas (array)
+        // 4. tallas_disponibles (prendas nuevas sin cantidades)
         if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde generosConTallas:', prenda.generosConTallas);
             
@@ -544,6 +549,16 @@ class PrendaEditor {
                 const generoUpper = generoKey.toUpperCase();
                 if (tallaData.cantidades && typeof tallaData.cantidades === 'object') {
                     window.tallasRelacionales[generoUpper] = { ...tallaData.cantidades };
+                }
+            });
+        } else if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && Object.keys(prenda.cantidad_talla).length > 0) {
+            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde cantidad_talla (prendas nuevas):', prenda.cantidad_talla);
+            
+            // cantidad_talla tiene estructura: { DAMA: {S: 20, M: 20}, CABALLERO: {}, UNISEX: {} }
+            Object.entries(prenda.cantidad_talla).forEach(([generoKey, tallasObj]) => {
+                const generoUpper = generoKey.toUpperCase();
+                if (tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                    window.tallasRelacionales[generoUpper] = { ...tallasObj };
                 }
             });
         } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {

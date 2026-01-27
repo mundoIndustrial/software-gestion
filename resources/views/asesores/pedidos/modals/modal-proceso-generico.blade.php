@@ -15,53 +15,14 @@
         <!-- Body -->
         <div class="modal-body">
             <form id="form-proceso-generico">
-                <!-- Imágenes del Proceso -->
-                <div class="form-section">
-                    <label class="form-label-primary">
-                        <span class="material-symbols-rounded">photo_camera</span>IMÁGENES (Máximo 3)
-                    </label>
-                    
-                    <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start;">
-                        <!-- Preview 1 -->
-                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-1').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
-                            </div>
-                        </div>
-                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 1)">
-                        
-                        <!-- Preview 2 -->
-                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-2').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
-                            </div>
-                        </div>
-                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 2)">
-                        
-                        <!-- Preview 3 -->
-                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-3').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
-                            </div>
-                        </div>
-                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 3)">
-                    </div>
-                    <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
-                        <i class="fas fa-info-circle"></i> Puedes agregar hasta 3 imágenes para este proceso
-                    </p>
-                </div>
-
                 <!-- Ubicación del Proceso (Agregar lista) -->
                 <div class="form-section">
                     <label class="form-label-primary">
-                        <span class="material-symbols-rounded">location_on</span>UBICACIONES (Opcional)
+                        <span class="material-symbols-rounded">location_on</span>UBICACIONES
                     </label>
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                        <input type="text" id="input-ubicacion-nueva" placeholder="Ej: Frente, Espalda, Manga derecha..." class="form-input" style="flex: 1;">
-                        <button type="button" class="btn btn-primary" onclick="agregarUbicacionProceso()" style="width: auto; padding: 0.75rem 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                        <textarea id="input-ubicacion-nueva" placeholder="Ej: Frente, Espalda, Manga derecha, Bolsillo..." class="form-textarea" style="min-height: 120px; resize: vertical;"></textarea>
+                        <button type="button" class="btn btn-primary" onclick="agregarUbicacionProceso()" style="width: auto; align-self: flex-end; padding: 0.75rem 1rem;">
                             <span class="material-symbols-rounded">add</span>
                         </button>
                     </div>
@@ -100,6 +61,45 @@
                     
                     <!-- Resumen de tallas seleccionadas -->
                     <div id="proceso-tallas-resumen" style="background: #f3f4f6; border-radius: 8px; padding: 1rem; font-size: 0.875rem; color: #6b7280; margin-top: 1rem;"></div>
+                </div>
+
+                <!-- Imágenes del Proceso -->
+                <div class="form-section">
+                    <label class="form-label-primary">
+                        <span class="material-symbols-rounded">photo_camera</span>IMÁGENES (Máximo 3)
+                    </label>
+                    
+                    <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start;">
+                        <!-- Preview 1 -->
+                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-1').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                            <div class="placeholder-content" style="text-align: center;">
+                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
+                            </div>
+                        </div>
+                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 1)">
+                        
+                        <!-- Preview 2 -->
+                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-2').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                            <div class="placeholder-content" style="text-align: center;">
+                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
+                            </div>
+                        </div>
+                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 2)">
+                        
+                        <!-- Preview 3 -->
+                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-3').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                            <div class="placeholder-content" style="text-align: center;">
+                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
+                            </div>
+                        </div>
+                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" onchange="manejarImagenProceso(this, 3)">
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+                        <i class="fas fa-info-circle"></i> Puedes agregar hasta 3 imágenes para este proceso
+                    </p>
                 </div>
             </form>
         </div>

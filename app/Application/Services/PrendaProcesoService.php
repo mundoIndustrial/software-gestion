@@ -160,3 +160,4 @@ class PrendaProcesoService
         
         return json_encode([]);
     }
+}

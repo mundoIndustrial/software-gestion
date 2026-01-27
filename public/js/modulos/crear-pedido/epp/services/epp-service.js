@@ -30,12 +30,13 @@ class EppService {
      * Abrir modal para agregar EPP
      */
     abrirModalAgregar() {
-        this.stateManager.resetear();
-        // Asegurar que el modalManager también limpia el estado de imágenes
-        this.stateManager.limpiarImagenesSubidas();
-        this.modalManager.limpiarFormulario();
-        this.modalManager.abrirModal();
-
+        // El nuevo modal de Blade es autónomo, no necesita el manager antiguo
+        // Simplemente abrir el nuevo modal
+        if (typeof abrirModalAgregarEPP === 'function') {
+            abrirModalAgregarEPP(); // Función del template Blade
+        } else {
+            console.warn('⚠️ [EppService] abrirModalAgregarEPP() no definida');
+        }
     }
 
     /**
@@ -515,17 +516,21 @@ class EppService {
             if (epps.length === 0) {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
             } else {
-                container.innerHTML = epps.map(epp => `
-                    <div onclick="window.eppService.seleccionarProducto({id: ${epp.id}, nombre: '${epp.nombre_completo || epp.nombre}', imagen: '${epp.imagen || ''}'}); document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
+                console.log('🔍 [EppService] Renderizando resultados:', epps.length);
+                const html = epps.map(epp => `
+                    <div onclick="if(window.mostrarProductoEPP) { window.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${epp.nombre_completo || epp.nombre}', nombre: '${epp.nombre}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
                          onmouseover="this.style.background = '#f3f4f6';"
                          onmouseout="this.style.background = 'white';">
                         <div style="font-weight: 500; color: #1f2937;">${epp.nombre_completo || epp.nombre}</div>
                     </div>
                 `).join('');
+                container.innerHTML = html;
+                console.log('✅ [EppService] HTML renderizado en contenedor');
             }
 
             container.style.display = 'block';
+            console.log('✅ [EppService] Contenedor visible:', container.style.display);
         } catch (error) {
 
             container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626;">Error al buscar EPP</div>`;
