@@ -268,10 +268,23 @@ class GuardarPedidoDesdeJSONService
                 continue;
             }
 
+            // Decodificar ubicaciones si vienen como JSON string
+            $ubicaciones = $procesoData['ubicaciones'] ?? [];
+            if (is_string($ubicaciones)) {
+                try {
+                    $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                    if (is_array($ubicacionesDecodificadas)) {
+                        $ubicaciones = $ubicacionesDecodificadas;
+                    }
+                } catch (\Exception $e) {
+                    $ubicaciones = [];
+                }
+            }
+
             // Crear registro de proceso
             $proceso = $prendaPedido->procesos()->create([
                 'tipo_proceso_id' => $procesoData['tipo_proceso_id'],
-                'ubicaciones' => json_encode($procesoData['ubicaciones'] ?? []),
+                'ubicaciones' => json_encode($ubicaciones),
                 'observaciones' => $procesoData['observaciones'] ?? '',
                 'tallas_dama' => !empty($procesoData['tallas_dama']) 
                     ? json_encode($procesoData['tallas_dama']) 

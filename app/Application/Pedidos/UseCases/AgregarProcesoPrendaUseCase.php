@@ -52,9 +52,22 @@ final class AgregarProcesoPrendaUseCase
         }
 
         // Crear proceso con tallas agrupadas en JSON
+        // Decodificar ubicaciones si vienen como JSON string
+        $ubicaciones = $dto->ubicaciones ?? null;
+        if (is_string($ubicaciones)) {
+            try {
+                $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                if (is_array($ubicacionesDecodificadas)) {
+                    $ubicaciones = $ubicacionesDecodificadas;
+                }
+            } catch (\Exception $e) {
+                $ubicaciones = null;
+            }
+        }
+
         $proceso = $prenda->procesos()->create([
             'tipo_proceso_id' => $dto->tipo_proceso_id,
-            'ubicaciones' => !empty($dto->ubicaciones) ? json_encode($dto->ubicaciones) : null,
+            'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
             'observaciones' => $dto->observaciones,
             'tallas_dama' => !empty($tallasDama) ? json_encode($tallasDama) : null,
             'tallas_caballero' => !empty($tallasCaballero) ? json_encode($tallasCaballero) : null,

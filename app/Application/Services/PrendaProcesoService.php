@@ -46,7 +46,7 @@ class PrendaProcesoService
                 $tipoProcesoId = $proceso['tipo_proceso_id'] ?? $proceso['id'] ?? null;
                 
                 // Si viene como nombre (string), buscar o crear
-                if (!$tipoProcesoId && !empty($proceso['tipo'])) {
+                if ($tipoProcesoId === null && !empty($proceso['tipo'])) {
                     $tipoNombre = $proceso['tipo'];
                     $tipoProcesoObj = DB::table('tipos_procesos')
                         ->where('nombre', 'like', "%{$tipoNombre}%")
@@ -65,7 +65,7 @@ class PrendaProcesoService
                     }
                 }
                 
-                if (!$tipoProcesoId) {
+                if ($tipoProcesoId === null) {
                     Log::warning(' [PrendaProcesoService] Tipo de proceso no especificado', [
                         'prenda_id' => $prendaId,
                         'proceso_index' => $procesoIndex,
@@ -78,7 +78,7 @@ class PrendaProcesoService
                 $procesoDetalleId = DB::table('pedidos_procesos_prenda_detalles')->insertGetId([
                     'prenda_pedido_id' => $prendaId,
                     'tipo_proceso_id' => $tipoProcesoId,
-                    'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
+                    'ubicaciones' => !empty($proceso['ubicaciones']) ? $this->normalizarUbicaciones($proceso['ubicaciones']) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'tallas_dama' => null,  // LEGACY - usar tabla relacional
                     'tallas_caballero' => null,  // LEGACY - usar tabla relacional
@@ -139,4 +139,24 @@ class PrendaProcesoService
             'cantidad_procesos' => count($procesos),
         ]);
     }
-}
+
+    /**
+     * Normalizar ubicaciones: Decodificar si es JSON string y volver a codificar
+     * Evita la doble codificación JSON
+     */
+    private function normalizarUbicaciones($ubicaciones)
+    {
+        if (is_string($ubicaciones)) {
+            $decodificada = json_decode($ubicaciones, true);
+            if (is_array($decodificada)) {
+                return json_encode($decodificada);
+            }
+            return json_encode([$ubicaciones]);
+        }
+        
+        if (is_array($ubicaciones)) {
+            return json_encode($ubicaciones);
+        }
+        
+        return json_encode([]);
+    }

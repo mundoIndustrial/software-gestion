@@ -143,11 +143,22 @@ final class ActualizarPrendaPedidoUseCase
 
         $prenda->procesos()->delete();
         foreach ($dto->procesos as $proceso) {
+            // Decodificar ubicaciones si vienen como JSON string
+            $ubicaciones = $proceso['ubicaciones'] ?? null;
+            if (is_string($ubicaciones)) {
+                try {
+                    $ubicacionesDecodificadas = json_decode($ubicaciones, true);
+                    if (is_array($ubicacionesDecodificadas)) {
+                        $ubicaciones = $ubicacionesDecodificadas;
+                    }
+                } catch (\Exception $e) {
+                    $ubicaciones = null;
+                }
+            }
+
             $prenda->procesos()->create([
                 'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
-                'ubicaciones' => !empty($proceso['ubicaciones']) ? json_encode($proceso['ubicaciones']) : null,
-                'observaciones' => $proceso['observaciones'] ?? null,
-                'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
             ]);
         }
     }

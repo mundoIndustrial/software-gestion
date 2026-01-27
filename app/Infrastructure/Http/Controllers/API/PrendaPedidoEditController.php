@@ -409,6 +409,18 @@ class PrendaPedidoEditController extends Controller
             // Limpieza y preparación de datos ANTES de validar
             $data = $request->all();
 
+            // Decodificar ubicaciones si vienen como JSON string
+            if (isset($data['ubicaciones']) && is_string($data['ubicaciones'])) {
+                try {
+                    $ubicacionesDecodificadas = json_decode($data['ubicaciones'], true);
+                    if (is_array($ubicacionesDecodificadas)) {
+                        $data['ubicaciones'] = $ubicacionesDecodificadas;
+                    }
+                } catch (\Exception $e) {
+                    // Si no es JSON válido, mantener como está
+                }
+            }
+
             // Limpiar imágenes: convertir a strings, eliminar nulls/vacíos
             if (isset($data['imagenes']) && is_array($data['imagenes'])) {
                 $imagenesLimpias = [];
