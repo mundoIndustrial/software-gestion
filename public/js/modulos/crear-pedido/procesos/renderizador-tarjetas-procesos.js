@@ -129,17 +129,28 @@ function generarTarjetaProceso(tipo, datos) {
                 return raw;
             }
             
-            // Si contiene strings
+            // Si contiene strings, intentar parsear cada uno
             const resultado = raw.map(ub => {
-                // Si es objeto, extraer ubicacion
+                // Si es string, intentar parsearlo como JSON
+                if (typeof ub === 'string') {
+                    try {
+                        const parsed = JSON.parse(ub);
+                        // Si parsea correctamente, es un JSON
+                        return Array.isArray(parsed) ? parsed[0] : parsed;
+                    } catch (e) {
+                        // Si no parsea, es un string plano
+                        return ub;
+                    }
+                }
+                // Si es objeto, retornar como está
                 if (typeof ub === 'object' && ub !== null) {
                     return ub;
                 }
-                // Si es string, retornar como está
                 return ub;
             });
             
-            return resultado.length > 0 ? resultado : [String(raw)];
+            // Aplanar array en caso de que haya arrays anidados
+            return resultado.flat();
         }
         
         return [String(raw)];

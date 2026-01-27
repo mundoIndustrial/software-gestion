@@ -275,8 +275,8 @@ class ObtenerPedidoDetalleService
             $telaFotos = $this->obtenerFotosTelas($prenda);
             foreach ($telasUnicas as $tela) {
                 $telas[] = [
+                    'nombre_tela' => $tela['tela_nombre'],
                     'color' => $tela['color_nombre'],
-                    'tela' => $tela['tela_nombre'],
                     'referencia' => $tela['referencia'],
                     'imagenes' => $telaFotos,
                 ];

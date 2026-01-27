@@ -172,6 +172,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                     codigo_color: ct.color_codigo || '',
                     tela_id: ct.tela_id,
                     tela: ct.tela_nombre || '',
+                    nombre_tela: ct.tela_nombre || '',
                     referencia: ct.tela_referencia || '',
                     imagenes: (ct.fotos_tela || []).map(f => {
                         const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original);

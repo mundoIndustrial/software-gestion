@@ -328,12 +328,21 @@ class PrendaEditor {
     cargarTelas(prenda) {
         console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
         
+        // ===== DEBUG: Ver estructura completa de prenda =====
+        console.group('[cargarTelas] 🔍 ESTRUCTURA COMPLETA DE PRENDA');
+        console.log('prenda.telasAgregadas:', prenda.telasAgregadas);
+        console.log('prenda.colores_telas:', prenda.colores_telas);
+        console.log('prenda keys:', Object.keys(prenda));
+        console.groupEnd();
+        
         // ===== TRANSFORMAR colores_telas (BD) a telasAgregadas (frontend) =====
         if (!prenda.telasAgregadas || prenda.telasAgregadas.length === 0) {
             if (prenda.colores_telas && prenda.colores_telas.length > 0) {
                 console.log('[cargarTelas] 🔄 Transformando colores_telas a telasAgregadas');
+                console.log('[cargarTelas] colores_telas ANTES:', JSON.stringify(prenda.colores_telas, null, 2));
+                
                 prenda.telasAgregadas = prenda.colores_telas.map((ct, idx) => {
-                    return {
+                    const transformed = {
                         id: ct.id,
                         nombre_tela: ct.tela_nombre || '(Sin nombre)',
                         color: ct.color_nombre || '(Sin color)',
@@ -347,9 +356,16 @@ class PrendaEditor {
                             }))
                             : []
                     };
+                    console.log(`[cargarTelas] Tela ${idx} transformada:`, transformed);
+                    return transformed;
                 });
                 console.log('[cargarTelas] ✅ Transformación completada:', prenda.telasAgregadas);
+                console.log('[cargarTelas] telasAgregadas DESPUÉS:', JSON.stringify(prenda.telasAgregadas, null, 2));
+            } else {
+                console.warn('[cargarTelas] ⚠️ No hay colores_telas para transformar');
             }
+        } else {
+            console.log('[cargarTelas] ℹ️ telasAgregadas ya tiene datos, no transformar');
         }
         
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
@@ -461,6 +477,10 @@ class PrendaEditor {
         window.tallasRelacionales.UNISEX = {};
 
         console.log('[cargarTallasYCantidades] 🔍 Analizando prenda:', {
+            tiene_tallas: !!prenda.tallas,
+            tallas: prenda.tallas,
+            tiene_generosConTallas: !!prenda.generosConTallas,
+            generosConTallas: prenda.generosConTallas,
             tiene_tallas_disponibles: !!prenda.tallas_disponibles,
             tallas_disponibles: prenda.tallas_disponibles,
             tiene_genero_id: !!prenda.variantes?.genero_id,
@@ -478,9 +498,28 @@ class PrendaEditor {
         
         console.log('[cargarTallasYCantidades] 👥 Género seleccionado:', generoActual);
 
-        // CARGAR TALLAS DISPONIBLES (sin cantidades)
-        // Las cantidades las digitará el usuario
-        if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
+        // CARGAR TALLAS DESDE generosConTallas (edición de BD)
+        // O desde tallas_disponibles (prendas nuevas)
+        if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
+            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde generosConTallas:', prenda.generosConTallas);
+            
+            Object.entries(prenda.generosConTallas).forEach(([generoKey, tallaData]) => {
+                const generoUpper = generoKey.toUpperCase();
+                if (tallaData.cantidades && typeof tallaData.cantidades === 'object') {
+                    window.tallasRelacionales[generoUpper] = { ...tallaData.cantidades };
+                }
+            });
+        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde array:', prenda.tallas);
+            
+            // Convertir array de tallas a objeto por género
+            prenda.tallas.forEach(tallaObj => {
+                const genero = tallaObj.genero || 'DAMA';
+                const talla = tallaObj.talla;
+                const cantidad = tallaObj.cantidad || 0;
+                window.tallasRelacionales[genero][talla] = cantidad;
+            });
+        } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas disponibles:', prenda.tallas_disponibles);
             
             // Cargar tallas en el género actual SIN cantidades (dejar vacío para que user digitee)
