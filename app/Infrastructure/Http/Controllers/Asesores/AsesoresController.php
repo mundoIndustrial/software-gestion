@@ -459,7 +459,7 @@ class AsesoresController extends Controller
             $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, $validated);
 
             // Usar el nuevo Use Case DDD
-            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutarConDTO($dto);
 
             return response()->json([
                 'success' => true,

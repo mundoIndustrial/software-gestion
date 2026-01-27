@@ -446,9 +446,12 @@ class PedidosProduccionController
                 'razon' => 'sometimes|string|max:500',
             ]);
 
-            // Usar Use Case DDD
-            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['razon'] ?? 'Sin especificar']);
-            $this->anularPedidoUseCase->ejecutar($dto);
+            // Usar Command Bus para eliminar el pedido
+            $command = new EliminarPedidoCommand(
+                (int)$id,
+                $validated['razon'] ?? 'Sin especificar'
+            );
+            $this->commandBus->dispatch($command);
 
             Log::info('[PedidosProduccionController] Pedido eliminado', ['pedido_id' => $id]);
 

@@ -28,27 +28,17 @@ class ColorTelaService
         }
 
         try {
-            // Buscar por nombre exacto
-            $color = ColorPrenda::where('nombre', $nombreColor)
-                ->where('activo', true)
-                ->first();
-
-            if ($color) {
-                Log::info(' [ColorTelaService] Color encontrado', [
-                    'nombre' => $nombreColor,
-                    'color_id' => $color->id,
-                ]);
-                return $color->id;
-            }
-
-            // Si no existe, crear
+            // 🔄 CAMBIO: Siempre crear un NUEVO color para este pedido
+            // No reutilizar colores existentes - Cada pedido tiene sus propios colores
+            // Esto asegura independencia entre pedidos
+            
             $colorNuevo = ColorPrenda::create([
                 'nombre' => $nombreColor,
                 'codigo' => $this->generarCodigo($nombreColor),
                 'activo' => true,
             ]);
 
-            Log::info(' [ColorTelaService] Color creado', [
+            Log::info(' [ColorTelaService] Color creado (NUEVA INSTANCIA)', [
                 'nombre' => $nombreColor,
                 'color_id' => $colorNuevo->id,
                 'codigo' => $colorNuevo->codigo,
@@ -75,28 +65,18 @@ class ColorTelaService
         }
 
         try {
-            // Buscar por nombre exacto
-            $tela = TelaPrenda::where('nombre', $nombreTela)
-                ->where('activo', true)
-                ->first();
-
-            if ($tela) {
-                Log::info(' [ColorTelaService] Tela encontrada', [
-                    'nombre' => $nombreTela,
-                    'tela_id' => $tela->id,
-                ]);
-                return $tela->id;
-            }
-
-            // Si no existe, crear
+            // 🔄 CAMBIO: Siempre crear una NUEVA tela para este pedido
+            // No reutilizar telas existentes - Cada pedido tiene sus propias telas
+            // Esto asegura independencia: si no guardaste referencia, no toma la de otro pedido
+            
             $telaNueva = TelaPrenda::create([
                 'nombre' => $nombreTela,
-                'referencia' => $referencia ?? $this->generarCodigo($nombreTela),
+                'referencia' => $referencia ?? '',
                 'descripcion' => "Tela: {$nombreTela}",
                 'activo' => true,
             ]);
 
-            Log::info(' [ColorTelaService] Tela creada', [
+            Log::info(' [ColorTelaService] Tela creada (NUEVA INSTANCIA)', [
                 'nombre' => $nombreTela,
                 'tela_id' => $telaNueva->id,
                 'referencia' => $telaNueva->referencia,

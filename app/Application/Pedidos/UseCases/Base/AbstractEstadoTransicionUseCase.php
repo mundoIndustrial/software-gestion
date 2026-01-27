@@ -43,8 +43,16 @@ abstract class AbstractEstadoTransicionUseCase
      * 4. Persistir
      * 5. Retornar respuesta
      */
-    final public function ejecutar(int $pedidoId): PedidoResponseDTO
+    final public function ejecutar(int|string|object $pedidoId): PedidoResponseDTO
     {
+        // Extraer ID si es un DTO
+        if (is_object($pedidoId) && property_exists($pedidoId, 'id')) {
+            $pedidoId = $pedidoId->id;
+        }
+        
+        // Convertir a entero si es string
+        $pedidoId = (int)$pedidoId;
+        
         // LINEA COMÃšN 1: Obtener pedido
         $pedido = $this->pedidoRepository->porId($pedidoId);
         

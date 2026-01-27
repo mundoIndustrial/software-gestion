@@ -49,6 +49,9 @@ class PrendaTelasService
 
     /**
      * Obtener o crear tela
+     * 
+     * 🔄 Ahora SIEMPRE crea una NUEVA tela para esta variante
+     * No reutiliza telas existentes - Cada variante tiene sus propias telas
      */
     public function obtenerOCrearTela(TelaDTO $telaDTO): ?TelaPrenda
     {
@@ -58,14 +61,12 @@ class PrendaTelasService
 
         $nombreNormalizado = ucfirst(strtolower(trim($telaDTO->nombre)));
 
-        return TelaPrenda::firstOrCreate(
-            ['nombre' => $nombreNormalizado],
-            [
-                'nombre' => $nombreNormalizado,
-                'referencia' => $telaDTO->referencia,
-                'activo' => true,
-            ]
-        );
+        // Crear NUEVA tela siempre
+        return TelaPrenda::create([
+            'nombre' => $nombreNormalizado,
+            'referencia' => $telaDTO->referencia ?? '',
+            'activo' => true,
+        ]);
     }
 
     /**

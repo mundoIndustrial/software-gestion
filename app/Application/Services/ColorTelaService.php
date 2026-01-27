@@ -17,7 +17,8 @@ class ColorTelaService
     /**
      * Obtener o crear un color por nombre
      * 
-     * Busca case-insensitive, si no existe, lo crea
+     * Siempre crea un NUEVO color para este pedido
+     * No reutiliza - Cada pedido tiene sus propios colores
      * 
      * @param string|null $nombreColor
      * @return int|null ID del color
@@ -28,16 +29,7 @@ class ColorTelaService
             return null;
         }
 
-        // Buscar color existente por nombre (case-insensitive)
-        $color = ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower(trim($nombreColor))])
-            ->where('activo', true)
-            ->first();
-
-        if ($color) {
-            return $color->id;
-        }
-
-        // Si no existe, crear el color
+        // 🔄 Siempre crear NUEVO color para este pedido
         $color = ColorPrenda::create([
             'nombre' => trim($nombreColor),
             'codigo' => strtoupper(substr(md5($nombreColor), 0, 6)),
@@ -50,7 +42,8 @@ class ColorTelaService
     /**
      * Obtener o crear una tela por nombre
      * 
-     * Busca case-insensitive, si no existe, la crea
+     * Siempre crea una NUEVA tela para este pedido
+     * No reutiliza - Cada pedido tiene sus propias telas
      * 
      * @param string|null $nombreTela
      * @return int|null ID de la tela
@@ -61,19 +54,10 @@ class ColorTelaService
             return null;
         }
 
-        // Buscar tela existente por nombre (case-insensitive)
-        $tela = TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower(trim($nombreTela))])
-            ->where('activo', true)
-            ->first();
-
-        if ($tela) {
-            return $tela->id;
-        }
-
-        // Si no existe, crear la tela
+        // 🔄 Siempre crear NUEVA tela para este pedido
         $tela = TelaPrenda::create([
             'nombre' => trim($nombreTela),
-            'referencia' => strtoupper(substr(md5($nombreTela), 0, 8)),
+            'referencia' => '',
             'activo' => true,
         ]);
 

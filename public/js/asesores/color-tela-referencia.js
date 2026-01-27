@@ -140,7 +140,7 @@ function buscarTela(input) {
             <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
                  onmouseover="this.style.backgroundColor='#f0f0f0'" 
                  onmouseout="this.style.backgroundColor='white'"
-                 onclick="seleccionarTela('${t.id}', '${t.nombre}', '${t.referencia}', this)">
+                 onclick="seleccionarTela('${t.id}', '${t.nombre}', this)">
                 <strong>${t.nombre}</strong>
                 <br>
                 <small style="color: #666;">${t.referencia}</small>
@@ -163,7 +163,7 @@ function buscarTela(input) {
     suggestionsDiv.style.display = 'block';
 }
 
-function seleccionarTela(id, nombre, referencia, element) {
+function seleccionarTela(id, nombre, element) {
     const td = element.closest('td');
     const input = td.querySelector('.tela-input');
     const idInput = td.querySelector('.tela-id-input');
@@ -171,16 +171,9 @@ function seleccionarTela(id, nombre, referencia, element) {
     input.value = nombre;
     idInput.value = id;
     
-    // No autocompletar la referencia - dejar que sea manual
-    // const trPadre = td.closest('tr');
-    // const refInput = trPadre.querySelector('.referencia-input');
-    // if (refInput && !refInput.value) {
-    //     refInput.value = referencia;
-    // }
+    // La referencia NO se autocompeta - El usuario debe ingresarla manualmente
     
     td.querySelector('.tela-suggestions').style.display = 'none';
-    
-
 }
 
 function buscarOCrearTela(btn) {
@@ -200,25 +193,18 @@ function buscarOCrearTela(btn) {
     );
     
     if (existe) {
-        seleccionarTela(existe.id, existe.nombre, existe.referencia, btn);
+        seleccionarTela(existe.id, existe.nombre, btn);
     } else {
         // Crear nueva
         const nuevoId = proximoTelaId++;
         const nuevaTela = { 
             id: nuevoId, 
             nombre: valor,
-            referencia: `REF-${valor.substring(0, 3).toUpperCase()}-001`
+            referencia: ''
         };
         telasDisponibles.push(nuevaTela);
         
         idInput.value = nuevoId;
-        
-        // No autocompletar la referencia - dejar que sea manual
-        // const trPadre = td.closest('tr');
-        // const refInput = trPadre.querySelector('.referencia-input');
-        // if (refInput) {
-        //     refInput.value = nuevaTela.referencia;
-        // }
         
         td.querySelector('.tela-suggestions').style.display = 'none';
         
@@ -296,13 +282,13 @@ function crearTelaDesdeInput(input) {
     );
     
     if (existe) {
-        seleccionarTela(existe.id, existe.nombre, existe.referencia, input);
+        seleccionarTela(existe.id, existe.nombre, input);
     } else {
         const nuevoId = proximoTelaId++;
         const nuevaTela = { 
             id: nuevoId, 
             nombre: valor,
-            referencia: `REF-${valor.substring(0, 3).toUpperCase()}-001`
+            referencia: ''
         };
         telasDisponibles.push(nuevaTela);
         
@@ -312,7 +298,7 @@ function crearTelaDesdeInput(input) {
         const trPadre = td.closest('tr');
         const refInput = trPadre.querySelector('.referencia-input');
         if (refInput) {
-            refInput.value = nuevaTela.referencia;
+            refInput.value = '';
         }
         
         td.querySelector('.tela-suggestions').style.display = 'none';
@@ -334,13 +320,13 @@ function crearTelaDesdeSelector(valor, element) {
     );
     
     if (existe) {
-        seleccionarTela(existe.id, existe.nombre, existe.referencia, element);
+        seleccionarTela(existe.id, existe.nombre, element);
     } else {
         const nuevoId = proximoTelaId++;
         const nuevaTela = { 
             id: nuevoId, 
             nombre: valor,
-            referencia: `REF-${valor.substring(0, 3).toUpperCase()}-001`
+            referencia: ''
         };
         telasDisponibles.push(nuevaTela);
         
@@ -350,7 +336,7 @@ function crearTelaDesdeSelector(valor, element) {
         const trPadre = td.closest('tr');
         const refInput = trPadre.querySelector('.referencia-input');
         if (refInput) {
-            refInput.value = nuevaTela.referencia;
+            refInput.value = '';
         }
         
         td.querySelector('.tela-suggestions').style.display = 'none';

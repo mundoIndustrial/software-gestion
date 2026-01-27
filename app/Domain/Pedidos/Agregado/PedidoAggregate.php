@@ -157,6 +157,18 @@ class PedidoAggregate extends AggregateRoot
         $this->fechaActualizacion = new \DateTime();
     }
 
+    /**
+     * Anular un pedido (alias para cancelar, con razón de anulación)
+     * @param string $razon Razón por la cual se anula el pedido
+     */
+    public function anular(string $razon = ''): void
+    {
+        $this->cancelar();
+        if (!empty($razon)) {
+            $this->agregarObservaciones("Anulación: $razon");
+        }
+    }
+
     public function actualizarDescripcion(string $nuevaDescripcion): void
     {
         if ($this->estado->esFinal()) {
