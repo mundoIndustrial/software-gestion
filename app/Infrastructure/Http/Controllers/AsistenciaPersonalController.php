@@ -499,34 +499,38 @@ class AsistenciaPersonalController extends Controller
                     // Para rol 22 (portería): usar método especial de completación
                     $horasOrdenadas = $this->completarMarcasRol22($personal, $horasOrdenadas, $registro['dia']);
                 } else {
-                    // Para otros roles: detectar y agregar marcas faltantes repetidamente
-                    while (count($horasOrdenadas) < $cantidadEsperada) {
-                        // Para sábado: si ya hay 2+ marcas, no agregar más
-                        if ($esSabado && count($horasOrdenadas) >= 2) {
-                            break;
-                        }
-                        
-                        $marcaFaltante = $this->detectarMarcaFaltante($personal, $horasOrdenadas, $registro['dia']);
-                        
-                        if ($marcaFaltante) {
-                            // Agregar la marca faltante solo si realmente falta
-                            $horasOrdenadas[] = $marcaFaltante['hora_esperada'];
+                    // Para otros roles: solo agregar marcas faltantes si hay MÁS de una marca
+                    // Si solo hay una marca en el día, no agregar marcas faltantes
+                    if (count($horasOrdenadas) > 1) {
+                        // Detectar y agregar marcas faltantes repetidamente
+                        while (count($horasOrdenadas) < $cantidadEsperada) {
+                            // Para sábado: si ya hay 2+ marcas, no agregar más
+                            if ($esSabado && count($horasOrdenadas) >= 2) {
+                                break;
+                            }
                             
-                            // Reordenar después de agregar
-                            $horasOrdenadas = $this->ordenarHorasCronologicamente($horasOrdenadas);
+                            $marcaFaltante = $this->detectarMarcaFaltante($personal, $horasOrdenadas, $registro['dia']);
                             
-                            // Registrar la marca faltante detectada
-                            $marcasFaltantes[] = [
-                                'codigo_persona' => $registro['id_persona'],
-                                'nombre_persona' => $personal->nombre_persona,
-                                'dia' => $registro['dia'],
-                                'marca' => $marcaFaltante['nombre_marca'],
-                                'hora_detectada' => $marcaFaltante['hora_esperada'],
-                                'status' => 'agregada_automaticamente'
-                            ];
-                        } else {
-                            // Si no hay más marcas faltantes detectadas, romper el bucle
-                            break;
+                            if ($marcaFaltante) {
+                                // Agregar la marca faltante solo si realmente falta
+                                $horasOrdenadas[] = $marcaFaltante['hora_esperada'];
+                                
+                                // Reordenar después de agregar
+                                $horasOrdenadas = $this->ordenarHorasCronologicamente($horasOrdenadas);
+                                
+                                // Registrar la marca faltante detectada
+                                $marcasFaltantes[] = [
+                                    'codigo_persona' => $registro['id_persona'],
+                                    'nombre_persona' => $personal->nombre_persona,
+                                    'dia' => $registro['dia'],
+                                    'marca' => $marcaFaltante['nombre_marca'],
+                                    'hora_detectada' => $marcaFaltante['hora_esperada'],
+                                    'status' => 'agregada_automaticamente'
+                                ];
+                            } else {
+                                // Si no hay más marcas faltantes detectadas, romper el bucle
+                                break;
+                            }
                         }
                     }
                 }
@@ -1602,5 +1606,190 @@ class AsistenciaPersonalController extends Controller
             'segundos_extras' => $horasExtras
         ];
     }
-}
 
+    /**
+     * Agregar marca faltante a una persona en un día específico
+     */
+    public function agregarMarcaFaltante(Request $request): JsonResponse
+    {
+        $request->validate([
+            'codigo_persona' => 'required|integer|exists:personal,codigo_persona',
+            'id_reporte' => 'required|integer|exists:reporte_personal,id',
+            'fecha' => 'required|date_format:Y-m-d',
+            'hora_nueva' => 'required|date_format:H:i:s'
+        ]);
+
+        try {
+            $codigoPersona = $request->input('codigo_persona');
+            $idReporte = $request->input('id_reporte');
+            $fecha = $request->input('fecha');
+            $horaNueva = $request->input('hora_nueva');
+
+            // Obtener el registro actual
+            $registro = RegistroHorasHuella::where('id_reporte', $idReporte)
+                ->where('codigo_persona', $codigoPersona)
+                ->where('dia', $fecha)
+                ->first();
+
+            if (!$registro) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registro no encontrado'
+                ], 404);
+            }
+
+            // Obtener las horas actuales
+            $horas = $registro->horas ?? [];
+            $horasArray = array_values($horas);
+
+            // Convertir hora nueva a formato timestamp
+            $partes = explode(':', $horaNueva);
+            $segundosNuevo = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+
+            // Convertir horas existentes a segundos
+            $horasEnSegundos = [];
+            foreach ($horasArray as $hora) {
+                $partes = explode(':', $hora);
+                $segundos = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + intval($partes[2]);
+                $horasEnSegundos[] = $segundos;
+            }
+
+            // Agregar la nueva hora
+            $horasEnSegundos[] = $segundosNuevo;
+
+            // Ordenar
+            sort($horasEnSegundos);
+
+            // Convertir de vuelta a formato HH:MM:SS
+            $horasFormateadas = [];
+            foreach ($horasEnSegundos as $segundos) {
+                $h = intdiv($segundos, 3600);
+                $m = intdiv($segundos % 3600, 60);
+                $s = $segundos % 60;
+                $horasFormateadas[] = sprintf('%02d:%02d:%02d', $h, $m, $s);
+            }
+
+            // Crear array con formato "Hora 1", "Hora 2", etc.
+            $horasFormato = [];
+            foreach ($horasFormateadas as $index => $hora) {
+                $horasFormato["Hora " . ($index + 1)] = $hora;
+            }
+
+            // Actualizar el registro
+            $registro->update([
+                'horas' => $horasFormato
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marca agregada exitosamente',
+                'horas' => $horasFormato
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al agregar marca: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar múltiples marcas en una sola operación
+     */
+    public function guardarMarcasMultiples(Request $request): JsonResponse
+    {
+        try {
+            // Validar datos
+            $request->validate([
+                'codigo_persona' => 'required|integer',
+                'id_reporte' => 'required|integer',
+                'fecha' => 'required|date_format:Y-m-d',
+                'horas_nuevas' => 'required|array',
+                'horas_nuevas.*' => 'required|string'
+            ]);
+
+            $codigoPersona = $request->input('codigo_persona');
+            $idReporte = $request->input('id_reporte');
+            $fecha = $request->input('fecha');
+            $horasNuevas = $request->input('horas_nuevas');
+
+            // Obtener el registro actual
+            $registro = RegistroHorasHuella::where('id_reporte', $idReporte)
+                ->where('codigo_persona', $codigoPersona)
+                ->where('dia', $fecha)
+                ->first();
+
+            if (!$registro) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registro no encontrado'
+                ], 404);
+            }
+
+            // Obtener las horas actuales
+            $horas = $registro->horas ?? [];
+            $horasArray = array_values($horas);
+
+            // Convertir todas las horas a segundos
+            $horasEnSegundos = [];
+            
+            // Agregar las horas existentes
+            foreach ($horasArray as $hora) {
+                if (!empty($hora)) {
+                    $partes = explode(':', $hora);
+                    if (count($partes) >= 2) {
+                        $segundos = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + (isset($partes[2]) ? intval($partes[2]) : 0);
+                        $horasEnSegundos[] = $segundos;
+                    }
+                }
+            }
+
+            // Agregar las horas nuevas
+            foreach ($horasNuevas as $horaNueva) {
+                if (!empty($horaNueva)) {
+                    $partes = explode(':', $horaNueva);
+                    if (count($partes) >= 2) {
+                        $segundosNuevo = intval($partes[0]) * 3600 + intval($partes[1]) * 60 + (isset($partes[2]) ? intval($partes[2]) : 0);
+                        $horasEnSegundos[] = $segundosNuevo;
+                    }
+                }
+            }
+
+            // Ordenar y eliminar duplicados
+            $horasEnSegundos = array_unique($horasEnSegundos);
+            sort($horasEnSegundos);
+
+            // Convertir de vuelta a formato HH:MM:SS
+            $horasFormateadas = [];
+            foreach ($horasEnSegundos as $segundos) {
+                $h = intdiv($segundos, 3600);
+                $m = intdiv($segundos % 3600, 60);
+                $s = $segundos % 60;
+                $horasFormateadas[] = sprintf('%02d:%02d:%02d', $h, $m, $s);
+            }
+
+            // Crear array con formato "Hora 1", "Hora 2", etc.
+            $horasFormato = [];
+            foreach ($horasFormateadas as $index => $hora) {
+                $horasFormato["Hora " . ($index + 1)] = $hora;
+            }
+
+            // Actualizar el registro
+            $registro->update([
+                'horas' => $horasFormato
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marcas guardadas exitosamente',
+                'horas' => $horasFormato
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en guardarMarcasMultiples: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar marcas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+}

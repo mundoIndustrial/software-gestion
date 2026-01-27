@@ -48,6 +48,8 @@ const AsistenciaPersonal = (() => {
         }
         
         modal.style.display = 'block';
+        // Ocultar scroll de la página cuando se abre el modal
+        document.body.style.overflow = 'hidden';
         menuOpen = false;
         toggleMenu(false);
         
@@ -113,6 +115,8 @@ const AsistenciaPersonal = (() => {
             closeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 modal.style.display = 'none';
+                // Restaurar scroll de la página al cerrar el modal
+                document.body.style.overflow = 'auto';
                 menuOpen = false;
                 toggleMenu(false);
             });
@@ -123,6 +127,8 @@ const AsistenciaPersonal = (() => {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 modal.style.display = 'none';
+                // Restaurar scroll de la página al cerrar el modal
+                document.body.style.overflow = 'auto';
                 menuOpen = false;
                 toggleMenu(false);
             }
@@ -227,6 +233,54 @@ const AsistenciaPersonal = (() => {
                     toggleMenu(false);
                 });
                 menuTotalHorasExtras.dataset.listenerAttached = true;
+            }
+
+            const menuAusenciasDelDia = navigationMenu.querySelector('#menuAusenciasDelDia');
+            if (menuAusenciasDelDia && !menuAusenciasDelDia.dataset.listenerAttached) {
+                menuAusenciasDelDia.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Ocultar botón de descarga PDF
+                    const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
+                    if (btnDescargarPDFMenu) {
+                        btnDescargarPDFMenu.style.display = 'none';
+                    }
+
+                    // Cargar y mostrar ausencias del reporte actual
+                    if (reporteActual && reporteActual.id) {
+                        AsistenciaAbsencias.cargar(reporteActual.id);
+                    } else {
+                        alert('Error: No se puede cargar las ausencias sin un reporte válido');
+                    }
+
+                    menuOpen = false;
+                    toggleMenu(false);
+                });
+                menuAusenciasDelDia.dataset.listenerAttached = true;
+            }
+
+            const menuMarcasFaltantes = navigationMenu.querySelector('#menuMarcasFaltantes');
+            if (menuMarcasFaltantes && !menuMarcasFaltantes.dataset.listenerAttached) {
+                menuMarcasFaltantes.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Ocultar botón de descarga PDF
+                    const btnDescargarPDFMenu = document.getElementById('btnDescargarPDFMenu');
+                    if (btnDescargarPDFMenu) {
+                        btnDescargarPDFMenu.style.display = 'none';
+                    }
+
+                    // Cargar y mostrar marcas faltantes del reporte actual
+                    if (reporteActual && reporteActual.id) {
+                        AsistenciaMarcasFaltantes.cargar(reporteActual);
+                    } else {
+                        alert('Error: No se puede cargar las marcas faltantes sin un reporte válido');
+                    }
+
+                    menuOpen = false;
+                    toggleMenu(false);
+                });
+                menuMarcasFaltantes.dataset.listenerAttached = true;
             }
         }
         
@@ -443,14 +497,21 @@ const AsistenciaPersonal = (() => {
 
     return {
         init,
-        openReportDetailModal
+        openReportDetailModal,
+        fetchReportDetails
     };
 })();
+
+// Exponer fetchReportDetails globalmente para uso en otros módulos
+function fetchReportDetails(reportId, callback) {
+    return AsistenciaPersonal.fetchReportDetails(reportId, callback);
+}
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     AsistenciaPersonal.init();
 });
+
 
 
 

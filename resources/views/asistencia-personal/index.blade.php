@@ -120,6 +120,14 @@
                     </svg>
                     <span>Personal Inasistente</span>
                 </button>
+                <button class="menu-item" id="menuMarcasFaltantes" data-tab="marcas-faltantes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <span>Marcas Faltantes</span>
+                </button>
                 <button class="menu-item" id="menuTotalHorasExtras" data-tab="horas-extras">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -212,15 +220,6 @@
     <!-- Modal de Ausencias del Día -->
     <div id="absenciasModal" class="modal-overlay modal-detail-overlay" style="display: none;">
         <div class="modal-content modal-detail-content">
-            <div class="modal-detail-header">
-                <h2>Personal Inasistente</h2>
-                <button class="btn-modal-close-detail" id="btnCloseAbsencias">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
             <div class="modal-detail-body">
                 <div class="ausencias-table-wrapper">
                     <table class="ausencias-table" id="ausenciasTable">
@@ -255,6 +254,22 @@
             <div class="modal-detail-body">
                 <div class="inasistencias-list" id="inasistenciasList">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Marcas Faltantes -->
+    <div id="marcasFaltantesModal" class="modal-overlay modal-detail-overlay" style="display: none;">
+        <div class="modal-content modal-detail-content" style="max-width: 1200px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-detail-body" style="flex: 1; overflow-y: auto; overflow-x: auto;">
+                <div id="marcasFaltantesContainer">
+                    <!-- Se generará dinámicamente -->
+                </div>
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #e0e0e0; background-color: #f8f9fa; text-align: center;">
+                <button id="btnGuardarTodasMarcas" style="padding: 12px 32px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);">
+                    Guardar Cambios
+                </button>
             </div>
         </div>
     </div>
@@ -472,6 +487,7 @@
     <script src="{{ asset('js/asistencia-personal/absencias.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/total-horas-extras.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/editar-registro.js') }}"></script>
+    <script src="{{ asset('js/asistencia-personal/marcas-faltantes.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/personal-roles.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/gestion-horarios.js') }}"></script>
     <script src="{{ asset('js/asistencia-personal/init.js') }}"></script>
