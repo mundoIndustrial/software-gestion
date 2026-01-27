@@ -163,7 +163,7 @@ class VerificarGuardadoCotizacion extends Command
 
     private function verificarTallas($cotizacionId)
     {
-        $this->line('📏 TALLAS (prenda_tallas_cot):');
+        $this->line(' TALLAS (prenda_tallas_cot):');
         $tallas = DB::table('prenda_tallas_cot')
             ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')

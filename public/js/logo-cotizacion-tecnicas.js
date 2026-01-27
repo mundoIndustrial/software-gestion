@@ -2254,7 +2254,7 @@ function renderizarTecnicasAgregadas() {
             bodyHTML += `
                 <div style="margin-bottom: 1.2rem;">
                     <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                        📏 Tallas:
+                         Tallas:
                     </h6>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
                         ${datosPrenda.talla_cantidad.map(tc => `

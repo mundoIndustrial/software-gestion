@@ -59,7 +59,7 @@ function abrirEditarPrendas() {
                             <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">PRENDA ${idx + 1}: ${nombrePrenda.toUpperCase()}</h4>
                             <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">${prenda.descripcion || 'Sin descripción'}</p>
                             <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #9ca3af;">
-                                📏 Tallas: ${cantTallas} |  Procesos: ${cantProcesos}
+                                 Tallas: ${cantTallas} |  Procesos: ${cantProcesos}
                             </div>
                         </div>
                         <span style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;"> Editar</span>

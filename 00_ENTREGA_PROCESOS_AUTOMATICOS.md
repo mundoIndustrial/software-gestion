@@ -200,7 +200,7 @@ Método público: createAdditionalProcesso()
 
 ---
 
-## ⚙️ Cambios Realizados
+##  Cambios Realizados
 
 ### Línea por Línea
 

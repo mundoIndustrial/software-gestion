@@ -28,7 +28,7 @@ const processoIconMap = {
 };
 
 function getProcessIcon(proceso) {
-    return processoIconMap[proceso] || '⚙️';
+    return processoIconMap[proceso] || '';
 }
 
 // Función para calcular días entre dos fechas

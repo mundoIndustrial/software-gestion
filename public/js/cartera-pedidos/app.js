@@ -216,7 +216,7 @@ function renderizarTabla(pedidos) {
         if (headerRow && firstBodyRow) {
             const headerWidth = headerRow.offsetWidth;
             const bodyRowWidth = firstBodyRow.offsetWidth;
-            console.log(`📏 COMPARACIÓN DE ANCHO:`);
+            console.log(` COMPARACIÓN DE ANCHO:`);
             console.log(`  Header width: ${headerWidth}px`);
             console.log(`  Body row width: ${bodyRowWidth}px`);
             console.log(`  Diferencia: ${bodyRowWidth - headerWidth}px`);

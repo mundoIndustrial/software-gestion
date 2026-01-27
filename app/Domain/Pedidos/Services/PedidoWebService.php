@@ -167,7 +167,7 @@ class PedidoWebService
         // 🔍 DEBUG: Verificar procesos
         $tieneProc = isset($itemData['procesos']) && is_array($itemData['procesos']) && count($itemData['procesos']) > 0;
         if ($tieneProc) {
-            \Log::info('[PedidoWebService] ⚙️ Creando procesos', [
+            \Log::info('[PedidoWebService]  Creando procesos', [
                 'prenda_id' => $prenda->id,
                 'procesos_count' => count($itemData['procesos']),
                 'procesos_keys' => array_keys($itemData['procesos']),
@@ -445,7 +445,7 @@ class PedidoWebService
      */
     private function crearProcesosCompletos(PrendaPedido $prenda, array $procesos): void
     {
-        \Log::info('[PedidoWebService] ⚙️ crearProcesosCompletos INICIADA', [
+        \Log::info('[PedidoWebService]  crearProcesosCompletos INICIADA', [
             'prenda_id' => $prenda->id,
             'procesos_count' => count($procesos),
             'procesos_keys' => array_keys($procesos),
@@ -555,7 +555,7 @@ class PedidoWebService
 
             // Crear tallas del proceso
             if (isset($datosProceso['tallas']) && is_array($datosProceso['tallas'])) {
-                \Log::info('[PedidoWebService] 📏 Llamando crearTallasProceso', [
+                \Log::info('[PedidoWebService]  Llamando crearTallasProceso', [
                     'proceso_id' => $procesoPrenda->id,
                     'tallas_estructura' => array_keys($datosProceso['tallas']),
                 ]);
@@ -574,7 +574,7 @@ class PedidoWebService
             }
         }
 
-        \Log::info('[PedidoWebService] ⚙️ crearProcesosCompletos TERMINADA', [
+        \Log::info('[PedidoWebService]  crearProcesosCompletos TERMINADA', [
             'prenda_id' => $prenda->id,
         ]);
     }
@@ -584,7 +584,7 @@ class PedidoWebService
      */
     private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas): void
     {
-        \Log::info('[PedidoWebService] 📏 crearTallasProceso INICIADA', [
+        \Log::info('[PedidoWebService]  crearTallasProceso INICIADA', [
             'proceso_id' => $proceso->id,
             'tallas_estructura' => json_encode($tallas),
         ]);
@@ -607,7 +607,7 @@ class PedidoWebService
             }
         }
 
-        \Log::info('[PedidoWebService] 📏 crearTallasProceso TERMINADA', [
+        \Log::info('[PedidoWebService]  crearTallasProceso TERMINADA', [
             'proceso_id' => $proceso->id,
             'tallas_creadas' => $tallasCreadas,
         ]);

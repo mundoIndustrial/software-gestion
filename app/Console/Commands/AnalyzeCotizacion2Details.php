@@ -57,7 +57,7 @@ class AnalyzeCotizacion2Details extends Command
                 ->where('prenda_cot_id', $prenda->id)
                 ->get();
 
-            $this->line("   📏 Tallas: " . count($tallas));
+            $this->line("    Tallas: " . count($tallas));
             if (count($tallas) > 0) {
                 $this->line("      • Tallas: " . implode(', ', $tallas->pluck('talla')->toArray()));
             }

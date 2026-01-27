@@ -673,7 +673,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             console.log(`   Variaciones: ${variacionesDePrenda.length}`);
             console.log(`   Variaciones Detalles:`, variacionesDePrenda);
             console.log(`   Género: ${genero || 'No especificado'}`);
-            console.log(`   📏 Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
+            console.log(`    Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
         }
     });
 

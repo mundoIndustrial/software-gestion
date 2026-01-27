@@ -97,7 +97,7 @@ function generarTarjetaProceso(tipo, datos) {
     const caballeroObj = datos.tallas?.caballero || {};
     const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
     
-    console.log(`📏 [GENERAR-TARJETA] Tallas para ${tipo}:`, {
+    console.log(` [GENERAR-TARJETA] Tallas para ${tipo}:`, {
         dama: Object.keys(damaObj),
         caballero: Object.keys(caballeroObj),
         total: totalTallas
@@ -333,7 +333,7 @@ window.editarProceso = function(tipo) {
  * Cargar datos de un proceso en el modal para editar
  */
 function cargarDatosProcesoEnModal(tipo, datos) {
-
+    console.log('🔄 [CARGAR-DATOS-PROCESO] Cargando datos en modal para:', tipo, datos);
 
 
     
@@ -436,14 +436,15 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         
 
         
-        // Guardar las cantidades en estructura relacional
-        if (!window.tallasRelacionales) {
-            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {} };
+        // IMPORTANTE: Guardar las cantidades en la estructura del PROCESO (NO en tallasRelacionales)
+        // tallasCantidadesProceso: estructura independiente para las cantidades del proceso
+        if (!window.tallasCantidadesProceso) {
+            window.tallasCantidadesProceso = { dama: {}, caballero: {} };
         }
         
-        // Poblar con datos del proceso (estructura relacional)
-        window.tallasRelacionales.DAMA = { ...damaTallas };
-        window.tallasRelacionales.CABALLERO = { ...caballeroTallas };
+        // Poblar con datos del proceso (estructura del PROCESO, no de la PRENDA)
+        window.tallasCantidadesProceso.dama = { ...damaTallas };
+        window.tallasCantidadesProceso.caballero = { ...caballeroTallas };
         
 
         
@@ -456,10 +457,6 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     } else {
 
     }
-    
-
-
-
 }
 
 /**

@@ -46,7 +46,7 @@
 
             <!-- Especificaciones -->
             <div class="specs-section">
-                <h3 class="section-title">⚙️ Especificaciones de la Orden</h3>
+                <h3 class="section-title"> Especificaciones de la Orden</h3>
                 <table class="specs-table">
                     <thead>
                         <tr>

@@ -78,6 +78,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                               $q3->withTrashed() // INCLUIR SOFT-DELETED
                                  ->with([
                                      'tipoProceso',
+                                     'tallas',  // NUEVO: Cargar tallas del proceso
                                      'imagenes' => function($q4) {
                                          // FOTOS DE PROCESOS - ORDENADAS POR ORDEN
                                          $q4->orderBy('orden', 'asc');
@@ -504,6 +505,23 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                             return $a['orden'] <=> $b['orden'];
                         });
                     }
+                    
+                    // Transformar tallas del proceso (desde la relación PedidosProcesosPrendaTalla)
+                    $tallasTransformadas = [
+                        'dama' => [],
+                        'caballero' => [],
+                        'unisex' => []
+                    ];
+                    
+                    if ($proceso->tallas && $proceso->tallas->count() > 0) {
+                        foreach ($proceso->tallas as $tallaProceso) {
+                            $genero = strtolower($tallaProceso->genero ?? 'dama');
+                            if (!isset($tallasTransformadas[$genero])) {
+                                $tallasTransformadas[$genero] = [];
+                            }
+                            $tallasTransformadas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
+                        }
+                    }
 
                     $procesos[] = [
                         'id' => $proceso->id,
@@ -512,6 +530,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'descripcion' => $proceso->descripcion,
                         'ubicaciones' => $proceso->ubicaciones ? json_decode($proceso->ubicaciones, true) : [],
                         'observaciones' => $proceso->observaciones,
+                        'tallas' => $tallasTransformadas,  // NUEVO: Agregar tallas transformadas
                         'imagenes' => $imagenes, // Array ordenado con estructura completa
                         'estado' => $proceso->estado ?? 'PENDIENTE',
                     ];

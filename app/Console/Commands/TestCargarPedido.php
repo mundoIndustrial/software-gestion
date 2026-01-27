@@ -115,7 +115,7 @@ class TestCargarPedido extends Command
                 }
                 
                 // Procesos
-                $this->line("\n⚙️  PROCESOS: " . $prenda->procesos->count());
+                $this->line("\n  PROCESOS: " . $prenda->procesos->count());
                 if ($prenda->procesos->count() > 0) {
                     foreach ($prenda->procesos as $proceso) {
                         $this->line("  ✓ Tipo: " . ($proceso->tipo_proceso ?? 'N/A'));

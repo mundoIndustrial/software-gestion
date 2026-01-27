@@ -328,6 +328,30 @@ class PrendaEditor {
     cargarTelas(prenda) {
         console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
         
+        // ===== TRANSFORMAR colores_telas (BD) a telasAgregadas (frontend) =====
+        if (!prenda.telasAgregadas || prenda.telasAgregadas.length === 0) {
+            if (prenda.colores_telas && prenda.colores_telas.length > 0) {
+                console.log('[cargarTelas] 🔄 Transformando colores_telas a telasAgregadas');
+                prenda.telasAgregadas = prenda.colores_telas.map((ct, idx) => {
+                    return {
+                        id: ct.id,
+                        nombre_tela: ct.tela_nombre || '(Sin nombre)',
+                        color: ct.color_nombre || '(Sin color)',
+                        referencia: ct.tela_referencia || '',
+                        imagenes: ct.fotos_tela && Array.isArray(ct.fotos_tela) 
+                            ? ct.fotos_tela.map(foto => ({
+                                url: foto.ruta_webp || foto.ruta_original || foto.url,
+                                ruta_webp: foto.ruta_webp,
+                                ruta_original: foto.ruta_original,
+                                previewUrl: foto.ruta_webp || foto.ruta_original || foto.url
+                            }))
+                            : []
+                    };
+                });
+                console.log('[cargarTelas] ✅ Transformación completada:', prenda.telasAgregadas);
+            }
+        }
+        
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
             console.log('[cargarTelas] ✓ Telas disponibles:', prenda.telasAgregadas.length);

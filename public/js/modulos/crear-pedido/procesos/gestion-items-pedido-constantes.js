@@ -197,7 +197,7 @@ const PROCESOS_VACIO_HTML = `
 const TARJETA_PROCESO_HEADER = `
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 1.5rem;">⚙️</span>
+            <span style="font-size: 1.5rem;"></span>
             <strong style="color: #111827; font-size: 1rem;">Proceso Personalizado</strong>
         </div>
         <div style="display: flex; gap: 0.5rem;">

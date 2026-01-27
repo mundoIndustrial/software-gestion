@@ -241,7 +241,7 @@ class TallaComponent {
                         <p style="margin-bottom: 1rem;">Selecciona el tipo de talla:</p>
                         <div style="display: flex; gap: 1rem; justify-content: center;">
                             <button type="button" class="swal2-confirm swal2-styled" id="btn-letra" style="flex: 1;">
-                                📏 LETRA<br><small>(XS, S, M, L, XL...)</small>
+                                 LETRA<br><small>(XS, S, M, L, XL...)</small>
                             </button>
                             <button type="button" class="swal2-confirm swal2-styled" id="btn-numero" style="flex: 1;">
                                 🔢 NÚMERO<br><small>(6, 8, 10, 12...)</small>

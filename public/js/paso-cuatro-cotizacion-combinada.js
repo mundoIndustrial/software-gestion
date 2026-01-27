@@ -87,7 +87,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- TALLAS A COTIZAR - TABLA DINÁMICA -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📏 TALLAS A COTIZAR</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;"> TALLAS A COTIZAR</label>
                 <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem; margin-bottom: 8px;">
                     <thead>
                         <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">

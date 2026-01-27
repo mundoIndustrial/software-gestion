@@ -210,7 +210,7 @@ window.obtenerResumenPrendasTipoPrendaSinCotizacion = function() {
             <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0066cc; border-radius: 4px;">
                 <strong style="color: #0052a3;">Prenda ${index + 1}: ${prenda.nombre_producto || 'Sin nombre'}</strong>
                 <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
-                    <div>📏 Tallas: ${tallas}</div>
+                    <div> Tallas: ${tallas}</div>
                     <div> Telas: ${telas}</div>
                     <div>📸 Fotos: ${fotos}</div>
                 </div>

@@ -125,7 +125,7 @@ if (is_dir($pedidosDir)) {
 echo "\n";
 
 // ===== 4. ANALIZAR ARCHIVOS CRÍTICOS =====
-echo "⚙️  4. VERIFICANDO ARCHIVOS CRÍTICOS\n";
+echo "  4. VERIFICANDO ARCHIVOS CRÍTICOS\n";
 echo str_repeat("─", 70) . "\n";
 
 $archivos = [

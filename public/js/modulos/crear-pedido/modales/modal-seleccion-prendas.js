@@ -504,7 +504,7 @@ function renderizarItemsCotizacionEnDOM() {
         // Construir HTML de variaciones
         let htmlVariaciones = '';
         if (Object.keys(variaciones).length > 0) {
-            htmlVariaciones = '<div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px;"><strong style="color: #92400e;">⚙️ Especificaciones:</strong><ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; font-size: 0.85rem;">';
+            htmlVariaciones = '<div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px;"><strong style="color: #92400e;"> Especificaciones:</strong><ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; font-size: 0.85rem;">';
             
             if (variaciones.aplica_manga && variaciones.obs_manga) {
                 htmlVariaciones += `<li style="color: #374151;">👔 Manga: ${variaciones.obs_manga}</li>`;

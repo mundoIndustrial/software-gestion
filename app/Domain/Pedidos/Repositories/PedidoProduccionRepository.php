@@ -32,6 +32,7 @@ class PedidoProduccionRepository
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',
+            'prendas.procesos.tallas',  // NUEVO: Cargar tallas de cada proceso (desde pedidos_procesos_prenda_tallas)
             'epps.imagenes',  // NO cargar categoria: es opcional
         ])->find($id);
     }
@@ -357,13 +358,22 @@ class PedidoProduccionRepository
                 try {
                     if ($prenda->procesos) {
                         foreach ($prenda->procesos as $proc) {
-                            // Construir tallas del proceso
-                            $procTallas = [];
-                            if (is_array($proc->tallas_dama)) {
-                                $procTallas['dama'] = $proc->tallas_dama;
-                            }
-                            if (is_array($proc->tallas_caballero)) {
-                                $procTallas['caballero'] = $proc->tallas_caballero;
+                            // Construir tallas del proceso desde la relación (FUENTE CANÓNICA)
+                            $procTallas = [
+                                'dama' => [],
+                                'caballero' => [],
+                                'unisex' => []
+                            ];
+                            
+                            // Obtener desde pedidos_procesos_prenda_tallas
+                            if ($proc->tallas && $proc->tallas->count() > 0) {
+                                foreach ($proc->tallas as $tallaProceso) {
+                                    $genero = strtolower($tallaProceso->genero ?? 'dama');
+                                    if (!isset($procTallas[$genero])) {
+                                        $procTallas[$genero] = [];
+                                    }
+                                    $procTallas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
+                                }
                             }
                             
                             // Ubicaciones puede ser array o string JSON

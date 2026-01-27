@@ -193,7 +193,7 @@
     <div class="card-section expandible" data-section="procesos">
       <div class="section-header" onclick="toggleSection(this)">
         <span class="section-titulo">
-          <span class="icon">⚙️</span> Procesos ({{ count($item['procesos']) }} procesos)
+          <span class="icon"></span> Procesos ({{ count($item['procesos']) }} procesos)
         </span>
         <span class="section-toggle">▼</span>
       </div>

@@ -200,7 +200,7 @@ class MigrarDatosCompleto extends Command
             $this->migrarPrendas($dryRun);
 
             // PASO 5: Migrar Procesos
-            $this->info("⚙️  PASO 5: Migrando Procesos...\n");
+            $this->info("  PASO 5: Migrando Procesos...\n");
             $this->migrarProcesos($dryRun);
 
             // PASO 6: Actualizar áreas y fechas

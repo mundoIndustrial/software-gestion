@@ -166,13 +166,37 @@ abstract class AbstractObtenerUseCase
     {
         \Log::info('[AbstractObtenerUseCase] Buscando procesos del pedido', ['pedidoId' => $pedidoId]);
         
-        $procesos = \App\Models\PedidosProcesosPrendaDetalle::whereHas('prenda', function ($q) use ($pedidoId) {
+        $procesosModelos = \App\Models\PedidosProcesosPrendaDetalle::whereHas('prenda', function ($q) use ($pedidoId) {
             $q->where('pedido_produccion_id', $pedidoId);
         })
-            ->with(['prenda', 'tipoProceso', 'imagenes'])
+            ->with(['prenda', 'tipoProceso', 'imagenes', 'tallas'])  // Cargar tallas desde relación
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->toArray();
+            ->get();
+
+        // Transformar procesos para convertir tallas al formato correcto
+        $procesos = $procesosModelos->map(function ($proc) {
+            $procArray = $proc->toArray();
+            
+            // Transformar tallas de array a objeto indexado por genero
+            $tallasTransformadas = [
+                'dama' => [],
+                'caballero' => [],
+                'unisex' => []
+            ];
+            
+            if (isset($procArray['tallas']) && is_array($procArray['tallas'])) {
+                foreach ($procArray['tallas'] as $talla) {
+                    $genero = strtolower($talla['genero'] ?? 'dama');
+                    if (!isset($tallasTransformadas[$genero])) {
+                        $tallasTransformadas[$genero] = [];
+                    }
+                    $tallasTransformadas[$genero][$talla['talla']] = (int)$talla['cantidad'];
+                }
+            }
+            
+            $procArray['tallas'] = $tallasTransformadas;
+            return $procArray;
+        })->toArray();
 
         \Log::info('[AbstractObtenerUseCase] Procesos encontrados', [
             'pedidoId' => $pedidoId,

@@ -222,7 +222,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     titulo_elem.textContent = titulo;
     titulo_elem.style.cssText = `
         color: white;
-        font-size: 14px;
+        font-size: 11px;
         font-weight: 700;
         margin-bottom: 10px;
     `;
@@ -759,16 +759,16 @@ function crearModalPreviewFactura(datos) {
             #invoice-preview-modal-wrapper table td,
             #invoice-preview-modal-wrapper table th,
             #invoice-preview-modal-wrapper table {
-                font-size: 10px !important;
+                font-size: 11px !important;
             }
             #invoice-preview-modal-wrapper em {
-                font-size: 10px !important;
+                font-size: 11px !important;
             }
         </style>
         <div style="background: white; border-radius: 6px; width: 100%; max-width: 1100px; height: 95vh; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden;">
             <!-- Header -->
             <div style="padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;">
-                <h3 style="margin: 0; color: #333; font-size: 12px; font-weight: 700;">
+                <h3 style="margin: 0; color: #333; font-size: 11px; font-weight: 700;">
                      Pedido #${datos.numero_pedido || datos.numero_pedido_temporal} | ${datos.cliente}
                 </h3>
                 <button onclick="document.getElementById('invoice-preview-modal-wrapper').remove();" 
@@ -794,6 +794,19 @@ function crearModalPreviewFactura(datos) {
     
     document.body.appendChild(modal);
     
+    // Log previo
+    console.log('[INVOICE-MODAL] Modal agregado al DOM');
+    console.log('[INVOICE-MODAL] Tipo de registrarFontSizesFactura:', typeof registrarFontSizesFactura);
+    console.log('[INVOICE-MODAL] Llamando registrarFontSizesFactura...');
+    
+    try {
+        // Registrar los font-sizes de la factura
+        registrarFontSizesFactura();
+        console.log('[INVOICE-MODAL] registrarFontSizesFactura() ejecutada sin errores');
+    } catch (e) {
+        console.error('[INVOICE-MODAL] Error al llamar registrarFontSizesFactura:', e);
+    }
+    
     // Cerrar al hacer click en el fondo
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
@@ -802,6 +815,13 @@ function crearModalPreviewFactura(datos) {
     });
     
 
+}
+
+/**
+ * Registra y loguea todos los font-sizes de los elementos de la factura
+ */
+function registrarFontSizesFactura() {
+    // Función deshabilitada - logging removido
 }
 
 /**
@@ -843,7 +863,7 @@ function generarHTMLFactura(datos) {
             variantesHTML = `
                 <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
                     <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> VARIANTES (Tallas con Especificaciones)</div>
-                    <table style="width: 100%; font-size: 10px !important; border-collapse: collapse;">
+                    <table style="width: 100%; font-size: 11px !important; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
                                 <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Talla</th>
@@ -860,15 +880,15 @@ function generarHTMLFactura(datos) {
                                     <tr style="background: ${tallaIdx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e0e7ff;">
                                         <td style="padding: 8px 12px; font-weight: 600; color: #334155;">${talla}</td>
                                         <td style="padding: 8px 12px; text-align: center; color: #475569;">${data.cantidad_total}</td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${firstSpec.manga ? `<strong>${firstSpec.manga}</strong>` : '—'}
                                             ${firstSpec.manga_obs ? `<br><em style="color: #64748b;">${firstSpec.manga_obs}</em>` : ''}
                                         </td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${firstSpec.broche ? `<strong>${firstSpec.broche}</strong>` : '—'}
                                             ${firstSpec.broche_obs ? `<br><em style="color: #64748b;">${firstSpec.broche_obs}</em>` : ''}
                                         </td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${firstSpec.bolsillos ? `<strong>Sí</strong>` : '—'}
                                             ${firstSpec.bolsillos_obs ? `<br><em style="color: #64748b;">${firstSpec.bolsillos_obs}</em>` : ''}
                                         </td>
@@ -905,7 +925,7 @@ function generarHTMLFactura(datos) {
                 variantesHTML = `
                     <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
                         <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> VARIANTES (Tallas con Especificaciones)</div>
-                        <table style="width: 100%; font-size: 10px !important; border-collapse: collapse;">
+                        <table style="width: 100%; font-size: 11px !important; border-collapse: collapse;">
                             <thead>
                                 <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
                                     <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #1e40af;">Talla</th>
@@ -920,15 +940,15 @@ function generarHTMLFactura(datos) {
                                     <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e0e7ff;">
                                         <td style="padding: 8px 12px; font-weight: 600; color: #334155;">${var_item.talla}</td>
                                         <td style="padding: 8px 12px; text-align: center; color: #475569;">${var_item.cantidad}</td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
                                             ${var_item.manga_obs ? `<br><em style="color: #64748b;">${var_item.manga_obs}</em>` : ''}
                                         </td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
                                             ${var_item.broche_obs ? `<br><em style="color: #64748b;">${var_item.broche_obs}</em>` : ''}
                                         </td>
-                                        <td style="padding: 8px 12px; color: #475569; font-size: 9px !important;">
+                                        <td style="padding: 8px 12px; color: #475569; font-size: 11px !important;">
                                             ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
                                             ${var_item.bolsillos_obs ? `<br><em style="color: #64748b;">${var_item.bolsillos_obs}</em>` : ''}
                                         </td>
@@ -958,7 +978,7 @@ function generarHTMLFactura(datos) {
                         ${variacionesArray.map((spec, idx) => `
                             <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #f0f0f0;">
                                 <td style="padding: 12px 12px; font-weight: 600; color: #334155; width: 35%; font-size: 11px !important;">${spec.nombre}</td>
-                                <td style="padding: 12px 12px; color: #475569; font-size: 11px !important;">${spec.valor}${spec.obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px !important;">(${spec.obs})</span>` : ''}</td>
+                                <td style="padding: 12px 12px; color: #475569; font-size: 11px !important;">${spec.valor}${spec.obs ? ` <span style="color: #64748b; font-style: italic; font-size: 11px !important;">(${spec.obs})</span>` : ''}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -971,25 +991,25 @@ function generarHTMLFactura(datos) {
             <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                 ${prenda.ref ? `
                     <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Referencia</div>
-                        <div style="font-size: 13px; color: #2c3e50; font-weight: 600;">${prenda.ref}</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Referencia</div>
+                        <div style="font-size: 11px; color: #2c3e50; font-weight: 600;">${prenda.ref}</div>
                     </div>
                 ` : ''}
                 ${prenda.tela ? `
                     <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Tela</div>
-                        <div style="font-size: 13px; color: #555;">${prenda.tela}</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Tela</div>
+                        <div style="font-size: 11px; color: #555;">${prenda.tela}</div>
                     </div>
                 ` : ''}
                 ${prenda.color ? `
                     <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Color</div>
-                        <div style="font-size: 13px; color: #555;">${prenda.color}</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Color</div>
+                        <div style="font-size: 11px; color: #555;">${prenda.color}</div>
                     </div>
                 ` : ''}
                 ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
                         <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                     </div>
                 ` : ''}
@@ -1014,6 +1034,7 @@ function generarHTMLFactura(datos) {
                 }, 0);
                 
                 generosTallasHTML = `
+                    <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                         <tbody>
                             ${generosConTallas.map(([genero, tallasObj]) => `
@@ -1026,16 +1047,23 @@ function generarHTMLFactura(datos) {
                     </table>
                 `;
             } else {
-                generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
+                generosTallasHTML = '<span style="color: #999; font-size: 11px;">Sin tallas</span>';
             }
         } else {
-            generosTallasHTML = '<span style="color: #999; font-size: 9px;">Sin tallas</span>';
+            generosTallasHTML = '<span style="color: #999; font-size: 11px;">Sin tallas</span>';
         }
         // Procesos
         const procesosListaHTML = prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0
             ? prenda.procesos.map(proc => {
                 // Renderizar tallas del proceso (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                 let tallasProcHTML = '';
+                
+                console.log('[FACTURA-PROCESO] Tallas del proceso:', {
+                    nombre: proc.tipo_proceso?.nombre || proc.tipoProceso?.nombre || proc.tipo,
+                    tallas_estructura: proc.tallas,
+                    tallas_keys: proc.tallas ? Object.keys(proc.tallas) : []
+                });
+                
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {
                     // Por género - FILTRAR géneros vacíos
                     const generosConTallasProc = Object.entries(proc.tallas).filter(([gen, tallasObj]) => 
@@ -1044,7 +1072,8 @@ function generarHTMLFactura(datos) {
                     
                     if (generosConTallasProc.length > 0) {
                         tallasProcHTML = `
-                            <div style="margin: 2px 0; padding: 4px; background: white; border-radius: 2px; font-size: 10px;">
+                            <div style="font-weight: 700; color: #2c3e50; margin: 4px 0 2px 0; font-size: 11px;"> Tallas</div>
+                            <div style="margin: 2px 0; padding: 4px; background: white; border-radius: 2px; font-size: 11px;">
                                 ${generosConTallasProc.map(([gen, tallasObj]) => {
                                     return `<div><strong>${gen}:</strong> ${Object.entries(tallasObj).map(([t, c]) => `${t}:${c}`).join(', ')}</div>`;
                                 }).join('')}
@@ -1054,7 +1083,7 @@ function generarHTMLFactura(datos) {
                 }
                 
                 return `
-                    <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 10px;">
+                    <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px;">
                         <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Proceso: ${
                             // Si tipo_proceso es un string directo (del backend toArray())
                             (typeof proc.tipo_proceso === 'string' && proc.tipo_proceso) 
@@ -1064,7 +1093,7 @@ function generarHTMLFactura(datos) {
                         }</div>
                         
                         ${(proc.ubicaciones?.length > 0 || proc.observaciones) ? `
-                            <table style="width: 100%; font-size: 10px; margin-bottom: 4px; border-collapse: collapse;">
+                            <table style="width: 100%; font-size: 11px; margin-bottom: 4px; border-collapse: collapse;">
                                 ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                     <tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Ubicación:</td>
@@ -1074,7 +1103,7 @@ function generarHTMLFactura(datos) {
                                 ${proc.observaciones ? `
                                     <tr>
                                         <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Observaciones:</td>
-                                        <td style="padding: 2px 3px; font-size: 10px;">${proc.observaciones}</td>
+                                        <td style="padding: 2px 3px; font-size: 11px;">${proc.observaciones}</td>
                                     </tr>
                                 ` : ''}
                             </table>
@@ -1088,7 +1117,7 @@ function generarHTMLFactura(datos) {
                                     `<div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(proc.imagenes).replace(/"/g, '&quot;')}, 'Imágenes de ${proc.tipoProceso?.nombre || proc.tipo_proceso?.nombre || proc.tipo || 'Proceso'}')">
                                         <img src="${window._extraerURLImagen(proc.imagenes[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd;">
                                         ${proc.imagenes.length > 1 ? `
-                                            <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
+                                            <div style="position: absolute; top: 0; right: 0; background: #3b82f6; color: white; font-size: 11px; font-weight: 700; padding: 2px 4px; border-radius: 0 2px 0 2px; cursor: pointer;">
                                                 ${proc.imagenes.length}+
                                             </div>
                                         ` : ''}
@@ -1100,10 +1129,10 @@ function generarHTMLFactura(datos) {
                     </div>
                 `;
             }).join('')
-            : '<div style="color: #999; font-size: 10px; font-style: italic;">Sin procesos asociados</div>';
+            : '<div style="color: #999; font-size: 11px; font-style: italic;">Sin procesos asociados</div>';
         
         return `
-            <div style="background: white; border: 1px solid #ddd; border-radius: 3px; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; font-size: 10px;">
+            <div style="background: white; border: 1px solid #ddd; border-radius: 3px; padding: 8px; margin-bottom: 8px; page-break-inside: avoid; font-size: 11px;">
                 <!-- ENCABEZADO CON NUMERACIÓN DE PRENDA -->
                 <div style="background: #f0f0f0; padding: 6px 8px; margin: -8px -8px 8px -8px; border-radius: 3px 3px 0 0; border-bottom: 2px solid #2c3e50;">
                     <span style="font-weight: 700; color: #2c3e50; font-size: 11px;"> PRENDA ${idx + 1}</span>
@@ -1121,14 +1150,14 @@ function generarHTMLFactura(datos) {
                                 <div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 32px;"></div>
                             `}
                         </div>
-                        <div style="flex: 1; font-size: 10px;">
+                        <div style="flex: 1; font-size: 11px;">
                             <div style="font-weight: 700; color: #2c3e50; margin-bottom: 3px; line-height: 1.3;">${prenda.nombre}</div>
-                            ${prenda.descripcion ? `<div style="color: #666; font-size: 9px; line-height: 1.3;">${prenda.descripcion}</div>` : ''}
+                            ${prenda.descripcion ? `<div style="color: #666; font-size: 11px; line-height: 1.3;">${prenda.descripcion}</div>` : ''}
                         </div>
                     </div>
                     
                     <!-- COLUMNA 2: Tela, Color, Ref + Imagen Tela -->
-                    <div style="font-size: 10px;">
+                    <div style="font-size: 11px;">
                         ${prenda.tela ? `<div style="margin-bottom: 4px;"><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
                         ${prenda.color ? `<div style="margin-bottom: 4px;"><strong>Color:</strong> ${prenda.color}</div>` : ''}
                         ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
@@ -1140,7 +1169,7 @@ function generarHTMLFactura(datos) {
                     </div>
                     
                     <!-- COLUMNA 3: Variantes (Manga, Broche, Bolsillos) -->
-                    <div style="font-size: 10px;">
+                    <div style="font-size: 11px;">
                         ${(() => {
                             // Si viene de la BD (tiene array de variantes)
                             if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
@@ -1157,7 +1186,7 @@ function generarHTMLFactura(datos) {
                                     specs.push(`<div><strong>Bolsillo:</strong> Sí${firstVar.bolsillos_obs ? ` <span style="color: #64748b; font-style: italic;">(${firstVar.bolsillos_obs})</span>` : ''}</div>`);
                                 }
                                 
-                                return specs.length > 0 ? specs.join('') : '<span style="color: #999; font-size: 9px;">Sin especificaciones</span>';
+                                return specs.length > 0 ? specs.join('') : '<span style="color: #999; font-size: 11px;">Sin especificaciones</span>';
                             }
                             // Si viene del formulario (estructura antigua)
                             else if (prenda.manga || prenda.broche || prenda.tiene_bolsillos) {
@@ -1175,13 +1204,13 @@ function generarHTMLFactura(datos) {
                                 
                                 return specs.join('');
                             } else {
-                                return '<span style="color: #999; font-size: 9px;">Sin variantes</span>';
+                                return '<span style="color: #999; font-size: 11px;">Sin variantes</span>';
                             }
                         })()}
                     </div>
                     
                     <!-- COLUMNA 4: Tallas por Género -->
-                    <div style="font-size: 10px;">
+                    <div style="font-size: 11px;">
                         ${generosTallasHTML}
                     </div>
                 </div>
@@ -1189,7 +1218,7 @@ function generarHTMLFactura(datos) {
                 <!-- FILA INFERIOR: Procesos -->
                 ${procesosListaHTML ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                        <div style="font-size: 10px; font-weight: 700; color: #2c3e50; margin-bottom: 4px;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #2c3e50; margin-bottom: 4px;"> Procesos ${prenda.procesos && Array.isArray(prenda.procesos) ? `(${prenda.procesos.length})` : ''}</div>
                         ${procesosListaHTML}
                     </div>
                 ` : ''}
@@ -1198,22 +1227,22 @@ function generarHTMLFactura(datos) {
     }).join('');
     
     return `
-        <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px;">
+        <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px;">
             <!-- Header Profesional COMPACTO -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #ddd; align-items: start;">
                 <!-- Lado Izquierdo: Cliente y Asesor -->
-                <div style="font-size: 10px;">
+                <div style="font-size: 11px;">
                     <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">${datos.cliente}</div>
-                    <div style="color: #666; font-size: 9px;">Asesor: ${datos.asesora}</div>
-                    <div style="color: #666; font-size: 9px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
+                    <div style="color: #666; font-size: 11px;">Asesor: ${datos.asesora}</div>
+                    <div style="color: #666; font-size: 11px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
                 </div>
                 
                 <!-- Lado Derecho: Recibo de Pedido -->
-                <div style="text-align: right; font-size: 10px;">
+                <div style="text-align: right; font-size: 11px;">
                     <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">
                         RECIBO DE PEDIDO #${datos.numero_pedido || datos.numero_pedido_temporal}
                     </div>
-                    <div style="color: #666; font-size: 9px;">${datos.fecha_creacion}</div>
+                    <div style="color: #666; font-size: 11px;">${datos.fecha_creacion}</div>
                 </div>
             </div>
             
@@ -1243,27 +1272,27 @@ function generarHTMLFactura(datos) {
                                         <img src="${window._extraerURLImagen(epp.imagen)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes || [], 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
                                     ` : (epp.imagenes && epp.imagenes.length > 0 ? `
                                         <img src="${window._extraerURLImagen(epp.imagenes[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes, 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
-                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 9px;">Sin imagen</div>')}
+                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 11px;">Sin imagen</div>')}
                                 </div>
                                 
                                 <!-- COLUMNA 2: Nombre y Datos -->
                                 <div style="font-size: 11px;">
                                     <div style="font-weight: 700; color: #374151; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre || ''}</div>
-                                    ${epp.talla ? `<div style="color: #6b7280; font-size: 9px; margin-bottom: 2px;"><strong>Talla:</strong> ${epp.talla}</div>` : ''}
+                                    ${epp.talla ? `<div style="color: #6b7280; font-size: 11px; margin-bottom: 2px;"><strong>Talla:</strong> ${epp.talla}</div>` : ''}
                                 </div>
                                 
                                 <!-- COLUMNA 3: Cantidad -->
                                 <div style="font-size: 11px; text-align: right;">
-                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
-                                    <div style="font-weight: 600; color: #374151; font-size: 12px;"><strong>${epp.cantidad || 0}</strong></div>
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
+                                    <div style="font-weight: 600; color: #374151; font-size: 11px;"><strong>${epp.cantidad || 0}</strong></div>
                                 </div>
                             </div>
                             
                             <!-- Observaciones (si hay) -->
                             ${epp.observaciones ? `
                                 <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                                    <div style="color: #6b7280; font-size: 9px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600;">Observaciones</div>
-                                    <div style="color: #555; font-size: 10px; font-style: italic;">${epp.observaciones}</div>
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600;">Observaciones</div>
+                                    <div style="color: #555; font-size: 11px; font-style: italic;">${epp.observaciones}</div>
                                 </div>
                             ` : ''}
                         </div>

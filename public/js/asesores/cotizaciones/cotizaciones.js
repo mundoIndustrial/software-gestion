@@ -1211,7 +1211,7 @@ function recopilarDatos() {
         console.log(`  [${idx + 1}] ${prod.nombre_producto}:`, {
             '📸 Fotos': prod.fotos.length,
             '🧵 Telas': prod.telas.length,
-            '📏 Tallas': prod.tallas.length,
+            ' Tallas': prod.tallas.length,
             '🎨 Variantes': Object.keys(prod.variantes).length
         });
     });

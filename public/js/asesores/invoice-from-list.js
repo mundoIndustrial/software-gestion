@@ -160,6 +160,15 @@ function crearModalFacturaDesdeListaPedidos(datos) {
                     margin: 0.5cm;
                 }
             }
+            
+            /* Override de font-sizes para modal de factura */
+            #modal-factura-contenido table,
+            #modal-factura-contenido table td,
+            #modal-factura-contenido table th,
+            #modal-factura-contenido td,
+            #modal-factura-contenido th {
+                font-size: 11px !important;
+            }
         `;
         document.head.appendChild(styleSheet);
 
@@ -476,8 +485,8 @@ function mostrarErrorNotificacion(titulo, mensaje) {
     `;
     
     notif.innerHTML = `
-        <h4 style="margin: 0 0 4px 0; font-weight: 600; font-size: 14px;">${titulo}</h4>
-        <p style="margin: 0; font-size: 13px;">${mensaje}</p>
+        <h4 style="margin: 0 0 4px 0; font-weight: 600; font-size: 11px;">${titulo}</h4>
+        <p style="margin: 0; font-size: 11px;">${mensaje}</p>
     `;
     
     document.body.appendChild(notif);
@@ -722,7 +731,7 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
     if (arrowContainer && !contenedor.querySelector('#receipt-counter')) {
         const counter = document.createElement('span');
         counter.id = 'receipt-counter';
-        counter.style.cssText = 'font-weight: bold; font-size: 14px;';
+        counter.style.cssText = 'font-weight: bold; font-size: 11px;';
         counter.innerHTML = 'Recibo <span id="receipt-number">1</span>/<span id="receipt-total">1</span>';
         arrowContainer.appendChild(counter);
     }
@@ -783,5 +792,16 @@ function cerrarModalRecibos() {
         overlay.remove();
     }
 }
+
+/**
+ * Registra y loguea todos los font-sizes del modal de lista de pedidos
+ */
+function registrarFontSizesFacturaListaPedidos(contenedorElement) {
+    // Función deshabilitada - logging removido
+}
+
+// Exportar función a nivel global para acceso desde otros contextos
+window.registrarFontSizesFacturaListaPedidos = registrarFontSizesFacturaListaPedidos;
+
 
 

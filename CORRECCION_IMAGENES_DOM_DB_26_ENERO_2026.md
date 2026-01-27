@@ -351,7 +351,7 @@ Deberías ver:
 
 ---
 
-## ⚙️ Integración Pendiente
+##  Integración Pendiente
 
 ### Para activar deduplicación (opcional):
 ```php

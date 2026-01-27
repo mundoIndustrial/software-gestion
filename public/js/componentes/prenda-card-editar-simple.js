@@ -17,7 +17,7 @@ function generarHTMLDatosPrenda(prenda) {
     // ===== TALLAS POR GÉNERO =====
     if ((prenda.tallas_dama && prenda.tallas_dama.length > 0) || (prenda.tallas_caballero && prenda.tallas_caballero.length > 0)) {
         html += '<div style="margin: 20px 0; padding: 15px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">';
-        html += '<h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase;">📏 Tallas por Género</h4>';
+        html += '<h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase;"> Tallas por Género</h4>';
         html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">';
         
         // Tallas Dama
@@ -84,7 +84,7 @@ function generarHTMLDatosPrenda(prenda) {
     // ===== VARIANTES =====
     if (prenda.variantes && prenda.variantes.length > 0) {
         html += '<div style="margin: 20px 0; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">';
-        html += '<h4 style="margin: 0 0 12px 0; color: #166534; font-size: 12px; font-weight: 700; text-transform: uppercase;">⚙️ Variantes</h4>';
+        html += '<h4 style="margin: 0 0 12px 0; color: #166534; font-size: 12px; font-weight: 700; text-transform: uppercase;"> Variantes</h4>';
         
         prenda.variantes.forEach(v => {
             html += '<div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #dbeafe;">';

@@ -32,7 +32,7 @@ foreach ($prendas as $prenda) {
     
     // Buscar procesos de la prenda
     $procesos = $prenda->procesos;
-    echo "  ⚙️  Procesos: " . $procesos->count() . "\n";
+    echo "    Procesos: " . $procesos->count() . "\n";
     
     foreach ($procesos as $proceso) {
         echo "    - Tipo: {$proceso->tipoProceso->nombre} (ID: {$proceso->id})\n";

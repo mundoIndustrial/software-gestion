@@ -774,10 +774,10 @@ window.mostrarResumenReflectivo = function() {
             todasLasTallas.push(...window.datosReflectivo.tallasPorGenero.caballero.map(t => `${t} (C)`));
         }
         if (todasLasTallas.length > 0) {
-            html += `<p style="margin: 0.5rem 0;"><strong>📏 Tallas:</strong> ${todasLasTallas.join(', ')}</p>`;
+            html += `<p style="margin: 0.5rem 0;"><strong> Tallas:</strong> ${todasLasTallas.join(', ')}</p>`;
         }
     } else {
-        html += `<p style="margin: 0.5rem 0;"><strong>📏 Tallas:</strong> Todas las tallas</p>`;
+        html += `<p style="margin: 0.5rem 0;"><strong> Tallas:</strong> Todas las tallas</p>`;
     }
     
     // Observaciones

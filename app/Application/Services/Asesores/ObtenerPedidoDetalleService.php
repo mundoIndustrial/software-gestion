@@ -634,7 +634,7 @@ class ObtenerPedidoDetalleService
         }
         $prendaArray['variantes'] = $variantes;
 
-        Log::info('⚙️ [VARIANTES-TRANSFORMADAS] ' . count($variantes) . ' variantes transformadas');
+        Log::info(' [VARIANTES-TRANSFORMADAS] ' . count($variantes) . ' variantes transformadas');
 
         // Colores y Telas (prenda_pedido_colores_telas)
         $coloresTelas = [];
