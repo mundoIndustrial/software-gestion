@@ -10,11 +10,13 @@
  * Obtiene los datos del servidor y los muestra
  */
 window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
-
+    console.log('[INICIO-verFacturaDelPedido] ⚠️ FUNCIÓN LLAMADA', { numeroPedido, pedidoId });
     
     try {
         // Mostrar spinner de carga
         mostrarCargando('Cargando factura...');
+        
+        console.log('[ANTES-FETCH] Llamando a endpoint', { url: `/asesores/pedidos/${pedidoId}/factura-datos` });
         
         // Obtener datos del pedido desde el servidor
         const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
@@ -36,6 +38,10 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         if (datos.prendas && datos.prendas[0]) {
             console.log('[FACTURA-DEBUG] Primera prenda:', datos.prendas[0]);
             console.log('[FACTURA-DEBUG] Variantes de primera prenda:', datos.prendas[0].variantes);
+            console.log('[FACTURA-DEBUG] ⚠️ TELAS_ARRAY en primera prenda:', datos.prendas[0].telas_array);
+            console.log('[FACTURA-DEBUG] ⚠️ TELAS_ARRAY length:', datos.prendas[0].telas_array ? datos.prendas[0].telas_array.length : 'NO EXISTE');
+            console.log('[FACTURA-DEBUG] ⚠️ TELA simple en primera prenda:', datos.prendas[0].tela);
+            console.log('[FACTURA-DEBUG] ⚠️ COLOR simple en primera prenda:', datos.prendas[0].color);
         }
         
         // Ocultar spinner

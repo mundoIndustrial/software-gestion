@@ -840,6 +840,19 @@ function generarHTMLFactura(datos) {
         return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
     }
     
+    // LOG CRÍTICO: Verificar telas_array en cada prenda
+    console.log('[generarHTMLFactura] ⚠️ PRENDAS RECIBIDAS:');
+    datos.prendas.forEach((prenda, idx) => {
+        console.log(`[generarHTMLFactura] Prenda ${idx}: ${prenda.nombre}`, {
+            telas_array_existe: !!prenda.telas_array,
+            telas_array_length: prenda.telas_array ? prenda.telas_array.length : 0,
+            telas_array_content: prenda.telas_array,
+            tela_simple: prenda.tela,
+            color_simple: prenda.color,
+            ref_simple: prenda.ref,
+        });
+    });
+    
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
         // Tabla de Variantes (Tallas con especificaciones)
@@ -987,35 +1000,78 @@ function generarHTMLFactura(datos) {
         ` : '';
         
         // Información de tela, color y referencia (SIEMPRE mostrar)
-        const telaHTML = (prenda.tela || prenda.color || prenda.ref || prenda.imagen_tela) ? `
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                ${prenda.ref ? `
-                    <div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Referencia</div>
-                        <div style="font-size: 11px; color: #2c3e50; font-weight: 600;">${prenda.ref}</div>
-                    </div>
-                ` : ''}
-                ${prenda.tela ? `
-                    <div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Tela</div>
-                        <div style="font-size: 11px; color: #555;">${prenda.tela}</div>
-                    </div>
-                ` : ''}
-                ${prenda.color ? `
-                    <div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Color</div>
-                        <div style="font-size: 11px; color: #555;">${prenda.color}</div>
-                    </div>
-                ` : ''}
-                ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
-                    <div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
-                        <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                    </div>
-                ` : ''}
-            </div>
-            <div style="height: 1px; background: #e0e0e0; margin-bottom: 15px;"></div>
-        ` : '';
+        // Renderizar telas con sus datos estructurados
+        let telaHTML = '';
+        
+        // Si existe telas_array (array estructurado), utilizarlo
+        if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+            telaHTML = `
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; flex-direction: column;">
+                    ${prenda.telas_array.map((tela, index) => `
+                        <div style="display: flex; gap: 15px; align-items: flex-start; padding: 8px; background: #f9f9f9; border-radius: 4px; border: 1px solid #e0e0e0;">
+                            <div style="flex: 1;">
+                                ${tela.tela_nombre ? `
+                                    <div style="margin-bottom: 6px;">
+                                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 2px; font-weight: 700;">Tela</div>
+                                        <div style="font-size: 11px; color: #2c3e50; font-weight: 600;">${tela.tela_nombre}</div>
+                                    </div>
+                                ` : ''}
+                                ${tela.color_nombre ? `
+                                    <div style="margin-bottom: 6px;">
+                                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 2px; font-weight: 700;">Color</div>
+                                        <div style="font-size: 11px; color: #555;">${tela.color_nombre}</div>
+                                    </div>
+                                ` : ''}
+                                ${tela.referencia ? `
+                                    <div>
+                                        <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 2px; font-weight: 700;">Referencia</div>
+                                        <div style="font-size: 11px; color: #555;">${tela.referencia}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${(tela.fotos && tela.fotos.length > 0) ? `
+                                <div>
+                                    <div style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700; text-align: center;">Muestra</div>
+                                    <img src="${window._extraerURLImagen(tela.fotos[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(tela.fotos, 'Imágenes de ' + (tela.tela_nombre || 'Tela'))})" title="Click para ver todas las imágenes de tela">
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="height: 1px; background: #e0e0e0; margin-bottom: 15px;"></div>
+            `;
+        } else {
+            // Fallback: usar los campos simples (tela, color, ref, imagen_tela)
+            telaHTML = (prenda.tela || prenda.color || prenda.ref || prenda.imagen_tela) ? `
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    ${prenda.ref ? `
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Referencia</div>
+                            <div style="font-size: 11px; color: #2c3e50; font-weight: 600;">${prenda.ref}</div>
+                        </div>
+                    ` : ''}
+                    ${prenda.tela ? `
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Tela</div>
+                            <div style="font-size: 11px; color: #555;">${prenda.tela}</div>
+                        </div>
+                    ` : ''}
+                    ${prenda.color ? `
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Color</div>
+                            <div style="font-size: 11px; color: #555;">${prenda.color}</div>
+                        </div>
+                    ` : ''}
+                    ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 4px; font-weight: 700;">Muestra Tela</div>
+                            <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                        </div>
+                    ` : ''}
+                </div>
+                <div style="height: 1px; background: #e0e0e0; margin-bottom: 15px;"></div>
+            ` : '';
+        }
         
         // Tallas por género (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
         let generosTallasHTML = '';
@@ -1158,14 +1214,35 @@ function generarHTMLFactura(datos) {
                     
                     <!-- COLUMNA 2: Tela, Color, Ref + Imagen Tela -->
                     <div style="font-size: 11px;">
-                        ${prenda.tela ? `<div style="margin-bottom: 4px;"><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
-                        ${prenda.color ? `<div style="margin-bottom: 4px;"><strong>Color:</strong> ${prenda.color}</div>` : ''}
-                        ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
-                        ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
-                            <div>
-                                <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
-                            </div>
-                        ` : ''}
+                        ${(() => {
+                            // Si existe telas_array, mostrar cada tela
+                            if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+                                return prenda.telas_array.map(tela => `
+                                    <div style="margin-bottom: 8px; padding: 4px; background: #f9f9f9; border-radius: 2px;">
+                                        ${tela.tela_nombre ? `<div style="margin-bottom: 2px;"><strong>Tela:</strong> ${tela.tela_nombre}</div>` : ''}
+                                        ${tela.color_nombre ? `<div style="margin-bottom: 2px;"><strong>Color:</strong> ${tela.color_nombre}</div>` : ''}
+                                        ${tela.referencia ? `<div style="margin-bottom: 4px;"><strong>Ref:</strong> ${tela.referencia}</div>` : ''}
+                                        ${(tela.fotos && tela.fotos.length > 0) ? `
+                                            <div>
+                                                <img src="${window._extraerURLImagen(tela.fotos[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(tela.fotos, 'Imágenes de ' + (tela.tela_nombre || 'Tela'))})" title="Click para ver todas las imágenes de tela">
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('');
+                            } else {
+                                // Fallback: campos simples
+                                return `
+                                    ${prenda.tela ? `<div style="margin-bottom: 4px;"><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
+                                    ${prenda.color ? `<div style="margin-bottom: 4px;"><strong>Color:</strong> ${prenda.color}</div>` : ''}
+                                    ${prenda.ref ? `<div style="margin-bottom: 6px;"><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
+                                    ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
+                                        <div>
+                                            <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
+                                        </div>
+                                    ` : ''}
+                                `;
+                            }
+                        })()}
                     </div>
                     
                     <!-- COLUMNA 3: Variantes (Manga, Broche, Bolsillos) -->

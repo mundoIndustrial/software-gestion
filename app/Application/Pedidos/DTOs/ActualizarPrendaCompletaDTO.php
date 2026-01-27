@@ -133,7 +133,9 @@ final class ActualizarPrendaCompletaDTO
             prendaId: $prendaId,
             nombrePrenda: $data['nombre_prenda'] ?? null,
             descripcion: $data['descripcion'] ?? null,
-            deBodega: isset($data['de_bodega']) ? (bool) $data['de_bodega'] : null,
+            deBodega: isset($data['de_bodega']) 
+                ? (bool) $data['de_bodega'] 
+                : (isset($data['origen']) ? ($data['origen'] === 'bodega' ? 1 : 0) : null),
             imagenes: $imagenes,
             imagenesExistentes: $imagenesExistentes,
             cantidadTalla: $cantidadTalla,

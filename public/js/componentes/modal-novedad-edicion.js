@@ -145,7 +145,14 @@ class ModalNovedadEdicion {
             const formData = new FormData();
             formData.append('nombre_prenda', this.prendaData.nombre_prenda);
             formData.append('descripcion', this.prendaData.descripcion);
-            formData.append('origen', this.prendaData.origen);
+            
+            // Enviar de_bodega (1=bodega, 0=confección)
+            // Si viene origen, convertir a de_bodega; si ya es de_bodega, usar directamente
+            if (this.prendaData.de_bodega !== undefined) {
+                formData.append('de_bodega', this.prendaData.de_bodega);
+            } else if (this.prendaData.origen) {
+                formData.append('de_bodega', this.prendaData.origen === 'bodega' ? 1 : 0);
+            }
             
             // IMPORTANTE: Leer tallas ACTUALIZADAS del modal (window.tallasRelacionales)
             // NO del this.prendaData inicial que puede estar desactualizado
@@ -183,6 +190,55 @@ class ModalNovedadEdicion {
                 console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
             } else {
                 console.log('[modal-novedad-edicion]  No hay variantes para enviar');
+            }
+            
+            // ========== NUEVO: LEER FILAS DE TELAS NUEVAS DEL MODAL ==========
+            // Capturar las filas que el usuario agregó manualmente con agregarFilaTela()
+            const filasTelasDOMNuevas = document.querySelectorAll('.fila-tela');
+            if (filasTelasDOMNuevas && filasTelasDOMNuevas.length > 0) {
+                console.log('[modal-novedad-edicion] 📋 Leyendo', filasTelasDOMNuevas.length, 'filas de telas del DOM');
+                filasTelasDOMNuevas.forEach((fila, idx) => {
+                    const nombreInput = fila.querySelector('.tela-name');
+                    const colorInput = fila.querySelector('.tela-color');
+                    const refInput = fila.querySelector('.tela-ref');
+                    const imagenInput = fila.querySelector('.tela-imagen');
+                    
+                    const nombreTela = nombreInput?.value?.trim() || '';
+                    const colorTela = colorInput?.value?.trim() || '';
+                    const refTela = refInput?.value?.trim() || '';
+                    const imagenFile = imagenInput?.files?.[0];
+                    
+                    if (nombreTela || colorTela || refTela || imagenFile) {
+                        // Esta es una tela nueva (sin id de BD)
+                        const telaNueva = {
+                            // Sin id, ya que es nueva
+                            tela: nombreTela,
+                            color: colorTela,
+                            referencia: refTela,
+                            imagenes: imagenFile ? [imagenFile] : [],
+                            tela_nombre: nombreTela,
+                            color_nombre: colorTela,
+                            esNueva: true  // Marcar como nueva para el backend
+                        };
+                        
+                        console.log('[modal-novedad-edicion] ✅ Tela nueva detectada:', telaNueva);
+                        
+                        // Agregar a window.telasAgregadas si aún no está
+                        if (!window.telasAgregadas) {
+                            window.telasAgregadas = [];
+                        }
+                        
+                        // Verificar si ya existe (por si acaso)
+                        const yaExiste = window.telasAgregadas.some(t => 
+                            t.tela === nombreTela && t.color === colorTela && t.referencia === refTela
+                        );
+                        
+                        if (!yaExiste) {
+                            window.telasAgregadas.push(telaNueva);
+                            console.log('[modal-novedad-edicion] ✅ Tela nueva agregada a window.telasAgregadas');
+                        }
+                    }
+                });
             }
             
             // NUEVO: Enviar telas (MERGE pattern - conservar telas existentes + agregar nuevas)

@@ -183,6 +183,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 // OBTENER FOTOS DE TELAS (ambas rutas, estructuradas por color-tela)
                 $imagenesTela = $this->obtenerImagenesTela($prenda);
                 
+                // OBTENER COLORES Y TELAS COMPLETOS (con fotos incluidas)
+                $coloresTelas = $this->obtenerColoresTelasCompletos($prenda);
+                
                 // OBTENER PROCESOS CON IMÁGENES ORDENADAS
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda);
 
@@ -202,6 +205,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'variantes' => $variantes,
                     'imagenes' => $imagenes, // Array con estructura completa
                     'imagenes_tela' => $imagenesTela, // Array con estructura completa
+                    'colores_telas' => $coloresTelas, // Estructura completa de coloresTelas con fotos
+                    'telas_array' => $coloresTelas, // ✅ ALIAS: telas_array para compatibilidad con factura
                     'procesos' => $procesos, // Array con imágenes ordenadas
                     'manga' => $variantes[0]['manga'] ?? null,
                     'obs_manga' => $variantes[0]['manga_obs'] ?? null,
@@ -413,6 +418,108 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         }
 
         return $imagenes; // Retorna [] si hay error, nunca null
+    }
+
+    /**
+     * ✅ NUEVO: Obtener estructura completa de coloresTelas con fotos
+     * 
+     * Retorna array de coloresTelas con toda la información:
+     * - id, color_id, tela_id, referencia
+     * - color_nombre, color_codigo
+     * - tela_nombre, tela_referencia
+     * - fotos (array de fotos con ruta_webp, ruta_original, etc)
+     */
+    private function obtenerColoresTelasCompletos($prenda): array
+    {
+        $coloresTelas = [];
+
+        try {
+            Log::info('[obtenerColoresTelasCompletos] Iniciando obtención de colores y telas', [
+                'prenda_id' => $prenda->id,
+                'prenda_nombre' => $prenda->nombre_prenda,
+                'colorTelas_count' => $prenda->coloresTelas ? $prenda->coloresTelas->count() : 0,
+            ]);
+            
+            if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
+                foreach ($prenda->coloresTelas as $idx => $ct) {
+                    // CARGAR RELACIONES EXPLÍCITAMENTE si no están disponibles
+                    if (!isset($ct->color) || !$ct->color) {
+                        $ct->load('color');
+                    }
+                    if (!isset($ct->tela) || !$ct->tela) {
+                        $ct->load('tela');
+                    }
+                    if (!isset($ct->fotos) || !$ct->fotos) {
+                        $ct->load('fotos');
+                    }
+                    
+                    Log::debug("[obtenerColoresTelasCompletos] Procesando colorTela $idx", [
+                        'ct_id' => $ct->id,
+                        'color_id' => $ct->color_id,
+                        'tela_id' => $ct->tela_id,
+                        'color_nombre' => $ct->color?->nombre,
+                        'tela_nombre' => $ct->tela?->nombre,
+                        'fotos_count' => $ct->fotos ? $ct->fotos->count() : 0,
+                    ]);
+                    
+                    $fotos = [];
+                    
+                    // Obtener fotos de este color-tela
+                    if ($ct->fotos && $ct->fotos->count() > 0) {
+                        foreach ($ct->fotos as $foto) {
+                            $rutaWebp = $foto->ruta_webp ?? $foto->url ?? null;
+                            $rutaOriginal = $foto->ruta_original ?? $rutaWebp ?? null;
+                            
+                            $fotos[] = [
+                                'id' => $foto->id ?? null,
+                                'ruta_webp' => $this->normalizarRutaImagen($rutaWebp),
+                                'ruta_original' => $this->normalizarRutaImagen($rutaOriginal),
+                                'url' => $this->normalizarRutaImagen($rutaWebp ?? $rutaOriginal),
+                                'orden' => (int)($foto->orden ?? 0),
+                            ];
+                        }
+                        
+                        // Ordenar por orden
+                        usort($fotos, function($a, $b) {
+                            return $a['orden'] <=> $b['orden'];
+                        });
+                        
+                        Log::debug("[obtenerColoresTelasCompletos] Fotos procesadas para CT $idx", [
+                            'fotos_count' => count($fotos),
+                            'fotos' => $fotos,
+                        ]);
+                    }
+                    
+                    $coloresTelas[] = [
+                        'id' => $ct->id,
+                        'color_id' => $ct->color_id,
+                        'tela_id' => $ct->tela_id,
+                        'referencia' => $ct->referencia,
+                        'color_nombre' => $ct->color?->nombre ?? null,
+                        'color_codigo' => $ct->color?->codigo ?? null,
+                        'tela_nombre' => $ct->tela?->nombre ?? null,
+                        'tela_referencia' => $ct->tela?->referencia ?? null,
+                        'fotos' => $fotos,
+                        'fotos_tela' => $fotos, // Alias para compatibilidad
+                    ];
+                }
+            }
+
+            Log::info('[obtenerColoresTelasCompletos] Colores y telas completos obtenidos', [
+                'prenda_id' => $prenda->id,
+                'total_colores_telas' => count($coloresTelas),
+                'estructura' => $coloresTelas,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::warning('Error obteniendo colores y telas completos', [
+                'prenda_id' => $prenda->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+        return $coloresTelas;
     }
 
     /**

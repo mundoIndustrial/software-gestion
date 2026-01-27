@@ -113,8 +113,14 @@ class PrendaEditor {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Buscar la opción que coincida con el origen (ignorando acentos)
-            const origen = prenda.origen || 'bodega';
+            // Determinar origen desde de_bodega o desde el campo origen
+            let origen = prenda.origen || 'bodega';
+            
+            // Si viene de_bodega (integer desde BD), convertir a string
+            if (prenda.de_bodega !== undefined && prenda.origen === undefined) {
+                origen = prenda.de_bodega === 1 ? 'bodega' : 'confeccion';
+            }
+            
             const origenNormalizado = normalizarTexto(origen);
             let encontrado = false;
             
@@ -340,29 +346,52 @@ class PrendaEditor {
             if (prenda.colores_telas && prenda.colores_telas.length > 0) {
                 console.log('[cargarTelas] 🔄 Transformando colores_telas a telasAgregadas');
                 console.log('[cargarTelas] colores_telas ANTES:', JSON.stringify(prenda.colores_telas, null, 2));
+                console.log('[cargarTelas] Total de colores_telas:', prenda.colores_telas.length);
                 
                 prenda.telasAgregadas = prenda.colores_telas.map((ct, idx) => {
+                    console.log(`[cargarTelas] Procesando colorTela ${idx}:`, {
+                        id: ct.id,
+                        color: ct.color_nombre,
+                        tela: ct.tela_nombre,
+                        fotos_count: ct.fotos ? ct.fotos.length : (ct.fotos_tela ? ct.fotos_tela.length : 0),
+                    });
+                    
+                    // Obtener fotos: puede venir en ct.fotos (nuevo) o ct.fotos_tela (antiguo)
+                    let fotosArray = [];
+                    if (ct.fotos && Array.isArray(ct.fotos) && ct.fotos.length > 0) {
+                        fotosArray = ct.fotos;
+                        console.log(`[cargarTelas] CT ${idx}: Usando ct.fotos (${ct.fotos.length} items)`);
+                    } else if (ct.fotos_tela && Array.isArray(ct.fotos_tela) && ct.fotos_tela.length > 0) {
+                        fotosArray = ct.fotos_tela;
+                        console.log(`[cargarTelas] CT ${idx}: Usando ct.fotos_tela (${ct.fotos_tela.length} items)`);
+                    } else {
+                        console.log(`[cargarTelas] CT ${idx}: SIN FOTOS`);
+                    }
+                    
                     const transformed = {
                         id: ct.id,
                         nombre_tela: ct.tela_nombre || '(Sin nombre)',
                         color: ct.color_nombre || '(Sin color)',
                         referencia: ct.referencia || ct.tela_referencia || '',
-                        imagenes: ct.fotos_tela && Array.isArray(ct.fotos_tela) 
-                            ? ct.fotos_tela.map(foto => ({
-                                url: foto.ruta_webp || foto.ruta_original || foto.url,
-                                ruta_webp: foto.ruta_webp,
-                                ruta_original: foto.ruta_original,
-                                previewUrl: foto.ruta_webp || foto.ruta_original || foto.url
-                            }))
-                            : []
+                        imagenes: fotosArray.map(foto => ({
+                            url: foto.ruta_webp || foto.ruta_original || foto.url || '',
+                            ruta_webp: foto.ruta_webp || '',
+                            ruta_original: foto.ruta_original || '',
+                            previewUrl: foto.ruta_webp || foto.ruta_original || foto.url || ''
+                        }))
                     };
-                    console.log(`[cargarTelas] Tela ${idx} transformada:`, transformed);
+                    console.log(`[cargarTelas] Tela ${idx} transformada:`, {
+                        nombre: transformed.nombre_tela,
+                        color: transformed.color,
+                        fotosCount: transformed.imagenes.length,
+                        fotos: transformed.imagenes
+                    });
                     return transformed;
                 });
                 console.log('[cargarTelas] ✅ Transformación completada:', prenda.telasAgregadas);
-                console.log('[cargarTelas] telasAgregadas DESPUÉS:', JSON.stringify(prenda.telasAgregadas, null, 2));
             } else {
                 console.warn('[cargarTelas] ⚠️ No hay colores_telas para transformar');
+                prenda.telasAgregadas = [];
             }
         } else {
             console.log('[cargarTelas] ℹ️ telasAgregadas ya tiene datos, no transformar');

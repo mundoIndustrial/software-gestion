@@ -37,10 +37,10 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
      */
     protected function obtenerOpciones(): array
     {
-        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true');
+        Log::debug('[ObtenerProduccionPedidoUseCase] Opciones: incluirProcesos = true, incluirPrendas = true');
         
         return [
-            'incluirPrendas' => false,
+            'incluirPrendas' => true,  // ← AHORA INCLUYE PRENDAS PARA LA FACTURA EDITABLE
             'incluirEpps' => false,
             'incluirProcesos' => true,
             'incluirImagenes' => false,
@@ -52,7 +52,10 @@ class ObtenerProduccionPedidoUseCase extends AbstractObtenerUseCase
      */
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
-        return $datosEnriquecidos;
+        // Envolver respuesta para mantener compatibilidad con vistas que esperan estructura pedido.X
+        return [
+            'pedido' => $datosEnriquecidos
+        ];
     }
 }
 

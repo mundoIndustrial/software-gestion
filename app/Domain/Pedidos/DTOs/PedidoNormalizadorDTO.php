@@ -91,6 +91,8 @@ class PedidoNormalizadorDTO
             return [
                 'uid' => $prenda['uid'] ?? null,
                 'nombre_prenda' => trim($prenda['nombre_prenda'] ?? ''),
+                'descripcion' => trim($prenda['descripcion'] ?? ''),
+                'de_bodega' => isset($prenda['de_bodega']) ? (int)$prenda['de_bodega'] : 1,  // Default: 1 (bodega)
                 'cantidad_talla' => $prenda['cantidad_talla'] ?? [],
                 'variaciones' => $prenda['variaciones'] ?? [],
                 'telas' => self::normalizarTelas($prenda['telas'] ?? []),

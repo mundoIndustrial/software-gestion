@@ -28,6 +28,7 @@ class PedidoProduccionRepository
             'prendas.fotosTelas',
             'prendas.coloresTelas.color',  // NUEVO: Cargar colores y telas desde tabla intermedia
             'prendas.coloresTelas.tela',   // NUEVO: Cargar telas con sus detalles (nombre, referencia)
+            'prendas.coloresTelas.fotos', // NUEVO: Cargar fotos de telas para cada combinación color-tela
             'prendas.tallas',  // NUEVA: Cargar tallas relacionales
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
@@ -217,6 +218,7 @@ class PedidoProduccionRepository
                 $colores = [];
                 $telas = [];
                 $referencias = [];
+                $telasArray = []; // Array estructurado con telas, colores, referencias e imágenes - INICIALIZADO ANTES
                 
                 if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
                     foreach ($prenda->coloresTelas as $colorTela) {
@@ -252,10 +254,55 @@ class PedidoProduccionRepository
                                 $referencias[] = $telaReferencia;
                             }
                             
+                            // Procesar fotos de esta combinación color-tela
+                            $fotosColorTela = [];
+                            if ($colorTela->fotos && $colorTela->fotos->count() > 0) {
+                                foreach ($colorTela->fotos as $foto) {
+                                    $fotosColorTela[] = [
+                                        'id' => $foto->id,
+                                        'url' => $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->ruta_original ?? $foto->url),
+                                        'ruta' => $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->ruta_original ?? $foto->url),
+                                        'ruta_original' => $this->normalizarRutaImagen($foto->ruta_original ?? $foto->url),
+                                        'ruta_webp' => $this->normalizarRutaImagen($foto->ruta_webp ?? $foto->url),
+                                    ];
+                                }
+                            }
+                            
+                            // Agregar a array estructurado
+                            $telaItem = [
+                                'id' => $colorTela->id,
+                                'tela_id' => $colorTela->tela_id,
+                                'color_id' => $colorTela->color_id,
+                                'nombre' => $telaNombre,
+                                'tela_nombre' => $telaNombre,  // ALIAS para compatibilidad con frontend
+                                'referencia' => $telaReferencia,
+                                'tela_referencia' => $telaReferencia,  // ALIAS
+                                'color' => $colorTela->color ? ($colorTela->color->nombre ?? null) : null,
+                                'color_nombre' => $colorTela->color ? ($colorTela->color->nombre ?? null) : null,  // ALIAS
+                                'color_codigo' => $colorTela->color ? ($colorTela->color->codigo ?? null) : null,
+                                'fotos' => $fotosColorTela,
+                                'fotos_tela' => $fotosColorTela,  // ALIAS para compatibilidad
+                                'imagenes' => $fotosColorTela,  // ALIAS para compatibilidad
+                            ];
+                            
+                            // Buscar si ya existe esta tela en el array
+                            $telaExistente = false;
+                            foreach ($telasArray as $key => $item) {
+                                if ($item['tela_id'] == $colorTela->tela_id && $item['color_id'] == $colorTela->color_id) {
+                                    $telaExistente = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!$telaExistente) {
+                                $telasArray[] = $telaItem;
+                            }
+                            
                             \Log::info('[FACTURA-TELA] Agregada desde coloresTelas', [
                                 'tela_id' => $colorTela->tela_id,
                                 'nombre' => $telaNombre,
                                 'referencia' => $telaReferencia,
+                                'fotos_count' => count($fotosColorTela),
                             ]);
                         }
                     }
@@ -309,20 +356,16 @@ class PedidoProduccionRepository
                 // Obtener foto principal de prenda
                 $foto = $prenda->fotos ? $prenda->fotos->first() : null;
                 
-                // Obtener fotos de telas
+                // Array simple de todas las fotos de tela para compatibilidad (fallback)
                 $fotoTelas = [];
-                try {
-                    if ($prenda->fotosTelas) {
-                        $fotoTelas = $prenda->fotosTelas->map(fn($f) => [
-                            'id' => $f->id,
-                            'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
-                            'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
-                            'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
-                            'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
-                        ])->toArray();
-                    }
-                } catch (\Exception $e) {
-                    \Log::debug('[FACTURA] Error fotos telas', ['error' => $e->getMessage()]);
+                if ($prenda->fotosTelas) {
+                    $fotoTelas = $prenda->fotosTelas->map(fn($f) => [
+                        'id' => $f->id,
+                        'url' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
+                        'ruta' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->ruta_original ?? $f->url),
+                        'ruta_original' => $this->normalizarRutaImagen($f->ruta_original ?? $f->url),
+                        'ruta_webp' => $this->normalizarRutaImagen($f->ruta_webp ?? $f->url),
+                    ])->toArray();
                 }
                 
                 // Obtener todas las fotos de prenda
@@ -455,6 +498,9 @@ class PedidoProduccionRepository
                     'tela' => !empty($telas) ? implode(', ', $telas) : null,
                     'color' => !empty($colores) ? implode(', ', $colores) : null,
                     'ref' => !empty($referencias) ? implode(', ', $referencias) : null,
+                    'telas_array' => $telasArray, // Array estructurado con todas las telas, colores, refs e imágenes
+                    'colores_array' => $colores, // Array simple de colores
+                    'referencias_array' => $referencias, // Array simple de referencias
                     'tallas' => $tallasSimples, // SOLO TALLA Y CANTIDAD (para vistas simples)
                     'variantes' => $variantes_formateadas, // CON TODO (talla, cantidad, manga, broche, bolsillos, obs) para factura
                     'procesos' => $procesos,
@@ -471,6 +517,19 @@ class PedidoProduccionRepository
                     'telas_array' => $telas,
                     'colores_array' => $colores,
                     'referencias_array' => $referencias,
+                    'telas_count' => count($telasArray),
+                    'telas_estructurado' => $telasArray,
+                ]);
+                
+                // LOG CRÍTICO: Verificar exactamente qué se está mandando
+                \Log::warning('[FACTURA-PRENDA-DEBUG] VERIFICACIÓN COMPLETA DE DATOS', [
+                    'prenda_id' => $prenda->id,
+                    'prenda_nombre' => $prenda->nombre_prenda,
+                    'coloresTelas_count' => $prenda->coloresTelas ? $prenda->coloresTelas->count() : 0,
+                    'telas_array_count' => count($telasArray),
+                    'telas_array_full' => json_encode($telasArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                    'prendasFormato_telas_array_count' => count($prendasFormato['telas_array'] ?? []),
+                    'prendasFormato_telas_array_full' => json_encode($prendasFormato['telas_array'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 ]);
                 
                 \Log::info('[FACTURA] Prenda procesada', [
@@ -575,6 +634,12 @@ class PedidoProduccionRepository
                     'error' => $e->getMessage(),
                 ]);
             }
+
+            // LOG CRÍTICO FINAL: Verificar datos JUSTO ANTES DE RETORNAR
+            \Log::warning('[FACTURA-RETURN] DATOS FINALES ANTES DE RETORNAR AL CLIENTE', [
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'prendas_array' => json_encode($datos['prendas'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            ]);
 
             return $datos;
         } catch (\Exception $e) {

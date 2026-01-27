@@ -36,7 +36,11 @@ class PrendaFormCollector {
             // ============================================
             const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
             const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
-            const origen = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
+            const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
+            
+            // Convertir origen a de_bodega (boolean)
+            // 'bodega' -> true (de_bodega=1), 'confeccion' -> false (de_bodega=0)
+            const de_bodega = origenSelect?.toLowerCase() === 'bodega' ? 1 : 0;
 
             // Validar campos requeridos
             if (!nombre) {
@@ -115,7 +119,7 @@ class PrendaFormCollector {
                 tipo: 'prenda_nueva',
                 nombre_prenda: nombre,
                 descripcion: descripcion || '',
-                origen: origen,
+                de_bodega: de_bodega,  // 1 para bodega, 0 para confección
                 // Imágenes de prenda copiadas del storage
                 imagenes: imagenesCopia,
                 telasAgregadas: [],

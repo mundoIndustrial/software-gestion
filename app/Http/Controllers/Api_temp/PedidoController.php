@@ -483,7 +483,7 @@ class PedidoController extends Controller
         try {
             $pedido = \App\Models\PedidoProduccion::with([
                 'prendas.variantes',
-                'prendas.coloresTelas',
+                'prendas.coloresTelas.fotos',
                 'prendas.procesos.tipoProceso',
                 'prendas.fotos',
                 'prendas.telaFotos',

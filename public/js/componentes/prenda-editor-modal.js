@@ -495,14 +495,28 @@ function agregarFilaTela() {
     const numFila = filasTelas.children.length;
     
     const fila = document.createElement('div');
-    fila.style.cssText = 'display: grid; grid-template-columns: 0.5fr 0.5fr 0.5fr 0.3fr; gap: 0.5rem; margin-bottom: 0.5rem;';
+    fila.style.cssText = 'display: grid; grid-template-columns: 0.5fr 0.5fr 0.5fr 0.2fr 0.3fr; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;';
     fila.className = 'fila-tela';
     fila.innerHTML = `
         <input type="text" class="tela-name" placeholder="Nombre tela" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem;">
         <input type="text" class="tela-color" placeholder="Color" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem;">
         <input type="text" class="tela-ref" placeholder="Referencia" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem;">
+        <div style="position: relative; display: flex; align-items: center; gap: 0.25rem;">
+            <input type="file" class="tela-imagen" accept="image/*" style="display: none; width: 100%;" title="Cargar imagen de tela">
+            <button type="button" class="btn-cargar-imagen-tela" onclick="document.currentScript.parentElement.querySelector('.tela-imagen').click()" style="background: #3b82f6; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">📷 Imagen</button>
+            <span class="tela-imagen-nombre" style="font-size: 0.75rem; color: #666; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+        </div>
         <button type="button" class="btn-eliminar-fila-tela" onclick="eliminarFilaTela(this)" style="background: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">✕</button>
     `;
+    
+    // Agregar event listener al input file para mostrar el nombre
+    const inputFile = fila.querySelector('.tela-imagen');
+    const spanNombre = fila.querySelector('.tela-imagen-nombre');
+    inputFile.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            spanNombre.textContent = this.files[0].name;
+        }
+    });
     
     filasTelas.appendChild(fila);
 }

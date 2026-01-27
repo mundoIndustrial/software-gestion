@@ -137,11 +137,71 @@ abstract class AbstractObtenerUseCase
                 },
                 'tallas',
                 'variantes',
-                'coloresTelas',
+                'coloresTelas' => function ($q) {
+                    $q->with(['color', 'tela', 'fotos']);
+                },
                 'fotos'
             ])
             ->get()
             ->toArray();
+
+        // Agregar telas_array a cada prenda construido desde coloresTelas
+        foreach ($prendas as &$prenda) {
+            $telasArray = [];
+            
+            // DEBUG: Verificar cuál es la clave exacta en el array
+            $coloresTelasKey = null;
+            if (isset($prenda['colores_telas'])) {
+                $coloresTelasKey = 'colores_telas';
+            } elseif (isset($prenda['coloresTelas'])) {
+                $coloresTelasKey = 'coloresTelas';
+            }
+            
+            \Log::debug('[obtenerPrendas] Buscando colores_telas', [
+                'prenda_id' => $prenda['id'],
+                'claves_disponibles' => array_keys($prenda),
+                'clave_encontrada' => $coloresTelasKey,
+                'tiene_colores_telas' => isset($prenda['colores_telas']),
+                'tiene_coloresTelas' => isset($prenda['coloresTelas'])
+            ]);
+            
+            if ($coloresTelasKey && isset($prenda[$coloresTelasKey]) && is_array($prenda[$coloresTelasKey])) {
+                foreach ($prenda[$coloresTelasKey] as $colorTela) {
+                    $telaNombre = $colorTela['tela']['nombre'] ?? 'N/A';
+                    $colorNombre = $colorTela['color']['nombre'] ?? 'N/A';
+                    $telaReferencia = $colorTela['tela']['referencia'] ?? 'N/A';
+                    
+                    // Obtener fotos del color-tela
+                    $fotos = [];
+                    if (isset($colorTela['fotos']) && is_array($colorTela['fotos'])) {
+                        foreach ($colorTela['fotos'] as $foto) {
+                            $fotos[] = [
+                                'id' => $foto['id'],
+                                'ruta_webp' => $foto['ruta_webp'] ?? $foto['ruta_original'] ?? '',
+                                'ruta_original' => $foto['ruta_original'] ?? '',
+                                'url' => $foto['url'] ?? $foto['ruta_webp'] ?? $foto['ruta_original'] ?? '',
+                                'orden' => $foto['orden'] ?? 1
+                            ];
+                        }
+                    }
+                    
+                    $telasArray[] = [
+                        'nombre' => $telaNombre,
+                        'color' => $colorNombre,
+                        'referencia' => $telaReferencia,
+                        'imagenes' => $fotos
+                    ];
+                }
+                
+                \Log::debug('[obtenerPrendas] telas_array construido', [
+                    'prenda_id' => $prenda['id'],
+                    'cantidad_telas' => count($telasArray),
+                    'telas' => $telasArray
+                ]);
+            }
+            
+            $prenda['telas_array'] = $telasArray;
+        }
 
         return $prendas;
     }

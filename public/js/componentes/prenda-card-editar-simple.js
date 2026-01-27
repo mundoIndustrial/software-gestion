@@ -14,6 +14,12 @@
 function generarHTMLDatosPrenda(prenda) {
     let html = '';
     
+    console.log('[generarHTMLDatosPrenda] 📋 Iniciando generación de HTML para prenda:', {
+        nombre: prenda.nombre_prenda,
+        colores_telas_count: prenda.colores_telas ? prenda.colores_telas.length : 0,
+        colores_telas: prenda.colores_telas,
+    });
+    
     // ===== TALLAS POR GÉNERO =====
     if ((prenda.tallas_dama && prenda.tallas_dama.length > 0) || (prenda.tallas_caballero && prenda.tallas_caballero.length > 0)) {
         html += '<div style="margin: 20px 0; padding: 15px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">';
@@ -45,10 +51,27 @@ function generarHTMLDatosPrenda(prenda) {
     
     // ===== COLORES Y TELAS =====
     if (prenda.colores_telas && prenda.colores_telas.length > 0) {
+        console.log('[generarHTMLDatosPrenda] 🎨 Renderizando colores y telas:', {
+            count: prenda.colores_telas.length,
+            items: prenda.colores_telas.map(ct => ({
+                id: ct.id,
+                color: ct.color_nombre,
+                tela: ct.tela_nombre,
+                fotos_count: ct.fotos ? ct.fotos.length : (ct.fotos_tela ? ct.fotos_tela.length : 0),
+            }))
+        });
+        
         html += '<div style="margin: 20px 0; padding: 15px; background: #fef3f2; border-radius: 8px; border-left: 4px solid #ef4444;">';
         html += '<h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">🎨 Colores y Telas</h4>';
         
         prenda.colores_telas.forEach((ct, idx) => {
+            console.log(`[generarHTMLDatosPrenda] Tela ${idx}:`, {
+                id: ct.id,
+                color_nombre: ct.color_nombre,
+                tela_nombre: ct.tela_nombre,
+                fotos: ct.fotos || ct.fotos_tela,
+            });
+            
             html += '<div style="margin-bottom: 12px; padding: 10px; background: white; border-radius: 6px;">';
             html += `<div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">`;
             
@@ -66,14 +89,22 @@ function generarHTMLDatosPrenda(prenda) {
             html += '</div></div>';
             
             // Fotos de tela
-            if (ct.fotos_tela && ct.fotos_tela.length > 0) {
+            if ((ct.fotos && ct.fotos.length > 0) || (ct.fotos_tela && ct.fotos_tela.length > 0)) {
+                const fotosArray = ct.fotos || ct.fotos_tela || [];
+                console.log(`[generarHTMLDatosPrenda] Tela ${idx} tiene ${fotosArray.length} fotos:`, fotosArray);
+                
                 html += '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">';
-                ct.fotos_tela.forEach(foto => {
-                    if (foto.url) {
-                        html += `<img src="${foto.url}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.open('${foto.url}', '_blank')" title="Ver foto">`;
+                fotosArray.forEach((foto, fotoIdx) => {
+                    const urlFoto = foto.url || foto.ruta_webp || foto.ruta_original || '';
+                    console.log(`[generarHTMLDatosPrenda] Foto ${fotoIdx}: ${urlFoto}`);
+                    
+                    if (urlFoto) {
+                        html += `<img src="${urlFoto}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.open('${urlFoto}', '_blank')" title="Ver foto">`;
                     }
                 });
                 html += '</div>';
+            } else {
+                console.log(`[generarHTMLDatosPrenda] Tela ${idx} NO tiene fotos`);
             }
             html += '</div>';
         });

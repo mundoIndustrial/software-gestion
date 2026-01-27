@@ -366,6 +366,24 @@ class AsesoresController extends Controller
             // Usar el nuevo Use Case DDD
             $pedidoData = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
 
+            // DEBUG: Verificar telas_array en show()
+            \Log::warning('╔═══ [SHOW - ANTES DE VISTA] ═══╗', [
+                'pedidoData_keys' => is_array($pedidoData) ? array_keys($pedidoData) : 'not_array',
+                'tiene_pedido_key' => isset($pedidoData['pedido']),
+            ]);
+            
+            $datosEnriquecidos = isset($pedidoData['pedido']) ? $pedidoData['pedido'] : $pedidoData;
+            
+            if (isset($datosEnriquecidos['prendas']) && count($datosEnriquecidos['prendas']) > 0) {
+                $prenda0 = $datosEnriquecidos['prendas'][0];
+                \Log::warning('╚═══ SHOW - PRENDA 0 FINAL ═══╝', [
+                    'prenda_keys' => array_keys($prenda0),
+                    'tiene_telas_array' => isset($prenda0['telas_array']),
+                    'cantidad_telas_array' => isset($prenda0['telas_array']) ? count($prenda0['telas_array']) : 0,
+                    'telas_array' => $prenda0['telas_array'] ?? 'NULL'
+                ]);
+            }
+
             return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -382,18 +400,34 @@ class AsesoresController extends Controller
             $dto = ObtenerProduccionPedidoDTO::fromRequest((string)$id);
 
             // Usar el nuevo Use Case DDD
-            $pedidoModel = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
-            $datos = $pedidoModel; // Ya obtenemos los datos del Use Case
+            $respuesta = $this->obtenerProduccionPedidoUseCase->ejecutar($dto);
             
-            \Log::info('[AsesoresController.edit] Datos obtenidos para editar', [
-                'pedidoId' => $id,
-                'tipo_dato' => gettype($datos),
-                'tiene_procesos' => isset($datos['procesos']) ? count($datos['procesos']) : 0
+            // Extraer el modelo del pedido envuelto por UseCase
+            $datosEnriquecidos = isset($respuesta['pedido']) ? $respuesta['pedido'] : $respuesta;
+            
+            // Para obtener el modelo Eloquent real
+            $pedidoModel = \App\Models\PedidoProduccion::find($id);
+            
+            // DEBUG: Verificar que telas_array está en los datos JUSTO ANTES de enviar a vista
+            \Log::warning('╔═══ [ANTES DE ENVIAR A VISTA] ═══╗', [
+                'respuesta_keys' => array_keys($respuesta),
+                'tiene_pedido_key' => isset($respuesta['pedido']),
+                'prendas_count' => isset($datosEnriquecidos['prendas']) ? count($datosEnriquecidos['prendas']) : 0
             ]);
+            
+            if (isset($datosEnriquecidos['prendas']) && count($datosEnriquecidos['prendas']) > 0) {
+                $prenda0 = $datosEnriquecidos['prendas'][0];
+                \Log::warning('╚═══ PRENDA 0 FINAL ═══╝', [
+                    'prenda_keys' => array_keys($prenda0),
+                    'tiene_telas_array' => isset($prenda0['telas_array']),
+                    'cantidad_telas_array' => isset($prenda0['telas_array']) ? count($prenda0['telas_array']) : 0,
+                    'telas_array' => $prenda0['telas_array'] ?? 'NULL'
+                ]);
+            }
 
             return view('asesores.pedidos.editar-pedido', [
                 'pedido' => $pedidoModel,
-                'pedidoData' => $datos,
+                'pedidoData' => $respuesta,  // Envía la estructura completa con 'pedido' adentro
             ]);
         } catch (\Exception $e) {
             \Log::error('[AsesoresController.edit] Error', ['error' => $e->getMessage()]);
@@ -647,6 +681,8 @@ class AsesoresController extends Controller
      */
     public function obtenerDatosFactura($id)
     {
+        \Log::warning('⚠️⚠️⚠️ [CONTROLLER-FACTURA] ENDPOINT LLAMADO ⚠️⚠️⚠️', ['pedido_id' => $id]);
+        
         try {
             \Log::info('[CONTROLLER-FACTURA] Obteniendo datos de factura para pedido: ' . $id);
             
@@ -661,6 +697,19 @@ class AsesoresController extends Controller
                 'prendas_count' => count($datos['prendas'] ?? []),
                 'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
             ]);
+            
+            // LOG CRÍTICO ANTES DE ENVIAR JSON
+            if (!empty($datos['prendas'])) {
+                foreach ($datos['prendas'] as $idx => $prenda) {
+                    \Log::warning('[CONTROLLER-FACTURA-TELAS] Verificación ANTES de JSON', [
+                        'prenda_idx' => $idx,
+                        'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
+                        'tiene_telas_array' => isset($prenda['telas_array']),
+                        'telas_array_count' => count($prenda['telas_array'] ?? []),
+                        'telas_array_full' => json_encode($prenda['telas_array'] ?? []),
+                    ]);
+                }
+            }
             
             return response()->json($datos);
         } catch (\Exception $e) {

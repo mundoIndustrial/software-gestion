@@ -29,6 +29,20 @@ class ObtenerFacturaUseCase
                 'prendas_count' => count($datos['prendas'] ?? []),
                 'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
             ]);
+            
+            // LOG CRÍTICO: Verificar telas_array en cada prenda
+            if (!empty($datos['prendas'])) {
+                foreach ($datos['prendas'] as $idx => $prenda) {
+                    Log::warning('[FACTURA-USECASE-TELAS] Prenda ' . $idx . ' tiene telas_array', [
+                        'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
+                        'telas_array_count' => count($prenda['telas_array'] ?? []),
+                        'telas_array' => $prenda['telas_array'] ?? [],
+                        'tela_simple' => $prenda['tela'] ?? null,
+                        'color_simple' => $prenda['color'] ?? null,
+                        'ref_simple' => $prenda['ref'] ?? null,
+                    ]);
+                }
+            }
 
             return $datos;
         } catch (\Exception $e) {
