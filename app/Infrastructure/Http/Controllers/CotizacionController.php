@@ -2371,39 +2371,49 @@ final class CotizacionController extends Controller
                                     
                                     $rutaGuardar = null;
                                     
-                                    // Si es imagen del PASO 2, usar la ruta directamente
+                                    // ✅ IMPORTANTE: Solo guardar imágenes del PASO 2 que tienen ruta guardada en BD
+                                    // Las imágenes del PASO 4 (nuevas) se procesan SOLO desde FormData, NO del JSON
+                                    // El JSON contiene preview (base64) que NUNCA debe guardarse directamente
+                                    
                                     if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
                                         $rutaGuardar = $imagen['ruta'];
                                         \Log::info('📸 Reflectivo: Imagen del PASO 2 detectada', [
                                             'prenda' => $prenda->nombre_producto,
                                             'ruta' => $rutaGuardar,
                                         ]);
-                                    }
-                                    // Si es imagen nueva del PASO 4, procesar el archivo
-                                    elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso4' && isset($imagen['file'])) {
-                                        // La imagen ya fue procesada en FormData como archivo
-                                        // Aquí procesamos las rutas que se reciben
-                                        \Log::info('📸 Reflectivo: Imagen del PASO 4 detectada', [
+                                    } elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso4') {
+                                        // ✅ Las imágenes del PASO 4 DEBEN procesarse desde FormData (archivos)
+                                        // NO desde el JSON que contiene base64
+                                        \Log::info('📸 Reflectivo: Imagen del PASO 4 - Será procesada desde FormData', [
                                             'prenda' => $prenda->nombre_producto,
-                                            'tipo' => isset($imagen['file']) ? 'archivo' : 'ruta',
+                                            'es_archivo' => isset($imagen['file']) ? 'SÍ' : 'NO (será procesada desde FormData)',
                                         ]);
+                                        // NO asignar $rutaGuardar aquí - dejar que se procese desde FormData
+                                        continue;
                                     }
                                     
-                                    // Guardar la ruta en reflectivo_fotos_cotizacion
+                                    // Guardar la ruta en reflectivo_fotos_cotizacion (solo PASO 2)
                                     if ($rutaGuardar) {
-                                        $reflectivoCotizacion->fotos()->create([
-                                            'ruta_original' => $rutaGuardar,
-                                            'ruta_webp' => $rutaGuardar,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                        
-                                        \Log::info(' Reflectivo foto guardada en BD', [
-                                            'reflectivo_id' => $reflectivoCotizacion->id,
-                                            'ruta' => $rutaGuardar,
-                                            'orden' => $ordenFoto,
-                                        ]);
-                                        
-                                        $ordenFoto++;
+                                        try {
+                                            $reflectivoCotizacion->fotos()->create([
+                                                'ruta_original' => $rutaGuardar,
+                                                'ruta_webp' => $rutaGuardar,
+                                                'orden' => $ordenFoto,
+                                            ]);
+                                            
+                                            \Log::info(' Reflectivo foto (PASO 2) guardada en BD', [
+                                                'reflectivo_id' => $reflectivoCotizacion->id,
+                                                'ruta' => $rutaGuardar,
+                                                'orden' => $ordenFoto,
+                                            ]);
+                                            
+                                            $ordenFoto++;
+                                        } catch (\Exception $e) {
+                                            \Log::error(' Error guardando foto de reflectivo del PASO 2', [
+                                                'reflectivo_id' => $reflectivoCotizacion->id,
+                                                'error' => $e->getMessage()
+                                            ]);
+                                        }
                                     }
                                 }
                                 break;
