@@ -68,13 +68,20 @@ class CargadorPrendasCotizacion {
             console.log(`  [Proceso] ${tipoProceso}:`, {
                 ubicaciones: procesoData.ubicaciones,
                 imagenes: procesoData.imagenes?.length || 0,
-                observaciones: procesoData.observaciones
+                observaciones: procesoData.observaciones,
+                variaciones_prenda: !!procesoData.variaciones_prenda,
+                talla_cantidad: !!procesoData.talla_cantidad
             });
 
             procesosCompletos[tipoProceso] = {
                 tipo: procesoData.tipo || tipoProceso,
+                slug: procesoData.slug || tipoProceso,  // Agregar slug si viene
                 ubicaciones: procesoData.ubicaciones || [],
                 observaciones: procesoData.observaciones || '',
+                // NUEVO: Procesar variaciones de prenda
+                variaciones_prenda: procesoData.variaciones_prenda || {},
+                // NUEVO: Procesar talla cantidad desde técnicas de logo
+                talla_cantidad: procesoData.talla_cantidad || {},
                 imagenes: (procesoData.imagenes || []).map(img => ({
                     ruta: img.ruta || img,
                     ruta_webp: img.ruta_webp || null,
@@ -444,6 +451,15 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     // Pero con todos los datos precargados
                     window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
                     console.log('[abrirSelectorPrendasCotizacion] ✓ Prenda cargada en modal para edición');
+                    
+                    // NUEVO: Cargar procesos automáticamente desde la prenda
+                    console.log('[abrirSelectorPrendasCotizacion] 🔧 Cargando procesos desde la cotización...');
+                    if (prendaCompleta.procesos && Object.keys(prendaCompleta.procesos).length > 0) {
+                        window.gestionItemsUI.prendaEditor.cargarProcesos(prendaCompleta);
+                        console.log('[abrirSelectorPrendasCotizacion] ✓ Procesos cargados:', Object.keys(prendaCompleta.procesos));
+                    } else {
+                        console.log('[abrirSelectorPrendasCotizacion] ℹ️ No hay procesos definidos para esta prenda');
+                    }
                 } else {
                     console.error('[abrirSelectorPrendasCotizacion] ❌ PrendaEditor no disponible');
                     alert('❌ Error: No se pudo abrir el editor de prendas');

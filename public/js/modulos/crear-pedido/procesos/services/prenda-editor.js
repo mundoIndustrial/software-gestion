@@ -799,12 +799,15 @@ class PrendaEditor {
                 // Si viene de BD, proceso es {...}
                 const datosReales = proceso.datos ? proceso.datos : proceso;
                 
-                // El backend retorna 'tipo' directamente (ej: 'Reflectivo')
+                // El backend retorna 'tipo' directamente (ej: 'Bordado')
+                // También puede traer 'slug' para facilitar la identificación
                 const tipoBackend = datosReales.tipo || datosReales.tipo_proceso || datosReales.nombre || `Proceso ${idx}`;
-                const tipoProceso = tipoBackend.toLowerCase().replace(/\s+/g, '-');
+                const slugDirecto = datosReales.slug || null;  // Si viene el slug directamente
+                const tipoProceso = slugDirecto || tipoBackend.toLowerCase().replace(/\s+/g, '-');
                 
                 console.log(`📌 [CARGAR-PROCESOS] Procesando [${idx}] tipo="${tipoProceso}"`, {
                     tipoBackend: tipoBackend,
+                    slug: slugDirecto,
                     nombreProceso: datosReales.nombre_proceso,
                     tipoProceso: datosReales.tipo_proceso,
                     nombre: datosReales.nombre,
@@ -854,6 +857,10 @@ class PrendaEditor {
                     ubicaciones: ubicacionesFormato,
                     observaciones: datosReales.observaciones || '',
                     tallas: tallasFormato,
+                    // NUEVO: Variaciones de prenda (ej: manga, bolsillos, broche)
+                    variaciones_prenda: datosReales.variaciones_prenda || {},
+                    // NUEVO: Talla cantidad desde técnicas de logo
+                    talla_cantidad: datosReales.talla_cantidad || {},
                     imagenes: (datosReales.imagenes || []).map(img => {
                         // Extraer URL de imagen, manejando distintos formatos
                         if (typeof img === 'string') {
