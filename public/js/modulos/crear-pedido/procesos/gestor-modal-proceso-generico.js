@@ -1015,11 +1015,18 @@ window.agregarProcesoAlPedido = function() {
             ubicaciones: window.ubicacionesProcesoSeleccionadas,
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
-                dama: window.tallasCantidadesProceso?.dama || {},
-                caballero: window.tallasCantidadesProceso?.caballero || {}
+                dama: { ...window.tallasCantidadesProceso?.dama } || {},
+                caballero: { ...window.tallasCantidadesProceso?.caballero } || {}
             },
             imagenes: imagenesValidas // Array de imágenes
         };
+        
+        console.log('[agregarProcesoAlPedido] Datos capturados:', {
+            tipo: procesoActual,
+            tallas: datos.tallas,
+            tallasCantidadesProceso: window.tallasCantidadesProceso,
+            tieneUbicaciones: ubicacionesProcesoSeleccionadas.length > 0
+        });
         
         // NUEVO: DIFERENCIAR ENTRE CREACIÓN Y EDICIÓN
         if (modoActual === 'crear') {
@@ -1039,10 +1046,10 @@ window.agregarProcesoAlPedido = function() {
             // Asignar los datos capturados
             window.procesosSeleccionados[procesoActual].datos = datos;
             
-            // NUEVO: Renderizar tarjetas de procesos en el modal de prenda
-            if (window.renderizarTarjetasProcesos) {
-                window.renderizarTarjetasProcesos();
-            }
+            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en window.procesosSeleccionados:', {
+                tipo: procesoActual,
+                datosGuardados: window.procesosSeleccionados[procesoActual].datos
+            });
             
         } else if (modoActual === 'editar') {
             // EDICIÓN: Usar el nuevo sistema de ProcesosEditor
@@ -1079,6 +1086,29 @@ window.agregarProcesoAlPedido = function() {
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);
+        
+        // ✅ CRÍTICO: Renderizar DESPUÉS de cerrar el modal para garantizar DOM actualizado
+        // Se llama SIEMPRE para ambos modos, pero con lógica diferente
+        if (window.renderizarTarjetasProcesos) {
+            // Pequeño delay para garantizar que el modal se ha cerrado y el DOM está actualizado
+            setTimeout(() => {
+                console.log('🎨 [agregarProcesoAlPedido] Renderizando tarjetas con retry...');
+                window.renderizarTarjetasProcesos();
+                
+                // VERIFICACIÓN: Confirmar que se renderizó correctamente
+                setTimeout(() => {
+                    const container = document.getElementById('contenedor-tarjetas-procesos');
+                    if (container) {
+                        const tarjetas = container.querySelectorAll('[data-tipo-proceso]');
+                        console.log(`✅ [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
+                        if (tarjetas.length === 0) {
+                            console.warn(' [agregarProcesoAlPedido-VERIFY] ⚠️ NO se encontraron tarjetas. Re-renderizando...');
+                            window.renderizarTarjetasProcesos();
+                        }
+                    }
+                }, 100);
+            }, 50);
+        }
         
         // Actualizar resumen en prenda modal
         if (window.actualizarResumenProcesos) {

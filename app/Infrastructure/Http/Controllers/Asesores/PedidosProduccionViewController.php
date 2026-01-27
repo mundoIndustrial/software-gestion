@@ -579,7 +579,12 @@ class PedidosProduccionViewController
                             },
                             'tallas:id,prenda_cot_id,talla',
                             'prendaCotReflectivo:id,prenda_cot_id,ubicaciones',
-                            'logoCotizacionesTecnicas:id,prenda_cot_id,ubicaciones,observaciones'
+                            'logoCotizacionesTecnicas' => function($q) {
+                                $q->with([
+                                    'tipoLogo:id,nombre',
+                                    'fotos:id,logo_cotizacion_tecnica_prenda_id,ruta_original,ruta_webp,ruta_miniatura,orden'
+                                ]);
+                            }
                         ]);
                 }
             ])->find($cotizacionId);
@@ -756,58 +761,112 @@ class PedidosProduccionViewController
                 ];
             }
 
-            // PROCESAR LOGO
+            // PROCESAR TÉCNICAS DE LOGO (Bordado, Estampado, DTF, Sublimado, etc)
+            // MODIFICADO: Procesar TODAS las técnicas, no solo la primera
             if ($prenda->logoCotizacionesTecnicas && count($prenda->logoCotizacionesTecnicas) > 0) {
-                $logoTecnica = $prenda->logoCotizacionesTecnicas[0];
-                $ubicacionesLogo = [];
-                
-                $ubicacionesRaw = $logoTecnica->ubicaciones ?? null;
-                
-                if ($ubicacionesRaw) {
-                    if (is_string($ubicacionesRaw)) {
-                        $ubicacionesRaw = json_decode($ubicacionesRaw, true);
-                    }
-                    if (is_string($ubicacionesRaw)) {
-                        $ubicacionesRaw = json_decode($ubicacionesRaw, true);
-                    }
+                // Usar los datos ya cargados en la relación (sin hacer query adicional)
+                foreach ($prenda->logoCotizacionesTecnicas as $logoTecnica) {
+                    // Obtener nombre técnico (Bordado, Estampado, DTF, Sublimado, etc)
+                    $nombreTecnica = $logoTecnica->tipoLogo ? $logoTecnica->tipoLogo->nombre : 'Técnica desconocida';
+                    // Generar slug desde el nombre (ej: "BORDADO" -> "bordado")
+                    $slugTecnica = strtolower(str_replace(' ', '-', $nombreTecnica));
                     
-                    if (is_array($ubicacionesRaw)) {
-                        foreach ($ubicacionesRaw as $ub) {
-                            if (is_array($ub)) {
-                                $ubicacionesLogo[] = [
-                                    'ubicacion' => $ub['ubicacion'] ?? '',
-                                    'descripcion' => $ub['descripcion'] ?? ''
-                                ];
+                    // Procesar ubicaciones
+                    $ubicacionesLogo = [];
+                    $ubicacionesRaw = $logoTecnica->ubicaciones ?? null;
+                    
+                    if ($ubicacionesRaw) {
+                        if (is_string($ubicacionesRaw)) {
+                            $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                        }
+                        if (is_string($ubicacionesRaw)) {
+                            $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                        }
+                        
+                        if (is_array($ubicacionesRaw)) {
+                            foreach ($ubicacionesRaw as $ub) {
+                                if (is_array($ub)) {
+                                    $ubicacionesLogo[] = [
+                                        'ubicacion' => $ub['ubicacion'] ?? '',
+                                        'descripcion' => $ub['descripcion'] ?? ''
+                                    ];
+                                } elseif (is_string($ub)) {
+                                    // Si es string simple, agregar como ubicación
+                                    $ubicacionesLogo[] = [
+                                        'ubicacion' => $ub,
+                                        'descripcion' => ''
+                                    ];
+                                }
                             }
                         }
                     }
-                }
-                
-                $fotosLogo = \DB::table('logo_fotos_cot')
-                    ->where('logo_cotizacion_id', $logoTecnica->id)
-                    ->orderBy('orden')
-                    ->get();
-                
-                $fotosLogoFormato = [];
-                foreach ($fotosLogo as $foto) {
-                    $ruta = $foto->ruta_webp ?? $foto->ruta_original;
-                    if ($ruta && !str_starts_with($ruta, '/')) {
-                        $ruta = '/storage/' . $ruta;
+                    
+                    // Procesar fotos de la técnica (desde la relación ya cargada)
+                    $fotosLogoFormato = [];
+                    if ($logoTecnica->fotos && count($logoTecnica->fotos) > 0) {
+                        foreach ($logoTecnica->fotos as $foto) {
+                            $rutaOriginal = $foto->ruta_original;
+                            $rutaWebp = $foto->ruta_webp;
+                            $rutaMiniatura = $foto->ruta_miniatura;
+                            
+                            // Agregar /storage/ si no lo tiene ya
+                            if ($rutaOriginal && !str_starts_with($rutaOriginal, '/')) {
+                                $rutaOriginal = '/storage/' . $rutaOriginal;
+                            }
+                            if ($rutaWebp && !str_starts_with($rutaWebp, '/')) {
+                                $rutaWebp = '/storage/' . $rutaWebp;
+                            }
+                            if ($rutaMiniatura && !str_starts_with($rutaMiniatura, '/')) {
+                                $rutaMiniatura = '/storage/' . $rutaMiniatura;
+                            }
+                            
+                            $fotosLogoFormato[] = [
+                                'ruta' => $rutaOriginal,
+                                'ruta_webp' => $rutaWebp,
+                                'ruta_miniatura' => $rutaMiniatura,
+                                'orden' => $foto->orden ?? 0
+                            ];
+                        }
                     }
                     
-                    $fotosLogoFormato[] = [
-                        'ruta' => $ruta,
-                        'ruta_webp' => $foto->ruta_webp ? '/storage/' . $foto->ruta_webp : null,
-                        'orden' => $foto->orden
+                    // Procesar variaciones de prenda (si existen)
+                    $variacionesPrenda = [];
+                    if ($logoTecnica->variaciones_prenda) {
+                        $variacionesRaw = is_string($logoTecnica->variaciones_prenda) 
+                            ? json_decode($logoTecnica->variaciones_prenda, true) 
+                            : $logoTecnica->variaciones_prenda;
+                        
+                        if (is_array($variacionesRaw)) {
+                            $variacionesPrenda = $variacionesRaw;
+                        }
+                    }
+                    
+                    // Procesar tallas
+                    $tallasFormatoProceso = [];
+                    if ($logoTecnica->talla_cantidad) {
+                        $tallaCantidad = is_array($logoTecnica->talla_cantidad) 
+                            ? $logoTecnica->talla_cantidad 
+                            : json_decode($logoTecnica->talla_cantidad, true);
+                        
+                        if (is_array($tallaCantidad)) {
+                            foreach ($tallaCantidad as $talla => $cantidad) {
+                                $tallasFormatoProceso[$talla] = $cantidad;
+                            }
+                        }
+                    }
+                    
+                    // Agregar técnica al array de procesos
+                    // Usar el slug como clave para facilitar acceso en JS
+                    $procesosFormato[$slugTecnica] = [
+                        'tipo' => $nombreTecnica,
+                        'slug' => $slugTecnica,
+                        'ubicaciones' => $ubicacionesLogo,
+                        'imagenes' => $fotosLogoFormato,
+                        'observaciones' => $logoTecnica->observaciones ?? '',
+                        'variaciones_prenda' => $variacionesPrenda,
+                        'talla_cantidad' => $tallasFormatoProceso
                     ];
                 }
-                
-                $procesosFormato['logo'] = [
-                    'tipo' => 'Logo / Estampado',
-                    'ubicaciones' => $ubicacionesLogo,
-                    'imagenes' => $fotosLogoFormato,
-                    'observaciones' => $logoTecnica->observaciones ?? ''
-                ];
             }
 
             // Retornar respuesta completa

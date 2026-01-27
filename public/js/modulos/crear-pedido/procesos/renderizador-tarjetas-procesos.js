@@ -29,12 +29,19 @@ window.renderizarTarjetasProcesos = function() {
     
     if (!container) {
         console.error(' [RENDER-PROCESOS] No se encontró contenedor');
-        return;
+        return false;
     }
 
     // Obtener procesos configurados
     const procesos = window.procesosSeleccionados || {};
-    const procesosConDatos = Object.keys(procesos).filter(tipo => procesos[tipo]?.datos);
+    
+    // Filtrar procesos que tengan datos (objeto no null)
+    // Ser más permisivo: incluir incluso si datos es un objeto vacío
+    const procesosConDatos = Object.keys(procesos).filter(tipo => {
+        const tieneDatos = procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
+        console.log(`  [FILTER-PROCESOS] ${tipo}: tieneDatos=${tieneDatos}, datos=${JSON.stringify(procesos[tipo]?.datos || 'undefined')}`);
+        return tieneDatos;
+    });
     
     console.log('📊 [RENDER-PROCESOS] Procesos encontrados:', procesosConDatos, {
         total: procesosConDatos.length,
@@ -50,7 +57,7 @@ window.renderizarTarjetasProcesos = function() {
             </div>
         `;
         container.style.display = 'block';
-        return;
+        return false;
     }
     
     // Renderizar cada proceso como tarjeta
@@ -62,8 +69,18 @@ window.renderizarTarjetasProcesos = function() {
     });
 
     container.innerHTML = html;
+    
+    // Añadir atributo data-tipo-proceso a las tarjetas para debugging
+    container.querySelectorAll('.tarjeta-proceso').forEach(tarjeta => {
+        const tipoMatch = tarjeta.className.match(/tipo-([a-z]+)/);
+        if (tipoMatch) {
+            tarjeta.setAttribute('data-tipo-proceso', tipoMatch[1]);
+        }
+    });
+    
     container.style.display = 'block';
     console.log('✅ [RENDER-PROCESOS] Renderizado completado');
+    return true;
 };
 
 /**
