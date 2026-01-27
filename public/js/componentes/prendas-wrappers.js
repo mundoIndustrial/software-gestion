@@ -240,7 +240,7 @@ window.manejarImagenesPrenda = function(input) {
  * Usa window.imagenesPrendaStorage para obtener las imágenes
  */
 window.actualizarPreviewPrenda = function() {
-
+    console.log('[actualizarPreviewPrenda] 🎬 Iniciando actualización del preview');
     
     try {
         // Obtener elementos del DOM
@@ -248,23 +248,31 @@ window.actualizarPreviewPrenda = function() {
         const contador = document.getElementById('nueva-prenda-foto-contador');
         const btn = document.getElementById('nueva-prenda-foto-btn');
         
+        console.log('[actualizarPreviewPrenda] 🔍 Elementos DOM:', {
+            preview: preview ? 'ENCONTRADO' : 'NO ENCONTRADO',
+            contador: contador ? 'ENCONTRADO' : 'NO ENCONTRADO',
+            btn: btn ? 'ENCONTRADO' : 'NO ENCONTRADO'
+        });
+        
         if (!preview) {
-
+            console.warn('[actualizarPreviewPrenda] ⚠️ Preview element no encontrado');
             return;
         }
         
         // Verificar que el servicio existe
         if (!window.imagenesPrendaStorage) {
-
+            console.warn('[actualizarPreviewPrenda] ⚠️ imagenesPrendaStorage no disponible');
             return;
         }
         
         // Obtener imágenes
         const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+        console.log('[actualizarPreviewPrenda] 📦 Imágenes cargadas:', imagenes.length);
 
         
         // Si no hay imágenes, mostrar placeholder
         if (imagenes.length === 0) {
+            console.log('[actualizarPreviewPrenda] 📭 Sin imágenes, mostrando placeholder');
             preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
             preview.style.cursor = 'pointer';
             if (contador) contador.textContent = '';
@@ -273,12 +281,15 @@ window.actualizarPreviewPrenda = function() {
         }
         
         // Mostrar primera imagen
+        console.log('[actualizarPreviewPrenda] 🖼️ Mostrando primera imagen');
         preview.innerHTML = '';
         preview.style.cursor = 'pointer';
         
         const img = document.createElement('img');
         img.src = imagenes[0].previewUrl;
         img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+        
+        console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
         
         //  Solo agregar click handler al preview (no duplicar en la img)
         preview.onclick = (e) => {
@@ -287,6 +298,7 @@ window.actualizarPreviewPrenda = function() {
         };
         
         preview.appendChild(img);
+        console.log('[actualizarPreviewPrenda] ✅ Imagen agregada al preview');
         
         // Actualizar contador
         if (contador) {

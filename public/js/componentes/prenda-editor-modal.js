@@ -511,11 +511,23 @@ function eliminarFilaTela(btn) {
  * Cerrar modal de prendas
  */
 function cerrarModalPrendaNueva() {
-    //  Usar modal dinámico
-    if (window.modalPrendaDinamico) {
-        window.modalPrendaDinamico.cerrar();
-    } else {
-
+    // Cerrar el modal directamente
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+        modal.classList.remove('active');
+    }
+    
+    // Resetear botón de guardar
+    const btnGuardar = document.getElementById('btn-guardar-prenda');
+    if (btnGuardar) {
+        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
+    }
+    
+    // Limpiar formulario del modal
+    const form = document.getElementById('form-prenda-nueva');
+    if (form) {
+        form.reset();
     }
 }
 

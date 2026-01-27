@@ -191,6 +191,9 @@
     <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ time() }}"></script>
     
+    <!-- NUEVO: Cargador de prendas desde cotización (COMPLETO) -->
+    <script src="{{ asset('js/modulos/crear-pedido/integracion/cargar-prendas-cotizacion.js') }}?v={{ time() }}"></script>
+    
     <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
     <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}?v={{ time() }}"></script>
     

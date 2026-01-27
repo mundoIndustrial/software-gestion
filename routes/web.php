@@ -520,6 +520,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // Obtener datos de cotización para crear pedido
     Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacionId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
     
+    // Obtener prenda COMPLETA desde cotización (con procesos, telas, fotos, etc.)
+    Route::get('/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerPrendaCompleta'])->name('pedidos-produccion.obtener-prenda-completa')->where(['cotizacionId' => '[0-9]+', 'prendaId' => '[0-9]+']);
+    
     Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'store'])->name('api.pedidos.store');
     Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'update'])->name('api.pedidos.update');
     Route::put('/api/pedidos/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'cambiarEstado'])->name('api.pedidos.cambiar-estado');
