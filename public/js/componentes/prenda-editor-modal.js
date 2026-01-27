@@ -165,24 +165,30 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         const telasAgregadas = [];
         if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas)) {
             prendaCompleta.colores_telas.forEach((ct) => {
+                console.log('🔍 [TRANSFORMAR-COLORES-TELAS] Color-tela objeto:', ct);
                 telasAgregadas.push({
-                    id: ct.id,
+                    id: ct.id,  // ID de la relación prenda_pedido_colores_telas
                     color_id: ct.color_id,
-                    color: ct.color_nombre || '',
-                    codigo_color: ct.color_codigo || '',
+                    color: ct.color?.nombre || ct.color_nombre || '',
+                    codigo_color: ct.color?.codigo || ct.color_codigo || '',
                     tela_id: ct.tela_id,
-                    tela: ct.tela_nombre || '',
-                    nombre_tela: ct.tela_nombre || '',
-                    referencia: ct.tela_referencia || '',
-                    imagenes: (ct.fotos_tela || []).map(f => {
+                    tela: ct.tela?.nombre || ct.tela_nombre || '',
+                    nombre_tela: ct.tela?.nombre || ct.tela_nombre || '',
+                    referencia: ct.referencia || ct.tela?.referencia || ct.tela_referencia || '',
+                    imagenes_count: (ct.imagenes_tela || ct.fotos_tela || []).length,
+                    imagenes: (ct.imagenes_tela || ct.fotos_tela || []).map(f => {
                         const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original);
                         return {
+                            id: f.id,  // ID de la foto
                             url: urlConStorage,
                             ruta: urlConStorage,
-                            urlDesdeDB: true
+                            urlDesdeDB: true,
+                            ruta_original: f.ruta_original,
+                            ruta_webp: f.ruta_webp
                         };
                     })
                 });
+                console.log('✅ [TRANSFORMAR-COLORES-TELAS] Tela transformada:', telasAgregadas[telasAgregadas.length - 1]);
             });
         }
         

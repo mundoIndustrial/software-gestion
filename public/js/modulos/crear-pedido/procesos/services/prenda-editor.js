@@ -346,7 +346,7 @@ class PrendaEditor {
                         id: ct.id,
                         nombre_tela: ct.tela_nombre || '(Sin nombre)',
                         color: ct.color_nombre || '(Sin color)',
-                        referencia: ct.tela_referencia || '',
+                        referencia: ct.referencia || ct.tela_referencia || '',
                         imagenes: ct.fotos_tela && Array.isArray(ct.fotos_tela) 
                             ? ct.fotos_tela.map(foto => ({
                                 url: foto.ruta_webp || foto.ruta_original || foto.url,
@@ -404,42 +404,10 @@ class PrendaEditor {
                 previewTemporal.style.display = 'none';
             }
             
-
-            
-            // Cargar cada tela
-            prenda.telasAgregadas.forEach((tela, idx) => {
-
-                
-                // Cargar imágenes de tela
-                if (tela.imagenes && tela.imagenes.length > 0 && window.imagenesTelaStorage) {
-
-                    
-                    tela.imagenes.forEach((img, imgIdx) => {
-
-                        
-                        if (img.file instanceof File) {
-
-                            window.imagenesTelaStorage.agregarImagen(img.file);
-                        } else if (img.previewUrl || img.url || img.ruta) {
-                            const urlImg = img.previewUrl || img.url || img.ruta;
-
-                            
-                            if (!window.imagenesTelaStorage.images) {
-                                window.imagenesTelaStorage.images = [];
-                            }
-                            window.imagenesTelaStorage.images.push({
-                                previewUrl: urlImg,
-                                nombre: `tela_${idx}_${imgIdx}.webp`,
-                                tamaño: 0,
-                                file: null,
-                                urlDesdeDB: true
-                            });
-                        }
-                    });
-                } else {
-                    console.log(`[cargarTelas] ⚠️ Tela ${idx} sin imágenes`);
-                }
-            });
+            // ⚠️ NO cargar imágenes de telas de BD en window.imagenesTelaStorage
+            // Las imágenes de telas existentes SOLO se muestran en la tabla (gestion-telas.js)
+            // El storage debe estar limpio para AGREGAR TELAS NUEVAS
+            // Esto evita que aparezcan precargadas en el input de agregar
             
             // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
             window.telasAgregadas = [...prenda.telasAgregadas];

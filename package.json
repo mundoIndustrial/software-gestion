@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "start": "concurrently \"npm run dev\" \"php artisan reverb:start\" \"php artisan serve\" --names \"VITE,REVERB,SERVER\" --prefix-colors \"cyan,magenta,green\""
+        "start": "concurrently \"npm run dev\" \"php artisan reverb:start --host=0.0.0.0\" \"php artisan serve --host=0.0.0.0\" --names \"VITE,REVERB,SERVER\" --prefix-colors \"cyan,magenta,green\""
     },
     "devDependencies": {
         "@fullhuman/postcss-purgecss": "^7.0.2",

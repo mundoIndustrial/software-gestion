@@ -13,7 +13,7 @@ use App\Models\PrendaPedido;
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
  * Responsabilidades:
- * - Validar pedido existe âœ… TRAIT
+ * - Validar pedido existe  TRAIT
  * - Crear registro en prendas_pedido
  * - Crear fotos de referencia (prenda_fotos_pedido)
  * - Crear tallas y cantidades (prenda_pedido_tallas)

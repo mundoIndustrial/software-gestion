@@ -99,13 +99,6 @@ class AtributosPrendaHelper
         // Este método devuelve vacío para mantener compatibilidad
         return '';
     }
-            
-            return $referencia;
-        } catch (\Exception $e) {
-            \Log::warning("Error al obtener referencia de tela con ID {$telaId}: " . $e->getMessage());
-            return '';
-        }
-    }
 
     /**
      * Obtener toda la información de una tela

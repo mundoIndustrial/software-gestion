@@ -51,19 +51,19 @@ class ObtenerPedidoHandler implements QueryHandler
             $pedido = $this->pedidoModel
                 ->where('id', $query->getPedidoId())
                 ->with([
-                    'prendas',                          // âœ… Prendas del pedido
-                    'prendas.variantes',                // âœ… Variantes (manga, broche)
-                    'prendas.tallas',                   // âœ… Tallas por gÃ©nero
-                    'prendas.coloresTelas',             // âœ… Combinaciones color-tela
-                    'prendas.coloresTelas.color',       // âœ… Detalles del color
-                    'prendas.coloresTelas.tela',        // âœ… Detalles de la tela
-                    'prendas.coloresTelas.fotos',       // âœ… Fotos de cada color-tela
-                    'prendas.fotos',                    // âœ… Fotos de referencia de cada prenda
-                    'prendas.procesos',                 // âœ… Procesos de producción
-                    'prendas.procesos.tipoProceso',     // âœ… Tipo de proceso
-                    'prendas.procesos.imagenes',        // âœ… ImÃ¡genes de los procesos
-                    'asesor',                           // âœ… Información del asesor
-                    'cliente',                          // âœ… Información del cliente
+                    'prendas',                          //  Prendas del pedido
+                    'prendas.variantes',                //  Variantes (manga, broche)
+                    'prendas.tallas',                   //  Tallas por gÃ©nero
+                    'prendas.coloresTelas',             //  Combinaciones color-tela
+                    'prendas.coloresTelas.color',       //  Detalles del color
+                    'prendas.coloresTelas.tela',        //  Detalles de la tela
+                    'prendas.coloresTelas.fotos',       //  Fotos de cada color-tela
+                    'prendas.fotos',                    //  Fotos de referencia de cada prenda
+                    'prendas.procesos',                 //  Procesos de producción
+                    'prendas.procesos.tipoProceso',     //  Tipo de proceso
+                    'prendas.procesos.imagenes',        //  ImÃ¡genes de los procesos
+                    'asesor',                           //  Información del asesor
+                    'cliente',                          //  Información del cliente
                 ])
                 ->first();
 

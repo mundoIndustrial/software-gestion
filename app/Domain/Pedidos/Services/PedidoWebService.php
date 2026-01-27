@@ -104,7 +104,7 @@ class PedidoWebService
             'cliente_id' => $datos['cliente_id'] ?? null,
             'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
             'novedades' => $datos['descripcion'] ?? null,
-            'estado' => 'Pendiente',
+            'estado' => 'pendiente_cartera',
             'cantidad_total' => 0,
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
         ]);

@@ -108,6 +108,23 @@
       data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}"
       data-module="@yield('module', 'default')">
 
+    <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
+    <script>
+        window.usuarioAutenticado = {
+            @if(auth()->check())
+                id: {{ auth()->user()->id }},
+                nombre: "{{ auth()->user()->name }}",
+                email: "{{ auth()->user()->email }}",
+                rol: "{{ auth()->user()->role?->name ?? 'Sin Rol' }}"
+            @else
+                id: null,
+                nombre: 'Usuario',
+                email: '',
+                rol: 'Sin Rol'
+            @endif
+        };
+    </script>
+
     <!-- Sincronizar tema con localStorage -->
     <script>
         (function() {

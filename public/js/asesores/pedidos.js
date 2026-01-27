@@ -214,7 +214,7 @@ async function guardarPedido(form, crear = false) {
         novedades: formData.get('novedades'),
         forma_de_pago: formData.get('forma_de_pago'),
         estado: formData.get('estado'),
-        area: formData.get('area') || 'Creaci�n Orden',
+        area: formData.get('area') || 'Creación Orden',
         crear: crear,
         productos: productos
     };

@@ -174,7 +174,33 @@
         }
     </style>
 </head>
-<body class="light-theme">
+<body class="light-theme"
+    @if(auth()->check())
+        data-user="{{ json_encode([
+            'id' => auth()->user()->id,
+            'nombre' => auth()->user()->name,
+            'email' => auth()->user()->email,
+            'rol' => auth()->user()->roles->first()?->name ?? 'Sin Rol'
+        ]) }}"
+    @endif
+>
+    <script>
+        // GLOBAL: Usuario autenticado disponible desde el inicio
+        window.usuarioAutenticado = {
+            @if(auth()->check())
+                id: {{ auth()->user()->id }},
+                nombre: "{{ auth()->user()->name }}",
+                email: "{{ auth()->user()->email }}",
+                rol: "{{ auth()->user()->roles->first()?->name ?? 'Sin Rol' }}"
+            @else
+                id: null,
+                nombre: 'Usuario',
+                email: '',
+                rol: 'Sin Rol'
+            @endif
+        };
+        console.log('[Layout] 👤 Usuario autenticado:', window.usuarioAutenticado);
+    </script>
     <!-- Main Content sin Sidebar -->
     <div class="main-content" id="mainContent">
         <!-- Top Navigation Simplificada -->

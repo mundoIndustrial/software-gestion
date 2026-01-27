@@ -71,7 +71,33 @@
     @stack('styles')
     
 </head>
-<body>
+<body 
+    @if(auth()->check())
+        data-user="{{ json_encode([
+            'id' => auth()->user()->id,
+            'nombre' => auth()->user()->name,
+            'email' => auth()->user()->email,
+            'rol' => auth()->user()->roles->first()?->name ?? 'Sin Rol'
+        ]) }}"
+    @endif
+>
+    <script>
+        // GLOBAL: Usuario autenticado disponible desde el inicio
+        window.usuarioAutenticado = {
+            @if(auth()->check())
+                id: {{ auth()->user()->id }},
+                nombre: "{{ auth()->user()->name }}",
+                email: "{{ auth()->user()->email }}",
+                rol: "{{ auth()->user()->roles->first()?->name ?? 'Sin Rol' }}"
+            @else
+                id: null,
+                nombre: 'Usuario',
+                email: '',
+                rol: 'Sin Rol'
+            @endif
+        };
+        console.log('[Layout] 👤 Usuario autenticado:', window.usuarioAutenticado);
+    </script>
     <!-- Sidebar Asesores (Componente) -->
     @include('components.sidebars.sidebar-asesores')
 

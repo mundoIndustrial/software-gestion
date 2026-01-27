@@ -594,6 +594,38 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('api')->name('api.')->g
     Route::get('/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasPrenda'])->name('prenda.tallas');
     Route::get('/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerVariantesPrenda'])->name('prenda.variantes');
     Route::get('/prenda-pedido/{prendaId}/colores-telas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerColoresTelasPrenda'])->name('prenda.colores-telas');
+
+    // ================================================
+    // EDICIÓN SEGURA DE PRENDAS (Separado de creación)
+    // ================================================
+    Route::prefix('prendas-pedido')->group(function () {
+        // Editar prenda completa (PATCH)
+        Route::patch('/{id}/editar', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editPrenda'])->name('editar');
+        
+        // Editar solo campos simples de prenda
+        Route::patch('/{id}/editar/campos', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editPrendaFields'])->name('editar-campos');
+        
+        // Editar solo tallas (MERGE)
+        Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
+        
+        // Obtener estado actual (para auditoría)
+        Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');
+        
+        // Editar variante específica
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVariante'])->name('variante-editar');
+        
+        // Editar solo campos simples de variante
+        Route::patch('/{prendaId}/variantes/{varianteId}/editar/campos', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteFields'])->name('variante-editar-campos');
+        
+        // Editar solo colores de variante (MERGE)
+        Route::patch('/{prendaId}/variantes/{varianteId}/colores', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteColores'])->name('variante-colores');
+        
+        // Editar solo telas de variante (MERGE)
+        Route::patch('/{prendaId}/variantes/{varianteId}/telas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editVarianteTelas'])->name('variante-telas');
+        
+        // Obtener estado de variante (para auditoría)
+        Route::get('/{prendaId}/variantes/{varianteId}/estado', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'getVarianteState'])->name('variante-estado');
+    });
 });
 
 // ========================================

@@ -52,7 +52,7 @@ class PrendaBaseCreatorService
                 $tallaRepository = new \App\Domain\Pedidos\Repositories\PedidoProduccionRepository();
                 $tallaRepository->guardarTallas($prenda->id, $cantidadTallaFinal);
                 
-                \Log::info("âœ… [PRENDA #{$index}] Tallas guardadas en tabla relacional", [
+                \Log::info(" [PRENDA #{$index}] Tallas guardadas en tabla relacional", [
                     'prenda_id' => $prenda->id,
                     'cantidad_tallas' => count($cantidadTallaFinal),
                     'generos' => array_keys($cantidadTallaFinal),

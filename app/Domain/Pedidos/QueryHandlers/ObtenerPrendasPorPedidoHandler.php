@@ -42,7 +42,7 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
                     'coloresTelas.color',  // detalles del color
                     'coloresTelas.tela',   // detalles de la tela
                     'coloresTelas.fotos',  // fotos de cada color-tela
-                    'fotos',               // âœ… AGREGADO: fotos de referencia de la prenda
+                    'fotos',               //  AGREGADO: fotos de referencia de la prenda
                     'procesos',            // procesos de producción
                     'procesos.tipoProceso', // tipo de proceso
                     'procesos.imagenes',   // imÃ¡genes de los procesos

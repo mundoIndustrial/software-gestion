@@ -11,6 +11,60 @@ class ModalNovedadEdicion {
         this.prendaData = null;
         this.prendaIndex = null;
         this.zIndexMaximoForzado = 999999;
+        
+        // Inicializar arrays separados por flujo (NO afectarse mutuamente)
+        if (!window.telasCreacion) {
+            window.telasCreacion = [];  // Para flujo de CREACIÓN
+        }
+        if (!window.telasEdicion) {
+            window.telasEdicion = [];   // Para flujo de EDICIÓN
+        }
+        // NO obtener usuario aquí - hacerlo cada vez que se necesite
+    }
+
+    /**
+     * Obtener información del usuario actual (cada vez que se llame)
+     * @private
+     */
+    obtenerUsuarioActual() {
+        // Obtener directamente de window.usuarioAutenticado (se define en layout.blade.php)
+        if (window.usuarioAutenticado) {
+            return window.usuarioAutenticado;
+        }
+        
+        // Fallback por si no está disponible
+        return {
+            nombre: 'Usuario',
+            rol: 'Sin Rol',
+            email: ''
+        };
+    }
+
+    /**
+     * Construir novedad con información de usuario, fecha/hora y razón
+     * Mismo formato que OperarioController: [usuario - DD-MM-YYYY HH:MM:SS] descripción
+     * @private
+     */
+    construirNovedadConMetadata(razonDelCambio) {
+        // Obtener usuario en este momento
+        const usuarioActual = this.obtenerUsuarioActual();
+        
+        const ahora = new Date();
+        // Formato DD-MM-YYYY
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const año = ahora.getFullYear();
+        const fecha = `${dia}-${mes}-${año}`;
+        
+        // Formato HH:MM:SS
+        const horas = String(ahora.getHours()).padStart(2, '0');
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const segundos = String(ahora.getSeconds()).padStart(2, '0');
+        const hora = `${horas}:${minutos}:${segundos}`;
+        
+        // Formato: [usuario - DD-MM-YYYY HH:MM:SS] descripción
+        const novedad = `[${usuarioActual.nombre} - ${fecha} ${hora}] ${razonDelCambio}`;
+        return novedad;
     }
 
     forzarZIndexMaximo() {
@@ -68,7 +122,14 @@ class ModalNovedadEdicion {
                         });
                         return;
                     }
-                    await this.actualizarPrendaConNovedad(novedad);
+                    // NUEVO: Aplicar cambios del buffer de procesos ANTES de guardar
+                    if (typeof window.aplicarCambiosProcesosDesdeBuffer === 'function') {
+                        window.aplicarCambiosProcesosDesdeBuffer();
+                        console.log('[modal-novedad-edicion] ✅ Buffer de procesos aplicado');
+                    }
+                    // NUEVO: Construir novedad con metadata del usuario
+                    const novedadConMetadata = this.construirNovedadConMetadata(novedad);
+                    await this.actualizarPrendaConNovedad(novedadConMetadata);
                     resolve();
                 } else {
                     resolve();
@@ -86,16 +147,18 @@ class ModalNovedadEdicion {
             formData.append('descripcion', this.prendaData.descripcion);
             formData.append('origen', this.prendaData.origen);
             
-            // Enviar tallas - se guardan en prenda_pedido_tallas
-            if (this.prendaData.tallas && Object.keys(this.prendaData.tallas).length > 0) {
-                // Convertir de {GENERO: {TALLA: CANTIDAD}} a [{genero, talla, cantidad}, ...]
+            // IMPORTANTE: Leer tallas ACTUALIZADAS del modal (window.tallasRelacionales)
+            // NO del this.prendaData inicial que puede estar desactualizado
+            let tallasParaEnviar = window.tallasRelacionales || this.prendaData.tallas || {};
+            
+            if (tallasParaEnviar && Object.keys(tallasParaEnviar).length > 0) {
                 const tallasArray = [];
-                for (const [genero, tallas] of Object.entries(this.prendaData.tallas)) {
+                for (const [genero, tallas] of Object.entries(tallasParaEnviar)) {
                     if (typeof tallas === 'object' && tallas !== null) {
                         for (const [talla, cantidad] of Object.entries(tallas)) {
                             if (cantidad > 0) {
                                 tallasArray.push({
-                                    genero: genero,
+                                    genero: genero.toLowerCase(),
                                     talla: talla,
                                     cantidad: parseInt(cantidad)
                                 });
@@ -105,7 +168,7 @@ class ModalNovedadEdicion {
                 }
                 if (tallasArray.length > 0) {
                     formData.append('tallas', JSON.stringify(tallasArray));
-                    console.log('[modal-novedad-edicion] Tallas enviadas:', tallasArray);
+                    console.log('[modal-novedad-edicion] ✅ Tallas ACTUALIZADAS enviadas:', tallasArray);
                 }
             }
             
@@ -122,9 +185,106 @@ class ModalNovedadEdicion {
                 console.log('[modal-novedad-edicion]  No hay variantes para enviar');
             }
             
-            // IMPORTANTE: Transformar procesos de estructura de objeto a array
-            const procesosArray = this._transformarProcesosAArray(this.prendaData.procesos || {});
+            // NUEVO: Enviar telas (MERGE pattern - conservar telas existentes + agregar nuevas)
+            // FLUJO EDICIÓN: usar window.telasAgregadas (nuevo) o window.telasEdicion (legacy)
+            const telasParaEnviar = (window.telasAgregadas && window.telasAgregadas.length > 0) 
+                ? window.telasAgregadas 
+                : window.telasEdicion;
+            
+            if (telasParaEnviar && telasParaEnviar.length > 0) {
+                const telasArray = telasParaEnviar.map((tela, idx) => {
+                    const obj = {
+                        // Datos visibles
+                        color: tela.color || '',
+                        tela: tela.tela || '',
+                        referencia: tela.referencia || '',
+                        
+                        // Nombres para fallback si faltan IDs
+                        color_nombre: tela.color_nombre || tela.color || '',
+                        tela_nombre: tela.tela_nombre || tela.tela || ''
+                    };
+                    
+                    // ✅ AGREGAR IDs PARA MERGE PATTERN
+                    // Si tiene ID de relación, es tela existente → UPDATE
+                    if (tela.id) {
+                        obj.id = tela.id;  // ID de relación (prenda_pedido_colores_telas.id)
+                    }
+                    
+                    // Agregar IDs del color y tela (para búsqueda en backend)
+                    if (tela.color_id) {
+                        obj.color_id = tela.color_id;
+                    }
+                    if (tela.tela_id) {
+                        obj.tela_id = tela.tela_id;
+                    }
+                    
+                    // Procesar imágenes
+                    if (tela.imagenes && tela.imagenes.length > 0) {
+                        obj.imagenes = [];
+                        tela.imagenes.forEach((img, imgIdx) => {
+                            if (img instanceof File) {
+                                // Imagen nueva (File object)
+                                formData.append(`telas[${idx}][imagenes][${imgIdx}]`, img);
+                            } else if (img.urlDesdeDB || img.url) {
+                                // Imagen existente de BD - guardar para preservar
+                                obj.imagenes.push({
+                                    url: img.url || img.urlDesdeDB,
+                                    nombre: img.nombre || ''
+                                });
+                            }
+                        });
+                    }
+                    
+                    return obj;
+                });
+                formData.append('colores_telas', JSON.stringify(telasArray));
+                console.log('[modal-novedad-edicion] Telas enviadas (MERGE):', telasArray);
+                
+                // ✅ ENVIAR FOTOS DE TELAS CON ESTRUCTURA CORRECTA (MERGE PATTERN)
+                const fotosTelaArray = [];
+                let fotoTelaFileIndex = 0;
+                
+                telasParaEnviar.forEach((tela, telaIdx) => {
+                    if (tela.imagenes && tela.imagenes.length > 0) {
+                        tela.imagenes.forEach((img, imgIdx) => {
+                            if (img instanceof File) {
+                                // Subir imagen a FormData
+                                formData.append(`fotos_tela[${fotoTelaFileIndex}]`, img);
+                                
+                                // Registrar metadatos en array para backend
+                                fotosTelaArray.push({
+                                    color_id: tela.color_id || null,
+                                    tela_id: tela.tela_id || null,
+                                    id: img.id || null,  // ID de foto existente si está siendo actualizada
+                                    orden: imgIdx + 1
+                                });
+                                fotoTelaFileIndex++;
+                            } else if (img.id && (img.urlDesdeDB || img.url)) {
+                                // Foto existente - preservar referencia
+                                fotosTelaArray.push({
+                                    id: img.id,
+                                    color_id: tela.color_id || null,
+                                    tela_id: tela.tela_id || null,
+                                    ruta_original: img.url || img.urlDesdeDB,
+                                    orden: imgIdx + 1
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                if (fotosTelaArray.length > 0) {
+                    formData.append('fotosTelas', JSON.stringify(fotosTelaArray));
+                    console.log('[modal-novedad-edicion] ✅ Fotos de telas enviadas (MERGE):', fotosTelaArray);
+                }
+            }
+
+            // IMPORTANTE: Leer procesos ACTUALIZADOS (window.procesosSeleccionados)
+            // NO del this.prendaData inicial que no incluye procesos nuevos agregados en el modal
+            const procesosParaEnviar = window.procesosSeleccionados || this.prendaData.procesos || {};
+            const procesosArray = this._transformarProcesosAArray(procesosParaEnviar);
             formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
+            console.log('[modal-novedad-edicion] ✅ Procesos ACTUALIZADOS enviados:', procesosArray);
             formData.append('novedad', novedad);
             
             // Obtener prenda_id - puede venir en diferentes propiedades
@@ -245,6 +405,17 @@ class ModalNovedadEdicion {
             didOpen: () => this.forzarZIndexMaximo()
         }).then((result) => {
             if (result.isConfirmed) {
+                // NUEVO: Disparar evento para actualizar tabla en tiempo real
+                const evento = new CustomEvent('prendaActualizada', {
+                    detail: {
+                        pedidoId: this.pedidoId,
+                        prendaId: this.prendaData.prenda_pedido_id || this.prendaData.id,
+                        timestamp: new Date()
+                    }
+                });
+                window.dispatchEvent(evento);
+                console.log('[modal-novedad-edicion] 📢 Evento disparado: prendaActualizada', evento.detail);
+                
                 // IMPORTANTE: Solo cerrar el modal de prenda, NO abrir otro modal
                 // El usuario estaba editando dentro del modal de prenda y ya finalizó
                 if (typeof window.cerrarModalPrendaNueva === 'function') {
@@ -428,5 +599,12 @@ class ModalNovedadEdicion {
     }
 }
 
-window.modalNovedadEditacion = new ModalNovedadEdicion();
+// Instanciar modal cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.modalNovedadEditacion = new ModalNovedadEdicion();
+    });
+} else {
+    window.modalNovedadEditacion = new ModalNovedadEdicion();
+}
 

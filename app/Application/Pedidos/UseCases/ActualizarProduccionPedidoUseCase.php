@@ -17,10 +17,10 @@ use Exception;
  * 
  * Cambios de FASE 1:
  * - Agregadas dependencias inyectadas (antes faltaban)
- * - Implementada actualizacion de cliente âœ…
- * - Implementada actualizacion de prendas âœ…
- * - Implementada persistencia de cambios âœ…
- * - Implementada publicación de eventos âœ…
+ * - Implementada actualizacion de cliente 
+ * - Implementada actualizacion de prendas 
+ * - Implementada persistencia de cambios 
+ * - Implementada publicación de eventos 
  */
 class ActualizarProduccionPedidoUseCase
 {
@@ -47,20 +47,20 @@ class ActualizarProduccionPedidoUseCase
                 );
             }
 
-            // 3. âœ… ACTUALIZAR CLIENTE SI VIENE EN DTO
+            // 3.  ACTUALIZAR CLIENTE SI VIENE EN DTO
             if ($dto->cliente) {
                 $pedido->cambiarCliente($dto->cliente);
             }
 
-            // 4. âœ… ACTUALIZAR PRENDAS SI VIENEN EN DTO
+            // 4.  ACTUALIZAR PRENDAS SI VIENEN EN DTO
             if (!empty($dto->prendas)) {
                 $pedido->reemplazarPrendas($dto->prendas);
             }
 
-            // 5. âœ… PERSISTIR CAMBIOS
+            // 5.  PERSISTIR CAMBIOS
             $this->pedidoRepository->guardar($pedido);
 
-            // 6. âœ… PUBLICAR DOMAIN EVENTS
+            // 6.  PUBLICAR DOMAIN EVENTS
             foreach ($pedido->eventos() as $evento) {
                 $this->eventDispatcher->dispatch($evento);
             }

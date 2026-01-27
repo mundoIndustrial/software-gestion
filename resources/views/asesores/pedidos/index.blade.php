@@ -1087,6 +1087,122 @@
             }, 300);
         }
     }
+
+    /**
+     * NUEVO: Escuchar evento de actualización de prenda y refrescar tabla en tiempo real
+     */
+    window.addEventListener('prendaActualizada', async function(event) {
+        console.log('[asesores/pedidos] 📢 Evento recibido: prendaActualizada', event.detail);
+        
+        const { pedidoId } = event.detail;
+        
+        // Refrescar la tabla automáticamente
+        await refrescarTablaPedidos();
+    });
+
+    /**
+     * refrescarTablaPedidos()
+     * Realiza AJAX para recargar la tabla sin refrescar la página
+     */
+    async function refrescarTablaPedidos() {
+        try {
+            console.log('[asesores/pedidos] 🔄 Refrescando tabla de pedidos...');
+            
+            // Mantener los parámetros de filtro/búsqueda actuales
+            const params = new URLSearchParams(window.location.search);
+            const queryString = params.toString() ? '?' + params.toString() : '';
+            
+            const response = await fetch(`/asesores/pedidos${queryString}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const html = await response.text();
+            
+            // Extraer solo la tabla del HTML respuesta
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            const nuevoContenidoTabla = newDoc.querySelector('.table-scroll-container');
+            
+            if (nuevoContenidoTabla) {
+                const tablaActual = document.querySelector('.table-scroll-container');
+                if (tablaActual) {
+                    tablaActual.innerHTML = nuevoContenidoTabla.innerHTML;
+                    console.log('[asesores/pedidos] ✅ Tabla refrescada exitosamente');
+                    
+                    // Mostrar notificación visual
+                    mostrarNotificacionActualizacion();
+                }
+            }
+        } catch (error) {
+            console.error('[asesores/pedidos] ❌ Error refrescando tabla:', error);
+        }
+    }
+
+    /**
+     * mostrarNotificacionActualizacion()
+     * Muestra notificación visual de actualización
+     */
+    function mostrarNotificacionActualizacion() {
+        const notificacion = document.createElement('div');
+        notificacion.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 999999;
+            animation: slideInRight 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        `;
+        notificacion.innerHTML = `
+            <span class="material-symbols-rounded" style="font-size: 20px;">check_circle</span>
+            <span>Tabla actualizada en tiempo real</span>
+        `;
+        
+        document.body.appendChild(notificacion);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            notificacion.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notificacion.remove(), 300);
+        }, 3000);
+    }
+
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 
 @endpush

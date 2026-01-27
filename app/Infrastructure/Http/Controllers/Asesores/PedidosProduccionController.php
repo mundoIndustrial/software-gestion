@@ -826,6 +826,39 @@ class PedidosProduccionController
                 }
             }
 
+            // NUEVO: Procesar imágenes de telas (anidadas en FormData)
+            $telasConImagenes = [];
+            $allFiles = $request->files->all();
+            foreach ($allFiles as $key => $value) {
+                if (strpos($key, 'telas[') === 0 && strpos($key, '][imagenes]') !== false) {
+                    if (is_array($value) && !empty($value)) {
+                        $telaFotoService = new \App\Domain\Pedidos\Services\TelaFotoService();
+                        foreach ($value as $imagen) {
+                            if ($imagen && $imagen->isValid()) {
+                                $rutas = $telaFotoService->procesarFoto($imagen);
+                                $telasConImagenes[] = $rutas;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // NUEVO: Procesar imágenes de procesos (anidadas en FormData)
+            $procesosConImagenes = [];
+            foreach ($allFiles as $key => $value) {
+                if (strpos($key, 'procesos[') === 0 && strpos($key, '][imagenes]') !== false) {
+                    if (is_array($value) && !empty($value)) {
+                        $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
+                        foreach ($value as $imagen) {
+                            if ($imagen && $imagen->isValid()) {
+                                $rutas = $procesoFotoService->procesarFoto($imagen);
+                                $procesosConImagenes[] = $rutas;
+                            }
+                        }
+                    }
+                }
+            }
+
             // Procesar imágenes existentes que deben preservarse
             $imagenesExistentes = [];
             if ($request->input('imagenes_existentes')) {
@@ -843,6 +876,7 @@ class PedidosProduccionController
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
                 'imagenes_procesadas' => count($imagenesGuardadas),
                 'imagenes_existentes' => count($imagenesExistentes),
+                'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)

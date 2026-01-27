@@ -141,10 +141,10 @@ class PrendaFormCollector {
             console.log('[prenda-form-collector]   - ¿Son el MISMO objeto (procesos)?', prendaData.procesos === window.procesosSeleccionados);
 
             // ============================================
-            // 4. PROCESAR TELAS AGREGADAS
+            // 4. PROCESAR TELAS AGREGADAS (FLUJO CREACIÓN)
             // ============================================
-            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
+            if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
+                prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
                     // Copiar imágenes de tela: SOLO File objects (NO blobs ni previewUrl)
                     const imagenesCopia = (tela.imagenes || []).map(img => {
                         // Si img es directamente un File object, usarlo

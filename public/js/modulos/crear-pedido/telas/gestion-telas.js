@@ -10,7 +10,9 @@
  */
 
 // ========== ESTADO GLOBAL DE TELAS ==========
-window.telasAgregadas = [];
+// FLUJO CREACIÓN: Prendas nuevas (NO se afecta por edición)
+window.telasCreacion = [];
+// FLUJO EDICIÓN: Prendas existentes (en modal-novedad-edicion.js)
 window.imagenesTelaModalNueva = [];
 
 // Función para limpiar errores en campos de tela
@@ -219,14 +221,27 @@ window.agregarTelaNueva = async function() {
         // NO copiar previewUrl - crearemos una nueva blob URL cuando sea necesario
     }));
     
-    // Agregar a la lista
-    window.telasAgregadas.push({ 
+    // Agregar a la lista CORRECTA según el modo
+    // En EDICIÓN: agregar a window.telasAgregadas (conserva telas de BD + nuevas)
+    // En CREACIÓN: agregar a window.telasCreacion
+    const modoEdicion = window.telasAgregadas && window.telasAgregadas.length > 0;
+    const destino = modoEdicion ? window.telasAgregadas : window.telasCreacion;
+    
+    destino.push({ 
         color, 
         tela, 
         referencia,
         color_id: colorId,
         tela_id: telaId,
+        nombre_tela: tela,  // Normalizar para que sea compatible
         imagenes: imagenesCopia
+    });
+    
+    console.log(`[guardarTela] 🧵 Tela agregada (Modo: ${modoEdicion ? 'EDICIÓN' : 'CREACIÓN'})`, {
+        tela,
+        color,
+        destino_array: modoEdicion ? 'telasAgregadas' : 'telasCreacion',
+        total_telas: destino.length
     });
     
 
@@ -236,6 +251,11 @@ window.agregarTelaNueva = async function() {
     document.getElementById('nueva-prenda-color').value = '';
     document.getElementById('nueva-prenda-tela').value = '';
     document.getElementById('nueva-prenda-referencia').value = '';
+    
+    // Actualizar tabla para mostrar la tela nueva agregada
+    if (window.actualizarTablaTelas) {
+        window.actualizarTablaTelas();
+    }
     
     // NO LIMPIAR window.imagenesTelaStorage aquí - se necesita para enviar las imágenes
     // Se limpiará después de que se envíe el pedido
@@ -285,14 +305,31 @@ window.actualizarTablaTelas = function() {
         }
     });
     
+    // ===== DETECTAR MODO: CREACIÓN o EDICIÓN =====
+    // En EDICIÓN: window.telasAgregadas O window.telasEdicion contienen las telas desde BD
+    // En CREACIÓN: window.telasCreacion contiene las telas nuevas
+    const telasParaMostrar = (window.telasAgregadas && window.telasAgregadas.length > 0) 
+        ? window.telasAgregadas 
+        : (window.telasEdicion && window.telasEdicion.length > 0)
+            ? window.telasEdicion
+            : window.telasCreacion;
+    
+    const modoEdicion = (window.telasAgregadas && window.telasAgregadas.length > 0) || 
+                        (window.telasEdicion && window.telasEdicion.length > 0);
+    console.log('[actualizarTablaTelas] 📋 Modo:', modoEdicion ? 'EDICIÓN' : 'CREACIÓN', 'Telas a mostrar:', telasParaMostrar.length);
 
     
-    // Agregar filas con los datos
-    window.telasAgregadas.forEach((telaData, index) => {
+    // Agregar filas con los datos según el modo (CREACIÓN o EDICIÓN)
+    telasParaMostrar.forEach((telaData, index) => {
+        // ===== NORMALIZAR DATOS: Compatible tanto CREACIÓN como EDICIÓN =====
+        const nombre_tela = telaData.nombre_tela || telaData.tela || telaData.nombre || '(Sin nombre)';
+        const color = telaData.color || telaData.color_nombre || '(Sin color)';
+        const referencia = telaData.referencia || telaData.tela_referencia || '';
+        
         console.log(`[actualizarTablaTelas] 🧵 Procesando tela ${index}:`, {
-            nombre: telaData.nombre_tela,
-            color: telaData.color,
-            imagenes: telaData.imagenes,
+            nombre: nombre_tela,
+            color: color,
+            referencia: referencia,
             imagenes_count: telaData.imagenes ? telaData.imagenes.length : 0
         });
 
@@ -312,27 +349,56 @@ window.actualizarTablaTelas = function() {
                 
                 // Crear una nueva blob URL a partir del File object
                 let blobUrl;
-                if (img && img.file instanceof File) {
+                
+                // CASO 0: previewUrl (viene de transformación en prenda-editor.js)
+                if (img && img.previewUrl) {
+                    blobUrl = img.previewUrl;
+                    console.log(`[actualizarTablaTelas] 📋 Caso previewUrl: ${blobUrl}`);
+                }
+                // CASO 1: Imagen vacía de edición (file: null, tamaño: 0)
+                else if (img && img.file === null && img.tamaño === 0) {
+                    console.log(`[actualizarTablaTelas] 📝 Caso EDICIÓN: Imagen nueva sin upload aún`);
+                    blobUrl = '';  // No mostrar thumbnail hasta que se cargue
+                }
+                // CASO 2: File object desde el DOM (creación)
+                else if (img && img.file instanceof File) {
                     blobUrl = URL.createObjectURL(img.file);
-                } else if (img instanceof File) {
+                } 
+                // CASO 3: File object directo
+                else if (img instanceof File) {
                     blobUrl = URL.createObjectURL(img);
-                } else if (img && img.blobUrl) {
+                } 
+                // CASO 4: Blob URL ya existente
+                else if (img && img.blobUrl) {
                     blobUrl = img.blobUrl;
-                } else if (typeof img === 'string') {
+                } 
+                // CASO 5: String directo (ruta)
+                else if (typeof img === 'string') {
                     blobUrl = img;
-                } else if (img && img.url) {
+                } 
+                // CASO 6: Backend retorna 'url'
+                else if (img && img.url) {
                     blobUrl = img.url;
-                } else if (img && img.ruta) {
-                    // ← AGREGAR ESTA LÍNEA: backend retorna 'ruta', no 'url'
+                } 
+                // CASO 7: Backend retorna 'ruta' (desde DB)
+                else if (img && img.ruta) {
                     blobUrl = img.ruta;
-                } else if (img && img.ruta_webp) {
+                } 
+                // CASO 8: Backend retorna 'ruta_webp'
+                else if (img && img.ruta_webp) {
                     blobUrl = img.ruta_webp;
-                } else if (img && img.ruta_original) {
+                } 
+                // CASO 9: Backend retorna 'ruta_original'
+                else if (img && img.ruta_original) {
                     blobUrl = img.ruta_original;
-                } else if (img instanceof Blob) {
+                } 
+                // CASO 10: Blob object directo
+                else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
-                } else {
-                    console.warn(`[actualizarTablaTelas] ⚠️ No se pudo determinar URL para imagen ${imgIndex}`);
+                } 
+                // CASO 11: Sin determinar (log y vacío)
+                else {
+                    console.warn(`[actualizarTablaTelas] ⚠️ No se pudo determinar URL para imagen ${imgIndex}, estructura:`, img);
                     blobUrl = '';
                 }
                 
@@ -346,8 +412,12 @@ window.actualizarTablaTelas = function() {
             
             imagenHTML = `
                 <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                    <img src="${imagenConBlobUrl[0].previewUrl}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="mostrarGaleriaImagenesTela(null, ${index}, 0)">
-                    ${imagenConBlobUrl.length > 1 ? `<span style="background: #0066cc; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${imagenConBlobUrl.length - 1}</span>` : ''}
+                    ${imagenConBlobUrl[0].previewUrl ? `
+                        <img src="${imagenConBlobUrl[0].previewUrl}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="mostrarGaleriaImagenesTela(null, ${index}, 0)">
+                        ${imagenConBlobUrl.length > 1 ? `<span style="background: #0066cc; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${imagenConBlobUrl.length - 1}</span>` : ''}
+                    ` : `
+                        <span style="color: #999; font-size: 0.875rem;">Sin foto</span>
+                    `}
                 </div>
             `;
         } else {
@@ -355,9 +425,9 @@ window.actualizarTablaTelas = function() {
         }
         
         const html = `
-            <td style="padding: 0.75rem; vertical-align: middle;">${telaData.nombre_tela}</td>
-            <td style="padding: 0.75rem; vertical-align: middle;">${telaData.color}</td>
-            <td style="padding: 0.75rem; vertical-align: middle;">${telaData.referencia}</td>
+            <td style="padding: 0.75rem; vertical-align: middle;">${nombre_tela}</td>
+            <td style="padding: 0.75rem; vertical-align: middle;">${color}</td>
+            <td style="padding: 0.75rem; vertical-align: middle;">${referencia}</td>
             <td style="padding: 0.75rem; text-align: center; vertical-align: middle; min-height: 60px; display: table-cell;">
                 ${imagenHTML}
             </td>
@@ -415,7 +485,15 @@ window.eliminarTela = function(index) {
     btnConfirmar.onclick = () => {
         confirmModal.remove();
 
-        window.telasAgregadas.splice(index, 1);
+        // Eliminar según el modo (EDICIÓN o CREACIÓN)
+        // Soporta ambas variables: telasAgregadas (modo edición actual) y telasEdicion (legacy)
+        if (window.telasAgregadas && window.telasAgregadas.length > 0) {
+            window.telasAgregadas.splice(index, 1);
+        } else if (window.telasEdicion && window.telasEdicion.length > 0) {
+            window.telasEdicion.splice(index, 1);
+        } else {
+            window.telasCreacion.splice(index, 1);
+        }
         actualizarTablaTelas();
     };
     botones.appendChild(btnConfirmar);
@@ -571,19 +649,19 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
 };
 
 /**
- * Obtener telas para envío
+ * Obtener telas para envío (FLUJO CREACIÓN)
  */
 window.obtenerTelasParaEnvio = function() {
 
-    return window.telasAgregadas;
+    return window.telasCreacion;
 };
 
 /**
- * Limpiar todas las telas
+ * Limpiar todas las telas (FLUJO CREACIÓN)
  */
 window.limpiarTelas = function() {
 
-    window.telasAgregadas = [];
+    window.telasCreacion = [];
     if (window.imagenesTelaStorage) {
         window.imagenesTelaStorage.limpiar();
     }

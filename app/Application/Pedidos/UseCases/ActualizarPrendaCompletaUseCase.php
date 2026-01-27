@@ -13,7 +13,7 @@ use App\Models\PedidosProcesosPrendaDetalle;
  * REFACTORIZADO: FASE 3 - Validaciones centralizadas
  * 
  * Responsabilidades:
- * - Validar prenda existe âœ… TRAIT
+ * - Validar prenda existe  TRAIT
  * - Actualizar registro en prendas_pedido (nombre, descripción, de_bodega)
  * - Actualizar fotos de referencia (prenda_fotos_pedido)
  * 
@@ -69,7 +69,8 @@ final class ActualizarPrendaCompletaUseCase
 
         // 7. Actualizar procesos y sus imÃ¡genes
         $this->actualizarProcesos($prenda, $dto);
-
+        // 8. Guardar novedad en pedido_produccion
+        $this->guardarNovedad($prenda, $dto);
         // CARGAR RELACIONES COMPLETAS PARA EL FRONTEND
         $prenda->refresh();
         
@@ -115,7 +116,7 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        // âœ… ACTUALIZACIÃ“N SELECTIVA: Comparar con existentes
+        //  ACTUALIZACIÃ“N SELECTIVA: Comparar con existentes
         $fotosExistentes = $prenda->fotos()->get()->keyBy(function($f) {
             return $f->ruta_original;
         });
@@ -128,11 +129,11 @@ final class ActualizarPrendaCompletaUseCase
             if (is_string($foto)) {
                 // Formato simple: solo ruta
                 $ruta = $foto;
-                $rutaWebp = $this->generarRutaWebp($ruta);
+                $rutaWebp = $ruta ? $this->generarRutaWebp($ruta) : null;
             } else if (is_array($foto)) {
                 // Formato completo: {'ruta_original': ..., 'ruta_webp': ...}
                 $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
-                $rutaWebp = $foto['ruta_webp'] ?? $this->generarRutaWebp($ruta);
+                $rutaWebp = $foto['ruta_webp'] ?? ($ruta ? $this->generarRutaWebp($ruta) : null);
             } else {
                 continue;
             }
@@ -146,14 +147,14 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
 
-        // âœ… Eliminar solo fotos que NO estÃ¡n en la nueva lista
+        //  Eliminar solo fotos que NO estÃ¡n en la nueva lista
         foreach ($fotosExistentes as $ruta => $fotoRecord) {
             if (!isset($fotosNuevas[$ruta])) {
                 $fotoRecord->delete();
             }
         }
 
-        // âœ… Insertar solo fotos nuevas (las que ya existen no se tocan)
+        //  Insertar solo fotos nuevas (las que ya existen no se tocan)
         foreach ($fotosNuevas as $ruta => $datosFoto) {
             if (!isset($fotosExistentes[$ruta])) {
                 $prenda->fotos()->create($datosFoto);
@@ -233,7 +234,7 @@ final class ActualizarPrendaCompletaUseCase
             'variantes' => $dto->variantes,
         ]);
 
-        // âœ… ACTUALIZACIÃ“N SELECTIVA
+        //  ACTUALIZACIÃ“N SELECTIVA
         // Si hay variantes nuevas, reemplazar TODAS (no hay ID Ãºnico para actualizar parcialmente)
         // Pero solo si explÃ­citamente se envÃ­a el array con datos
         $varianteExistente = $prenda->variantes()->first();
@@ -276,19 +277,14 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        // âœ… ACTUALIZACIÃ“N SELECTIVA: Obtener existentes para comparar
-        $coloresTelaExistentes = $prenda->coloresTelas()->get()->keyBy(function($ct) {
-            return "{$ct->color_id}_{$ct->tela_id}";
-        });
-
-        // Nuevas combinaciones a guardar
-        $coloresTelaNovas = [];
-        
+        // ✅ MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->coloresTelas as $colorTela) {
             $colorId = $colorTela['color_id'] ?? null;
             $telaId = $colorTela['tela_id'] ?? null;
+            $referencia = $colorTela['referencia'] ?? null;
+            $id = $colorTela['id'] ?? null;  // ID de relación existente
             
-            // Si vienen color_nombre o tela_nombre, buscar o crear
+            // Fallback: buscar por nombres si no hay IDs
             if (isset($colorTela['color_nombre']) && !$colorId) {
                 $colorId = $this->obtenerOCrearColor($colorTela['color_nombre']);
             }
@@ -297,27 +293,36 @@ final class ActualizarPrendaCompletaUseCase
                 $telaId = $this->obtenerOCrearTela($colorTela['tela_nombre']);
             }
             
-            // Solo guardar si tenemos ambos IDs
-            if ($colorId && $telaId) {
-                $key = "{$colorId}_{$telaId}";
-                $coloresTelaNovas[$key] = [
-                    'color_id' => $colorId,
-                    'tela_id' => $telaId,
-                ];
+            if (!$colorId || !$telaId) {
+                continue;
             }
-        }
-
-        // âœ… Eliminar solo combinaciones que NO estÃ¡n en la nueva lista
-        foreach ($coloresTelaExistentes as $key => $colorTelaRecord) {
-            if (!isset($coloresTelaNovas[$key])) {
-                $colorTelaRecord->delete();
-            }
-        }
-
-        // âœ… Insertar solo combinaciones nuevas (las que ya existen no se tocan)
-        foreach ($coloresTelaNovas as $key => $datosCT) {
-            if (!isset($coloresTelaExistentes[$key])) {
-                $prenda->coloresTelas()->create($datosCT);
+            
+            // ✅ UPDATE: Si viene con ID, actualizar relación existente
+            if ($id) {
+                $colorTelaExistente = $prenda->coloresTelas()->where('id', $id)->first();
+                if ($colorTelaExistente) {
+                    $colorTelaExistente->update([
+                        'color_id' => $colorId,
+                        'tela_id' => $telaId,
+                        'referencia' => $referencia
+                    ]);
+                }
+            } 
+            // ✅ CREATE: Si NO viene con ID, crear nueva relación
+            else {
+                // Verificar si ya existe esta combinación
+                $existente = $prenda->coloresTelas()
+                    ->where('color_id', $colorId)
+                    ->where('tela_id', $telaId)
+                    ->first();
+                
+                if (!$existente) {
+                    $prenda->coloresTelas()->create([
+                        'color_id' => $colorId,
+                        'tela_id' => $telaId,
+                        'referencia' => $referencia
+                    ]);
+                }
             }
         }
     }
@@ -377,14 +382,9 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        // âœ… ACTUALIZACIÃ“N SELECTIVA: Comparar con existentes
-        $fotosTelaExistentes = $prenda->fotosTelas()->get()->keyBy(function($ft) {
-            return $ft->ruta_original;
-        });
-
-        $fotosTelaNovas = [];
-        
+        // ✅ MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->fotosTelas as $idx => $foto) {
+            $id = $foto['id'] ?? null;  // ID de foto existente
             $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
             
             // Manejar tanto formato simple (string) como completo (array con ruta_original y ruta_webp)
@@ -395,7 +395,7 @@ final class ActualizarPrendaCompletaUseCase
             
             $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
             
-            // Si no existe el colorTelaId pero sÃ­ vienen color_id y tela_id, buscar o crear la combinación
+            // Si no existe el colorTelaId pero sí vienen color_id y tela_id, buscar o crear la combinación
             if (!$colorTelaId && isset($foto['color_id']) && isset($foto['tela_id'])) {
                 $colorTelaId = $this->obtenerOCrearColorTela(
                     $prenda,
@@ -404,31 +404,39 @@ final class ActualizarPrendaCompletaUseCase
                 );
             }
             
-            if ($colorTelaId && $ruta) {
-                $rutaWebp = is_array($foto) && isset($foto['ruta_webp']) 
-                    ? $foto['ruta_webp'] 
-                    : $this->generarRutaWebp($ruta);
+            if (!$colorTelaId || !$ruta) {
+                continue;
+            }
+            
+            $rutaWebp = is_array($foto) && isset($foto['ruta_webp']) 
+                ? $foto['ruta_webp'] 
+                : $this->generarRutaWebp($ruta);
+            
+            $datosFoto = [
+                'prenda_pedido_colores_telas_id' => $colorTelaId,
+                'ruta_original' => $ruta,
+                'ruta_webp' => $rutaWebp,
+                'orden' => $idx + 1,
+            ];
+            
+            // ✅ UPDATE: Si viene con ID, actualizar foto existente
+            if ($id) {
+                $fotoExistente = $prenda->fotosTelas()->where('id', $id)->first();
+                if ($fotoExistente) {
+                    $fotoExistente->update($datosFoto);
+                }
+            }
+            // ✅ CREATE: Si NO viene con ID, crear nueva foto
+            else {
+                // Verificar que no exista ya esta ruta exacta (evitar duplicados)
+                $existente = $prenda->fotosTelas()
+                    ->where('prenda_pedido_colores_telas_id', $colorTelaId)
+                    ->where('ruta_original', $ruta)
+                    ->first();
                 
-                $fotosTelaNovas[$ruta] = [
-                    'prenda_pedido_colores_telas_id' => $colorTelaId,
-                    'ruta_original' => $ruta,
-                    'ruta_webp' => $rutaWebp,
-                    'orden' => $idx + 1,
-                ];
-            }
-        }
-
-        // âœ… Eliminar solo fotos que NO estÃ¡n en la nueva lista
-        foreach ($fotosTelaExistentes as $ruta => $fotoTelaRecord) {
-            if (!isset($fotosTelaNovas[$ruta])) {
-                $fotoTelaRecord->delete();
-            }
-        }
-
-        // âœ… Insertar solo fotos nuevas (las que ya existen no se tocan)
-        foreach ($fotosTelaNovas as $ruta => $datosFoto) {
-            if (!isset($fotosTelaExistentes[$ruta])) {
-                $prenda->fotosTelas()->create($datosFoto);
+                if (!$existente) {
+                    $prenda->fotosTelas()->create($datosFoto);
+                }
             }
         }
     }
@@ -560,6 +568,41 @@ final class ActualizarPrendaCompletaUseCase
                 ];
             })->toArray(),
         ];
-    }}
+    }
+
+    private function guardarNovedad(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
+    {
+        // Si no hay novedad, no hacer nada
+        if (is_null($dto->novedad) || empty(trim($dto->novedad))) {
+            return;
+        }
+
+        // Obtener el pedido asociado a la prenda
+        $pedido = $prenda->pedidoProduccion;
+        
+        if (!$pedido) {
+            \Log::warning('[ActualizarPrendaCompletaUseCase] No se encontró pedido para prenda', [
+                'prenda_id' => $prenda->id,
+            ]);
+            return;
+        }
+
+        // Agregar novedad a las novedades existentes (para mantener historial)
+        // Usar "\n\n" como separador de bloques (igual que operario)
+        $novedadesActuales = $pedido->novedades ?? '';
+        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . trim($dto->novedad);
+
+        // Actualizar en pedidos_produccion
+        $pedido->update([
+            'novedades' => $novedadesActualizadas,
+        ]);
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] Novedad guardada', [
+            'prenda_id' => $prenda->id,
+            'pedido_id' => $pedido->id,
+            'novedad' => $dto->novedad,
+        ]);
+    }
+}
 
 

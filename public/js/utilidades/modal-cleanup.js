@@ -77,10 +77,12 @@ class ModalCleanup {
 
         }
 
-        // Limpiar telas agregadas
-        if (window.telasAgregadas) {
-            window.telasAgregadas.length = 0;
-
+        // Limpiar telas agregadas (AMBOS FLUJOS: CREACIÓN y EDICIÓN - SEPARADOS)
+        if (window.telasCreacion) {
+            window.telasCreacion.length = 0;
+        }
+        if (window.telasEdicion) {
+            window.telasEdicion.length = 0;
         }
 
         // Limpiar tallas relacionales (modelo nuevo: {GENERO: {TALLA: CANTIDAD}})

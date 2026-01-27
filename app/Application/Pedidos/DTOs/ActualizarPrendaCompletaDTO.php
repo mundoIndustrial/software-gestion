@@ -31,6 +31,7 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $fotos = null,                          // [ { ruta } ]
         public readonly ?array $procesos = null,                       // [ { tipo_proceso_id, ubicaciones, obs } ]
         public readonly ?array $fotosProcesosPorProceso = null,         // [ { proceso_id, imagenes: [ ruta ] } ]
+        public readonly ?string $novedad = null,                       // Descripción de cambios realizados
     ) {}
 
     public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
@@ -145,6 +146,7 @@ final class ActualizarPrendaCompletaDTO
             fotos: (!empty($imagenes) ? array_merge($imagenesExistentes ?? [], $imagenes) : null),
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
+            novedad: $data['novedad'] ?? null,
         );
     }
 }

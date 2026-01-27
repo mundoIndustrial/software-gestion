@@ -60,26 +60,42 @@ class TelaProcessor {
     /**
      * Carga telas desde estructura de BD (propiedades raíz: tela, color, ref, imagenes_tela)
      * Usado en cargarItemEnModal() para prendas guardadas en BD
+     * FLUJO EDICIÓN: Guarda en window.telasEdicion
+     * 
+     * IMPORTANTE: Ahora captura IDs para MERGE pattern:
+     * - id: ID de relación (prenda_pedido_colores_telas.id)
+     * - color_id: ID del color (para UPDATE/busqueda)
+     * - tela_id: ID de la tela (para UPDATE/busqueda)
+     * - referencia: Referencia del pedido (de pivot table)
+     * 
      * @param {Object} prenda - Objeto de prenda desde BD
      * @returns {Object} {telaObj: Object|null, procesada: boolean}
      */
     static cargarTelaDesdeBaseDatos(prenda) {
-        if ((prenda.tela || prenda.color) && window.telasAgregadas) {
+        if ((prenda.tela || prenda.color) && window.telasEdicion) {
             const telaObj = {
+                // IDs para MERGE (actualizar relación existente)
+                id: prenda.prenda_pedido_colores_telas_id || null,  // ID de la relación (pivot)
+                color_id: prenda.color_id || null,                   // ID del color
+                tela_id: prenda.tela_id || null,                     // ID de la tela
+                
+                // Datos visibles
                 color: prenda.color || '',
                 tela: prenda.tela || '',
-                referencia: prenda.ref || prenda.referencia || '',  // BD usa 'ref', no 'referencia'
+                referencia: prenda.ref || prenda.referencia || prenda.referencia_tela || '',  // De BD
+                
+                // Para fallback si faltan IDs
+                color_nombre: prenda.color || '',
+                tela_nombre: prenda.tela || '',
+                
                 imagenes: []
             };
 
             // Agregar imágenes de tela si existen
-            // En BD están en 'imagenes_tela' (sin la primera imagen que es imagen_tela de portada)
             if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
-                // La segunda imagen es la de tela real (primera es imagen_tela de portada)
                 if (prenda.imagenes_tela.length > 1) {
-                    telaObj.imagenes = [prenda.imagenes_tela[1]];  // Usar la segunda imagen (foto de tela)
+                    telaObj.imagenes = [prenda.imagenes_tela[1]];
                 } else if (prenda.imagenes_tela.length === 1) {
-                    // Si solo hay una, usarla
                     telaObj.imagenes = [prenda.imagenes_tela[0]];
                 }
             }
@@ -91,15 +107,16 @@ class TelaProcessor {
     }
 
     /**
-     * Actualiza telasAgregadas global con una nueva tela desde BD
+     * Actualiza telasEdicion global con una nueva tela desde BD
+     * FLUJO EDICIÓN: Solo usa telasEdicion
      * @param {Object} telaObj - Objeto de tela a agregar
      */
     static agregarTelaAlStorage(telaObj) {
-        if (!window.telasAgregadas) {
-            window.telasAgregadas = [];
+        if (!window.telasEdicion) {
+            window.telasEdicion = [];
         }
-        window.telasAgregadas.length = 0;  // Limpiar telas anteriores
-        window.telasAgregadas.push(telaObj);
+        window.telasEdicion.length = 0;  // Limpiar telas anteriores
+        window.telasEdicion.push(telaObj);
 
         // Actualizar tabla de telas si existe
         if (window.actualizarTablaTelas) {

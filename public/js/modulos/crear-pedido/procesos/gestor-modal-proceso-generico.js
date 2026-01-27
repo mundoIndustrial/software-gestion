@@ -6,6 +6,11 @@
  */
 
 let procesoActual = null;
+// NUEVO: Flag para diferenciar entre CREACIÓN y EDICIÓN
+let modoActual = 'crear';  // 'crear' o 'editar'
+// NUEVO: Buffer temporal para cambios en EDICIÓN (no se sincroniza hasta GUARDAR CAMBIOS final)
+let cambiosProceso = null;
+
 window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
 window.ubicacionesProcesoSeleccionadas = [];
 // ESTRUCTURA INDEPENDIENTE: Cantidades de TALLAS DEL PROCESO (NO de la prenda)
@@ -59,6 +64,8 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     }
     
     procesoActual = tipoProceso;
+    // NUEVO: Establecer el modo (crear o editar)
+    modoActual = esEdicion ? 'editar' : 'crear';
     const config = procesosConfig[tipoProceso];
     
     if (!config) {
@@ -84,7 +91,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         
         // SOLO limpiar variables si NO es edición
         if (!esEdicion) {
-
+            // En CREACIÓN: limpiar todo
             window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
             window.tallasCantidadesProceso = { dama: {}, caballero: {} };
             
@@ -104,8 +111,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
                 limpiarImagenesProceso();
             }
         } else {
-
-            // En modo edición, renderizar lo que ya está cargado
+            // En EDICIÓN: renderizar lo que ya está cargado
             if (window.renderizarListaUbicaciones) {
                 window.renderizarListaUbicaciones();
             }
@@ -131,8 +137,9 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         modal.style.display = 'none';
     }
     
-    // Solo deseleccionar si NO se guardó el proceso (usuario cerró sin guardar)
-    if (procesoActual && !procesoGuardado) {
+    // En CREACIÓN: Deseleccionar si no se guardó
+    // En EDICIÓN: No hacer nada (cambios están en buffer, se aplicarán en PATCH final)
+    if (modoActual === 'crear' && procesoActual && !procesoGuardado) {
 
         
         //  PASO 1: Deseleccionar el checkbox visualmente en el HTML
@@ -159,12 +166,13 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         // PASO 3: Limpiar estructura de tallas del proceso
         window.tallasCantidadesProceso = { dama: {}, caballero: {} };
         
-
-    } else if (procesoActual && procesoGuardado) {
-
+    } else if (modoActual === 'editar' && procesoGuardado) {
+        console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
     }
     
+    // NUEVO: Reset de variables después de cerrar
     procesoActual = null;
+    modoActual = 'crear';  // Reset a valor por defecto
 };
 
 // Array para almacenar los archivos reales del proceso (hasta 3)
@@ -993,31 +1001,35 @@ window.agregarProcesoAlPedido = function() {
             imagenes: imagenesValidas // Array de imágenes
         };
         
-
-        
-        //  CRÍTICO: Guardar en procesosSeleccionados CON SINCRONIZACIÓN
-        if (!window.procesosSeleccionados) {
-            window.procesosSeleccionados = {};
-
-        }
-        
-        // Si el proceso NO existe todavía, crearlo
-        if (!window.procesosSeleccionados[procesoActual]) {
-            window.procesosSeleccionados[procesoActual] = {
-                tipo: procesoActual,
-                datos: null
-            };
-
-        }
-        
-        // Asignar los datos capturados
-        window.procesosSeleccionados[procesoActual].datos = datos;
-
-        
-        //  NUEVO: Renderizar tarjetas de procesos en el modal de prenda
-        if (window.renderizarTarjetasProcesos) {
-            window.renderizarTarjetasProcesos();
-
+        // NUEVO: DIFERENCIAR ENTRE CREACIÓN Y EDICIÓN
+        if (modoActual === 'crear') {
+            // CREACIÓN: Guardar directamente en procesosSeleccionados (comportamiento actual)
+            if (!window.procesosSeleccionados) {
+                window.procesosSeleccionados = {};
+            }
+            
+            // Si el proceso NO existe todavía, crearlo
+            if (!window.procesosSeleccionados[procesoActual]) {
+                window.procesosSeleccionados[procesoActual] = {
+                    tipo: procesoActual,
+                    datos: null
+                };
+            }
+            
+            // Asignar los datos capturados
+            window.procesosSeleccionados[procesoActual].datos = datos;
+            
+            // NUEVO: Renderizar tarjetas de procesos en el modal de prenda
+            if (window.renderizarTarjetasProcesos) {
+                window.renderizarTarjetasProcesos();
+            }
+            
+        } else if (modoActual === 'editar') {
+            // EDICIÓN: Guardar TEMPORALMENTE en buffer (NO en procesosSeleccionados)
+            // Los cambios se aplicarán cuando el usuario haga click en "GUARDAR CAMBIOS" de la prenda
+            cambiosProceso = datos;
+            console.log('[EDICIÓN-BUFFER] Cambios del proceso guardados temporalmente:', cambiosProceso);
+            console.log('[EDICIÓN-BUFFER] ⚠️ procesosSeleccionados NO ha sido actualizado aún');
         }
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
@@ -1028,10 +1040,43 @@ window.agregarProcesoAlPedido = function() {
             window.actualizarResumenProcesos();
         }
         
-
     } catch (error) {
-
+        console.error('[agregarProcesoAlPedido] Error:', error);
     }
+};
+
+// NUEVO: Función para aplicar cambios del buffer cuando se hace GUARDAR CAMBIOS de la prenda
+// Esta función es llamada ANTES de hacer el PATCH final
+window.aplicarCambiosProcesosDesdeBuffer = function() {
+    if (cambiosProceso) {
+        console.log('[APLICAR-BUFFER] Aplicando cambios del proceso al procesosSeleccionados:', cambiosProceso);
+        
+        // Si no existe, crear
+        if (!window.procesosSeleccionados) {
+            window.procesosSeleccionados = {};
+        }
+        
+        // Crear o actualizar el proceso con los cambios del buffer
+        window.procesosSeleccionados[cambiosProceso.tipo] = {
+            tipo: cambiosProceso.tipo,
+            datos: cambiosProceso
+        };
+        
+        console.log('[APLICAR-BUFFER] ✅ Cambios aplicados a procesosSeleccionados');
+        
+        // Limpiar buffer
+        cambiosProceso = null;
+    }
+};
+
+// NUEVO: Función para obtener el estado actual del buffer (para debugging/validación)
+window.obtenerBufferProcesoActual = function() {
+    return cambiosProceso;
+};
+
+// NUEVO: Función para obtener el modo actual (para debugging)
+window.obtenerModoActual = function() {
+    return modoActual;
 };
 
 // Confirmar que el módulo se cargó correctamente

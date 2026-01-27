@@ -35,19 +35,19 @@ class BuscarPedidoPorNumeroHandler implements QueryHandler
             $pedido = $this->pedidoModel
                 ->where('numero_pedido', $query->getNumeroPedido())
                 ->with([
-                    'prendas',                          // âœ… Prendas del pedido
-                    'prendas.variantes',                // âœ… Variantes (manga, broche)
-                    'prendas.tallas',                   // âœ… Tallas
-                    'prendas.coloresTelas',             // âœ… Colores-telas
-                    'prendas.coloresTelas.color',       // âœ… Detalles del color
-                    'prendas.coloresTelas.tela',        // âœ… Detalles de la tela
-                    'prendas.coloresTelas.fotos',       // âœ… Fotos de color-tela
-                    'prendas.fotos',                    // âœ… Fotos de prenda
-                    'prendas.procesos',                 // âœ… Procesos
-                    'prendas.procesos.tipoProceso',     // âœ… Tipo de proceso
-                    'prendas.procesos.imagenes',        // âœ… ImÃ¡genes de procesos
-                    'asesor',                           // âœ… Asesor
-                    'cliente',                          // âœ… Cliente
+                    'prendas',                          //  Prendas del pedido
+                    'prendas.variantes',                //  Variantes (manga, broche)
+                    'prendas.tallas',                   //  Tallas
+                    'prendas.coloresTelas',             //  Colores-telas
+                    'prendas.coloresTelas.color',       //  Detalles del color
+                    'prendas.coloresTelas.tela',        //  Detalles de la tela
+                    'prendas.coloresTelas.fotos',       //  Fotos de color-tela
+                    'prendas.fotos',                    //  Fotos de prenda
+                    'prendas.procesos',                 //  Procesos
+                    'prendas.procesos.tipoProceso',     //  Tipo de proceso
+                    'prendas.procesos.imagenes',        //  ImÃ¡genes de procesos
+                    'asesor',                           //  Asesor
+                    'cliente',                          //  Cliente
                 ])
                 ->first();
 
