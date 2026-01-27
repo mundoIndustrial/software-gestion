@@ -76,8 +76,8 @@ class PrendaEditor {
             this.llenarCamposBasicos(prenda);
             this.cargarImagenes(prenda);
             this.cargarTelas(prenda);
+            this.cargarVariaciones(prenda);  // CARGAR PRIMERO para que genero_id esté seleccionado antes de las tallas
             this.cargarTallasYCantidades(prenda);
-            this.cargarVariaciones(prenda);
             
             console.log(' [CARGAR-PRENDA] Sobre de cargar procesos...');
             this.cargarProcesos(prenda);
@@ -197,6 +197,29 @@ class PrendaEditor {
             });
 
             this.actualizarPreviewImagenes(imagenesACargar);
+            
+            // ACTUALIZAR PREVIEW DIRECTAMENTE SIN DEPENDER DE actualizarPreviewPrenda
+            setTimeout(() => {
+                console.log('[cargarImagenes] 🎬 Actualizando preview directamente...');
+                const preview = document.getElementById('nueva-prenda-foto-preview');
+                if (preview && window.imagenesPrendaStorage.images && window.imagenesPrendaStorage.images.length > 0) {
+                    const primerImg = window.imagenesPrendaStorage.images[0];
+                    const urlImg = primerImg.previewUrl;
+                    
+                    console.log('[cargarImagenes] 🖼️ URL imagen:', urlImg);
+                    
+                    preview.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = urlImg;
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+                    preview.appendChild(img);
+                    
+                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM');
+                } else {
+                    console.warn('[cargarImagenes] ⚠️ Preview no encontrado o sin imágenes');
+                }
+            }, 100);
+            
             console.log(`✅ [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
         } else {
             console.warn(' [CARGAR-IMAGENES] imagenesPrendaStorage no disponible');
@@ -267,11 +290,11 @@ class PrendaEditor {
      * @private
      */
     actualizarPreviewImagenes(imagenes) {
-
-
+        console.log('[actualizarPreviewImagenes] 📸 Actualizando preview con', imagenes?.length || 0, 'imágenes');
+        console.log('[actualizarPreviewImagenes] 📦 Storage tiene:', window.imagenesPrendaStorage?.images?.length || 0, 'imágenes');
         
         if (window.actualizarPreviewPrenda) {
-
+            console.log('[actualizarPreviewImagenes] ✅ Llamando a window.actualizarPreviewPrenda()');
             window.actualizarPreviewPrenda();
             return;
         }
@@ -279,23 +302,22 @@ class PrendaEditor {
         const preview = document.getElementById('nueva-prenda-foto-preview');
         const contador = document.getElementById('nueva-prenda-foto-contador');
         
-
-
+        console.log('[actualizarPreviewImagenes] 🔍 Preview element:', preview ? 'ENCONTRADO' : 'NO ENCONTRADO');
 
         if (preview && window.imagenesPrendaStorage.images.length > 0) {
             const primerImg = window.imagenesPrendaStorage.images[0];
             const urlImg = primerImg.previewUrl || primerImg.url;
-
             
+            console.log('[actualizarPreviewImagenes] 🖼️ Mostrando imagen:', urlImg);
+
             preview.style.backgroundImage = `url('${urlImg}')`;
             preview.style.cursor = 'pointer';
 
             if (contador && window.imagenesPrendaStorage.images.length > 1) {
                 contador.textContent = window.imagenesPrendaStorage.images.length;
-
             }
         } else {
-
+            console.log('[actualizarPreviewImagenes] ⚠️ No hay imágenes para mostrar');
         }
     }
 
@@ -304,10 +326,21 @@ class PrendaEditor {
      * @private
      */
     cargarTelas(prenda) {
-
+        console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
         
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
+            console.log('[cargarTelas] ✓ Telas disponibles:', prenda.telasAgregadas.length);
+            
+            // Verificar estructura de cada tela
+            prenda.telasAgregadas.forEach((tela, idx) => {
+                console.log(`[cargarTelas] Tela ${idx}:`, {
+                    nombre: tela.nombre_tela,
+                    color: tela.color,
+                    imagenes_count: tela.imagenes ? tela.imagenes.length : 0,
+                    imagenes: tela.imagenes
+                });
+            });
 
             
             // Limpiar storage de telas y inputs
@@ -364,16 +397,18 @@ class PrendaEditor {
                         }
                     });
                 } else {
-
+                    console.log(`[cargarTelas] ⚠️ Tela ${idx} sin imágenes`);
                 }
             });
             
             // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
             window.telasAgregadas = [...prenda.telasAgregadas];
+            console.log('[cargarTelas] ✅ window.telasAgregadas asignadas:', window.telasAgregadas);
 
             
             // Actualizar tabla de telas
             if (window.actualizarTablaTelas) {
+                console.log('[cargarTelas] 🔄 Llamando a actualizarTablaTelas()');
                 window.actualizarTablaTelas();
 
             }
@@ -401,73 +436,46 @@ class PrendaEditor {
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
 
-        // PRIORIDAD 0: Usar cantidad_talla (estructura desde formulario: {DAMA: {S: 10, M: 20}})
-        if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
-            Object.entries(prenda.cantidad_talla).forEach(([genero, tallasObj]) => {
-                const generoUp = genero.toUpperCase();
-                if (window.tallasRelacionales[generoUp] && typeof tallasObj === 'object') {
-                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
-                        if (cantidad > 0) {
-                            window.tallasRelacionales[generoUp][talla] = cantidad;
-                        }
-                    });
-                }
-            });
-            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde cantidad_talla (formulario)', window.tallasRelacionales);
-        }
-        // PRIORIDAD 1: Usar array relacional {genero, talla, cantidad} de prenda_pedido_tallas
-        else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+        console.log('[cargarTallasYCantidades] 🔍 Analizando prenda:', {
+            tiene_tallas_disponibles: !!prenda.tallas_disponibles,
+            tallas_disponibles: prenda.tallas_disponibles,
+            tiene_genero_id: !!prenda.variantes?.genero_id,
+            genero_id: prenda.variantes?.genero_id
+        });
 
-            const generosMap = {};
-            
-            // Iterar array de objetos {genero, talla, cantidad}
-            prenda.tallas.forEach(tallaRecord => {
-                const { genero, talla, cantidad } = tallaRecord;
-                
-                if (genero && talla && cantidad !== undefined) {
-                    const generoUp = genero.toUpperCase();
-                    if (window.tallasRelacionales[generoUp]) {
-                        window.tallasRelacionales[generoUp][talla] = cantidad;
-                    }
-                    
-                    if (!generosMap[genero]) {
-                        generosMap[genero] = [];
-                    }
-                    if (!generosMap[genero].includes(talla)) {
-                        generosMap[genero].push(talla);
-                    }
-                }
-            });
-            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde array (BD)', window.tallasRelacionales);
-            
-            // Convertir a estructura esperada
+        // MAPEO de genero_id a nombre
+        const generoMap = {
+            1: 'DAMA',
+            2: 'CABALLERO'
+        };
 
-        }
-        // PRIORIDAD 2: Fallback a generosConTallas (estructura alternativa)
-        else if (prenda.generosConTallas && Object.keys(prenda.generosConTallas).length > 0) {
-
-            
-            // Extraer cantidades a estructura relacional
-            Object.entries(prenda.generosConTallas).forEach(([genero, generoData]) => {
-                const generoUp = genero.toUpperCase();
-                if (generoData && typeof generoData === 'object') {
-                    if (generoData.cantidades && typeof generoData.cantidades === 'object') {
-                        Object.entries(generoData.cantidades).forEach(([talla, cantidad]) => {
-                            if (window.tallasRelacionales[generoUp]) {
-                                window.tallasRelacionales[generoUp][talla] = cantidad;
-                            }
-                        });
-                    }
-                }
-            });
-            console.log('✅ [CARGAR-TALLAS] Tallas cargadas desde generosConTallas (BD alternativo)', window.tallasRelacionales);
-        }
+        // Determinar género de la prenda desde genero_id
+        const generoActual = prenda.variantes?.genero_id ? generoMap[prenda.variantes.genero_id] : null;
         
+        console.log('[cargarTallasYCantidades] 👥 Género seleccionado:', generoActual);
 
-        
+        // CARGAR TALLAS DISPONIBLES (sin cantidades)
+        // Las cantidades las digitará el usuario
+        if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
+            console.log('[cargarTallasYCantidades] ✓ Cargando tallas disponibles:', prenda.tallas_disponibles);
+            
+            // Cargar tallas en el género actual SIN cantidades (dejar vacío para que user digitee)
+            if (generoActual) {
+                prenda.tallas_disponibles.forEach(talla => {
+                    window.tallasRelacionales[generoActual][talla] = 0;  // 0 = no pre-llenado
+                });
+            }
+        } else {
+            console.log('[cargarTallasYCantidades] ⚠️ No hay tallas disponibles en la prenda');
+            return;
+        }
+
+        console.log('[cargarTallasYCantidades] 📊 window.tallasRelacionales:', window.tallasRelacionales);
+
         // Renderizar tallas desde estructura relacional
         Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {
-            const tallasList = Object.keys(tallasObj).filter(t => tallasObj[t] > 0);
+            const tallasList = Object.keys(tallasObj);  // TODOS los que están en el objeto, incluso con valor 0
+            
             if (tallasList && tallasList.length > 0) {
                 const generoLower = genero.toLowerCase();
 
@@ -475,55 +483,28 @@ class PrendaEditor {
                     window.mostrarTallasDisponibles('letra');
                 }
                 
-                // Crear tarjeta de género con tallas y cantidades
+                // Crear tarjeta de género con tallas
                 setTimeout(() => {
-
-                    
                     // Llamar a la función que crea la tarjeta de género
                     if (window.crearTarjetaGenero) {
                         window.crearTarjetaGenero(generoLower);
-
+                        console.log(`[cargarTallasYCantidades] ✓ Tarjeta creada para género: ${generoLower}`);
                     }
                     
-                    // Cargar cantidades en los inputs después de crear la tarjeta
+                    // NO pre-llenar cantidades - dejar inputs vacíos
+                    // El usuario digitará las cantidades manualmente
                     setTimeout(() => {
-
-
-                        
-                        tallasList.forEach(talla => {
-                            const cantidad = window.tallasRelacionales[genero][talla];
-                            const dataKey = `${generoLower}-${talla}`;
-                            
-
-                            
-                            if (cantidad !== undefined && cantidad !== null) {
-                                // Buscar input por data-key (formato: dama-M, dama-L, etc.)
-                                const input = document.querySelector(`input[data-key="${dataKey}"]`);
-                                if (input) {
-                                    input.value = cantidad;
-                                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                                    input.dispatchEvent(new Event('input', { bubbles: true }));
-
-                                } else {
-
-                                    // Debug: mostrar todos los inputs disponibles
-                                    const allInputs = document.querySelectorAll('input[data-key]');
-
-                                    allInputs.forEach(inp => console.log(`  - data-key: ${inp.dataset.key}`));
-                                }
-                            }
-                        });
+                        console.log('[cargarTallasYCantidades] 📋 Tallas mostradas sin cantidades pre-cargadas');
                     }, 200);
                 }, 150);
             }
         });
         
-        // También disparar eventos de cambio en los checkboxes de género
+        // Disparar eventos de cambio en los checkboxes de género
         ['dama', 'caballero', 'unisex'].forEach(genero => {
             const checkboxGenero = document.querySelector(`input[value="${genero}"]`);
             if (checkboxGenero) {
                 checkboxGenero.dispatchEvent(new Event('change', { bubbles: true }));
-
             }
         });
     }
@@ -538,6 +519,33 @@ class PrendaEditor {
         const aplicaBolsillos = document.getElementById('aplica-bolsillos');
         const aplicaBroche = document.getElementById('aplica-broche');
         const aplicaReflectivo = document.getElementById('aplica-reflectivo');
+        
+        // CARGAR GÉNERO DESDE VARIANTES (genero_id: 1=DAMA, 2=CABALLERO)
+        if (variantes.genero_id) {
+            console.log('[cargarVariaciones] 👥 Cargando género desde variantes:', {
+                genero_id: variantes.genero_id,
+                genero_nombre: variantes.genero
+            });
+            
+            const generoMap = {
+                1: 'DAMA',
+                2: 'CABALLERO'
+            };
+            
+            const generoSeleccionado = generoMap[variantes.genero_id];
+            
+            if (generoSeleccionado) {
+                // Marcar checkbox del género
+                const checkboxGenero = document.querySelector(`input[value="${generoSeleccionado.toLowerCase()}"]`);
+                if (checkboxGenero) {
+                    console.log(`[cargarVariaciones] ✓ Marcando checkbox género: ${generoSeleccionado}`);
+                    checkboxGenero.checked = true;
+                    checkboxGenero.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    console.warn(`[cargarVariaciones] ⚠️ No encontré checkbox para género: ${generoSeleccionado}`);
+                }
+            }
+        }
 
         // MANGA
         if (aplicaManga && (variantes.tipo_manga || variantes.manga)) {
@@ -583,6 +591,12 @@ class PrendaEditor {
             aplicaBroche.checked = true;
             aplicaBroche.dispatchEvent(new Event('change', { bubbles: true }));
             
+            console.log('[cargarVariaciones] 🔗 Broche/Botón encontrado:', {
+                tipo_broche: variantes.tipo_broche,
+                obs_broche: variantes.obs_broche,
+                tipo_broche_id: variantes.tipo_broche_id
+            });
+            
             const brocheInput = document.getElementById('broche-input');
             if (brocheInput) {
                 // Normalizar el valor: convertir a minúscula y sin acentos
@@ -595,14 +609,20 @@ class PrendaEditor {
                     .replace(/ú/g, 'u');
                 
                 brocheInput.value = valorBroche;
+                console.log('[cargarVariaciones] ✓ broche-input asignado:', brocheInput.value);
                 brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
             const brocheObs = document.getElementById('broche-obs');
             if (brocheObs) {
                 brocheObs.value = variantes.obs_broche || '';
+                console.log('[cargarVariaciones] ✓ broche-obs asignado:', brocheObs.value);
                 brocheObs.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+                console.warn('[cargarVariaciones] ⚠️ No encontré elemento #broche-obs');
             }
+        } else {
+            console.log('[cargarVariaciones] ⚠️ Broche/Botón no aplica o sin datos');
         }
 
         // REFLECTIVO

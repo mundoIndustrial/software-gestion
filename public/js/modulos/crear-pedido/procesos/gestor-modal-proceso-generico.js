@@ -280,7 +280,19 @@ window.agregarUbicacionProceso = function() {
 
 // Remover ubicación de la lista
 window.removerUbicacionProceso = function(ubicacion) {
-    window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => u !== ubicacion);
+    // Si es objeto, comparar por ubicacion.ubicacion
+    if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
+        window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => {
+            if (typeof u === 'object') return u.ubicacion !== ubicacion.ubicacion;
+            return u !== ubicacion.ubicacion;
+        });
+    } else {
+        // Si es string
+        window.ubicacionesProcesoSeleccionadas = window.ubicacionesProcesoSeleccionadas.filter(u => {
+            if (typeof u === 'object') return u.ubicacion !== ubicacion;
+            return u !== ubicacion;
+        });
+    }
 
     window.renderizarListaUbicaciones();
 };
@@ -297,15 +309,54 @@ window.renderizarListaUbicaciones = function() {
         return;
     }
     
-    window.ubicacionesProcesoSeleccionadas.forEach(ubicacion => {
+    window.ubicacionesProcesoSeleccionadas.forEach((ubicacion, idx) => {
         const tag = document.createElement('div');
-        tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
-        tag.innerHTML = `
-            <span>${ubicacion}</span>
-            <button type="button" onclick="removerUbicacionProceso('${ubicacion}')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
-            </button>
-        `;
+        
+        // Determinar si es objeto con descripcion o solo string
+        let ubicacionTexto = '';
+        let ubicacionKey = '';
+        
+        if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
+            ubicacionTexto = ubicacion.ubicacion;
+            ubicacionKey = JSON.stringify(ubicacion); // Para comparación en remover
+            
+            // Si tiene descripción, mostrar expandido
+            if (ubicacion.descripcion) {
+                const desc = ubicacion.descripcion.substring(0, 80) + (ubicacion.descripcion.length > 80 ? '...' : '');
+                tag.style.cssText = 'display: flex; gap: 0.75rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.875rem; flex-direction: column;';
+                tag.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 0.25rem;">📍 ${ubicacionTexto}</strong>
+                            <small style="color: #4b7c0f;">${desc}</small>
+                        </div>
+                        <button type="button" onclick="removerUbicacionProceso(${ubicacionKey})" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center; flex-shrink: 0;">
+                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
+                tag.innerHTML = `
+                    <span>📍 ${ubicacionTexto}</span>
+                    <button type="button" onclick="removerUbicacionProceso(${ubicacionKey})" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
+                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
+                    </button>
+                `;
+            }
+        } else {
+            // Es un string simple
+            ubicacionTexto = ubicacion;
+            ubicacionKey = ubicacion;
+            tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
+            tag.innerHTML = `
+                <span>📍 ${ubicacionTexto}</span>
+                <button type="button" onclick="removerUbicacionProceso('${ubicacionKey}')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
+                </button>
+            `;
+        }
+        
         container.appendChild(tag);
     });
 };

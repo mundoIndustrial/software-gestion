@@ -160,16 +160,16 @@
                     return;
                 }
                 
-                console.log('📦 Abriendo modal para agregar prenda de cotización:', cotizacionSeleccionada.numero_cotizacion);
+                console.log('📦 Abriendo selector de prendas de cotización:', cotizacionSeleccionada.numero_cotizacion);
                 
                 // Guardar para usar en el modal
                 window.cotizacionSeleccionadaActual = cotizacionSeleccionada;
                 
-                // Abrir modal de selección de prendas
-                if (typeof window.abrirModalSeleccionPrendas === 'function') {
-                    window.abrirModalSeleccionPrendas(cotizacionSeleccionada);
+                // NUEVO: Usar el nuevo sistema de cargar prendas completas
+                if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
+                    window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
                 } else {
-                    console.warn('⚠️ Función abrirModalSeleccionPrendas no disponible');
+                    console.warn('⚠️ Función abrirSelectorPrendasCotizacion no disponible');
                 }
             });
         }

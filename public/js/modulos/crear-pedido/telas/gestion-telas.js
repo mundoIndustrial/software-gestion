@@ -263,10 +263,11 @@ window.agregarTelaNueva = async function() {
  * Actualizar tabla de telas
  */
 window.actualizarTablaTelas = function() {
+    console.log('[actualizarTablaTelas] 🔄 Iniciando actualización de tabla...');
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-
+        console.warn('[actualizarTablaTelas] ⚠️ tbody-telas no encontrado');
         return;
     }
     
@@ -288,6 +289,12 @@ window.actualizarTablaTelas = function() {
     
     // Agregar filas con los datos
     window.telasAgregadas.forEach((telaData, index) => {
+        console.log(`[actualizarTablaTelas] 🧵 Procesando tela ${index}:`, {
+            nombre: telaData.nombre_tela,
+            color: telaData.color,
+            imagenes: telaData.imagenes,
+            imagenes_count: telaData.imagenes ? telaData.imagenes.length : 0
+        });
 
         
         const tr = document.createElement('tr');
@@ -296,10 +303,13 @@ window.actualizarTablaTelas = function() {
         // Crear celda de imágenes
         let imagenHTML = '';
         if (telaData.imagenes && telaData.imagenes.length > 0) {
+            console.log(`[actualizarTablaTelas] 📸 Primera imagen de tela ${index}:`, telaData.imagenes[0]);
 
             
             // Crear un array con blob URLs dinámicas para esta visualización
             const imagenConBlobUrl = telaData.imagenes.map((img, imgIndex) => {
+                console.log(`[actualizarTablaTelas] 🔍 Estructura de imagen ${imgIndex}:`, img);
+                
                 // Crear una nueva blob URL a partir del File object
                 let blobUrl;
                 if (img && img.file instanceof File) {
@@ -311,8 +321,10 @@ window.actualizarTablaTelas = function() {
                 } else if (typeof img === 'string') {
                     blobUrl = img;
                 } else if (img && img.url) {
-                    // Backend retorna objetos con propiedades url, ruta_webp, ruta_original
                     blobUrl = img.url;
+                } else if (img && img.ruta) {
+                    // ← AGREGAR ESTA LÍNEA: backend retorna 'ruta', no 'url'
+                    blobUrl = img.ruta;
                 } else if (img && img.ruta_webp) {
                     blobUrl = img.ruta_webp;
                 } else if (img && img.ruta_original) {
@@ -320,12 +332,12 @@ window.actualizarTablaTelas = function() {
                 } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
                 } else {
-
+                    console.warn(`[actualizarTablaTelas] ⚠️ No se pudo determinar URL para imagen ${imgIndex}`);
                     blobUrl = '';
                 }
-                if (blobUrl) {
-
-                }
+                
+                console.log(`[actualizarTablaTelas] ✅ blobUrl para imagen ${imgIndex}:`, blobUrl);
+                
                 return {
                     ...img,
                     previewUrl: blobUrl  // Blob URL recién creada para esta sesión
@@ -339,11 +351,11 @@ window.actualizarTablaTelas = function() {
                 </div>
             `;
         } else {
-
+            console.log(`[actualizarTablaTelas] ⚠️ Tela ${index} sin imágenes`);
         }
         
         const html = `
-            <td style="padding: 0.75rem; vertical-align: middle;">${telaData.tela}</td>
+            <td style="padding: 0.75rem; vertical-align: middle;">${telaData.nombre_tela}</td>
             <td style="padding: 0.75rem; vertical-align: middle;">${telaData.color}</td>
             <td style="padding: 0.75rem; vertical-align: middle;">${telaData.referencia}</td>
             <td style="padding: 0.75rem; text-align: center; vertical-align: middle; min-height: 60px; display: table-cell;">

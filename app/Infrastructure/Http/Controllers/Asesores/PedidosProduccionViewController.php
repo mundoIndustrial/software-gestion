@@ -549,4 +549,298 @@ class PedidosProduccionViewController
             ], 500);
         }
     }
+
+    /**
+     * Obtener prenda completa desde cotización (para crear/editar pedido)
+     * GET /asesores/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}
+     */
+    public function obtenerPrendaCompleta($cotizacionId, $prendaId)
+    {
+        try {
+            // Cargar cotización con todas las relaciones
+            $cotizacion = Cotizacion::with([
+                'prendas' => function($query) use ($prendaId) {
+                    $query->where('id', $prendaId)
+                        ->with([
+                            'telas' => function($q) {
+                                $q->with([
+                                    'color:id,nombre,codigo',
+                                    'tela:id,nombre,referencia,descripcion'
+                                ]);
+                            },
+                            'fotos:id,prenda_cot_id,ruta_original,ruta_webp,ruta_miniatura',
+                            'telaFotos:id,prenda_cot_id,prenda_tela_cot_id,ruta_original,ruta_webp,ruta_miniatura',
+                            'variantes' => function($q) {
+                                $q->with([
+                                    'manga:id,nombre',
+                                    'broche:id,nombre',
+                                    'genero:id,nombre'
+                                ]);
+                            },
+                            'tallas:id,prenda_cot_id,talla',
+                            'prendaCotReflectivo:id,prenda_cot_id,ubicaciones',
+                            'logoCotizacionesTecnicas:id,prenda_cot_id,ubicaciones,observaciones'
+                        ]);
+                }
+            ])->find($cotizacionId);
+
+            if (!$cotizacion) {
+                return response()->json(['error' => 'Cotización no encontrada'], 404);
+            }
+
+            if (count($cotizacion->prendas) === 0) {
+                return response()->json(['error' => 'Prenda no encontrada'], 404);
+            }
+
+            $prenda = $cotizacion->prendas[0];
+            $procesosFormato = [];
+
+            // PROCESAR TELAS
+            $telasFormato = [];
+            if ($prenda->telas && count($prenda->telas) > 0) {
+                foreach ($prenda->telas as $tela) {
+                    $tela_data = [
+                        'id' => $tela->id,
+                        'nombre_tela' => isset($tela->tela) ? $tela->tela->nombre : 'SIN NOMBRE',
+                        'color' => isset($tela->color) ? $tela->color->nombre : '',
+                        'referencia' => $tela->referencia ?? '',
+                        'descripcion' => $tela->descripcion ?? '',
+                        'imagenes' => []
+                    ];
+
+                    // Agregar imágenes de tela
+                    if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
+                        foreach ($prenda->telaFotos as $foto) {
+                            if ($foto->prenda_tela_cot_id == $tela->id) {
+                                $ruta = $foto->ruta_original;
+                                $rutaWebp = $foto->ruta_webp;
+                                
+                                // Solo agregar /storage/ si no lo tiene ya
+                                if ($ruta && !str_starts_with($ruta, '/')) {
+                                    $ruta = '/storage/' . $ruta;
+                                }
+                                if ($rutaWebp && !str_starts_with($rutaWebp, '/')) {
+                                    $rutaWebp = '/storage/' . $rutaWebp;
+                                }
+                                
+                                $tela_data['imagenes'][] = [
+                                    'ruta' => $ruta,
+                                    'ruta_webp' => $rutaWebp
+                                ];
+                            }
+                        }
+                    }
+
+                    $telasFormato[] = $tela_data;
+                }
+            }
+
+            // PROCESAR FOTOS DE PRENDA
+            $fotosFormato = [];
+            if ($prenda->fotos && count($prenda->fotos) > 0) {
+                foreach ($prenda->fotos as $foto) {
+                    $ruta = $foto->ruta_original;
+                    $rutaWebp = $foto->ruta_webp;
+                    
+                    // Solo agregar /storage/ si no lo tiene ya
+                    if ($ruta && !str_starts_with($ruta, '/')) {
+                        $ruta = '/storage/' . $ruta;
+                    }
+                    if ($rutaWebp && !str_starts_with($rutaWebp, '/')) {
+                        $rutaWebp = '/storage/' . $rutaWebp;
+                    }
+                    
+                    $fotosFormato[] = [
+                        'ruta' => $ruta,
+                        'ruta_webp' => $rutaWebp
+                    ];
+                }
+            }
+
+            // PROCESAR TALLAS
+            $tallasDisponibles = [];
+            if ($prenda->tallas && count($prenda->tallas) > 0) {
+                foreach ($prenda->tallas as $tallaCot) {
+                    $tallasDisponibles[] = $tallaCot->talla;
+                }
+            }
+
+            // PROCESAR VARIANTES
+            $variantes = [];
+            if ($prenda->variantes && count($prenda->variantes) > 0) {
+                $var = $prenda->variantes[0];
+                $variantes = [
+                    'tipo_prenda' => $var->tipo_prenda ?? '',
+                    'es_jean_pantalon' => (bool)($var->es_jean_pantalon ?? false),
+                    'tipo_jean_pantalon' => $var->tipo_jean_pantalon ?? '',
+                    'aplica_manga' => (bool)($var->aplica_manga ?? false),
+                    'tipo_manga' => $var->manga ? $var->manga->nombre : ($var->tipo_manga ?? 'No aplica'),
+                    'tipo_manga_id' => $var->tipo_manga_id,
+                    'obs_manga' => $var->obs_manga ?? '',
+                    'tiene_bolsillos' => (bool)($var->tiene_bolsillos ?? false),
+                    'obs_bolsillos' => $var->obs_bolsillos ?? '',
+                    'aplica_broche' => (bool)($var->aplica_broche ?? false),
+                    'tipo_broche' => $var->broche ? $var->broche->nombre : ($var->tipo_broche ?? 'No aplica'),
+                    'tipo_broche_id' => $var->tipo_broche_id,
+                    'obs_broche' => $var->obs_broche ?? '',
+                    'tiene_reflectivo' => (bool)($var->tiene_reflectivo ?? false),
+                    'obs_reflectivo' => $var->obs_reflectivo ?? '',
+                    'genero_id' => $var->genero_id ?? null,
+                    'genero' => $var->genero ? $var->genero->nombre : 'UNISEX'
+                ];
+            }
+
+            // PROCESAR REFLECTIVO
+            if ($prenda->prendaCotReflectivo && count($prenda->prendaCotReflectivo) > 0) {
+                $prendaCotRef = $prenda->prendaCotReflectivo[0];
+                $ubicaciones = [];
+                
+                $ubicacionesRaw = $prendaCotRef->ubicaciones;
+                if (is_string($ubicacionesRaw)) {
+                    $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                }
+                if (is_string($ubicacionesRaw)) {
+                    $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                }
+                
+                if (is_array($ubicacionesRaw)) {
+                    foreach ($ubicacionesRaw as $ub) {
+                        if (is_array($ub)) {
+                            $ubicaciones[] = [
+                                'ubicacion' => $ub['ubicacion'] ?? '',
+                                'descripcion' => $ub['descripcion'] ?? ''
+                            ];
+                        }
+                    }
+                }
+                
+                $reflectivoCotizacion = \DB::table('reflectivo_cotizacion')
+                    ->where('prenda_cot_id', $prenda->id)
+                    ->first();
+                
+                $fotosReflectivo = [];
+                $observacionesReflectivo = '';
+                
+                if ($reflectivoCotizacion) {
+                    if ($reflectivoCotizacion->observaciones_generales) {
+                        $obsData = is_string($reflectivoCotizacion->observaciones_generales) 
+                            ? json_decode($reflectivoCotizacion->observaciones_generales, true)
+                            : $reflectivoCotizacion->observaciones_generales;
+                        $observacionesReflectivo = is_array($obsData) ? implode(', ', $obsData) : '';
+                    }
+                    
+                    $fotosData = \DB::table('reflectivo_fotos_cotizacion')
+                        ->where('reflectivo_cotizacion_id', $reflectivoCotizacion->id)
+                        ->orderBy('orden')
+                        ->get();
+                    
+                    foreach ($fotosData as $foto) {
+                        $ruta = $foto->ruta_webp ?? $foto->ruta_original;
+                        if ($ruta && !str_starts_with($ruta, '/')) {
+                            $ruta = '/storage/' . $ruta;
+                        }
+                        
+                        $fotosReflectivo[] = [
+                            'ruta' => $ruta,
+                            'ruta_webp' => $foto->ruta_webp ? '/storage/' . $foto->ruta_webp : null,
+                            'orden' => $foto->orden
+                        ];
+                    }
+                }
+                
+                $procesosFormato['reflectivo'] = [
+                    'tipo' => 'Reflectivo',
+                    'ubicaciones' => $ubicaciones,
+                    'imagenes' => $fotosReflectivo,
+                    'observaciones' => $observacionesReflectivo
+                ];
+            }
+
+            // PROCESAR LOGO
+            if ($prenda->logoCotizacionesTecnicas && count($prenda->logoCotizacionesTecnicas) > 0) {
+                $logoTecnica = $prenda->logoCotizacionesTecnicas[0];
+                $ubicacionesLogo = [];
+                
+                $ubicacionesRaw = $logoTecnica->ubicaciones ?? null;
+                
+                if ($ubicacionesRaw) {
+                    if (is_string($ubicacionesRaw)) {
+                        $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                    }
+                    if (is_string($ubicacionesRaw)) {
+                        $ubicacionesRaw = json_decode($ubicacionesRaw, true);
+                    }
+                    
+                    if (is_array($ubicacionesRaw)) {
+                        foreach ($ubicacionesRaw as $ub) {
+                            if (is_array($ub)) {
+                                $ubicacionesLogo[] = [
+                                    'ubicacion' => $ub['ubicacion'] ?? '',
+                                    'descripcion' => $ub['descripcion'] ?? ''
+                                ];
+                            }
+                        }
+                    }
+                }
+                
+                $fotosLogo = \DB::table('logo_fotos_cot')
+                    ->where('logo_cotizacion_id', $logoTecnica->id)
+                    ->orderBy('orden')
+                    ->get();
+                
+                $fotosLogoFormato = [];
+                foreach ($fotosLogo as $foto) {
+                    $ruta = $foto->ruta_webp ?? $foto->ruta_original;
+                    if ($ruta && !str_starts_with($ruta, '/')) {
+                        $ruta = '/storage/' . $ruta;
+                    }
+                    
+                    $fotosLogoFormato[] = [
+                        'ruta' => $ruta,
+                        'ruta_webp' => $foto->ruta_webp ? '/storage/' . $foto->ruta_webp : null,
+                        'orden' => $foto->orden
+                    ];
+                }
+                
+                $procesosFormato['logo'] = [
+                    'tipo' => 'Logo / Estampado',
+                    'ubicaciones' => $ubicacionesLogo,
+                    'imagenes' => $fotosLogoFormato,
+                    'observaciones' => $logoTecnica->observaciones ?? ''
+                ];
+            }
+
+            // Retornar respuesta completa
+            return response()->json([
+                'success' => true,
+                'cotizacion_id' => $cotizacionId,
+                'numero_cotizacion' => $cotizacion->numero,
+                'prenda' => [
+                    'id' => $prenda->id,
+                    'nombre_producto' => $prenda->nombre_producto,
+                    'descripcion' => $prenda->descripcion ?? '',
+                    'cantidad' => $prenda->cantidad,
+                    'prenda_bodega' => $prenda->prenda_bodega,
+                    'tallas_disponibles' => $tallasDisponibles,
+                    'telas' => $telasFormato,
+                    'fotos' => $fotosFormato,
+                    'variantes' => $variantes
+                ],
+                'procesos' => $procesosFormato
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[OBTENER-PRENDA-COMPLETA] Error obteniendo prenda completa', [
+                'cotizacion_id' => $cotizacionId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Error al obtener prenda completa',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

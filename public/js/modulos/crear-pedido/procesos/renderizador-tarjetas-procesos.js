@@ -123,37 +123,23 @@ function generarTarjetaProceso(tipo, datos) {
         
         // Si es array
         if (Array.isArray(raw)) {
-            // Intentar reconstruir un array JSON válido si está fragmentado
-            const joined = raw.join('');
-            if (joined.startsWith('[') && joined.endsWith(']')) {
-                try {
-                    const parsed = JSON.parse(joined);
-                    return Array.isArray(parsed) ? parsed : [parsed];
-                } catch (e) {
-                    // Si falla, parsear elemento por elemento
-                    return raw.map(ub => {
-                        if (typeof ub === 'string') {
-                            try {
-                                // Intentar parsear como JSON string: "valor" -> valor
-                                const parsed = JSON.parse(ub);
-                                return typeof parsed === 'string' ? parsed : String(parsed);
-                            } catch (e) {
-                                // Si falla, limpiar caracteres especiales
-                                return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
-                            }
-                        }
-                        return String(ub);
-                    });
-                }
-            } else {
-                // No parece JSON, limpiar cada elemento
-                return raw.map(ub => {
-                    if (typeof ub === 'string') {
-                        return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
-                    }
-                    return String(ub);
-                });
+            // Si el array contiene objetos con 'ubicacion' y 'descripcion'
+            if (raw.length > 0 && typeof raw[0] === 'object' && raw[0].ubicacion) {
+                // Es un array de objetos del backend - retornar como está
+                return raw;
             }
+            
+            // Si contiene strings
+            const resultado = raw.map(ub => {
+                // Si es objeto, extraer ubicacion
+                if (typeof ub === 'object' && ub !== null) {
+                    return ub;
+                }
+                // Si es string, retornar como está
+                return ub;
+            });
+            
+            return resultado.length > 0 ? resultado : [String(raw)];
         }
         
         return [String(raw)];
@@ -164,10 +150,23 @@ function generarTarjetaProceso(tipo, datos) {
     
     const ubicacionesTexto = Array.isArray(ubicacionesArray) && ubicacionesArray.length > 0
         ? ubicacionesArray.map(ub => {
-            if (typeof ub === 'string') return ub;
-            if (typeof ub === 'object') return ub.nombre || ub.descripcion || JSON.stringify(ub);
-            return String(ub);
-        }).join(', ') 
+            // Si es objeto con ubicacion y descripcion
+            if (typeof ub === 'object' && ub.ubicacion) {
+                const ubicacion = ub.ubicacion;
+                const descripcion = ub.descripcion ? ub.descripcion.replace(/\n/g, ' ').substring(0, 100) + '...' : '';
+                return descripcion 
+                    ? `<div style="margin-bottom: 0.75rem;"><strong>📍 ${ubicacion}</strong><br><span style="color: #6b7280; font-size: 0.8rem;">${descripcion}</span></div>` 
+                    : `<strong>📍 ${ubicacion}</strong>`;
+            }
+            // Si es string con nombre o descripcion
+            if (typeof ub === 'object' && (ub.nombre || ub.descripcion)) {
+                return ub.nombre || ub.descripcion;
+            }
+            // Si es string plano
+            if (typeof ub === 'string') return `<strong>📍 ${ub}</strong>`;
+            // Fallback
+            return `<strong>📍 ${String(ub)}</strong>`;
+        }).join('') 
         : 'Sin ubicaciones';
     
     console.log(`📄 [GENERAR-TARJETA] Ubicaciones texto para ${tipo}:`, ubicacionesTexto);
@@ -370,7 +369,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     // Cargar ubicaciones
     if (datos.ubicaciones && window.ubicacionesProcesoSeleccionadas) {
         
-        // Función para limpiar ubicaciones
+        // Función para limpiar ubicaciones - MANTIENE OBJETOS COMPLETOS
         const limpiarUbicaciones = (raw) => {
             if (!raw) return [];
             
@@ -386,34 +385,18 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             
             // Si es array
             if (Array.isArray(raw)) {
-                // Intentar reconstruir un array JSON válido si está fragmentado
-                const joined = raw.join('');
-                if (joined.startsWith('[') && joined.endsWith(']')) {
-                    try {
-                        const parsed = JSON.parse(joined);
-                        return Array.isArray(parsed) ? parsed : [parsed];
-                    } catch (e) {
-                        // Si falla, parsear elemento por elemento
-                        return raw.map(ub => {
-                            if (typeof ub === 'string') {
-                                try {
-                                    const parsed = JSON.parse(ub);
-                                    return typeof parsed === 'string' ? parsed : String(parsed);
-                                } catch (e) {
-                                    return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
-                                }
-                            }
-                            return String(ub);
-                        });
+                // Mantener objetos completos si tienen ubicacion + descripcion
+                return raw.map(ub => {
+                    // Si es objeto con 'ubicacion', devolverlo completo
+                    if (typeof ub === 'object' && ub !== null && ub.ubicacion) {
+                        return ub; // DEVOLVER OBJETO COMPLETO
                     }
-                } else {
-                    return raw.map(ub => {
-                        if (typeof ub === 'string') {
-                            return ub.replace(/^["'\[\]\{\}]+|["'\[\]\{\}]+$/g, '').trim();
-                        }
-                        return String(ub);
-                    });
-                }
+                    // Si es string, retornar como está
+                    if (typeof ub === 'string') {
+                        return ub;
+                    }
+                    return String(ub);
+                });
             }
             
             return [String(raw)];
