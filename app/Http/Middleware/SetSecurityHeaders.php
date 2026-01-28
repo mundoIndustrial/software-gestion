@@ -18,12 +18,17 @@ class SetSecurityHeaders
     {
         $response = $next($request);
 
+        // En desarrollo, no aplicar CSP restrictiva
+        if (app()->environment('local', 'development')) {
+            return $response;
+        }
+
         //  IMPORTANTE: Remover cualquier CSP header previo para evitar conflictos
         $response->headers->remove('Content-Security-Policy');
         $response->headers->remove('Content-Security-Policy-Report-Only');
 
         // Detectar si estamos en desarrollo
-        $isDevelopment = app()->environment('local');
+        $isDevelopment = app()->environment('local', 'development');
         
         // En desarrollo, usar el hostname actual para Vite y Reverb
         $serverHost = $request->getHost();
