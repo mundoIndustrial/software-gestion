@@ -13,6 +13,7 @@ class PrendaCotReflectivo extends Model
         'prenda_cot_id',
         'variaciones',
         'ubicaciones',
+        'descripcion',
     ];
 
     protected $casts = [

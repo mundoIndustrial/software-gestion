@@ -51,9 +51,7 @@ class PrendaPdfDesign
         // Agregar secciones en orden
         $html .= $this->renderHeader();
         $html .= $this->renderClientInfo();
-        $html .= $this->renderQuoteSection();
         $html .= $this->renderPrendas();
-        $html .= $this->renderSpecifications();
 
         $html .= '</body>
 </html>';
@@ -70,30 +68,55 @@ class PrendaPdfDesign
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
-        .container { width: 100%; margin: 0; padding: 0; }
+        
         .header-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 0; }
         .header { text-align: center; border-bottom: 2px solid #000; padding: 15px 12mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 15px; }
         .header-logo { width: 120px; height: auto; flex-shrink: 0; }
         .header-content { flex: 1; text-align: center; }
         .header-title { font-size: 14px; font-weight: bold; margin: 0; }
         .header-subtitle { font-size: 10px; margin: 2px 0; }
+        
         .info-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 8px; }
         .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; padding: 0 12mm; }
         .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; }
         .info-table .label { background: #f0f0f0; font-weight: bold; }
-        .content-wrapper { padding: 0 12mm; margin-bottom: 20px; }
-        .prenda { margin-bottom: 15px; page-break-inside: avoid; border: 1px solid #ddd; padding: 10px; background: #fafafa; }
-        .prenda-nombre { font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #000; }
-        .prenda-descripcion { font-size: 9px; margin-bottom: 4px; color: #333; line-height: 1.3; word-wrap: break-word; }
-        .prenda-tallas { font-size: 10px; font-weight: bold; margin: 8px 0; color: #e74c3c; }
-        .prenda-imagenes { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
-        .prenda-imagen { width: 120px; height: 120px; border: 1px solid #ddd; object-fit: cover; }
-        .spec-wrapper { width: 100%; margin: 20px 0 0 0; padding: 15px 12mm; border-top: 2px solid #000; page-break-inside: avoid; }
-        .spec-table { width: 100%; border-collapse: collapse; table-layout: auto; page-break-inside: avoid; }
-        .spec-table th { background: #FFC107; padding: 8px 5px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 9px; }
-        .spec-table td { padding: 6px 5px; border: 1px solid #000; font-size: 8px; word-wrap: break-word; }
-        .spec-table .label { background: #f9f9f9; font-weight: bold; }
-        CSS;
+        
+        /* Estilos para prendas */
+        .prendas-wrapper { padding: 12mm; }
+        
+        .prenda-card { border: 1px solid #000; margin-bottom: 15px; padding: 0; page-break-inside: avoid; }
+        
+        /* Header del card con nombre y detalles */
+        .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
+        .prenda-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
+        .prenda-detalles { font-size: 9px; margin-bottom: 2px; }
+        .prenda-tallas { font-size: 10px; color: #e74c3c; font-weight: bold; }
+        
+        /* Contenedor principal de la prenda */
+        .prenda-contenido { display: flex; gap: 10px; padding: 10px; }
+        
+        /* Columna izquierda: tabla de variaciones */
+        .prenda-info { flex: 1; }
+        .variaciones-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .variaciones-table td { border: 1px solid #000; padding: 6px; font-size: 9px; }
+        .variaciones-table .var-header { background: #e0e0e0; font-weight: bold; }
+        .variaciones-table .var-label { background: #f5f5f5; font-weight: bold; width: 35%; }
+        
+        /* Columna derecha: imágenes de variaciones */
+        .prenda-imagenes { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; width: 100%; }
+        .prenda-img-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .prenda-img { border: 2px solid #999; padding: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; }
+        .prenda-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .prenda-img-label { font-size: 8px; font-weight: bold; text-align: center; color: #333; width: 100px; word-wrap: break-word; }
+        .prenda-img-placeholder { width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; flex-shrink: 0; }
+        
+        /* Tabla de ubicaciones */
+        .ubicaciones-wrapper { width: 100%; border-top: 1px solid #000; padding: 10px; background: #f9f9f9; }
+        .ubicaciones-title { font-weight: bold; font-size: 10px; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px; }
+        .ubicaciones-content { font-size: 9px; line-height: 1.6; }
+        .ubicacion-item { margin-bottom: 8px; padding: 6px; border-left: 3px solid #000; }
+        .ubicacion-titulo { font-weight: bold; }
+CSS;
     }
 
     /**
@@ -167,20 +190,31 @@ class PrendaPdfDesign
     /**
      * Renderiza todas las prendas
      */
+    /**
+     * Renderiza las prendas en cards con variaciones, colores, telas, tallas e imágenes
+     */
     private function renderPrendas(): string
     {
         $prendas = $this->cotizacion->prendas()
-            ->with(['telas.tela', 'variantes.manga', 'variantes.broche', 'tallas', 'fotos', 'telaFotos'])
+            ->with([
+                'telas.tela',
+                'variantes.manga',
+                'variantes.broche',
+                'tallas',
+                'fotos',
+                'telaFotos',
+                'prendaCotReflectivo:id,prenda_cot_id,variaciones,ubicaciones'
+            ])
             ->get() ?? [];
 
         if ($prendas->isEmpty()) {
             return '';
         }
 
-        $html = '<div class="content-wrapper">';
+        $html = '<div class="prendas-wrapper">';
 
         foreach ($prendas as $index => $prenda) {
-            $html .= $this->renderPrenda($prenda, $index);
+            $html .= $this->renderPrendaCard($prenda, $index);
         }
 
         $html .= '</div>';
@@ -189,33 +223,68 @@ class PrendaPdfDesign
     }
 
     /**
-     * Renderiza una prenda individual
+     * Renderiza una prenda en card con diseño mejorado
      */
-    private function renderPrenda($prenda, int $index): string
+    private function renderPrendaCard($prenda, int $index): string
     {
-        $html = '<div class="prenda" style="page-break-inside: avoid; margin-bottom: 25px; border: 1px solid #ddd; padding: 12px; background: #fafafa;">';
+        $html = '<div class="prenda-card">';
 
-        // Nombre de la prenda
-        $nombrePrenda = htmlspecialchars(strtoupper($prenda->nombre_producto ?? 'N/A'));
-        $html .= "<div style=\"font-size: 11px; font-weight: bold; margin-bottom: 6px;\">PRENDA " . ($index + 1) . ": {$nombrePrenda}</div>";
+        // Header del card con nombre y detalles
+        $html .= '<div class="prenda-header">';
+        $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . '</div>';
 
-        // Color, Tela y Manga
-        $html .= $this->renderPrendaDetails($prenda);
+        // Información de color, tela y referencia
+        $html .= $this->renderPrendaHeaderDetails($prenda);
 
-        // Descripción
+        // Tallas en rojo
+        $html .= $this->renderPrendaTallas($prenda);
+
+        $html .= '</div>';
+
+        // Contenido: tabla de variaciones + imágenes
+        $html .= '<div class="prenda-contenido">';
+
+        // Columna izquierda: descripción + tabla de variaciones
+        $html .= '<div class="prenda-info">';
+        
+        // Descripción concatenada de prenda y reflectivo
+        $descripciones = [];
+        
+        // Descripción de la prenda base
         if ($prenda->descripcion) {
-            $descripcion = htmlspecialchars($prenda->descripcion);
-            $html .= "<div style=\"font-size: 10px; margin-bottom: 6px; color: #333;\"><strong>DESCRIPCION:</strong> {$descripcion}</div>";
+            $descripciones[] = htmlspecialchars($prenda->descripcion);
         }
+        
+        // Descripción de reflectivo si existe
+        $prendaCotReflectivo = $prenda->prendaCotReflectivo()->first();
+        if ($prendaCotReflectivo && $prendaCotReflectivo->descripcion) {
+            $descripciones[] = htmlspecialchars($prendaCotReflectivo->descripcion);
+        }
+        
+        // Mostrar descripción concatenada
+        if (!empty($descripciones)) {
+            $html .= '<div style="background: #f5f5f5; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px; font-size: 9px; line-height: 1.4; border-radius: 3px;">';
+            $html .= '<strong>DESCRIPCIÓN:</strong><br>';
+            $html .= nl2br(implode(' - ', $descripciones));
+            $html .= '</div>';
+        }
+        
+        // Tabla de variaciones
+        $html .= $this->renderVariacionesTable($prenda);
+        $html .= '</div>';
 
-        // Detalles especiales (reflectivo, bolsillos, etc)
-        $html .= $this->renderPrendaSpecialDetails($prenda);
+        // Columna derecha: imágenes
+        $html .= '<div class="prenda-imagenes">';
+        $html .= $this->renderImagenesVariaciones($prenda, $prendaCotReflectivo);
+        $html .= '</div>';
 
-        // Tallas
-        $html .= $this->renderTallas($prenda);
+        $html .= '</div>';
 
-        // Imágenes
-        $html .= $this->renderPrendaImages($prenda);
+        // Ubicaciones de reflectivo si existen
+        $prendaCotReflectivo = $prenda->prendaCotReflectivo()->first();
+        if ($prendaCotReflectivo && $prendaCotReflectivo->ubicaciones) {
+            $html .= $this->renderUbicacionesReflectivo($prendaCotReflectivo->ubicaciones);
+        }
 
         $html .= '</div>';
 
@@ -223,114 +292,9 @@ class PrendaPdfDesign
     }
 
     /**
-     * Renderiza detalles de color, tela y manga
+     * Renderiza los detalles del header (color, tela, referencia)
      */
-    private function renderPrendaDetails($prenda): string
-    {
-        $html = '';
-        $lineasColorTela = [];
-
-        $variantes = $prenda->variantes ?? [];
-        if ($variantes->isEmpty()) {
-            return $html;
-        }
-
-        $variante = $variantes[0];
-
-        // Telas múltiples
-        $telasMultiples = $variante->telas_multiples ?? [];
-        if (is_string($telasMultiples)) {
-            $telasMultiples = json_decode($telasMultiples, true) ?? [];
-        }
-
-        if (is_array($telasMultiples) && count($telasMultiples) > 0) {
-            foreach ($telasMultiples as $tm) {
-                $partesLinea = [];
-                
-                if (!empty($tm['color'])) {
-                    $partesLinea[] = 'Color: ' . htmlspecialchars($tm['color']);
-                } elseif (!empty($variante->color)) {
-                    $partesLinea[] = 'Color: ' . htmlspecialchars($variante->color);
-                }
-
-                if (!empty($tm['tela'])) {
-                    $telaTexto = 'Tela: ' . htmlspecialchars($tm['tela']);
-                    if (!empty($tm['referencia'])) {
-                        $telaTexto .= ' Ref: ' . htmlspecialchars($tm['referencia']);
-                    }
-                    $partesLinea[] = $telaTexto;
-                }
-
-                if (!empty($tm['manga'])) {
-                    $partesLinea[] = 'Manga: ' . htmlspecialchars($tm['manga']);
-                }
-
-                if (!empty($partesLinea)) {
-                    $lineasColorTela[] = implode(' | ', $partesLinea);
-                }
-            }
-        } else {
-            // Fallback: color + telas
-            $partes = [];
-
-            if ($variante->color) {
-                $partes[] = 'Color: ' . htmlspecialchars($variante->color);
-            }
-
-            // Telas
-            $telas = $prenda->telas ?? [];
-            if (!$telas->isEmpty()) {
-                $telasTexto = [];
-                foreach ($telas as $telaPrenda) {
-                    $textoTela = '';
-                    
-                    if ($telaPrenda->tela) {
-                        $textoTela = htmlspecialchars($telaPrenda->tela->nombre ?? '');
-                        if ($telaPrenda->tela->referencia) {
-                            $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->tela->referencia);
-                        }
-                    } elseif ($telaPrenda->nombre_tela) {
-                        $textoTela = htmlspecialchars($telaPrenda->nombre_tela);
-                        if ($telaPrenda->referencia_tela) {
-                            $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->referencia_tela);
-                        }
-                    }
-
-                    if ($textoTela) {
-                        $telasTexto[] = $textoTela;
-                    }
-                }
-                if (count($telasTexto) > 0) {
-                    $partes[] = 'Tela: ' . implode(', ', $telasTexto);
-                }
-            }
-
-            if (!empty($partes)) {
-                $lineasColorTela[] = implode(' | ', $partes);
-            }
-        }
-
-        // Manga aparte
-        if ($variante->tipo_manga_id) {
-            $tipomanga = $variante->manga?->nombre ?? 'Manga desconocida';
-            $mangaLinea = 'Manga: ' . htmlspecialchars($tipomanga);
-            if (!empty($variante->obs_manga)) {
-                $mangaLinea .= ' (' . htmlspecialchars($variante->obs_manga) . ')';
-            }
-            $lineasColorTela[] = $mangaLinea;
-        }
-
-        if (count($lineasColorTela) > 0) {
-            $html .= '<div style="font-size: 10px; margin-bottom: 6px; color: #333;">' . implode('<br>', $lineasColorTela) . '</div>';
-        }
-
-        return $html;
-    }
-
-    /**
-     * Renderiza detalles especiales: reflectivo, bolsillos, etc
-     */
-    private function renderPrendaSpecialDetails($prenda): string
+    private function renderPrendaHeaderDetails($prenda): string
     {
         $html = '';
         $variantes = $prenda->variantes ?? [];
@@ -340,209 +304,223 @@ class PrendaPdfDesign
         }
 
         $variante = $variantes[0];
+        $color = $variante->color ?? 'N/A';
+        $tela = '';
+        $referencia = '';
 
-        // Reflectivo
-        if ($variante->tiene_reflectivo && $variante->obs_reflectivo) {
-            $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
-                <strong>.</strong> <strong>Reflectivo:</strong> ' . htmlspecialchars($variante->obs_reflectivo) . '</div>';
+        // Obtener tela y referencia
+        if (isset($variante->telas_multiples)) {
+            $telasMultiples = is_string($variante->telas_multiples)
+                ? json_decode($variante->telas_multiples, true)
+                : $variante->telas_multiples;
+
+            if (is_array($telasMultiples) && !empty($telasMultiples)) {
+                $primeraTela = $telasMultiples[0];
+                $tela = $primeraTela['tela'] ?? '';
+                $referencia = $primeraTela['referencia'] ?? '';
+            }
         }
 
-        // Bolsillos
-        if ($variante->tiene_bolsillos && $variante->obs_bolsillos) {
-            $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
-                <strong>.</strong> <strong>Bolsillos:</strong> ' . htmlspecialchars($variante->obs_bolsillos) . '</div>';
+        if (!$tela && $prenda->telas && !$prenda->telas->isEmpty()) {
+            $primeraTela = $prenda->telas->first();
+            $tela = $primeraTela->tela?->nombre ?? $primeraTela->nombre_tela ?? '';
+            $referencia = $primeraTela->tela?->referencia ?? $primeraTela->referencia_tela ?? '';
         }
 
-        // Manga observaciones
-        if ($variante->obs_manga && !$variante->tipo_manga_id) {
-            $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
-                <strong>.</strong> <strong>Manga:</strong> ' . htmlspecialchars($variante->obs_manga) . '</div>';
+        $html .= '<div class="prenda-detalles">';
+        $html .= 'Color: ' . htmlspecialchars($color) . ' | Tela: ' . htmlspecialchars($tela);
+        if ($referencia) {
+            $html .= ' Ref: ' . htmlspecialchars($referencia);
         }
-
-        // Broche/Botón
-        if ($variante->tipo_broche_id && $variante->obs_broche) {
-            $nombreBroche = $variante->broche?->nombre ?? 'Botón';
-            $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
-                <strong>.</strong> <strong>' . htmlspecialchars($nombreBroche) . ':</strong> ' . htmlspecialchars($variante->obs_broche) . '</div>';
-        }
-
-        // Tipo de Jean/Pantalón
-        if ($variante->es_jean_pantalon && $variante->tipo_jean_pantalon) {
-            $nombrePrenda = strtoupper($prenda->nombre_producto ?? '');
-            $esJean = str_contains($nombrePrenda, 'JEAN');
-            $tipoLabel = $esJean ? 'Jean' : 'Pantalón';
-            $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
-                <strong>.</strong> <strong>Tipo de ' . htmlspecialchars($tipoLabel) . ':</strong> ' . htmlspecialchars($variante->tipo_jean_pantalon) . '</div>';
-        }
+        $html .= '</div>';
 
         return $html;
     }
 
     /**
-     * Renderiza la sección de tallas
+     * Renderiza las tallas en rojo
      */
-    private function renderTallas($prenda): string
+    private function renderPrendaTallas($prenda): string
     {
-        $tallas = $prenda->tallas ?? [];
-        $tallasInfo = [];
-
-        if (!$tallas->isEmpty()) {
-            foreach ($tallas as $talla) {
-                $cantidad = $talla->cantidad ?? 0;
-                if ($cantidad > 0 || $cantidad === null) {
-                    $tallasInfo[] = $talla->talla;
-                }
-            }
-        }
-
-        if (empty($tallasInfo)) {
-            return '';
-        }
-
-        $tallasTexto = implode(', ', $tallasInfo);
-
-        if ($prenda->texto_personalizado_tallas) {
-            $tallasTexto .= ' ' . htmlspecialchars($prenda->texto_personalizado_tallas);
-        }
-
-        return '<div style="font-size: 10px; font-weight: bold; margin-top: 8px; margin-bottom: 12px; color: #e74c3c;">Tallas: ' . $tallasTexto . '</div>';
+        $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->implode(', ') : 'Sin tallas';
+        return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars($tallas) . '</div>';
     }
 
     /**
-     * Renderiza las imágenes de la prenda
+     * Renderiza la tabla de variaciones
      */
-    private function renderPrendaImages($prenda): string
+    private function renderVariacionesTable($prenda): string
     {
+        $variantes = $prenda->variantes ?? [];
+
+        if ($variantes->isEmpty()) {
+            return '<p style="color: #999; font-size: 9px;">Sin variaciones</p>';
+        }
+
+        $html = '<table class="variaciones-table">';
+
+        // Headers
+        $html .= '<tr>';
+        $html .= '<td class="var-header" style="width: 35%;">Variación</td>';
+        $html .= '<td class="var-header" style="width: 65%;">Observación</td>';
+        $html .= '</tr>';
+
+        // Recolectar todas las variaciones
+        foreach ($variantes as $var) {
+            $mangaId = $var->tipo_manga_id ?? null;
+            $brocheId = $var->tipo_broche_id ?? null;
+            $tieneBosillos = $var->tiene_bolsillos ?? false;
+            $obsBolsillos = $var->obs_bolsillos ?? '';
+            $obsBroche = $var->obs_broche ?? '';
+
+            // Fila de manga
+            if ($mangaId) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Manga</td>';
+                $html .= '<td></td>';
+                $html .= '</tr>';
+            }
+
+            // Fila de bolsillos
+            if ($tieneBosillos && $obsBolsillos) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Bolsillos</td>';
+                $html .= '<td>' . htmlspecialchars($obsBolsillos) . '</td>';
+                $html .= '</tr>';
+            }
+
+            // Fila de broche
+            if ($brocheId && $obsBroche) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Broche/Botón</td>';
+                $html .= '<td>' . htmlspecialchars($obsBroche) . '</td>';
+                $html .= '</tr>';
+            }
+        }
+
+        $html .= '</table>';
+
+        return $html;
+    }
+
+    /**
+     * Renderiza las imágenes de variaciones de la prenda y del reflectivo con títulos
+     */
+    private function renderImagenesVariaciones($prenda, $prendaCotReflectivo = null): string
+    {
+        $html = '';
         $imagenesPrenda = $prenda->fotos ?? [];
-        $imagenesTela = $prenda->telaFotos ?? [];
 
-        if ($imagenesPrenda->isEmpty() && $imagenesTela->isEmpty()) {
-            return '';
+        // Imágenes de la prenda
+        if ($imagenesPrenda && count($imagenesPrenda) > 0) {
+            foreach ($imagenesPrenda as $foto) {
+                if ($foto->ruta_webp) {
+                    $imagenUrl = public_path('storage/' . $foto->ruta_webp);
+
+                    if (file_exists($imagenUrl)) {
+                        $html .= '<div class="prenda-img-container">';
+                        $html .= '<div class="prenda-img">';
+                        $html .= '<img src="' . $imagenUrl . '" alt="Prenda">';
+                        $html .= '</div>';
+                        $html .= '<div class="prenda-img-label">Img Prenda</div>';
+                        $html .= '</div>';
+                    } else {
+                        $html .= '<div class="prenda-img-container">';
+                        $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
+                        $html .= '<div class="prenda-img-label">Img Prenda</div>';
+                        $html .= '</div>';
+                    }
+                }
+            }
         }
 
-        $html = '<div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center;">';
-
-        // Imágenes de prenda
-        foreach ($imagenesPrenda as $imagen) {
-            $html .= $this->renderImage($imagen->url ?? null, 'Prenda');
+        // Imágenes del reflectivo paso 4
+        if ($prendaCotReflectivo && $this->cotizacion->reflectivoPrendas) {
+            foreach ($this->cotizacion->reflectivoPrendas as $refPrendaItem) {
+                if ($refPrendaItem->prenda_cot_id === $prenda->id && $refPrendaItem->fotos) {
+                    foreach ($refPrendaItem->fotos as $foto) {
+                        if ($foto->ruta_webp) {
+                            $imagenUrl = public_path('storage/' . $foto->ruta_webp);
+                            
+                            if (file_exists($imagenUrl)) {
+                                $html .= '<div class="prenda-img-container">';
+                                $html .= '<div class="prenda-img">';
+                                $html .= '<img src="' . $imagenUrl . '" alt="Reflectivo">';
+                                $html .= '</div>';
+                                $html .= '<div class="prenda-img-label">Img Reflectivo</div>';
+                                $html .= '</div>';
+                            } else {
+                                $html .= '<div class="prenda-img-container">';
+                                $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
+                                $html .= '<div class="prenda-img-label">Img Reflectivo</div>';
+                                $html .= '</div>';
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        // Imágenes de tela
-        foreach ($imagenesTela as $imagen) {
-            $html .= $this->renderImage($imagen->url ?? null, 'Tela');
+        // Si no hay imágenes, mostrar placeholder
+        if (empty($html)) {
+            $html .= '<div class="prenda-img-container">';
+            $html .= '<div class="prenda-img-placeholder">Sin imagen</div>';
+            $html .= '<div class="prenda-img-label">Sin contenido</div>';
+            $html .= '</div>';
         }
-
-        $html .= '</div>';
 
         return $html;
     }
 
     /**
-     * Renderiza una imagen individual
+     * Renderiza la tabla de ubicaciones de reflectivo
      */
-    private function renderImage(?string $rutaImagen, string $alt): string
-    {
-        if (!$rutaImagen) {
-            return '';
-        }
-
-        // URL completa
-        if (strpos($rutaImagen, 'http') === 0) {
-            return '<img src="' . htmlspecialchars($rutaImagen) . '" alt="' . $alt . '" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
-        }
-
-        // Ruta local
-        if (!str_starts_with($rutaImagen, '/')) {
-            $rutaImagen = '/' . $rutaImagen;
-        }
-        if (!str_starts_with($rutaImagen, '/storage/')) {
-            if (str_starts_with($rutaImagen, '/cotizaciones/')) {
-                $rutaImagen = '/storage' . $rutaImagen;
-            }
-        }
-
-        $rutaAbsoluta = str_starts_with($rutaImagen, '/') 
-            ? public_path($rutaImagen) 
-            : $rutaImagen;
-
-        if (file_exists($rutaAbsoluta)) {
-            return '<img src="' . $rutaAbsoluta . '" alt="' . $alt . '" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
-        }
-
-        return '';
-    }
-
     /**
-     * Renderiza la tabla de especificaciones
+     * Renderiza la tabla de ubicaciones de reflectivo
      */
-    private function renderSpecifications(): string
+    private function renderUbicacionesReflectivo($ubicaciones): string
     {
-        $especificacionesData = $this->cotizacion->especificaciones ?? [];
-
-        if (is_string($especificacionesData)) {
-            $especificacionesData = json_decode($especificacionesData, true) ?? [];
-        }
-
-        if (!is_array($especificacionesData) || empty($especificacionesData)) {
+        if (!$ubicaciones) {
             return '';
         }
 
-        $categoriasInfo = [
-            'disponibilidad' => 'DISPONIBILIDAD',
-            'forma_pago' => 'FORMA DE PAGO',
-            'regimen' => 'RÉGIMEN',
-            'se_ha_vendido' => 'SE HA VENDIDO',
-            'ultima_venta' => 'ÚLTIMA VENTA',
-            'flete' => 'FLETE DE ENVÍO'
-        ];
+        // Decodificar si es string
+        if (is_string($ubicaciones)) {
+            $ubicaciones = json_decode($ubicaciones, true);
+        }
 
-        $html = '<div class="spec-wrapper" style="page-break-inside: avoid; margin: 8px 0 0 0; padding: 8px 12mm; border-top: 2px solid #FFE082;">
-            <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #1e293b; padding-bottom: 3px;">Especificaciones Generales</div>
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; font-size: 9px;">
-                <thead>
-                    <tr style="background: #FFE082; border: 1px solid #FFE082;">
-                        <th style="padding: 4px 4px; text-align: left; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 35%; color: #000;">CATEGORÍA</th>
-                        <th style="padding: 4px 4px; text-align: center; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 10%; color: #000;">ESTADO</th>
-                        <th style="padding: 4px 4px; text-align: left; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 55%; color: #000;">OBSERVACIONES</th>
-                    </tr>
-                </thead>
-                <tbody>';
+        if (!is_array($ubicaciones) || empty($ubicaciones)) {
+            return '';
+        }
 
-        foreach ($categoriasInfo as $categoriaKey => $categoriaNombre) {
-            if (isset($especificacionesData[$categoriaKey]) && !empty($especificacionesData[$categoriaKey])) {
-                $valores = $especificacionesData[$categoriaKey];
+        $html = '<div class="ubicaciones-wrapper">';
+        $html .= '<div class="ubicaciones-title">Ubicaciones de Reflectivo</div>';
+        $html .= '<div class="ubicaciones-content">';
 
-                if (!is_array($valores)) {
-                    $valores = [$valores];
-                }
+        foreach ($ubicaciones as $ubicacion) {
+            // Obtener la clave correcta (ubicacion, no titulo)
+            $titulo = '';
+            $descripcion = '';
 
-                $html .= '<tr style="border: 1px solid #ddd; background: #FFE082;">
-                        <td colspan="3" style="padding: 4px 4px; font-size: 9px; font-weight: 600; color: #000; border: 1px solid #FFE082;">' . htmlspecialchars($categoriaNombre) . '</td>
-                    </tr>';
+            if (is_array($ubicacion)) {
+                $titulo = $ubicacion['ubicacion'] ?? $ubicacion['titulo'] ?? '';
+                $descripcion = $ubicacion['descripcion'] ?? '';
+            } else {
+                // Si es un objeto
+                $titulo = $ubicacion->ubicacion ?? $ubicacion->titulo ?? '';
+                $descripcion = $ubicacion->descripcion ?? '';
+            }
 
-                foreach ($valores as $item) {
-                    $valor = '';
-                    $observacion = '';
-
-                    if (is_array($item)) {
-                        $valor = $item['valor'] ?? '';
-                        $observacion = $item['observacion'] ?? '';
-                    } else {
-                        $valor = $item;
-                    }
-
-                    $html .= '<tr style="border: 1px solid #ddd; background: #f9f9f9;">
-                            <td style="padding: 3px 4px; font-size: 8.5px; border: 1px solid #ddd; color: #333; font-weight: 500; line-height: 1.2;">' . htmlspecialchars($valor) . '</td>
-                            <td style="padding: 3px 4px; text-align: center; font-weight: 700; color: #28a745; font-size: 10px; border: 1px solid #ddd;">✓</td>
-                            <td style="padding: 3px 4px; font-size: 8.5px; border: 1px solid #ddd; color: #555; line-height: 1.2;">' . htmlspecialchars($observacion) . '</td>
-                        </tr>';
-                }
+            if ($titulo) {
+                $html .= '<div class="ubicacion-item">';
+                $html .= '<div class="ubicacion-titulo">' . htmlspecialchars($titulo) . '</div>';
+                $html .= '<div style="margin-top: 4px;">' . nl2br(htmlspecialchars($descripcion)) . '</div>';
+                $html .= '</div>';
             }
         }
 
-        $html .= '</tbody>
-            </table>
-        </div>';
+        $html .= '</div>';
+        $html .= '</div>';
 
         return $html;
     }

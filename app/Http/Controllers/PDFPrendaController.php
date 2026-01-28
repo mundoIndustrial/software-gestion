@@ -47,7 +47,9 @@ class PDFPrendaController extends Controller
                 'prendas.reflectivo' => function($query) {
                     $query->select('id', 'cotizacion_id', 'prenda_cot_id', 'descripcion', 'ubicacion');
                 },
-                'prendas.reflectivo.fotos:id,reflectivo_cotizacion_id,ruta_original,ruta_webp'
+                'prendas.reflectivo.fotos:id,reflectivo_cotizacion_id,ruta_original,ruta_webp',
+                'prendas.prendaCotReflectivo:id,prenda_cot_id,descripcion,variaciones,ubicaciones',
+                'reflectivoPrendas.fotos:id,reflectivo_cotizacion_id,ruta_webp'
             ])->findOrFail($id);
 
             // 2. Validar permisos de acceso (si es necesario)
