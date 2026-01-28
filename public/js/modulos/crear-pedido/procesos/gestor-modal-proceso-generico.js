@@ -705,6 +705,48 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
+    
+    // 🔍 DIAGNÓSTICO Z-INDEX
+    console.log('📌 [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
+    console.log('📌 [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
+    console.log('📌 [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
+    
+    // Obtener z-index del modal principal
+    const modalPrincipal = document.getElementById('modal-proceso-generico');
+    if (modalPrincipal) {
+        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (style):', modalPrincipal.style.zIndex || 'NO DEFINIDO');
+        console.log('📌 [EDITOR-TALLAS] Z-index MODAL PRINCIPAL (computed):', window.getComputedStyle(modalPrincipal).zIndex);
+    }
+    
+    // Forzar z-index aún más alto
+    const zIndexEditorActual = parseInt(window.getComputedStyle(modalEditor).zIndex) || 100002;
+    const zIndexPrincipalActual = parseInt(window.getComputedStyle(modalPrincipal).zIndex) || 999999999;
+    const nuevoZIndexEditor = zIndexPrincipalActual + 1;
+    
+    console.log('📌 [EDITOR-TALLAS] Z-index EDITOR actual:', zIndexEditorActual);
+    console.log('📌 [EDITOR-TALLAS] Z-index PRINCIPAL actual:', zIndexPrincipalActual);
+    console.log('📌 [EDITOR-TALLAS] ASIGNANDO nuevo Z-index al editor:', nuevoZIndexEditor);
+    
+    // Aplicar z-index forzado
+    modalEditor.style.zIndex = nuevoZIndexEditor.toString();
+    console.log('✅ [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
+    console.log('✅ [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
+    
+    // Verificar contexto de apilamiento
+    console.log('📌 [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
+    console.log('   - Modal Principal display:', window.getComputedStyle(modalPrincipal).display);
+    console.log('   - Modal Principal position:', window.getComputedStyle(modalPrincipal).position);
+    console.log('   - Editor display:', window.getComputedStyle(modalEditor).display);
+    console.log('   - Editor position:', window.getComputedStyle(modalEditor).position);
+    
+    // Listar todos los elementos con z-index alto en la página
+    console.log('📌 [EDITOR-TALLAS] ELEMENTOS CON Z-INDEX ALTO:');
+    document.querySelectorAll('[style*="z-index"], [class*="modal"], [class*="overlay"]').forEach((el, idx) => {
+        const zIdx = window.getComputedStyle(el).zIndex;
+        if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100) {
+            console.log(`   ${idx}. ${el.id || el.className || el.tagName} - Z-index: ${zIdx}, Display: ${window.getComputedStyle(el).display}`);
+        }
+    });
 
 };
 
@@ -739,7 +781,10 @@ function calcularCantidadAsignadaOtrosProcesos(talla, generoKey, procesoActualEx
     return { totalAsignado, procesosDetalle };
 }
 
-// Mostrar modal de validación de límite excedido
+// ❌ DEPRECATED: Esta función ya no se usa
+// Se reemplazó con Swal.fire() para validación de límites
+// Se mantiene comentada para referencia histórica
+/*
 function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, cantidadDisponible, cantidadIntentada, procesosDetalle) {
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -859,6 +904,7 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
         }
     });
 }
+*/
 
 // Actualizar cantidad de talla en el modal de proceso
 window.actualizarCantidadTallaProceso = function(input) {
@@ -871,47 +917,189 @@ window.actualizarCantidadTallaProceso = function(input) {
     const generoKey = genero.toLowerCase();
     const cantidadDisponibleEnPrenda = tallasPrenda[generoKey]?.[talla] || 0;
     
-    // Calcular cuánto ya está asignado en OTROS procesos
-    const { totalAsignado, procesosDetalle } = calcularCantidadAsignadaOtrosProcesos(talla, generoKey, procesoActual);
-    
-    // Calcular cuánto queda disponible para ESTE proceso
-    const cantidadDisponibleParaEsteProceso = cantidadDisponibleEnPrenda - totalAsignado;
+    // 🔄 LÓGICA CORREGIDA: Las mismas prendas pueden recibir MÚLTIPLES procesos
+    // NO hay límite entre procesos. Solo validamos contra la cantidad total de la prenda.
+    // Ejemplo: 20 camisas talla S pueden tener:
+    //   - 10 con Bordado
+    //   - 15 con Estampado (son las MISMAS u OTRAS camisas, lo importante es que NO superen 20 total)
     
     console.log(`🔍 [actualizarCantidadTallaProceso] Validación para ${talla}/${genero}:`, {
         cantidadIntentada: cantidad,
         cantidadDisponibleEnPrenda: cantidadDisponibleEnPrenda,
-        totalAsignadoOtrosProcesos: totalAsignado,
-        cantidadDisponibleParaEsteProceso: cantidadDisponibleParaEsteProceso,
-        procesosDetalle: procesosDetalle
+        procesoActual: procesoActual,
+        nota: 'Sin límite entre procesos - mismas prendas pueden recibir múltiples procesos'
     });
     
-    // VALIDACIÓN: No permitir que se exceda lo disponible
-    if (cantidad > cantidadDisponibleParaEsteProceso) {
-        console.warn(`⚠️ [actualizarCantidadTallaProceso] Cantidad ${cantidad} supera disponible ${cantidadDisponibleParaEsteProceso}`);
+    // VALIDACIÓN: Solo permitir que NO supere la cantidad total de la prenda
+    if (cantidad > cantidadDisponibleEnPrenda) {
+        console.warn(`⚠️ [actualizarCantidadTallaProceso] Cantidad ${cantidad} supera disponible en PRENDA ${cantidadDisponibleEnPrenda}`);
         
-        // Mostrar modal informativo
-        mostrarModalAdvertenciaLimiteExcedido(
-            talla,
-            generoKey,
-            cantidadDisponibleEnPrenda,
-            cantidadDisponibleParaEsteProceso,
-            cantidad,
-            procesosDetalle
-        );
-        
-        // Revertir valor al máximo permitido
-        input.value = cantidadDisponibleParaEsteProceso;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        // Marcar visualmente
+        // Mostrar error INLINE en rojo debajo del input
         input.style.borderColor = '#dc2626';
         input.style.backgroundColor = '#fee2e2';
-        setTimeout(() => {
-            input.style.borderColor = '';
-            input.style.backgroundColor = '';
-        }, 2000);
         
+        // Buscar o crear elemento de error
+        let errorDiv = input.parentNode.querySelector('.error-cantidad');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'error-cantidad';
+            errorDiv.style.cssText = 'color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; white-space: nowrap;';
+            input.parentNode.appendChild(errorDiv);
+        }
+        
+        errorDiv.textContent = `❌ Máximo: ${cantidadDisponibleEnPrenda} unidades`;
+        errorDiv.style.display = 'block';
+        
+        // Reset al valor anterior
+        input.value = cantidadAnterior;
         return;
+        
+        // CÓDIGO VIEJO - DESCARTAR
+        /* Swal.fire({
+            title: '⚠️ Cantidad Excedida',
+            html: `<div style="text-align: left;">
+                <p><strong>Talla:</strong> ${talla} (${generoKey.toUpperCase()})</p>
+                <p><strong>Cantidad disponible en PRENDA:</strong> <span style="color: #dc2626; font-weight: bold;">${cantidadDisponibleEnPrenda}</span></p>
+                <p><strong>Cantidad intentada:</strong> <span style="color: #dc2626; font-weight: bold;">${cantidad}</span></p>
+                <hr>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                    💡 <strong>Nota:</strong> Las mismas prendas pueden recibir múltiples procesos.
+                </p>
+            </div>`,
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#dc2626',
+            allowOutsideClick: false,
+            didOpen: (modal) => {
+                // 🔍 DESPUÉS DE ABRIR
+                console.log('✅ [MODAL-CANTIDAD-EXCEDIDA] ABIERTO');
+                
+                // Buscar elemento Swal2
+                const swalContainer = document.querySelector('.swal2-container');
+                const backdrop = document.querySelector('.swal2-backdrop-show');
+                const swalModal = document.querySelector('.swal2-popup');
+                
+                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] DIAGNÓSTICO INICIAL:');
+                console.log('   - swalContainer encontrado:', !!swalContainer);
+                console.log('   - backdrop encontrado:', !!backdrop);
+                console.log('   - swalModal encontrado:', !!swalModal);
+                
+                if (!swalContainer) {
+                    console.error('❌ [MODAL-CANTIDAD-EXCEDIDA] NO SE ENCONTRÓ .swal2-container');
+                    console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] Elementos en DOM:');
+                    document.querySelectorAll('[class*="swal"]').forEach((el, idx) => {
+                        console.log(`   ${idx}. ${el.className} - display: ${window.getComputedStyle(el).display}, z-index: ${window.getComputedStyle(el).zIndex}`);
+                    });
+                    return;
+                }
+                
+                // Z-index ANTES
+                const zindexAntes = window.getComputedStyle(swalContainer).zIndex;
+                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX ANTES DE FORZAR:');
+                console.log('   - Swal2 Container zIndex:', zindexAntes);
+                console.log('   - Swal2 Container display:', window.getComputedStyle(swalContainer).display);
+                console.log('   - Swal2 Container position:', window.getComputedStyle(swalContainer).position);
+                console.log('   - Backdrop zIndex:', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
+                
+                // Verificar padres
+                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] PADRES DE SWAL2:');
+                let padre = swalContainer.parentElement;
+                let nivel = 0;
+                while (padre && nivel < 5) {
+                    const padreZindex = window.getComputedStyle(padre).zIndex;
+                    console.log(`   Nivel ${nivel}: ${padre.tagName}#${padre.id} - z-index: ${padreZindex}, position: ${window.getComputedStyle(padre).position}`);
+                    padre = padre.parentElement;
+                    nivel++;
+                }
+                
+                // Forzar z-index MÁS ALTO
+                const zindexActual = parseInt(zindexAntes) || 9999998;
+                const nuevoZindex = Math.max(zindexActual, 2000000000);
+                
+                console.log('🔝 [MODAL-CANTIDAD-EXCEDIDA] FORZANDO Z-INDEX:');
+                console.log('   - Z-index actual (parseado):', zindexActual);
+                console.log('   - Nuevo z-index:', nuevoZindex);
+                
+                swalContainer.style.zIndex = nuevoZindex.toString();
+                
+                if (backdrop) {
+                    const backdropZindex = Math.max(nuevoZindex - 1, 1999999999);
+                    backdrop.style.zIndex = backdropZindex.toString();
+                    console.log('   - Backdrop z-index también forzado a:', backdropZindex);
+                }
+                
+                // Verificar DESPUÉS de forzar
+                console.log('✅ [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX DESPUÉS DE FORZAR:');
+                const zindexDespues = window.getComputedStyle(swalContainer).zIndex;
+                console.log('   - Swal2 Container zIndex (style):', swalContainer.style.zIndex);
+                console.log('   - Swal2 Container zIndex (computed):', zindexDespues);
+                console.log('   - Backdrop zIndex (computed):', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
+                
+                // Buscar si algo está ENCIMA
+                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] BÚSQUEDA DE ELEMENTOS ENCIMA:');
+                document.querySelectorAll('*').forEach(el => {
+                    const zIdx = window.getComputedStyle(el).zIndex;
+                    if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > parseInt(nuevoZindex)) {
+                        console.warn(`   ⚠️ ELEMENTO ENCIMA: ${el.tagName}#${el.id}.${el.className} - z-index: ${zIdx}`);
+                    }
+                });
+                
+                // Listar todos los elementos con z-index alto
+                console.log('📌 [MODAL-CANTIDAD-EXCEDIDA] ELEMENTOS CON Z-INDEX ALTO (> 100000):');
+                let encontradosAltos = [];
+                document.querySelectorAll('*').forEach((el) => {
+                    const zIdx = window.getComputedStyle(el).zIndex;
+                    if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > 100000) {
+                        encontradosAltos.push({
+                            elemento: el.id ? `#${el.id}` : el.className ? `.${el.className}` : el.tagName,
+                            zIndex: zIdx,
+                            position: window.getComputedStyle(el).position
+                        });
+                    }
+                });
+                
+                if (encontradosAltos.length === 0) {
+                    console.log('   ℹ️ NO HAY ELEMENTOS CON Z-INDEX > 100000 (excepto Swal2)');
+                } else {
+                    encontradosAltos.sort((a, b) => parseInt(b.zIndex) - parseInt(a.zIndex));
+                    encontradosAltos.forEach((item, idx) => {
+                        console.log(`   ${idx + 1}. ${item.elemento} - z-index: ${item.zIndex}, position: ${item.position}`);
+                    });
+                }
+                
+                // Verificar si modal-editor-tallas está creando stacking context
+                const editorTallas = document.getElementById('modal-editor-tallas');
+                if (editorTallas) {
+                    console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] STACKING CONTEXT EDITOR-TALLAS:');
+                    console.log('   - Encontrado: SI');
+                    console.log('   - Z-index:', window.getComputedStyle(editorTallas).zIndex);
+                    console.log('   - Position:', window.getComputedStyle(editorTallas).position);
+                    console.log('   - Display:', window.getComputedStyle(editorTallas).display);
+                    console.log('   - Visibility:', window.getComputedStyle(editorTallas).visibility);
+                    console.log('   - Opacity:', window.getComputedStyle(editorTallas).opacity);
+                }
+                
+                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] CSS PROPERTIES SWAL2:');
+                console.log('   - Visibility:', window.getComputedStyle(swalContainer).visibility);
+                console.log('   - Opacity:', window.getComputedStyle(swalContainer).opacity);
+                console.log('   - Pointer-events:', window.getComputedStyle(swalContainer).pointerEvents);
+                console.log('   - Overflow:', window.getComputedStyle(swalContainer).overflow);
+                
+                if (swalModal) {
+                    console.log('   - swalModal visibility:', window.getComputedStyle(swalModal).visibility);
+                    console.log('   - swalModal opacity:', window.getComputedStyle(swalModal).opacity);
+                }
+            }
+        });
+        */
+    } else {
+        // Limpiar error si la cantidad es válida
+        input.style.borderColor = '#be185d';
+        input.style.backgroundColor = '#fce7f3';
+        let errorDiv = input.parentNode.querySelector('.error-cantidad');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
     }
     
     // Actualizar SOLO en la estructura de TALLAS DEL PROCESO
@@ -936,7 +1124,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         genero,
         talla,
         cantidad,
-        cantidadDisponibleParaEsteProceso,
+        cantidadDisponibleEnPrenda: cantidadDisponibleEnPrenda,
         estructuraActual: window.tallasCantidadesProceso
     });
 };
@@ -945,7 +1133,10 @@ window.actualizarCantidadTallaProceso = function(input) {
 window.cerrarEditorTallas = function() {
     const modal = document.getElementById('modal-editor-tallas');
     if (modal) {
+        console.log('🔍 [EDITOR-TALLAS] Cerrando modal...');
+        console.log('🔍 [EDITOR-TALLAS] Z-index ANTES de cerrar:', window.getComputedStyle(modal).zIndex);
         modal.style.display = 'none';
+        console.log('✅ [EDITOR-TALLAS] Modal cerrado. Display:', window.getComputedStyle(modal).display);
     }
 
 };
@@ -953,14 +1144,20 @@ window.cerrarEditorTallas = function() {
 // Guardar tallas seleccionadas desde el editor
 window.guardarTallasSeleccionadas = function() {
 
+    console.log('💾 [guardarTallasSeleccionadas] INICIANDO guardado de tallas...');
+    console.log('💾 [guardarTallasSeleccionadas] Proceso actual:', procesoActual);
+    console.log('💾 [guardarTallasSeleccionadas] Modo:', modoActual);
     
     // Recopilar tallas DAMA
     const checksDama = document.querySelectorAll('input[data-genero="dama"]:checked');
     window.tallasSeleccionadasProceso.dama = Array.from(checksDama).map(cb => cb.value);
+    console.log('💾 [guardarTallasSeleccionadas] Tallas DAMA seleccionadas:', window.tallasSeleccionadasProceso.dama);
     
     // Recopilar tallas CABALLERO
     const checksCaballero = document.querySelectorAll('input[data-genero="caballero"]:checked');
     window.tallasSeleccionadasProceso.caballero = Array.from(checksCaballero).map(cb => cb.value);
+    console.log('💾 [guardarTallasSeleccionadas] Tallas CABALLERO seleccionadas:', window.tallasSeleccionadasProceso.caballero);
+    console.log('💾 [guardarTallasSeleccionadas] Cantidades por talla (proceso):', window.tallasCantidadesProceso);
     
     // IMPORTANTE: Actualizar el objeto del proceso con las tallas y cantidades
     // para que no pierda los datos cuando se cierre el modal
@@ -974,12 +1171,23 @@ window.guardarTallasSeleccionadas = function() {
             tallas: window.procesosSeleccionados[procesoActual].datos.tallas,
             tallasCantidadesProceso: window.tallasCantidadesProceso
         });
+    } else {
+        console.warn(`⚠️ [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!window.procesosSeleccionados}`);
     }
 
+    console.log('📌 [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
+    console.log('   - Modal editor display:', window.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    console.log('   - Modal principal display:', window.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     // Cerrar editor y actualizar resumen
     cerrarEditorTallas();
+    
+    console.log('📌 [guardarTallasSeleccionadas] ESTADO DESPUÉS DE CERRAR MODAL:');
+    console.log('   - Modal editor display:', window.getComputedStyle(document.getElementById('modal-editor-tallas')).display);
+    console.log('   - Modal principal display:', window.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
+    
     actualizarResumenTallasProceso();
+    console.log('✅ [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
 };
 
 // Actualizar resumen de tallas
