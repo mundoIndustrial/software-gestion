@@ -2296,16 +2296,26 @@ final class CotizacionController extends Controller
                             'cotizacion_id' => $cotizacionId,
                         ]);
                         
-                        //  BUSCAR UBICACIONES ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
-                        // Cada prenda puede tener sus propias ubicaciones
+                        //  BUSCAR UBICACIONES Y DESCRIPCIÓN ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
+                        // Cada prenda puede tener sus propias ubicaciones y descripción
                         $ubicacionesEspecificasPrenda = [];
+                        $descripcionEspecificaPrenda = null;
                         
                         foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
                             // Comparar por nombre de prenda - usar 'tipo_prenda' (clave en el PASO 4)
                             if (isset($prendaReflectivo['tipo_prenda']) && 
-                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto &&
-                                !empty($prendaReflectivo['ubicaciones'])) {
-                                $ubicacionesEspecificasPrenda = $prendaReflectivo['ubicaciones'];
+                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto) {
+                                
+                                // Obtener ubicaciones
+                                if (!empty($prendaReflectivo['ubicaciones'])) {
+                                    $ubicacionesEspecificasPrenda = $prendaReflectivo['ubicaciones'];
+                                }
+                                
+                                // Obtener descripción si existe
+                                if (!empty($prendaReflectivo['descripcion'])) {
+                                    $descripcionEspecificaPrenda = $prendaReflectivo['descripcion'];
+                                }
+                                
                                 break;
                             }
                         }
@@ -2315,13 +2325,14 @@ final class CotizacionController extends Controller
                             ? json_encode($ubicacionesEspecificasPrenda)
                             : json_encode([]);
                         
-                        \Log::info(' Ubicaciones específicas para prenda:', [
+                        \Log::info(' Ubicaciones y descripción específicas para prenda:', [
                             'prenda_nombre' => $prenda->nombre_producto,
                             'ubicaciones_encontradas' => $ubicacionesEspecificasPrenda,
+                            'descripcion_encontrada' => $descripcionEspecificaPrenda,
                             'ubicaciones_json' => $ubicacionesFinal,
                         ]);
                         
-                        // Guardar en prenda_cot_reflectivo con variaciones y ubicaciones
+                        // Guardar en prenda_cot_reflectivo con variaciones, ubicaciones y descripción
                         $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::updateOrCreate(
                             [
                                 'cotizacion_id' => $cotizacionId,
@@ -2330,6 +2341,8 @@ final class CotizacionController extends Controller
                             [
                                 'variaciones' => $variacionesJson,  // Variaciones traídas del PASO 2
                                 'ubicaciones' => $ubicacionesFinal,  // Ubicaciones específicas del reflectivo para esta prenda
+                                'descripcion' => $descripcionEspecificaPrenda,  // Descripción escrita en el paso 4
+
                             ]
                         );
                         

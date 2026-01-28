@@ -3,12 +3,15 @@
 namespace App\Application\Services\PdfDesign;
 
 use App\Models\Cotizacion;
-use App\Models\TipoManga;
-use App\Models\TipoBrocheBoton;
 
+/**
+ * ReflectivoPdfDesign - Componente de diseño para PDF de reflectivo
+ * 
+ * Muestra prendas con sus variaciones, colores, telas, tallas e imágenes
+ */
 class ReflectivoPdfDesign
 {
-    protected Cotizacion $cotizacion;
+    private Cotizacion $cotizacion;
 
     public function __construct(Cotizacion $cotizacion)
     {
@@ -16,788 +19,319 @@ class ReflectivoPdfDesign
     }
 
     /**
-     * Construir el documento HTML completo del PDF de reflectivo
+     * Genera el HTML completo del PDF de reflectivo
      */
     public function build(): string
     {
-        return "
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset='UTF-8'>
-            <title>Cotización Reflectivo</title>
-            {$this->getStyles()}
-        </head>
-        <body>
-            {$this->getDocumentStructure()}
-        </body>
-        </html>
-        ";
-    }
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>' . $this->getStyles() . '</style>
+</head>
+<body>';
 
-    /**
-     * Obtener la estructura completa del documento
-     */
-    protected function getDocumentStructure(): string
-    {
-        $html = '';
-        
-        // Header
         $html .= $this->renderHeader();
-        
-        // Información del cliente
         $html .= $this->renderClientInfo();
-        
-        // Sección de cotización
-        $html .= $this->renderQuoteSection();
-        
-        // Prendas reflectivo
-        $html .= $this->renderReflectivos();
-        
-        // Especificaciones finales
-        $html .= $this->renderSpecifications();
-        
+        $html .= $this->renderPrendas();
+
+        $html .= '</body>
+</html>';
+
         return $html;
     }
 
     /**
-     * Obtener todos los estilos CSS
+     * Retorna todos los estilos CSS
      */
-    protected function getStyles(): string
+    private function getStyles(): string
     {
-        return '
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            
-            body {
-                font-family: Arial, Helvetica, sans-serif;
-                color: #333;
-                line-height: 1.5;
-            }
-            
-            .header {
-                border-bottom: 3px solid #1e40af;
-                padding-bottom: 15px;
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            .logo-section {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                flex: 1;
-            }
-            
-            .logo-section img {
-                max-width: 80px;
-                height: auto;
-            }
-            
-            .header-title {
-                font-size: 20px;
-                font-weight: bold;
-                color: #1e40af;
-            }
-            
-            .header-subtitle {
-                font-size: 12px;
-                color: #666;
-                margin-top: 5px;
-            }
-            
-            .info-table {
-                width: 100%;
-                margin-bottom: 20px;
-                border-collapse: collapse;
-            }
-            
-            .info-table td {
-                padding: 8px 12px;
-                border: 1px solid #ddd;
-                font-size: 11px;
-            }
-            
-            .info-table .label {
-                font-weight: bold;
-                background-color: #f0f7ff;
-                width: 30%;
-                color: #1e40af;
-            }
-            
-            .info-table .value {
-                background-color: #ffffff;
-            }
-            
-            .section-title {
-                background-color: #1e40af;
-                color: white;
-                padding: 10px 15px;
-                font-size: 14px;
-                font-weight: bold;
-                margin: 20px 0 15px 0;
-                border-radius: 4px;
-            }
-            
-            .prenda-card {
-                border: 2px solid #3b82f6;
-                border-radius: 8px;
-                margin-bottom: 20px;
-                background-color: white;
-                overflow: hidden;
-            }
-            
-            .prenda-card-header {
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                color: white;
-                padding: 12px 15px;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            
-            .prenda-card-content {
-                padding: 15px;
-            }
-            
-            .card-section {
-                margin-bottom: 15px;
-            }
-            
-            .card-section-title {
-                color: #1e40af;
-                font-size: 12px;
-                font-weight: bold;
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }
-            
-            .variations-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 10px;
-                font-size: 10px;
-            }
-            
-            .variations-table thead {
-                background-color: #1e40af;
-                color: white;
-            }
-            
-            .variations-table th,
-            .variations-table td {
-                padding: 8px;
-                text-align: left;
-                border: 1px solid #ddd;
-            }
-            
-            .variations-table tbody tr:nth-child(even) {
-                background-color: #f9fafb;
-            }
-            
-            .ubicaciones-container {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .ubicacion-item {
-                background-color: white;
-                border-left: 4px solid #10b981;
-                border-radius: 4px;
-                padding: 10px;
-                font-size: 10px;
-            }
-            
-            .ubicacion-titulo {
-                color: #059669;
-                font-weight: bold;
-                margin-bottom: 5px;
-            }
-            
-            .ubicacion-desc {
-                color: #666;
-                font-size: 9px;
-            }
-            
-            .description-box {
-                background-color: #fef3c7;
-                border: 1px solid #fcd34d;
-                border-radius: 4px;
-                padding: 12px;
-                font-size: 11px;
-                color: #92400e;
-                line-height: 1.5;
-                margin-top: 8px;
-            }
-            
-            .observations-box {
-                background-color: #f3e8ff;
-                border: 1px solid #e9d5ff;
-                border-radius: 4px;
-                padding: 12px;
-                font-size: 10px;
-            }
-            
-            .observation-item {
-                background-color: white;
-                border-left: 4px solid #1e40af;
-                padding: 8px;
-                margin-bottom: 8px;
-                border-radius: 3px;
-                color: #333;
-            }
-            
-            .images-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-                margin-top: 10px;
-            }
-            
-            .image-item {
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                overflow: hidden;
-                background-color: #f3f4f6;
-                text-align: center;
-            }
-            
-            .image-item img {
-                width: 100%;
-                height: 120px;
-                object-fit: cover;
-                display: block;
-            }
-            
-            .image-info {
-                padding: 8px;
-                background-color: white;
-                font-size: 9px;
-                color: #666;
-            }
-            
-            .spec-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 10px;
-                margin-top: 10px;
-            }
-            
-            .spec-table th {
-                background-color: #1e40af;
-                color: white;
-                padding: 8px;
-                text-align: left;
-                font-weight: bold;
-            }
-            
-            .spec-table td {
-                padding: 8px;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            
-            .spec-table tr:nth-child(even) {
-                background-color: #f9fafb;
-            }
-            
-            .page-break {
-                page-break-after: always;
-                margin-bottom: 20px;
-            }
-        </style>
-        ';
+        return <<<'CSS'
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; margin: 0; padding: 0; height: auto; }
+        body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
+        
+        .header-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 0; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding: 15px 12mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 15px; }
+        .header-logo { width: 120px; height: auto; flex-shrink: 0; }
+        .header-content { flex: 1; text-align: center; }
+        .header-title { font-size: 14px; font-weight: bold; margin: 0; }
+        .header-subtitle { font-size: 10px; margin: 2px 0; }
+        
+        .info-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 8px; }
+        .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; padding: 0 12mm; }
+        .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; }
+        .info-table .label { background: #f0f0f0; font-weight: bold; }
+        
+        /* Estilos para prendas */
+        .prendas-wrapper { padding: 12mm; }
+        
+        .prenda-card { border: 1px solid #000; margin-bottom: 15px; padding: 0; page-break-inside: avoid; }
+        
+        /* Header del card con nombre y detalles */
+        .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
+        .prenda-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
+        .prenda-detalles { font-size: 9px; margin-bottom: 2px; }
+        .prenda-tallas { font-size: 10px; color: #e74c3c; font-weight: bold; }
+        
+        /* Contenedor principal de la prenda */
+        .prenda-contenido { display: flex; gap: 10px; padding: 10px; }
+        
+        /* Columna izquierda: tabla de variaciones */
+        .prenda-info { flex: 1; }
+        .variaciones-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .variaciones-table td { border: 1px solid #000; padding: 6px; font-size: 9px; }
+        .variaciones-table .var-header { background: #e0e0e0; font-weight: bold; }
+        .variaciones-table .var-label { background: #f5f5f5; font-weight: bold; width: 35%; }
+        
+        /* Columna derecha: imágenes de variaciones */
+        .prenda-imagenes { display: flex; flex-wrap: nowrap; gap: 8px; align-items: flex-start; overflow-x: auto; }
+        .prenda-img { border: 2px solid #999; padding: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; }
+        .prenda-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .prenda-img-placeholder { width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; }
+CSS;
     }
 
     /**
-     * Renderizar header del documento
+     * Renderiza el encabezado con logo de empresa
      */
-    protected function renderHeader(): string
+    private function renderHeader(): string
     {
-        $company_logo = asset('logo.png');
+        $logoPath = public_path('images/logo3.png');
         
-        return "
-        <div class='header'>
-            <div class='logo-section'>
-                <img src='{$company_logo}' alt='Logo'>
-                <div>
-                    <div class='header-title'>Cotización Reflectivo</div>
-                    <div class='header-subtitle'>Mundo Industrial</div>
+        return <<<HTML
+        <div class="header-wrapper">
+            <div class="header">
+                <img src="{$logoPath}" class="header-logo" alt="Logo">
+                <div class="header-content">
+                    <div class="header-title">Uniformes Mundo Industrial</div>
+                    <div class="header-subtitle">Lenis Ruth Mahecha Acosta</div>
+                    <div class="header-subtitle">NIT: 1.093.738.433-3 Régimen Común</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN COMBINADA (REFLECTIVO)</div>
                 </div>
             </div>
-            <div style='text-align: right; font-size: 11px;'>
-                <strong>Código:</strong> {$this->cotizacion->codigo}<br>
-                <strong>Fecha:</strong> {$this->cotizacion->created_at->format('d/m/Y')}
-            </div>
         </div>
-        ";
+        HTML;
     }
 
     /**
-     * Renderizar información del cliente
+     * Renderiza la información del cliente
      */
-    protected function renderClientInfo(): string
+    private function renderClientInfo(): string
     {
-        $cliente = $this->cotizacion->cliente->nombre ?? 'N/A';
-        $asesor = $this->cotizacion->asesor->nombre_usuario ?? 'N/A';
-        $fecha = $this->cotizacion->created_at->format('d/m/Y H:i');
-        
-        return "
-        <table class='info-table'>
-            <tr>
-                <td class='label'>Cliente:</td>
-                <td class='value'>{$cliente}</td>
-            </tr>
-            <tr>
-                <td class='label'>Asesor:</td>
-                <td class='value'>{$asesor}</td>
-            </tr>
-            <tr>
-                <td class='label'>Fecha de Cotización:</td>
-                <td class='value'>{$fecha}</td>
-            </tr>
-        </table>
-        ";
-    }
+        $nombreCliente = $this->cotizacion->cliente?->nombre ?? 'N/A';
+        $nombreAsesor = $this->cotizacion->usuario?->name ?? 'N/A';
+        $fecha = $this->cotizacion->created_at?->format('d/m/Y') ?? 'N/A';
 
-    /**
-     * Renderizar sección de cotización
-     */
-    protected function renderQuoteSection(): string
-    {
-        return "
-        <div class='section-title'>
-            Detalles de Cotización Reflectivo
+        $nombreCliente = htmlspecialchars($nombreCliente);
+        $nombreAsesor = htmlspecialchars($nombreAsesor);
+        $fecha = htmlspecialchars($fecha);
+
+        return <<<HTML
+        <div class="info-wrapper">
+            <table class="info-table">
+                <tr>
+                    <td class="label" style="width: 15%;">CLIENTE</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 25%;">{$nombreCliente}</td>
+                    <td class="label" style="width: 15%;">ASESOR</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 25%;">{$nombreAsesor}</td>
+                    <td class="label" style="width: 10%;">Fecha</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 10%;">{$fecha}</td>
+                </tr>
+            </table>
         </div>
-        <div style='font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.6;'>
-            <p><strong>Referencia:</strong> Reflectivo aplicable en prendas</p>
-            <p><strong>Tipo de Cotización:</strong> Reflectivo (PASO 4)</p>
-        </div>
-        ";
+        HTML;
     }
 
     /**
-     * Renderizar todas las prendas reflectivo
+     * Renderiza las prendas en cards con variaciones, colores, telas, tallas e imágenes
      */
-    protected function renderReflectivos(): string
+    private function renderPrendas(): string
     {
-        $html = '<div class="section-title">Prendas con Reflectivo</div>';
-        
-        $reflectivoPrendas = $this->cotizacion->reflectivoPrendas()->with([
-            'prenda',
-            'prenda.tallas',
-            'fotos'
-        ])->get();
-        
-        if ($reflectivoPrendas->isEmpty()) {
-            $html .= '<p style="color: #666; font-size: 11px;">No hay prendas con reflectivo registradas.</p>';
-            return $html;
-        }
-        
-        foreach ($reflectivoPrendas as $reflectivo) {
-            $html .= $this->renderReflectivoPrenda($reflectivo);
-        }
-        
-        return $html;
-    }
+        $html = '<div class="prendas-wrapper">';
 
-    /**
-     * Renderizar una prenda reflectivo individual
-     */
-    protected function renderReflectivoPrenda($reflectivo): string
-    {
-        $prenda = $reflectivo->prenda;
-        
-        // Construir nombre con color (obtener de variantes)
-        $nombrePrenda = $prenda->nombre_producto ?? 'Prenda sin nombre';
-        $color = '';
-        
-        // Obtener color de la primera variante si existe
-        if ($prenda->variantes && count($prenda->variantes) > 0) {
-            $primerVariante = $prenda->variantes->first();
-            $color = $primerVariante->color ?? '';
-        }
-        
-        $nombreCompleto = $nombrePrenda;
-        if ($color) $nombreCompleto .= " - $color";
-        
-        $html = '<div class="prenda-card">';
-        $html .= '<div class="prenda-card-header">' . htmlspecialchars($nombreCompleto) . '</div>';
-        $html .= '<div class="prenda-card-content">';
-        
-        // Tallas
-        $html .= $this->renderTallasReflectivo($prenda);
-        
-        // Variaciones
-        $html .= $this->renderVariacionesReflectivo($prenda);
-        
-        // Ubicaciones del reflectivo
-        $html .= $this->renderUbicacionesReflectivo($prenda);
-        
-        // Descripción
-        if ($reflectivo->descripcion) {
-            $html .= '<div class="card-section">';
-            $html .= '<div class="card-section-title">Descripción</div>';
-            $html .= '<div class="description-box">' . htmlspecialchars($reflectivo->descripcion) . '</div>';
-            $html .= '</div>';
-        }
-        
-        // Observaciones
-        $html .= $this->renderObservacionesReflectivo($reflectivo);
-        
-        // Imágenes
-        $html .= $this->renderImagenesReflectivo($prenda, $reflectivo);
-        
-        $html .= '</div>';
-        $html .= '</div>';
-        
-        return $html;
-    }
+        // Obtener las prendas de reflectivo
+        if ($this->cotizacion->prendaCotReflectivos && count($this->cotizacion->prendaCotReflectivos) > 0) {
+            foreach ($this->cotizacion->prendaCotReflectivos as $refPrenda) {
+                $prenda = $refPrenda->prendaCot;
+                
+                if (!$prenda) continue;
 
-    /**
-     * Renderizar tallas de la prenda
-     */
-    protected function renderTallasReflectivo($prenda): string
-    {
-        if (!$prenda->tallas || $prenda->tallas->isEmpty()) {
-            return '';
-        }
-        
-        $html = '<div class="card-section">';
-        $html .= '<div class="card-section-title">Tallas</div>';
-        $html .= '<div style="display: flex; flex-wrap: wrap; gap: 5px; font-size: 10px;">';
-        
-        foreach ($prenda->tallas as $talla) {
-            $html .= '<span style="background-color: #0284c7; color: white; padding: 4px 8px; border-radius: 3px;">';
-            $html .= htmlspecialchars($talla->talla) . ' (' . $talla->cantidad . ')';
-            $html .= '</span>';
-        }
-        
-        $html .= '</div>';
-        $html .= '</div>';
-        
-        return $html;
-    }
-
-    /**
-     * Renderizar variaciones de la prenda
-     */
-    protected function renderVariacionesReflectivo($prenda): string
-    {
-        $prendaReflectivo = $this->getPrendaCotReflectivo($prenda->id);
-        if (!$prendaReflectivo) {
-            return '';
-        }
-        
-        $variaciones = $prendaReflectivo->variaciones;
-        if (is_string($variaciones)) {
-            $variaciones = json_decode($variaciones, true) ?? [];
-        }
-        
-        if (empty($variaciones) || !is_array($variaciones)) {
-            return '';
-        }
-        
-        $variacionesFormateadas = $this->formatearVariaciones($variaciones);
-        
-        if (empty($variacionesFormateadas)) {
-            return '';
-        }
-        
-        $html = '<div class="card-section">';
-        $html .= '<div class="card-section-title">Variaciones</div>';
-        $html .= '<table class="variations-table">';
-        $html .= '<thead><tr>';
-        $html .= '<th>Tipo</th>';
-        $html .= '<th>Valor</th>';
-        $html .= '<th>Observación</th>';
-        $html .= '</tr></thead>';
-        $html .= '<tbody>';
-        
-        foreach ($variacionesFormateadas as $tipo => $datos) {
-            $html .= '<tr>';
-            $html .= '<td>' . htmlspecialchars($tipo) . '</td>';
-            $html .= '<td>' . htmlspecialchars($datos['valor']) . '</td>';
-            $html .= '<td>' . htmlspecialchars($datos['observacion'] ?? '-') . '</td>';
-            $html .= '</tr>';
-        }
-        
-        $html .= '</tbody>';
-        $html .= '</table>';
-        $html .= '</div>';
-        
-        return $html;
-    }
-
-    /**
-     * Renderizar ubicaciones del reflectivo
-     */
-    protected function renderUbicacionesReflectivo($prenda): string
-    {
-        $prendaReflectivo = $this->getPrendaCotReflectivo($prenda->id);
-        if (!$prendaReflectivo) {
-            return '';
-        }
-        
-        $ubicaciones = $prendaReflectivo->ubicaciones;
-        if (is_string($ubicaciones)) {
-            $ubicaciones = json_decode($ubicaciones, true) ?? [];
-        }
-        
-        if (empty($ubicaciones) || !is_array($ubicaciones)) {
-            return '';
-        }
-        
-        $html = '<div class="card-section">';
-        $html .= '<div class="card-section-title">Ubicaciones del Reflectivo</div>';
-        $html .= '<div class="ubicaciones-container">';
-        
-        foreach ($ubicaciones as $ubi) {
-            $html .= '<div class="ubicacion-item">';
-            
-            if (isset($ubi['ubicacion']) && !empty($ubi['ubicacion'])) {
-                $html .= '<div class="ubicacion-titulo">' . htmlspecialchars($ubi['ubicacion']) . '</div>';
-            }
-            
-            if (isset($ubi['descripcion']) && !empty($ubi['descripcion'])) {
-                $html .= '<div class="ubicacion-desc">' . htmlspecialchars($ubi['descripcion']) . '</div>';
-            }
-            
-            $html .= '</div>';
-        }
-        
-        $html .= '</div>';
-        $html .= '</div>';
-        
-        return $html;
-    }
-
-    /**
-     * Renderizar observaciones del reflectivo
-     */
-    protected function renderObservacionesReflectivo($reflectivo): string
-    {
-        $obsGenerales = $reflectivo->observaciones_generales ?? [];
-        if (is_string($obsGenerales)) {
-            $obsGenerales = json_decode($obsGenerales, true) ?? [];
-        }
-        
-        if (empty($obsGenerales) || !is_array($obsGenerales)) {
-            return '';
-        }
-        
-        $html = '<div class="card-section">';
-        $html .= '<div class="card-section-title">Observaciones</div>';
-        $html .= '<div class="observations-box">';
-        
-        foreach ($obsGenerales as $obs) {
-            $html .= '<div class="observation-item">';
-            
-            if (is_array($obs)) {
-                if ($obs['tipo'] === 'checkbox' && $obs['valor'] === true) {
-                    $html .= '<strong>' . htmlspecialchars($obs['texto']) . '</strong> ✓';
-                } elseif (isset($obs['valor'])) {
-                    $html .= '<strong>' . htmlspecialchars($obs['texto']) . ':</strong> ' . htmlspecialchars($obs['valor']);
-                } else {
-                    $html .= '<strong>' . htmlspecialchars($obs['texto'] ?? $obs) . '</strong>';
+                // Decodificar variaciones JSON
+                $variaciones = [];
+                if ($refPrenda->variaciones) {
+                    $variaciones = is_string($refPrenda->variaciones) 
+                        ? json_decode($refPrenda->variaciones, true) 
+                        : $refPrenda->variaciones;
                 }
-            } else {
-                $html .= htmlspecialchars($obs);
+
+                $html .= '<div class="prenda-card">';
+
+                // Header del card con nombre y detalles
+                $html .= '<div class="prenda-header">';
+                $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . '</div>';
+
+                // Información de color, tela y referencia (de la primera variación)
+                if (!empty($variaciones) && is_array($variaciones)) {
+                    $primeraVar = $variaciones[0];
+                    
+                    $color = $primeraVar['color'] ?? 'N/A';
+                    $tela = '';
+                    $referencia = '';
+                    
+                    if (isset($primeraVar['telas_multiples']) && !empty($primeraVar['telas_multiples'])) {
+                        $primeraTela = $primeraVar['telas_multiples'][0];
+                        $tela = $primeraTela['tela'] ?? '';
+                        $referencia = $primeraTela['referencia'] ?? '';
+                    }
+                    
+                    $html .= '<div class="prenda-detalles">';
+                    $html .= 'Color: ' . htmlspecialchars($color) . ' | Tela: ' . htmlspecialchars($tela);
+                    if ($referencia) {
+                        $html .= ' Ref: ' . htmlspecialchars($referencia);
+                    }
+                    $html .= '</div>';
+                }
+
+                // Tallas en rojo
+                $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->implode(', ') : 'Sin tallas';
+                $html .= '<div class="prenda-tallas">Tallas: ' . htmlspecialchars($tallas) . '</div>';
+
+                $html .= '</div>';
+
+                // Contenido: tabla de variaciones + imágenes
+                $html .= '<div class="prenda-contenido">';
+
+                // Columna izquierda: tabla de variaciones
+                $html .= '<div class="prenda-info">';
+                $html .= $this->renderVariacionesTable($variaciones);
+                $html .= '</div>';
+
+                // Columna derecha: imágenes
+                $html .= '<div class="prenda-imagenes">';
+                $html .= $this->renderImagenesVariaciones($prenda, $refPrenda);
+                $html .= '</div>';
+
+                $html .= '</div>';
+
+                $html .= '</div>';
             }
-            
-            $html .= '</div>';
+        } else {
+            $html .= '<div style="padding: 20px; text-align: center; color: #999;">No hay prendas de reflectivo en esta cotización</div>';
         }
-        
+
         $html .= '</div>';
-        $html .= '</div>';
-        
+
         return $html;
     }
 
     /**
-     * Renderizar imágenes del reflectivo y la prenda
+     * Renderiza la tabla de variaciones
      */
-    protected function renderImagenesReflectivo($prenda, $reflectivo): string
+    private function renderVariacionesTable(array $variaciones): string
     {
-        $todasLasImagenes = [];
+        if (empty($variaciones)) {
+            return '<p style="color: #999; font-size: 9px;">Sin variaciones</p>';
+        }
+
+        $html = '<table class="variaciones-table">';
         
-        // Imágenes de la prenda (PASO 2)
+        // Headers
+        $html .= '<tr>';
+        $html .= '<td class="var-header" style="width: 35%;">Variación</td>';
+        $html .= '<td class="var-header" style="width: 65%;">Observación</td>';
+        $html .= '</tr>';
+
+        // Recolectar todas las variaciones
+        foreach ($variaciones as $var) {
+            $mangaId = $var['tipo_manga_id'] ?? null;
+            $brocheId = $var['tipo_broche_id'] ?? null;
+            $tieneBosillos = $var['tiene_bolsillos'] ?? false;
+            $obsBolsillos = $var['obs_bolsillos'] ?? '';
+            $obsBroche = $var['obs_broche'] ?? '';
+
+            // Fila de manga
+            if ($mangaId) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Manga</td>';
+                $html .= '<td></td>';
+                $html .= '</tr>';
+            }
+
+            // Fila de bolsillos
+            if ($tieneBosillos && $obsBolsillos) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Bolsillos</td>';
+                $html .= '<td>' . htmlspecialchars($obsBolsillos) . '</td>';
+                $html .= '</tr>';
+            }
+
+            // Fila de broche
+            if ($brocheId && $obsBroche) {
+                $html .= '<tr>';
+                $html .= '<td class="var-label">Broche/Botón</td>';
+                $html .= '<td>' . htmlspecialchars($obsBroche) . '</td>';
+                $html .= '</tr>';
+            }
+        }
+
+        $html .= '</table>';
+
+        return $html;
+    }
+
+    /**
+     * Renderiza las imágenes de variaciones de la prenda y del reflectivo
+     */
+    private function renderImagenesVariaciones($prenda, $refPrenda): string
+    {
+        $html = '';
+
+        // Imágenes de la prenda (prendas_cot)
         if ($prenda->fotos && count($prenda->fotos) > 0) {
             foreach ($prenda->fotos as $foto) {
-                $url = $foto->ruta_webp ? '/storage/' . $foto->ruta_webp : null;
-                if ($url) {
-                    $todasLasImagenes[] = [
-                        'url' => asset($url),
-                        'tipo' => 'Prenda (PASO 2)',
-                        'fecha' => $foto->created_at->format('d/m/Y H:i') ?? ''
-                    ];
+                if ($foto->ruta_webp) {
+                    $imagenUrl = public_path('storage/' . $foto->ruta_webp);
+                    
+                    if (file_exists($imagenUrl)) {
+                        $html .= '<div class="prenda-img">';
+                        $html .= '<img src="' . $imagenUrl . '" alt="Variación">';
+                        $html .= '</div>';
+                    } else {
+                        $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
+                    }
                 }
             }
         }
-        
-        // Imágenes del reflectivo (PASO 4)
-        if ($reflectivo->fotos && count($reflectivo->fotos) > 0) {
-            foreach ($reflectivo->fotos as $foto) {
-                if ($foto->ruta_original) {
-                    $todasLasImagenes[] = [
-                        'url' => $foto->url,
-                        'tipo' => 'Reflectivo (PASO 4)',
-                        'fecha' => $foto->created_at->format('d/m/Y H:i') ?? ''
-                    ];
+
+        // Imágenes del reflectivo paso 4 (reflectivo_fotos_cotizacion)
+        // Buscar en reflectivoPrendas los que correspondan a esta prenda
+        if ($this->cotizacion->reflectivoPrendas) {
+            foreach ($this->cotizacion->reflectivoPrendas as $refPrendaItem) {
+                // Filtrar solo los que corresponden a esta prenda
+                if ($refPrendaItem->prenda_cot_id === $prenda->id && $refPrendaItem->fotos) {
+                    foreach ($refPrendaItem->fotos as $foto) {
+                        if ($foto->ruta_webp) {
+                            $imagenUrl = public_path('storage/' . $foto->ruta_webp);
+                            
+                            if (file_exists($imagenUrl)) {
+                                $html .= '<div class="prenda-img">';
+                                $html .= '<img src="' . $imagenUrl . '" alt="Reflectivo">';
+                                $html .= '</div>';
+                            } else {
+                                $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
+                            }
+                        }
+                    }
                 }
             }
         }
-        
-        if (empty($todasLasImagenes)) {
-            return '';
+
+        // Si no hay imágenes, mostrar placeholder
+        if (empty($html)) {
+            $html .= '<div class="prenda-img-placeholder">Sin imagen</div>';
         }
-        
-        $html = '<div class="card-section">';
-        $html .= '<div class="card-section-title">Imágenes Adjuntas (' . count($todasLasImagenes) . ')</div>';
-        $html .= '<div class="images-grid">';
-        
-        foreach ($todasLasImagenes as $imagen) {
-            if ($imagen['url']) {
-                $html .= '<div class="image-item">';
-                $html .= '<img src="' . htmlspecialchars($imagen['url']) . '" alt="' . htmlspecialchars($imagen['tipo']) . '">';
-                $html .= '<div class="image-info">';
-                $html .= '<div><strong>' . htmlspecialchars($imagen['tipo']) . '</strong></div>';
-                if ($imagen['fecha']) {
-                    $html .= '<div style="font-size: 8px; color: #999;">' . htmlspecialchars($imagen['fecha']) . '</div>';
-                }
-                $html .= '</div>';
-                $html .= '</div>';
-            }
-        }
-        
-        $html .= '</div>';
-        $html .= '</div>';
-        
+
         return $html;
-    }
-
-    /**
-     * Renderizar especificaciones finales
-     */
-    protected function renderSpecifications(): string
-    {
-        $especificaciones = $this->cotizacion->especificaciones;
-        if (is_string($especificaciones)) {
-            $especificaciones = json_decode($especificaciones, true) ?? [];
-        }
-        
-        if (empty($especificaciones) || !is_array($especificaciones)) {
-            return '';
-        }
-        
-        $html = '<div style="page-break-before: avoid;" class="section-title">Especificaciones Generales</div>';
-        $html .= '<table class="spec-table">';
-        $html .= '<thead><tr>';
-        $html .= '<th>Categoría</th>';
-        $html .= '<th>Valor</th>';
-        $html .= '</tr></thead>';
-        $html .= '<tbody>';
-        
-        foreach ($especificaciones as $key => $valor) {
-            $html .= '<tr>';
-            $html .= '<td><strong>' . htmlspecialchars($key) . '</strong></td>';
-            
-            if (is_array($valor)) {
-                $html .= '<td>' . htmlspecialchars($valor['valor'] ?? json_encode($valor)) . '</td>';
-            } else {
-                $html .= '<td>' . htmlspecialchars($valor) . '</td>';
-            }
-            
-            $html .= '</tr>';
-        }
-        
-        $html .= '</tbody>';
-        $html .= '</table>';
-        
-        return $html;
-    }
-
-    /**
-     * Obtener el registro PrendaCotReflectivo para una prenda
-     */
-    protected function getPrendaCotReflectivo($prendaId)
-    {
-        return \App\Models\PrendaCotReflectivo::where([
-            'cotizacion_id' => $this->cotizacion->id,
-            'prenda_cot_id' => $prendaId
-        ])->first();
-    }
-
-    /**
-     * Formatear variaciones para mostrar en tabla
-     */
-    protected function formatearVariaciones(array $variaciones): array
-    {
-        $formateadas = [];
-        
-        if (empty($variaciones)) {
-            return $formateadas;
-        }
-        
-        $variacion = is_array($variaciones[0]) ? $variaciones[0] : $variaciones;
-        
-        // Color
-        if (isset($variacion['color']) && !empty($variacion['color'])) {
-            $formateadas['Color'] = [
-                'valor' => $variacion['color'],
-                'observacion' => ''
-            ];
-        }
-        
-        // Tela
-        if (isset($variacion['telas_multiples']) && is_array($variacion['telas_multiples']) && count($variacion['telas_multiples']) > 0) {
-            $telaObj = $variacion['telas_multiples'][0];
-            if (is_array($telaObj) && isset($telaObj['tela'])) {
-                $formateadas['Tela'] = [
-                    'valor' => $telaObj['tela'],
-                    'observacion' => $telaObj['referencia'] ?? ''
-                ];
-            }
-        }
-        
-        // Manga
-        if (isset($variacion['tipo_manga_id'])) {
-            $tipoManga = TipoManga::find($variacion['tipo_manga_id']);
-            $nombreManga = $tipoManga ? $tipoManga->nombre : 'Tipo ' . $variacion['tipo_manga_id'];
-            $formateadas['Manga'] = [
-                'valor' => $nombreManga,
-                'observacion' => ''
-            ];
-        }
-        
-        // Bolsillo
-        if (isset($variacion['tiene_bolsillos'])) {
-            $bolsilloValor = $variacion['tiene_bolsillos'] ? 'Sí' : 'No';
-            $bolsilloObs = $variacion['obs_bolsillos'] ?? '';
-            $formateadas['Bolsillo'] = [
-                'valor' => $bolsilloValor,
-                'observacion' => $bolsilloObs
-            ];
-        }
-        
-        // Broche/Botón
-        if (isset($variacion['tipo_broche_id'])) {
-            $tipoBroche = TipoBrocheBoton::find($variacion['tipo_broche_id']);
-            $nombreBroche = $tipoBroche ? $tipoBroche->nombre : 'Tipo ' . $variacion['tipo_broche_id'];
-            $brocheObs = $variacion['obs_broche'] ?? '';
-            $formateadas['Broche/Botón'] = [
-                'valor' => $nombreBroche,
-                'observacion' => $brocheObs
-            ];
-        }
-        
-        return $formateadas;
     }
 }

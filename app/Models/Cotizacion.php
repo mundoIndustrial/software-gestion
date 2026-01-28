@@ -149,6 +149,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con prendas reflectivo (tabla prenda_cot_reflectivo)
+     */
+    public function prendaCotReflectivos(): HasMany
+    {
+        return $this->hasMany(PrendaCotReflectivo::class, 'cotizacion_id');
+    }
+
+    /**
      * Relación con fotos de logo (logo_fotos_cot)
      */
     public function logoFotos(): HasMany
