@@ -158,15 +158,12 @@ class PedidoAggregate extends AggregateRoot
     }
 
     /**
-     * Anular un pedido (alias para cancelar, con razón de anulación)
-     * @param string $razon Razón por la cual se anula el pedido
+     * Anular un pedido (solo cambia estado a CANCELADO)
+     * La razón se agrega mediante agregarNovedad() en el Use Case
      */
     public function anular(string $razon = ''): void
     {
         $this->cancelar();
-        if (!empty($razon)) {
-            $this->agregarObservaciones("Anulación: $razon");
-        }
     }
 
     public function actualizarDescripcion(string $nuevaDescripcion): void
@@ -182,6 +179,20 @@ class PedidoAggregate extends AggregateRoot
     public function agregarObservaciones(string $observaciones): void
     {
         $this->observaciones = $observaciones;
+        $this->fechaActualizacion = new \DateTime();
+    }
+
+    /**
+     * Agregar una observación/novedad al registro existente
+     * Concatena con los registros previos usando saltos de línea
+     */
+    public function agregarNovedad(string $novedad): void
+    {
+        if (!empty($this->observaciones)) {
+            $this->observaciones = $this->observaciones . "\n\n" . $novedad;
+        } else {
+            $this->observaciones = $novedad;
+        }
         $this->fechaActualizacion = new \DateTime();
     }
 

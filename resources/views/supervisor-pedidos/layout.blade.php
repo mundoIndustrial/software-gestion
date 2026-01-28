@@ -430,58 +430,58 @@
             // No ejecutar en cartera (será sobrescrito)
             if (typeof isCartera === 'undefined' || !isCartera) {
                 cargarNotificacionesPendientes();
-                cargarContadorOrdenesPendientes();
+                // cargarContadorOrdenesPendientes();
             }
         });
 
         /**
          * Cargar contador de órdenes pendientes de aprobación
          */
-        function cargarContadorOrdenesPendientes() {
-            fetch('{{ route("supervisor-pedidos.ordenes-pendientes-count") }}')
-                .then(response => response.json())
-                .then(data => {
-                    // Actualizar contador de órdenes pendientes regulares
-                    const badgePendientes = document.getElementById('ordenesPendientesCount');
-                    if (badgePendientes) {
-                        if (data.success && data.count > 0) {
-                            // Restar las órdenes de logo para obtener solo las regulares
-                            const countRegulares = data.count - (data.pendientesLogo || 0);
-                            if (countRegulares > 0) {
-                                badgePendientes.textContent = countRegulares;
-                                badgePendientes.style.display = 'inline-flex';
-                            } else {
-                                badgePendientes.style.display = 'none';
-                            }
-                        } else {
-                            badgePendientes.style.display = 'none';
-                        }
-                    }
+        // function cargarContadorOrdenesPendientes() {
+        //     fetch('{{ route("supervisor-pedidos.ordenes-pendientes-count") }}')
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             // Actualizar contador de órdenes pendientes regulares
+        //             const badgePendientes = document.getElementById('ordenesPendientesCount');
+        //             if (badgePendientes) {
+        //                 if (data.success && data.count > 0) {
+        //                     // Restar las órdenes de logo para obtener solo las regulares
+        //                     const countRegulares = data.count - (data.pendientesLogo || 0);
+        //                     if (countRegulares > 0) {
+        //                         badgePendientes.textContent = countRegulares;
+        //                         badgePendientes.style.display = 'inline-flex';
+        //                     } else {
+        //                         badgePendientes.style.display = 'none';
+        //                     }
+        //                 } else {
+        //                     badgePendientes.style.display = 'none';
+        //                 }
+        //             }
 
-                    // Actualizar contador de órdenes pendientes de logo
-                    const badgeLogo = document.getElementById('ordenesPendientesLogoCount');
-                    if (badgeLogo) {
-                        if (data.success && data.pendientesLogo > 0) {
-                            badgeLogo.textContent = data.pendientesLogo;
-                            badgeLogo.style.display = 'inline-flex';
-                        } else {
-                            badgeLogo.style.display = 'none';
-                        }
-                    }
-                })
-                .catch(error => console.error('Error al cargar contador:', error));
-        }
+        //             // Actualizar contador de órdenes pendientes de logo
+        //             const badgeLogo = document.getElementById('ordenesPendientesLogoCount');
+        //             if (badgeLogo) {
+        //                 if (data.success && data.pendientesLogo > 0) {
+        //                     badgeLogo.textContent = data.pendientesLogo;
+        //                     badgeLogo.style.display = 'inline-flex';
+        //                 } else {
+        //                     badgeLogo.style.display = 'none';
+        //                 }
+        //             }
+        //         })
+        //         .catch(error => console.error('Error al cargar contador:', error));
+        // }
 
         // Cargar contador al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof isCartera === 'undefined' || !isCartera) {
-                cargarContadorOrdenesPendientes();
+                // cargarContadorOrdenesPendientes();
             }
         });
 
         // Recargar contador cada 30 segundos (solo en supervisores)
         if (typeof isCartera === 'undefined' || !isCartera) {
-            setInterval(cargarContadorOrdenesPendientes, 30000);
+            // setInterval(cargarContadorOrdenesPendientes, 30000);
         }
     </script>
 

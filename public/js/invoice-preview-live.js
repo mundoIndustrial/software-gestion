@@ -817,10 +817,13 @@ function generarHTMLFactura(datos) {
             return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
         }
 
-        // Si no hay prendas, mostrar mensaje
+        // Si no hay prendas, verificar si hay EPP
         if (datos.prendas.length === 0) {
-
-            return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
+            // Si tampoco hay EPP, mostrar mensaje de advertencia
+            if (!datos.epps || datos.epps.length === 0) {
+                return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
+            }
+            // Si hay EPP pero no prendas, continuamos sin mostrar advertencia
         }
     
     // Generar las tarjetas de prendas con todos los detalles
@@ -1306,23 +1309,14 @@ function generarHTMLFactura(datos) {
                         return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
                             <!-- HEADER EPP -->
-                            <div style="display: grid; grid-template-columns: auto 1fr 1fr; gap: 12px; align-items: start;">
-                                <!-- COLUMNA 1: Imagen -->
-                                <div style="font-size: 11px;">
-                                    ${epp.imagen && (epp.imagen.ruta_webp || epp.imagen.ruta_original || epp.imagen.ruta_web) ? `
-                                        <img src="${window._extraerURLImagen(epp.imagen)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes || [], 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
-                                    ` : (epp.imagenes && epp.imagenes.length > 0 ? `
-                                        <img src="${window._extraerURLImagen(epp.imagenes[0])}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(epp.imagenes, 'Imágenes de EPP: ' + (epp.nombre_completo || epp.nombre))})" title="Click para ver todas las imágenes de EPP">
-                                    ` : '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 4px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 11px;">Sin imagen</div>')}
-                                </div>
-                                
-                                <!-- COLUMNA 2: Nombre y Datos -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;">
+                                <!-- COLUMNA 1: Nombre y Datos -->
                                 <div style="font-size: 11px;">
                                     <div style="font-weight: 700; color: #374151; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre || ''}</div>
                                     ${epp.talla ? `<div style="color: #6b7280; font-size: 11px; margin-bottom: 2px;"><strong>Talla:</strong> ${epp.talla}</div>` : ''}
                                 </div>
                                 
-                                <!-- COLUMNA 3: Cantidad -->
+                                <!-- COLUMNA 2: Cantidad -->
                                 <div style="font-size: 11px; text-align: right;">
                                     <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Cantidad</div>
                                     <div style="font-weight: 600; color: #374151; font-size: 11px;"><strong>${epp.cantidad || 0}</strong></div>

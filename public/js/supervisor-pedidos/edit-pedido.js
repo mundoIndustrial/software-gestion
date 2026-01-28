@@ -534,3 +534,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+/**
+ * Función wrapper para usar editarPedido (compatible con asesores)
+ * Usa la misma función de asesores si está disponible, si no, usa abrirModalEditar
+ */
+window.editarPedido = async function(pedidoId) {
+    // Intentar usar la función de asesores si existe
+    if (typeof window._editarPedidoAsesores === 'function') {
+        return window._editarPedidoAsesores(pedidoId);
+    }
+    
+    // Fallback: usar la función del supervisor
+    return abrirModalEditar(pedidoId);
+};
+

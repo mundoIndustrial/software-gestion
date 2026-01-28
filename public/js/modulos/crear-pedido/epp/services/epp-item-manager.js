@@ -21,26 +21,25 @@ class EppItemManager {
         const galeriaHTML = this._crearGaleriaHTML(nombre, imagenes);
         
         const itemHTML = `
-            <div class="item-epp" data-item-id="${id}" data-pedido-epp-id="${pedidoEppId || id}" style="padding: 1.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="item-epp" data-item-id="${id}" data-pedido-epp-id="${pedidoEppId || id}" style="padding: 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.5rem;">
                 <!-- Header con menú contextual -->
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                     <div style="flex: 1;">
-                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; color: #1f2937;">${nombre}</h4>
-                        <p style="margin: 0; font-size: 0.875rem; color: #6b7280;">Categoría: ${categoria}</p>
+                        <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #1f2937;">${nombre}</h4>
                     </div>
                     <!-- Menú contextual (posicionado como en prenda) -->
                     <div style="position: relative;">
-                        <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #6b7280; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;" 
+                        <button class="btn-menu-epp" data-item-id="${id}" type="button" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280; padding: 0.25rem; border-radius: 4px; transition: all 0.2s ease;" 
                             onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937';"
                             onmouseout="this.style.background='none'; this.style.color='#6b7280';">
                             ⋮
                         </button>
-                        <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 140px;">
+                        <div class="submenu-epp" data-item-id="${id}" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; flex-direction: column; min-width: 120px;">
                             <button 
                                 type="button"
                                 class="btn-editar-epp"
                                 data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;"
+                                style="display: block; width: 100%; padding: 0.5rem 0.75rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #1f2937; transition: background 0.2s ease; border-bottom: 1px solid #e5e7eb;"
                                 onmouseover="this.style.background = '#f3f4f6';"
                                 onmouseout="this.style.background = 'transparent';"
                             >
@@ -50,7 +49,7 @@ class EppItemManager {
                                 type="button"
                                 class="btn-eliminar-epp"
                                 data-item-id="${id}"
-                                style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #dc2626; transition: background 0.2s ease; border-radius: 0 0 8px 8px;"
+                                style="display: block; width: 100%; padding: 0.5rem 0.75rem; text-align: left; background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #dc2626; transition: background 0.2s ease; border-radius: 0 0 6px 6px;"
                                 onmouseover="this.style.background = '#fef2f2';"
                                 onmouseout="this.style.background = 'transparent';"
                             >
@@ -61,14 +60,14 @@ class EppItemManager {
                 </div>
 
                 <!-- Detalles -->
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
                     <div>
-                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Cantidad</p>
-                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${cantidad}</p>
+                        <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Cantidad</p>
+                        <p style="margin: 0; font-size: 0.85rem; font-weight: 500; color: #1f2937;">${cantidad}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Observaciones</p>
-                        <p style="margin: 0; font-size: 1rem; font-weight: 500; color: #1f2937;">${observaciones || 'N/A'}</p>
+                        <p style="margin: 0 0 0.1rem 0; font-size: 0.65rem; font-weight: 600; color: #9ca3af; text-transform: uppercase;">Observaciones</p>
+                        <p style="margin: 0; font-size: 0.85rem; font-weight: 500; color: #1f2937;">${observaciones || 'N/A'}</p>
                     </div>
                 </div>
 

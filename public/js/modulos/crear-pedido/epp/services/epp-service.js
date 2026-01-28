@@ -46,12 +46,6 @@ class EppService {
     abrirModalEditarEPP(eppData) {
         console.log('[EppService] 📝 Abriendo modal de edición con datos:', eppData);
 
-        // Estandarizar datos: crear propiedad 'imagen' si no existe pero hay 'imagenes'
-        if (!eppData.imagen && eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
-            eppData.imagen = eppData.imagenes[0];
-            console.log('[EppService] 📸 Estandarizando: creada propiedad imagen desde imagenes[0]');
-        }
-
         // Resetear estado y marcar como edición
         this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, true, eppData.pedido_epp_id || eppData.id);
         
@@ -72,8 +66,7 @@ class EppService {
             nombre: nombre,
             nombre_completo: nombre,
             codigo: eppData.codigo || undefined,
-            categoria: eppData.categoria || undefined,
-            imagen: eppData.imagen ? (eppData.imagen.ruta_webp || eppData.imagen.ruta_web || eppData.imagen.url || eppData.imagen) : undefined
+            categoria: eppData.categoria || undefined
         });
 
         // Cargar valores en el formulario
@@ -83,39 +76,10 @@ class EppService {
             eppData.observaciones || ''
         );
 
-        // Mostrar y guardar imágenes si existen
-        if (eppData.imagenes && Array.isArray(eppData.imagenes) && eppData.imagenes.length > 0) {
-            console.log('[EppService] 📸 Guardando imágenes en estado:', eppData.imagenes);
-            this.modalManager.mostrarImagenes(eppData.imagenes);
-            
-            // Cargar imágenes en el stateManager para que se puedan eliminar correctamente
-            console.log('[EppService] 📸 Limpiando imágenes previas en stateManager');
-            this.stateManager.limpiarImagenesSubidas();
-            
-            // Agregar cada imagen al estado
-            eppData.imagenes.forEach((img, idx) => {
-                const imagenParaEstado = {
-                    id: img.id || `${eppData.epp_id}-img-${idx}`,
-                    nombre: img.nombre || `imagen-${idx}`,
-                    preview: img.url || img.ruta_web || img.preview || '',
-                    url: img.url || img.ruta_web || img.preview || '',
-                    ruta_web: img.ruta_web || img.url || img.preview || '',
-                    archivo: null // No es un File, es una imagen existente
-                };
-                console.log('[EppService] 📸 Agregando imagen al estado:', imagenParaEstado);
-                this.stateManager.agregarImagenSubida(imagenParaEstado);
-            });
-            
-            // Guardar imágenes en el estado para que se incluyan al guardar (versión legacy)
-            if (this.stateManager.cargarImagenesExistentes) {
-                this.stateManager.cargarImagenesExistentes(eppData.imagenes);
-            }
-        } else {
-            // Si no hay imágenes, limpiar estado pero MOSTRAR el contenedor para agregar nuevas
-            console.log('[EppService] 📸 Sin imágenes existentes, limpiando estado');
-            this.stateManager.limpiarImagenesSubidas();
-            this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacío para poder agregar
-        }
+        // Limpiar imágenes previas
+        console.log('[EppService] 📸 Limpiando imágenes previas en stateManager');
+        this.stateManager.limpiarImagenesSubidas();
+        this.modalManager.mostrarImagenes([]); // Mostrar contenedor vacío para poder agregar nuevas
 
         // Habilitar campos
         this.modalManager.habilitarCampos();
@@ -277,21 +241,46 @@ class EppService {
         try {
             const eppId = this.stateManager.getEppIdSeleccionado();
             const pedidoId = this.stateManager.getPedidoId();
+            const pedidoEppId = this.stateManager.getPedidoEppId();
             const imagenes = this.stateManager.getImagenesSubidas();
 
-            // Agregar EPP al pedido
-            const resultado = await this.apiService.agregarEPPAlPedido(
-                pedidoId,
+            console.log('[EppService] 📝 Guardando EPP desde BD:', {
                 eppId,
-                valores.cantidad,
-                valores.observaciones,
-                imagenes
-            );
+                pedidoId,
+                pedidoEppId,
+                cantidad: valores.cantidad,
+                observaciones: valores.observaciones,
+                esEdicion: !!pedidoEppId
+            });
+
+            let resultado;
+
+            // Si tiene pedidoEppId, es una edición (UPDATE)
+            if (pedidoEppId) {
+                console.log('[EppService] 🔄 MODO EDICIÓN: Actualizando EPP en el pedido...');
+                resultado = await this.apiService.actualizarEPPDelPedido(
+                    pedidoId,
+                    pedidoEppId,
+                    valores.cantidad,
+                    valores.observaciones
+                );
+            } else {
+                // Si no tiene pedidoEppId, es agregar (CREATE)
+                console.log('[EppService] ✨ MODO CREAR: Agregando nuevo EPP al pedido...');
+                resultado = await this.apiService.agregarEPPAlPedido(
+                    pedidoId,
+                    eppId,
+                    valores.cantidad,
+                    valores.observaciones,
+                    imagenes
+                );
+            }
 
             if (window.eppNotificationService) {
+                const mensaje = pedidoEppId ? 'EPP actualizado correctamente' : 'EPP agregado al pedido correctamente';
                 window.eppNotificationService.mostrarExitoModal(
-                    '✅ EPP Agregado',
-                    'EPP agregado al pedido correctamente'
+                    '✅ ' + (pedidoEppId ? 'Actualizado' : 'Agregado'),
+                    mensaje
                 );
             }
             this.cerrarModal();
@@ -300,6 +289,7 @@ class EppService {
             // Recargar página
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
+            console.error('[EppService] ❌ Error al guardar EPP:', error);
 
             if (window.eppNotificationService) {
                 window.eppNotificationService.mostrarErrorModal(

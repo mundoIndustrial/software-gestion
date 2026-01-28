@@ -115,6 +115,15 @@ class PedidoProduccionRepository
                 throw new \Exception('Pedido no encontrado');
             }
 
+            // Determinar la fecha de creación (priorizar fecha_de_creacion_de_orden, fallback a created_at)
+            $fechaCreacion = $pedido->fecha_de_creacion_de_orden 
+                ? (is_string($pedido->fecha_de_creacion_de_orden) 
+                    ? $pedido->fecha_de_creacion_de_orden 
+                    : $pedido->fecha_de_creacion_de_orden->format('d/m/Y'))
+                : ($pedido->created_at 
+                    ? $pedido->created_at->format('d/m/Y')
+                    : date('d/m/Y'));
+
             // Construir datos base
             $datos = [
                 'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
@@ -122,8 +131,8 @@ class PedidoProduccionRepository
                 'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
                 'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
                 'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
-                'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
-                'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+                'fecha' => $fechaCreacion,
+                'fecha_creacion' => $fechaCreacion,
                 'observaciones' => $pedido->observaciones ?? '',
                 'prendas' => [],
                 'total_items' => 0,

@@ -1653,4 +1653,60 @@ class CrearPedidoEditableController extends Controller
             }
         }
     }
+
+    /**
+     * Obtener prendas para autocomplete/datalist
+     * GET /asesores/api/prendas/autocomplete
+     * 
+     * Retorna las prendas activas de la tabla tipos_prenda para rellenar
+     * un datalist en el campo de nombre de prenda
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function obtenerPrendasAutocomplete(Request $request): JsonResponse
+    {
+        try {
+            $busqueda = $request->input('q', '');
+            
+            $query = \App\Models\TipoPrenda::where('activo', true);
+            
+            // Si hay búsqueda, filtrar por nombre o palabras clave
+            if (!empty($busqueda)) {
+                $busquedaUpper = strtoupper($busqueda);
+                $query->where(function($q) use ($busquedaUpper) {
+                    $q->whereRaw('UPPER(nombre) LIKE ?', ["%{$busquedaUpper}%"])
+                      ->orWhereRaw('UPPER(codigo) LIKE ?', ["%{$busquedaUpper}%"]);
+                });
+            }
+            
+            $prendas = $query->orderBy('nombre', 'asc')
+                            ->limit(50)
+                            ->get(['id', 'nombre', 'codigo', 'descripcion'])
+                            ->map(function($prenda) {
+                                return [
+                                    'id' => $prenda->id,
+                                    'nombre' => $prenda->nombre,
+                                    'codigo' => $prenda->codigo,
+                                    'descripcion' => $prenda->descripcion
+                                ];
+                            });
+            
+            return response()->json([
+                'success' => true,
+                'prendas' => $prendas
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('[obtenerPrendasAutocomplete] Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener prendas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

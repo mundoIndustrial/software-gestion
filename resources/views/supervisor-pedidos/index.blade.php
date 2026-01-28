@@ -11,160 +11,276 @@
 @section('content')
 <div class="supervisor-pedidos-container">
 
-    <!-- Tabla de Órdenes - Nuevo Diseño -->
-    <div class="table-container">
-        <div class="modern-table-wrapper">
-            <div class="table-scroll-container">
-                <div class="table-head">
-                    <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
-                        @php
-                            $columns = [
-                                ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 200px', 'justify' => 'flex-start'],
-                                ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
-                                ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
-                                ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 160px', 'justify' => 'center'],
-                                ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
-                                ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
-                                ['key' => 'forma_pago', 'label' => 'Forma Pago', 'flex' => '0 0 140px', 'justify' => 'center'],
-                                ['key' => 'fecha_estimada', 'label' => 'Entrega Est.', 'flex' => '0 0 160px', 'justify' => 'center'],
-                            ];
-                        @endphp
-                        @foreach($columns as $column)
-                            <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
-                                <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                                    <span class="header-text">{{ $column['label'] }}</span>
-                                    @if($column['key'] !== 'acciones')
-                                        <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('{{ $column['key'] }}')" title="Filtrar {{ $column['label'] }}">
-                                            <span class="material-symbols-rounded">filter_alt</span>
-                                            <div class="filter-badge"></div>
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+    <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
+    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
+        <!-- Contenedor con Scroll -->
+        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
+            <!-- Header Azul -->
+            <div style="
+                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+                color: white;
+                padding: 0.75rem 1rem;
+                display: grid;
+                grid-template-columns: 200px 140px 200px 160px 150px 150px 140px 160px;
+                gap: 1.2rem;
+                font-weight: 600;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                min-width: min-content;
+                border-radius: 6px;
+            ">
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Acciones</span>
                 </div>
-                <div class="modern-table">
-                    <div class="table-body">
-                        @if($ordenes->count() > 0)
-                            @foreach($ordenes as $orden)
-                                <div class="table-row" data-orden-id="{{ $orden->id }}" data-numero="{{ $orden->numero_pedido }}" data-cliente="{{ $orden->cliente }}" data-fecha="{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}" data-estado="{{ $orden->estado }}" data-asesora="{{ $orden->asesora?->name ?? 'N/A' }}" data-forma_pago="{{ $orden->forma_de_pago ?? 'N/A' }}" data-fecha_estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
-                                    
-                                    <!-- Acciones -->
-                                    <div class="table-cell acciones-column" style="flex: 0 0 200px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
-                                        <button class="action-view-btn" title="Ver opciones" onclick="toggleAcciones(event, {{ $orden->id }})">
-                                            <span class="material-symbols-rounded">visibility</span>
-                                        </button>
-                                        <div class="action-menu" id="menu-{{ $orden->id }}" style="display: none;">
-                                            <button class="action-menu-item" onclick="verOrdenDetalles({{ $orden->id }})">
-                                                <span class="material-symbols-rounded">description</span>
-                                                <span>Detalles</span>
-                                            </button>
-                                            <button class="action-menu-item" onclick="abrirSeguimiento({{ $orden->id }})">
-                                                <span class="material-symbols-rounded">local_shipping</span>
-                                                <span>Seguimiento</span>
-                                            </button>
-                                        </div>
-                                        
-                                        @if(request('aprobacion') === 'pendiente')
-                                            <button class="btn-action btn-success" title="Aprobar orden" onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
-                                                <span class="material-symbols-rounded">check_circle</span>
-                                            </button>
-                                        @endif
-                                        
-                                        <button class="btn-action btn-edit" title="Editar orden" onclick="abrirModalEditar({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
-                                            <span class="material-symbols-rounded">edit</span>
-                                        </button>
-                                        
-                                        @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') !== 'pendiente' && !request()->filled('estado')))
-                                            <button class="btn-action btn-danger" title="Anular orden" onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
-                                                <span class="material-symbols-rounded">cancel</span>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    
-                                    <!-- Número -->
-                                    <div class="table-cell" style="flex: 0 0 140px;" data-numero="{{ $orden->numero_pedido }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Cliente -->
-                                    <div class="table-cell" style="flex: 0 0 200px;" data-cliente="{{ $orden->cliente }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span>{{ $orden->cliente }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Fecha -->
-                                    <div class="table-cell" style="flex: 0 0 160px;" data-fecha="{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span>{{ $orden->fecha_de_creacion_de_orden->format('d/m/Y') }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Estado -->
-                                    <div class="table-cell" style="flex: 0 0 150px;" data-estado="{{ $orden->estado }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            @php
-                                                $estadoColors = [
-                                                    'No iniciado' => ['bg' => '#ecf0f1', 'color' => '#7f8c8d'],
-                                                    'En Ejecución' => ['bg' => '#fff3cd', 'color' => '#856404'],
-                                                    'Entregado' => ['bg' => '#d4edda', 'color' => '#155724'],
-                                                    'Anulada' => ['bg' => '#f8d7da', 'color' => '#721c24'],
-                                                    'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
-                                                ];
-                                                $colors = $estadoColors[$orden->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
-                                            @endphp
-                                            <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
-                                                {{ $orden->estado }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Asesora -->
-                                    <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $orden->asesora?->name ?? 'N/A' }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span>{{ $orden->asesora?->name ?? 'N/A' }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Forma Pago -->
-                                    <div class="table-cell" style="flex: 0 0 140px;" data-forma_pago="{{ $orden->forma_de_pago ?? 'N/A' }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Fecha Estimada -->
-                                    <div class="table-cell" style="flex: 0 0 160px;" data-fecha_estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
-                                        <div class="cell-content" style="justify-content: center;">
-                                            <span>{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div style="padding: 40px; text-align: center; color: #9ca3af; width: 100%;">
-                                <p>No hay órdenes disponibles</p>
-                            </div>
-                        @endif
-                    </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Número</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Número" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Cliente</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Fecha</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Estado</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Asesora</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Forma Pago</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Entrega Est.</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Paginación -->
-            <div class="table-pagination">
-                <div class="pagination-info">
-                    <span id="paginationInfo">Mostrando 1-15 de {{ $ordenes->total() }} registros</span>
+            <!-- Filas -->
+            @if($ordenes->isEmpty())
+                <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
+                    <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
+                    <p style="font-size: 1rem; margin: 0;">No hay órdenes disponibles</p>
                 </div>
-                <div class="pagination-controls">
-                    {{ $ordenes->links('pagination::bootstrap-4') }}
-                </div>
-            </div>
+            @else
+                @foreach($ordenes as $orden)
+                    <div style="
+                        display: grid;
+                        grid-template-columns: 200px 140px 200px 160px 150px 150px 140px 160px;
+                        gap: 1.2rem;
+                        padding: 1rem;
+                        border-bottom: 1px solid #e5e7eb;
+                        align-items: center;
+                        min-width: min-content;
+                        background: white;
+                        transition: background 0.2s ease;
+                    " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                        
+                        <!-- Acciones -->
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <!-- Botón Ver con Dropdown -->
+                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $orden->numero_pedido) }}" data-pedido="{{ str_replace('#', '', $orden->numero_pedido) }}" data-pedido-id="{{ $orden->id }}" title="Ver Opciones" style="
+                                background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.3)'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            
+                            @if(request('aprobacion') === 'pendiente')
+                                <button class="btn-action btn-success" title="Aprobar orden" onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')" style="
+                                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                    color: white;
+                                    border: none;
+                                    padding: 0.5rem;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 36px;
+                                    height: 36px;
+                                    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            @endif
+                            
+                            <!-- Botón Editar -->
+                            <button onclick="editarPedido({{ $orden->id }})" title="Editar Pedido" style="
+                                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            
+                            @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') !== 'pendiente' && !request()->filled('estado')))
+                                <button class="btn-action btn-danger" title="Anular orden" onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')" style="
+                                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                    color: white;
+                                    border: none;
+                                    padding: 0.5rem;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 36px;
+                                    height: 36px;
+                                    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            @endif
+                        </div>
+                        
+                        <!-- Número -->
+                        <div>
+                            <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido }}</span>
+                        </div>
+                        
+                        <!-- Cliente -->
+                        <div>
+                            <span>{{ $orden->cliente }}</span>
+                        </div>
+                        
+                        <!-- Fecha -->
+                        <div>
+                            <span>{{ $orden->fecha_de_creacion_de_orden ? $orden->fecha_de_creacion_de_orden->format('d/m/Y') : 'N/A' }}</span>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div>
+                            @php
+                                $estadoColors = [
+                                    'No iniciado' => ['bg' => '#ecf0f1', 'color' => '#7f8c8d'],
+                                    'En Ejecución' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                    'Entregado' => ['bg' => '#d4edda', 'color' => '#155724'],
+                                    'Anulada' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                    'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                ];
+                                $colors = $estadoColors[$orden->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
+                                $estadoDisplay = $orden->estado === 'PENDIENTE_SUPERVISOR' ? 'PENDIENTE' : $orden->estado;
+                            @endphp
+                            <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">
+                                {{ $estadoDisplay }}
+                            </span>
+                        </div>
+                        
+                        <!-- Asesora -->
+                        <div>
+                            <span>{{ $orden->asesora?->name ?? 'N/A' }}</span>
+                        </div>
+                        
+                        <!-- Forma Pago -->
+                        <div>
+                            <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
+                        </div>
+                        
+                        <!-- Fecha Estimada -->
+                        <div>
+                            <span>{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
         </div>
     </div>
+
+    <!-- Paginación Personalizada -->
+    @if($ordenes->lastPage() > 1 || $ordenes->count() > 0)
+        <div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Botón Anterior -->
+            @if($ordenes->onFirstPage())
+                <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
+                    ← Anterior
+                </button>
+            @else
+                <a href="{{ $ordenes->previousPageUrl() }}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
+                    ← Anterior
+                </a>
+            @endif
+
+            <!-- Números de Página -->
+            @if($ordenes->lastPage() > 1)
+                @foreach($ordenes->getUrlRange(1, $ordenes->lastPage()) as $page => $url)
+                    @if($page == $ordenes->currentPage())
+                        <button disabled style="min-width: 36px; height: 36px; padding: 0 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 1px solid #1d4ed8; border-radius: 6px; color: white; font-weight: 600; cursor: default;">
+                            {{ $page }}
+                        </button>
+                    @else
+                        <a href="{{ $url }}" style="min-width: 36px; height: 36px; padding: 0 8px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
+                            {{ $page }}
+                        </a>
+                    @endif
+                @endforeach
+            @endif
+
+            <!-- Botón Siguiente -->
+            @if($ordenes->hasMorePages())
+                <a href="{{ $ordenes->nextPageUrl() }}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
+                    Siguiente →
+                </a>
+            @else
+                <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
+                    Siguiente →
+                </button>
+            @endif
+
+            <!-- Info de Página -->
+            <span style="margin-left: 1rem; color: #666; font-size: 14px; font-weight: 500;">
+                Página {{ $ordenes->currentPage() }} de {{ $ordenes->lastPage() }} | Total: {{ $ordenes->total() }} registros
+            </span>
+        </div>
+    @endif
 </div>
 
 <!-- Modal Filtro Dinámico -->
@@ -703,6 +819,8 @@
 </script>
 
 <!-- Modal Overlay y Wrapper para Detalles de Orden -->
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+
 <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none;" onclick="closeModalOverlay()"></div>
 
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 90vw; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
@@ -721,8 +839,121 @@
 <x-orders-components.order-tracking-modal />
 
 @push('scripts')
+    <!-- Scripts para funcionalidad de asesores -->
+    <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+    <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
+    <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
+    <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+    <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
+    
+    <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
     <script src="{{ asset('js/supervisor-pedidos/edit-pedido.js') }}"></script>
+    
+    <!-- Script para activar dropdowns en supervisor -->
+    <script>
+        let dropdownAbierto = {};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[Supervisor Dropdowns] DOMContentLoaded iniciado');
+            console.log('[Supervisor Dropdowns] Buscando botones btn-ver-dropdown...');
+            
+            const botones = document.querySelectorAll('.btn-ver-dropdown');
+            console.log(`[Supervisor Dropdowns] Encontrados ${botones.length} botones`);
+            
+            // Cuando se haga clic en cualquier botón btn-ver-dropdown, abrir el dropdown
+            document.addEventListener('click', function(e) {
+                const btnVerDropdown = e.target.closest('.btn-ver-dropdown');
+                if (btnVerDropdown) {
+                    console.log('[Supervisor Dropdowns] Clic en botón Ver');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const menuId = btnVerDropdown.getAttribute('data-menu-id');
+                    console.log(`[Supervisor Dropdowns] menuId: ${menuId}`);
+                    
+                    // Crear el dropdown si no existe
+                    let dropdown = document.getElementById(menuId);
+                    console.log(`[Supervisor Dropdowns] Dropdown existe: ${dropdown !== null}`);
+                    
+                    if (!dropdown) {
+                        console.log(`[Supervisor Dropdowns] Creando dropdown ${menuId}...`);
+                        // Usar la función crearDropdownVer del script pedidos-dropdown-simple.js
+                        if (typeof crearDropdownVer === 'function') {
+                            console.log('[Supervisor Dropdowns] Función crearDropdownVer disponible');
+                            // Llamar a la función interna
+                            dropdown = crearDropdownVer(btnVerDropdown);
+                            console.log(`[Supervisor Dropdowns] Dropdown creado: ${dropdown !== null}`);
+                            dropdownAbierto[menuId] = false; // Inicializar estado
+                        } else {
+                            console.error('[Supervisor Dropdowns] Función crearDropdownVer NO disponible');
+                        }
+                    }
+                    
+                    if (dropdown) {
+                        console.log(`[Supervisor Dropdowns] Estado actual: ${dropdownAbierto[menuId] ? 'ABIERTO' : 'CERRADO'}`);
+                        
+                        // Cerrar otros dropdowns abiertos
+                        Object.keys(dropdownAbierto).forEach(id => {
+                            if (id !== menuId && dropdownAbierto[id]) {
+                                const otroDropdown = document.getElementById(id);
+                                if (otroDropdown) {
+                                    otroDropdown.style.display = 'none';
+                                    otroDropdown.style.pointerEvents = 'none';
+                                    dropdownAbierto[id] = false;
+                                    console.log(`[Supervisor Dropdowns] Cerrado dropdown anterior: ${id}`);
+                                }
+                            }
+                        });
+                        
+                        // Toggle del dropdown actual
+                        if (!dropdownAbierto[menuId]) {
+                            // Posicionar el dropdown cerca del botón
+                            const rect = btnVerDropdown.getBoundingClientRect();
+                            dropdown.style.top = (rect.bottom + 5) + 'px';
+                            dropdown.style.left = (rect.left) + 'px';
+                            dropdown.style.display = 'block';
+                            dropdown.style.pointerEvents = 'auto';
+                            dropdownAbierto[menuId] = true;
+                            console.log('[Supervisor Dropdowns] Dropdown abierto');
+                        } else {
+                            dropdown.style.display = 'none';
+                            dropdown.style.pointerEvents = 'none';
+                            dropdownAbierto[menuId] = false;
+                            console.log('[Supervisor Dropdowns] Dropdown cerrado');
+                        }
+                    } else {
+                        console.error('[Supervisor Dropdowns] No se pudo crear el dropdown');
+                    }
+                }
+            });
+            
+            // Cerrar dropdown al hacer clic afuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.btn-ver-dropdown') && !e.target.closest('.dropdown-menu')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        const id = menu.id;
+                        if (dropdownAbierto[id]) {
+                            menu.style.display = 'none';
+                            menu.style.pointerEvents = 'none';
+                            dropdownAbierto[id] = false;
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Función para cerrar dropdowns
+        function closeDropdown() {
+            console.log('[closeDropdown] Cerrando dropdowns');
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                const id = menu.id;
+                menu.style.display = 'none';
+                menu.style.pointerEvents = 'none';
+                dropdownAbierto[id] = false;
+            });
+        }
+    </script>
 @endpush
 
 @endsection

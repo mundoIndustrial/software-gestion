@@ -43,6 +43,32 @@ function confirmarAnularPedido(numeroPedido) {
         icon: 'warning',
         width: '500px',
         padding: '1.5rem',
+        position: 'center',
+        allowOutsideClick: false,
+        didOpen: (modal) => {
+            // Aplicar estilos de centrado al modal
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.zIndex = '999999';
+            
+            // Aplicar estilos al contenedor
+            const container = document.querySelector('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.position = 'fixed';
+                container.style.zIndex = '999998';
+            }
+            
+            // Enfocar en el textarea automáticamente
+            setTimeout(() => {
+                const textarea = document.getElementById('novedadAnulacion');
+                if (textarea) textarea.focus();
+            }, 100);
+        },
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',
@@ -51,6 +77,7 @@ function confirmarAnularPedido(numeroPedido) {
         focusConfirm: false,
         customClass: {
             popup: 'swal-anular-pedido',
+            container: 'swal-anular-pedido-container',
             htmlContainer: 'swal-html-container-custom'
         },
         preConfirm: () => {
@@ -98,8 +125,23 @@ function anularPedido(numeroPedido, novedad) {
         html: 'Por favor espera',
         allowOutsideClick: false,
         allowEscapeKey: false,
+        position: 'center',
         didOpen: () => {
             Swal.showLoading();
+            // Centrar el modal
+            const modal = document.querySelector('.swal2-popup');
+            if (modal) {
+                modal.style.position = 'fixed';
+                modal.style.top = '50%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translate(-50%, -50%)';
+            }
+            const container = document.querySelector('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+            }
         }
     });
     
@@ -111,7 +153,24 @@ function anularPedido(numeroPedido, novedad) {
             title: 'Error',
             text: 'No se pudo obtener el token de seguridad',
             icon: 'error',
-            confirmButtonColor: '#ef4444'
+            confirmButtonColor: '#ef4444',
+            position: 'center',
+            didOpen: () => {
+                // Centrar el modal
+                const modal = document.querySelector('.swal2-popup');
+                if (modal) {
+                    modal.style.position = 'fixed';
+                    modal.style.top = '50%';
+                    modal.style.left = '50%';
+                    modal.style.transform = 'translate(-50%, -50%)';
+                }
+                const container = document.querySelector('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                }
+            }
         });
         return;
     }
@@ -153,7 +212,24 @@ function anularPedido(numeroPedido, novedad) {
                 `,
                 icon: 'success',
                 confirmButtonColor: '#10b981',
-                confirmButtonText: 'Entendido'
+                confirmButtonText: 'Entendido',
+                position: 'center',
+                didOpen: () => {
+                    // Centrar el modal
+                    const modal = document.querySelector('.swal2-popup');
+                    if (modal) {
+                        modal.style.position = 'fixed';
+                        modal.style.top = '50%';
+                        modal.style.left = '50%';
+                        modal.style.transform = 'translate(-50%, -50%)';
+                    }
+                    const container = document.querySelector('.swal2-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.justifyContent = 'center';
+                    }
+                }
             }).then(() => {
                 // Recargar la página para actualizar la lista
                 window.location.reload();
@@ -163,12 +239,28 @@ function anularPedido(numeroPedido, novedad) {
         }
     })
     .catch(error => {
-
         Swal.fire({
             title: 'Error',
             text: error.message || 'Ocurrió un error al anular el pedido',
             icon: 'error',
-            confirmButtonColor: '#ef4444'
+            confirmButtonColor: '#ef4444',
+            position: 'center',
+            didOpen: () => {
+                // Centrar el modal
+                const modal = document.querySelector('.swal2-popup');
+                if (modal) {
+                    modal.style.position = 'fixed';
+                    modal.style.top = '50%';
+                    modal.style.left = '50%';
+                    modal.style.transform = 'translate(-50%, -50%)';
+                }
+                const container = document.querySelector('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                }
+            }
         });
     });
 }

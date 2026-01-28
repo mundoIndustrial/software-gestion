@@ -26,16 +26,36 @@ class CheckRole
         // Soportar múltiples roles separados por comas
         $requiredRoles = array_map('trim', explode(',', $roles));
         
+        // Obtener roles_ids - puede ser JSON o array
+        $rolesIds = $user->roles_ids;
+        if (is_string($rolesIds)) {
+            $rolesIds = json_decode($rolesIds, true) ?? [];
+        }
+        if (!is_array($rolesIds)) {
+            $rolesIds = [];
+        }
+        
         Log::info('CheckRole: Verificando rol', [
             'user_id' => $user->id,
             'required_roles' => $requiredRoles,
-            'roles_ids' => $user->roles_ids,
+            'roles_ids' => $rolesIds,
         ]);
 
-        // Permitir si el usuario tiene alguno de los roles requeridos O es admin
-        // Verificar directamente en roles_ids
-        $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids ?? [])->pluck('name')->toArray();
-        Log::info('CheckRole: Roles del usuario', ['roles' => $userRoles]);
+        // Obtener nombres de los roles del usuario
+        $userRoles = [];
+        if (!empty($rolesIds)) {
+            $userRoles = \App\Models\Role::whereIn('id', $rolesIds)->pluck('name')->toArray();
+        }
+        
+        // También verificar el role_id principal del usuario (campo legacy)
+        if ($user->role_id && !in_array($user->role_id, $rolesIds)) {
+            $mainRole = \App\Models\Role::find($user->role_id);
+            if ($mainRole && !in_array($mainRole->name, $userRoles)) {
+                $userRoles[] = $mainRole->name;
+            }
+        }
+        
+        Log::info('CheckRole: Roles del usuario encontrados', ['roles' => $userRoles]);
 
         $hasRequiredRole = false;
         foreach ($requiredRoles as $role) {
@@ -46,7 +66,12 @@ class CheckRole
         }
         
         if (!$hasRequiredRole && !in_array('admin', $userRoles)) {
-            Log::warning('CheckRole: Acceso denegado', ['required_roles' => $requiredRoles, 'user_roles' => $userRoles]);
+            Log::warning('CheckRole: Acceso denegado', [
+                'required_roles' => $requiredRoles, 
+                'user_roles' => $userRoles,
+                'user_role_id' => $user->role_id,
+                'user_roles_ids' => $rolesIds
+            ]);
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
 

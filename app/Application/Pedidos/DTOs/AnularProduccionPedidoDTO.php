@@ -8,18 +8,25 @@ use InvalidArgumentException;
  * AnularProduccionPedidoDTO
  * 
  * DTO para anular un pedido de producción
+ * Incluye información del usuario para registrar en novedades
  */
 class AnularProduccionPedidoDTO
 {
     public string $id;
     public string $razon;
+    public string $nombreUsuario;
+    public string $rolUsuario;
 
     public function __construct(
         string $id,
-        string $razon
+        string $razon,
+        string $nombreUsuario = 'Sistema',
+        string $rolUsuario = 'Sin rol'
     ) {
         $this->id = trim($id);
         $this->razon = trim($razon);
+        $this->nombreUsuario = trim($nombreUsuario);
+        $this->rolUsuario = trim($rolUsuario);
 
         $this->validar();
     }
@@ -28,8 +35,19 @@ class AnularProduccionPedidoDTO
     {
         return new self(
             $id,
-            $datos['razon'] ?? ''
+            $datos['razon'] ?? '',
+            $datos['nombreUsuario'] ?? 'Sistema',
+            $datos['rolUsuario'] ?? 'Sin rol'
         );
+    }
+
+    /**
+     * Construir la novedad en el formato especificado: NOMBRE-ROL-FECHATIME-MOTIVO
+     */
+    public function construirNovedad(): string
+    {
+        $fechaActual = now()->format('d/m/Y H:i');
+        return "{$this->nombreUsuario}-{$this->rolUsuario}-{$fechaActual}- {$this->razon}";
     }
 
     private function validar(): void

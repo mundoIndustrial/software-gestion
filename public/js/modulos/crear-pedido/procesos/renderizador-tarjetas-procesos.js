@@ -784,30 +784,16 @@ window.eliminarTarjetaProceso = function(tipo) {
     Swal.fire({
         icon: 'warning',
         title: '¿Eliminar proceso?',
-        html: `
-            <p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>
-            <p style="color: #ef4444; font-weight: 600; margin-top: 1rem;">
-                 Se eliminará de la base de datos:
-            </p>
-            <ul style="text-align: left; display: inline-block; margin-top: 0.5rem; color: #6b7280;">
-                <li>✓ Configuración del proceso</li>
-                <li>✓ Ubicaciones</li>
-                <li>✓ Observaciones</li>
-                <li>✓ Tallas configuradas</li>
-                <li>✓ Imágenes asociadas</li>
-            </ul>
-            <p style="color: #ef4444; font-weight: 600; margin-top: 1rem;">
-                Esta acción no se puede deshacer.
-            </p>
-        `,
+        html: `<p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>`,
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         confirmButtonColor: '#ef4444',
         cancelButtonText: 'Cancelar',
         cancelButtonColor: '#6b7280',
+        width: '400px',
         customClass: {
-            container: 'swal-container-top',
-            popup: 'swal-popup-top'
+            container: 'swal-container-centered',
+            popup: 'swal-popup-compact'
         },
         didOpen: (modal) => {
             // Asegurar z-index máximo
@@ -815,6 +801,11 @@ window.eliminarTarjetaProceso = function(tipo) {
             const backdrop = document.querySelector('.swal2-container');
             if (backdrop) {
                 backdrop.style.zIndex = '999998';
+            }
+            // Centrar modal
+            const popup = modal.closest('.swal2-popup');
+            if (popup) {
+                popup.style.margin = 'auto';
             }
         }
     }).then((result) => {

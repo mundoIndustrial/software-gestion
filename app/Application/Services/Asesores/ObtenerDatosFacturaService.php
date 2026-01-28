@@ -78,6 +78,11 @@ class ObtenerDatosFacturaService
     {
         Log::info('[FACTURA] Procesando LogoPedido', ['id' => $pedido->id]);
 
+        // Determinar la fecha de creación
+        $fechaCreacion = $pedido->created_at 
+            ? $pedido->created_at->format('d/m/Y') 
+            : date('d/m/Y');
+
         $datos = [
             'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
             'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
@@ -86,8 +91,8 @@ class ObtenerDatosFacturaService
                 ? $pedido->asesora->name 
                 : ($pedido->asesora ?? 'Sin asignar'),
             'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
-            'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
-            'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
+            'fecha' => $fechaCreacion,
+            'fecha_creacion' => $fechaCreacion,
             'observaciones' => $pedido->observaciones ?? '',
             'descripcion' => $pedido->descripcion ?? '',
             'tecnicas' => $pedido->tecnicas ?? '',

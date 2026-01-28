@@ -938,20 +938,53 @@ window.actualizarCantidadTallaProceso = function(input) {
         input.style.borderColor = '#dc2626';
         input.style.backgroundColor = '#fee2e2';
         
-        // Buscar o crear elemento de error
-        let errorDiv = input.parentNode.querySelector('.error-cantidad');
+        // Buscar el label padre que contiene todo
+        const label = input.closest('label');
+        console.log('🔍 [ERROR-CSS] Label encontrado:', !!label);
+        
+        // Buscar o crear wrapper para mantener el grid ordenado
+        let wrapper = label?.closest('.talla-error-wrapper');
+        console.log('🔍 [ERROR-CSS] Wrapper existente:', !!wrapper);
+        
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'talla-error-wrapper';
+            wrapper.style.cssText = 'display: contents;';
+            
+            if (label && label.parentNode) {
+                // Reemplazar label con wrapper en el DOM
+                label.parentNode.insertBefore(wrapper, label);
+                // Meter label dentro del wrapper
+                wrapper.appendChild(label);
+                console.log('✅ [ERROR-CSS] Wrapper CREADO y label MOVIDO dentro');
+            }
+        }
+        
+        // Buscar o crear elemento de error dentro del wrapper
+        let errorDiv = wrapper?.querySelector('.error-cantidad');
+        
         if (!errorDiv) {
             errorDiv = document.createElement('div');
             errorDiv.className = 'error-cantidad';
-            errorDiv.style.cssText = 'color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; white-space: nowrap;';
-            input.parentNode.appendChild(errorDiv);
+            errorDiv.style.cssText = 'color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; padding: 0 0.5rem; width: 100%; display: block;';
+            if (wrapper) {
+                wrapper.appendChild(errorDiv);
+                console.log('✅ [ERROR-CSS] ErrorDiv CREADO dentro del wrapper');
+            }
         }
+        
+        console.log('🔍 [ERROR-CSS] ErrorDiv después de crear:');
+        console.log('   - Existe:', !!errorDiv);
+        console.log('   - Display (style):', errorDiv.style.display);
+        console.log('   - Display (computed):', window.getComputedStyle(errorDiv).display);
         
         errorDiv.textContent = `❌ Máximo: ${cantidadDisponibleEnPrenda} unidades`;
         errorDiv.style.display = 'block';
         
-        // Reset al valor anterior
-        input.value = cantidadAnterior;
+        console.log('✅ [ERROR-CSS] Mensaje asignado');
+        
+        // Limpiar el campo (dejar en 0)
+        input.value = 0;
         return;
         
         // CÓDIGO VIEJO - DESCARTAR

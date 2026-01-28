@@ -251,6 +251,37 @@ class SupervisorPedidosController extends Controller
         ]);
 
         $orden = PedidoProduccion::findOrFail($id);
+        $usuario = auth()->user();
+
+        // Obtener información del usuario para la novedad
+        $nombreUsuario = 'Sistema';
+        $rol = 'Usuario';
+        
+        if ($usuario) {
+            $nombreUsuario = strtoupper($usuario->name ?? $usuario->email ?? 'Sistema');
+            
+            // Obtener rol
+            if (method_exists($usuario, 'getRoleNames')) {
+                $roles = $usuario->getRoleNames();
+                if ($roles && count($roles) > 0) {
+                    $rol = strtoupper($roles[0]);
+                }
+            } elseif (method_exists($usuario, 'roles')) {
+                $usuarioRoles = $usuario->roles();
+                if ($usuarioRoles) {
+                    $primerRol = $usuarioRoles->first();
+                    if ($primerRol) {
+                        $rol = strtoupper($primerRol->name ?? 'Usuario');
+                    }
+                }
+            }
+        }
+        
+        // Construir novedad con formato: NOMBRE-ROL-dd/mm/yyyy-h:mmAM/PM
+        // seguido de salto de línea y el motivo
+        $fechaActual = now();
+        $fechaFormato = $fechaActual->format('d/m/Y') . '-' . $fechaActual->format('g:iA');
+        $linea_novedad = "{$nombreUsuario}-{$rol}-{$fechaFormato}\nANULACIÓN PEDIDO: {$request->motivo_anulacion}";
 
         // Actualizar estado
         // IMPORTANTE: Se registra aprobado_por_supervisor_en para marcar que el supervisor ha actuado sobre la orden
@@ -263,10 +294,20 @@ class SupervisorPedidosController extends Controller
             'aprobado_por_supervisor_en' => now(), // Registrar acción del supervisor
         ]);
 
+        // Agregar novedad al campo novedades del pedido
+        if (!empty($orden->novedades)) {
+            $orden->novedades .= "\n\n" . str_repeat("-", 60) . "\n" . $linea_novedad;
+        } else {
+            $orden->novedades = $linea_novedad;
+        }
+        $orden->save();
+
         // Log de auditoría
         \Log::info("Orden #{$orden->numero_pedido} anulada por " . auth()->user()->name, [
             'motivo' => $request->motivo_anulacion,
             'fecha' => now(),
+            'usuario' => $nombreUsuario,
+            'rol' => $rol,
         ]);
 
         return response()->json([

@@ -97,27 +97,38 @@ window.EppMenuHandlers = {
      * Editar EPP - Intenta obtener datos del DOM, gestionItemsUI o BD
      */
     _editarEpp(btn) {
+        console.log('🟦 [_editarEpp] ===== CLICK EN EDITAR =====');
         const itemId = btn.dataset.itemId;
+        console.log('🟦 [_editarEpp] itemId:', itemId);
         
         // Obtener el item EPP
         const item = btn.closest('.item-epp') || btn.closest('.item-epp-card');
         if (!item) {
+            console.error('❌ [_editarEpp] No se encontró elemento .item-epp o .item-epp-card');
             return;
         }
+        console.log('🟦 [_editarEpp] Elemento item encontrado:', item.className);
 
         // Obtener pedido_epp_id del DOM si está disponible
         const pedidoEppId = item.dataset.pedidoEppId || itemId;
+        console.log('🟦 [_editarEpp] pedidoEppId:', pedidoEppId);
 
         // OPCIÓN 1: Intentar obtener del DOM (tarjeta)
+        console.log('🟦 [_editarEpp] OPCIÓN 1: Extrayendo datos del DOM...');
         let eppData = this._extraerDatosDelDOM(item, itemId);
+        console.log('🟦 [_editarEpp] Datos del DOM:', eppData);
+        console.log('🟦 [_editarEpp] Cantidad de campos:', Object.keys(eppData).length);
         
         // OPCIÓN 2: Si no está completo, buscar en window.gestionItemsUI
         if (!eppData || Object.keys(eppData).length < 3) {
+            console.log('🟦 [_editarEpp] OPCIÓN 1 INCOMPLETA - Intentando OPCIÓN 2: gestionItemsUI...');
             eppData = this._extraerDatosDelGestionItemsUI(itemId) || eppData;
+            console.log('🟦 [_editarEpp] Datos de gestionItemsUI:', eppData);
         }
 
         // OPCIÓN 3: Si aún no tiene datos, traer de la DB
         if (!eppData || Object.keys(eppData).length < 3) {
+            console.log('🟦 [_editarEpp] OPCIÓN 2 INCOMPLETA - Intentando OPCIÓN 3: BD...');
             this._traerEPPDelaBD(itemId, item);
             return; // El resto de la lógica se ejecutará cuando lleguen los datos de la DB
         }
@@ -126,8 +137,10 @@ window.EppMenuHandlers = {
         if (eppData && !eppData.pedido_epp_id) {
             eppData.pedido_epp_id = pedidoEppId;
         }
+        console.log('🟦 [_editarEpp] Datos finales con pedido_epp_id:', eppData);
 
         // Si ya tenemos los datos, proceder a editar
+        console.log('🟦 [_editarEpp] Datos completos encontrados - Procediendo a editar');
         this._procederAEditarEPP(eppData, itemId, item);
     },
 
@@ -135,8 +148,10 @@ window.EppMenuHandlers = {
      * Extraer datos del DOM (tarjeta renderizada)
      */
     _extraerDatosDelDOM(item, itemId) {
+        console.log('🟪 [_extraerDatosDelDOM] Extrayendo datos del DOM para itemId:', itemId);
         try {
             const nombre = item.querySelector('h4')?.textContent?.trim() || '';
+            console.log('🟪 [_extraerDatosDelDOM] Nombre encontrado:', nombre);
             
             // Buscar cantidad - puede estar en diferentes lugares
             let cantidad = 0;
@@ -148,6 +163,7 @@ window.EppMenuHandlers = {
                     break;
                 }
             }
+            console.log('🟪 [_extraerDatosDelDOM] Cantidad encontrada:', cantidad);
             
             // Buscar observaciones
             let observaciones = '';
@@ -158,6 +174,7 @@ window.EppMenuHandlers = {
                     break;
                 }
             }
+            console.log('🟪 [_extraerDatosDelDOM] Observaciones encontradas:', observaciones);
 
             // IMPORTANTE: Priorizar imágenes del stateManager (si existen = cambios pendientes)
             // Si no hay en stateManager, extraer del DOM (imágenes originales)
@@ -168,6 +185,7 @@ window.EppMenuHandlers = {
                 if (imagenesState && imagenesState.length > 0) {
                     // Usar imágenes del stateManager (reflejan eliminaciones)
                     imagenes = imagenesState;
+                    console.log('🟪 [_extraerDatosDelDOM] Imágenes de stateManager:', imagenes.length);
                 } else {
                     // Si stateManager está vacío, obtener del DOM
                     const todosLosImg = item.querySelectorAll('img');
@@ -181,6 +199,7 @@ window.EppMenuHandlers = {
                             });
                         }
                     });
+                    console.log('🟪 [_extraerDatosDelDOM] Imágenes del DOM (vacío stateManager):', imagenes.length);
                 }
             } else {
                 // Fallback: si no hay stateManager, extraer del DOM
@@ -195,6 +214,7 @@ window.EppMenuHandlers = {
                         });
                     }
                 });
+                console.log('🟪 [_extraerDatosDelDOM] Imágenes del DOM (sin stateManager):', imagenes.length);
             }
 
             const datos = {
@@ -205,8 +225,10 @@ window.EppMenuHandlers = {
                 imagenes: imagenes,
                 esEdicion: true  // Indicador de que es edición
             };
+            console.log('🟪 [_extraerDatosDelDOM] Datos finales:', datos);
             return datos;
         } catch (error) {
+            console.error('🟪 [_extraerDatosDelDOM] Error:', error);
             return null;
         }
     },
@@ -215,20 +237,26 @@ window.EppMenuHandlers = {
      * Extraer datos de window.gestionItemsUI
      */
     _extraerDatosDelGestionItemsUI(itemId) {
+        console.log('🟩 [_extraerDatosDelGestionItemsUI] Buscando itemId:', itemId);
         try {
             if (!window.gestionItemsUI || !window.gestionItemsUI.ordenItems) {
+                console.log('🟩 [_extraerDatosDelGestionItemsUI] window.gestionItemsUI no disponible o sin ordenItems');
                 return null;
             }
 
+            console.log('🟩 [_extraerDatosDelGestionItemsUI] Buscando en', window.gestionItemsUI.ordenItems.length, 'items');
             // Buscar el EPP en los items ordenados
             const item = window.gestionItemsUI.ordenItems.find(i => i.epp_id === parseInt(itemId));
             
             if (item) {
+                console.log('🟩 [_extraerDatosDelGestionItemsUI] Item encontrado:', item);
                 return item;
             }
             
+            console.log('🟩 [_extraerDatosDelGestionItemsUI] Item NO encontrado en gestionItemsUI');
             return null;
         } catch (error) {
+            console.error('🟩 [_extraerDatosDelGestionItemsUI] Error:', error);
             return null;
         }
     },
@@ -237,20 +265,26 @@ window.EppMenuHandlers = {
      * Traer datos del EPP desde la BD
      */
     async _traerEPPDelaBD(itemId, item) {
+        console.log('🟦 [_traerEPPDelaBD] Obteniendo datos de BD para itemId:', itemId);
         try {
+            console.log('🟦 [_traerEPPDelaBD] Llamando a /api/epp/' + itemId);
             const response = await fetch(`/api/epp/${itemId}`);
             
             if (!response.ok) {
+                console.error('🟦 [_traerEPPDelaBD] Error en response:', response.status, response.statusText);
                 return;
             }
 
             const data = await response.json();
+            console.log('🟦 [_traerEPPDelaBD] Datos recibidos de BD:', data);
             
             // Proceder con los datos de la BD
             const eppData = data.data || data;
+            console.log('🟦 [_traerEPPDelaBD] EPP Data extraída:', eppData);
             this._procederAEditarEPP(eppData, itemId, item);
             
         } catch (error) {
+            console.error('🟦 [_traerEPPDelaBD] Error:', error);
             alert('Error al cargar los datos del EPP');
         }
     },
@@ -259,24 +293,59 @@ window.EppMenuHandlers = {
      * Proceder a editar el EPP con los datos obtenidos
      */
     _procederAEditarEPP(eppData, itemId, item) {
+        console.log('🟦 [_procederAEditarEPP] ===== INICIANDO TRANSFORMACIÓN =====');
+        console.log('🟦 [_procederAEditarEPP] Datos recibidos:', eppData);
+        
+        // Transformar datos para que sean compatibles con editarEPPAgregado
+        // Los datos pueden venir de diferentes fuentes y tienen estructuras diferentes
+        const eppDataTransformado = {
+            epp_id: eppData.epp_id || eppData.id,
+            id: eppData.epp_id || eppData.id,
+            nombre_epp: eppData.nombre_epp || eppData.nombre_completo || eppData.nombre || '',
+            nombre: eppData.nombre_epp || eppData.nombre_completo || eppData.nombre || '',
+            cantidad: eppData.cantidad || 1,
+            observaciones: eppData.observaciones || '',
+            imagenes: eppData.imagenes || [],
+            imagen: eppData.imagen || null,
+        };
+        console.log('🟦 [_procederAEditarEPP] Datos transformados:', eppDataTransformado);
+        
         // Crear evento personalizado con los datos
         const evento = new CustomEvent('epp:editar', {
             detail: {
                 itemId,
-                eppData,
+                eppData: eppDataTransformado,
                 elemento: item
             }
         });
+        console.log('🟦 [_procederAEditarEPP] Despachando evento personalizado "epp:editar"');
         document.dispatchEvent(evento);
 
-        // Abrir modal de edición con los datos
-        if (window.eppService && typeof window.eppService.abrirModalEditarEPP === 'function') {
-            window.eppService.abrirModalEditarEPP(eppData);
-        }
-
-        // Cerrar menú
+        // Cerrar menú primero
         const submenu = item.querySelector('.submenu-epp');
         if (submenu) submenu.style.display = 'none';
+        console.log('🟦 [_procederAEditarEPP] Menú cerrado');
+
+        // Usar setTimeout para asegurar que la función esté disponible
+        // Esto permite que el Blade template se cargue
+        console.log('🟦 [_procederAEditarEPP] Esperando 100ms para llamar a editarEPPAgregado...');
+        setTimeout(() => {
+            if (typeof window.editarEPPAgregado === 'function') {
+                console.log('🟥 [_procederAEditarEPP] ✅✅✅ LLAMANDO A window.editarEPPAgregado() ✅✅✅');
+                console.log('🟥 [_procederAEditarEPP] Con datos:', eppDataTransformado);
+                window.editarEPPAgregado(eppDataTransformado);
+            } else {
+                console.warn('🟥 [_procederAEditarEPP] ❌ window.editarEPPAgregado NO disponible');
+                console.warn('🟥 [_procederAEditarEPP] Funciones disponibles en window:', Object.keys(window).filter(k => k.includes('edit') || k.includes('epp')));
+                if (window.eppService && typeof window.eppService.abrirModalEditarEPP === 'function') {
+                    console.log('🟥 [_procederAEditarEPP] Usando servicio antiguo para editar EPP');
+
+                    window.eppService.abrirModalEditarEPP(eppDataTransformado);
+                } else {
+                    console.error('[EppMenuHandlers] ❌ No hay función disponible para editar EPP');
+                }
+            }
+        }, 100);
     },
 
     /**

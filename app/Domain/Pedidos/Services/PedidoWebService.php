@@ -14,6 +14,7 @@ use App\Models\PedidosProcesosPrendaTalla;
 use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Models\TipoPrenda;
 use App\Application\Services\ImageUploadService;
 use App\Domain\Pedidos\Services\ProcesoImagenService;
 use Illuminate\Http\UploadedFile;
@@ -116,9 +117,13 @@ class PedidoWebService
      */
     private function crearItemCompleto(PedidoProduccion $pedido, array $itemData, int $itemIndex): PrendaPedido
     {
+        // CREAR TIPO DE PRENDA SI NO EXISTE
+        $nombrePrenda = $itemData['nombre_prenda'] ?? 'SIN NOMBRE';
+        $this->crearOObtenerTipoPrenda($nombrePrenda);
+
         $prenda = PrendaPedido::create([
             'pedido_produccion_id' => $pedido->id,
-            'nombre_prenda' => $itemData['nombre_prenda'] ?? 'SIN NOMBRE',
+            'nombre_prenda' => $nombrePrenda,
             'descripcion' => $itemData['descripcion'] ?? null,
             'de_bodega' => $itemData['de_bodega'] ?? 0,
         ]);
@@ -795,6 +800,57 @@ class PedidoWebService
         ];
 
         return $tipos[strtolower($tipoProceso)] ?? null;
+    }
+
+    /**
+     * Crear o obtener un tipo de prenda
+     * Si no existe, crea una nueva entrada en la tabla tipos_prenda
+     * 
+     * @param string $nombrePrenda
+     * @return TipoPrenda|null
+     */
+    private function crearOObtenerTipoPrenda(string $nombrePrenda): ?TipoPrenda
+    {
+        try {
+            $nombreUpper = strtoupper(trim($nombrePrenda));
+            
+            // Buscar la prenda existente
+            $tipoPrenda = TipoPrenda::whereRaw('UPPER(nombre) = ?', [$nombreUpper])
+                                    ->first();
+            
+            if ($tipoPrenda) {
+                Log::info('[PedidoWebService] Tipo de prenda encontrado', [
+                    'tipo_prenda_id' => $tipoPrenda->id,
+                    'nombre' => $tipoPrenda->nombre
+                ]);
+                return $tipoPrenda;
+            }
+            
+            // Crear nueva prenda si no existe
+            $tipoPrenda = TipoPrenda::create([
+                'nombre' => $nombreUpper,
+                'codigo' => strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $nombrePrenda), 0, 10)),
+                'descripcion' => "Prenda creada automáticamente desde pedido",
+                'activo' => true,
+                'palabras_clave' => []
+            ]);
+            
+            Log::info('[PedidoWebService] Tipo de prenda creado', [
+                'tipo_prenda_id' => $tipoPrenda->id,
+                'nombre' => $tipoPrenda->nombre
+            ]);
+            
+            return $tipoPrenda;
+            
+        } catch (\Exception $e) {
+            Log::warning('[PedidoWebService] Error creando tipo de prenda', [
+                'error' => $e->getMessage(),
+                'nombre_prenda' => $nombrePrenda
+            ]);
+            
+            // Si hay error, no fallar el flujo, solo loguear
+            return null;
+        }
     }
 
     /**

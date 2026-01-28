@@ -168,6 +168,15 @@ Route::middleware('api')->delete('epp/imagenes/{imagenId}', [\App\Infrastructure
 Route::middleware('api')->get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
     ->name('epp.index');
 
+// Buscar EPP por término
+Route::middleware('api')->get('epps/buscar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'buscar'])
+    ->name('epp.buscar');
+
+// Crear nuevo EPP (solo nombre_completo)
+Route::middleware('api')->post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'crearEppSimple'])
+    ->name('epp.store');
+
+
 // Debug: Prueba simple de EPP
 Route::middleware('api')->get('epp-debug', function() {
     try {
@@ -195,8 +204,7 @@ Route::middleware('api')->get('epp-debug', function() {
 Route::middleware('api')->get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
     ->name('epp.categorias');
 
-Route::middleware('api')->post('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'store'])
-    ->name('epp.store');
+// Ruta para crear EPP movida arriba (POST epp ahora usa crearEppSimple)
 
 Route::middleware('api')->get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
     ->name('epp.show');
@@ -228,6 +236,12 @@ Route::middleware('api')->post('pedidos/{pedidoId}/epp/agregar', [\App\Infrastru
 
 Route::middleware('api')->delete('pedidos/{pedidoId}/epp/{eppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminar'])
     ->name('pedidos.epp.eliminar');
+
+Route::middleware(['web'])->get('pedidos/{pedidoId}/epp/{pedidoEppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'obtenerEppDelPedidoPorId'])
+    ->name('pedidos.epp.obtener-por-id');
+
+Route::middleware(['web'])->patch('pedidos/{pedidoId}/epp/{pedidoEppId}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'actualizarEppDelPedido'])
+    ->name('pedidos.epp.actualizar');
 
 /**
  * API Routes for Pedidos Editables (DDD - Gestión de Ítems)

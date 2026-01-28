@@ -296,6 +296,17 @@ class PedidoController extends Controller
             // Transformar datos a array
             $datos = $response->toArray();
             
+            // Agregar fecha de creación si no existe
+            if (!isset($datos['fecha_creacion'])) {
+                $pedido = \App\Models\PedidoProduccion::find($id);
+                if ($pedido) {
+                    $fechaCreacion = $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
+                    $datos['fecha_creacion'] = $fechaCreacion 
+                        ? (is_string($fechaCreacion) ? $fechaCreacion : $fechaCreacion->format('d/m/Y'))
+                        : date('d/m/Y');
+                }
+            }
+            
             // Agregar EPPs transformados con imágenes
             $eppsList = [];
             try {

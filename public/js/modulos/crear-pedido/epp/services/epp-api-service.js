@@ -175,6 +175,45 @@ class EppApiService {
     }
 
     /**
+     * Actualizar EPP del pedido (cantidad y observaciones)
+     * Ruta: PATCH /api/pedidos/{pedidoId}/epp/{pedidoEppId}
+     */
+    async actualizarEPPDelPedido(pedidoId, pedidoEppId, cantidad, observaciones) {
+        try {
+            console.log('[EppApiService] 📝 Actualizando EPP del pedido:', {
+                pedidoId,
+                pedidoEppId,
+                cantidad,
+                observaciones
+            });
+
+            const response = await fetch(`${this.baseUrl}/pedidos/${pedidoId}/epp/${pedidoEppId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this._obtenerCsrfToken()
+                },
+                body: JSON.stringify({
+                    cantidad: cantidad,
+                    observaciones: observaciones
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Error al actualizar EPP del pedido: ${response.statusText}`);
+            }
+
+            const resultado = await response.json();
+            console.log('[EppApiService] ✅ EPP actualizado correctamente:', resultado);
+            return resultado;
+        } catch (error) {
+            console.error('[EppApiService] ❌ Error actualizarEPPDelPedido:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Subir imagen de EPP durante creación del pedido
      * Guarda directamente en pedidos/{pedido_id}/epp/
      * Retorna ruta webp en el servidor

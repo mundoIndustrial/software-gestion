@@ -507,6 +507,57 @@ function inicializarEventListenersEpp() {
     });
 }
 
+// Escuchar evento de prenda actualizada (desde modal-novedad-edicion.js)
+// Este evento se dispara después de guardar cambios en una prenda editada
+window.addEventListener('prendaActualizada', (event) => {
+    console.log('[cargar-datos-edicion-nuevo] 🔔 Evento prendaActualizada recibido:', event.detail);
+    
+    try {
+        const { pedidoId, prendaId } = event.detail;
+        
+        // Preservar los EPPs actuales ANTES de actualizar
+        const eppsPersistentes = window.eppsPedido ? JSON.parse(JSON.stringify(window.eppsPedido)) : [];
+        console.log('[cargar-datos-edicion-nuevo] 💾 EPPs a preservar:', eppsPersistentes.length);
+        
+        // Recargar los datos del pedido para obtener la prenda actualizada
+        if (pedidoId && window.datosEdicionPedido) {
+            // Actualizar prendasEdicion con los datos del servidor
+            // Esto asegura que tenemos la prenda actualizada
+            if (window.prendasEdicion && typeof window.prendasEdicion === 'object') {
+                console.log('[cargar-datos-edicion-nuevo] 🔄 Actualizando prendasEdicion desde servidor...');
+                
+                // Re-renderizar las prendas (se cargarán desde window.datosEdicionPedido)
+                if (typeof window.renderizarPrendasSinCotizacion === 'function') {
+                    window.renderizarPrendasSinCotizacion();
+                    console.log('[cargar-datos-edicion-nuevo] ✅ Prendas re-renderizadas');
+                } else {
+                    console.warn('[cargar-datos-edicion-nuevo] ⚠️ renderizarPrendasSinCotizacion no disponible');
+                }
+            }
+        }
+        
+        // Re-renderizar EPPs manteniéndolos intactos
+        if (eppsPersistentes.length > 0) {
+            console.log('[cargar-datos-edicion-nuevo] 🔄 Re-renderizando EPPs (preservados)...');
+            
+            // Restaurar los EPPs
+            window.eppsPedido = eppsPersistentes;
+            
+            // Re-renderizar
+            if (typeof window.renderizarEppsSinCotizacion === 'function') {
+                window.renderizarEppsSinCotizacion();
+                console.log('[cargar-datos-edicion-nuevo] ✅ EPPs re-renderizados correctamente');
+            } else {
+                console.warn('[cargar-datos-edicion-nuevo] ⚠️ renderizarEppsSinCotizacion no disponible');
+            }
+        }
+        
+        console.log('[cargar-datos-edicion-nuevo] ✅ Actualización completada sin perder items');
+    } catch (error) {
+        console.error('[cargar-datos-edicion-nuevo] ❌ Error al procesar prendaActualizada:', error);
+    }
+});
+
 // Inicializar event listeners cuando el documento esté listo
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();

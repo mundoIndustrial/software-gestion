@@ -280,7 +280,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 // ========================================
 // RUTAS PARA COTIZACIONES - PRENDA (DDD REFACTORIZADO)
 // ========================================
-Route::middleware(['auth', 'role:asesor'])->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
     // Cotizaciones tipo PRENDA
     Route::get('/cotizaciones-prenda/crear', [CotizacionPrendaController::class, 'create'])->name('cotizaciones-prenda.create');
     Route::post('/cotizaciones-prenda', [CotizacionPrendaController::class, 'store'])->name('cotizaciones-prenda.store');
@@ -298,7 +298,7 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
 // ========================================
 // RUTAS PARA COTIZACIONES - BORDADO (DDD REFACTORIZADO)
 // ========================================
-Route::middleware(['auth', 'role:asesor'])->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->group(function () {
     // Cotizaciones tipo BORDADO/LOGO
     Route::get('/cotizaciones-bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
     Route::post('/cotizaciones-bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
@@ -427,8 +427,8 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 // ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
-// Admin puede acceder a asesores además del rol asesor
-Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('asesores.')->group(function () {
+// Admin y supervisor_pedidos pueden acceder a asesores además del rol asesor
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('asesores')->name('asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-data', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
@@ -589,7 +589,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
 // ========================================
 // API ROUTES - CATÁLOGOS - Tallas, variantes, colores/telas de prendas
 // ========================================
-Route::middleware(['auth', 'role:asesor,admin'])->prefix('api')->name('api.')->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api')->name('api.')->group(function () {
     Route::get('/tallas-disponibles', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasDisponibles'])->name('tallas.disponibles');
     Route::get('/prenda-pedido/{prendaId}/tallas', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerTallasPrenda'])->name('prenda.tallas');
     Route::get('/prenda-pedido/{prendaId}/variantes', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerVariantesPrenda'])->name('prenda.variantes');
@@ -635,7 +635,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('api')->name('api.')->g
 // ========================================
 // RUTAS PARA LOGO COTIZACIÓN TÉCNICAS (DDD) - Fuera del grupo de asesores
 // ========================================
-Route::middleware(['auth', 'role:asesor,admin'])->prefix('api/logo-cotizacion-tecnicas')->name('api.logo-cotizacion-tecnicas.')->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api/logo-cotizacion-tecnicas')->name('api.logo-cotizacion-tecnicas.')->group(function () {
     Route::get('tipos-disponibles', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'tiposDisponibles'])->name('tipos');
     Route::post('agregar', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'agregarTecnica'])->name('agregar');
     Route::get('cotizacion/{logoCotizacionId}', [App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController::class, 'obtenerTecnicas'])->name('obtener');
@@ -972,7 +972,7 @@ Route::middleware(['auth', 'verified'])->prefix('api')->name('api.')->group(func
 // ========================================
 // RUTAS WEB - PEDIDOS EDITABLES (Arquitectura Web Tradicional)
 // ========================================
-Route::middleware(['auth', 'role:asesor'])->prefix('asesores/pedidos-editable')->name('asesores.pedidos-editable.')->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('asesores/pedidos-editable')->name('asesores.pedidos-editable.')->group(function () {
     // Ruta fallback que redirige a crear-desde-cotizacion
     Route::get('crear', function() {
         return redirect()->route('asesores.pedidos-editable.crear-desde-cotizacion');
@@ -1004,7 +1004,7 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores/pedidos-editable')-
 // ========================================
 // API RUTAS - GUARDAR PEDIDO DESDE JSON
 // ========================================
-Route::middleware(['auth', 'role:asesor'])->prefix('api/pedidos')->name('api.pedidos.')->group(function () {
+Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('api/pedidos')->name('api.pedidos.')->group(function () {
     Route::post('/guardar-desde-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'guardar'])
         ->name('guardar-json');
     Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
@@ -1046,7 +1046,9 @@ require __DIR__.'/auth.php';
 // ========================================
 // RUTAS DE ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
-require __DIR__.'/asesores.php';
+// Las rutas de asesores ya están definidas arriba en este archivo
+// El archivo asesores.php se mantiene como referencia pero no se carga aquí para evitar duplicados
+// require __DIR__.'/asesores.php';
 
 // ========================================
 // RUTAS DE DESPACHO (MÓDULO NUEVO)

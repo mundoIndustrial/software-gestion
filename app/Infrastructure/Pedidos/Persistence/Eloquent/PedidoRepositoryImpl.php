@@ -78,7 +78,7 @@ class PedidoRepositoryImpl implements PedidoRepository
                 'numero_pedido' => $pedido->numero()->valor(),
                 'cliente_id' => $pedido->clienteId(),
                 'estado' => $this->mapEstadoABD($pedido->estado()->valor()),
-                'novedades' => $pedido->descripcion() ? $pedido->descripcion() . "\n" . ($pedido->observaciones() ?? '') : $pedido->observaciones(),
+                'novedades' => $pedido->observaciones(),
             ];
 
             if ($pedido->id() === null) {

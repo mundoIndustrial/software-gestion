@@ -127,6 +127,9 @@ window.PrendaCardHandlers = {
                 const btn = e.target.closest('.btn-eliminar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
+                console.log('🔍 [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
+                console.log('🔍 [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
+                console.log('🔍 [ELIMINAR-PRENDA] window.gestorPrendaSinCotizacion existe:', !!window.gestorPrendaSinCotizacion);
                 
                 Swal.fire({
                     title: '¿Eliminar prenda?',
@@ -138,45 +141,55 @@ window.PrendaCardHandlers = {
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
                     if (result.isConfirmed) {
-
+                        console.log('✅ [ELIMINAR-PRENDA] Usuario confirmó eliminación');
                         
                         // Obtener instancia de GestionItemsUI si existe
                         if (window.gestionItemsUI) {
+                            console.log('✅ [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI');
                             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
                             if (prendaIndex >= 0 && prendaIndex < itemsOrdenados.length) {
                                 itemsOrdenados.splice(prendaIndex, 1);
-
+                                console.log('✅ [ELIMINAR-PRENDA] Prenda eliminada del array');
                             }
                         }
                         
                         // También eliminar desde gestor si existe
                         if (window.gestorPrendaSinCotizacion?.eliminar) {
+                            console.log('✅ [ELIMINAR-PRENDA] Eliminando desde gestorPrendaSinCotizacion');
                             window.gestorPrendaSinCotizacion.eliminar(prendaIndex);
                         }
                         
-                        // Re-renderizar
-                        const container = document.getElementById('lista-items-pedido');
-                        if (container && window.generarTarjetaPrendaReadOnly) {
-                            let items = [];
-                            if (window.gestionItemsUI) {
-                                items = window.gestionItemsUI.obtenerItemsOrdenados();
-                            }
+                        // Eliminar la tarjeta del DOM inmediatamente
+                        const prendaCard = document.querySelector(`.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`);
+                        console.log('🔍 [ELIMINAR-PRENDA] Buscando tarjeta con selector:', `.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`);
+                        console.log('🔍 [ELIMINAR-PRENDA] Tarjeta encontrada:', !!prendaCard);
+                        
+                        if (prendaCard) {
+                            console.log('✅ [ELIMINAR-PRENDA] ELIMINANDO TARJETA DEL DOM');
+                            prendaCard.remove();
                             
-                            if (items.length === 0) {
+                            // Verificar si hay más prendas
+                            const container = document.getElementById('lista-items-pedido');
+                            const prendasRestantes = container?.querySelectorAll('.prenda-card-readonly').length || 0;
+                            console.log('🔍 [ELIMINAR-PRENDA] Prendas restantes:', prendasRestantes);
+                            
+                            if (prendasRestantes === 0 && container) {
+                                console.log('✅ [ELIMINAR-PRENDA] No hay más prendas, mostrando mensaje vacío');
                                 container.innerHTML = `
                                     <div class="empty-state" style="text-align: center; padding: 2rem; color: #9ca3af;">
                                         <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
                                         <p>No hay ítems agregados.</p>
                                     </div>
                                 `;
-                            } else {
-                                let html = '';
-                                items.forEach((item, idx) => {
-                                    html += window.generarTarjetaPrendaReadOnly(item, idx);
-                                });
-                                container.innerHTML = html;
                             }
-
+                        } else {
+                            console.error('❌ [ELIMINAR-PRENDA] NO SE ENCONTRÓ LA TARJETA EN EL DOM');
+                            // Intentar buscar cualquier prenda-card-readonly
+                            const todasPrendas = document.querySelectorAll('.prenda-card-readonly');
+                            console.log('❌ [ELIMINAR-PRENDA] Total de prendas en DOM:', todasPrendas.length);
+                            todasPrendas.forEach((prenda, idx) => {
+                                console.log(`   Prenda ${idx}: data-prenda-index="${prenda.dataset.prendaIndex}"`);
+                            });
                         }
                     }
                 });

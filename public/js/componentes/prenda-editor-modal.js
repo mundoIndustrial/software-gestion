@@ -28,17 +28,10 @@ function abrirEditarPrendas() {
     let htmlListaPrendas = '<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">';
     
     if (prendas.length === 0) {
-        // Mostrar botón para agregar prenda si la lista está vacía
-
+        // Mostrar mensaje cuando la lista está vacía
         htmlListaPrendas += `
             <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
-                <p style="color: #6b7280; margin: 0 0 1rem 0;">No hay prendas agregadas aún</p>
-                <button onclick="abrirAgregarPrenda()" 
-                    style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s;"
-                    onmouseover="this.style.backgroundColor='#059669'"
-                    onmouseout="this.style.backgroundColor='#10b981'">
-                    ➕ Agregar Prenda
-                </button>
+                <p style="color: #6b7280; margin: 0;">No hay prendas agregadas aún</p>
             </div>
         `;
     } else {
@@ -794,4 +787,63 @@ function cargarPrendaEnFormularioModal(prendaData) {
     }
 }
 
+/**
+ * Cargar prendas en el datalist para autocomplete
+ * Se ejecuta cada vez que el usuario escribe en el campo de nombre de prenda
+ */
+async function cargarPrendasDatalist() {
+    try {
+        const inputNombre = document.getElementById('nueva-prenda-nombre');
+        const datalist = document.getElementById('lista-prendas-autocomplete');
+        
+        if (!inputNombre || !datalist) {
+            console.log('[cargarPrendasDatalist] No se encontraron elementos del datalist');
+            return;
+        }
+        
+        const busqueda = inputNombre.value.trim();
+        
+        // Realizar búsqueda en el backend
+        const url = new URL('/asesores/api/prendas/autocomplete', window.location.origin);
+        if (busqueda) {
+            url.searchParams.append('q', busqueda);
+        }
+        
+        console.log('[cargarPrendasDatalist] Buscando prendas:', busqueda || 'todas');
+        
+        const response = await fetch(url.toString());
+        
+        if (!response.ok) {
+            console.error('[cargarPrendasDatalist] Error en la respuesta:', response.status);
+            return;
+        }
+        
+        const resultado = await response.json();
+        
+        if (!resultado.success || !Array.isArray(resultado.prendas)) {
+            console.warn('[cargarPrendasDatalist] Respuesta inválida:', resultado);
+            return;
+        }
+        
+        // Limpiar opciones anteriores
+        datalist.innerHTML = '';
+        
+        // Agregar opciones del datalist
+        resultado.prendas.forEach(prenda => {
+            const option = document.createElement('option');
+            option.value = prenda.nombre;
+            option.dataset.id = prenda.id;
+            option.dataset.codigo = prenda.codigo || '';
+            option.label = prenda.descripcion ? `${prenda.nombre} - ${prenda.descripcion}` : prenda.nombre;
+            datalist.appendChild(option);
+        });
+        
+        console.log(`[cargarPrendasDatalist] Datalist actualizado con ${resultado.prendas.length} prendas`);
+        
+    } catch (error) {
+        console.error('[cargarPrendasDatalist] Error:', error);
+    }
+}
 
+// Exponer función globalmente
+window.cargarPrendasDatalist = cargarPrendasDatalist;

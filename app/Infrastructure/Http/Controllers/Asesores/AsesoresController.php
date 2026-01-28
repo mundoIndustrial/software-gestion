@@ -646,11 +646,65 @@ class AsesoresController extends Controller
         ]);
 
         try {
-            // Crear DTO para el Use Case
-            $dto = AnularProduccionPedidoDTO::fromRequest((string)$id, ['razon' => $validated['novedad']]);
+            // Buscar el pedido por numero_pedido (ya que el parámetro $id es el número del pedido, no el ID de BD)
+            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', (int)$id)
+                ->orWhere('id', (int)$id)
+                ->first();
+            
+            if (!$pedidoModel) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado',
+                ], 404);
+            }
+            
+            // Obtener el ID real del pedido
+            $pedidoId = $pedidoModel->id;
+            
+            // Obtener usuario autenticado
+            $usuario = auth()->user();
+            $nombreUsuario = $usuario ? $usuario->name : 'Sistema';
+            
+            // Obtener el rol del usuario
+            $rolUsuario = 'Sin rol';
+            if ($usuario) {
+                try {
+                    // Obtener los roles del usuario (relación)
+                    $rolesUsuario = $usuario->roles();
+                    
+                    \Log::info('[anularPedido] Roles del usuario:', [
+                        'usuario_id' => $usuario->id,
+                        'roles_ids' => $usuario->roles_ids ?? [],
+                        'roles_count' => $rolesUsuario->count(),
+                    ]);
+                    
+                    if ($rolesUsuario && $rolesUsuario->count() > 0) {
+                        $rolUsuario = $rolesUsuario->first()->name ?? 'Sin rol';
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('[anularPedido] Error obteniendo roles:', [
+                        'error' => $e->getMessage(),
+                        'usuario_id' => $usuario->id,
+                    ]);
+                }
+            }
+            
+            \Log::info('[anularPedido] Información del usuario:', [
+                'nombre' => $nombreUsuario,
+                'rol' => $rolUsuario,
+                'numero_pedido' => $id,
+                'pedido_id' => $pedidoId,
+            ]);
+            
+            // Crear DTO para el Use Case con información del usuario
+            $dto = AnularProduccionPedidoDTO::fromRequest((string)$pedidoId, [
+                'razon' => $validated['novedad'],
+                'nombreUsuario' => $nombreUsuario,
+                'rolUsuario' => $rolUsuario
+            ]);
 
             // Usar el nuevo Use Case DDD
-            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutar($dto);
+            $pedidoAnulado = $this->anularProduccionPedidoUseCase->ejecutarConDTO($dto);
             
             return response()->json([
                 'success' => true,
@@ -658,6 +712,12 @@ class AsesoresController extends Controller
                 'pedido' => $pedidoAnulado,
             ]);
         } catch (\Exception $e) {
+            \Log::error('[anularPedido] Error al anular pedido:', [
+                'numero_pedido' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

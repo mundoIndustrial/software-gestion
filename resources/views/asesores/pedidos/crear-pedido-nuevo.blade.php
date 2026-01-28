@@ -419,4 +419,7 @@
 
 <!-- Script para interactividad de item-cards -->
 <script src="{{ asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}"></script>
+
+<!-- Script para modal de prendas y autocomplete -->
+<script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
 @endpush
