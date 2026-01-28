@@ -626,6 +626,7 @@ function capturarPrendas() {
                 talla_referencia: prenda.talla_referencia || '',
                 variantes: prenda.variantes || {},
                 origen: prenda.origen || 'Confección',
+                de_bodega: prenda.de_bodega || 0,
                 tallas: tallasReconstruidas,
                 cantidad: cantidadTotal,
                 tiene_bolsillos: tieneBolsillos,

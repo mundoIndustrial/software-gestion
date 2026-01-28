@@ -88,12 +88,14 @@
                 id: {{ auth()->user()->id }},
                 nombre: "{{ auth()->user()->name }}",
                 email: "{{ auth()->user()->email }}",
-                rol: "{{ auth()->user()->roles->first()?->name ?? 'Sin Rol' }}"
+                rol: "{{ auth()->user()->roles->first()?->name ?? 'Sin Rol' }}",
+                roles: @json(auth()->user()->roles->pluck('name')->toArray())
             @else
                 id: null,
                 nombre: 'Usuario',
                 email: '',
-                rol: 'Sin Rol'
+                rol: 'Sin Rol',
+                roles: []
             @endif
         };
         console.log('[Layout] 👤 Usuario autenticado:', window.usuarioAutenticado);

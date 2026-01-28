@@ -66,7 +66,7 @@ class ReceiptManager {
             
             // 1. Agregar recibo de COSTURA para la prenda
             let tituloCostura = "RECIBO DE COSTURA";
-            if (prenda.origen && prenda.origen.toLowerCase() === 'bodega') {
+            if (prenda.de_bodega == 1) {
                 tituloCostura = "RECIBO DE COSTURA-BODEGA";
             }
 
@@ -363,15 +363,8 @@ class ReceiptManager {
      * Aplica el nuevo formato enumerado con puntos
      */
     contenidoCostura(prenda) {
-        // Validar tipo de costura
-        const esCostura = prenda.origen && 
-            (prenda.origen.toLowerCase() === 'bodega' || prenda.origen.toLowerCase() === 'confección');
-        
-        if (!esCostura) {
-            // Fallback al formato anterior si no es costura/costura-bodega
-            return this.contenidoCosturaSinFormato(prenda);
-        }
-
+        // Validar tipo de costura - siempre es costura si llegó aquí
+        // de_bodega solo indica si es de bodega o confección, pero ambas son COSTURA
         return this.construirDescripcionCostura(prenda);
     }
 

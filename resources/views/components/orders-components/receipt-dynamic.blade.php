@@ -100,7 +100,7 @@ class ReceiptManager {
         datosFactura.prendas.forEach((prenda, prendaIdx) => {
             // 1. Agregar recibo de COSTURA para la prenda
             let tituloCostura = "RECIBO DE COSTURA";
-            if (prenda.origen && prenda.origen.toLowerCase() === 'bodega') {
+            if (prenda.de_bodega == 1) {
                 tituloCostura = "RECIBO DE COSTURA-BODEGA";
             }
 
@@ -269,8 +269,8 @@ class ReceiptManager {
             html += `<strong>Tela:</strong> ${prenda.tela.toUpperCase()}<br>`;
         }
 
-        if (prenda.origen) {
-            const origenTexto = prenda.origen.toLowerCase() === 'bodega' ? 'BODEGA' : 'CONFECCIÓN';
+        if (prenda.de_bodega !== undefined) {
+            const origenTexto = prenda.de_bodega == 1 ? 'BODEGA' : 'CONFECCIÓN';
             html += `<strong>Origen:</strong> ${origenTexto}<br>`;
         }
 

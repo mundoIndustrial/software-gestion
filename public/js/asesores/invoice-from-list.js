@@ -34,6 +34,10 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         const datos = await response.json();
 
         console.log('[FACTURA-DEBUG] Datos completos del servidor:', datos);
+        console.log('[FACTURA-DEBUG] ¿Tiene prendas?', !!datos.prendas);
+        console.log('[FACTURA-DEBUG] Tipo de prendas:', typeof datos.prendas);
+        console.log('[FACTURA-DEBUG] ¿Es array?', Array.isArray(datos.prendas));
+        console.log('[FACTURA-DEBUG] Prendas count:', datos.prendas ? datos.prendas.length : 'N/A');
         console.log('[FACTURA-DEBUG] Prendas recibidas:', datos.prendas);
         if (datos.prendas && datos.prendas[0]) {
             console.log('[FACTURA-DEBUG] Primera prenda:', datos.prendas[0]);
@@ -44,10 +48,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
             console.log('[FACTURA-DEBUG] ⚠️ COLOR simple en primera prenda:', datos.prendas[0].color);
         }
         
-        // Ocultar spinner
-        ocultarCargando();
-        
-        // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
+    // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
         if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
 
             crearModalFacturaDesdeListaPedidos(datos);
@@ -184,30 +185,53 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     let htmlFactura;
     if (typeof generarHTMLFactura === 'function') {
         try {
+            console.log('[GENERAR-FACTURA] Intentando generar HTML con datos:', {
+                prendas_existe: !!datos.prendas,
+                prendas_es_array: Array.isArray(datos.prendas),
+                prendas_count: datos.prendas?.length || 0,
+                datos_keys: Object.keys(datos)
+            });
+            
             htmlFactura = generarHTMLFactura(datos);
+
+            console.log('[GENERAR-FACTURA] ✅ HTML generado exitosamente', {
+                htmlFactura_length: htmlFactura?.length || 0,
+                htmlFactura_vacio: !htmlFactura || htmlFactura.trim().length === 0
+            });
 
             if (!htmlFactura || htmlFactura.trim().length === 0) {
                 throw new Error('HTML vacío generado');
             }
         } catch (error) {
+            console.error('[GENERAR-FACTURA] ❌ ERROR al generar HTML:', {
+                error_mensaje: error.message,
+                error_stack: error.stack,
+                datos_prendas: datos.prendas,
+                datos_keys: Object.keys(datos)
+            });
 
             htmlFactura = `
-                <div style="padding: 30px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404;">
-                    <h3>Error al generar factura</h3>
-                    <p>${error.message}</p>
+                <div style="padding: 30px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #dc2626;">
+                    <h3>❌ Error al generar factura</h3>
+                    <p><strong>${error.message}</strong></p>
+                    <hr>
+                    <div style="font-size: 12px; color: #666; background: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace; max-height: 200px; overflow-y: auto;">
+                        <strong>Stack:</strong><br>${error.stack?.substring(0, 500) || 'No stack disponible'}
+                    </div>
                     <hr>
                     <div style="font-size: 12px; color: #666;">
-                        <strong>Datos disponibles:</strong><br>
+                        <strong>Información del pedido:</strong><br>
                         Pedido: ${datos.numero_pedido}<br>
                         Cliente: ${datos.cliente}<br>
-                        Asesor: ${datos.asesora}
+                        Asesor: ${datos.asesora}<br>
+                        Prendas recibidas: ${datos.prendas?.length || 0}
                     </div>
                 </div>
             `;
         }
     } else {
-
-        htmlFactura = `<div style="padding: 30px; background: #f3f4f6; border-radius: 6px;"><h3>Información del Pedido</h3><p><strong>Pedido #${datos.numero_pedido}</strong></p><p>Cliente: ${datos.cliente}</p><p>Asesor: ${datos.asesora}</p></div>`;
+        console.error('[GENERAR-FACTURA] ❌ Función generarHTMLFactura NO existe');
+        htmlFactura = `<div style="padding: 30px; background: #f3f4f6; border-radius: 6px;"><h3>Información del Pedido</h3><p><strong>Pedido #${datos.numero_pedido}</strong></p><p>Cliente: ${datos.cliente}</p><p>Asesor: ${datos.asesora}</p><p><em style="color: #666;">Prendas: ${datos.prendas?.length || 0}</em></p></div>`;
     }
     
     // Crear overlay
@@ -386,6 +410,8 @@ function cerrarModalFactura() {
             overlay.remove();
         }, 300);
     }
+    // Asegurarse de ocultar el loading
+    ocultarCargando();
 }
 
 /**

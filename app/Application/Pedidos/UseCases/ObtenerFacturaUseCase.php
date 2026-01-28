@@ -17,14 +17,22 @@ class ObtenerFacturaUseCase
 
     public function ejecutar(ObtenerFacturaDTO $dto): array
     {
-        Log::info('[FACTURA-USECASE] Ejecutando para pedido: ' . $dto->pedidoId);
+        \Log::info('🔄 [USECASE-FACTURA] ===== INICIO DE EJECUCIÓN =====', [
+            'pedido_id' => $dto->pedidoId,
+            'usuario_id' => \Auth::id(),
+            'usuario_nombre' => \Auth::user()?->name ?? 'No autenticado',
+        ]);
         
         try {
             // Obtener datos completos de factura desde el repositorio
             // Este método incluye procesos, imágenes, telas, fotos, etc.
+            \Log::info('[USECASE-FACTURA] Llamando al repositorio para obtener datos', [
+                'pedido_id' => $dto->pedidoId
+            ]);
+            
             $datos = $this->pedidoProduccionRepository->obtenerDatosFactura((int)$dto->pedidoId);
             
-            Log::info('[FACTURA-USECASE] Datos obtenidos correctamente', [
+            \Log::info('[USECASE-FACTURA] Datos obtenidos correctamente del repositorio', [
                 'pedido_id' => $dto->pedidoId,
                 'prendas_count' => count($datos['prendas'] ?? []),
                 'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
@@ -33,7 +41,7 @@ class ObtenerFacturaUseCase
             // LOG CRÍTICO: Verificar telas_array en cada prenda
             if (!empty($datos['prendas'])) {
                 foreach ($datos['prendas'] as $idx => $prenda) {
-                    Log::warning('[FACTURA-USECASE-TELAS] Prenda ' . $idx . ' tiene telas_array', [
+                    \Log::debug('[USECASE-FACTURA-TELAS] Prenda ' . $idx . ' verificada', [
                         'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
                         'telas_array_count' => count($prenda['telas_array'] ?? []),
                         'telas_array' => $prenda['telas_array'] ?? [],
@@ -43,13 +51,19 @@ class ObtenerFacturaUseCase
                     ]);
                 }
             }
-
+            
+            \Log::info('✅ [USECASE-FACTURA] Retornando datos exitosamente');
             return $datos;
         } catch (\Exception $e) {
-            Log::error('[FACTURA-USECASE] Error obteniendo datos de factura', [
+            \Log::error('❌ [USECASE-FACTURA] ERROR EN USECASE', [
                 'pedido_id' => $dto->pedidoId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'usuario_id' => \Auth::id(),
+                'error_mensaje' => $e->getMessage(),
+                'error_código' => $e->getCode(),
+                'error_clase' => get_class($e),
+                'archivo' => $e->getFile(),
+                'línea' => $e->getLine(),
+                'trace_resumido' => substr($e->getTraceAsString(), 0, 500),
             ]);
             throw $e;
         }

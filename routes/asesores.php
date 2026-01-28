@@ -59,7 +59,6 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.api.store');
     Route::post('/pedidos/confirm', [PedidoController::class, 'confirm'])->name('pedidos.api.confirm');
     Route::post('/pedidos/{id}/anular', [AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
-    Route::get('/pedidos/{id}/factura-datos', [AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [PedidoController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // Cargar datos de pedido para edición

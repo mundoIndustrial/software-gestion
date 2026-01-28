@@ -78,7 +78,14 @@ export class ReceiptRenderer {
 
         // Número de pedido
         const pedidoNumber = document.querySelector('.pedido-number');
-        if (pedidoNumber) pedidoNumber.textContent = '#' + datosPedido.numero_pedido;
+        if (pedidoNumber) {
+            // En supervisor-pedidos, mostrar vacío hasta que se apruebe
+            let numero = '';
+            if (!window.location.href.includes('supervisor-pedidos')) {
+                numero = datosPedido.numero_pedido || datosPedido.numero || '';
+            }
+            pedidoNumber.textContent = '#' + numero;
+        }
 
         // Encargado
         const encargadoValue = document.getElementById('encargado-value');
@@ -101,14 +108,8 @@ export class ReceiptRenderer {
 
         // Determinar si es costura
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
-            // Intentar usar ReceiptManager si existe
-            if (typeof window.ReceiptManager !== 'undefined' && window.ReceiptManager.prototype.construirDescripcionCostura) {
-                const rm = new window.ReceiptManager({prendas: []}, null, null);
-                html = rm.construirDescripcionCostura(prendaData);
-            } else {
-                // Usar formateador
-                html = Formatters.construirDescripcionCostura(prendaData);
-            }
+            // Usar formateador directamente
+            html = Formatters.construirDescripcionCostura(prendaData);
         } else {
             // Para otros procesos
             html = Formatters.construirDescripcionProceso(prendaData, recibo);

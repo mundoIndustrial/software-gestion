@@ -20,9 +20,15 @@ export class GalleryManager {
         if (prendaData && prendaData.imagenes && Array.isArray(prendaData.imagenes)) {
             const imagenesPrendaLimpias = prendaData.imagenes
                 .map(img => {
-                    let url = img.url || img.ruta || img;
+                    // Extraer URL dependiendo del formato
+                    let url = '';
+                    if (typeof img === 'string') {
+                        url = img;
+                    } else if (typeof img === 'object' && img !== null) {
+                        url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                    }
                     // Limpiar rutas duplicadas /storage/storage
-                    if (url && url.includes('/storage/storage/')) {
+                    if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
                         return url.replace('/storage/storage/', '/storage/');
                     }
                     return url;
@@ -36,9 +42,16 @@ export class GalleryManager {
         // 2. Agregar imágenes de tela (desde prendaData.imagenes_tela)
         if (prendaData && prendaData.imagenes_tela && Array.isArray(prendaData.imagenes_tela)) {
             const imagenesTelaLimpias = prendaData.imagenes_tela
-                .map(url => {
+                .map(img => {
+                    // Extraer URL dependiendo del formato
+                    let url = '';
+                    if (typeof img === 'string') {
+                        url = img;
+                    } else if (typeof img === 'object' && img !== null) {
+                        url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                    }
                     // Limpiar rutas duplicadas /storage/storage
-                    if (url && url.includes('/storage/storage/')) {
+                    if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
                         return url.replace('/storage/storage/', '/storage/');
                     }
                     return url;
@@ -52,9 +65,16 @@ export class GalleryManager {
         // 3. Agregar imágenes del recibo/proceso (si existen)
         if (imagenesActuales && Array.isArray(imagenesActuales) && imagenesActuales.length > 0) {
             const imagenesRecibosLimpias = imagenesActuales
-                .map(url => {
+                .map(img => {
+                    // Extraer URL dependiendo del formato
+                    let url = '';
+                    if (typeof img === 'string') {
+                        url = img;
+                    } else if (typeof img === 'object' && img !== null) {
+                        url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                    }
                     // Limpiar rutas duplicadas /storage/storage
-                    if (url && url.includes('/storage/storage/')) {
+                    if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
                         return url.replace('/storage/storage/', '/storage/');
                     }
                     return url;
@@ -62,7 +82,6 @@ export class GalleryManager {
                 .filter(url => url);
             
             fotosParaMostrar = [...fotosParaMostrar, ...imagenesRecibosLimpias];
-
         }
         
         // 4. Si aún no hay imágenes, intentar obtener desde el endpoint
@@ -195,8 +214,73 @@ export class GalleryManager {
     }
 
     /**
-     * Obtiene los botones de toggle (factura/galería)
+     * Abre una modal con la imagen en grande
      */
+    static abrirModalImagenProcesoGrande(indice, fotosJSON) {
+        try {
+            // Parsear JSON si viene como string
+            let fotos = typeof fotosJSON === 'string' ? JSON.parse(fotosJSON) : fotosJSON;
+            
+            if (!fotos || !fotos[indice]) {
+                console.error('Imagen no encontrada:', indice);
+                return;
+            }
+            
+            const imgActual = fotos[indice];
+            
+            // Crear modal
+            const modal = document.createElement('div');
+            modal.id = 'modal-imagen-proceso-grande';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            `;
+            
+            modal.innerHTML = `
+                <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
+                    <button onclick="document.getElementById('modal-imagen-proceso-grande').remove()" style="
+                        position: absolute;
+                        top: -40px;
+                        right: 0;
+                        background: white;
+                        border: none;
+                        border-radius: 50%;
+                        width: 36px;
+                        height: 36px;
+                        cursor: pointer;
+                        font-size: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    ">✕</button>
+                    <img src="${imgActual}" alt="Imagen grande" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px;">
+                    <div style="color: white; margin-top: 10px; font-size: 14px;">${indice + 1} / ${fotos.length}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Cerrar al hacer click fuera
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error al abrir imagen:', error);
+        }
+    }
     static obtenerBotones() {
         return {
             factura: document.getElementById('btn-factura'),

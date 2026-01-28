@@ -448,7 +448,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     
     // Pedidos - APIs ahora usan DDD (usar /api/pedidos en lugar de /asesores/pedidos)
     // Las rutas POST, PATCH, DELETE se han migrado a /api/pedidos en routes/api.php
-    Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])->where('id', '[0-9]+')->name('pedidos.factura-datos');
+    Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])
+        ->where('id', '[0-9]+')
+        ->name('pedidos.factura-datos');
     Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
@@ -1048,7 +1050,7 @@ require __DIR__.'/auth.php';
 // ========================================
 // Las rutas de asesores ya están definidas arriba en este archivo
 // El archivo asesores.php se mantiene como referencia pero no se carga aquí para evitar duplicados
-// require __DIR__.'/asesores.php';
+// require __DIR__.'/asesores.php';  // DESHABILITADO: Las rutas están en web.php línea 431
 
 // ========================================
 // RUTAS DE DESPACHO (MÓDULO NUEVO)

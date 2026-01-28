@@ -79,12 +79,24 @@ export class PedidosRecibosModule {
             // Mostrar modal
             this.modalManager.abrirModal();
 
+            // Siempre usar la ruta de asesores (compatible con ambos contextos)
+            const endpoint = `/asesores/pedidos/${pedidoId}/recibos-datos`;
+
             // Obtener datos del servidor
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`);
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            const datos = await response.json();
-            this.modalManager.setState({ datosCompletos: datos });
+            let datos = await response.json();            
+            // Manejar respuesta envuelta en { success: true, data: {...} }
+            if (datos.data && typeof datos.data === 'object') {
+                datos = datos.data;
+            }
+                        this.modalManager.setState({ datosCompletos: datos });
+
+            // Validar que existan prendas
+            if (!datos.prendas || !Array.isArray(datos.prendas)) {
+                throw new Error('No se encontraron prendas en los datos del pedido');
+            }
 
             // Encontrar la prenda
             const prendaData = datos.prendas.find(p => p.id == prendaId);

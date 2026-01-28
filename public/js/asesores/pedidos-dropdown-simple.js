@@ -129,26 +129,34 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        // Agregar divisor y opción de recibos de procesos (abre modal intermedio)
+        // Verificar si estamos en la ruta supervisor-pedidos (mostrar "Ver Recibos" para supervisores)
+        const esRutaSupervisor = window.location.pathname.includes('supervisor-pedidos');
+        
+        // Mostrar "Ver Recibos" si es supervisor-pedidos
+        if (esRutaSupervisor) {
+            dropdownHTML += `
+                <div style="height: 1px; background: #e5e7eb;"></div>
+                <button onclick="abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Recibos
+                </button>
+            `;
+        }
+        
         dropdownHTML += `
-            <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
-                width: 100%;
-                text-align: left;
-                padding: 0.875rem 1rem;
-                border: none;
-                background: transparent;
-                cursor: pointer;
-                color: #374151;
-                font-size: 0.875rem;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                font-weight: 500;
-            " onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
-                <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Recibos
-            </button>
             <div style="height: 1px; background: #e5e7eb;"></div>
             <button onclick="verSeguimiento(${pedidoId}); closeDropdown()" style="
                 width: 100%;

@@ -838,17 +838,25 @@
 <!-- Modal Seguimiento del Pedido -->
 <x-orders-components.order-tracking-modal />
 
+<!-- Modal para Selector de Recibos (desde asesores) -->
+@include('components.modals.recibos-process-selector')
+
 @push('scripts')
     <!-- Scripts para funcionalidad de asesores -->
     <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+    <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
     <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
     <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
     <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
     <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
+    <script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
     
     <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
     <script src="{{ asset('js/supervisor-pedidos/edit-pedido.js') }}"></script>
+    
+    <!-- Scripts para Recibos/Procesos -->
+    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
     
     <!-- Script para activar dropdowns en supervisor -->
     <script>
@@ -953,6 +961,25 @@
                 dropdownAbierto[id] = false;
             });
         }
+        
+        // Función para toggle de factura (compatible con order-detail-modal)
+        window.toggleFactura = function() {
+            // Usar Galeria si está disponible
+            if (typeof Galeria !== 'undefined' && Galeria.toggleFactura) {
+                Galeria.toggleFactura('order-detail-modal-wrapper', 'btn-factura', 'btn-galeria');
+            }
+        };
+        
+        // Función para abrir imagen en grande desde la galería
+        window.abrirModalImagenProcesoGrande = function(indice, fotosJSON) {
+            // Importar GalleryManager y llamar su método estático
+            import('./js/modulos/pedidos-recibos/components/GalleryManager.js').then(module => {
+                const { GalleryManager } = module;
+                if (GalleryManager) {
+                    GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
+                }
+            }).catch(err => console.error('Error cargando GalleryManager:', err));
+        };
     </script>
 @endpush
 

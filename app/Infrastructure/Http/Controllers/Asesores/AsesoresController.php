@@ -744,6 +744,34 @@ class AsesoresController extends Controller
         \Log::warning('⚠️⚠️⚠️ [CONTROLLER-FACTURA] ENDPOINT LLAMADO ⚠️⚠️⚠️', ['pedido_id' => $id]);
         
         try {
+            // 🔍 LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
+            $usuarioAutenticado = \Auth::user();
+            \Log::info('[DIAGNÓSTICO] Verificando autenticación y autorización', [
+                'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'NO_AUTENTICADO',
+                'usuario_nombre' => $usuarioAutenticado ? $usuarioAutenticado->name : 'ANÓNIMO',
+                'usuario_email' => $usuarioAutenticado ? $usuarioAutenticado->email : 'N/A',
+                'pedido_id' => $id,
+                'ruta_accedida' => \Route::getCurrentRoute()->uri ?? 'desconocida',
+                'método_http' => \Request::getMethod(),
+            ]);
+            
+            // 🔍 OBTENER ROLES DEL USUARIO
+            if ($usuarioAutenticado) {
+                $rolesUsuario = $usuarioAutenticado->roles()->pluck('name')->toArray();
+                
+                // 🔄 EXTENSIÓN: APLICAR JERARQUÍA DE ROLES (herencia)
+                $rolesConHerencia = \App\Services\RoleHierarchyService::getEffectiveRoles($rolesUsuario);
+                
+                \Log::info('[DIAGNÓSTICO] Roles y permisos del usuario', [
+                    'usuario_id' => $usuarioAutenticado->id,
+                    'roles' => $rolesUsuario,
+                    'roles_con_herencia' => $rolesConHerencia,
+                    'tiene_supervisor_pedidos' => in_array('supervisor_pedidos', $rolesConHerencia),
+                    'tiene_asesor' => in_array('asesor', $rolesConHerencia),
+                    'tiene_admin' => in_array('admin', $rolesConHerencia),
+                ]);
+            }
+            
             \Log::info('[CONTROLLER-FACTURA] Obteniendo datos de factura para pedido: ' . $id);
             
             // Crear DTO para el Use Case
@@ -771,11 +799,30 @@ class AsesoresController extends Controller
                 }
             }
             
+            \Log::info('✅ [CONTROLLER-FACTURA] Datos de factura obtenidos exitosamente');
+            
+            // 🔍 LOG FINAL: Verificar estructura exacta antes de retornar
+            \Log::info('[CONTROLLER-FACTURA-JSON-RESPONSE] Estructura JSON final que se envía', [
+                'estructura_keys' => array_keys($datos),
+                'tiene_prendas' => isset($datos['prendas']),
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'prendas_vacio' => empty($datos['prendas']),
+                'prendas_tipo' => gettype($datos['prendas'] ?? null),
+                'prendas_es_array' => is_array($datos['prendas'] ?? false),
+            ]);
+            
             return response()->json($datos);
         } catch (\Exception $e) {
-            \Log::error('[CONTROLLER-FACTURA] Error obteniendo datos de factura', [
+            $usuarioAutenticado = \Auth::user();
+            \Log::error('❌ [CONTROLLER-FACTURA] ERROR obteniendo datos de factura', [
                 'pedido_id' => $id,
-                'error' => $e->getMessage(),
+                'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'N/A',
+                'usuario_nombre' => $usuarioAutenticado ? $usuarioAutenticado->name : 'N/A',
+                'error_mensaje' => $e->getMessage(),
+                'error_código' => $e->getCode(),
+                'error_clase' => get_class($e),
+                'archivo' => $e->getFile(),
+                'línea' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
