@@ -609,7 +609,8 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('api')->name('api.')->g
         Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
         
         // ✅ NUEVA RUTA: Actualizar un proceso específico de la prenda
-        Route::patch('/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
+        // ✅ FIX: Acepta POST también (con _method=PATCH en FormData para mejor compatibilidad)
+        Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
         
         // Obtener estado actual (para auditoría)
         Route::get('/{id}/estado', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'getPrendaState'])->name('estado');

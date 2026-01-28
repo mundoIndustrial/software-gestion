@@ -623,9 +623,11 @@ window.crearTarjetaGenero = function(genero) {
         const input = document.createElement('input');
         input.type = 'number';
         input.min = '0';
-        input.value = cantidad;
+        input.value = cantidad;  // ✅ Cargar la cantidad (puede ser 0)
+        input.data = { talla, cantidad };  // ✅ Guardar datos para referencia
         input.style.cssText = 'padding: 0.5rem; border: 2px solid #0066cc; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.9rem;';
         input.onchange = () => {
+            console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  // ✅ Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
         };

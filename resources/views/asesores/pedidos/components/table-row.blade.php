@@ -47,10 +47,15 @@
 @endphp
 
 <div data-pedido-row 
+     data-pedido-id="{{ $pedido->id }}"
      data-numero-pedido="{{ $numeroPedidoBusqueda }}" 
      data-cliente="{{ $clienteBusqueda }}"
+     data-estado="{{ $pedido->estado ?? 'Pendiente' }}"
+     data-forma-pago="{{ $pedido->forma_de_pago ?? '-' }}"
+     data-asesor="{{ $pedido->asesora?->name ?? '-' }}"
      data-prenda-info="{{ $prendasJson }}"
      data-procesos-info="{{ $procesosJson }}"
+     data-prendas="{{ json_encode($pedido->prendas ?? []) }}"
      style="
     display: grid;
     grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 120px 140px 110px 120px 130px' : '120px 120px 120px 140px 110px 120px 130px 130px 130px' }};

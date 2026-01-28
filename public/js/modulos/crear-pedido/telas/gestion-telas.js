@@ -280,10 +280,10 @@ window.agregarTelaNueva = async function() {
 };
 
 /**
- * Actualizar tabla de telas
+ * Actualizar tabla de telas - OPTIMIZADO CON DOCUMENTFRAGMENT
+ * Evita múltiples reflows usando batch rendering
  */
 window.actualizarTablaTelas = function() {
-    console.log('[actualizarTablaTelas] 🔄 Iniciando actualización de tabla...');
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
@@ -291,123 +291,68 @@ window.actualizarTablaTelas = function() {
         return;
     }
     
-
-    
     // Limpiar tbody excepto la fila de inputs (la primera fila)
     const filas = Array.from(tbody.querySelectorAll('tr'));
-
-    
     filas.forEach((fila, index) => {
-
         if (index > 0) {
             fila.remove();
-
         }
     });
     
-    // ===== DETECTAR MODO: CREACIÓN o EDICIÓN =====
-    // En EDICIÓN: window.telasAgregadas O window.telasEdicion contienen las telas desde BD
-    // En CREACIÓN: window.telasCreacion contiene las telas nuevas
+    // Detectar modo: CREACIÓN o EDICIÓN
     const telasParaMostrar = (window.telasAgregadas && window.telasAgregadas.length > 0) 
         ? window.telasAgregadas 
         : (window.telasEdicion && window.telasEdicion.length > 0)
             ? window.telasEdicion
             : window.telasCreacion;
     
-    const modoEdicion = (window.telasAgregadas && window.telasAgregadas.length > 0) || 
-                        (window.telasEdicion && window.telasEdicion.length > 0);
-    console.log('[actualizarTablaTelas] 📋 Modo:', modoEdicion ? 'EDICIÓN' : 'CREACIÓN', 'Telas a mostrar:', telasParaMostrar.length);
+    if (!telasParaMostrar || telasParaMostrar.length === 0) {
+        return;
+    }
 
+    // ✅ OPTIMIZACIÓN 1: Usar DocumentFragment para batch rendering
+    // Esto evita un reflow por cada appendChild()
+    const fragment = document.createDocumentFragment();
     
-    // Agregar filas con los datos según el modo (CREACIÓN o EDICIÓN)
     telasParaMostrar.forEach((telaData, index) => {
-        // ===== NORMALIZAR DATOS: Compatible tanto CREACIÓN como EDICIÓN =====
+        // Normalizar datos
         const nombre_tela = telaData.nombre_tela || telaData.tela || telaData.nombre || '(Sin nombre)';
         const color = telaData.color || telaData.color_nombre || '(Sin color)';
         const referencia = telaData.referencia || telaData.tela_referencia || '';
         
-        console.log(`[actualizarTablaTelas] 🧵 Procesando tela ${index}:`, {
-            nombre: nombre_tela,
-            color: color,
-            referencia: referencia,
-            imagenes_count: telaData.imagenes ? telaData.imagenes.length : 0
-        });
-
-        
-        const tr = document.createElement('tr');
-        tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
-        
         // Crear celda de imágenes
         let imagenHTML = '';
         if (telaData.imagenes && telaData.imagenes.length > 0) {
-            console.log(`[actualizarTablaTelas] 📸 Primera imagen de tela ${index}:`, telaData.imagenes[0]);
-
-            
-            // Crear un array con blob URLs dinámicas para esta visualización
-            const imagenConBlobUrl = telaData.imagenes.map((img, imgIndex) => {
-                console.log(`[actualizarTablaTelas] 🔍 Estructura de imagen ${imgIndex}:`, img);
-                
-                // Crear una nueva blob URL a partir del File object
+            const imagenConBlobUrl = telaData.imagenes.map((img) => {
                 let blobUrl;
                 
-                // CASO 0: previewUrl (viene de transformación en prenda-editor.js)
                 if (img && img.previewUrl) {
                     blobUrl = img.previewUrl;
-                    console.log(`[actualizarTablaTelas] 📋 Caso previewUrl: ${blobUrl}`);
-                }
-                // CASO 1: Imagen vacía de edición (file: null, tamaño: 0)
-                else if (img && img.file === null && img.tamaño === 0) {
-                    console.log(`[actualizarTablaTelas] 📝 Caso EDICIÓN: Imagen nueva sin upload aún`);
-                    blobUrl = '';  // No mostrar thumbnail hasta que se cargue
-                }
-                // CASO 2: File object desde el DOM (creación)
-                else if (img && img.file instanceof File) {
+                } else if (img && img.file === null && img.tamaño === 0) {
+                    blobUrl = '';
+                } else if (img && img.file instanceof File) {
                     blobUrl = URL.createObjectURL(img.file);
-                } 
-                // CASO 3: File object directo
-                else if (img instanceof File) {
+                } else if (img instanceof File) {
                     blobUrl = URL.createObjectURL(img);
-                } 
-                // CASO 4: Blob URL ya existente
-                else if (img && img.blobUrl) {
+                } else if (img && img.blobUrl) {
                     blobUrl = img.blobUrl;
-                } 
-                // CASO 5: String directo (ruta)
-                else if (typeof img === 'string') {
+                } else if (typeof img === 'string') {
                     blobUrl = img;
-                } 
-                // CASO 6: Backend retorna 'url'
-                else if (img && img.url) {
+                } else if (img && img.url) {
                     blobUrl = img.url;
-                } 
-                // CASO 7: Backend retorna 'ruta' (desde DB)
-                else if (img && img.ruta) {
+                } else if (img && img.ruta) {
                     blobUrl = img.ruta;
-                } 
-                // CASO 8: Backend retorna 'ruta_webp'
-                else if (img && img.ruta_webp) {
+                } else if (img && img.ruta_webp) {
                     blobUrl = img.ruta_webp;
-                } 
-                // CASO 9: Backend retorna 'ruta_original'
-                else if (img && img.ruta_original) {
+                } else if (img && img.ruta_original) {
                     blobUrl = img.ruta_original;
-                } 
-                // CASO 10: Blob object directo
-                else if (img instanceof Blob) {
+                } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
-                } 
-                // CASO 11: Sin determinar (log y vacío)
-                else {
-                    console.warn(`[actualizarTablaTelas] ⚠️ No se pudo determinar URL para imagen ${imgIndex}, estructura:`, img);
+                } else {
                     blobUrl = '';
                 }
                 
-                console.log(`[actualizarTablaTelas] ✅ blobUrl para imagen ${imgIndex}:`, blobUrl);
-                
-                return {
-                    ...img,
-                    previewUrl: blobUrl  // Blob URL recién creada para esta sesión
-                };
+                return { ...img, previewUrl: blobUrl };
             });
             
             imagenHTML = `
@@ -420,11 +365,11 @@ window.actualizarTablaTelas = function() {
                     `}
                 </div>
             `;
-        } else {
-            console.log(`[actualizarTablaTelas] ⚠️ Tela ${index} sin imágenes`);
         }
         
-        const html = `
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
+        tr.innerHTML = `
             <td style="padding: 0.75rem; vertical-align: middle;">${nombre_tela}</td>
             <td style="padding: 0.75rem; vertical-align: middle;">${color}</td>
             <td style="padding: 0.75rem; vertical-align: middle;">${referencia}</td>
@@ -432,26 +377,39 @@ window.actualizarTablaTelas = function() {
                 ${imagenHTML}
             </td>
             <td style="padding: 0.75rem; text-align: center; vertical-align: middle;">
-                <button type="button" onclick="eliminarTela(${index})" class="btn btn-sm" style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; cursor: pointer; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                <button type="button" onclick="eliminarTela(${index}, event)" class="btn btn-sm" style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border: none; cursor: pointer; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">delete</span>
                 </button>
             </td>
         `;
         
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-
+        // Agregar al fragment (sin reflow todavía)
+        fragment.appendChild(tr);
     });
     
-
+    // ✅ UN SOLO REFLOW: Agregar todo el fragment de una vez
+    tbody.appendChild(fragment);
 };
 
 /**
  * Eliminar tela con confirmación
  */
-window.eliminarTela = function(index) {
+window.eliminarTela = function(index, event) {
+    // Prevenir propagación de eventos para evitar clicks accidentales
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     const confirmModal = document.createElement('div');
     confirmModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999999;';
+    
+    // Prevenir clicks en el fondo
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+            confirmModal.remove();
+        }
+    });
     
     const confirmBox = document.createElement('div');
     confirmBox.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
@@ -471,18 +429,26 @@ window.eliminarTela = function(index) {
     
     const btnCancelar = document.createElement('button');
     btnCancelar.textContent = 'Cancelar';
+    btnCancelar.type = 'button';
     btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s;';
     btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
     btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
-    btnCancelar.onclick = () => confirmModal.remove();
+    btnCancelar.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        confirmModal.remove();
+    };
     botones.appendChild(btnCancelar);
     
     const btnConfirmar = document.createElement('button');
     btnConfirmar.textContent = 'Eliminar';
+    btnConfirmar.type = 'button';
     btnConfirmar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s;';
     btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#dc2626';
     btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#ef4444';
-    btnConfirmar.onclick = () => {
+    btnConfirmar.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         confirmModal.remove();
 
         // Eliminar según el modo (EDICIÓN o CREACIÓN)
@@ -501,6 +467,9 @@ window.eliminarTela = function(index) {
     confirmBox.appendChild(botones);
     confirmModal.appendChild(confirmBox);
     document.body.appendChild(confirmModal);
+    
+    // Enfoque en el botón de cancelar para evitar acciones accidentales
+    btnCancelar.focus();
 };
 
 /**

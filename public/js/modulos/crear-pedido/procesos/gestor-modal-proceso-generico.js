@@ -126,7 +126,9 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         
         // Mostrar modal
         modal.style.display = 'flex';
-        
+        // ⚡ CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
+        modal.style.zIndex = '999999999';
+        console.log('🔝 [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
 
     } catch (error) {
 
@@ -198,6 +200,18 @@ window.manejarImagenProceso = function(input, indice) {
         //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
+        // ✅ CRÍTICO: Sincronizar con window.imagenesProcesoActual (usado en PATCH)
+        if (!window.imagenesProcesoActual) {
+            window.imagenesProcesoActual = [null, null, null];
+        }
+        window.imagenesProcesoActual[indice - 1] = file;
+        console.log('[manejarImagenProceso] ✅ Imagen guardada en window.imagenesProcesoActual:', {
+            indice: indice,
+            filename: file.name,
+            size: file.size,
+            totalImagenes: window.imagenesProcesoActual.filter(img => img instanceof File).length
+        });
+        
         // Mostrar preview usando URL.createObjectURL (más eficiente que base64)
         const preview = document.getElementById(`proceso-foto-preview-${indice}`);
         if (preview) {
@@ -227,6 +241,12 @@ window.eliminarImagenProceso = function(indice) {
     }
     
     imagenesProcesoActual[indice - 1] = null;
+    
+    // ✅ CRÍTICO: Sincronizar con window.imagenesProcesoActual
+    if (window.imagenesProcesoActual) {
+        window.imagenesProcesoActual[indice - 1] = null;
+    }
+    console.log('[eliminarImagenProceso] ✅ Imagen eliminada del índice:', indice);
     
     const input = document.getElementById(`proceso-foto-input-${indice}`);
     
@@ -506,8 +526,20 @@ function mostrarModalAdvertenciaTallas() {
         </div>
     `;
     
+    console.log('[🔍 MODAL-PROCESO-GENERICO] 📍 Antes de appendChild');
+    console.log('[🔍 MODAL-PROCESO-GENERICO] z-index calculado:', window.getComputedStyle(modal).zIndex);
+    console.log('[🔍 MODAL-PROCESO-GENERICO] Swal2-container z-index:', window.getComputedStyle(document.querySelector('.swal2-container')).zIndex);
+    
     document.body.appendChild(modal);
+    
+    console.log('[🔍 MODAL-PROCESO-GENERICO] ✅ appendChild ejecutado');
+    console.log('[🔍 MODAL-PROCESO-GENERICO] z-index después:', window.getComputedStyle(modal).zIndex);
+    console.log('[🔍 MODAL-PROCESO-GENERICO] display:', window.getComputedStyle(modal).display);
+    console.log('[🔍 MODAL-PROCESO-GENERICO] posición en DOM:', Array.from(document.body.children).indexOf(modal));
+    
     modal.style.display = 'flex';
+    
+    console.log('[🔍 MODAL-PROCESO-GENERICO] ✅ Modal visible, display=flex')
 }
 
 // Cerrar modal de advertencia
@@ -720,7 +752,7 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 999999;
+        z-index: 9999999;  // ⚡ CRÍTICO: Mayor que Swal2 (9999998)
     `;
     
     const contenido = document.createElement('div');
@@ -802,7 +834,23 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
     `;
     
     modal.appendChild(contenido);
+    
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] 📍 Antes de appendChild');
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index CSS:', '9999999');
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] Swal2 visible?:', !!document.querySelector('.swal2-container'));
+    
     document.body.appendChild(modal);
+    
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] ✅ appendChild ejecutado');
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index computed:', window.getComputedStyle(modal).zIndex);
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] Todas las capas:', {
+        modal_z: window.getComputedStyle(modal).zIndex,
+        swal_z: window.getComputedStyle(document.querySelector('.swal2-container') || {}).zIndex,
+        elementos: Array.from(document.querySelectorAll('[style*="z-index"]')).map(el => ({
+            tag: el.tagName,
+            zIndex: window.getComputedStyle(el).zIndex
+        }))
+    });
     
     // Cerrar al hacer click afuera
     modal.addEventListener('click', function(e) {

@@ -4,26 +4,35 @@ namespace App\Application\Services\Asesores;
 
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ObtenerPedidosService
 {
     /**
-     * Obtener pedidos del asesor con filtros y bÃºsqueda
+     * Obtener pedidos del asesor con filtros y búsqueda - OPTIMIZADO
      * Soporta filtrado por tipo (logo, prendas, todos)
+     * 
+     * ✅ OPTIMIZACIONES:
+     * - Select solo columnas necesarias
+     * - Limit en procesos (máximo 3)
+     * - Cache en estados
+     * - Sin logs en producción
      * 
      * @param string|null $tipo Tipo de pedido: 'logo', 'prendas', null (todos)
      * @param array $filtros Filtros: ['estado', 'search']
-     * @param int $perPage Resultados por pÃ¡gina
+     * @param int $perPage Resultados por página
      * @return LengthAwarePaginator
      */
     public function obtener(?string $tipo = null, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::info(' [OBTENER PEDIDOS] Iniciando bÃºsqueda', [
-            'tipo' => $tipo,
-            'filtros' => $filtros,
-            'por_pagina' => $perPage
-        ]);
+        if (app()->isLocal()) {
+            \Log::info('[OBTENER PEDIDOS] Iniciando búsqueda', [
+                'tipo' => $tipo,
+                'filtros' => $filtros,
+                'por_pagina' => $perPage
+            ]);
+        }
 
         $userId = Auth::id();
         $userName = Auth::user()->name ?? 'Sin nombre';
@@ -43,41 +52,75 @@ class ObtenerPedidosService
      */
     private function obtenerLogoPedidos(string $userName, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginación vacÃ­a');
+        if (app()->isLocal()) {
+            \Log::warning('[LOGO] Funcionalidad LogoPedido removida - retornando paginación vacía');
+        }
         
-        // Retornar paginación vacÃ­a
+        // Retornar paginación vacía
         return PedidoProduccion::where('id', '=', null)
             ->paginate($perPage);
     }
 
     /**
-     * Obtener Pedidos del asesor
+     * Obtener Pedidos del asesor - OPTIMIZADO
+     * 
+     * ✅ Cambios:
+     * - Select solo columnas necesarias
+     * - Limit 3 en procesos para evitar N+1
+     * - Cache en estados
      */
     private function obtenerPedidosProduccion(int $userId, ?string $tipo, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
+        // 🔥 OPTIMIZACIÓN 1: Select solo columnas necesarias
         $query = PedidoProduccion::where('asesor_id', $userId)
+            ->select([
+                'id',
+                'numero_pedido',
+                'cliente',
+                'estado',
+                'forma_de_pago',
+                'novedades',
+                'created_at',
+                'asesor_id'
+            ])
+            // 🔥 OPTIMIZACIÓN 2: With relaciones optimizadas
             ->with([
                 'prendas' => function ($q) {
-                    $q->with(['procesos' => function ($q2) {
-                        $q2->orderBy('created_at', 'desc');
+                    // Select solo columnas necesarias de prendas
+                    $q->select([
+                        'id',
+                        'pedido_produccion_id',
+                        'nombre_prenda',
+                        'cantidad',
+                        'descripcion'
+                    ])
+                    // 🔥 CRÍTICO: Eager load procesos CON LIMIT
+                    ->with(['procesos' => function ($q2) {
+                        $q2->select([
+                            'id',
+                            'prenda_pedido_id',
+                            'tipo_proceso',
+                            'created_at'
+                        ])
+                        ->limit(3)  // ⚡ MÁXIMO 3 procesos por prenda
+                        ->orderBy('created_at', 'desc');
                     }]);
                 },
-                'asesora'
+                'asesora' => function ($q) {
+                    $q->select(['id', 'name', 'email']);
+                }
             ]);
-
-        // Si es solo PRENDAS, no hace falta filtrar por logoPedidos ya que la tabla no existe
-        // if ($tipo === 'prendas') {
-        //     $query->whereDoesntHave('logoPedidos');
-        // }
 
         // Aplicar filtros
         $this->aplicarFiltros($query, $filtros);
 
-        \Log::info('[PRENDAS] Filtros aplicados', [
-            'tipo' => $tipo ?? 'todos',
-            'estado' => $filtros['estado'] ?? 'ninguno',
-            'search' => $filtros['search'] ?? 'ninguno'
-        ]);
+        if (app()->isLocal()) {
+            \Log::info('[PRENDAS] Filtros aplicados', [
+                'tipo' => $tipo ?? 'todos',
+                'estado' => $filtros['estado'] ?? 'ninguno',
+                'search' => $filtros['search'] ?? 'ninguno'
+            ]);
+        }
 
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
@@ -109,7 +152,7 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener bÃºsqueda aplicada
+     * Obtener búsqueda aplicada
      */
     public function aplicarBusqueda($query, string $search): void
     {
@@ -120,21 +163,30 @@ class ObtenerPedidosService
     }
 
     /**
-     * Obtener estados Ãºnicos disponibles
+     * Obtener estados únicos disponibles - CON CACHE
+     * 
+     * ✅ OPTIMIZACIÓN: Cache por 1 hora para evitar full table scan
      */
     public function obtenerEstados(): array
     {
-        \Log::info(' [ESTADOS] Obteniendo estados Ãºnicos');
+        // 🔥 Cache por 1 hora (3600 segundos)
+        return Cache::remember('pedidos_estados_list', 3600, function () {
+            if (app()->isLocal()) {
+                \Log::info('[ESTADOS] Obteniendo estados únicos');
+            }
 
-        $estados = PedidoProduccion::select('estado')
-            ->whereNotNull('estado')
-            ->distinct()
-            ->pluck('estado')
-            ->toArray();
+            $estados = PedidoProduccion::select('estado')
+                ->whereNotNull('estado')
+                ->distinct()
+                ->pluck('estado')
+                ->toArray();
 
-        \Log::info(' [ESTADOS] Encontrados', ['count' => count($estados), 'estados' => $estados]);
+            if (app()->isLocal()) {
+                \Log::info('[ESTADOS] Encontrados', ['count' => count($estados), 'estados' => $estados]);
+            }
 
-        return $estados;
+            return $estados;
+        });
     }
 
     /**

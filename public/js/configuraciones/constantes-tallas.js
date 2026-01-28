@@ -22,3 +22,6 @@ const CONSTANTES_TALLAS = {
     NUMEROS_DAMA: TALLAS_NUMEROS_DAMA,
     NUMEROS_CABALLERO: TALLAS_NUMEROS_CABALLERO
 };
+
+// Asignar a window para disponibilidad global (especialmente en carga dinámica)
+window.constantes_tallas = CONSTANTES_TALLAS;

@@ -180,14 +180,14 @@ class ProcesosEditor {
     obtenerCambios() {
         const cambiosFinales = {};
 
-        // Si hay cambio en ubicaciones
+        // Si hay cambio en ubicaciones - NORMALIZAR Y LIMPIAR
         if (this.cambios.ubicaciones !== null) {
-            cambiosFinales.ubicaciones = this.cambios.ubicaciones;
+            cambiosFinales.ubicaciones = this._normalizarUbicaciones(this.cambios.ubicaciones);
         }
 
-        // Si hay cambio en imágenes
+        // Si hay cambio en imágenes - NORMALIZAR Y LIMPIAR
         if (this.cambios.imagenes !== null) {
-            cambiosFinales.imagenes = this.cambios.imagenes;
+            cambiosFinales.imagenes = this._normalizarImagenes(this.cambios.imagenes);
         }
 
         // Si hay cambio en observaciones
@@ -207,6 +207,63 @@ class ProcesosEditor {
         });
 
         return cambiosFinales;
+    }
+
+    /**
+     * PRIVADO: Normalizar ubicaciones para evitar doble JSON encoding
+     * Convierte elementos JSON-encodados de vuelta a valores simples
+     * @private
+     */
+    _normalizarUbicaciones(ubicaciones) {
+        if (!Array.isArray(ubicaciones)) {
+            return ubicaciones;
+        }
+
+        return ubicaciones.map(ub => {
+            // Si es string que parece JSON (empieza con [ o {), intentar parsearlo
+            if (typeof ub === 'string' && (ub.startsWith('[') || ub.startsWith('{'))) {
+                try {
+                    const parsed = JSON.parse(ub);
+                    // Si parsea a array o objeto, extraer valor simple
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed[0]; // Tomar primer elemento
+                    } else if (typeof parsed === 'object' && parsed.ubicacion) {
+                        return parsed.ubicacion; // Extraer propiedad ubicacion
+                    }
+                } catch (e) {
+                    // Si no parsea, mantener como string original
+                }
+            }
+            
+            // Si es objeto con 'ubicacion', extraer valor
+            if (typeof ub === 'object' && ub !== null && ub.ubicacion) {
+                return ub.ubicacion;
+            }
+            
+            // Mantener como está
+            return ub;
+        }).filter(u => u && u.length > 0); // Filtrar vacíos
+    }
+
+    /**
+     * PRIVADO: Normalizar imágenes para evitar valores null/vacíos
+     * Filtra las imágenes válidas
+     * @private
+     */
+    _normalizarImagenes(imagenes) {
+        if (!Array.isArray(imagenes)) {
+            return [];
+        }
+
+        return imagenes
+            .map(img => {
+                // Si es string, limpiar y retornar
+                if (typeof img === 'string') {
+                    return img.trim();
+                }
+                return null;
+            })
+            .filter(img => img && img !== 'null' && img.length > 0); // Filtrar vacíos y "null"
     }
 
     /**

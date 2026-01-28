@@ -406,8 +406,75 @@ class PrendaPedidoEditController extends Controller
             // Obtener el proceso
             $proceso = $prenda->procesos()->findOrFail($procesoId);
 
+            // ============ FIX: PARSEAR FormData CON PATCH ============
+            // Cuando se envía FormData con PATCH desde fetch, PHP/Laravel a veces no parsea
+            // los parámetros correctamente.
+            // SOLUCIÓN: El cliente envía POST con _method=PATCH en el FormData
+            // Laravel lo reconoce automáticamente y routea a este método
+            // Necesitamos usar $request->all() que ya debería funcionar con POST + FormData
+            $inputData = $request->all();
+            
+            // Fallback: Si request->all() está vacío pero hay datos en $_POST, usarlos
+            if (empty($inputData) && !empty($_POST)) {
+                $inputData = $_POST;
+            }
+
+            // ============ LOG INICIAL ============
+            \Log::info('[PROCESOS-ACTUALIZAR-PATCH] Recibido PATCH (POST con _method)', [
+                'prenda_id' => $prendaId,
+                'proceso_id' => $procesoId,
+                'request_method' => $request->getMethod(),
+                'request_keys' => array_keys($inputData),
+                'ubicaciones' => $inputData['ubicaciones'] ?? 'NOT_SET',
+                'observaciones' => substr($inputData['observaciones'] ?? '', 0, 50),
+                'has_files' => $request->hasFile('imagenes_nuevas'),
+                'files_count' => count((array)$request->file('imagenes_nuevas') ?? []),
+                '_method' => $inputData['_method'] ?? 'NOT_SET'
+            ]);
+
+            // ============ NUEVO: PROCESAR IMÁGENES NUEVAS (FILES) DEL FORMDATA ============
+            $imagenesNuevasRutas = [];
+            if ($request->hasFile('imagenes_nuevas')) {
+                $files = $request->file('imagenes_nuevas');
+                if (!is_array($files)) {
+                    $files = [$files];
+                }
+                
+                \Log::info('[PROCESOS-ACTUALIZAR] Archivos de imágenes recibidos:', [
+                    'cantidad' => count($files),
+                    'archivos' => array_map(function($f) { return $f->getClientOriginalName() ?? 'unknown'; }, $files)
+                ]);
+                
+                $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
+                foreach ($files as $imagen) {
+                    if ($imagen && $imagen->isValid()) {
+                        try {
+                            $rutas = $procesoFotoService->procesarFoto($imagen);
+                            $imagenesNuevasRutas[] = $rutas['ruta_webp'] ?? $rutas;
+                            \Log::info('[PROCESOS-ACTUALIZAR] Imagen nueva de proceso procesada', [
+                                'archivo' => $imagen->getClientOriginalName(),
+                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::warning('[PROCESOS-ACTUALIZAR] Error procesando imagen nueva de proceso', [
+                                'error' => $e->getMessage(),
+                                'archivo' => $imagen->getClientOriginalName()
+                            ]);
+                        }
+                    }
+                }
+                
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes nuevas procesadas:', [
+                    'total' => count($imagenesNuevasRutas),
+                    'rutas' => $imagenesNuevasRutas
+                ]);
+            } else {
+                \Log::info('[PROCESOS-ACTUALIZAR] Sin archivos de imágenes en el request');
+            }
+
             // Limpieza y preparación de datos ANTES de validar
-            $data = $request->all();
+            // IMPORTANTE: Usar $inputData que ya fue parseado correctamente
+            $data = $inputData;
 
             // Decodificar ubicaciones si vienen como JSON string
             if (isset($data['ubicaciones']) && is_string($data['ubicaciones'])) {
@@ -419,6 +486,65 @@ class PrendaPedidoEditController extends Controller
                 } catch (\Exception $e) {
                     // Si no es JSON válido, mantener como está
                 }
+            }
+
+            // LOG: Confirmar que los datos se recibieron después del fix
+            \Log::info('[PROCESOS-ACTUALIZAR-PATCH] Datos después del FIX de parseo', [
+                'data_keys' => array_keys($data),
+                'ubicaciones_presente' => isset($data['ubicaciones']),
+                'observaciones_presente' => isset($data['observaciones']),
+                'ubicaciones_valor' => $data['ubicaciones'] ?? 'NULL',
+                'observaciones_valor' => substr($data['observaciones'] ?? '', 0, 100)
+            ]);
+
+            // ============ NUEVO: PROCESAR IMÁGENES EXISTENTES Y NUEVAS ============
+            $imagenesExistentes = [];
+            if (isset($data['imagenes_existentes']) && is_string($data['imagenes_existentes'])) {
+                try {
+                    $imagenesExistentes = json_decode($data['imagenes_existentes'], true) ?? [];
+                    if (!is_array($imagenesExistentes)) {
+                        $imagenesExistentes = [];
+                    }
+                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes existentes recuperadas', [
+                        'cantidad' => count($imagenesExistentes),
+                        'detalles' => $imagenesExistentes
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::warning('[PROCESOS-ACTUALIZAR] Error decodificando imágenes_existentes', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // ============ NUEVO: AGREGAR IMÁGENES NUEVAS A LA LISTA DE IMÁGENES ============
+            if (!empty($imagenesNuevasRutas) || !empty($imagenesExistentes)) {
+                $imagenesDeJSON = [];
+                if (isset($data['imagenes']) && is_string($data['imagenes'])) {
+                    try {
+                        $imagenesDeJSON = json_decode($data['imagenes'], true) ?? [];
+                    } catch (\Exception $e) {
+                        // Ignorar si no es JSON válido
+                    }
+                }
+                
+                // Combinar: existentes + nuevas + JSON
+                $todasLasImagenes = array_merge(
+                    $imagenesExistentes,  // Primero las existentes
+                    $imagenesNuevasRutas, // Luego las nuevas del upload
+                    $imagenesDeJSON       // Y las del JSON (por si acaso)
+                );
+                
+                // Eliminar duplicados manteniendo orden
+                $todasLasImagenes = array_unique($todasLasImagenes);
+                
+                $data['imagenes'] = array_values($todasLasImagenes); // Reindexar array
+                
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes combinadas', [
+                    'existentes' => count($imagenesExistentes),
+                    'nuevas' => count($imagenesNuevasRutas),
+                    'json' => count($imagenesDeJSON),
+                    'total' => count($data['imagenes'])
+                ]);
             }
 
             // Limpiar imágenes: convertir a strings, eliminar nulls/vacíos
@@ -461,6 +587,34 @@ class PrendaPedidoEditController extends Controller
                 $data['imagenes'] = $imagenesLimpias;
             }
 
+            // ============ FIX: DECODIFICAR JSON STRINGS ANTES DE VALIDAR ============
+            // Cuando se envía FormData, los JSON strings llegan como strings, no arrays
+            // Necesitamos decodificarlos ANTES de la validación
+            
+            // Decodificar tallas si es string
+            if (isset($data['tallas']) && is_string($data['tallas'])) {
+                try {
+                    $tallasDecodificadas = json_decode($data['tallas'], true);
+                    if (is_array($tallasDecodificadas)) {
+                        $data['tallas'] = $tallasDecodificadas;
+                    }
+                } catch (\Exception $e) {
+                    // Si no parsea, dejar como está
+                }
+            }
+            
+            // Decodificar imagenes si es string
+            if (isset($data['imagenes']) && is_string($data['imagenes'])) {
+                try {
+                    $imagenesDecodificadas = json_decode($data['imagenes'], true);
+                    if (is_array($imagenesDecodificadas)) {
+                        $data['imagenes'] = $imagenesDecodificadas;
+                    }
+                } catch (\Exception $e) {
+                    // Si no parsea, dejar como está
+                }
+            }
+
             // Validar manualmente con datos limpios (no usar $request->validate para evitar validar request original)
             $validator = \Validator::make($data, [
                 'tipo_proceso_id' => 'nullable|integer|exists:tipos_proceso,id',
@@ -488,10 +642,14 @@ class PrendaPedidoEditController extends Controller
 
             // Actualizar ubicaciones (REEMPLAZO completo, no merge)
             if (isset($validated['ubicaciones'])) {
-                $ubicacionesLimpias = array_filter($validated['ubicaciones']);
+                // Normalizar ubicaciones para evitar JSON doble-encodeado
+                $ubicacionesNormalizadas = $this->normalizarUbicaciones($validated['ubicaciones']);
+                
+                $ubicacionesLimpias = array_filter($ubicacionesNormalizadas);
                 $proceso->ubicaciones = json_encode($ubicacionesLimpias);
                 \Log::info('[PROCESOS-ACTUALIZAR] Ubicaciones actualizadas:', [
-                    'nuevas' => $ubicacionesLimpias
+                    'nuevas' => $ubicacionesLimpias,
+                    'json_final' => $proceso->ubicaciones
                 ]);
             }
 
@@ -509,15 +667,29 @@ class PrendaPedidoEditController extends Controller
             $proceso->save();
 
             // ============ ACTUALIZAR IMÁGENES (EN TABLA SEPARADA) ============
-            if (isset($validated['imagenes'])) {
+            if (isset($validated['imagenes']) && is_array($validated['imagenes'])) {
+                \Log::info('[PROCESOS-ACTUALIZAR] Procesando imágenes:', [
+                    'raw_imagenes' => $validated['imagenes'],
+                    'total_recibidas' => count($validated['imagenes'])
+                ]);
+
                 // Obtener imágenes actuales
                 $imagenesActuales = \DB::table('pedidos_procesos_imagenes')
                     ->where('proceso_prenda_detalle_id', $proceso->id)
                     ->pluck('ruta_webp')
                     ->toArray();
 
-                $imagenesNuevas = array_filter($validated['imagenes']);
-                
+                // Limpiar y filtrar imágenes: remover nulls, vacíos y strings "null"
+                $imagenesNuevas = array_values(array_filter($validated['imagenes'], function($img) {
+                    return !empty($img) && $img !== 'null' && is_string($img) && trim($img) !== '';
+                }));
+
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes después de filtrado:', [
+                    'actuales' => $imagenesActuales,
+                    'nuevas' => $imagenesNuevas,
+                    'total_nuevas' => count($imagenesNuevas)
+                ]);
+
                 // Eliminar SOLO las imágenes que ya no están en la nueva lista
                 $imagenesAEliminar = array_diff($imagenesActuales, $imagenesNuevas);
                 if (!empty($imagenesAEliminar)) {
@@ -525,6 +697,11 @@ class PrendaPedidoEditController extends Controller
                         ->where('proceso_prenda_detalle_id', $proceso->id)
                         ->whereIn('ruta_webp', $imagenesAEliminar)
                         ->delete();
+
+                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes eliminadas:', [
+                        'cantidad' => count($imagenesAEliminar),
+                        'rutas' => $imagenesAEliminar
+                    ]);
                 }
 
                 // Agregar SOLO las imágenes nuevas que no existen
@@ -535,11 +712,11 @@ class PrendaPedidoEditController extends Controller
                         ->max('orden') ?? 0;
 
                     foreach ($imagenesAAgregar as $idx => $ruta) {
-                        if ($ruta) {
+                        if ($ruta && is_string($ruta) && trim($ruta) !== '') {
                             \DB::table('pedidos_procesos_imagenes')->insert([
                                 'proceso_prenda_detalle_id' => $proceso->id,
                                 'ruta_original' => null,
-                                'ruta_webp' => $ruta,
+                                'ruta_webp' => trim($ruta),
                                 'orden' => $proximoOrden + $idx + 1,
                                 'es_principal' => 0,
                                 'created_at' => now(),
@@ -547,9 +724,14 @@ class PrendaPedidoEditController extends Controller
                             ]);
                         }
                     }
+
+                    \Log::info('[PROCESOS-ACTUALIZAR] Imágenes agregadas:', [
+                        'cantidad' => count($imagenesAAgregar),
+                        'rutas' => $imagenesAAgregar
+                    ]);
                 }
 
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes actualizadas:', [
+                \Log::info('[PROCESOS-ACTUALIZAR] Resumen imágenes:', [
                     'eliminadas' => count($imagenesAEliminar),
                     'agregadas' => count($imagenesAAgregar),
                     'total_final' => count($imagenesNuevas)
@@ -684,4 +866,79 @@ class PrendaPedidoEditController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Normalizar ubicaciones para evitar JSON doble-encodeado
+     * Convierte elementos JSON-encodados de vuelta a valores simples
+     * @private
+     */
+    private function normalizarUbicaciones(array $ubicaciones): array
+    {
+        $normalizadas = [];
+
+        foreach ($ubicaciones as $ub) {
+            $valor = $this->extraerValorUbicacion($ub);
+
+            // Agregar si no es vacío
+            if (!empty($valor) && is_string($valor) && trim($valor) !== '') {
+                $normalizadas[] = trim($valor);
+            }
+        }
+
+        return $normalizadas;
+    }
+
+    /**
+     * Extraer el valor simple de una ubicación (que puede ser JSON-encodeada)
+     * @private
+     */
+    private function extraerValorUbicacion($ub): ?string
+    {
+        // Si es string, limpiar comillas escapadas primero
+        if (is_string($ub)) {
+            // Remover comillas escapadas: "\"valor\"" → "valor"
+            $ub = preg_replace('/^["\\\\]*|["\\\\]*$/','', $ub);
+            $ub = trim($ub);
+        }
+
+        // Si es string que parece JSON
+        if (is_string($ub) && (strpos($ub, '[') === 0 || strpos($ub, '{') === 0)) {
+            return $this->parseJsonUbicacion($ub);
+        }
+
+        // Si es array con 'ubicacion', extraer valor
+        if (is_array($ub) && isset($ub['ubicacion'])) {
+            return (string)$ub['ubicacion'];
+        }
+
+        // Retornar como string
+        return is_string($ub) ? $ub : null;
+    }
+
+    /**
+     * Parsear ubicación que viene como JSON string
+     * @private
+     */
+    private function parseJsonUbicacion(string $jsonString): ?string
+    {
+        try {
+            $parsed = json_decode($jsonString, true);
+
+            // Si parsea a array, extraer primer elemento
+            if (is_array($parsed) && !empty($parsed)) {
+                return (string)$parsed[0];
+            }
+
+            // Si parsea a objeto, extraer propiedad ubicacion
+            if (is_array($parsed) && isset($parsed['ubicacion'])) {
+                return (string)$parsed['ubicacion'];
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            // Si no parsea, retornar null
+            return null;
+        }
+    }
 }
+

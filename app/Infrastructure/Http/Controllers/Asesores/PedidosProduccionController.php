@@ -851,17 +851,26 @@ class PedidosProduccionController
                 }
             }
 
-            // NUEVO: Procesar imágenes de procesos (anidadas en FormData)
+            // NUEVO: Procesar imágenes de procesos (vienen como files_proceso_*_*_*)
             $procesosConImagenes = [];
+            $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
             foreach ($allFiles as $key => $value) {
-                if (strpos($key, 'procesos[') === 0 && strpos($key, '][imagenes]') !== false) {
-                    if (is_array($value) && !empty($value)) {
-                        $procesoFotoService = new \App\Domain\Pedidos\Services\ProcesoFotoService();
-                        foreach ($value as $imagen) {
-                            if ($imagen && $imagen->isValid()) {
-                                $rutas = $procesoFotoService->procesarFoto($imagen);
-                                $procesosConImagenes[] = $rutas;
-                            }
+                // Buscar claves como: files_proceso_prendaIdx_procesoIdx_imgIdx
+                if (strpos($key, 'files_proceso_') === 0) {
+                    if ($value && $value->isValid()) {
+                        try {
+                            $rutas = $procesoFotoService->procesarFoto($value);
+                            $procesosConImagenes[] = $rutas;
+                            Log::info('[PedidosProduccionController] Imagen de proceso procesada', [
+                                'key' => $key,
+                                'archivo' => $value->getClientOriginalName(),
+                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error procesando imagen de proceso', [
+                                'key' => $key,
+                                'error' => $e->getMessage()
+                            ]);
                         }
                     }
                 }

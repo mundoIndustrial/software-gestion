@@ -122,13 +122,27 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
+        // 🔍 DEBUG: Log detallado de lo que se recibe
+        \Log::info('[ActualizarPrendaCompletaUseCase] actualizarFotos - Iniciando', [
+            'prenda_id' => $prenda->id,
+            'dto->fotos' => $dto->fotos,
+            'es_null' => is_null($dto->fotos),
+            'es_empty' => empty($dto->fotos),
+            'cantidad_fotos' => is_array($dto->fotos) ? count($dto->fotos) : 'N/A'
+        ]);
+        
         // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotos)) {
+            \Log::info('[ActualizarPrendaCompletaUseCase] fotos es NULL - NO MODIFICAR imágenes existentes');
             return;
         }
 
         if (empty($dto->fotos)) {
-            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
+            // Si viene array vacío, es intención explícita de eliminar TODO
+            \Log::info('[ActualizarPrendaCompletaUseCase] fotos es array VACÍO - ELIMINAR todas las imágenes', [
+                'prenda_id' => $prenda->id,
+                'fotosActuales' => $prenda->fotos()->count()
+            ]);
             $prenda->fotos()->delete();
             return;
         }
@@ -291,6 +305,9 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
+        // 🗑️ RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
+        $telaIdsEnPayload = [];
+        
         // ✅ MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->coloresTelas as $colorTela) {
             $colorId = $colorTela['color_id'] ?? null;
@@ -320,6 +337,7 @@ final class ActualizarPrendaCompletaUseCase
                         'tela_id' => $telaId,
                         'referencia' => $referencia
                     ]);
+                    $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
                 }
             } 
             // ✅ CREATE: Si NO viene con ID, crear nueva relación
@@ -331,14 +349,22 @@ final class ActualizarPrendaCompletaUseCase
                     ->first();
                 
                 if (!$existente) {
-                    $prenda->coloresTelas()->create([
+                    $nueva = $prenda->coloresTelas()->create([
                         'color_id' => $colorId,
                         'tela_id' => $telaId,
                         'referencia' => $referencia
                     ]);
+                    $telaIdsEnPayload[] = $nueva->id;  // 📍 Guardar ID de la nueva tela
+                } else {
+                    $telaIdsEnPayload[] = $existente->id;  // 📍 Guardar ID de la existente
                 }
             }
         }
+        
+        // 🗑️ ELIMINAR TELAS QUE NO ESTÁN EN EL PAYLOAD (FUERON ELIMINADAS POR EL USUARIO)
+        $prenda->coloresTelas()
+            ->whereNotIn('id', $telaIdsEnPayload)
+            ->delete();
     }
 
     private function obtenerOCrearColor(string $nombreColor): ?int

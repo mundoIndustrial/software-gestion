@@ -121,13 +121,54 @@ final class ActualizarPrendaPedidoUseCase
             return;
         }
 
-        $prenda->coloresTelas()->delete();
+        // 🗑️ RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
+        $telaIdsEnPayload = [];
+        
+        // ✅ MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->coloresTelas as $colorTela) {
-            $prenda->coloresTelas()->create([
-                'color_id' => $colorTela['color_id'] ?? null,
-                'tela_id' => $colorTela['tela_id'] ?? null,
-            ]);
+            $colorId = $colorTela['color_id'] ?? null;
+            $telaId = $colorTela['tela_id'] ?? null;
+            $id = $colorTela['id'] ?? null;  // ID de relación existente
+            
+            if (!$colorId || !$telaId) {
+                continue;
+            }
+            
+            // ✅ UPDATE: Si viene con ID, actualizar relación existente
+            if ($id) {
+                $colorTelaExistente = $prenda->coloresTelas()->where('id', $id)->first();
+                if ($colorTelaExistente) {
+                    $colorTelaExistente->update([
+                        'color_id' => $colorId,
+                        'tela_id' => $telaId,
+                    ]);
+                    $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
+                }
+            } 
+            // ✅ CREATE: Si NO viene con ID, crear nueva relación
+            else {
+                // Verificar si ya existe esta combinación
+                $existente = $prenda->coloresTelas()
+                    ->where('color_id', $colorId)
+                    ->where('tela_id', $telaId)
+                    ->first();
+                
+                if (!$existente) {
+                    $nueva = $prenda->coloresTelas()->create([
+                        'color_id' => $colorId,
+                        'tela_id' => $telaId,
+                    ]);
+                    $telaIdsEnPayload[] = $nueva->id;  // 📍 Guardar ID de la nueva tela
+                } else {
+                    $telaIdsEnPayload[] = $existente->id;  // 📍 Guardar ID de la existente
+                }
+            }
         }
+        
+        // 🗑️ ELIMINAR TELAS QUE NO ESTÁN EN EL PAYLOAD (FUERON ELIMINADAS POR EL USUARIO)
+        $prenda->coloresTelas()
+            ->whereNotIn('id', $telaIdsEnPayload)
+            ->delete();
     }
 
     private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaPedidoDTO $dto): void

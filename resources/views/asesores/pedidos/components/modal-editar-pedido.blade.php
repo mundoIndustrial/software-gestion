@@ -6,7 +6,17 @@
      * @param {object} datosCompletos - Datos del pedido
      * @param {string} modo - 'editar' (con botones) o 'ver' (solo lectura)
      */
-    function abrirModalEditarPedido(pedidoId, datosCompletos, modo = 'editar') {
+    async function abrirModalEditarPedido(pedidoId, datosCompletos, modo = 'editar') {
+        console.log('[🔍 abrirModalEditarPedido] Iniciando... Pedido:', pedidoId);
+        console.log('[🔍 Swal disponible?:', typeof Swal !== 'undefined');
+        
+        // 🔥 IMPORTANTE: Esperar a que Swal esté disponible
+        if (typeof Swal === 'undefined') {
+            console.log('[⏳ Esperando a que Swal cargue...]');
+            await _ensureSwal();
+            console.log('[✅ Swal ya está disponible]');
+        }
+        
         // Guardar datos en variable global
         window.datosEdicionPedido = datosCompletos;
         
@@ -47,51 +57,69 @@
             </div>
         `;
         
-        UI.contenido({
+        console.log('[🔍 abrirModalEditarPedido] HTML generado');
+        
+        // Usar Swal.fire() directamente en lugar de UI.contenido()
+        // para evitar el centrado vertical que corta el modal
+        return Swal.fire({
             html: htmlConHeader,
-            ancho: '1150px',
+            width: '1150px',
             showConfirmButton: false,
             allowOutsideClick: true,
             allowEscapeKey: true,
             didOpen: (modal) => {
+                console.log('[✅ abrirModalEditarPedido] Modal abierto correctamente en Swal');
+                
+                // 🔥 Inicializar servicio de almacenamiento de imágenes si no existe
+                if (!window.imagenesPrendaStorage) {
+                    console.log('[🔧 Inicializando ImageStorageService...]');
+                    window.imagenesPrendaStorage = new ImageStorageService(3);
+                    console.log('[✅ ImageStorageService inicializado]');
+                }
+                
+                // 🔥 FIX: Centrar el modal en la página
+                const swalContainer = document.querySelector('.swal2-container');
+                if (swalContainer) {
+                    // Forzar display flex y centrado - z-index muy alto para estar siempre al frente
+                    swalContainer.style.cssText = 'display: flex !important; align-items: center !important; justify-content: center !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 9999999 !important;';
+                    
+                    // 🔍 LOGS de debug
+                    console.log('[🔍 Container CSS aplicado]');
+                    const computedStyle = window.getComputedStyle(swalContainer);
+                    console.log('  display:', computedStyle.display);
+                    console.log('  alignItems:', computedStyle.alignItems);
+                    console.log('  justifyContent:', computedStyle.justifyContent);
+                    console.log('  z-index:', computedStyle.zIndex);
+                    console.log('[✅ Container configurado]');
+                }
+                
                 const swalPopup = document.querySelector('.swal2-popup');
                 if (swalPopup) {
-                    swalPopup.style.padding = '0';
-                    swalPopup.style.borderRadius = '6px';
-                    swalPopup.style.fontSize = '11px !important';
+                    // Forzar que sea visible con display block
+                    swalPopup.style.cssText = 'display: flex !important; flex-direction: column !important; position: static !important; max-height: 95vh !important; overflow-y: auto !important; padding: 0 !important; margin: 0 !important;';
+                    
+                    // 🔍 LOGS del popup
+                    console.log('[🔍 Popup CSS aplicado]');
+                    const popupComputed = window.getComputedStyle(swalPopup);
+                    console.log('  display:', popupComputed.display);
+                    console.log('  position:', popupComputed.position);
+                    console.log('[✅ Popup configurado]');
                 }
+                
                 const swalHtmlContainer = document.querySelector('.swal2-html-container');
                 if (swalHtmlContainer) {
                     swalHtmlContainer.style.padding = '0';
                     swalHtmlContainer.style.margin = '0';
-                    swalHtmlContainer.style.fontSize = '11px !important';
+                    swalHtmlContainer.style.overflow = 'visible';
                 }
                 
-                // Aplicar 11px a todos los elementos del modal CON !important
-                const allElements = document.querySelectorAll('.swal2-popup *');
-                allElements.forEach(el => {
-                    el.style.setProperty('font-size', '11px', 'important');
-                });
+                // Prevenir scroll del body
+                document.body.style.overflow = 'hidden';
                 
-                // Agregar CSS global con !important para TD, TH, etc.
-                if (!document.getElementById('modal-editar-pedido-styles')) {
-                    const style = document.createElement('style');
-                    style.id = 'modal-editar-pedido-styles';
-                    style.textContent = `
-                        .swal2-popup * {
-                            font-size: 11px !important;
-                        }
-                        .swal2-popup table td,
-                        .swal2-popup table th {
-                            font-size: 11px !important;
-                        }
-                        .swal2-popup button,
-                        .swal2-popup h3 {
-                            font-size: 11px !important;
-                        }
-                    `;
-                    document.head.appendChild(style);
-                }
+                console.log('[✅ abrirModalEditarPedido] Configuración completada');
+            },
+            willClose: () => {
+                document.body.style.overflow = '';
             }
         });
     }

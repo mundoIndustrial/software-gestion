@@ -530,16 +530,6 @@ function capturarPrendas() {
             let colorCapturado = prenda.color || variantes.color || '';
             let refCapturada = prenda.ref || '';
             
-            // DEBUG: Verificar qué se está capturando
-            console.log('[CAPTURA-TELA-COLOR] Prenda:', prenda.nombre, {
-                telaServidor: prenda.tela,
-                colorServidor: prenda.color,
-                refServidor: prenda.ref,
-                telaCapturada,
-                colorCapturado,
-                refCapturada
-            });
-            
             if (!refCapturada || !telaCapturada || !colorCapturado) {
                 if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
                     const primeTela = prenda.telasAgregadas[0];
@@ -794,17 +784,11 @@ function crearModalPreviewFactura(datos) {
     
     document.body.appendChild(modal);
     
-    // Log previo
-    console.log('[INVOICE-MODAL] Modal agregado al DOM');
-    console.log('[INVOICE-MODAL] Tipo de registrarFontSizesFactura:', typeof registrarFontSizesFactura);
-    console.log('[INVOICE-MODAL] Llamando registrarFontSizesFactura...');
-    
     try {
         // Registrar los font-sizes de la factura
         registrarFontSizesFactura();
-        console.log('[INVOICE-MODAL] registrarFontSizesFactura() ejecutada sin errores');
     } catch (e) {
-        console.error('[INVOICE-MODAL] Error al llamar registrarFontSizesFactura:', e);
+        // Ignorar errores de logging
     }
     
     // Cerrar al hacer click en el fondo
@@ -813,8 +797,6 @@ function crearModalPreviewFactura(datos) {
             modal.remove();
         }
     });
-    
-
 }
 
 /**
@@ -828,30 +810,18 @@ function registrarFontSizesFactura() {
  * Genera el HTML de la factura con los datos en tiempo real
  */
 function generarHTMLFactura(datos) {
-    // Validar que datos y prendas existan
-    if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
+    try {
+        // Validar que datos y prendas existan
+        if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
 
-        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
-    }
+            return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido. Estructura de datos inválida.</div>';
+        }
 
-    // Si no hay prendas, mostrar mensaje
-    if (datos.prendas.length === 0) {
+        // Si no hay prendas, mostrar mensaje
+        if (datos.prendas.length === 0) {
 
-        return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
-    }
-    
-    // LOG CRÍTICO: Verificar telas_array en cada prenda
-    console.log('[generarHTMLFactura] ⚠️ PRENDAS RECIBIDAS:');
-    datos.prendas.forEach((prenda, idx) => {
-        console.log(`[generarHTMLFactura] Prenda ${idx}: ${prenda.nombre}`, {
-            telas_array_existe: !!prenda.telas_array,
-            telas_array_length: prenda.telas_array ? prenda.telas_array.length : 0,
-            telas_array_content: prenda.telas_array,
-            tela_simple: prenda.tela,
-            color_simple: prenda.color,
-            ref_simple: prenda.ref,
-        });
-    });
+            return '<div style="color: #f59e0b; padding: 1rem; border: 1px solid #fed7aa; border-radius: 6px; background: #fffbeb;"> Advertencia: El pedido no contiene prendas.</div>';
+        }
     
     // Generar las tarjetas de prendas con todos los detalles
     const prendasHTML = datos.prendas.map((prenda, idx) => {
@@ -1114,12 +1084,6 @@ function generarHTMLFactura(datos) {
                 // Renderizar tallas del proceso (estructura relacional: { GENERO: { TALLA: CANTIDAD } })
                 let tallasProcHTML = '';
                 
-                console.log('[FACTURA-PROCESO] Tallas del proceso:', {
-                    nombre: proc.tipo_proceso?.nombre || proc.tipoProceso?.nombre || proc.tipo,
-                    tallas_estructura: proc.tallas,
-                    tallas_keys: proc.tallas ? Object.keys(proc.tallas) : []
-                });
-                
                 if (proc.tallas && Object.keys(proc.tallas).length > 0) {
                     // Por género - FILTRAR géneros vacíos
                     const generosConTallasProc = Object.entries(proc.tallas).filter(([gen, tallasObj]) => 
@@ -1379,6 +1343,9 @@ function generarHTMLFactura(datos) {
             ` : ''}
         </div>
     `;
+    } catch (error) {
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error generando factura: ' + error.message + '</div>';
+    }
 }
 
 /**
@@ -1400,11 +1367,3 @@ function guardarComoHTML(nombreArchivo) {
     
 
 }
-
-// ========================================
-// AGREGAR BOTÓN A FORMULARIO
-// ========================================
-
-/**
- * Agregar botón de vista previa al formulario
- */

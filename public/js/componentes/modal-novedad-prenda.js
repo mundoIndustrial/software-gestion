@@ -40,12 +40,16 @@ class ModalNovedadPrenda {
         this.pedidoId = pedidoId;
         this.prendaData = prendaData;
 
+        // 🔧 CRÍTICO: Inicializar window.imagenesPrendaStorage limpio para prenda NUEVA
+        if (window.imagenesPrendaStorage) {
+            window.imagenesPrendaStorage.limpiar();
+            console.log('[modal-novedad-prenda] ✅ [INIT-SYNC] window.imagenesPrendaStorage limpiado para nueva prenda');
+        }
+
         return new Promise((resolve) => {
             const html = `
                 <div style="text-align: left;">
-                    <p style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
-                        <strong>📝 Registra una novedad del cambio</strong>
-                    </p>
+                   
                     <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.875rem;">
                         Explica qué cambios se están realizando en este pedido:
                     </p>
@@ -161,12 +165,29 @@ class ModalNovedadPrenda {
             formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
             formData.append('novedad', novedad);  // AGREGAR NOVEDAD
             
+            // 🔧 FIX: Obtener imágenes ACTUALIZADAS desde window.imagenesPrendaStorage (que incluye eliminaciones)
+            // NO desde this.prendaData.imagenes que es estático
+            let imagenesActuales = this.prendaData.imagenes || [];
+            
+            // Si existen imágenes en el storage (editadas por el usuario), usar esas
+            if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
+                const imagenesDelStorage = window.imagenesPrendaStorage.obtenerImagenes();
+                if (imagenesDelStorage && imagenesDelStorage.length > 0) {
+                    console.log('[modal-novedad-prenda] ✅ Usando imágenes del storage (incluye eliminaciones):', imagenesDelStorage.length);
+                    imagenesActuales = imagenesDelStorage;
+                } else if (imagenesDelStorage && imagenesDelStorage.length === 0) {
+                    // El usuario eliminó todas las imágenes
+                    console.log('[modal-novedad-prenda] ⚠️ El usuario eliminó todas las imágenes');
+                    imagenesActuales = [];
+                }
+            }
+            
             // Agregar imágenes de prenda - separar nuevas de existentes
             const imagenesNuevas = [];
             const imagenesDB = [];
             
-            if (this.prendaData.imagenes && this.prendaData.imagenes.length > 0) {
-                this.prendaData.imagenes.forEach((img, idx) => {
+            if (imagenesActuales && imagenesActuales.length > 0) {
+                imagenesActuales.forEach((img, idx) => {
                     if (img instanceof File) {
                         imagenesNuevas.push(img);
                         formData.append(`imagenes[${imagenesNuevas.length - 1}]`, img);
@@ -176,13 +197,30 @@ class ModalNovedadPrenda {
                             previewUrl: img.previewUrl,
                             nombre: img.nombre
                         });
+                    } else if (img && (img.url || img.ruta_webp || img.ruta_original)) {
+                        // Imagen URL (desde BD o precargada) - preservarla
+                        const urlImagen = img.url || img.ruta_webp || img.ruta_original;
+                        imagenesDB.push({
+                            previewUrl: urlImagen,
+                            nombre: img.nombre || ''
+                        });
                     }
                 });
             }
             
+            console.log('[modal-novedad-prenda] 📊 Resumen de imágenes a guardar:', {
+                imagenesNuevas: imagenesNuevas.length,
+                imagenesExistentes: imagenesDB.length,
+                total: imagenesActuales.length
+            });
+            
             // Enviar imágenes existentes como JSON para que backend las preserve
             if (imagenesDB.length > 0) {
                 formData.append('imagenes_existentes', JSON.stringify(imagenesDB));
+            } else if (imagenesDB.length === 0 && imagenesActuales.length === 0) {
+                // Si no hay imágenes (el usuario las eliminó), enviar array vacío
+                // Esto le indica al backend que quita todas las imágenes
+                formData.append('imagenes_existentes', JSON.stringify([]));
             }
             
             // Agregar telas

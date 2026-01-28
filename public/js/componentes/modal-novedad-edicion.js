@@ -41,8 +41,8 @@ class ModalNovedadEdicion {
     }
 
     /**
-     * Construir novedad con información de usuario, fecha/hora y razón
-     * Mismo formato que OperarioController: [usuario - DD-MM-YYYY HH:MM:SS] descripción
+     * Construir novedad con información de usuario, rol, fecha/hora y razón
+     * Formato: [usuario (rol) - DD-MM-YYYY HH:MM:SS] descripción
      * @private
      */
     construirNovedadConMetadata(razonDelCambio) {
@@ -62,8 +62,11 @@ class ModalNovedadEdicion {
         const segundos = String(ahora.getSeconds()).padStart(2, '0');
         const hora = `${horas}:${minutos}:${segundos}`;
         
-        // Formato: [usuario - DD-MM-YYYY HH:MM:SS] descripción
-        const novedad = `[${usuarioActual.nombre} - ${fecha} ${hora}] ${razonDelCambio}`;
+        // Obtener rol formateado (convertir a minúsculas sin espacios para consistencia)
+        const rol = (usuarioActual.rol || 'sin-rol').toLowerCase().replace(/\s+/g, '-');
+        
+        // Formato: [usuario (rol) - DD-MM-YYYY HH:MM:SS] descripción
+        const novedad = `[${usuarioActual.nombre} (${rol}) - ${fecha} ${hora}] ${razonDelCambio}`;
         return novedad;
     }
 
@@ -81,12 +84,27 @@ class ModalNovedadEdicion {
         this.prendaData = prendaData;
         this.prendaIndex = prendaIndex;
 
+        // 🔧 CRÍTICO: Inicializar window.imagenesPrendaStorage con las imágenes ACTUALES de la prenda
+        // Esto asegura que cuando la galería se abre, tenga las imágenes correctas
+        console.log('[modal-novedad-edicion] 🔍 DEBUG prendaData.imagenes:', {
+            existe: !!prendaData.imagenes,
+            esArray: Array.isArray(prendaData.imagenes),
+            cantidad: prendaData.imagenes?.length || 0,
+            datos: prendaData.imagenes
+        });
+        
+        if (window.imagenesPrendaStorage && prendaData && prendaData.imagenes) {
+            // Limpiar el storage antes de cargar nuevas imágenes
+            window.imagenesPrendaStorage.limpiar();
+            
+            // Establecer las imágenes de la prenda actual
+            window.imagenesPrendaStorage.establecerImagenes(prendaData.imagenes);
+            console.log('[modal-novedad-edicion] ✅ [INIT-SYNC] window.imagenesPrendaStorage inicializado con', prendaData.imagenes.length, 'imágenes');
+        }
+
         return new Promise((resolve) => {
             const html = `
                 <div style="text-align: left;">
-                    <p style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
-                        <strong>📝 Registra una novedad del cambio</strong>
-                    </p>
                     <textarea id="modalNovedadEdicion" placeholder="Ej: Se cambió el color a rojo..." 
                               style="width: 100%; padding: 0.75rem; border: 2px solid #3b82f6; border-radius: 6px; 
                                      font-size: 0.95rem; min-height: 120px; font-family: inherit; resize: vertical;"></textarea>
@@ -103,10 +121,40 @@ class ModalNovedadEdicion {
                 showCancelButton: true,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
+                position: 'center',
                 didOpen: () => {
+                    console.log('🔔 [MODAL-NOVEDAD] didOpen iniciado');
                     this.forzarZIndexMaximo();
                     const textarea = document.getElementById('modalNovedadEdicion');
                     if (textarea) textarea.focus();
+                    
+                    // 🔝 Asegurar que el modal esté centrado
+                    const swalContainer = document.querySelector('.swal2-container');
+                    const swalPopup = document.querySelector('.swal2-popup');
+                    
+                    console.log('🔔 [MODAL-NOVEDAD] swalContainer existe?:', !!swalContainer);
+                    console.log('🔔 [MODAL-NOVEDAD] swalPopup existe?:', !!swalPopup);
+                    
+                    if (swalContainer) {
+                        swalContainer.style.display = 'flex';
+                        swalContainer.style.alignItems = 'center';
+                        swalContainer.style.justifyContent = 'center';
+                        swalContainer.style.position = 'fixed';
+                        swalContainer.style.top = '0';
+                        swalContainer.style.left = '0';
+                        swalContainer.style.width = '100%';
+                        swalContainer.style.height = '100%';
+                        
+                        console.log('🔔 [MODAL-NOVEDAD] Estilos aplicados a container:');
+                        console.log('   - display:', window.getComputedStyle(swalContainer).display);
+                        console.log('   - position:', window.getComputedStyle(swalContainer).position);
+                        console.log('   - alignItems:', window.getComputedStyle(swalContainer).alignItems);
+                    }
+                    if (swalPopup) {
+                        swalPopup.style.position = 'relative';
+                        console.log('🔔 [MODAL-NOVEDAD] Position del popup:', window.getComputedStyle(swalPopup).position);
+                        console.log('🔔 [MODAL-NOVEDAD] Size del popup:', swalPopup.offsetWidth + 'x' + swalPopup.offsetHeight);
+                    }
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
@@ -368,12 +416,29 @@ class ModalNovedadEdicion {
 
             formData.append('prenda_id', prendaIdInt);
             
+            // 🔧 FIX: Obtener imágenes ACTUALIZADAS desde window.imagenesPrendaStorage (que incluye eliminaciones)
+            // NO desde this.prendaData.imagenes que es estático
+            let imagenesActuales = this.prendaData.imagenes || [];
+            
+            // Si existen imágenes en el storage (editadas por el usuario), usar esas
+            if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
+                const imagenesDelStorage = window.imagenesPrendaStorage.obtenerImagenes();
+                if (imagenesDelStorage && imagenesDelStorage.length > 0) {
+                    console.log('[modal-novedad-edicion] ✅ Usando imágenes del storage (incluye eliminaciones):', imagenesDelStorage.length);
+                    imagenesActuales = imagenesDelStorage;
+                } else if (imagenesDelStorage && imagenesDelStorage.length === 0) {
+                    // El usuario eliminó todas las imágenes
+                    console.log('[modal-novedad-edicion] ⚠️ El usuario eliminó todas las imágenes');
+                    imagenesActuales = [];
+                }
+            }
+            
             // Separar imágenes nuevas (File objects) de imágenes existentes (DB)
             const imagenesNuevas = [];
             const imagenesDB = [];
             
-            if (this.prendaData.imagenes && this.prendaData.imagenes.length > 0) {
-                this.prendaData.imagenes.forEach((img, idx) => {
+            if (imagenesActuales && imagenesActuales.length > 0) {
+                imagenesActuales.forEach((img, idx) => {
                     if (img instanceof File) {
                         imagenesNuevas.push(img);
                         formData.append(`imagenes[${imagenesNuevas.length - 1}]`, img);
@@ -383,13 +448,30 @@ class ModalNovedadEdicion {
                             previewUrl: img.previewUrl,
                             nombre: img.nombre
                         });
+                    } else if (img && (img.url || img.ruta_webp || img.ruta_original)) {
+                        // Imagen URL (desde BD o precargada) - preservarla
+                        const urlImagen = img.url || img.ruta_webp || img.ruta_original;
+                        imagenesDB.push({
+                            previewUrl: urlImagen,
+                            nombre: img.nombre || ''
+                        });
                     }
                 });
             }
             
+            console.log('[modal-novedad-edicion] 📊 Resumen de imágenes a guardar:', {
+                imagenesNuevas: imagenesNuevas.length,
+                imagenesExistentes: imagenesDB.length,
+                total: imagenesActuales.length
+            });
+            
             // Enviar imágenes existentes como JSON para que backend las preserve
             if (imagenesDB.length > 0) {
                 formData.append('imagenes_existentes', JSON.stringify(imagenesDB));
+            } else if (imagenesDB.length === 0 && imagenesActuales.length === 0) {
+                // Si no hay imágenes (el usuario las eliminó), enviar array vacío
+                // Esto le indica al backend que quita todas las imágenes
+                formData.append('imagenes_existentes', JSON.stringify([]));
             }
             
 
@@ -404,25 +486,167 @@ class ModalNovedadEdicion {
                 // Ejecutar PATCH de cada proceso de forma secuencial
                 for (const procesoEditado of procesosEditados) {
                     try {
+                        const prendaIdInt = parseInt(this.prendaData.prenda_pedido_id || this.prendaData.id);
+                        
+                        // ✅ Determinar si hay cambios (incluyendo imágenes)
+                        const tieneImagenesNuevas = window.imagenesProcesoActual?.some(img => img instanceof File);
+                        const tieneImagenesExistentes = window.imagenesProcesoExistentes?.length > 0;
+                        const tieneCambiosOtros = Object.keys(procesoEditado.cambios || {}).length > 0;
+                        
+                        // ✅ FIX: Incluir ubicaciones y observaciones actuales en la verificación
+                        const tieneUbicacionesActuales = window.ubicacionesProcesoSeleccionadas?.length > 0;
+                        const obsTextarea = document.getElementById('proceso-observaciones');
+                        const tieneObservacionesActuales = obsTextarea?.value?.trim?.() ? true : false;
+                        
+                        const hayAlgunCambio = tieneCambiosOtros || tieneImagenesNuevas || tieneImagenesExistentes || 
+                                               tieneUbicacionesActuales || tieneObservacionesActuales;
+                        
                         console.log('[modal-novedad-edicion] 📤 Enviando PATCH para proceso:', {
                             prendaId: prendaIdInt,
                             procesoId: procesoEditado.id,
-                            cambios: procesoEditado.cambios
+                            cambios: procesoEditado.cambios,
+                            tieneImagenesNuevas,
+                            tieneImagenesExistentes,
+                            tieneUbicacionesActuales,
+                            tieneObservacionesActuales,
+                            tieneCambiosOtros,
+                            hayAlgunCambio,
+                            ubicacionesSeleccionadas: window.ubicacionesProcesoSeleccionadas?.length || 0,
+                            observacionesValor: obsTextarea?.value?.substring?.(0, 50) || 'vacío'
                         });
                         
+                        // Si no hay cambios de ningún tipo, saltar este proceso
+                        if (!hayAlgunCambio) {
+                            console.log('[modal-novedad-edicion] ℹ️ Sin cambios para este proceso, saltando PATCH');
+                            continue;
+                        }
+                        
+                        
+                        // ✅ CAMBIO: Usar FormData en lugar de JSON para permitir subir archivos
+                        const patchFormData = new FormData();
+                        
+                        // ✅ FIX CRITICAL: Agregar _method=PATCH para que Laravel parsee FormData correctamente
+                        // Cuando se envía FormData con PATCH, Laravel/PHP no lo parsea. 
+                        // Solución: enviar como POST con _method=PATCH en el FormData
+                        patchFormData.append('_method', 'PATCH');
+                        
+                        // ✅ FIX: Incluir datos ACTUALES del proceso, no solo "cambios"
+                        // Esto asegura que las ubicaciones y observaciones se envíen siempre
+                        
+                        // Ubicaciones: usar las del cambio si existen, sino usar las actuales de window
+                        let ubicacionesAEnviar = procesoEditado.cambios.ubicaciones || 
+                                                 window.ubicacionesProcesoSeleccionadas || 
+                                                 [];
+                        
+                        // ✅ IMPORTANTE: Limpiar ubicaciones de comillas escapadas
+                        // Si es un string, parsearlo
+                        if (typeof ubicacionesAEnviar === 'string') {
+                            try {
+                                ubicacionesAEnviar = JSON.parse(ubicacionesAEnviar);
+                            } catch (e) {
+                                ubicacionesAEnviar = [ubicacionesAEnviar];
+                            }
+                        }
+                        // Asegurar que es array
+                        if (!Array.isArray(ubicacionesAEnviar)) {
+                            ubicacionesAEnviar = [];
+                        }
+                        
+                        // Limpiar cada ubicación de comillas escapadas
+                        ubicacionesAEnviar = ubicacionesAEnviar.map(u => {
+                            if (typeof u === 'string') {
+                                // Remover comillas escapadas: "\"valor\"" → "valor"
+                                return u.replace(/^["\\]*|["\\]*$/g, '').trim();
+                            }
+                            return u;
+                        }).filter(u => u && u.length > 0);
+                        
+                        if (ubicacionesAEnviar && ubicacionesAEnviar.length > 0) {
+                            console.log('[modal-novedad-edicion] 🔍 Ubicaciones ANTES de stringify:', {
+                                tipo: typeof ubicacionesAEnviar,
+                                esArray: Array.isArray(ubicacionesAEnviar),
+                                contenido: ubicacionesAEnviar,
+                                limpias: true
+                            });
+                            // Enviar ubicaciones como array individual (NO stringify)
+                            ubicacionesAEnviar.forEach((ub, idx) => {
+                                patchFormData.append(`ubicaciones[${idx}]`, ub);
+                            });
+                            console.log('[modal-novedad-edicion] 📍 Ubicaciones añadidas al PATCH (limpias):', ubicacionesAEnviar);
+                        }
+                        
+                        // Observaciones: usar las del cambio si existen, sino intentar del DOM
+                        const observacionesAEnviar = procesoEditado.cambios.observaciones || 
+                                                     (obsTextarea?.value) || 
+                                                     '';
+                        if (observacionesAEnviar) {
+                            patchFormData.append('observaciones', observacionesAEnviar);
+                            console.log('[modal-novedad-edicion] 📝 Observaciones añadidas al PATCH:', observacionesAEnviar);
+                        }
+                        
+                        // Tallas: usar las del cambio si existen
+                        if (procesoEditado.cambios.tallas) {
+                            patchFormData.append('tallas', JSON.stringify(procesoEditado.cambios.tallas));
+                        }
+                        
+                        // Imágenes: usar las del cambio si existen
+                        if (procesoEditado.cambios.imagenes) {
+                            patchFormData.append('imagenes', JSON.stringify(procesoEditado.cambios.imagenes));
+                        }
+                        
+                        // ✅ Incluir imágenes existentes (URLs) si las hay
+                        if (window.imagenesProcesoExistentes && Array.isArray(window.imagenesProcesoExistentes) && window.imagenesProcesoExistentes.length > 0) {
+                            console.log(`[modal-novedad-edicion] 🖼️ Imágenes existentes encontradas:`, window.imagenesProcesoExistentes);
+                            patchFormData.append('imagenes_existentes', JSON.stringify(window.imagenesProcesoExistentes));
+                        }
+                        
+                        // ✅ Incluir archivos nuevos de imágenes de proceso desde window.imagenesProcesoActual
+                        if (window.imagenesProcesoActual && Array.isArray(window.imagenesProcesoActual)) {
+                            const imagenesNuevasCount = window.imagenesProcesoActual.filter(img => img instanceof File).length;
+                            console.log(`[modal-novedad-edicion] 📎 Imágenes nuevas a procesar:`, imagenesNuevasCount);
+                            
+                            window.imagenesProcesoActual.forEach((img, idx) => {
+                                if (img instanceof File) {
+                                    console.log(`[modal-novedad-edicion] 📎 Agregando archivo de proceso al FormData:`, {
+                                        indice: idx,
+                                        nombre: img.name,
+                                        tamano: img.size
+                                    });
+                                    // ✅ FIX: Usar nombre simple 'imagenes_nuevas' en lugar de índices con corchetes
+                                    // FormData maneja mejor esto automáticamente
+                                    patchFormData.append('imagenes_nuevas', img);
+                                }
+                            });
+                        }
+                        
                         const patchResponse = await fetch(`/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`, {
-                            method: 'PATCH',
+                            method: 'POST',  // ✅ FIX: Usar POST en lugar de PATCH, Laravel lo procesará con _method=PATCH
                             headers: {
-                                'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                             },
-                            body: JSON.stringify(procesoEditado.cambios)
+                            body: patchFormData
                         });
                         
                         const patchResult = await patchResponse.json();
                         
                         if (!patchResponse.ok) {
-                            throw new Error(`Error PATCH: ${patchResult.message || 'Desconocido'}`);
+                            // Log detallado de error
+                            console.error('[modal-novedad-edicion] 🚨 Error 422 del servidor:', {
+                                status: patchResponse.status,
+                                message: patchResult.message,
+                                errors: patchResult.errors,
+                                patchResult: patchResult
+                            });
+                            
+                            // Construir mensaje de error detallado
+                            let errorMsg = `Error ${patchResponse.status}: ${patchResult.message || 'Desconocido'}`;
+                            if (patchResult.errors) {
+                                const errorDetails = Object.entries(patchResult.errors).map(([field, msgs]) => {
+                                    return `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+                                }).join('\n');
+                                errorMsg += `\n\nDetalles:\n${errorDetails}`;
+                            }
+                            throw new Error(errorMsg);
                         }
                         
                         console.log('[modal-novedad-edicion] ✅ PATCH aplicado exitosamente para proceso:', procesoEditado.id);

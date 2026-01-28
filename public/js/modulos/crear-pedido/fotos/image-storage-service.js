@@ -49,6 +49,42 @@ class ImageStorageService {
     }
 
     /**
+     * 🔧 Establecer/reemplazar el array completo de imágenes
+     * Usado cuando la galería elimina una imagen y necesita sincronizar el storage
+     * 
+     * Normaliza las imágenes para asegurar que tengan previewUrl
+     */
+    establecerImagenes(nuevasImagenes) {
+        if (!Array.isArray(nuevasImagenes)) {
+            console.warn('⚠️ [ImageStorageService.establecerImagenes] No es un array válido');
+            return;
+        }
+        
+        // Limpiar URLs de imágenes que serán reemplazadas
+        this.images.forEach(img => {
+            if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(img.previewUrl);
+            }
+        });
+        
+        // Normalizar nuevas imágenes: asegurar que tienen previewUrl
+        const imagenesNormalizadas = nuevasImagenes.map(img => {
+            // Si no tiene previewUrl, usar url, ruta, o ruta_webp
+            if (!img.previewUrl && (img.url || img.ruta || img.ruta_webp)) {
+                return {
+                    ...img,
+                    previewUrl: img.url || img.ruta || img.ruta_webp
+                };
+            }
+            return img;
+        });
+        
+        // Reemplazar el array
+        this.images = imagenesNormalizadas || [];
+        console.log('✅ [ImageStorageService.establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
+    }
+
+    /**
      * Obtener imagen por índice
      */
     obtenerImagen(index) {
@@ -120,6 +156,9 @@ class ImageStorageService {
         return formData;
     }
 }
+
+// Asignar a window para disponibilidad global (especialmente en carga dinámica)
+window.ImageStorageService = ImageStorageService;
 
 // NOTA: Las instancias globales se crean en crear-desde-cotizacion-editable.blade.php
 // en el evento DOMContentLoaded para asegurar que el DOM esté listo

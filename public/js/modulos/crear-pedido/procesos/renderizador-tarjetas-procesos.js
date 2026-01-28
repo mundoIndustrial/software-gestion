@@ -20,36 +20,25 @@ const nombresProcesos = {
 };
 
 /**
- * Renderizar todas las tarjetas de procesos en el modal de prenda
+ * Renderizar todas las tarjetas de procesos en el modal de prenda - OPTIMIZADO
+ * Usa batch rendering para evitar reflows múltiples
  */
 window.renderizarTarjetasProcesos = function() {
-    console.log('🎨 [RENDER-PROCESOS] Renderizando tarjetas de procesos...');
-
     const container = document.getElementById('contenedor-tarjetas-procesos');
     
     if (!container) {
-        console.error(' [RENDER-PROCESOS] No se encontró contenedor');
+        console.error('[RENDER-PROCESOS] No se encontró contenedor');
         return false;
     }
 
-    // Obtener procesos configurados
     const procesos = window.procesosSeleccionados || {};
     
-    // Filtrar procesos que tengan datos (objeto no null)
-    // Ser más permisivo: incluir incluso si datos es un objeto vacío
+    // Filtrar procesos que tengan datos
     const procesosConDatos = Object.keys(procesos).filter(tipo => {
-        const tieneDatos = procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
-        console.log(`  [FILTER-PROCESOS] ${tipo}: tieneDatos=${tieneDatos}, datos=${JSON.stringify(procesos[tipo]?.datos || 'undefined')}`);
-        return tieneDatos;
-    });
-    
-    console.log('📊 [RENDER-PROCESOS] Procesos encontrados:', procesosConDatos, {
-        total: procesosConDatos.length,
-        procesosSeleccionados: window.procesosSeleccionados
+        return procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
     });
 
     if (procesosConDatos.length === 0) {
-        console.log(' [RENDER-PROCESOS] Sin procesos configurados');
         container.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;">add_circle</span>
@@ -60,17 +49,16 @@ window.renderizarTarjetasProcesos = function() {
         return false;
     }
     
-    // Renderizar cada proceso como tarjeta
+    // ✅ OPTIMIZACIÓN: Construir TODO el HTML en memoria ANTES de tocar el DOM
     let html = '';
     procesosConDatos.forEach(tipo => {
-        const proceso = procesos[tipo];
-        console.log(`📝 [RENDER-PROCESOS] Renderizando ${tipo}:`, proceso.datos);
-        html += generarTarjetaProceso(tipo, proceso.datos);
+        html += generarTarjetaProceso(tipo, procesos[tipo].datos);
     });
 
+    // ✅ UN SOLO REFLOW: Asignar todo el HTML de una vez
     container.innerHTML = html;
     
-    // Añadir atributo data-tipo-proceso a las tarjetas para debugging
+    // Añadir atributos data-tipo-proceso a las tarjetas para debugging
     container.querySelectorAll('.tarjeta-proceso').forEach(tarjeta => {
         const tipoMatch = tarjeta.className.match(/tipo-([a-z]+)/);
         if (tipoMatch) {
@@ -79,7 +67,6 @@ window.renderizarTarjetasProcesos = function() {
     });
     
     container.style.display = 'block';
-    console.log('✅ [RENDER-PROCESOS] Renderizado completado');
     return true;
 };
 
@@ -87,19 +74,9 @@ window.renderizarTarjetasProcesos = function() {
  * Generar HTML de una tarjeta de proceso
  */
 function generarTarjetaProceso(tipo, datos) {
-    console.log(' [GENERAR-TARJETA] Generando tarjeta para tipo:', tipo, {
-        datos: datos,
-        tieneNombre: !!datos.nombre,
-        tieneNombreProceso: !!datos.nombre_proceso,
-        tieneDescripcion: !!datos.descripcion,
-        tipoProcesoAPI: datos.tipo_proceso
-    });
-
     const icono = iconosProcesos[tipo] || '<span class="material-symbols-rounded">settings</span>';
     // Intentar obtener nombre de múltiples fuentes
     const nombre = nombresProcesos[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
-    
-    console.log(`📛 [GENERAR-TARJETA] Nombre resuelto para ${tipo}:`, nombre);
     
     // Función auxiliar para agregar /storage/ a URLs
     const agregarStorage = (url) => {
@@ -114,15 +91,8 @@ function generarTarjetaProceso(tipo, datos) {
     const caballeroObj = datos.tallas?.caballero || {};
     const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
     
-    console.log(` [GENERAR-TARJETA] Tallas para ${tipo}:`, {
-        dama: Object.keys(damaObj),
-        caballero: Object.keys(caballeroObj),
-        total: totalTallas
-    });
-    
     // Procesar ubicaciones: si es array, convertir a string; si es string JSON, parsear
     let ubicacionesArray = datos.ubicaciones || [];
-    console.log(` [GENERAR-TARJETA] Ubicaciones raw para ${tipo}:`, ubicacionesArray, typeof ubicacionesArray);
     
     // Función para limpiar y parsear ubicaciones
     const limpiarYparsearUbicaciones = (raw) => {
@@ -174,7 +144,6 @@ function generarTarjetaProceso(tipo, datos) {
     };
     
     ubicacionesArray = limpiarYparsearUbicaciones(ubicacionesArray);
-    console.log(`✅ [GENERAR-TARJETA] Ubicaciones limpias para ${tipo}:`, ubicacionesArray);
     
     const ubicacionesTexto = Array.isArray(ubicacionesArray) && ubicacionesArray.length > 0
         ? ubicacionesArray.map(ub => {
@@ -196,8 +165,6 @@ function generarTarjetaProceso(tipo, datos) {
             return `<strong>📍 ${String(ub)}</strong>`;
         }).join('') 
         : 'Sin ubicaciones';
-    
-    console.log(`📄 [GENERAR-TARJETA] Ubicaciones texto para ${tipo}:`, ubicacionesTexto);
     
     return `
         <div class="tarjeta-proceso" data-tipo="${tipo}" style="
@@ -307,6 +274,16 @@ function generarTarjetaProceso(tipo, datos) {
  */
 window.editarProcesoDesdeModal = function(tipo) {
     console.log('✏️ [EDITAR-PROCESO-MODAL] Iniciando edición de proceso existente:', tipo);
+    
+    // 🔍 DEBUG CRÍTICO: Verificar dónde estamos
+    const swalPopup = document.querySelector('.swal2-popup');
+    const mainModal = document.querySelector('[data-main-modal="prenda-editor"]');
+    const customModal = document.querySelector('.modal-overlay');
+    console.log('🔍 [EDITAR-PROCESO-MODAL] ESTRUCTURA DEL DOM:');
+    console.log('   - Swal2 popup abierto?:', !!swalPopup);
+    console.log('   - Modal principal [data-main-modal]?:', !!mainModal);
+    console.log('   - Modal custom (.modal-overlay)?:', !!customModal);
+    console.log('   - Body children count:', document.body.children.length);
 
     // Obtener datos del proceso
     const proceso = window.procesosSeleccionados[tipo];
@@ -349,7 +326,51 @@ window.editarProcesoDesdeModal = function(tipo) {
     // ✅ PASO 4: Abrir modal en modo EDICIÓN
     if (window.abrirModalProcesoGenerico) {
         console.log('🪟 [EDITAR-PROCESO-MODAL] Abriendo modal genérico en modo EDICIÓN');
+        
+        const swalContainer = document.querySelector('.swal2-container');
+        const swalPopup = document.querySelector('.swal2-popup');
+        console.log('🪟 [EDITAR-PROCESO-MODAL] Swal2 visible?:', !!swalContainer);
+        console.log('🪟 [EDITAR-PROCESO-MODAL] Swal2 popup existe?:', !!swalPopup);
+        if (swalContainer) {
+            console.log('🪟 [EDITAR-PROCESO-MODAL] Swal2 z-index:', window.getComputedStyle(swalContainer).zIndex);
+        }
+        
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
+        
+        // Verificar z-index después de abrir
+        setTimeout(() => {
+            const modalProceso = document.getElementById('modal-proceso-generico');
+            const swal = document.querySelector('.swal2-container');
+            console.log('🪟 [EDITAR-PROCESO-MODAL] DESPUÉS de abrirModalProcesoGenerico:');
+            console.log('   - Modal proceso existe?:', !!modalProceso);
+            if (modalProceso) {
+                console.log('   - Modal proceso z-index (inline):', modalProceso.style.zIndex);
+                console.log('   - Modal proceso z-index (computed):', window.getComputedStyle(modalProceso).zIndex);
+                console.log('   - Modal proceso display:', window.getComputedStyle(modalProceso).display);
+                console.log('   - Modal proceso classList:', modalProceso.className);
+            }
+            console.log('   - Swal2 existe?:', !!swal);
+            if (swal) {
+                console.log('   - Swal2 z-index:', window.getComputedStyle(swal).zIndex);
+            }
+            console.log('   - Elementos en body:', document.body.children.length);
+            
+            // Listar top 5 elementos con z-index alto
+            const elementos = document.querySelectorAll('[style*="z-index"]');
+            console.log('   - Elementos con z-index:', elementos.length);
+            const conZAlto = Array.from(elementos).filter(el => {
+                const z = parseInt(window.getComputedStyle(el).zIndex);
+                return z > 90000;
+            }).sort((a, b) => {
+                const zA = parseInt(window.getComputedStyle(a).zIndex);
+                const zB = parseInt(window.getComputedStyle(b).zIndex);
+                return zB - zA;
+            });
+            console.log('   - Top elementos con z-index alto:');
+            conZAlto.slice(0, 5).forEach(el => {
+                console.log(`     ✓ ${el.tagName}#${el.id || '(sin-id)'}.${el.className || '(sin-class)'}: z=${window.getComputedStyle(el).zIndex}`);
+            });
+        }, 100);
         
         // Marcar claramente que estamos en modo edición
         const modalProceso = document.getElementById('modal-proceso-generico');
@@ -387,22 +408,41 @@ window.editarProceso = function(tipo) {
 function cargarDatosProcesoEnModal(tipo, datos) {
     console.log('🔄 [CARGAR-DATOS-PROCESO] Cargando datos en modal para:', tipo, datos);
 
-
+    // ✅ CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
+    window.imagenesProcesoActual = [null, null, null];
+    
+    // ✅ CRÍTICO: Inicializar window.imagenesProcesoExistentes para procesos editados
+    window.imagenesProcesoExistentes = [];
+    
+    // ✅ CRÍTICO: Inicializar ubicaciones si no existen
+    if (!window.ubicacionesProcesoSeleccionadas) {
+        window.ubicacionesProcesoSeleccionadas = [];
+    }
     
     // Limpiar imágenes anteriores
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual = [null, null, null];
+
     }
+    
+    // ✅ NUEVO: Mantener imágenes existentes (URLs) separadas de las nuevas (Files)
+    if (!window.imagenesProcesoExistentes) {
+        window.imagenesProcesoExistentes = [];
+    }
+    window.imagenesProcesoExistentes = [];
     
     // Cargar imágenes (soporte para formato antiguo 'imagen' y nuevo 'imagenes')
     const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
     imagenes.forEach((img, idx) => {
         if (img && idx < 3) {
             const indice = idx + 1;
+            // ✅ Detectar si es URL o File (ANTES de usarlo)
+            const isFile = img instanceof File;
             const preview = document.getElementById(`proceso-foto-preview-${indice}`);
             
             if (preview) {
-                const imgUrl = img instanceof File ? URL.createObjectURL(img) : img;
+                const imgUrl = isFile ? URL.createObjectURL(img) : img;
+                
                 preview.innerHTML = `
                     <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
                     <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
@@ -412,8 +452,15 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                 `;
             }
             
-            if (window.imagenesProcesoActual) {
-                window.imagenesProcesoActual[idx] = img;
+            // ✅ Guardar según tipo
+            if (isFile) {
+                // Es un File nuevo → guardar en imagenesProcesoActual
+                if (window.imagenesProcesoActual) {
+                    window.imagenesProcesoActual[idx] = img;
+                }
+            } else {
+                // Es una URL existente → guardar en imagenesProcesoExistentes
+                window.imagenesProcesoExistentes.push(img);
             }
         }
     });
@@ -429,22 +476,53 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             if (typeof raw === 'string') {
                 try {
                     const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        // Si es array de objetos con 'ubicacion', mantener como está
+                        if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].ubicacion) {
+                            return parsed;
+                        }
+                        // Si es array de strings, retornar limpio (no como JSON)
+                        return parsed.map(u => {
+                            // Limpiar comillas escapadas
+                            if (typeof u === 'string') {
+                                return u.replace(/^["\\]*|["\\]*$/g, '').trim();
+                            }
+                            return typeof u === 'string' ? u : String(u);
+                        });
+                    }
                     return Array.isArray(parsed) ? parsed : [parsed];
                 } catch (e) {
-                    return [raw];
+                    // Si no parsea como JSON, limpiar comillas escapadas y retornar
+                    const cleaned = raw.replace(/^["\\]*|["\\]*$/g, '').trim();
+                    return cleaned ? [cleaned] : [];
                 }
             }
             
             // Si es array
             if (Array.isArray(raw)) {
-                // Mantener objetos completos si tienen ubicacion + descripcion
+                // Mapear cada elemento
                 return raw.map(ub => {
                     // Si es objeto con 'ubicacion', devolverlo completo
                     if (typeof ub === 'object' && ub !== null && ub.ubicacion) {
                         return ub; // DEVOLVER OBJETO COMPLETO
                     }
-                    // Si es string, retornar como está
+                    // Si es string, retornar limpio (no en JSON)
                     if (typeof ub === 'string') {
+                        // Limpiar comillas escapadas primero
+                        ub = ub.replace(/^["\\]*|["\\]*$/g, '').trim();
+                        
+                        // Si el string parece un JSON array, parsearlo
+                        if (ub.startsWith('[') || ub.startsWith('{')) {
+                            try {
+                                const parsed = JSON.parse(ub);
+                                if (Array.isArray(parsed)) {
+                                    return parsed[0]; // Tomar primer elemento si es array
+                                }
+                                return String(parsed);
+                            } catch (e) {
+                                return ub; // Mantener original si no es JSON válido
+                            }
+                        }
                         return ub;
                     }
                     return String(ub);

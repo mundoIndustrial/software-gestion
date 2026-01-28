@@ -700,6 +700,10 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual = [null, null, null];
     }
+    if (!window.imagenesProcesoExistentes) {
+        window.imagenesProcesoExistentes = [];
+    }
+    window.imagenesProcesoExistentes = [];
     
     // Cargar imágenes
     const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
@@ -747,8 +751,18 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
     }
 }
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    window.gestionItemsUI = new GestionItemsUI();
-});
+// Inicializar cuando el DOM esté listo O inmediatamente si el script se carga dinámicamente
+if (document.readyState === 'loading') {
+    // Si aún está cargando el DOM, esperar
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.gestionItemsUI) {
+            window.gestionItemsUI = new GestionItemsUI();
+        }
+    });
+} else {
+    // Si el DOM ya está cargado (carga dinámica de script), inicializar inmediatamente
+    if (!window.gestionItemsUI) {
+        window.gestionItemsUI = new GestionItemsUI();
+    }
+}
  

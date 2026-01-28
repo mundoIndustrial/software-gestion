@@ -4,19 +4,79 @@
 @section('page-title', 'Mis Pedidos')
 
 @section('extra_styles')
+    <!-- ✅ OPTIMIZADO: Solo CSS necesario para lista de pedidos -->
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/page-loading.css') }}">
-    <!-- CSS necesarios para el modal de crear/editar prendas -->
-    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
-    <!-- CSS del modal EPP -->
-    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
-    <!-- CSS de modales personalizados (EPP y Prendas) -->
-    <link rel="stylesheet" href="{{ asset('css/modales-personalizados.css') }}">
+    <!-- Otros CSS se cargan lazy cuando se editan prendas/EPP -->
+    
+    <!-- 🔧 FIX GLOBAL: Posicionamiento de SweetAlert para modales grandes -->
+    <style>
+        /* Permitir que SweetAlert sea scrolleable y se posicione correctamente */
+        .swal2-container {
+            align-items: flex-start !important;
+            padding-top: 20px !important;
+            max-height: 100vh !important;
+            overflow-y: auto !important;
+        }
+        
+        .swal2-popup {
+            max-height: 95vh !important;
+            overflow-y: auto !important;
+            width: auto !important;
+            max-width: 1200px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        .swal2-html-container {
+            overflow: visible !important;
+            max-height: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Fondo oscuro debe ocupar toda la pantalla */
+        .swal2-backdrop {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+        }
+        
+        /* 🔥 FIX CRÍTICO: Todos los .modal-overlay deben ser fixed overlays */
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            display: none !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            overflow-y: auto !important;
+            /* 🔝 CRÍTICO: NO usar !important en z-index para permitir inline styles */
+            z-index: 99999;
+        }
+        
+        /* Cuando está visible, mostrar con flexbox */
+        .modal-overlay[style*="display: flex"] {
+            display: flex !important;
+        }
+        
+        /* Contenedor del modal debe tener scroll */
+        .modal-overlay .modal-container,
+        .modal-overlay .modal-content {
+            position: relative !important;
+            background: white !important;
+            max-height: 95vh !important;
+            overflow-y: auto !important;
+            max-width: 900px !important;
+            width: 100% !important;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -49,6 +109,14 @@
 @endpush
 
 @push('scripts')
+
+<!-- ✅ PRELOADER: Precarga en background para evitar delays en primera apertura -->
+<script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
+
+<!-- ✅ LAZY LOADERS: Cargan módulos bajo demanda -->
+<script src="{{ asset('js/lazy-loaders/prenda-editor-loader.js') }}"></script>
+<script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
+
 <!-- Componente: Modal Editar Pedido -->
 @include('asesores.pedidos.components.modal-editar-pedido')
 
@@ -278,26 +346,92 @@
     }
 
     /**
-     * Editar pedido - carga datos y abre modal de edición
-     * FIX: Usar async/await para evitar race condition cuando se hace clic durante carga de página
-     * Ref: ANALISIS_RACE_CONDITION_EDITAR_PEDIDO.md
+     * Editar pedido - OPTIMIZADO CON LAZY LOADING
+     * 
+     * ✅ CAMBIOS:
+     * - Carga módulos de edición bajo demanda (NO en la carga inicial)
+     * - SIEMPRE hace fetch para obtener datos completos (modal necesita estructura completa)
+     * - Tiempo: <100ms para lazy loader (cacheado), ~500ms para fetch datos
      */
     async function editarPedido(pedidoId) {
-        //  Prevenir múltiples clics simultáneos
-        if (edicionEnProgreso) {
+        // 🔒 Prevenir múltiples clics simultáneos
+        if (window.edicionEnProgreso) {
             return;
         }
         
-        edicionEnProgreso = true;
+        window.edicionEnProgreso = true;
+        const tiempoInicio = performance.now();
+        const etapas = {};
         
         try {
-            //  PASO 1: Esperar a que Swal esté disponible (await correcto)
+            etapas.inicio = performance.now();
+            console.log(`[editarPedido] ⏱️ Iniciando apertura modal - Pedido: ${pedidoId}`);
+            // 🔥 PASO 1: Abrir modal pequeño de carga centrado
+            console.log('[editarPedido] 🚀 Abriendo modal de carga...');
             await _ensureSwal();
+            etapas.swalReady = performance.now();
+            console.log(`[editarPedido] ✅ Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
             
-            //  PASO 2: Mostrar modal de carga
-            UI.cargando('Cargando datos del pedido...', 'Por favor espera');
-            
-            //  PASO 3: Hacer fetch
+            // Mostrar modal pequeño con spinner centrado
+            const modalPromise = Swal.fire({
+                html: `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="width: 60px; height: 60px; border: 4px solid #e5e7eb; border-top-color: #1e40af; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+                        <p style="color: #6b7280; font-size: 14px; font-weight: 500; margin: 0;">Cargando datos del pedido...</p>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                `,
+                width: '300px',
+                padding: '0',
+                background: 'white',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: (modal) => {
+                    const swalContainer = document.querySelector('.swal2-container');
+                    if (swalContainer) {
+                        swalContainer.style.display = 'flex';
+                        swalContainer.style.alignItems = 'center';
+                        swalContainer.style.justifyContent = 'center';
+                    }
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            // 🔥 PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
+            // Si ya está precargado, esto es casi instantáneo (<1ms)
+            // Si no, muestra el loader mientras termina
+            if (!window.PrendaEditorPreloader?.isReady?.()) {
+                console.log('[editarPedido] 📦 Cargando módulos de edición (con preloader)...');
+                try {
+                    await window.PrendaEditorPreloader.loadWithLoader({
+                        title: 'Cargando datos',
+                        message: 'Por favor espera...',
+                        onComplete: () => {
+                            console.log('[editarPedido] ✅ Módulos cargados completamente');
+                        }
+                    });
+                    etapas.modulosCargados = performance.now();
+                    console.log(`[editarPedido] ✅ Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
+                } catch (error) {
+                    console.error('[editarPedido] ❌ Error cargando módulos:', error);
+                    Swal.close();
+                    UI.error('Error', 'No se pudieron cargar los módulos de edición');
+                    window.edicionEnProgreso = false;
+                    return;
+                }
+            } else {
+                etapas.modulosCargados = performance.now();
+                console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
+            }
+
+            // 🔥 PASO 3: Fetch de datos mientras el modal ya está visible
+            console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
+
             const response = await fetch(`/api/pedidos/${pedidoId}`, {
                 method: 'GET',
                 credentials: 'include',
@@ -306,27 +440,29 @@
                     'Content-Type': 'application/json'
                 }
             });
-            const respuesta = await response.json();
-            
-            //  PASO 4: Cerrar modal de carga ANTES de abrir el siguiente
-            Swal.close();
-            
-            //  PASO 5: Validar respuesta
-            if (!respuesta.success) {
-                throw new Error(respuesta.message || 'Error al cargar datos');
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
+            const respuesta = await response.json();
+
+            if (!respuesta.success) {
+                throw new Error(respuesta.message || 'Error desconocido');
+            }
+
             const datos = respuesta.data || respuesta.datos;
+            etapas.fetchCompleto = performance.now();
+            console.log(`[editarPedido] ✅ Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
             
-            //  TRANSFORMAR datos al formato que espera generarHTMLFactura
+            // Transformar datos al formato que espera abrirModalEditarPedido
             const datosTransformados = {
                 id: datos.id || datos.numero_pedido,
-                numero_pedido: datos.numero_pedido || datos.numero || datos.id,
-                numero: datos.numero || datos.numero_pedido || datos.id,
-                cliente: datos.cliente || datos.clienteNombre || 'Cliente sin especificar',
-                asesora: datos.asesor || datos.asesora || datos.asesor_nombre || 'Asesor sin especificar',
+                numero_pedido: datos.numero_pedido || datos.numero,
+                numero: datos.numero || datos.numero_pedido,
+                cliente: datos.cliente || 'Cliente sin especificar',
+                asesora: datos.asesor || datos.asesora?.name || 'Asesor sin especificar',
                 estado: datos.estado || 'Pendiente',
-                fecha_creacion: datos.fecha_creacion || datos.created_at || new Date().toLocaleDateString('es-ES'),
                 forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
                 prendas: datos.prendas || [],
                 epps: datos.epps_transformados || datos.epps || [],
@@ -334,18 +470,38 @@
                 // Copiar todas las otras propiedades
                 ...datos
             };
+
+            console.log('[editarPedido] 📊 Datos cargados:', {
+                id: datosTransformados.id,
+                numero: datosTransformados.numero_pedido,
+                cliente: datosTransformados.cliente,
+                prendas: datosTransformados.prendas?.length || 0,
+                procesos: datosTransformados.procesos?.length || 0
+            });
+
+            // 🔥 PASO 4: Reemplazar modal de carga con contenido real
+            etapas.antes_modal = performance.now();
+            console.log(`[editarPedido] 🎬 Abriendo modal de edición...`);
             
-            //  PASO 6: Abrir modal de edición con datos transformados
-            abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
+            await abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
             
+            etapas.fin = performance.now();
+            console.log(`
+[editarPedido] ⏱️ RESUMEN DE TIEMPOS:
+  └─ Swal Ready: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms
+  └─ Módulos: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms
+  └─ Fetch: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms
+  └─ Modal: ${(etapas.fin - etapas.antes_modal).toFixed(2)}ms
+  └─ TOTAL: ${(etapas.fin - etapas.inicio).toFixed(2)}ms
+            `);
+
         } catch (err) {
-            // Cerrar cualquier modal abierto
             Swal.close();
+            console.error('[editarPedido] ❌ Error:', err);
             UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
             
         } finally {
-            //  PASO 7: Permitir nuevas ediciones
-            edicionEnProgreso = false;
+            window.edicionEnProgreso = false;
         }
     }
     
@@ -652,138 +808,22 @@
         });
     });
 </script>
+<!-- ✅ CORE PEDIDOS (necesario para lista) -->
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
-<!-- Modal Manager para renderizar detalles del pedido (igual que órdenes) -->
-<script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
-<!-- NUEVO: Módulo de recibos dinámicos (refactorizado en componentes) -->
+
+<!-- ✅ TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
-<!-- Image Gallery para mostrar fotos en el modal -->
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
-<!-- Invoice Preview (necesario para generarHTMLFactura) -->
 <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
-<!-- Invoice Preview desde Lista de Pedidos -->
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 
-<!-- Módulos para gestionar prendas en el modal -->
-<script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
-
-<!-- Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
-<script>
-    //  CRÍTICO: Esto se ejecuta INMEDIATAMENTE
-    if (!window.imagenesPrendaStorage) {
-        window.imagenesPrendaStorage = new ImageStorageService(3);
-    }
-    if (!window.imagenesTelaStorage) {
-        window.imagenesTelaStorage = new ImageStorageService(3);
-    }
-    if (!window.imagenesReflectivoStorage) {
-        window.imagenesReflectivoStorage = new ImageStorageService(3);
-    }
-    if (!window.telasAgregadas) {
-        window.telasAgregadas = [];
-    }
-    if (!window.procesosSeleccionados) {
-        window.procesosSeleccionados = {};
-    }
-</script>
-
-<!-- Ahora cargar gestion-telas.js (con imagenesTelaStorage YA disponible) -->
-<script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
-
-<!-- Manejadores de variaciones (manga, bolsillos, broche) -->
-<script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
-
-<!-- Editar prenda modal con procesos -->
-<script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
-
-<!-- Wrappers de prendas -->
-<script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>
-
-<!-- Utilidades DOM - Necesario para modal-cleanup.js -->
-<script src="{{ asset('js/utilidades/dom-utils.js') }}"></script>
-
-<!-- Constantes de items pedido - Necesario para modal-cleanup.js -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}"></script>
-
-<!-- Modal Cleanup - CRÍTICO para limpiar y preparar el modal correctamente -->
-<script src="{{ asset('js/utilidades/modal-cleanup.js') }}"></script>
-
-<!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
-
-<!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
-
-<!-- PAYLOAD NORMALIZER INITIALIZER (Opcional - para debugging) -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-init.js') }}?v={{ time() }}"></script>
-
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
-
-<!-- Componentes de Modales - Deben cargarse ANTES de GestionItemsUI -->
-<script src="{{ asset('js/componentes/modal-novedad-prenda.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/componentes/modal-novedad-edicion.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
-
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
-
-<!-- Dependencias para Modal Dinámico -->
-<script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
-
-<!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/proceso-editor.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/gestor-edicion-procesos.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/servicio-procesos.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/procesos/services/middleware-guardado-prenda.js') }}?v={{ time() }}"></script>
-
-<!-- Modal Dinámico: Constantes HTML (DEBE cargarse ANTES del modal principal) -->
-<script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>
-
-<!-- Modal Dinámico: Prenda Nueva -->
-<script src="{{ asset('js/componentes/modal-prenda-dinamico.js') }}"></script>
-
-<!-- Componente: Editor de Prendas Modal -->
-<script src="{{ asset('js/componentes/prenda-editor-modal.js') }}"></script>
-<!-- EPP Services - Deben cargarse ANTES del modal -->
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}"></script>
-
-<!-- EPP Services SOLID - Mejoras de refactorización -->
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}"></script>
-
-<!-- EPP Templates e Interfaces -->
-<script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}"></script>
-<script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}"></script>
-
-<!-- EPP Initialization -->
-<script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}"></script>
-
-<!-- Modal EPP (refactorizado) - Carga DESPUÉS de los servicios -->
-<script src="{{ asset('js/modulos/crear-pedido/modales/modal-agregar-epp.js') }}"></script>
-
-<!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
+<!-- ✅ ORDER TRACKING (MODULAR - necesario) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}"></script>
@@ -1209,6 +1249,74 @@
         }
     `;
     document.head.appendChild(style);
+
+    /**
+     * 🔧 INICIALIZACIÓN DE LAZY LOADERS
+     * 
+     * Envuelve funciones de interfaz para cargar módulos bajo demanda
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[PedidosInit] 🚀 Inicializando lazy loaders...');
+
+        // ✅ Inicializar PrendaEditorPreloader si está disponible
+        if (window.PrendaEditorPreloader) {
+            console.log('[PedidosInit] 🔄 Iniciando precarguía en background...');
+            window.PrendaEditorPreloader.start();
+            console.log('[PedidosInit] ✅ Preloader iniciado - Cargará en background sin bloquear');
+        } else {
+            console.warn('[PedidosInit] ⚠️ PrendaEditorPreloader no encontrado');
+        }
+
+        // ✅ Inicializar PrendaEditorLoader si está disponible
+        if (window.PrendaEditorLoader) {
+            console.log('[PedidosInit] ✅ PrendaEditorLoader disponible');
+        } else {
+            console.warn('[PedidosInit] ⚠️ PrendaEditorLoader no encontrado - revisar script de carga');
+        }
+
+        // ✅ Inicializar EPPManagerLoader si está disponible
+        if (window.EPPManagerLoader) {
+            console.log('[PedidosInit] ✅ EPPManagerLoader disponible');
+        } else {
+            console.warn('[PedidosInit] ⚠️ EPPManagerLoader no encontrado - revisar script de carga');
+        }
+
+        // 🔥 Envolver funciones de edición/creación para garantizar lazy loading
+        if (typeof abrirModalEditarEPP === 'function') {
+            const originalAbrirEPP = window.abrirModalEditarEPP;
+            window.abrirModalEditarEPP = async function(...args) {
+                if (window.EPPManagerLoader && !window.EPPManagerLoader.isLoaded()) {
+                    console.log('[PedidosInit] 📦 Cargando EPP manager antes de abrir...');
+                    try {
+                        await window.EPPManagerLoader.load();
+                    } catch (e) {
+                        console.error('[PedidosInit] Error cargando EPP:', e);
+                    }
+                }
+                return originalAbrirEPP.apply(this, args);
+            };
+            console.log('[PedidosInit] ✅ abrirModalEditarEPP envuelto para lazy loading');
+        }
+
+        // 🔥 Envolver función para agregar prenda
+        if (typeof abrirAgregarPrenda === 'function') {
+            const originalAgregar = window.abrirAgregarPrenda;
+            window.abrirAgregarPrenda = async function(...args) {
+                if (window.PrendaEditorLoader && !window.PrendaEditorLoader.isLoaded()) {
+                    console.log('[PedidosInit] 📦 Cargando prenda editor antes de agregar...');
+                    try {
+                        await window.PrendaEditorLoader.load();
+                    } catch (e) {
+                        console.error('[PedidosInit] Error cargando prenda editor:', e);
+                    }
+                }
+                return originalAgregar.apply(this, args);
+            };
+            console.log('[PedidosInit] ✅ abrirAgregarPrenda envuelto para lazy loading');
+        }
+
+        console.log('[PedidosInit] 🎉 Inicialización completada - Lista para ediciones bajo demanda');
+    });
 </script>
 
 @endpush

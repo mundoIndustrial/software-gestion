@@ -257,20 +257,48 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         console.log('✅ [EDITAR-PRENDA] Variantes transformadas:', variantes);
         
         // Preparar datos para el modal
+        // Transformar imágenes de la prenda
+        // IMPORTANTE: Capturar TODAS las imágenes, tanto ruta_webp como ruta_original
+        // La API devuelve las imágenes en la propiedad 'fotos', no 'imagenes'
+        const prendaImagenesRaw = prendaCompleta.fotos || prendaCompleta.imagenes || [];
+        console.log('🖼️ [EDITAR-PRENDA-IMAGENES-RAW] Imágenes RAW recibidas de la API (property: fotos/imagenes):', {
+            cantidad: prendaImagenesRaw.length,
+            datos: prendaImagenesRaw,
+            hayFotos: !!prendaCompleta.fotos,
+            hayImagenes: !!prendaCompleta.imagenes
+        });
+        
+        const prendaImagenesMapeadas = prendaImagenesRaw.map((img, idx) => {
+            const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
+            const urlFinal = agregarStorage(url);
+            console.log(`   [${idx}] Mapeo de imagen:`, {
+                url: url,
+                urlFinal: urlFinal,
+                tieneRutaWebp: !!img.ruta_webp,
+                tieneRutaOriginal: !!img.ruta_original,
+                tieneUrl: !!img.url,
+                imageId: img.id
+            });
+            return {
+                url: urlFinal,
+                ruta: urlFinal,
+                urlDesdeDB: true,
+                id: img.id
+            };
+        });
+        
+        console.log('✅ [EDITAR-PRENDA-IMAGENES-MAPEADAS] Después del mapeo:', {
+            cantidad: prendaImagenesMapeadas.length,
+            datos: prendaImagenesMapeadas
+        });
+        
         const prendaParaEditar = {
             nombre_prenda: prendaCompleta.nombre_prenda || '',
             nombre_producto: prendaCompleta.nombre_prenda || '',
             descripcion: prendaCompleta.descripcion || '',
             origen: prendaCompleta.origen || prenda.origen || 'bodega',
             de_bodega: prendaCompleta.de_bodega !== undefined ? prendaCompleta.de_bodega : prenda.de_bodega,
-            imagenes: (prendaCompleta.imagenes || []).map(img => {
-                const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
-                return {
-                    url: agregarStorage(url),
-                    ruta: agregarStorage(url),
-                    urlDesdeDB: true
-                };
-            }),
+            imagenes: prendaImagenesMapeadas,
             telasAgregadas: telasAgregadas,
             tallas: tallasArray,
             generosConTallas: generosConTallasEstructura,

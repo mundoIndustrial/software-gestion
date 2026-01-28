@@ -30,9 +30,9 @@ class SetSecurityHeaders
         $serverIp = $request->ip();
         $serverPort = $request->getPort();
         
-        // Para desarrollo local, permitir localhost, 127.0.0.1, hostname y la IP actual
-        $viteSources = $isDevelopment ? " http://localhost:5173 ws://localhost:5173 http://{$serverHost}:5173 ws://{$serverHost}:5173 http://{$serverIp}:5173 ws://{$serverIp}:5173" : "";
-        $connectSources = $isDevelopment ? " ws://localhost:8080 ws://{$serverHost}:8080 wss://{$serverHost}:8080 ws://{$serverIp}:8080 wss://{$serverIp}:8080" : "";
+        // Para desarrollo local, permitir localhost, 127.0.0.1, hostname, la IP actual, y todas las IPs locales comunes
+        $viteSources = $isDevelopment ? " http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173 http://{$serverHost}:5173 ws://{$serverHost}:5173 http://{$serverIp}:5173 ws://{$serverIp}:5173 http://192.168.20.23:5173 ws://192.168.20.23:5173" : "";
+        $connectSources = $isDevelopment ? " ws://localhost:8080 ws://{$serverHost}:8080 wss://{$serverHost}:8080 ws://{$serverIp}:8080 wss://{$serverIp}:8080 ws://192.168.20.23:8080 wss://192.168.20.23:8080" : "";
 
         // Content Security Policy (CSP) - More permissive for Laravel Echo and CDNs
         $csp = "default-src 'self'; "

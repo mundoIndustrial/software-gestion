@@ -562,6 +562,17 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         contador.style.cssText = 'color: white; font-size: 1rem; min-width: 80px; text-align: center;';
         
         const actualizarUI = () => {
+            if (imagenesValidas.length === 0) {
+                modal.remove();
+                console.log('✅ Todas las imágenes fueron eliminadas, galería cerrada');
+                return;
+            }
+            
+            // Ajustar índice si es necesario
+            if (indiceActual >= imagenesValidas.length) {
+                indiceActual = imagenesValidas.length - 1;
+            }
+            
             imgElement.src = imagenesValidas[indiceActual].src;
             contador.textContent = (indiceActual + 1) + ' de ' + imagenesValidas.length;
         };
@@ -569,7 +580,9 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         // Botón anterior
         const btnAnterior = document.createElement('button');
         btnAnterior.textContent = '◀';
-        btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnAnterior.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: background 0.2s;';
+        btnAnterior.onmouseover = () => btnAnterior.style.background = '#0052a3';
+        btnAnterior.onmouseout = () => btnAnterior.style.background = '#0066cc';
         btnAnterior.onclick = () => {
             indiceActual = (indiceActual - 1 + imagenesValidas.length) % imagenesValidas.length;
             actualizarUI();
@@ -581,17 +594,106 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         // Botón siguiente
         const btnSiguiente = document.createElement('button');
         btnSiguiente.textContent = '▶';
-        btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnSiguiente.style.cssText = 'background: #0066cc; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: background 0.2s;';
+        btnSiguiente.onmouseover = () => btnSiguiente.style.background = '#0052a3';
+        btnSiguiente.onmouseout = () => btnSiguiente.style.background = '#0066cc';
         btnSiguiente.onclick = () => {
             indiceActual = (indiceActual + 1) % imagenesValidas.length;
             actualizarUI();
         };
         toolbar.appendChild(btnSiguiente);
         
+        // 🗑️ Botón eliminar
+        const btnEliminar = document.createElement('button');
+        btnEliminar.textContent = '🗑️ Eliminar';
+        btnEliminar.style.cssText = 'background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background 0.2s;';
+        btnEliminar.title = 'Eliminar esta imagen';
+        btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
+        btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
+        btnEliminar.onclick = () => {
+            // Crear modal personalizado para confirmación
+            const confirmModalDiv = document.createElement('div');
+            confirmModalDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100002;';
+            
+            const confirmBox = document.createElement('div');
+            confirmBox.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);';
+            
+            const titulo = document.createElement('h3');
+            titulo.textContent = '¿Eliminar imagen?';
+            titulo.style.cssText = 'margin: 0 0 1rem 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;';
+            confirmBox.appendChild(titulo);
+            
+            const mensaje = document.createElement('p');
+            mensaje.textContent = '¿Estás seguro de que deseas eliminar esta imagen? Esta acción no se puede deshacer.';
+            mensaje.style.cssText = 'margin: 0 0 1.5rem 0; color: #6b7280; font-size: 0.95rem; line-height: 1.5;';
+            confirmBox.appendChild(mensaje);
+            
+            const botonesDiv = document.createElement('div');
+            botonesDiv.style.cssText = 'display: flex; gap: 1rem; justify-content: flex-end;';
+            
+            const btnCancelar = document.createElement('button');
+            btnCancelar.textContent = 'Cancelar';
+            btnCancelar.type = 'button';
+            btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s;';
+            btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
+            btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
+            btnCancelar.onclick = () => confirmModalDiv.remove();
+            botonesDiv.appendChild(btnCancelar);
+            
+            const btnConfirmarEliminar = document.createElement('button');
+            btnConfirmarEliminar.textContent = 'Eliminar';
+            btnConfirmarEliminar.type = 'button';
+            btnConfirmarEliminar.style.cssText = 'background: #ef4444; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: background 0.2s;';
+            btnConfirmarEliminar.onmouseover = () => btnConfirmarEliminar.style.background = '#dc2626';
+            btnConfirmarEliminar.onmouseout = () => btnConfirmarEliminar.style.background = '#ef4444';
+            btnConfirmarEliminar.onclick = () => {
+                confirmModalDiv.remove();
+                
+                console.log('🗑️ [mostrarGaleriaImagenesPrenda] Eliminando imagen en índice', indiceActual);
+                
+                // Eliminar de imagenesValidas
+                imagenesValidas.splice(indiceActual, 1);
+                
+                // Eliminar del array original (imagenes)
+                const imagenAEliminar = imagenes[indiceActual];
+                const indiceEnOriginal = imagenes.indexOf(imagenAEliminar);
+                if (indiceEnOriginal !== -1) {
+                    imagenes.splice(indiceEnOriginal, 1);
+                    console.log('✅ Imagen eliminada del array original');
+                }
+                
+                // 🔧 IMPORTANTE: Actualizar window.imagenesPrendaStorage con el nuevo array
+                if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.establecerImagenes === 'function') {
+                    window.imagenesPrendaStorage.establecerImagenes(imagenes);
+                    console.log('✅ [SYNC] window.imagenesPrendaStorage actualizado con', imagenes.length, 'imágenes');
+                }
+                
+                // Actualizar UI
+                actualizarUI();
+            };
+            botonesDiv.appendChild(btnConfirmarEliminar);
+            
+            confirmBox.appendChild(botonesDiv);
+            confirmModalDiv.appendChild(confirmBox);
+            
+            // Cerrar si se hace click fuera del modal
+            confirmModalDiv.onclick = (e) => {
+                if (e.target === confirmModalDiv) {
+                    confirmModalDiv.remove();
+                }
+            };
+            
+            document.body.appendChild(confirmModalDiv);
+        };
+        toolbar.appendChild(btnEliminar);
+        
         // Botón cerrar
         const btnCerrar = document.createElement('button');
         btnCerrar.textContent = '✕';
-        btnCerrar.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem;';
+        btnCerrar.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: background 0.2s;';
+        btnCerrar.title = 'Cerrar galería';
+        btnCerrar.onmouseover = () => btnCerrar.style.background = '#5a6268';
+        btnCerrar.onmouseout = () => btnCerrar.style.background = '#6c757d';
         btnCerrar.onclick = () => modal.remove();
         toolbar.appendChild(btnCerrar);
         

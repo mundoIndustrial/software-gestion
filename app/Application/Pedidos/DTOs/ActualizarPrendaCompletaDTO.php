@@ -142,10 +142,15 @@ final class ActualizarPrendaCompletaDTO
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,
-            // 🔧 FIX: Si NO hay imágenes nuevas, NO pasar 'fotos' para evitar soft delete
-            // Solo pasar $imagenes si hay nuevas imágenes subidas
-            // Si está vacío, dejar null para que no toque las imágenes existentes
-            fotos: (!empty($imagenes) ? array_merge($imagenesExistentes ?? [], $imagenes) : null),
+            // 🔧 FIX: IMPORTANTE - Usar $imagenesExistentes como base para eliminar imágenes correctamente
+            // Patrón MERGE:
+            // 1. Si hay imágenes nuevas + existentes -> MERGE ambas
+            // 2. Si solo hay existentes (usuario no agregó nuevas pero puede haber eliminado) -> usar existentes
+            // 3. Si está vacío (usuario eliminó todas) -> array vacío (que causa DELETE en UseCase)
+            // 4. Si no se envió nada -> null (no tocar imágenes)
+            fotos: isset($data['imagenes_existentes']) 
+                ? array_merge($imagenesExistentes ?? [], $imagenes ?? [])
+                : ((!empty($imagenes)) ? $imagenes : null),
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
             novedad: $data['novedad'] ?? null,

@@ -566,9 +566,10 @@ class PrendaEditor {
             
             // Convertir array de tallas a objeto por género
             prenda.tallas.forEach(tallaObj => {
-                const genero = tallaObj.genero || 'DAMA';
+                const genero = (tallaObj.genero || 'DAMA').toUpperCase();  // ✅ Normalizar a mayúsculas
                 const talla = tallaObj.talla;
                 const cantidad = tallaObj.cantidad || 0;
+                console.log(`[cargarTallasYCantidades] Agregando ${genero} - ${talla}: ${cantidad}`);
                 window.tallasRelacionales[genero][talla] = cantidad;
             });
         } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {

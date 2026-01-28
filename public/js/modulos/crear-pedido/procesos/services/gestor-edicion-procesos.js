@@ -68,8 +68,19 @@ class GestorEditacionProcesos {
             hayEditor: !!window.procesosEditor
         });
 
-        // Si es edición (no nuevo) y hay cambios en el editor
-        if (!esNuevo && window.procesosEditor && window.procesosEditor.tieneChangiosPendientes()) {
+        // ✅ Verificar si hay imágenes nuevas (Files) o existentes
+        const tieneImagenesNuevas = window.imagenesProcesoActual?.some(img => img instanceof File);
+        const tieneImagenesExistentes = window.imagenesProcesoExistentes?.length > 0;
+        const tieneImagenes = tieneImagenesNuevas || tieneImagenesExistentes;
+
+        console.log('📸 [GESTOR-EDICION] Verificación de imágenes:', {
+            tieneImagenesNuevas,
+            tieneImagenesExistentes,
+            tieneImagenes
+        });
+
+        // Si es edición (no nuevo) y hay cambios en el editor O hay imágenes
+        if (!esNuevo && window.procesosEditor && (window.procesosEditor.tieneChangiosPendientes() || tieneImagenes)) {
             const cambios = window.procesosEditor.obtenerCambios();
             const datosCompletos = window.procesosEditor.obtenerPayloadActualizacion();
 
@@ -84,7 +95,8 @@ class GestorEditacionProcesos {
             console.log('✅ [GESTOR-EDICION] Cambios registrados como editados:', {
                 tipo,
                 cambios: Object.keys(cambios),
-                idProceso: datosCompletos.id
+                idProceso: datosCompletos.id,
+                tieneImagenes
             });
 
             // Guardar en window.procesosSeleccionados para que se refleje inmediatamente
