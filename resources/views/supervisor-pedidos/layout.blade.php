@@ -230,7 +230,7 @@
 
             <div class="nav-center">
                 <!-- Barra de búsqueda -->
-                <form method="GET" action="{{ route('supervisor-pedidos.index') }}" class="search-form" style="flex: 1; max-width: 500px; margin: 0 1rem;">
+                <form method="GET" action="{{ route('supervisor-pedidos.index') }}" class="search-form" style="flex: 1; max-width: 500px; margin: 0 1rem;" onsubmit="limpiarParametrosVacios(event)">
                     @if(request('aprobacion'))
                         <input type="hidden" name="aprobacion" value="{{ request('aprobacion') }}">
                     @endif
@@ -258,10 +258,7 @@
                                value="{{ request('busqueda') }}"
                                style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
                         @if(request('busqueda'))
-                            <a href="{{ route('supervisor-pedidos.index', array_merge(
-                                request()->only(['aprobacion', 'estado', 'asesora', 'forma_pago', 'fecha_desde', 'fecha_hasta']),
-                                ['busqueda' => '']
-                            )) }}" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center;">
+                            <a href="{{ route('supervisor-pedidos.index', request()->only(['aprobacion', 'estado', 'asesora', 'forma_pago', 'fecha_desde', 'fecha_hasta'])) }}" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center;">
                                 <span class="material-symbols-rounded">close</span>
                             </a>
                         @endif
@@ -585,6 +582,29 @@
 
             console.log('✅ Protecciones instaladas');
         });
+
+        // ===== FUNCIÓN PARA LIMPIAR PARÁMETROS VACÍOS =====
+        function limpiarParametrosVacios(event) {
+            event.preventDefault();
+            const form = event.target;
+            
+            // Crear objeto con todos los campos del form
+            const params = {};
+            new FormData(form).forEach((value, key) => {
+                // Solo incluir si tiene valor y no está vacío
+                if (value && value.trim() !== '') {
+                    params[key] = value;
+                }
+            });
+            
+            // Construir URL con solo parámetros no vacíos
+            const baseUrl = form.getAttribute('action');
+            const queryParams = new URLSearchParams(params).toString();
+            const finalUrl = queryParams ? baseUrl + '?' + queryParams : baseUrl;
+            
+            console.log('[Search] URL final:', finalUrl);
+            window.location.href = finalUrl;
+        }
     </script>
 
 </body>

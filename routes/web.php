@@ -792,8 +792,8 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Anular orden
     Route::post('/{id}/anular', [App\Http\Controllers\SupervisorPedidosController::class, 'anular'])->name('anular');
     
-    // Aprobar orden (enviar a producción)
-    Route::post('/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarOrden'])->name('aprobar');
+    // Aprobar orden (cambiar estado de PENDIENTE_SUPERVISOR a Pendiente)
+    Route::post('/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobar'])->name('aprobar');
     
     // Cambiar estado
     Route::patch('/{id}/estado', [App\Http\Controllers\SupervisorPedidosController::class, 'cambiarEstado'])->name('cambiar-estado');

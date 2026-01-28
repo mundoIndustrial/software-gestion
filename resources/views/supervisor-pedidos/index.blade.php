@@ -20,7 +20,7 @@
                 color: white;
                 padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: 200px 140px 200px 160px 150px 150px 140px 160px;
+                grid-template-columns: 200px 140px 200px 140px 150px 150px;
                 gap: 1.2rem;
                 font-weight: 600;
                 font-size: 0.8rem;
@@ -45,16 +45,7 @@
                     </button>
                 </div>
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span>Fecha</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span>Estado</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
-                    </button>
+                    <span>Novedades</span>
                 </div>
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                     <span>Asesora</span>
@@ -65,12 +56,6 @@
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                     <span>Forma Pago</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span>Entrega Est.</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                     </button>
                 </div>
@@ -86,7 +71,7 @@
                 @foreach($ordenes as $orden)
                     <div style="
                         display: grid;
-                        grid-template-columns: 200px 140px 200px 160px 150px 150px 140px 160px;
+                        grid-template-columns: 200px 140px 200px 140px 150px 150px;
                         gap: 1.2rem;
                         padding: 1rem;
                         border-bottom: 1px solid #e5e7eb;
@@ -102,6 +87,7 @@
                             @php
                                 $numeroPedido = $orden->numero_pedido;
                                 $pedidoId = $orden->id;
+                                $estado = $orden->estado ?? 'Pendiente';
                             @endphp
                             <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" title="Ver Opciones" style="
                                 background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
@@ -122,31 +108,6 @@
                                 <i class="fas fa-eye"></i>
                             </button>
 
-                            <!-- Botón Anular (solo si no está anulado) -->
-                            @php
-                                $estado = $orden->estado ?? 'Pendiente';
-                            @endphp
-                            @if($estado !== 'Anulada' && $estado !== 'anulada')
-                            <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
-                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                color: white;
-                                border: none;
-                                padding: 0.5rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-size: 1rem;
-                                transition: all 0.3s ease;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 36px;
-                                height: 36px;
-                                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
-                                <i class="fas fa-ban"></i>
-                            </button>
-                            @endif
-
                             <!-- Botón Editar -->
                             <button onclick="editarPedido({{ $orden->id }})" title="Editar Pedido" style="
                                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -166,6 +127,50 @@
                             " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
                                 <i class="fas fa-edit"></i>
                             </button>
+
+                            <!-- Botón Aprobar (solo si está pendiente de aprobación) -->
+                            @if($estado === 'PENDIENTE_SUPERVISOR')
+                            <button onclick="abrirModalAprobacion({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')" title="Aprobar Pedido" style="
+                                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            @endif
+
+                            <!-- Botón Anular (solo si está pendiente de aprobación) -->
+                            @if($estado === 'PENDIENTE_SUPERVISOR')
+                            <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
+                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                            @endif
                         </div>
                         
                         <!-- Número -->
@@ -178,27 +183,24 @@
                             <span>{{ $orden->cliente }}</span>
                         </div>
                         
-                        <!-- Fecha -->
-                        <div>
-                            <span>{{ $orden->fecha_de_creacion_de_orden ? $orden->fecha_de_creacion_de_orden->format('d/m/Y') : 'N/A' }}</span>
-                        </div>
-                        
-                        <!-- Estado -->
+                        <!-- Novedades -->
                         <div>
                             @php
-                                $estadoColors = [
-                                    'No iniciado' => ['bg' => '#ecf0f1', 'color' => '#7f8c8d'],
-                                    'En Ejecución' => ['bg' => '#fff3cd', 'color' => '#856404'],
-                                    'Entregado' => ['bg' => '#d4edda', 'color' => '#155724'],
-                                    'Anulada' => ['bg' => '#f8d7da', 'color' => '#721c24'],
-                                    'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
-                                ];
-                                $colors = $estadoColors[$orden->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
-                                $estadoDisplay = $orden->estado === 'PENDIENTE_SUPERVISOR' ? 'PENDIENTE' : $orden->estado;
+                                $novedades_count = 0;
+                                if (!empty($orden->novedades)) {
+                                    // Contar por doble salto de línea que es el separador entre novedades
+                                    $novedades_count = count(array_filter(explode("\n\n", $orden->novedades)));
+                                }
                             @endphp
-                            <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">
-                                {{ $estadoDisplay }}
-                            </span>
+                            @if($novedades_count > 0)
+                                <button class="btn-novedades" type="button" data-orden-id="{{ $orden->id }}" data-novedades="{{ Illuminate\Support\Js::from($orden->novedades) }}" style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">
+                                    {{ $novedades_count }} novedades
+                                </button>
+                            @else
+                                <span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">
+                                    Sin novedades
+                                </span>
+                            @endif
                         </div>
                         
                         <!-- Asesora -->
@@ -209,11 +211,6 @@
                         <!-- Forma Pago -->
                         <div>
                             <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
-                        </div>
-                        
-                        <!-- Fecha Estimada -->
-                        <div>
-                            <span>{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}</span>
                         </div>
                     </div>
                 @endforeach
@@ -356,6 +353,22 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Modal Novedades -->
+<div id="modalNovedades" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 75vh; display: flex; flex-direction: column;">
+        <div class="modal-header" style="border-bottom: 2px solid #1e40af; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1.5rem;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: white;">📋 Historial de Novedades</h2>
+            <button class="btn-close" onclick="cerrarModalNovedades()" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: white; position: absolute; right: 1rem; top: 1rem;">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+        <div id="modalNovedadesContent" style="overflow-y: auto; flex: 1; padding: 2rem; background: #f9fafb; margin: 0; border: none; color: #1f2937;">
+        <!-- Contenido de novedades formateado -->
+        </div>
+
     </div>
 </div>
 
@@ -1201,6 +1214,195 @@
                     GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
                 }
             }).catch(err => console.error('Error cargando GalleryManager:', err));
+        };
+
+        // ===== FUNCIONES PARA MODAL DE NOVEDADES =====
+        window.abrirNovedades = function(ordenId, novedades) {
+            console.log('[Novedades] Abriendo modal con ID:', ordenId);
+            const modal = document.getElementById('modalNovedades');
+            const contenido = document.getElementById('modalNovedadesContent');
+            
+            if (modal && contenido) {
+                // Procesar saltos de línea: reemplazar \n literal con saltos reales
+                const procesado = novedades.replace(/\\n/g, '\n');
+                
+                // Separar por doble salto de línea (separador de novedades)
+                const novedadesArray = procesado.split('\n\n').filter(n => n.trim());
+                
+                // Formatear cada novedad
+                let html = '';
+                novedadesArray.forEach((novedad, index) => {
+                    // Extraer usuario, rol y fecha usando regex
+                    const match = novedad.match(/\[(.*?)\]\s(.*)/);
+                    
+                    if (match) {
+                        const header = match[1];
+                        const mensaje = match[2];
+                        
+                        html += `
+                            <div style="
+                                background: white;
+                                border-left: 4px solid #1e40af;
+                                padding: 1.2rem;
+                                margin-bottom: 1.5rem;
+                                border-radius: 4px;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                            ">
+                                <div style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.5rem;
+                                    margin-bottom: 0.8rem;
+                                    font-weight: 600;
+                                    color: #1e40af;
+                                    font-size: 0.85rem;
+                                ">
+                                    <span style="color: #3b82f6;">✓</span>
+                                    <span>${escapeHtml(header)}</span>
+                                </div>
+                                <div style="
+                                    color: #374151;
+                                    font-size: 0.95rem;
+                                    line-height: 1.6;
+                                    white-space: pre-wrap;
+                                    word-wrap: break-word;
+                                ">
+                                    ${escapeHtml(mensaje)}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Si no coincide el formato, mostrar como está
+                        html += `
+                            <div style="
+                                background: white;
+                                border-left: 4px solid #6b7280;
+                                padding: 1.2rem;
+                                margin-bottom: 1.5rem;
+                                border-radius: 4px;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                            ">
+                                <div style="
+                                    color: #374151;
+                                    font-size: 0.95rem;
+                                    line-height: 1.6;
+                                    white-space: pre-wrap;
+                                    word-wrap: break-word;
+                                ">
+                                    ${escapeHtml(novedad)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                contenido.innerHTML = html;
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                console.log('[Novedades] Modal abierto');
+            }
+        };
+
+        // Función auxiliar para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        window.cerrarModalNovedades = function() {
+            console.log('[Novedades] Cerrando modal');
+            const modal = document.getElementById('modalNovedades');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+        // Event listener para botones de novedades
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.btn-novedades').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const ordenId = this.dataset.ordenId;
+                    // El atributo data-novedades ya contiene el valor de string directamente
+                    const novedades = this.getAttribute('data-novedades');
+                    
+                    try {
+                        // El valor ya está en formato string desde Laravel
+                        abrirNovedades(ordenId, novedades);
+                    } catch (err) {
+                        console.error('[Novedades] Error:', err);
+                        console.log('[Novedades] Novedades:', novedades);
+                    }
+                });
+            });
+        });
+
+        // Cerrar modal al hacer clic fuera del contenido
+        document.getElementById('modalNovedades')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalNovedades();
+            }
+        });
+
+        // ===== FUNCIÓN PARA ABRIR MODAL DE APROBACIÓN =====
+        window.abrirModalAprobacion = function(ordenId, numeroPedido) {
+            console.log('[Aprobación] Abriendo modal para orden:', { ordenId, numeroPedido });
+            
+            Swal.fire({
+                title: '¿Aprobar Pedido?',
+                html: `<p>¿Deseas aprobar el pedido <strong>#${numeroPedido}</strong>?</p>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-check"></i> Sí, aprobar',
+                cancelButtonText: 'Cancelar',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Enviar solicitud de aprobación
+                    fetch(`/supervisor-pedidos/${ordenId}/aprobar`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: '¡Aprobado!',
+                                text: data.message || 'Pedido aprobado correctamente',
+                                icon: 'success',
+                                confirmButtonColor: '#10b981'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.message || 'No se pudo aprobar el pedido',
+                                icon: 'error',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[Aprobación] Error:', error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Error al procesar la solicitud',
+                            icon: 'error',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    });
+                }
+            });
         };
     </script>
 @endpush

@@ -711,7 +711,11 @@ class ModalNovedadEdicion {
 
             
             // IMPORTANTE: Recargar datos completos del pedido para asegurar que telasAgregadas y datos relacionados se actualizan correctamente
-            if (window.prendaEnEdicion) {
+            // NOTA: Se omite la recarga para supervisores de pedidos ya que no es necesaria en ese flujo
+            const usuarioActual = this.obtenerUsuarioActual();
+            const esSupervisor = usuarioActual.rol === 'supervisor_pedidos';
+            
+            if (window.prendaEnEdicion && !esSupervisor) {
                 const pedidoId = window.prendaEnEdicion.pedidoId;
 
                 

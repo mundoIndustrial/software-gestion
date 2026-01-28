@@ -89,6 +89,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Obtener relación roles() desde roles_ids
+     * Retorna una relación que puede ser consultada como un método
+     */
+    public function roles()
+    {
+        // Retornar una query builder que simula la relación
+        if (!empty($this->roles_ids)) {
+            return Role::whereIn('id', $this->roles_ids);
+        }
+        return Role::whereIn('id', []); // Retorna query builder vacío
+    }
+
+    /**
      * Verificar si el usuario tiene un rol específico
      *
      * @param string|int $role - Nombre o ID del rol
@@ -101,8 +114,8 @@ class User extends Authenticatable
             return in_array($role, $this->roles_ids ?? []);
         }
 
-        // Si es string, buscar por nombre en roles
-        return $this->roles()->pluck('name')->contains($role);
+        // Si es string, buscar por nombre en roles usando el accessor
+        return $this->roles->pluck('name')->contains($role);
     }
 
     /**

@@ -135,15 +135,16 @@ class SupervisorPedidosController extends Controller
      */
     public function index(Request $request)
     {
-        // Obtener órdenes con filtros
-        $query = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion']);
+        // Obtener órdenes con filtros (incluyendo borradas suavemente)
+        $query = PedidoProduccion::withTrashed()->with(['asesora', 'prendas', 'cotizacion']);
 
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
-        // Por defecto mostrar órdenes PENDIENTES DE SUPERVISOR
+        // Si no hay parámetro aprobacion, mostrar todos los pedidos
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
-                // Órdenes PENDIENTES DE SUPERVISOR: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
-                $query->where('estado', 'PENDIENTE_SUPERVISOR');
+                // Órdenes PENDIENTES DE SUPERVISOR: aquellas que aún no han sido aprobadas
+                // Incluye PENDIENTE_SUPERVISOR y también "No iniciado" (ya aprobadas pero sin iniciar)
+                $query->whereIn('estado', ['PENDIENTE_SUPERVISOR', 'No iniciado']);
                 
                 // Filtrar solo órdenes con cotización de logo si el parámetro tipo=logo está presente
                 if ($request->filled('tipo') && $request->tipo === 'logo') {
@@ -153,12 +154,10 @@ class SupervisorPedidosController extends Controller
                 }
             } elseif ($request->aprobacion === 'aprobadas') {
                 // Órdenes aprobadas: las que ya fueron aprobadas (estado Pendiente o posteriores)
-                $query->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Finalizada', 'Anulada']);
+                $query->whereIn('estado', ['Pendiente', 'En Ejecución', 'Finalizada', 'Anulada']);
             }
-        } else {
-            // Por defecto, redirigir a pendientes
-            return redirect()->route('supervisor-pedidos.index', ['aprobacion' => 'pendiente']);
         }
+        // Si no hay parámetro, mostrar TODOS los pedidos (sin filtro de aprobación)
 
         // Búsqueda general por pedido o cliente
         if ($request->filled('busqueda')) {
@@ -235,6 +234,74 @@ class SupervisorPedidosController extends Controller
         $pdf = Pdf::loadView('supervisor-pedidos.pdf', compact('orden'));
         
         return $pdf->download('Orden_' . $orden->numero_pedido . '.pdf');
+    }
+
+    /**
+     * Aprobar orden (cambiar estado de PENDIENTE_SUPERVISOR a Pendiente)
+     */
+    public function aprobar($id)
+    {
+        try {
+            $orden = PedidoProduccion::findOrFail($id);
+            
+            // Verificar que está en estado PENDIENTE_SUPERVISOR
+            if ($orden->estado !== 'PENDIENTE_SUPERVISOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta orden no está pendiente de aprobación'
+                ], 400);
+            }
+
+            // Obtener usuario actual
+            $usuario = auth()->user();
+            $nombreUsuario = strtoupper($usuario->name ?? $usuario->email ?? 'Sistema');
+            $rol = 'Usuario';
+            
+            if (method_exists($usuario, 'getRoleNames')) {
+                $roles = $usuario->getRoleNames();
+                if ($roles && count($roles) > 0) {
+                    $rol = strtoupper($roles[0]);
+                }
+            }
+
+            // Crear novedad de aprobación
+            $fechaActual = now();
+            $fechaFormato = $fechaActual->format('d/m/Y') . '-' . $fechaActual->format('g:iA');
+            $linea_novedad = "{$nombreUsuario}-{$rol}-{$fechaFormato}\nAPROBACIÓN: Pedido aprobado por supervisor";
+
+            // Actualizar estado
+            $orden->update([
+                'estado' => 'No iniciado',
+                'aprobado_por_supervisor_en' => now()
+            ]);
+
+            // Agregar novedad
+            if (!empty($orden->novedades)) {
+                $orden->novedades .= "\n\n" . str_repeat("-", 60) . "\n" . $linea_novedad;
+            } else {
+                $orden->novedades = $linea_novedad;
+            }
+            $orden->save();
+
+            // Registrar en log
+            \Log::info('Pedido aprobado por supervisor', [
+                'pedido_id' => $id,
+                'numero_pedido' => $orden->numero_pedido,
+                'usuario' => $usuario->name,
+                'timestamp' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido aprobado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al aprobar pedido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aprobar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

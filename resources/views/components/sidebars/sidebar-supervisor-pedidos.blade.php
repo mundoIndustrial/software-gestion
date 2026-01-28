@@ -19,21 +19,12 @@
             <span class="menu-section-title">Estado de Aprobación</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'pendiente']) }}"
-                       class="menu-link {{ request()->query('aprobacion') === 'pendiente' && !request()->query('tipo') ? 'active' : '' }}"
+                    <a href="{{ route('supervisor-pedidos.index') }}"
+                       class="menu-link {{ !request()->query('aprobacion') ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
-                        <span class="menu-label">Pendientes</span>
+                        <span class="menu-label">Pedidos</span>
                         <span class="badge-alert" id="ordenesPendientesCount" style="display: none;">0</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'pendiente', 'tipo' => 'logo']) }}"
-                       class="menu-link {{ request()->query('tipo') === 'logo' ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">image</span>
-                        <span class="menu-label">Pendientes Logo</span>
-                        <span class="badge-alert" id="ordenesPendientesLogoCount" style="display: none;">0</span>
                     </a>
                 </li>
             </ul>
