@@ -83,7 +83,11 @@ function mostrarNotificacionTipoCotizacion(tipo) {
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {
-
+    // No ejecutar en supervisor-pedidos o cartera-pedidos
+    if (window.location.pathname.includes('supervisor-pedidos') || 
+        window.location.pathname.includes('cartera-pedidos')) {
+        return;
+    }
     
     // Ocultar navbar
     const topNav = document.querySelector('.top-nav');

@@ -332,7 +332,7 @@ class ItemRenderer {
                     <p>${cliente}</p>
                 </div>
                 <div>
-                    <strong>Asesora:</strong>
+                    <strong>Asesor:</strong>
                     <p>${asesora}</p>
                 </div>
                 <div>

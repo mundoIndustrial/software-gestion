@@ -77,7 +77,7 @@ class User extends Authenticatable
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function roles()
+    public function getRolesAttribute()
     {
         // Obtener roles desde roles_ids (JSON)
         if (!empty($this->roles_ids)) {

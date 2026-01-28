@@ -671,6 +671,19 @@ class PedidoProduccionRepository
             throw new \Exception('Pedido no encontrado');
         }
 
+        // VERIFICAR QUÉ ESTÁ EN ASESORA
+        \Log::info('[RECIBOS-REPO] VERIFICACIÓN DE ASESORA:', [
+            'pedido->asesora type' => gettype($pedido->asesora),
+            'es_object' => is_object($pedido->asesora),
+            'valor_asesora' => $pedido->asesora,
+        ]);
+        if (is_object($pedido->asesora)) {
+            \Log::info('[RECIBOS-REPO] ASESORA ES OBJETO:', [
+                'name' => $pedido->asesora->name ?? 'N/A',
+                'todas_las_propiedades' => (array) $pedido->asesora,
+            ]);
+        }
+
         //  AGREGAR EPP A LOS DATOS DE FACTURA
         \Log::info('[RECIBOS-REPO] EPPs del pedido:', [
             'count' => $pedido->epps->count(),
@@ -688,7 +701,7 @@ class PedidoProduccionRepository
             'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
             'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
             'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
-            'asesora' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
+            'asesor' => is_object($pedido->asesora) ? $pedido->asesora->name : ($pedido->asesora ?? 'Sin asignar'),
             'forma_de_pago' => $pedido->forma_de_pago ?? 'No especificada',
             'fecha' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
             'fecha_creacion' => $pedido->created_at ? $pedido->created_at->format('d/m/Y') : date('d/m/Y'),
@@ -696,6 +709,14 @@ class PedidoProduccionRepository
             'prendas' => [],
             'epps' => [],
         ];
+
+        // LOG DE VERIFICACIÓN
+        \Log::info('[RECIBOS-REPO] DATOS CONSTRUIDOS - Campos principales:', [
+            'numero_pedido' => $datos['numero_pedido'],
+            'cliente' => $datos['cliente'],
+            'asesor_enviado' => $datos['asesor'],
+            'forma_de_pago' => $datos['forma_de_pago'],
+        ]);
 
         // Procesar prendas para recibos
         foreach ($pedido->prendas as $prendaIndex => $prenda) {

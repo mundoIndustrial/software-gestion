@@ -50,10 +50,10 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         
     // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
         if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
-
+            console.log('[invoice-from-list.js] 📋 Usando crearModalFacturaDesdeListaPedidos');
             crearModalFacturaDesdeListaPedidos(datos);
         } else {
-
+            console.warn('[invoice-from-list.js] ⚠️ crearModalFacturaDesdeListaPedidos NO EXISTE, usando fallback abrirModalEditarPedido');
             abrirModalEditarPedido(pedidoId, datos, 'ver');  // Fallback al modal simple
         }
         
@@ -324,6 +324,9 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     
     // Botón Cerrar
     const btnCerrar = document.createElement('button');
+    btnCerrar.id = 'close-receipt-btn';
+    btnCerrar.setAttribute('id', 'close-receipt-btn');
+    console.log('[invoice-from-list.js] 🔵 Creando botón cerrar con ID:', { id: btnCerrar.id, getAttribute: btnCerrar.getAttribute('id') });
     btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 20px;">close</span>';
     btnCerrar.style.cssText = `
         background: #ef4444;
@@ -381,6 +384,10 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Log de verificación
+    const btnVerify = document.getElementById('close-receipt-btn');
+    console.log('[invoice-from-list.js] ✅ Modal agregado al DOM. Verificando botón:', { btnVerify, encontrado: !!btnVerify });
     
     // Cerrar con ESC
     document.addEventListener('keydown', (e) => {
@@ -548,44 +555,30 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
             }
         });
         
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('[cargarRecibosDesdeLista] FETCH A /asesores/pedidos/' + pedidoId + '/recibos-datos');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
         if (!response.ok) {
             throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         
         const datos = await response.json();
 
-        // ===== DEBUG: Rastrear estructura completa del backend =====
-        console.group('[DEBUG] Datos recibidos del backend - /asesores/pedidos/{id}/recibos-datos');
-        console.log('Estructura completa:', datos);
-        console.log('Número de prendas:', datos.prendas ? datos.prendas.length : 0);
-        if (datos.prendas && datos.prendas.length > 0) {
-            datos.prendas.forEach((prenda, idx) => {
-                console.group(`Prenda ${idx}: ${prenda.nombre}`);
-                console.log('  - Campos disponibles:', Object.keys(prenda));
-                console.log('  - procesos existe?', 'procesos' in prenda);
-                console.log('  - procesos es array?', Array.isArray(prenda.procesos));
-                console.log('  - procesos count:', (prenda.procesos || []).length);
-                if (prenda.procesos && prenda.procesos.length > 0) {
-                    console.log('  - Procesos:', prenda.procesos);
-                    prenda.procesos.forEach((p, pIdx) => {
-                        console.log(`    Proceso ${pIdx}:`, {
-                            nombre_proceso: p.nombre_proceso,
-                            tipo_proceso: p.tipo_proceso,
-                            tallas: p.tallas,
-                            ubicaciones: p.ubicaciones,
-                            imagenes: p.imagenes,
-                            observaciones: p.observaciones
-                        });
-                    });
-                }
-                console.groupEnd();
-            });
+        console.log('📦 DATOS RECIBIDOS DEL BACKEND:');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('datos.cliente:', datos.data?.cliente || datos.cliente);
+        console.log('datos.asesor:', datos.data?.asesor || datos.asesor);
+        console.log('datos.asesora:', datos.data?.asesora || datos.asesora);
+        console.log('datos.forma_de_pago:', datos.data?.forma_de_pago || datos.forma_de_pago);
+        console.log('datos.numero_pedido:', datos.data?.numero_pedido || datos.numero_pedido);
+        console.log('Estructura datos:', Object.keys(datos).slice(0, 10));
+        if (datos.data) {
+            console.log('Estructura datos.data:', Object.keys(datos.data).slice(0, 10));
         }
-        console.groupEnd();
-        // ===== FIN DEBUG =====
-        
-        // Ocultar spinner
-        ocultarCargando();
+        console.log('════════════════════════════════════════════════════════════');
         
         // Crear modal con los recibos
         crearModalRecibosDesdeListaPedidos(datos, prendasIndex);
@@ -607,17 +600,30 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
  */
 function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
     
-    // ===== DEBUG: Verificar datos al entrar a crearModal =====
-    console.group('[crearModalRecibosDesdeListaPedidos] Datos recibidos en función');
-    console.log('datos completo:', datos);
-    console.log('prendas count:', datos.prendas ? datos.prendas.length : 0);
-    if (datos.prendas && datos.prendas.length > 0) {
+    // ===== DEBUG: Verificar estructura del response =====
+    console.group('[crearModalRecibosDesdeListaPedidos] ANALIZANDO ESTRUCTURA DEL RESPONSE');
+    console.log('¿Tiene propiedades directas?', Object.keys(datos).slice(0, 15));
+    console.log('¿Tiene datos.data?', !!datos.data);
+    console.log('¿Tiene datos.success?', !!datos.success);
+    
+    // Determinar dónde están los datos reales
+    const datosReales = datos.data || datos;
+    console.log('Usando datosReales:', {
+        cliente: datosReales.cliente,
+        asesor: datosReales.asesor,
+        forma_de_pago: datosReales.forma_de_pago,
+        numero_pedido: datosReales.numero_pedido,
+        prendas_length: datosReales.prendas ? datosReales.prendas.length : 'undefined'
+    });
+    
+    console.log('prendas count:', datosReales.prendas ? datosReales.prendas.length : 0);
+    if (datosReales.prendas && datosReales.prendas.length > 0) {
         console.log('Primera prenda estructura:', {
-            nombre: datos.prendas[0].nombre,
-            campos: Object.keys(datos.prendas[0]),
-            procesos_existe: 'procesos' in datos.prendas[0],
-            procesos_valor: datos.prendas[0].procesos,
-            procesos_tipo: typeof datos.prendas[0].procesos
+            nombre: datosReales.prendas[0].nombre,
+            campos: Object.keys(datosReales.prendas[0]),
+            procesos_existe: 'procesos' in datosReales.prendas[0],
+            procesos_valor: datosReales.prendas[0].procesos,
+            procesos_tipo: typeof datosReales.prendas[0].procesos
         });
     }
     console.groupEnd();
@@ -711,9 +717,9 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
                         <div class="date-box year-box" id="receipt-year"></div>
                     </div>
                 </div>
-                <div id="order-asesora" class="order-asesora">ASESORA: <span id="receipt-asesora-value"></span></div>
-                <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="receipt-forma-pago-value"></span></div>
-                <div id="order-cliente" class="order-cliente">CLIENTE: <span id="receipt-cliente-value"></span></div>
+                <div id="order-asesor" class="order-asesor">ASESOR: <span id="asesora-value"></span></div>
+                <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
+                <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
                 <div id="order-descripcion" class="order-descripcion">
                     <div id="descripcion-text"></div>
                 </div>
@@ -773,9 +779,14 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
         // Los campos de firma se mantienen visibles (ENCARGADO y PRENDAS ENTREGADAS)
         
         // ===== DEBUG: Verificar datos justo antes de ReceiptManager =====
-        console.group('[cargarComponenteOrderDetailModal] Antes de crear ReceiptManager');
-        console.log('datos parámetro:', datos);
-        console.log('datos.prendas.length:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
+        console.group('[cargarComponenteOrderDetailModal] ANTES DE CREAR ReceiptManager');
+        console.log('🔍 DATOS PARÁMETRO RECIBIDOS:');
+        console.log('  cliente:', datos.cliente);
+        console.log('  asesor:', datos.asesor);
+        console.log('  asesora:', datos.asesora);
+        console.log('  forma_de_pago:', datos.forma_de_pago);
+        console.log('  numero_pedido:', datos.numero_pedido);
+        console.log('  prendas.length:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
         if (datos.prendas && datos.prendas.length > 0) {
             console.log('Primera prenda en datos:', {
                 nombre: datos.prendas[0].nombre,

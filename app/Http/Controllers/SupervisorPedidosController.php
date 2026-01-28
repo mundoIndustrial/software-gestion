@@ -429,15 +429,15 @@ class SupervisorPedidosController extends Controller
             'asesora', 
             'prendas',
             'prendas.fotos',
-            'prendas.fotosLogo',
-            'prendas.fotosTela',
+            'prendas.fotosTelas',
             'cotizacion.tipoCotizacion'
         ])->findOrFail($id);
 
-        // Obtener estadísticas
-        $totalCantidad = \DB::table('prendas_pedido')
-            ->where('numero_pedido', $orden->numero_pedido)
-            ->sum('cantidad');
+        // Obtener estadísticas - sumar cantidad desde prenda_pedido_tallas
+        $totalCantidad = \DB::table('prenda_pedido_tallas')
+            ->join('prendas_pedido', 'prenda_pedido_tallas.prenda_pedido_id', '=', 'prendas_pedido.id')
+            ->where('prendas_pedido.pedido_produccion_id', $orden->id)
+            ->sum('prenda_pedido_tallas.cantidad');
 
         $totalEntregado = ($orden->estado === 'Entregado') ? $totalCantidad : 0;
 

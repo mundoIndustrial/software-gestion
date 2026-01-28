@@ -116,7 +116,8 @@
     text-align: center;
 }
 
-.order-asesora {
+.order-asesora,
+.order-asesor {
     position: relative;
     top: auto;
     left: auto;
@@ -166,6 +167,7 @@
 }
 
 .order-asesora span,
+.order-asesor span,
 .order-forma-pago span,
 .order-cliente span {
     font-weight: bold;
@@ -344,6 +346,7 @@
     }
 
     .order-asesora,
+    .order-asesor,
     .order-forma-pago,
     .order-cliente {
         font-size: 13px;

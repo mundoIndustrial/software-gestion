@@ -15,7 +15,7 @@
         </div>
 
         <!-- Información Básica -->
-        <div id="order-asesora" class="order-asesora">ASESORA: <span id="receipt-asesora-value"></span></div>
+        <div id="order-asesor" class="order-asesor">ASESOR: <span id="receipt-asesor-value"></span></div>
         <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="receipt-forma-pago-value"></span></div>
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="receipt-cliente-value"></span></div>
 
@@ -186,10 +186,10 @@ class ReceiptManager {
         this.actualizarFecha(this.datosFactura.fecha);
 
         // Actualizar información básica
-        document.getElementById('receipt-asesora-value').textContent = 
-            this.datosFactura.asesora || 'N/A';
+        document.getElementById('receipt-asesor-value').textContent = 
+            this.datosFactura.asesor || 'N/A';
         document.getElementById('receipt-forma-pago-value').textContent = 
-            this.datosFactura.formaPago || 'N/A';
+            this.datosFactura.forma_de_pago || 'N/A';
         document.getElementById('receipt-cliente-value').textContent = 
             this.datosFactura.cliente || 'N/A';
 

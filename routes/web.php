@@ -459,20 +459,21 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     // ========================================
     
     // BORRADORES - Gestión de borradores
-    Route::get('/borradores', [App\Http\Controllers\Api_temp\V1\OrdenController::class, 'borradores'])->name('borradores.index');
+    // Route::get('/borradores', [App\Http\Controllers\Api_temp\V1\OrdenController::class, 'borradores'])->name('borradores.index');
     
     // ÓRDENES - CRUD principal
-    Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
-    Route::post('/ordenes/guardar', [App\Http\Controllers\OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
-    Route::get('/ordenes/{id}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
-    Route::patch('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
-    Route::post('/ordenes/{id}/confirmar', [App\Http\Controllers\OrdenController::class, 'confirmar'])->name('ordenes.confirm');
-    Route::delete('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
-    Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
-    Route::get('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
+    // ⚠️ Controlador comentado: OrdenController no existe - usar RegistroOrdenController en su lugar
+    // Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
+    // Route::post('/ordenes/guardar', [App\Http\Controllers\OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
+    // Route::get('/ordenes/{id}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
+    // Route::patch('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
+    // Route::post('/ordenes/{id}/confirmar', [App\Http\Controllers\OrdenController::class, 'confirmar'])->name('ordenes.confirm');
+    // Route::delete('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
+    // Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
+    // Route::get('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
     
     // Estadísticas de órdenes
-    Route::get('/ordenes/stats', [App\Http\Controllers\OrdenController::class, 'stats'])->name('ordenes.stats');
+    // Route::get('/ordenes/stats', [App\Http\Controllers\OrdenController::class, 'stats'])->name('ordenes.stats');
     
 
     // ========================================
@@ -524,6 +525,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     
     // Obtener prenda COMPLETA desde cotización (con procesos, telas, fotos, etc.)
     Route::get('/pedidos-produccion/obtener-prenda-completa/{cotizacionId}/{prendaId}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionViewController::class, 'obtenerPrendaCompleta'])->name('pedidos-produccion.obtener-prenda-completa')->where(['cotizacionId' => '[0-9]+', 'prendaId' => '[0-9]+']);
+    
+    // Obtener datos de una prenda específica con procesos para edición modal
+    Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.prenda-datos');
     
     Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'store'])->name('api.pedidos.store');
     Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'update'])->name('api.pedidos.update');
@@ -586,6 +590,17 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     
     // Actualizar prenda completa (con novedades) en un pedido existente
     Route::post('/pedidos/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
+
+    // ========================================
+    // DATOS DE CATÁLOGOS (tipos de broche, manga, telas, colores, etc)
+    // ========================================
+    Route::get('/api/tipos-broche-boton', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposBrocheBoton'])->name('api.tipos-broche-boton');
+    Route::get('/api/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposManga'])->name('api.tipos-manga');
+    Route::post('/api/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTipoManga'])->name('api.tipos-manga.create');
+    Route::get('/api/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTelas'])->name('api.telas');
+    Route::post('/api/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTela'])->name('api.telas.create');
+    Route::get('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.colores');
+    Route::post('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.colores.create');
 });
 
 // ========================================

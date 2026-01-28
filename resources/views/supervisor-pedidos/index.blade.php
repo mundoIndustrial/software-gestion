@@ -5,7 +5,6 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/index.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/edit-pedido.css') }}">
 @endpush
 
 @section('content')
@@ -98,9 +97,13 @@
                     " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                         
                         <!-- Acciones -->
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <!-- Botón Ver con Dropdown -->
-                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $orden->numero_pedido) }}" data-pedido="{{ str_replace('#', '', $orden->numero_pedido) }}" data-pedido-id="{{ $orden->id }}" title="Ver Opciones" style="
+                        <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                            <!-- Botón Ver (con dropdown) -->
+                            @php
+                                $numeroPedido = $orden->numero_pedido;
+                                $pedidoId = $orden->id;
+                            @endphp
+                            <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" title="Ver Opciones" style="
                                 background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                                 color: white;
                                 border: none;
@@ -118,28 +121,32 @@
                             " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.3)'">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            
-                            @if(request('aprobacion') === 'pendiente')
-                                <button class="btn-action btn-success" title="Aprobar orden" onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')" style="
-                                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                                    color: white;
-                                    border: none;
-                                    padding: 0.5rem;
-                                    border-radius: 6px;
-                                    cursor: pointer;
-                                    font-size: 1rem;
-                                    transition: all 0.3s ease;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    width: 36px;
-                                    height: 36px;
-                                    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
-                                    <i class="fas fa-check-circle"></i>
-                                </button>
+
+                            <!-- Botón Anular (solo si no está anulado) -->
+                            @php
+                                $estado = $orden->estado ?? 'Pendiente';
+                            @endphp
+                            @if($estado !== 'Anulada' && $estado !== 'anulada')
+                            <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
+                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 36px;
+                                height: 36px;
+                                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+                            " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                                <i class="fas fa-ban"></i>
+                            </button>
                             @endif
-                            
+
                             <!-- Botón Editar -->
                             <button onclick="editarPedido({{ $orden->id }})" title="Editar Pedido" style="
                                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -159,27 +166,6 @@
                             " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            
-                            @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') !== 'pendiente' && !request()->filled('estado')))
-                                <button class="btn-action btn-danger" title="Anular orden" onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')" style="
-                                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                    color: white;
-                                    border: none;
-                                    padding: 0.5rem;
-                                    border-radius: 6px;
-                                    cursor: pointer;
-                                    font-size: 1rem;
-                                    transition: all 0.3s ease;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    width: 36px;
-                                    height: 36px;
-                                    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-                                " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            @endif
                         </div>
                         
                         <!-- Número -->
@@ -374,82 +360,6 @@
 </div>
 
 <!-- Modal Editar Pedido -->
-<div id="modalEditarPedido" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 95%; max-width: 1400px; max-height: 95vh; overflow-y: auto;">
-        <div class="modal-header">
-            <h2>Editar Pedido <span id="editarNumeroOrden"></span></h2>
-            <button class="btn-close" onclick="cerrarModalEditar()">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-
-        <div class="modal-body">
-            <form id="formEditarPedido" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" id="editarOrdenId" name="orden_id">
-
-                <!-- Información General del Pedido -->
-                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                    <h3 style="margin: 0 0 1.5rem 0; color: #2c3e50; font-size: 1.1rem; border-bottom: 2px solid #e0e6ed; padding-bottom: 0.75rem;">
-                        <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem;">info</span>
-                        Información General
-                    </h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                        <div class="form-group">
-                            <label for="editarCliente">Cliente *</label>
-                            <input type="text" id="editarCliente" name="cliente" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editarFormaPago">Forma de Pago</label>
-                            <input type="text" id="editarFormaPago" name="forma_de_pago" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="editarDiaEntrega">Días de Entrega</label>
-                            <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
-                                <input type="number" id="editarDiaEntrega" name="dia_de_entrega" class="form-control" min="1" style="flex: 1;">
-                                <button type="button" class="btn" style="background: #3498db; color: white; padding: 0.5rem 1rem; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;" onclick="calcularFechaEstimada()">
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">event</span>
-                                    Calcular
-                                </button>
-                            </div>
-                            <!-- Campo oculto para enviar fecha estimada -->
-                            <input type="hidden" id="fechaEstimadaOculta" name="fecha_estimada_de_entrega" value="">
-                            <div id="fechaEstimadaContainer" style="margin-top: 0.75rem; display: none;">
-                                <label style="font-size: 0.9rem; color: #27ae60; font-weight: 600;">Fecha Estimada:</label>
-                                <div id="fechaEstimadaMostrada" style="padding: 0.5rem; background: #d5f4e6; border: 1px solid #27ae60; border-radius: 4px; color: #27ae60; font-weight: 500;">-</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label for="editarNovedades">Novedades</label>
-                        <textarea id="editarNovedades" name="novedades" class="form-control" rows="3"></textarea>
-                    </div>
-                </div>
-
-                <!-- Prendas del Pedido -->
-                <div id="prendasContainer">
-                    <h3 style="margin: 0 0 1.5rem 0; color: #2c3e50; font-size: 1.1rem; border-bottom: 2px solid #e0e6ed; padding-bottom: 0.75rem;">
-                        <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem;">checkroom</span>
-                        Prendas del Pedido
-                    </h3>
-                    <!-- Las prendas se cargarán dinámicamente aquí -->
-                </div>
-
-                <!-- Botones de Acción -->
-                <div class="form-actions" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e0e6ed;">
-                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEditar()">
-                        <span class="material-symbols-rounded">close</span>
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn" style="background: #27ae60; color: white;">
-                        <span class="material-symbols-rounded">save</span>
-                        Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 
 <script>
@@ -691,6 +601,161 @@
         document.getElementById('modalVerOrden').style.display = 'none';
     }
 
+    /**
+     * EDICIÓN DE PEDIDOS - Sincronizada con asesores
+     * Usa el mismo endpoint /api/pedidos/{id} y abre el mismo modal
+     */
+    async function editarPedido(pedidoId) {
+        // 🔒 Prevenir múltiples clics simultáneos
+        if (window.edicionEnProgreso) {
+            return;
+        }
+        
+        window.edicionEnProgreso = true;
+        const tiempoInicio = performance.now();
+        const etapas = {};
+        
+        try {
+            etapas.inicio = performance.now();
+            console.log(`[editarPedido] ⏱️ Iniciando apertura modal - Pedido: ${pedidoId}`);
+            
+            // 🔥 PASO 1: Abrir modal pequeño de carga centrado
+            console.log('[editarPedido] 🚀 Abriendo modal de carga...');
+            await _ensureSwal();
+            etapas.swalReady = performance.now();
+            console.log(`[editarPedido] ✅ Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
+            
+            // Mostrar modal pequeño con spinner centrado
+            const modalPromise = Swal.fire({
+                html: `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="width: 60px; height: 60px; border: 4px solid #e5e7eb; border-top-color: #1e40af; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+                        <p style="color: #6b7280; font-size: 14px; font-weight: 500; margin: 0;">Cargando datos del pedido...</p>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                `,
+                width: '300px',
+                padding: '0',
+                background: 'white',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: (modal) => {
+                    const swalContainer = document.querySelector('.swal2-container');
+                    if (swalContainer) {
+                        swalContainer.style.display = 'flex';
+                        swalContainer.style.alignItems = 'center';
+                        swalContainer.style.justifyContent = 'center';
+                    }
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            // 🔥 PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
+            if (!window.PrendaEditorPreloader?.isReady?.()) {
+                console.log('[editarPedido] 📦 Cargando módulos de edición (con preloader)...');
+                try {
+                    await window.PrendaEditorPreloader.loadWithLoader({
+                        title: 'Cargando datos',
+                        message: 'Por favor espera...',
+                        onComplete: () => {
+                            console.log('[editarPedido] ✅ Módulos cargados completamente');
+                        }
+                    });
+                    etapas.modulosCargados = performance.now();
+                    console.log(`[editarPedido] ✅ Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
+                } catch (error) {
+                    console.error('[editarPedido] ❌ Error cargando módulos:', error);
+                    Swal.close();
+                    alert('Error: No se pudieron cargar los módulos de edición');
+                    window.edicionEnProgreso = false;
+                    return;
+                }
+            } else {
+                etapas.modulosCargados = performance.now();
+                console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
+            }
+
+            // 🔥 PASO 3: Fetch de datos mientras el modal ya está visible
+            console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
+
+            const response = await fetch(`/api/pedidos/${pedidoId}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const respuesta = await response.json();
+
+            if (!respuesta.success) {
+                throw new Error(respuesta.message || 'Error desconocido');
+            }
+
+            const datos = respuesta.data || respuesta.datos;
+            etapas.fetchCompleto = performance.now();
+            console.log(`[editarPedido] ✅ Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
+            
+            // Transformar datos al formato que espera abrirModalEditarPedido
+            const datosTransformados = {
+                id: datos.id || datos.numero_pedido,
+                numero_pedido: datos.numero_pedido || datos.numero,
+                numero: datos.numero || datos.numero_pedido,
+                cliente: datos.cliente || 'Cliente sin especificar',
+                asesora: datos.asesor || datos.asesora?.name || 'Asesor sin especificar',
+                estado: datos.estado || 'Pendiente',
+                forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
+                prendas: datos.prendas || [],
+                epps: datos.epps_transformados || datos.epps || [],
+                procesos: datos.procesos || [],
+                // Copiar todas las otras propiedades
+                ...datos
+            };
+
+            console.log('[editarPedido] 📊 Datos cargados:', {
+                id: datosTransformados.id,
+                numero: datosTransformados.numero_pedido,
+                cliente: datosTransformados.cliente,
+                prendas: datosTransformados.prendas?.length || 0,
+                procesos: datosTransformados.procesos?.length || 0
+            });
+
+            // 🔥 PASO 4: Reemplazar modal de carga con contenido real
+            etapas.antes_modal = performance.now();
+            console.log(`[editarPedido] 🎬 Abriendo modal de edición...`);
+            
+            await abrirModalEditarPedido(pedidoId, datosTransformados, 'editar');
+            
+            etapas.fin = performance.now();
+            console.log(`
+[editarPedido] ⏱️ RESUMEN DE TIEMPOS:
+  └─ Swal Ready: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms
+  └─ Módulos: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms
+  └─ Fetch: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms
+  └─ Modal: ${(etapas.fin - etapas.antes_modal).toFixed(2)}ms
+  └─ TOTAL: ${(etapas.fin - etapas.inicio).toFixed(2)}ms
+            `);
+
+        } catch (err) {
+            Swal.close();
+            console.error('[editarPedido] ❌ Error:', err);
+            alert('Error: No se pudo cargar el pedido: ' + err.message);
+            
+        } finally {
+            window.edicionEnProgreso = false;
+        }
+    }
+
     function abrirModalAnulacion(ordenId, numeroOrden) {
         document.getElementById('ordenNumero').textContent = '#' + numeroOrden;
         document.getElementById('formAnulacion').dataset.ordenId = ordenId;
@@ -805,15 +870,38 @@
 
     // Función para abrir el seguimiento
     function abrirSeguimiento(ordenId) {
+        console.log('=== [abrirSeguimiento] Iniciado ===');
+        console.log('ordenId:', ordenId);
+        
         // Cerrar el menú ver
         const menu = document.getElementById(`ver-menu-${ordenId}`);
         if (menu) {
+            console.log('[abrirSeguimiento] Cerrando menú:', `ver-menu-${ordenId}`);
             menu.style.display = 'none';
+        } else {
+            console.log('[abrirSeguimiento] No se encontró el menú:', `ver-menu-${ordenId}`);
         }
+        
+        // Log de funciones disponibles
+        console.log('[abrirSeguimiento] Verificando si openOrderTrackingModal está disponible');
+        console.log('[abrirSeguimiento] typeof openOrderTrackingModal:', typeof openOrderTrackingModal);
         
         // Abrir el modal de seguimiento usando la función externa
         if (typeof openOrderTrackingModal === 'function') {
-            openOrderTrackingModal(ordenId);
+            console.log('[abrirSeguimiento] ✓ openOrderTrackingModal está disponible, llamando...');
+            try {
+                openOrderTrackingModal(ordenId);
+                console.log('[abrirSeguimiento] ✓ openOrderTrackingModal llamado exitosamente');
+            } catch (error) {
+                console.error('[abrirSeguimiento] ✗ Error al llamar openOrderTrackingModal:', error);
+                console.error('[abrirSeguimiento] Stack:', error.stack);
+                alert('Error en openOrderTrackingModal: ' + error.message);
+            }
+        } else {
+            console.error('[abrirSeguimiento] ✗ openOrderTrackingModal NO está disponible');
+            console.log('[abrirSeguimiento] Funciones globales con "tracking":', Object.keys(window).filter(k => k.toLowerCase().includes('tracking')));
+            console.log('[abrirSeguimiento] Funciones globales con "orden":', Object.keys(window).filter(k => k.toLowerCase().includes('orden')));
+            alert('Error: openOrderTrackingModal no está disponible. Intenta nuevamente.');
         }
     }
 </script>
@@ -823,12 +911,12 @@
 
 <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none;" onclick="closeModalOverlay()"></div>
 
-<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 90vw; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 90vw; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none; border-radius: 8px;">
     <x-orders-components.order-detail-modal />
 </div>
 
 <!-- Modal Wrapper para Detalles de Orden - LOGO -->
-<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 90vw; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 90vw; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none; border-radius: 8px;">
     <x-orders-components.order-detail-modal-logo />
 </div>
 
@@ -838,10 +926,34 @@
 <!-- Modal Seguimiento del Pedido -->
 <x-orders-components.order-tracking-modal />
 
+<!-- Script para funcionalidad del modal de seguimiento -->
+@include('components.orders-components.tracking-modal-script')
+
 <!-- Modal para Selector de Recibos (desde asesores) -->
 @include('components.modals.recibos-process-selector')
 
+<!-- Modal Editar Pedido (desde asesores) - Componente completo para edición de pedidos -->
+@include('asesores.pedidos.components.modal-editar-pedido')
+
+<!-- Componentes de módulos de edición (desde asesores) -->
+@include('asesores.pedidos.components.modal-prendas-lista')
+@include('asesores.pedidos.components.modal-agregar-prenda')
+@include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
+@include('asesores.pedidos.components.modal-editar-prenda')
+@include('asesores.pedidos.components.modal-editar-epp')
+
 @push('scripts')
+    <!-- ✅ SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
+    <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
+    <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
+    <script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
+    <script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
+    
+    <!-- ✅ LAZY LOADERS: Cargan módulos bajo demanda (Requeridos para modal-editar-pedido) -->
+    <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
+    <script src="{{ asset('js/lazy-loaders/prenda-editor-loader.js') }}"></script>
+    <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
+    
     <!-- Scripts para funcionalidad de asesores -->
     <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
     <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
@@ -849,11 +961,121 @@
     <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
     <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
     <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
-    <script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
     
     <!-- Scripts específicos de supervisor -->
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>
-    <script src="{{ asset('js/supervisor-pedidos/edit-pedido.js') }}"></script>
+    <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}"></script>
+    
+    <!-- Script para abrir el modal de seguimiento (inline para asegurar disponibilidad) -->
+    <script>
+        /**
+         * Abre el modal de seguimiento del pedido
+         * @param {number} ordenId - ID de la orden/pedido
+         */
+        window.openOrderTrackingModal = function(ordenId) {
+            console.log('[openOrderTrackingModal] Abriendo modal para orden:', ordenId);
+            
+            // Primero verificar que mostrarTrackingModal está disponible
+            if (typeof mostrarTrackingModal !== 'function') {
+                console.error('[openOrderTrackingModal] ERROR: mostrarTrackingModal no está disponible');
+                alert('Error: El modal de seguimiento no está cargado correctamente. Por favor, recarga la página.');
+                return;
+            }
+            
+            console.log('[openOrderTrackingModal] mostrarTrackingModal está disponible');
+            
+            // Obtener datos del pedido desde la ruta de supervisor
+            console.log('[openOrderTrackingModal] Obteniendo datos de /supervisor-pedidos/' + ordenId + '/datos');
+            
+            fetch(`/supervisor-pedidos/${ordenId}/datos`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    console.log('[openOrderTrackingModal] Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        console.error('[openOrderTrackingModal] HTTP error! status:', response.status);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(pedidoData => {
+                    console.log('[openOrderTrackingModal] Datos del pedido recibidos:', pedidoData);
+                    
+                    // Si tenemos los datos, intentar obtener los procesos
+                    console.log('[openOrderTrackingModal] Obteniendo procesos de /api/ordenes/' + ordenId + '/procesos');
+                    
+                    return fetch(`/api/ordenes/${ordenId}/procesos`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    })
+                        .then(procResponse => {
+                            console.log('[openOrderTrackingModal] Procesos response status:', procResponse.status);
+                            
+                            // Si la respuesta es exitosa, agregar los procesos
+                            if (procResponse.ok) {
+                                return procResponse.json().then(procesos => {
+                                    console.log('[openOrderTrackingModal] Procesos obtenidos:', procesos);
+                                    pedidoData.procesos = procesos;
+                                    return pedidoData;
+                                });
+                            }
+                            // Si falla, devolver los datos sin procesos
+                            console.warn('[openOrderTrackingModal] No se pudieron cargar los procesos (status ' + procResponse.status + ')');
+                            pedidoData.procesos = [];
+                            return pedidoData;
+                        })
+                        .catch(error => {
+                            console.warn('[openOrderTrackingModal] Error al obtener procesos:', error);
+                            pedidoData.procesos = [];
+                            return pedidoData;
+                        });
+                })
+                .then(data => {
+                    console.log('[openOrderTrackingModal] Datos finales listos. Llamando a mostrarTrackingModal...');
+                    
+                    // Verificar nuevamente que la función existe
+                    if (typeof mostrarTrackingModal !== 'function') {
+                        console.error('[openOrderTrackingModal] ERROR: mostrarTrackingModal no está disponible en el then final');
+                        alert('Error: El modal de seguimiento no está cargado correctamente.');
+                        return;
+                    }
+                    
+                    // Llamar a la función que rellena y muestra el modal
+                    try {
+                        mostrarTrackingModal(data);
+                        console.log('[openOrderTrackingModal] Modal mostrado exitosamente');
+                    } catch (e) {
+                        console.error('[openOrderTrackingModal] Error al llamar mostrarTrackingModal:', e);
+                        alert('Error: ' + e.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('[openOrderTrackingModal] Error general:', error);
+                    alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
+                });
+        };
+
+        /**
+         * Cierra el modal de seguimiento
+         */
+        window.closeOrderTracking = function() {
+            console.log('[closeOrderTracking] Cerrando modal de seguimiento');
+            const modal = document.getElementById('orderTrackingModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
+    </script>
     
     <!-- Scripts para Recibos/Procesos -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>

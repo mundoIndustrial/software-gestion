@@ -91,7 +91,17 @@ export class PedidosRecibosModule {
             if (datos.data && typeof datos.data === 'object') {
                 datos = datos.data;
             }
-                        this.modalManager.setState({ datosCompletos: datos });
+            
+            console.group('[PedidosRecibosModule.abrirRecibo] 📥 DATOS RECIBIDOS DEL ENDPOINT');
+            console.log('Endpoint:', endpoint);
+            console.log('Cliente:', datos.cliente);
+            console.log('Asesor:', datos.asesor);
+            console.log('Forma de pago:', datos.forma_de_pago);
+            console.log('Número pedido:', datos.numero_pedido);
+            console.log('Total prendas:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
+            console.groupEnd();
+                        
+            this.modalManager.setState({ datosCompletos: datos });
 
             // Validar que existan prendas
             if (!datos.prendas || !Array.isArray(datos.prendas)) {

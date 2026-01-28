@@ -66,15 +66,33 @@ export class ReceiptRenderer {
 
         // Cliente
         const clienteValue = document.getElementById('cliente-value');
-        if (clienteValue) clienteValue.textContent = datosPedido.cliente || '-';
+        if (clienteValue) {
+            const valor = datosPedido.cliente || '-';
+            clienteValue.textContent = valor;
+            console.log('✅ [ReceiptRenderer] Cliente actualizado:', valor);
+        } else {
+            console.warn('⚠️ [ReceiptRenderer] Elemento #cliente-value NO encontrado');
+        }
 
-        // Asesora
-        const asesoraValue = document.getElementById('asesora-value');
-        if (asesoraValue) asesoraValue.textContent = datosPedido.asesora || '-';
+        // Asesor
+        const asesorValue = document.getElementById('asesora-value');
+        if (asesorValue) {
+            const valor = datosPedido.asesor || datosPedido.asesora || '-';
+            asesorValue.textContent = valor;
+            console.log('✅ [ReceiptRenderer] Asesor actualizado:', valor);
+        } else {
+            console.warn('⚠️ [ReceiptRenderer] Elemento #asesora-value NO encontrado');
+        }
 
         // Forma de pago
         const formaPagoValue = document.getElementById('forma-pago-value');
-        if (formaPagoValue) formaPagoValue.textContent = datosPedido.forma_de_pago || '-';
+        if (formaPagoValue) {
+            const valor = datosPedido.forma_de_pago || '-';
+            formaPagoValue.textContent = valor;
+            console.log('✅ [ReceiptRenderer] Forma de pago actualizada:', valor);
+        } else {
+            console.warn('⚠️ [ReceiptRenderer] Elemento #forma-pago-value NO encontrado');
+        }
 
         // Número de pedido
         const pedidoNumber = document.querySelector('.pedido-number');

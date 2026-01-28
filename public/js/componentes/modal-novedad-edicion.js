@@ -41,8 +41,34 @@ class ModalNovedadEdicion {
     }
 
     /**
+     * Obtener nombre legible del rol
+     * @private
+     */
+    obtenerNombreRolLegible(rolTecnico) {
+        const mapeoRoles = {
+            'supervisor_pedidos': 'Supervisor de Pedidos',
+            'supervisor_asesores': 'Supervisor de Asesores',
+            'supervisor-admin': 'Supervisor Administrador',
+            'asesor': 'Asesor',
+            'contador': 'Contador',
+            'cortador': 'Cortador',
+            'supervisor': 'Supervisor',
+            'costurero': 'Costurero',
+            'patron': 'Patronista',
+            'patronista': 'Patronista',
+            'bordado': 'Bordado',
+            'despacho': 'Despacho',
+            'cartera': 'Cartera',
+            'produccion': 'Producción',
+            'admin': 'Administrador',
+        };
+        
+        return mapeoRoles[rolTecnico] || (rolTecnico || 'Sin Rol');
+    }
+
+    /**
      * Construir novedad con información de usuario, rol, fecha/hora y razón
-     * Formato: [usuario (rol) - DD-MM-YYYY HH:MM:SS] descripción
+     * Formato: [rol-DD-MM-YYYY HH:MM:SS] descripción
      * @private
      */
     construirNovedadConMetadata(razonDelCambio) {
@@ -62,11 +88,12 @@ class ModalNovedadEdicion {
         const segundos = String(ahora.getSeconds()).padStart(2, '0');
         const hora = `${horas}:${minutos}:${segundos}`;
         
-        // Obtener rol formateado (convertir a minúsculas sin espacios para consistencia)
-        const rol = (usuarioActual.rol || 'sin-rol').toLowerCase().replace(/\s+/g, '-');
+        // Obtener rol con nombre legible
+        const rolTecnico = (usuarioActual.rol || 'Sin Rol');
+        const rolLegible = this.obtenerNombreRolLegible(rolTecnico);
         
-        // Formato: [usuario (rol) - DD-MM-YYYY HH:MM:SS] descripción
-        const novedad = `[${usuarioActual.nombre} (${rol}) - ${fecha} ${hora}] ${razonDelCambio}`;
+        // Formato: [rol-DD-MM-YYYY HH:MM:SS] descripción
+        const novedad = `[${rolLegible}-${fecha} ${hora}] ${razonDelCambio}`;
         return novedad;
     }
 
@@ -690,21 +717,28 @@ class ModalNovedadEdicion {
                 
                 try {
                     const respDataEdicion = await fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`);
-                    const resultadoDataEdicion = await respDataEdicion.json();
                     
-                    if (resultadoDataEdicion.success && resultadoDataEdicion.datos) {
-
-                        window.datosEdicionPedido = resultadoDataEdicion.datos;
+                    // Verificar si la respuesta es exitosa (status 200-299)
+                    if (!respDataEdicion.ok) {
+                        console.warn('[modal-novedad-edicion] Recarga de datos fallida (status: ' + respDataEdicion.status + '), continuando sin actualización');
+                    } else {
+                        const resultadoDataEdicion = await respDataEdicion.json();
                         
-                        // Actualizar en prendasEdicion también
-                        if (window.prendasEdicion) {
-                            window.prendasEdicion.prendas = resultadoDataEdicion.datos.prendas;
-                            window.prendasEdicion.pedidoId = resultadoDataEdicion.datos.id || resultadoDataEdicion.datos.numero_pedido;
+                        if (resultadoDataEdicion.success && resultadoDataEdicion.datos) {
+
+                            window.datosEdicionPedido = resultadoDataEdicion.datos;
+                            
+                            // Actualizar en prendasEdicion también
+                            if (window.prendasEdicion) {
+                                window.prendasEdicion.prendas = resultadoDataEdicion.datos.prendas;
+                                window.prendasEdicion.pedidoId = resultadoDataEdicion.datos.id || resultadoDataEdicion.datos.numero_pedido;
+                            }
                         }
                     }
                 } catch (e) {
 
                     // Si falla la recarga automática, al menos actualizar la prenda con los datos que vinieron
+                    console.warn('[modal-novedad-edicion] Error al recargar datos:', e.message);
                     if (resultado.prenda && window.datosEdicionPedido && window.prendaEnEdicion) {
                         const prendasIndex = window.prendaEnEdicion.prendasIndex;
                         if (prendasIndex !== null && prendasIndex !== undefined) {

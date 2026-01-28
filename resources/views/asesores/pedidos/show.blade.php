@@ -43,7 +43,7 @@
                 <span class="value">{{ $pedidoData->cliente }}</span>
             </div>
             <div class="info-item">
-                <label>Asesora:</label>
+                <label>Asesor:</label>
                 <span class="value">{{ $pedidoData->asesora }}</span>
             </div>
             <div class="info-item">

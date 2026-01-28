@@ -6,11 +6,18 @@
 class ReceiptManager {
     constructor(datosFactura, prendasIndex = null, contenedorId = null) {
         // ===== DEBUG: Verificar datos de entrada =====
-        console.group('[ReceiptManager] Constructor - Datos recibidos');
-        console.log('datosFactura:', datosFactura);
-        console.log('datosFactura.prendas:', datosFactura.prendas);
-        console.log('Número de prendas:', datosFactura.prendas ? datosFactura.prendas.length : 'UNDEFINED');
-        console.log('prendasIndex filtro:', prendasIndex);
+        console.group('[ReceiptManager] ✅ CONSTRUCTOR INICIADO');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('📥 PARÁMETROS RECIBIDOS EN CONSTRUCTOR:');
+        console.log('  datosFactura.cliente:', datosFactura.cliente);
+        console.log('  datosFactura.asesor:', datosFactura.asesor);
+        console.log('  datosFactura.asesora:', datosFactura.asesora);
+        console.log('  datosFactura.forma_de_pago:', datosFactura.forma_de_pago);
+        console.log('  datosFactura.numero_pedido:', datosFactura.numero_pedido);
+        console.log('  datosFactura.prendas:', datosFactura.prendas);
+        console.log('  Número de prendas:', datosFactura.prendas ? datosFactura.prendas.length : 'UNDEFINED');
+        console.log('  prendasIndex filtro:', prendasIndex);
+        console.log('═══════════════════════════════════════════════════════════');
         
         if (datosFactura.prendas && datosFactura.prendas.length > 0) {
             const primeraPrenda = datosFactura.prendas[0];
@@ -43,6 +50,7 @@ class ReceiptManager {
 
         this.inicializarEventos();
         this.crearSelectorPrendas();
+        console.log('✅ [ReceiptManager] Constructor completado. Recibos generados:', this.recibos.length);
         this.renderizar();
     }
 
@@ -278,8 +286,13 @@ class ReceiptManager {
      */
     renderizar() {
         const recibo = this.recibos[this.indexActual];
-
-
+        
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('[ReceiptManager.renderizar] INICIANDO RENDERIZACIÓN');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('Recibo actual:', recibo);
+        console.log('datosFactura completo:', this.datosFactura);
+        console.log('═══════════════════════════════════════════════════════════');
 
         // Actualizar contador
         document.getElementById('receipt-number').textContent = recibo.numero;
@@ -289,12 +302,49 @@ class ReceiptManager {
         this.actualizarFecha(this.datosFactura.fecha);
 
         // Actualizar información básica
-        document.getElementById('receipt-asesora-value').textContent = 
-            this.datosFactura.asesora || 'N/A';
-        document.getElementById('receipt-forma-pago-value').textContent = 
-            this.datosFactura.forma_de_pago || 'N/A';
-        document.getElementById('receipt-cliente-value').textContent = 
-            this.datosFactura.cliente || 'N/A';
+        console.log('─────────────────────────────────────────────────────────────');
+        console.log('[ReceiptManager.renderizar] ACTUALIZANDO CAMPOS:');
+        console.log('─────────────────────────────────────────────────────────────');
+        console.log('1. ASESOR:');
+        console.log('   - datosFactura.asesor:', this.datosFactura.asesor);
+        console.log('   - datosFactura.asesora:', this.datosFactura.asesora);
+        const asesorElem = document.getElementById('asesora-value');
+        console.log('   - Elemento #asesora-value existe?', !!asesorElem);
+        if (asesorElem) {
+            const valorAsesor = this.datosFactura.asesor || this.datosFactura.asesora || 'N/A';
+            asesorElem.textContent = valorAsesor;
+            console.log('   - ✓ Asignado:', valorAsesor);
+            console.log('   - Contenido ahora:', asesorElem.textContent);
+        } else {
+            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
+        }
+        
+        console.log('2. FORMA DE PAGO:');
+        console.log('   - datosFactura.forma_de_pago:', this.datosFactura.forma_de_pago);
+        const formaPagoElem = document.getElementById('forma-pago-value');
+        console.log('   - Elemento #forma-pago-value existe?', !!formaPagoElem);
+        if (formaPagoElem) {
+            const valorFormaPago = this.datosFactura.forma_de_pago || 'N/A';
+            formaPagoElem.textContent = valorFormaPago;
+            console.log('   - ✓ Asignado:', valorFormaPago);
+            console.log('   - Contenido ahora:', formaPagoElem.textContent);
+        } else {
+            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
+        }
+        
+        console.log('3. CLIENTE:');
+        console.log('   - datosFactura.cliente:', this.datosFactura.cliente);
+        const clienteElem = document.getElementById('cliente-value');
+        console.log('   - Elemento #cliente-value existe?', !!clienteElem);
+        if (clienteElem) {
+            const valorCliente = this.datosFactura.cliente || 'N/A';
+            clienteElem.textContent = valorCliente;
+            console.log('   - ✓ Asignado:', valorCliente);
+            console.log('   - Contenido ahora:', clienteElem.textContent);
+        } else {
+            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
+        }
+        console.log('─────────────────────────────────────────────────────────────');
 
         // Actualizar título (DINÁMICO)
         document.getElementById('receipt-title').textContent = recibo.titulo;

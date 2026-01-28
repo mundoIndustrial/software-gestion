@@ -11,7 +11,7 @@
                 <div class="date-box year-box"></div>
             </div>
         </div>
-        <div id="order-asesora" class="order-asesora">ASESORA: <span id="asesora-value"></span></div>
+        <div id="order-asesora" class="order-asesora">ASESOR: <span id="asesora-value"></span></div>
         <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
         <div id="order-descripcion" class="order-descripcion">

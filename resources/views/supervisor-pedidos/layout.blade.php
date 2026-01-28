@@ -20,8 +20,34 @@
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
+    <script>
+        window.usuarioAutenticado = {
+            @if(auth()->check())
+                id: {{ auth()->user()->id }},
+                nombre: "{{ auth()->user()->name }}",
+                email: "{{ auth()->user()->email }}",
+                rol: "{{ auth()->user()->roles->first()?->name ?? 'Sin Rol' }}",
+                roles: @json(auth()->user()->roles->pluck('name')->toArray())
+            @else
+                id: null,
+                nombre: 'Usuario',
+                email: '',
+                rol: 'Sin Rol',
+                roles: []
+            @endif
+        };
+        console.log('[Supervisor-Pedidos Layout] 👤 Usuario autenticado:', window.usuarioAutenticado);
+    </script>
 
     <style>
         .top-nav {
@@ -51,6 +77,18 @@
             justify-content: flex-end;
             align-items: center;
             gap: 1rem;
+        }
+
+        /* 🔥 PROTECCIÓN MÁXIMA: El nav NUNCA se puede ocultar en supervisor-pedidos */
+        header.top-nav {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: auto !important;
+            min-height: 72px !important;
+            position: relative !important;
+            z-index: 100 !important;
+            pointer-events: auto !important;
         }
 
         /* Estilos para notificaciones */
@@ -486,6 +524,68 @@
     </script>
 
     @stack('scripts')
+
+    <!-- 🔥 PROTECCIÓN TOTAL: Prevenir que el nav se oculte por cualquier medio -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const topNav = document.querySelector('.top-nav');
+            
+            if (!topNav) {
+                console.error('❌ .top-nav no encontrado');
+                return;
+            }
+
+            console.log('✅ TOP-NAV PROTECTOR ACTIVADO');
+
+            // Función agresiva para restaurar el nav
+            function forceNavVisible() {
+                // Remover cualquier clase que pueda ocultarlo
+                topNav.classList.remove('hidden', 'hide', 'invisible', 'd-none', 'opacity-0');
+                
+                // Forzar estilos CSS
+                topNav.style.cssText = `
+                    display: flex !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    height: auto !important;
+                    min-height: 72px !important;
+                    position: relative !important;
+                    z-index: 100 !important;
+                    pointer-events: auto !important;
+                `;
+            }
+
+            // Ejecutar inmediatamente
+            forceNavVisible();
+
+            // MutationObserver para detectar cambios
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes') {
+                        console.log(`[MUTACIÓN] Atributo ${mutation.attributeName} cambió en .top-nav`);
+                        forceNavVisible();
+                    }
+                });
+            });
+
+            observer.observe(topNav, {
+                attributes: true,
+                attributeFilter: ['style', 'class'],
+                subtree: false
+            });
+
+            // También proteger cada 200ms como fallback
+            setInterval(() => {
+                const computed = window.getComputedStyle(topNav);
+                if (computed.display === 'none' || computed.visibility === 'hidden') {
+                    console.log('⚠️ NAV OCULTADO - RESTAURANDO');
+                    forceNavVisible();
+                }
+            }, 200);
+
+            console.log('✅ Protecciones instaladas');
+        });
+    </script>
 
 </body>
 </html>

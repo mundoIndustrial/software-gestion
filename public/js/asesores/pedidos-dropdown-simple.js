@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         dropdownHTML += `
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="verSeguimiento(${pedidoId}); closeDropdown()" style="
+            <button onclick="abrirSeguimiento ? abrirSeguimiento(${pedidoId}) : verSeguimiento(${pedidoId}); closeDropdown()" style="
                 width: 100%;
                 text-align: left;
                 padding: 0.875rem 1rem;

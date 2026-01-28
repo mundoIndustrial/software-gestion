@@ -25,7 +25,14 @@ function cambiarTab(tabName, button) {
 }
 
 // Ocultar navbar cuando se carga la página
+// Solo si NO estamos en supervisor-pedidos o cartera-pedidos
 document.addEventListener('DOMContentLoaded', function() {
+    // No ejecutar en supervisor-pedidos o cartera-pedidos
+    if (window.location.pathname.includes('supervisor-pedidos') || 
+        window.location.pathname.includes('cartera-pedidos')) {
+        return;
+    }
+    
     const topNav = document.querySelector('.top-nav');
     if (topNav) {
         topNav.style.display = 'none';

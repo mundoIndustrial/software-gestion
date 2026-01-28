@@ -268,9 +268,9 @@ function renderOrderDetail(orden) {
     const clienteValue = document.getElementById('cliente-value');
     if (clienteValue) clienteValue.textContent = orden.cliente || '-';
     
-    // Llenar asesora
-    const asesoraValue = document.getElementById('asesora-value');
-    if (asesoraValue) asesoraValue.textContent = orden.asesora || '-';
+    // Llenar asesor
+    const asesorValue = document.getElementById('asesora-value');
+    if (asesorValue) asesorValue.textContent = orden.asesor || orden.asesora || '-';
     
     // Llenar forma de pago
     const formaPagoValue = document.getElementById('forma-pago-value');
