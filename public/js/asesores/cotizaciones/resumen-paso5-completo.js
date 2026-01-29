@@ -58,7 +58,7 @@ function actualizarResumenClientePaso5() {
         } else if (tieneLogo && tieneReflectivo) {
             tipoDetectado = '🎨 Logo + Reflectivo';
         } else if (tienePrendas) {
-            tipoDetectado = '👕 Solo Prendas';
+            tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo) {
             tipoDetectado = '🎨 Logo/Bordado';
         } else if (tieneReflectivo) {

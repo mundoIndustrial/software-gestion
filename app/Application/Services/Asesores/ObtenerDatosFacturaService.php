@@ -31,12 +31,22 @@ class ObtenerDatosFacturaService
         $pedido = PedidoProduccion::find($pedidoId);
         
         if ($pedido) {
-            // Verificar permisos
-            if ($pedido->asesor_id && $pedido->asesor_id !== Auth::id()) {
-                throw new \Exception('No tienes permiso para ver este pedido', 403);
+            // Verificar permisos - permitir al asesor dueño o usuarios con roles de cartera/supervisor
+            $usuario = Auth::user();
+            if ($usuario) {
+                // Si es el asesor dueño, permitir acceso
+                if ($pedido->asesor_id && $pedido->asesor_id === $usuario->id) {
+                    return $this->obtenerDatosPedidos($pedido);
+                }
+                
+                // Si tiene roles de cartera o supervisor, permitir acceso
+                $roles = $usuario->roles()->pluck('name')->toArray();
+                if (in_array('cartera', $roles) || in_array('supervisor_pedidos', $roles) || in_array('admin', $roles)) {
+                    return $this->obtenerDatosPedidos($pedido);
+                }
             }
             
-            return $this->obtenerDatosPedidos($pedido);
+            throw new \Exception('No tienes permiso para ver este pedido', 403);
         }
 
         // Intentar obtener como LogoPedido

@@ -288,7 +288,7 @@ class ItemFormCollector {
                 telas_count: item.telas?.length,
             });
         });
-        console.log('🛡️ EPPs:', epps.length);
+        console.log(' EPPs:', epps.length);
         epps.forEach((epp, idx) => {
             console.log(`  EPP ${idx}:`, {
                 uid: epp.uid,  // ← NUEVO: Mostrar UID

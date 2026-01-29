@@ -138,7 +138,7 @@ class CargadorPrendasCotizacion {
             tallasDisponibles.push(...prenda.tallas_disponibles);
         }
         
-        console.log('[transformarDatos] 👕 TALLAS DISPONIBLES:', tallasDisponibles);
+        console.log('[transformarDatos] TALLAS DISPONIBLES:', tallasDisponibles);
 
         // Estructura COMPLETA de prenda para el editor modal
         const prendaCompleta = {

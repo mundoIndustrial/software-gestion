@@ -5,7 +5,7 @@
             <span>3</span> <span id="titulo-prendas-dinamico">Prendas del Pedido</span>
         </h2>
         <button type="button" onclick="abrirEditarPrendas()" style="background: #1e40af; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#1e3a8a'" onmouseout="this.style.backgroundColor='#1e40af'">
-            👕 Editar Prendas
+            Editar Prendas
         </button>
     </div>
 

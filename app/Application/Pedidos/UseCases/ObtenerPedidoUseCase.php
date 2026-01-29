@@ -320,7 +320,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             if ($prenda->tallas && $prenda->tallas->count() > 0) {
                 foreach ($prenda->tallas as $talla) {
                     $variantes[] = [
+                        'talla_id' => $talla->id,  // ✅ Agregar ID de la talla
                         'talla' => $talla->talla,
+                        'genero' => $talla->genero,  // ✅ Agregar género
                         'cantidad' => (int)$talla->cantidad,
                         'manga' => $especificaciones['manga'],
                         'manga_obs' => $especificaciones['manga_obs'],

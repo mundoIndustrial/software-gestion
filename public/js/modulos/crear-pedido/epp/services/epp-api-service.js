@@ -180,7 +180,7 @@ class EppApiService {
      */
     async actualizarEPPDelPedido(pedidoId, pedidoEppId, cantidad, observaciones) {
         try {
-            console.log('[EppApiService] 📝 Actualizando EPP del pedido:', {
+            console.log('[EppApiService] Actualizando EPP del pedido:', {
                 pedidoId,
                 pedidoEppId,
                 cantidad,

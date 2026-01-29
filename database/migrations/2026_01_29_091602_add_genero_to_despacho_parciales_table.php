@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('despacho_parciales', function (Blueprint $table) {
-            $table->unsignedBigInteger('talla_id')->nullable()->after('item_id');
+            $table->enum('genero', ['DAMA', 'CABALLERO', 'UNISEX'])->nullable()->after('talla_id');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('despacho_parciales', function (Blueprint $table) {
-            $table->dropColumn('talla_id');
+            $table->dropColumn('genero');
         });
     }
 };

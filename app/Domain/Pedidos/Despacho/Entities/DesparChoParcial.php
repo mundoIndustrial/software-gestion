@@ -21,6 +21,8 @@ class DesparChoParcial
     private int $pedidoId;
     private string $tipoItem;          // 'prenda' | 'epp'
     private int $itemId;
+    private ?int $tallaId;             // ID de talla (nullable para EPP)
+    private ?string $genero;           // Género (DAMA, CABALLERO, UNISEX)
     private int $pendienteInicial;
     private int $parcial1;
     private int $pendiente1;
@@ -42,6 +44,8 @@ class DesparChoParcial
         int $pedidoId,
         string $tipoItem,
         int $itemId,
+        ?int $tallaId = null,
+        ?string $genero = null,          // ✅ Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -56,6 +60,8 @@ class DesparChoParcial
         $this->pedidoId = $pedidoId;
         $this->tipoItem = $tipoItem;
         $this->itemId = $itemId;
+        $this->tallaId = $tallaId;
+        $this->genero = $genero;          // ✅ Agregar género
         $this->pendienteInicial = $pendienteInicial;
         $this->parcial1 = $parcial1;
         $this->pendiente1 = $pendiente1;
@@ -78,6 +84,8 @@ class DesparChoParcial
         int $pedidoId,
         string $tipoItem,
         int $itemId,
+        ?int $tallaId = null,
+        ?string $genero = null,          // ✅ Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -105,6 +113,8 @@ class DesparChoParcial
             $pedidoId,
             $tipoItem,
             $itemId,
+            $tallaId,
+            $genero,                      // ✅ Agregar género
             $pendienteInicial,
             $parcial1,
             $pendiente1,
@@ -127,6 +137,8 @@ class DesparChoParcial
         int $pedidoId,
         string $tipoItem,
         int $itemId,
+        ?int $tallaId = null,
+        ?string $genero = null,          // ✅ Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -145,6 +157,8 @@ class DesparChoParcial
             $pedidoId,
             $tipoItem,
             $itemId,
+            $tallaId,
+            $genero,                      // ✅ Agregar género
             $pendienteInicial,
             $parcial1,
             $pendiente1,
@@ -234,6 +248,16 @@ class DesparChoParcial
         return $this->itemId;
     }
 
+    public function tallaId(): ?int
+    {
+        return $this->tallaId;
+    }
+
+    public function genero(): ?string
+    {
+        return $this->genero;
+    }
+
     public function pendienteInicial(): int
     {
         return $this->pendienteInicial;
@@ -306,9 +330,14 @@ class DesparChoParcial
             'pedido_id' => $this->pedidoId,
             'tipo_item' => $this->tipoItem,
             'item_id' => $this->itemId,
+            'talla_id' => $this->tallaId,
+            'pendiente_inicial' => $this->pendienteInicial,
             'parcial_1' => $this->parcial1,
+            'pendiente_1' => $this->pendiente1,
             'parcial_2' => $this->parcial2,
+            'pendiente_2' => $this->pendiente2,
             'parcial_3' => $this->parcial3,
+            'pendiente_3' => $this->pendiente3,
             'observaciones' => $this->observaciones,
             'fecha_despacho' => $this->fechaDespacho,
             'usuario_id' => $this->usuarioId,

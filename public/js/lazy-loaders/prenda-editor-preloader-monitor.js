@@ -56,7 +56,7 @@
         `);
 
         console.log('═'.repeat(60));
-        console.log('%c📝 Eventos personalizados disponibles', 'color: #1abc9c; font-size: 12px;');
+        console.log('%cEventos personalizados disponibles', 'color: #1abc9c; font-size: 12px;');
         console.log(`
   'prendaEditorPreloaded' - Se dispara cuando termina la precarga
   'prendaEditorPreloadError' - Se dispara si hay error

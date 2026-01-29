@@ -477,7 +477,7 @@ function inicializarEventListenersEpp() {
             const btn = e.target.closest('.btn-editar-epp');
             const eppIndex = parseInt(btn.dataset.eppIndex);
             
-            console.log('[EPP] 📝 Editando EPP con índice:', eppIndex);
+            console.log('[EPP] Editando EPP con índice:', eppIndex);
             
             // Obtener EPP desde window.eppsPedido (donde se almacenan)
             if (window.eppsPedido && window.eppsPedido[eppIndex]) {

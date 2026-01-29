@@ -81,7 +81,7 @@ function normalizarItem(item) {
     };
     itemNorm.cantidad_talla = normalizarTallas(item.cantidad_talla);
     itemNorm.variaciones = (item.variaciones && typeof item.variaciones === 'object') ? item.variaciones : {};
-    console.log('[PayloadNormalizer] 📝 Variaciones preservadas:', itemNorm.variaciones);
+    console.log('[PayloadNormalizer] Variaciones preservadas:', itemNorm.variaciones);
     itemNorm.telas = normalizarTelas(item.telas);
     itemNorm.procesos = normalizarProcesos(item.procesos);
     return itemNorm;

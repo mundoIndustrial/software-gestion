@@ -264,7 +264,7 @@
 <!-- Modal para registrar la novedad del cambio -->
 <div id="modal-novedad-epp" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.3rem;">📝 Registrar Novedad del Cambio</h3>
+        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.3rem;">Registrar Novedad del Cambio</h3>
         <p style="margin: 0 0 1.5rem 0; color: #6b7280; font-size: 0.95rem;">Explica por qué estás realizando este cambio en el EPP</p>
         
         <div style="margin-bottom: 1.5rem;">
@@ -286,7 +286,7 @@
 <script>
     // Funciones para abrir/cerrar el modal de edición de EPP
     function abrirModalEditarEppForm(eppData) {
-        console.log('📝 [Modal Editar EPP] Abriendo formulario con datos:', eppData);
+        console.log('[Modal Editar EPP] Abriendo formulario con datos:', eppData);
         
         const modal = document.getElementById('modal-editar-epp-form');
         if (!modal) {

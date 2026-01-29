@@ -122,7 +122,7 @@ function generarHTMLDatosPrenda(prenda) {
             html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">';
             
             if (v.tipo_manga) {
-                html += `<div><strong>👕 Manga:</strong> ${v.tipo_manga}${v.manga_obs ? ' <em style="color: #64748b;">(' + v.manga_obs + ')</em>' : ''}</div>`;
+                html += `<div><strong>Manga:</strong> ${v.tipo_manga}${v.manga_obs ? ' <em style="color: #64748b;">(' + v.manga_obs + ')</em>' : ''}</div>`;
             }
             
             if (v.tipo_broche_boton) {

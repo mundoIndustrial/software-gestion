@@ -24,7 +24,7 @@ use App\Http\Controllers\PDFReflectivoController;
 use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('asesores')->name('asesores.')->group(function () {
+Route::prefix('asesores')->name('asesores.')->group(function () {
     
     // ========================================
     // DASHBOARD Y NOTIFICACIONES
@@ -60,6 +60,14 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     Route::post('/pedidos/confirm', [PedidoController::class, 'confirm'])->name('pedidos.api.confirm');
     Route::post('/pedidos/{id}/anular', [AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.api.anular');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [PedidoController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
+    
+    // API para listado de pedidos en tiempo real
+    Route::get('/pedidos-api-listar', [AsesoresController::class, 'apiListar']);
+    
+    // Ruta de prueba
+    Route::get('/test', function() {
+        return response()->json(['message' => 'Test working']);
+    });
     
     // Cargar datos de pedido para edición
     Route::get('/pedidos/{id}/editar-datos', [\App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('pedidos.api.editar-datos');

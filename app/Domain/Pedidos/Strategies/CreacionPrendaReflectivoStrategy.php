@@ -106,7 +106,7 @@ class CreacionPrendaReflectivoStrategy implements CreacionPrendaStrategy
                 'estado' => 'pendiente',
             ]);
 
-            Log::info('📝 [CreacionPrendaReflectivoStrategy] Detalles del proceso guardados', [
+            Log::info('[CreacionPrendaReflectivoStrategy] Detalles del proceso guardados', [
                 'detalle_id' => $detallesProceso->id,
                 'ubicaciones' => count($prendaData['ubicaciones'] ?? []),
             ]);

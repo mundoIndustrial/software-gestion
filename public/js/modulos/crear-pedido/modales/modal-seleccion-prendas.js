@@ -395,7 +395,7 @@ window.agregarPrendasSeleccionadas = function() {
 
     
     // Actualizar vista - Renderizar items directamente en el DOM
-    console.log('📝 Intentando renderizar items en el DOM...');
+    console.log('Intentando renderizar items en el DOM...');
     renderizarItemsCotizacionEnDOM();
     
     // Cerrar modal
@@ -470,7 +470,7 @@ function renderizarItemsCotizacionEnDOM() {
         const cantidad = item.prenda?.cantidad || 0;
         const origen = item.origen === 'bodega' ? '🏪 Bodega' : '✂️ Confección';
         const procesosTexto = item.procesos && item.procesos.length > 0 ? item.procesos.join(', ') : 'Sin procesos';
-        const tipoItem = item.es_proceso ? '🔧 Proceso' : '👕 Prenda Base';
+        const tipoItem = item.es_proceso ? '🔧 Proceso' : 'Prenda Base';
         
         // Información adicional de la prenda
         const descripcion = item.prenda?.variaciones?.descripcion || '';
@@ -543,7 +543,7 @@ function renderizarItemsCotizacionEnDOM() {
                         </span>
                     </div>
                     
-                    ${descripcion ? `<div style="margin-top: 0.5rem; padding: 0.75rem; background: #f9fafb; border-left: 3px solid #0066cc; border-radius: 4px;"><strong style="color: #0066cc;">📝 Descripción:</strong><p style="margin: 0.25rem 0 0 0; color: #4b5563; font-size: 0.875rem;">${descripcion}</p></div>` : ''}
+                    ${descripcion ? `<div style="margin-top: 0.5rem; padding: 0.75rem; background: #f9fafb; border-left: 3px solid #0066cc; border-radius: 4px;"><strong style="color: #0066cc;">Descripción:</strong><p style="margin: 0.25rem 0 0 0; color: #4b5563; font-size: 0.875rem;">${descripcion}</p></div>` : ''}
                     
                     ${htmlTelas}
                     ${htmlVariaciones}

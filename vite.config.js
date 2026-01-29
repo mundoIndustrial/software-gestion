@@ -95,6 +95,6 @@ export default defineConfig({
     // Optimize dependencies pre-bundling
     optimizeDeps: {
         include: ['alpinejs'],
-        exclude: ['laravel-echo']
+        exclude: [] // Removido 'laravel-echo' para que se incluya correctamente
     }
 });

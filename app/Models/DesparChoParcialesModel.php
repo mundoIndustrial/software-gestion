@@ -23,6 +23,7 @@ class DesparChoParcialesModel extends Model
         'tipo_item',
         'item_id',
         'talla_id',
+        'genero',
         'pendiente_inicial',
         'parcial_1',
         'pendiente_1',

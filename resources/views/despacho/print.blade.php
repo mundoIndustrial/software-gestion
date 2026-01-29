@@ -139,9 +139,9 @@
         }
 
         .section-epp {
-            background: #dcfce7;
+            background: #dbeafe;
             font-weight: bold;
-            color: #166534;
+            color: #0c4a6e;
         }
 
         /* Valores númericos */
@@ -251,7 +251,7 @@
     <div class="container">
         <!-- Botones de impresión (solo pantalla) -->
         <div class="no-print print-buttons">
-            <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+            <button class="btn" onclick="window.print()"> Imprimir</button>
             <a href="{{ route('despacho.show', $pedido->id) }}" class="btn btn-secondary">← Volver</a>
         </div>
 
@@ -285,68 +285,90 @@
 
         @if($prendas->count() > 0)
             <div class="table-section">
-                <div class="table-title">👕 PRENDAS</div>
+                <div class="table-title">PRENDAS</div>
                 <table>
                     <thead>
-                        <tr>
-                            <th>Descripción</th>
-                            <th class="numeric">Talla</th>
-                            <th class="numeric">Cantidad Total</th>
-                            <th class="numeric">Parcial 1</th>
-                            <th class="numeric">Pendiente 1</th>
-                            <th class="numeric">Parcial 2</th>
-                            <th class="numeric">Pendiente 2</th>
-                            <th class="numeric">Parcial 3</th>
-                            <th class="numeric">Pendiente 3</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($prendas as $fila)
                             <tr>
-                                <td>{{ $fila->descripcion }}</td>
-                                <td class="numeric">{{ $fila->talla }}</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
+                                <th>Descripción</th>
+                                <th class="numeric">Género</th>
+                                <th class="numeric">Talla</th>
+                                <th class="numeric">Cantidad</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+                        </thead>
+                        <tbody>
+                            @foreach($prendas as $fila)
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: bold; margin-bottom: 4px;">{{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}</div>
+                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['variantes']) && is_array($fila->objetoPrenda['variantes']) && count($fila->objetoPrenda['variantes']) > 0)
+                                            @php
+                                                $primeraVariante = $fila->objetoPrenda['variantes'][0];
+                                                $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
+                                                $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
+                                                $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
+                                                $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
+                                                $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
+                                                $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
+                                            @endphp
+                                            <div style="font-size: 11px; color: #64748b; line-height: 1.3; font-weight: bold;">
+                                                @if($manga)
+                                                    <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                @endif
+                                                @if($broche)
+                                                    <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                @endif
+                                                @if($bolsillos)
+                                                    <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                @endif
+                                            </div>
+                                            
+                                            @if($fila->objetoPrenda && isset($fila->objetoPrenda['procesos']) && is_array($fila->objetoPrenda['procesos']) && count($fila->objetoPrenda['procesos']) > 0)
+                                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: bold;">
+                                                @foreach($fila->objetoPrenda['procesos'] as $proc)
+                                                        @php
+                                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
+                                                        @endphp
+                                                        <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                @endforeach
+                                            </div>
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </td>
+                                    <td class="numeric">{{ $fila->genero ?? '—' }}</td>
+                                    <td class="numeric">{{ $fila->talla }}</td>
+                                    <td class="numeric">{{ $fila->cantidadTotal }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
 
-        <!-- EPP -->
+            <!-- EPP -->
         @if($epps->count() > 0)
             <div class="table-section">
-                <div class="table-title">🛡️ EPP (ELEMENTOS DE PROTECCIÓN PERSONAL)</div>
+                <div class="table-title"> EPP (ELEMENTOS DE PROTECCIÓN PERSONAL)</div>
                 <table>
                     <thead>
                         <tr>
                             <th>Descripción</th>
+                            <th class="numeric">Género</th>
                             <th class="numeric">Talla</th>
-                            <th class="numeric">Cantidad Total</th>
-                            <th class="numeric">Parcial 1</th>
-                            <th class="numeric">Pendiente 1</th>
-                            <th class="numeric">Parcial 2</th>
-                            <th class="numeric">Pendiente 2</th>
-                            <th class="numeric">Parcial 3</th>
-                            <th class="numeric">Pendiente 3</th>
+                            <th class="numeric">Cantidad</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($epps as $fila)
                             <tr>
-                                <td>{{ $fila->descripcion }}</td>
+                                <td>
+                                    <div style="font-weight: bold; margin-bottom: 4px;"> {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}</div>
+                                    @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== '—' && $fila->objetoEpp['observaciones'] !== '-')
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">{{ $fila->objetoEpp['observaciones'] }}</div>
+                                    @endif
+                                </td>
                                 <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
                                 <td class="numeric">—</td>
                                 <td class="numeric">{{ $fila->cantidadTotal }}</td>
                             </tr>
@@ -360,10 +382,6 @@
         <div class="footer">
             <div class="signature-box">
                 <div class="signature-line"></div>
-                <div class="signature-label">Preparado por</div>
-            </div>
-            <div class="signature-box">
-                <div class="signature-line"></div>
                 <div class="signature-label">Recibido por</div>
             </div>
             <div class="signature-box">
@@ -372,16 +390,7 @@
             </div>
         </div>
 
-        <!-- Notas finales -->
-        <div style="margin-top: 40px; padding: 15px; background: #f1f5f9; border-radius: 4px; font-size: 11px; color: #64748b; border-left: 4px solid #3b82f6;">
-            <strong>Notas importantes:</strong>
-            <ul style="margin-left: 20px; margin-top: 10px;">
-                <li>Verificar que todas las cantidades sean correctas antes de firmar</li>
-                <li>Cada parcial representa un envío o fase de entrega</li>
-                <li>Conservar este documento para auditoría y control</li>
-                <li>Para prendas: verificar talles por cantidad. Para EPP: verificar códigos y marcas</li>
-            </ul>
-        </div>
+   
     </div>
 </body>
 </html>

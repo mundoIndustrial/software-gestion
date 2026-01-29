@@ -163,7 +163,7 @@ async function crearPedidoConManejErrors(pedidoData) {
 
     try {
         // PASO 1: Crear pedido
-        console.log('📝 Creando pedido...');
+        console.log('Creando pedido...');
         const pedidoCreado = await flujo.crearPedido(pedidoData);
 
         if (!pedidoCreado.success) {

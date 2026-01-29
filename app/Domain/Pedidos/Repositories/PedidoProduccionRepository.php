@@ -52,8 +52,14 @@ class PedidoProduccionRepository
     public function obtenerPedidosAsesor(array $filtros = []): LengthAwarePaginator
     {
         $query = PedidoProduccion::query()
-            ->where('asesor_id', Auth::id())
             ->with(['cotizacion', 'prendas']);
+
+        // Si el usuario es asesor, solo mostrar sus pedidos
+        // Otros roles pueden ver todos los pedidos
+        $user = Auth::user();
+        if ($user && $user->hasRole('asesor')) {
+            $query->where('asesor_id', Auth::id());
+        }
 
         // Aplicar filtros
         if (!empty($filtros['estado'])) {

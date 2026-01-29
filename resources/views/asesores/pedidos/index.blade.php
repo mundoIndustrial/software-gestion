@@ -132,6 +132,9 @@
 <!-- Componente: Modal Editar EPP -->
 @include('asesores.pedidos.components.modal-editar-epp')
 
+<!-- Sistema de Actualización en Tiempo Real con WebSockets -->
+<!-- Nota: Los scripts de WebSockets se cargan automáticamente en el layout base para usuarios autenticados -->
+
 <!--  SERVICIOS CENTRALIZADOS - Cargar PRIMERO -->
 <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
 <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
@@ -563,7 +566,7 @@
         `;
         
         UI.contenido({
-            titulo: '📝 Registrar Novedad del Cambio',
+            titulo: 'Registrar Novedad del Cambio',
             html: html,
             confirmButtonText: '✅ Confirmar y Guardar',
             confirmButtonColor: '#10b981',
@@ -1042,9 +1045,9 @@
                 let resto = lineas.slice(1).join('<br>');
                 
                 // Parsear la primera línea para extraer datos
-                let match = primerLinea.match(/📝 \[(.*?)\]/);
+                let match = primerLinea.match(/\[(.*?)\]/);
                 let info = match ? match[1] : '';
-                let novedad = primerLinea.replace(/📝 \[.*?\]\n?/, '') || resto;
+                let novedad = primerLinea.replace(/\[.*?\]\n?/, '') || resto;
                 
                 htmlContenido += `
                     <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%); border-left: 5px solid #0284c7; border-radius: 8px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);">
@@ -1086,7 +1089,7 @@
                     animation: slideUp 0.3s ease;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">📝 Novedades - Pedido #${numeroPedido}</h2>
+                        <h2 style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 700;">Novedades - Pedido #${numeroPedido}</h2>
                         <button onclick="cerrarModalNovedades()" style="
                             background: #f3f4f6;
                             border: none;

@@ -148,72 +148,15 @@ class CarteraPedidosController extends Controller
     public function obtenerDatosFactura($id)
     {
         try {
-            $pedido = PedidoProduccion::with([
-                'prendas.variantes.tipoManga',
-                'prendas.variantes.tipoBroche',
-                'prendas.tallas'
-            ])->find($id);
+            // Usar el mismo servicio que usa AsesoresController para obtener datos completos
+            $service = app(\App\Application\Services\Asesores\ObtenerDatosFacturaService::class);
+            $datos = $service->obtener($id);
             
-            if (!$pedido) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado'
-                ], 404);
-            }
-            
-            // Mapear prendas con variantes para el modal profesional
-            $prendasFormato = $pedido->prendas->map(function($prenda) {
-                // Obtener tallas agrupadas por género en formato { GENERO: { TALLA: CANTIDAD } }
-                $tallasAgrupadas = [];
-                if ($prenda->tallas && $prenda->tallas->count() > 0) {
-                    foreach ($prenda->tallas as $talla) {
-                        if (!isset($tallasAgrupadas[$talla->genero])) {
-                            $tallasAgrupadas[$talla->genero] = [];
-                        }
-                        $tallasAgrupadas[$talla->genero][$talla->talla] = $talla->cantidad;
-                    }
-                }
-                
-                return [
-                    'nombre' => $prenda->nombre_prenda ?? 'Prenda sin nombre',
-                    'cantidad' => $prenda->cantidad ?? 0,
-                    'manga' => null,
-                    'obs_manga' => $prenda->observaciones,
-                    'broche' => null,
-                    'obs_broche' => null,
-                    'tiene_bolsillos' => $prenda->tiene_bolsillos ?? false,
-                    'obs_bolsillos' => null,
-                    'tallas' => $tallasAgrupadas,  // Estructura: { DAMA: { L: 5, M: 15, S: 10 } }
-                    'variantes' => $prenda->variantes ? $prenda->variantes->map(function($var) {
-                        return [
-                            'talla' => $var->talla ?? 'N/A',
-                            'cantidad' => $var->cantidad ?? 0,
-                            'manga' => $var->tipoManga?->nombre ?? null,
-                            'manga_obs' => $var->manga_obs ?? null,
-                            'broche' => $var->tipoBroche?->nombre ?? null,
-                            'broche_obs' => $var->broche_obs ?? null,
-                            'bolsillos' => $var->tiene_bolsillos ?? false,
-                            'bolsillos_obs' => $var->bolsillos_obs ?? null
-                        ];
-                    })->toArray() : []
-                ];
-            })->toArray();
-            
-            // Obtener datos con estructura compatible con crearModalPreviewFactura
-            $datos = [
-                'numero_pedido' => $pedido->numero_pedido,
-                'numero_pedido_temporal' => $pedido->id,
-                'cliente' => $pedido->cliente,
-                'fecha' => $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at,
-                'prendas' => $prendasFormato
-            ];
-            
-            // LOG: Debug de estructura de tallas
-            \Log::info(' [CarteraPedidosController] Estructura de prendas con tallas:', [
-                'pedido_numero' => $pedido->numero_pedido,
-                'cantidad_prendas' => count($prendasFormato),
-                'primera_prenda' => $prendasFormato[0] ?? null,
-                'tallas_primera_prenda' => $prendasFormato[0]['tallas'] ?? 'VACÍO'
+            \Log::info('[CARTERA-FACTURA] Datos obtenidos correctamente', [
+                'pedido_id' => $id,
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? [])),
+                'epps_count' => count($datos['epps'] ?? [])
             ]);
             
             return response()->json($datos);

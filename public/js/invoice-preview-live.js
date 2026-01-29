@@ -777,7 +777,7 @@ function crearModalPreviewFactura(datos) {
             <div style="padding: 8px 12px; border-top: 1px solid #ddd; display: flex; gap: 6px; justify-content: flex-end; background: #f9f9f9;">
                 <button onclick="document.getElementById('preview-content').contentWindow?.print() || window.print();" 
                         style="padding: 6px 12px; background: #2c3e50; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 11px;">
-                    🖨️ Imprimir
+                     Imprimir
                 </button>
             </div>
         </div>

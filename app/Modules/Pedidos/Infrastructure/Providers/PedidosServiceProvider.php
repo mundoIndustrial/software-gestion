@@ -16,6 +16,7 @@ use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositor
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
+use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -81,7 +82,9 @@ class PedidosServiceProvider extends ServiceProvider
 
         // Registrar DespachoGeneradorService
         $this->app->singleton(DespachoGeneradorService::class, function ($app) {
-            return new DespachoGeneradorService();
+            return new DespachoGeneradorService(
+                $app->make(ObtenerPedidoUseCase::class)
+            );
         });
 
         // Registrar DespachoValidadorService

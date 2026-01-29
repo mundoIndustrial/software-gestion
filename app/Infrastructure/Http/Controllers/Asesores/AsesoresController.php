@@ -883,4 +883,56 @@ class AsesoresController extends Controller
             ], 400);
         }
     }
+
+    /**
+     * API para listar pedidos en tiempo real
+     */
+    public function apiListar(Request $request)
+    {
+        try {
+            $tipo = $request->query('tipo');
+            $filtros = [];
+            
+            if ($request->filled('estado')) {
+                $filtros['estado'] = $request->estado;
+            }
+            
+            if ($request->filled('search')) {
+                $filtros['search'] = $request->search;
+            }
+
+            // Crear DTO para el Use Case
+            $dto = ListarProduccionPedidosDTO::fromRequest($tipo, $filtros);
+
+            // Usar el nuevo Use Case DDD
+            $pedidos = $this->listarProduccionPedidosUseCase->ejecutar($dto);
+
+            // Transformar a array para JSON
+            $pedidosArray = $pedidos->getCollection()->map(function ($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'area' => $pedido->area,
+                    'novedades' => $pedido->novedades,
+                    'forma_pago' => $pedido->forma_pago,
+                    'fecha_creacion' => $pedido->fecha_creacion,
+                    'fecha_estimada' => $pedido->fecha_estimada,
+                ];
+            })->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pedidosArray
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en apiListar: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al listar pedidos'
+            ], 500);
+        }
+    }
 }

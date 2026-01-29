@@ -72,9 +72,6 @@
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     Cliente
                                 </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    Estado
-                                </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
                                     Creación
                                 </th>
@@ -97,21 +94,6 @@
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">
                                         {{ $pedido->cliente ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-block px-2 py-1 rounded text-xs font-medium
-                                            @if($pedido->estado === 'Entregado')
-                                                bg-green-100 text-green-800
-                                            @elseif($pedido->estado === 'En Ejecución')
-                                                bg-blue-100 text-blue-800
-                                            @elseif($pedido->estado === 'Anulada')
-                                                bg-red-100 text-red-800
-                                            @else
-                                                bg-amber-100 text-amber-800
-                                            @endif
-                                        ">
-                                            {{ $pedido->estado }}
-                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
                                         {{ $pedido->fecha_de_creacion_de_orden?->format('d/m/Y H:i') ?? '—' }}

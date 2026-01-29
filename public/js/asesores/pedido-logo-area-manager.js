@@ -275,7 +275,7 @@ class PedidoLogoAreaManager {
             'pendiente_confirmar_diseño': '⏳ Pendiente Confirmar Diseño',
             'en_diseño': ' En Diseño',
             'logo': ' Logo (Producción)',
-            'estampado': '🖨️ Estampado'
+            'estampado': ' Estampado'
         };
         return mapa[area] || area;
     }

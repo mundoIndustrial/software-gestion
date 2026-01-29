@@ -79,7 +79,7 @@ class AnalizarPedido45729Seeder extends Seeder
             
             // EPPs
             $epps = PedidoEpp::where('pedido_produccion_id', $pedido->id)->get();
-            echo "\n🛡️  EPPs: {$epps->count()}\n";
+            echo "\n  EPPs: {$epps->count()}\n";
             foreach ($epps as $epp) {
                 echo "   EPP: {$epp->nombre} (ID: {$epp->id})\n";
                 $fotosEpp = PedidoEppImagen::where('pedido_epp_id', $epp->id)->get();

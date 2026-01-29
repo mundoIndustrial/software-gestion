@@ -128,6 +128,8 @@ class DesparChoParcialesRepositoryImpl implements DesparChoParcialesRepository
             pedidoId: $modelo->pedido_id,
             tipoItem: $modelo->tipo_item,
             itemId: $modelo->item_id,
+            tallaId: $modelo->talla_id,
+            genero: $modelo->genero,        // ✅ Agregar género
             pendienteInicial: $modelo->pendiente_inicial,
             parcial1: $modelo->parcial_1,
             pendiente1: $modelo->pendiente_1,
@@ -153,6 +155,8 @@ class DesparChoParcialesRepositoryImpl implements DesparChoParcialesRepository
             'pedido_id' => $despacho->pedidoId(),
             'tipo_item' => $despacho->tipoItem(),
             'item_id' => $despacho->itemId(),
+            'talla_id' => $despacho->tallaId(),
+            'genero' => $despacho->genero(),  // ✅ Agregar género
             'pendiente_inicial' => $despacho->pendienteInicial(),
             'parcial_1' => $despacho->parcial1(),
             'pendiente_1' => $despacho->pendiente1(),

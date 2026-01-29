@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket Cartera</title>
+    <meta name="csrf-token" content="test-token">
+    <meta name="user-id" content="1">
+    <!-- Meta tags para WebSockets/Reverb -->
+    <meta name="reverb-key" content="test-key">
+    <meta name="reverb-app-id" content="test-app">
+    <meta name="reverb-host" content="localhost">
+    <meta name="reverb-port" content="8080">
+    <meta name="reverb-scheme" content="http">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test WebSocket - Cartera de Pedidos</h1>
+    
+    <div id="status" class="status info">Inicializando...</div>
+    
+    <div>
+        <h3>📊 Estado de Conexión</h3>
+        <div id="connection-status">Esperando...</div>
+    </div>
+    
+    <div>
+        <h3>📡 Logs</h3>
+        <pre id="logs"></pre>
+    </div>
+    
+    <div>
+        <h3>🔄 Prueba de API</h3>
+        <button onclick="testAPI()">Probar API Cartera</button>
+        <pre id="api-result"></pre>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.2/dist/web/pusher.min.js"></script>
+    
+    <script>
+        // Configuración de logs
+        const logs = document.getElementById('logs');
+        const status = document.getElementById('status');
+        const connectionStatus = document.getElementById('connection-status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logs.textContent += logEntry;
+            logs.scrollTop = logs.scrollHeight;
+            
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function updateConnectionStatus(message, type = 'info') {
+            connectionStatus.innerHTML = `<span class="status ${type}">${message}</span>`;
+        }
+        
+        // Configuración de Laravel Echo (manual)
+        log('Configurando Laravel Echo...');
+        
+        try {
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: 'test-key',
+                wsHost: 'localhost',
+                wsPort: 8080,
+                wssPort: 8080,
+                forceTLS: false,
+                enabledTransports: ['ws', 'wss'],
+                disableStats: true,
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': 'test-token',
+                    },
+                },
+            });
+            
+            log('✅ Laravel Echo configurado correctamente');
+            updateStatus('Laravel Echo configurado', 'success');
+            
+            // Probar conexión WebSocket
+            log('Intentando conectar a WebSocket...');
+            
+            // Escuchar canal privado
+            const channel = window.Echo.private('pedidos.1');
+            
+            channel.on('connect', () => {
+                log('🔌 Conectado al canal privado pedidos.1');
+                updateConnectionStatus('🟢 WebSocket Conectado', 'success');
+                updateStatus('WebSocket funcionando correctamente', 'success');
+            });
+            
+            channel.on('disconnect', () => {
+                log('🔌 Desconectado del canal');
+                updateConnectionStatus('🔴 WebSocket Desconectado', 'error');
+            });
+            
+            channel.on('error', (error) => {
+                log(`❌ Error en canal: ${error.message}`);
+                updateConnectionStatus('🔴 Error en WebSocket', 'error');
+            });
+            
+            channel.on('PedidoActualizado', (data) => {
+                log(`📦 Pedido actualizado: ${JSON.stringify(data)}`);
+            });
+            
+            // Eventos de conexión
+            window.Echo.connector.pusher.connection.bind('connected', () => {
+                log('🟢 Conexión WebSocket establecida');
+                updateConnectionStatus('🟢 WebSocket Conectado', 'success');
+            });
+            
+            window.Echo.connector.pusher.connection.bind('disconnected', () => {
+                log('🔴 Conexión WebSocket perdida');
+                updateConnectionStatus('🔴 WebSocket Desconectado', 'error');
+            });
+            
+            window.Echo.connector.pusher.connection.bind('error', (error) => {
+                log(`❌ Error de conexión: ${error.message}`);
+                updateConnectionStatus('🔴 Error de Conexión', 'error');
+                updateStatus(`Error: ${error.message}`, 'error');
+            });
+            
+        } catch (error) {
+            log(`❌ Error configurando Echo: ${error.message}`);
+            updateStatus(`Error: ${error.message}`, 'error');
+        }
+        
+        // Prueba de API
+        async function testAPI() {
+            const apiResult = document.getElementById('api-result');
+            apiResult.textContent = 'Probando API...';
+            
+            try {
+                const response = await axios.get('http://localhost:8000/api/cartera/pedidos?estado=pendiente_cartera', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                apiResult.textContent = `✅ API Funciona (${response.status})\n`;
+                apiResult.textContent += `Pedidos recibidos: ${response.data.length}\n`;
+                apiResult.textContent += `Datos: ${JSON.stringify(response.data.slice(0, 2), null, 2)}`;
+                
+                log(`✅ API funcionó: ${response.data.length} pedidos`);
+                
+            } catch (error) {
+                apiResult.textContent = `❌ Error API: ${error.message}\n`;
+                apiResult.textContent += `Status: ${error.response?.status}\n`;
+                apiResult.textContent += `Response: ${JSON.stringify(error.response?.data, null, 2)}`;
+                
+                log(`❌ Error API: ${error.message}`);
+            }
+        }
+        
+        // Test inicial
+        setTimeout(() => {
+            log('🧪 Iniciando pruebas automáticas...');
+            testAPI();
+        }, 2000);
+    </script>
+</body>
+</html>

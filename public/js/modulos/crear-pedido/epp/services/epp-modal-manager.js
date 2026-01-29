@@ -197,7 +197,7 @@ class EppModalManager {
         }
 
         const mensajeSeleccionar = document.getElementById('mensajeSelecccionarEPP');
-        console.log('📝 [ModalManager] Buscando mensajeSelecccionarEPP, encontrado:', !!mensajeSeleccionar);
+        console.log('[ModalManager] Buscando mensajeSelecccionarEPP, encontrado:', !!mensajeSeleccionar);
         if (mensajeSeleccionar) {
             mensajeSeleccionar.style.display = 'none';
             console.log('✅ [ModalManager] Mensaje de selección ocultado');

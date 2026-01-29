@@ -11,7 +11,7 @@ const processoIconMap = {
     'Insumos y Telas': '',
     'Corte': '✂️',
     'Bordado': '',
-    'Estampado': '🖨️',
+    'Estampado': '',
     'Costura': '👗',
     'Polos': '',
     'Taller': '',

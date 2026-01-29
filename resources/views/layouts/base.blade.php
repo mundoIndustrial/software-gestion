@@ -6,6 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @auth
     <meta name="user-id" content="{{ auth()->id() }}">
+    <!-- Meta tags para WebSockets/Reverb -->
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
     @endauth
     <meta name="google" content="notranslate">
     <meta http-equiv="Content-Language" content="es">
@@ -159,6 +165,11 @@
     <!-- Non-critical JS (diferido) -->
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
+    
+    <!-- Laravel Echo - Para actualizaciones en tiempo real -->
+    @auth
+    <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    @endauth
 
     <!-- Page-specific scripts -->
     @stack('scripts')

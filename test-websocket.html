@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    
+    <script>
+        const ws = new WebSocket('ws://192.168.0.173:8080/app/mundo-industrial-key');
+        
+        ws.onopen = function(event) {
+            document.getElementById('status').textContent = 'Connected';
+            console.log('WebSocket connected');
+        };
+        
+        ws.onmessage = function(event) {
+            const messages = document.getElementById('messages');
+            messages.innerHTML += '<p>' + event.data + '</p>';
+        };
+        
+        ws.onclose = function(event) {
+            document.getElementById('status').textContent = 'Disconnected';
+            console.log('WebSocket disconnected', event);
+        };
+        
+        ws.onerror = function(error) {
+            document.getElementById('status').textContent = 'Error: ' + error;
+            console.error('WebSocket error', error);
+        };
+    </script>
+</body>
+</html>

@@ -43,4 +43,9 @@ Route::prefix('despacho')
         Route::get('/{pedido}/obtener-despachos', [DespachoController::class, 'obtenerDespachos'])
             ->name('despacho.obtener')
             ->where('pedido', '[0-9]+');
+
+        // Obtener datos de factura para un pedido
+        Route::get('/{pedido}/factura-datos', [DespachoController::class, 'obtenerFacturaDatos'])
+            ->name('despacho.factura-datos')
+            ->where('pedido', '[0-9]+');
     });

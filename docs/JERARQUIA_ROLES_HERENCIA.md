@@ -170,7 +170,7 @@ Buscar líneas con:
 
 ---
 
-## 🛡️ Garantías de Seguridad
+##  Garantías de Seguridad
 
 ✅ **No elimina código existente**
 - El middleware original funciona exactamente igual
@@ -190,7 +190,7 @@ Buscar líneas con:
 
 ---
 
-## 📝 Casos de Uso
+## Casos de Uso
 
 ### Caso 1: Supervisor ve reportes de Asesor
 ```php

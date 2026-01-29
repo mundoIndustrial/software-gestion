@@ -38,7 +38,7 @@ class AnalizarImagenesEppSeeder extends Seeder
             }
 
             foreach ($epps as $epp) {
-                echo "   🛡️  EPP: {$epp->nombre} (ID: {$epp->id})\n";
+                echo "     EPP: {$epp->nombre} (ID: {$epp->id})\n";
                 
                 // 3. Verificar fotos de EPP
                 echo "\n      Fotos de EPP:\n";

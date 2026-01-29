@@ -139,7 +139,7 @@ class ModalNovedadEdicion {
             `;
 
             Swal.fire({
-                title: '📝 Registrar Cambios en Prenda',
+                title: 'Registrar Cambios en Prenda',
                 html: html,
                 icon: 'info',
                 confirmButtonText: '✓ Guardar Cambios',
@@ -608,7 +608,7 @@ class ModalNovedadEdicion {
                                                      '';
                         if (observacionesAEnviar) {
                             patchFormData.append('observaciones', observacionesAEnviar);
-                            console.log('[modal-novedad-edicion] 📝 Observaciones añadidas al PATCH:', observacionesAEnviar);
+                            console.log('[modal-novedad-edicion] Observaciones añadidas al PATCH:', observacionesAEnviar);
                         }
                         
                         // Tallas: usar las del cambio si existen

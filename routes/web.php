@@ -208,7 +208,6 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
     Route::put('/api/procesos/{id}/editar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
-    Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     Route::post('/bodega/search', [RegistroBodegaController::class, 'searchOrders'])->name('bodega.search');
@@ -425,10 +424,73 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 });
 
 // ========================================
+// API PARA SISTEMA DE TIEMPO REAL (FUERA DEL GRUPO DE ASESORES)
+// ========================================
+Route::middleware(['auth'])->prefix('asesores')->group(function () {
+    // API para Sistema de Tiempo Real (acceso para rol despacho) - SIN MIDDLEWARE DE ROLES
+    Route::get('/realtime/pedidos', function () {
+        // Debug: Ver información del usuario y roles
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'No authenticated user'], 403);
+        }
+        
+        // Debug: Mostrar todos los roles del usuario
+        $userRoles = $user->roles->pluck('name')->toArray();
+        
+        // Verificar si el usuario tiene permisos (verificación manual)
+        $hasPermission = $user->hasRole('asesor') || 
+                       $user->hasRole('admin') || 
+                       $user->hasRole('supervisor_pedidos') || 
+                       $user->hasRole('despacho') ||
+                       $user->hasRole('insumos');
+        
+        // Log para debug
+        \Log::info('[REALTIME-API] Verificación de permisos', [
+            'user_id' => $user->id,
+            'user_roles' => $userRoles,
+            'has_permission' => $hasPermission
+        ]);
+        
+        if (!$hasPermission) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'user_roles' => $userRoles,
+                    'has_permission' => $hasPermission
+                ]
+            ], 403);
+        }
+        
+        // Obtener pedidos según el rol del usuario
+        $query = \App\Models\PedidoProduccion::select('id', 'numero_pedido', 'cliente', 'estado', 'area', 'novedades', 'forma_de_pago', 'created_at', 'fecha_estimada_de_entrega');
+        
+        // Si es asesor, solo mostrar sus pedidos
+        if ($user->hasRole('asesor')) {
+            $query->where('asesor_id', $user->id);
+        }
+        
+        $pedidos = $query->orderBy('created_at', 'desc')->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $pedidos->toArray(),
+            'debug' => [
+                'user_id' => $user->id,
+                'user_roles' => $userRoles,
+                'pedidos_count' => $pedidos->count()
+            ]
+        ]);
+    })->name('realtime.pedidos.listar');
+});
+
+// ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin y supervisor_pedidos pueden acceder a asesores además del rol asesor
-Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('asesores')->name('asesores.')->group(function () {
+Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->prefix('asesores')->name('asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-data', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
@@ -453,6 +515,12 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
         ->name('pedidos.factura-datos');
     Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
+    
+    // API para listado de pedidos en tiempo real
+    Route::get('/pedidos/api/listar', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'apiListar'])->name('pedidos.api.listar');
+    
+    // Anular pedido
+    Route::post('/pedidos/{id}/anular', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.anular');
     
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
@@ -1022,12 +1090,12 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
 // ========================================
 // API RUTAS - GUARDAR PEDIDO DESDE JSON
 // ========================================
-Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('api/pedidos')->name('api.pedidos.')->group(function () {
-    Route::post('/guardar-desde-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'guardar'])
-        ->name('guardar-json');
-    Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
-        ->name('validar-json');
-});
+// Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('api/pedidos')->name('api.pedidos.')->group(function () {
+//     Route::post('/guardar-desde-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'guardar'])
+//         ->name('guardar-json');
+//     Route::post('/validar-json', [App\Infrastructure\Http\Controllers\Asesores\GuardarPedidoJSONController::class, 'validar'])
+//         ->name('validar-json');
+// });
 
 // ========================================
 // RUTAS PARA CARTERA - PEDIDOS

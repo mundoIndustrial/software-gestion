@@ -88,7 +88,7 @@ window.abrirFacturaEnIframe = function(numeroPedido) {
                 <!-- Footer -->
                 <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
                     <button onclick="document.getElementById('invoice-modal-wrapper').remove();" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 4px; cursor: pointer;">Cerrar</button>
-                    <button onclick="document.getElementById('invoice-frame').contentWindow.print();" style="padding: 8px 16px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer;">🖨️ Imprimir</button>
+                    <button onclick="document.getElementById('invoice-frame').contentWindow.print();" style="padding: 8px 16px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer;"> Imprimir</button>
                 </div>
             </div>
         `;

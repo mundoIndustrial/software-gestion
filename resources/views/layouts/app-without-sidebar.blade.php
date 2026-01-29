@@ -77,26 +77,6 @@
                 </button>
                 @endif
                 
-                <!-- Notificaciones -->
-                <div class="notification-dropdown">
-                    <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones" aria-expanded="false" aria-controls="notificationMenu">
-                        <span class="material-symbols-rounded" aria-hidden="true">notifications</span>
-                        <span class="notification-badge" id="notificationBadge" aria-label="0 notificaciones nuevas">0</span>
-                    </button>
-                    <div class="notification-menu" id="notificationMenu" role="region" aria-label="Menú de notificaciones">
-                        <div class="notification-header">
-                            <h3>Notificaciones</h3>
-                            <button class="mark-all-read" aria-label="Marcar todas las notificaciones como leídas">Marcar todas</button>
-                        </div>
-                        <div class="notification-list" id="notificationList" role="list">
-                            <div class="notification-empty">
-                                <span class="material-symbols-rounded" aria-hidden="true">notifications_off</span>
-                                <p>Sin notificaciones</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Perfil de Usuario -->
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">

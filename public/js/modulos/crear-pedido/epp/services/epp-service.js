@@ -44,7 +44,7 @@ class EppService {
      * Seguro para datos opcionales (categoria, codigo)
      */
     abrirModalEditarEPP(eppData) {
-        console.log('[EppService] 📝 Abriendo modal de edición con datos:', eppData);
+        console.log('[EppService] Abriendo modal de edición con datos:', eppData);
 
         // Resetear estado y marcar como edición
         this.stateManager.iniciarEdicion(eppData.epp_id || eppData.id, true, eppData.pedido_epp_id || eppData.id);
@@ -244,7 +244,7 @@ class EppService {
             const pedidoEppId = this.stateManager.getPedidoEppId();
             const imagenes = this.stateManager.getImagenesSubidas();
 
-            console.log('[EppService] 📝 Guardando EPP desde BD:', {
+            console.log('[EppService] Guardando EPP desde BD:', {
                 eppId,
                 pedidoId,
                 pedidoEppId,
@@ -390,9 +390,9 @@ class EppService {
 
             // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
             if (!eppId) {
-                console.log('[EppService] 📝 Agregando EPP nuevo a estado');
-                console.log('[EppService] 📝 ¿window.gestionItemsUI existe?', !!window.gestionItemsUI);
-                console.log('[EppService] 📝 ¿agregarEPPDesdeModal existe?', window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function');
+                console.log('[EppService] Agregando EPP nuevo a estado');
+                console.log('[EppService] ¿window.gestionItemsUI existe?', !!window.gestionItemsUI);
+                console.log('[EppService] ¿agregarEPPDesdeModal existe?', window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function');
                 
                 // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
                 if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {

@@ -63,7 +63,7 @@
                             onmouseout="this.style.background='white'; this.style.borderColor='#1e40af';">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">👕 ${nombre.toUpperCase()}</h4>
+                                    <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;">${nombre.toUpperCase()}</h4>
                                     <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${cantidad}</strong></p>
                                 </div>
                                 <span style="background: #1e40af; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">✏️ Editar</span>
@@ -93,7 +93,7 @@
                     <!-- Header Azul con mejor espaciado -->
                     <div style="padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                         <h3 style="margin: 0; color: white; font-size: 20px; font-weight: 700; flex: 1;">
-                            👕 Selecciona una Prenda para Editar
+                            Selecciona una Prenda para Editar
                         </h3>
                         <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 
                             style="background: #ef4444; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0;"

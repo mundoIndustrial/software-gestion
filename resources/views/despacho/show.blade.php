@@ -17,6 +17,11 @@
                        class="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium">
                         ← Volver
                     </a>
+                    <button type="button"
+                            onclick="abrirModalFactura({{ $pedido->id }})"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
+                        Ver Pedido
+                    </button>
                     <a href="{{ route('despacho.print', $pedido->id) }}"
                        target="_blank"
                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded transition-colors">
@@ -31,12 +36,6 @@
                     <span class="text-slate-500">Cliente:</span>
                     <span class="font-medium text-slate-900 ml-2">{{ $pedido->cliente ?? '—' }}</span>
                 </div>
-                <div>
-                    <span class="text-slate-500">Estado:</span>
-                    <span class="font-medium text-slate-900 ml-2 @if($pedido->estado === 'Entregado') text-green-700 @elseif($pedido->estado === 'En Ejecución') text-blue-700 @else text-amber-700 @endif">
-                        {{ $pedido->estado }}
-                    </span>
-                </div>
             </div>
         </div>
 
@@ -46,7 +45,7 @@
 
             <!-- Inputs de despacho -->
             <div class="px-6 py-6 border-b border-slate-200 bg-slate-50">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 gap-6">
                     <div>
                         <label for="fecha_hora" class="block text-sm font-medium text-slate-700 mb-2">
                             Fecha y Hora
@@ -57,43 +56,33 @@
                                class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                                value="{{ now()->format('Y-m-d\TH:i') }}">
                     </div>
-                    <div>
-                        <label for="cliente_empresa" class="block text-sm font-medium text-slate-700 mb-2">
-                            Receptor
-                        </label>
-                        <input type="text" 
-                               id="cliente_empresa"
-                               name="cliente_empresa"
-                               class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-                               placeholder="Nombre del receptor"
-                               value="{{ $pedido->cliente }}">
-                    </div>
                 </div>
             </div>
 
             <!-- Tabla de despacho -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+            <div class="overflow-x-auto lg:overflow-visible">
+                <table class="w-full text-sm min-w-[800px] lg:min-w-full">
                     <thead class="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-slate-700">Descripción</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700">Talla</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Cantidad</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-20">Parcial 1</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-20">Parcial 2</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-20">Parcial 3</th>
-                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-left font-medium text-slate-700 text-xs lg:text-sm">Descripción</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Género</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Talla</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Cantidad</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 1</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 2</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 3</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
                         </tr>
                     </thead>
                     <tbody id="tablaDespacho">
                         <!-- PRENDAS -->
                         @if($prendas->count() > 0)
                             <tr class="bg-slate-50">
-                                <td colspan="10" class="px-4 py-2 font-semibold text-slate-900">
-                                    Prendas ({{ $prendas->count() }})
+                                <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
+                                    Prendas
                                 </td>
                             </tr>
                             @foreach($prendas as $index => $fila)
@@ -101,63 +90,124 @@
                                     data-tipo="prenda"
                                     data-id="{{ $fila->id }}"
                                     data-talla-id="{{ $fila->tallaId }}"
+                                    data-genero="{{ $fila->genero }}"
                                     data-cantidad="{{ $fila->cantidadTotal }}">
                                     
-                                    <td class="px-4 py-3 text-slate-900">
-                                        {{ $fila->descripcion }}
+                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
+                                        <div class="font-semibold text-slate-900 mb-1">{{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}</div>
+                                        
+                                        <!-- Tela y Color -->
+                                        @if($fila->objetoPrenda && (isset($fila->objetoPrenda['tela']) || isset($fila->objetoPrenda['color'])))
+                                            @php
+                                                $tela = $fila->objetoPrenda['tela'] ?? null;
+                                                $color = $fila->objetoPrenda['color'] ?? null;
+                                            @endphp
+                                            <div class="text-slate-600 mb-1 text-xs">
+                                                @if($tela && $color)
+                                                    <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                @elseif($tela)
+                                                    <div>• Tela: {{ $tela }}</div>
+                                                @elseif($color)
+                                                    <div>• Color: {{ $color }}</div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        
+                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['variantes']) && is_array($fila->objetoPrenda['variantes']) && count($fila->objetoPrenda['variantes']) > 0)
+                                            @php
+                                                // Obtener la primera variante para mostrar las características comunes
+                                                $primeraVariante = $fila->objetoPrenda['variantes'][0];
+                                                $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
+                                                $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
+                                                $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
+                                                $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
+                                                $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
+                                                $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
+                                            @endphp
+                                            <div class="text-slate-600 mb-1 text-xs space-y-0.5">
+                                                @if($manga)
+                                                    <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                @endif
+                                                @if($broche)
+                                                    <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                @endif
+                                                @if($bolsillos)
+                                                    <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['procesos']) && is_array($fila->objetoPrenda['procesos']) && count($fila->objetoPrenda['procesos']) > 0)
+                                            <div class="text-slate-600 mt-1 text-xs">
+                                                <div class="ml-2 mt-0.5">
+                                                    @foreach($fila->objetoPrenda['procesos'] as $proc)
+                                                        @php
+                                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
+                                                        @endphp
+                                                        <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                        @endif
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center text-slate-600">
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs">
+                                        {{ $fila->genero ?? '—' }}
+                                    </td>
+                                    
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
                                         {{ $fila->talla }}
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900">
+                                    <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
                                         {{ $fila->cantidadTotal }}
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
                                                value="0"
@@ -170,8 +220,8 @@
                         <!-- EPP -->
                         @if($epps->count() > 0)
                             <tr class="bg-slate-50">
-                                <td colspan="10" class="px-4 py-2 font-semibold text-slate-900">
-                                    EPP ({{ $epps->count() }})
+                                <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
+                                    EPP
                                 </td>
                             </tr>
                             @foreach($epps as $index => $fila)
@@ -180,61 +230,68 @@
                                     data-id="{{ $fila->id }}"
                                     data-cantidad="{{ $fila->cantidadTotal }}">
                                     
-                                    <td class="px-4 py-3 text-slate-900">
-                                        {{ $fila->descripcion }}
+                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
+                                        <div class="font-semibold text-slate-900"> {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}</div>
+                                        @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== '—' && $fila->objetoEpp['observaciones'] !== '-')
+                                            <div class="text-slate-600 mt-1 text-xs">{{ $fila->objetoEpp['observaciones'] }}</div>
+                                        @endif
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center text-slate-600">
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs">
                                         —
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900">
+                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                        —
+                                    </td>
+                                    
+                                    <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
                                         {{ $fila->cantidadTotal }}
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
                                                value="0"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3">
+                                    <td class="px-2 lg:px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
                                                value="0"
@@ -246,7 +303,7 @@
 
                         @if($prendas->count() === 0 && $epps->count() === 0)
                             <tr>
-                                <td colspan="10" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="11" class="px-6 py-12 text-center text-slate-500">
                                     No hay ítems en este pedido
                                 </td>
                             </tr>
@@ -276,12 +333,75 @@
     </div>
 </div>
 
+<!-- Modal de Factura -->
+<div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 9999;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
+        <!-- Header -->
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
+            <h2 class="text-lg font-semibold text-white">📋 Pedido</h2>
+            <button onclick="cerrarModalFactura()" 
+                    class="text-white hover:text-slate-200 text-2xl leading-none">
+                ✕
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
+            <div class="flex justify-center items-center py-12">
+                <span class="text-slate-500">⏳ Cargando factura...</span>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0">
+            <button onclick="cerrarModalFactura()" 
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div id="modalExito" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Header -->
+        <div class="bg-green-50 px-6 py-4 border-b border-green-200">
+            <h2 class="text-lg font-semibold text-green-900">✓ Despacho Guardado</h2>
+        </div>
+        
+        <!-- Body -->
+        <div class="px-6 py-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <svg class="h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-slate-700" id="modalMensaje">Despacho guardado correctamente</p>
+                    <p class="text-sm text-slate-500 mt-2" id="modalDetalles"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+            <button onclick="cerrarModalExito()" 
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript para despacho -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Variables
     const formDespacho = document.getElementById('formDespacho');
     const btnGuardar = document.getElementById('btnGuardar');
+    const modalExito = document.getElementById('modalExito');
 
     // Cargar despachos guardados al cargar la página
     cargarDespachos();
@@ -316,10 +436,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Buscar fila: con talla_id si existe, sin talla_id si es null
                     if (despacho.talla_id) {
+                        // Para prendas, buscar por talla_id (que es el item_id guardado)
                         fila = document.querySelector(
-                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-id="${despacho.id}"][data-talla-id="${despacho.talla_id}"]`
+                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-talla-id="${despacho.talla_id}"]`
                         );
-                        console.log(`🔍 Buscando: tipo=${despacho.tipo}, id=${despacho.id}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
+                        console.log(`🔍 Buscando: tipo=${despacho.tipo}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
                     } else {
                         // Para items sin talla (EPPs), buscar solo por tipo e id
                         const filas = document.querySelectorAll(
@@ -393,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 tipo,
                 id,
                 talla_id: tallaId,
+                genero: tipo === 'prenda' ? (fila.dataset.genero || null) : null,  // ✅ Agregar género para prendas
                 pendiente_inicial: pendienteInicial,
                 parcial_1: parcial1,
                 pendiente_1: pendiente1,
@@ -420,28 +542,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     fecha_hora: document.getElementById('fecha_hora').value,
-                    cliente_empresa: document.getElementById('cliente_empresa').value,
                     despachos,
                 }),
             });
 
-            const data = await response.json();
+            // Verificar si la respuesta es JSON válido
+            const contentType = response.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                console.error('❌ Respuesta no es JSON:', text);
+                throw new Error('La respuesta del servidor no es JSON válido');
+            }
 
             if (data.success) {
-                alert('✓ Despacho guardado exitosamente');
+                console.log('✅ Despacho guardado exitosamente');
                 
-                // Limpiar los inputs para mostrar que se guardó
-                const filas = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
-                filas.forEach(fila => {
+                // Mostrar modal de éxito
+                mostrarModalExito(data);
+                
+                // Limpiar los inputs después de guardar exitosamente
+                const filasLimpiar = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
+                filasLimpiar.forEach(fila => {
                     fila.querySelectorAll('input[type="number"]').forEach(input => {
                         input.value = '';
                     });
                 });
                 
-                btnGuardar.innerHTML = '✓ Guardado';
+                // Recargar despachos guardados en tiempo real (sin reload completo)
                 setTimeout(() => {
-                    btnGuardar.innerHTML = '💾 Guardar Despacho';
-                }, 2000);
+                    cargarDespachos();
+                }, 500);
+                
             } else {
                 alert('❌ Error: ' + data.message);
                 if (data.errors) {
@@ -457,6 +592,319 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// ============ FUNCIONES GLOBALES PARA MODAL ============
+
+/**
+ * Abrir modal con la factura del pedido
+ */
+async function abrirModalFactura(pedidoId) {
+    const modal = document.getElementById('modalFactura');
+    const contenido = document.getElementById('facturaContenido');
+    
+    modal.classList.remove('hidden');
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    
+    try {
+        const response = await fetch(`/despacho/${pedidoId}/factura-datos`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            },
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data) {
+            // Generar HTML de la factura
+            const htmlFactura = generarHTMLFactura(data);
+            contenido.innerHTML = htmlFactura;
+        } else {
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error al cargar la factura</div>';
+        }
+    } catch (error) {
+        console.error('Error cargando factura:', error);
+        contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error: ' + error.message + '</div>';
+    }
+}
+
+/**
+ * Cerrar modal de factura
+ */
+function cerrarModalFactura() {
+    const modal = document.getElementById('modalFactura');
+    modal.classList.add('hidden');
+}
+
+/**
+ * Generar HTML de la factura - IGUAL QUE EN ASESORES
+ */
+function generarHTMLFactura(datos) {
+    if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido.</div>';
+    }
+
+    // Generar las tarjetas de prendas
+    const prendasHTML = datos.prendas.map((prenda, idx) => {
+        // Variantes tabla
+        let variantesHTML = '';
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            // Verificar qué columnas tienen datos
+            const tieneManga = prenda.variantes.some(v => v.manga);
+            const tieneBroche = prenda.variantes.some(v => v.broche);
+            const tieneBolsillos = prenda.variantes.some(v => v.bolsillos);
+            
+            variantesHTML = `
+                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
+                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Broche</th>` : ''}
+                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prenda.variantes.map((var_item, varIdx) => `
+                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
+                                ${tieneManga ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
+                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                                ${tieneBroche ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
+                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                                ${tieneBolsillos ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Tela y color
+        let telaHTML = '';
+        if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+            telaHTML = `
+                <div style="margin-bottom: 12px;">
+                    ${prenda.telas_array.map(tela => `
+                        <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="font-size: 11px; color: #374151;">
+                                <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
+                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
+                                ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else if (prenda.tela || prenda.color) {
+            telaHTML = `
+                <div style="margin-bottom: 12px; font-size: 11px; color: #374151;">
+                    <strong>Tela:</strong> ${prenda.tela || '—'} 
+                    ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
+                </div>
+            `;
+        }
+
+        // Procesos
+        let procesosHTML = '';
+        if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+            procesosHTML = `
+                <div style="margin-bottom: 0;">
+                    ${prenda.procesos.map(proc => `
+                        <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
+                            ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
+                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
+                                    📍 ${proc.ubicaciones.join(' • ')}
+                                </div>
+                            ` : ''}
+                            ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0) ? `
+                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
+                                    ${[
+                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : [])
+                                    ].join(' • ')}
+                                </div>
+                            ` : ''}
+                            ${proc.observaciones ? `
+                                <div style="font-size: 10px; color: #6b7280;">
+                                    ${proc.observaciones}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
+                <!-- Header simple -->
+                <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}</div>
+                    ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
+                </div>
+                
+                <!-- Telas (movido aquí) -->
+                ${telaHTML}
+                
+                <!-- Imagen pequeña -->
+                ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
+                    <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
+                        <img src="${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                    </div>
+                ` : ''}
+                
+                <!-- Contenido compacto -->
+                <div style="${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
+                    <!-- Variantes -->
+                    ${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
+                    
+                    <!-- Procesos -->
+                    ${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
+                </div>
+                
+                <div style="clear: both;"></div>
+            </div>
+        `;
+    }).join('');
+
+    // EPPs
+    const eppsHTML = (datos.epps && datos.epps.length > 0) ? `
+        <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
+            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (${datos.epps.length})</div>
+            <div style="padding: 12px; space-y: 8px;">
+                ${datos.epps.map(epp => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
+                            ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                        </div>
+                        <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px;">
+                            ${epp.cantidad}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    ` : '';
+
+    // Totales
+    const totalHTML = `
+        <div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">
+            <div style="font-size: 12px; margin-bottom: 8px;">
+                <strong>Total Ítems:</strong> ${datos.total_items || 0}
+            </div>
+            ${datos.valor_total ? `
+                <div style="font-size: 12px; margin-bottom: 8px;">
+                    <strong>Subtotal:</strong> $${parseFloat(datos.valor_total).toLocaleString('es-CO')}
+                </div>
+            ` : ''}
+            ${datos.total_general ? `
+                <div style="font-size: 14px; font-weight: 700; color: #1e40af; padding-top: 8px; border-top: 2px solid #d1d5db;">
+                    <strong>Total:</strong> $${parseFloat(datos.total_general).toLocaleString('es-CO')}
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    return `
+        <div>
+            <!-- Header factura -->
+            <div style="background: #1e3a8a; color: white; padding: 16px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">FACTURA DE PEDIDO</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Número</div>
+                        <div style="font-weight: 600;">${datos.numero_pedido}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Cliente</div>
+                        <div style="font-weight: 600;">${datos.cliente}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Asesora</div>
+                        <div style="font-weight: 600;">${datos.asesora}</div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
+                        <div style="font-weight: 600;">${datos.forma_de_pago}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
+                        <div style="font-weight: 600;">${datos.fecha}</div>
+                    </div>
+                </div>
+            </div>
+
+            ${datos.observaciones ? `
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
+                    <strong style="color: #92400e;">📋 Observaciones:</strong>
+                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
+                </div>
+            ` : ''}
+
+            <!-- Prendas -->
+            ${prendasHTML}
+
+            <!-- EPPs -->
+            ${eppsHTML}
+
+            <!-- Totales -->
+            ${totalHTML}
+        </div>
+    `;
+}
+
+/**
+ * Mostrar modal de éxito
+ */
+function mostrarModalExito(data) {
+    const modal = document.getElementById('modalExito');
+    const mensaje = document.getElementById('modalMensaje');
+    const detalles = document.getElementById('modalDetalles');
+    
+    mensaje.textContent = '✓ ' + (data.message || 'Despacho guardado correctamente');
+    detalles.textContent = `${data.despachos_procesados} ítem(s) procesado(s) y guardado(s)`;
+    
+    modal.classList.remove('hidden');
+    
+    // Cerrar automáticamente después de 5 segundos
+    setTimeout(() => {
+        cerrarModalExito();
+    }, 5000);
+}
+
+/**
+ * Cerrar modal de éxito
+ */
+function cerrarModalExito() {
+    const modal = document.getElementById('modalExito');
+    modal.classList.add('hidden');
+}
 </script>
 
 <style>
@@ -464,4 +912,5 @@ document.addEventListener('DOMContentLoaded', function() {
         font-variant-numeric: tabular-nums;
     }
 </style>
+
 @endsection

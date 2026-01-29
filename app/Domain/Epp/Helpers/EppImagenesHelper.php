@@ -21,7 +21,7 @@ class EppImagenesHelper
      */
     public static function logInit(): void
     {
-        Log::debug('🛡️ [EPP-IMAGENES-HELPER] Sistema de imágenes de EPP inicializado', [
+        Log::debug(' [EPP-IMAGENES-HELPER] Sistema de imágenes de EPP inicializado', [
             'epp_imagenes_table' => 'NO EXISTE (ignorada)',
             'pedido_epp_imagenes_table' => 'ACTIVA (almacena imágenes)',
         ]);

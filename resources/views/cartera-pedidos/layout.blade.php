@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+    <meta name="user-id" content="{{ auth()->id() }}">
+    <!-- Meta tags para WebSockets/Reverb -->
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
+    @endauth
     <title>@yield('title', 'Cartera de Pedidos') - MundoIndustrial</title>
 
     <!-- CSS (heredado de asesores) -->
@@ -558,6 +567,11 @@
             console.groupEnd();
         }, 100);
     </script>
+
+    <!-- Laravel Echo - Para actualizaciones en tiempo real -->
+    @auth
+    <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    @endauth
 
     @stack('scripts')
 </body>

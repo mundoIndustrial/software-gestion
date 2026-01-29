@@ -1,118 +1,287 @@
 /**
- * Real-Time Table Refresh System
- * Refresca automáticamente la tabla de pedidos cada X segundos
+ * Real-Time Table Refresh System - Laravel Echo + Reverb
+ * Usa únicamente Laravel Echo con broadcaster "reverb"
+ * Eliminado todo código WebSocket manual
  */
 
 class PedidosRealtimeRefresh {
     constructor(options = {}) {
-        this.checkInterval = options.checkInterval || 1000; // Verificar cada 1 segundo
-        this.autoStart = options.autoStart !== false; // Auto-iniciar por defecto
+        // Configuración optimada
+        this.checkInterval = options.checkInterval || 30000; // 30 segundos para fallback
+        this.autoStart = options.autoStart !== false;
         this.isRunning = false;
         this.lastUpdateTime = null;
         this.lastChangeTime = null;
-        this.intervaloId = null;
-        this.pedidosAnterior = new Map(); // Almacenar estado anterior para detectar cambios
+        this.pedidosAnterior = new Map();
+        
+        // Control de actividad
+        this.userActivityTimeout = null;
+        this.isVisible = true;
+        this.hasFocus = true;
+        
+        // Laravel Echo
+        this.echoChannel = null;
+        this.usingWebSockets = false;
+        
+        // Detección de página
+        this.isCarteraPage = window.location.pathname.includes('/cartera/pedidos');
         
         // Elementos DOM
-        this.tableContainer = document.querySelector('.table-scroll-container');
-        this.tableHeader = document.querySelector('[style*="grid-template-columns"]');
+        this.tableContainer = this.isCarteraPage ? 
+            document.querySelector('.table-scroll-container') : 
+            document.querySelector('.table-scroll-container');
         
         this.init();
     }
 
     init() {
-        console.log('🔄 [PedidosRealtime] Sistema de detección de cambios inicializado');
+        console.log('🔄 [PedidosRealtime] Sistema con WebSockets inicializado');
+        
+        // Detectar actividad del usuario
+        this.setupActivityDetection();
+        
+        // Detectar visibilidad de la página
+        this.setupVisibilityDetection();
+        
+        // Configurar Laravel Echo
+        this.setupEchoConnection();
         
         if (this.autoStart) {
             this.start();
         }
-        
-        // Crear indicador visual de refresco
-        this.crearIndicadorRefresco();
-        
-        // Agregar controles
-        this.agregarControles();
     }
 
-    crearIndicadorRefresco() {
-        const indicador = document.createElement('div');
-        indicador.id = 'realtime-refresh-indicator';
-        indicador.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 12px 16px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.85rem;
-            ">
-                <span class="refresh-status" style="color: #6b7280;">
-                    ✅ Monitoreo activo
-                </span>
-                <span class="refresh-time" style="color: #9ca3af; font-size: 0.75rem;">
-                    Esperando cambios...
-                </span>
-            </div>
-        `;
-        document.body.appendChild(indicador);
-        this.indicador = indicador;
+    setupActivityDetection() {
+        // Detectar actividad del usuario (mouse, teclado, scroll)
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'click', 'focus'];
+        
+        events.forEach(event => {
+            document.addEventListener(event, () => {
+                this.onUserActivity();
+            }, { passive: true });
+        });
     }
 
-    agregarControles() {
-        const contenedorContrales = document.createElement('div');
-        contenedorContrales.id = 'realtime-controls';
-        contenedorContrales.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 140px;
-                right: 20px;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-                display: flex;
-                gap: 4px;
-            ">
-                <button id="btn-refresco-manual" title="Refrescar ahora" style="
-                    padding: 8px 12px;
-                    background: #1e40af;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 0.8rem;
-                    font-weight: 600;
-                ">
-                    🔄 Actualizar
-                </button>
-                <button id="btn-pausa-refresco" title="Pausa/Reanudar" style="
-                    padding: 8px 12px;
-                    background: #6b7280;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 0.8rem;
-                    font-weight: 600;
-                ">
-                    ⏸️ Pausar
-                </button>
-            </div>
-        `;
-        document.body.appendChild(contenedorContrales);
+    setupVisibilityDetection() {
+        // Detectar si la página está visible
+        document.addEventListener('visibilitychange', () => {
+            this.isVisible = !document.hidden;
+            this.adjustPollingInterval();
+        });
+
+        // Detectar si la ventana tiene foco
+        window.addEventListener('focus', () => {
+            this.hasFocus = true;
+            this.adjustPollingInterval();
+        });
+
+        window.addEventListener('blur', () => {
+            this.hasFocus = false;
+            this.adjustPollingInterval();
+        });
+    }
+
+    /**
+     * Configurar Laravel Echo
+     */
+    setupEchoConnection() {
+        // Verificar si Echo está disponible
+        if (!window.Echo) {
+            console.warn('⚠️ [PedidosRealtime] Laravel Echo no está disponible, usando solo polling');
+            return;
+        }
+
+        // Obtener user ID desde meta tags
+        const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
+
+        if (!userId) {
+            console.warn('⚠️ [PedidosRealtime] User ID no encontrado, no se puede suscribir a canales');
+            return;
+        }
+
+        try {
+            console.log('🔌 [PedidosRealtime] Suscribiendo a canal privado con Laravel Echo');
+            console.log('  - User ID:', userId);
+            
+            // Suscribir al canal privado usando Laravel Echo
+            this.echoChannel = window.Echo.private(`pedidos.${userId}`)
+                .listen('.PedidoActualizado', (event) => {
+                    console.log('� [PedidosRealtime] Evento PedidoActualizado recibido via Echo:', event);
+                    this.handlePedidoUpdate(event.pedido, 'pedido.actualizado', event.changedFields);
+                })
+                .error((error) => {
+                    console.error('❌ [PedidosRealtime] Error en canal Echo:', error);
+                    this.usingWebSockets = false;
+                    this.showConnectionIndicator('Echo Error', 'error');
+                });
+
+            this.usingWebSockets = true;
+            console.log('✅ [PedidosRealtime] Conexión Laravel Echo establecida');
+            this.showConnectionIndicator('Echo', 'success');
+
+        } catch (error) {
+            console.error('❌ [PedidosRealtime] Error configurando Laravel Echo:', error);
+            this.usingWebSockets = false;
+        }
+    }
+
+    /**
+     * Manejar actualización de pedido desde Echo
+     */
+    handlePedidoUpdate(pedido, action, changedFields) {
+        console.log('🔄 [PedidosRealtime] Actualización de pedido por Echo:', pedido.id);
         
-        // Event listeners
-        document.getElementById('btn-refresco-manual').addEventListener('click', () => this.verificarAhora());
-        document.getElementById('btn-pausa-refresco').addEventListener('click', () => this.togglePausa());
+        // Actualizar o agregar el pedido específico
+        this.actualizarPedidoIndividual(pedido, changedFields);
+        
+        this.lastChangeTime = new Date();
+    }
+
+    /**
+     * Actualizar pedido individual (para Echo)
+     */
+    actualizarPedidoIndividual(pedido, changedFields) {
+        // Buscar fila del pedido según la página
+        const selector = this.isCarteraPage ? 
+            `[data-orden-id="${pedido.id}"]` : 
+            `[data-pedido-id="${pedido.id}"]`;
+        const fila = document.querySelector(selector);
+        
+        if (fila) {
+            // Actualizar fila existente
+            this.actualizarFila(fila, pedido);
+            
+            // Resaltar campos cambiados
+            if (changedFields) {
+                this.resaltarCamposCambios(fila, changedFields);
+            }
+        } else {
+            // Nuevo pedido - para Cartera, recargar toda la tabla
+            if (this.isCarteraPage) {
+                console.log('🔄 [PedidosRealtime] Nuevo pedido en Cartera, recargando tabla');
+                if (window.cargarPedidos) {
+                    window.cargarPedidos();
+                }
+            } else {
+                // Para Asesores, agregar nueva fila
+                console.log('➕ [PedidosRealtime] Nuevo pedido por Echo:', pedido.id);
+                this.agregarFilaNueva(pedido);
+            }
+        }
+        // Actualizar estado interno
+        this.pedidosAnterior.set(pedido.id, {
+            estado: pedido.estado,
+            novedades: pedido.novedades,
+            forma_pago: pedido.forma_pago,
+            fecha_estimada: pedido.fecha_estimada,
+        });
+    }
+
+    /**
+     * Resaltar campos que cambiaron
+     */
+    resaltarCamposCambios(fila, changedFields) {
+        const celdas = fila.querySelectorAll('[style*="display: flex"]');
+        
+        if (changedFields.estado && celdas.length >= 2) {
+            celdas[1].style.background = '#dcfce7'; // Verde claro
+            setTimeout(() => {
+                celdas[1].style.background = '';
+                celdas[1].style.transition = 'background-color 1s ease-out';
+            }, 3000);
+        }
+        
+        if (changedFields.novedades && celdas.length > 5) {
+            celdas[5].style.background = '#fef3c7'; // Amarillo claro
+            setTimeout(() => {
+                celdas[5].style.background = '';
+                celdas[5].style.transition = 'background-color 1s ease-out';
+            }, 3000);
+        }
+    }
+
+    /**
+     * Mostrar indicador de conexión
+     */
+    showConnectionIndicator(type, status) {
+        // Crear o actualizar indicador
+        let indicator = document.querySelector('.realtime-connection-indicator');
+        
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'realtime-connection-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: bold;
+                z-index: 9999;
+                transition: all 0.3s ease;
+            `;
+            document.body.appendChild(indicator);
+        }
+        
+        indicator.textContent = type;
+        indicator.className = `realtime-connection-indicator ${status}`;
+        
+        // Colores según estado
+        if (status === 'success') {
+            indicator.style.background = '#22c55e';
+            indicator.style.color = 'white';
+        } else if (status === 'warning') {
+            indicator.style.background = '#f59e0b';
+            indicator.style.color = 'white';
+        } else {
+            indicator.style.background = '#ef4444';
+            indicator.style.color = 'white';
+        }
+        
+        // Ocultar después de 3 segundos
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+            setTimeout(() => indicator.remove(), 300);
+        }, 3000);
+    }
+
+    /**
+     * Ocultar indicador de conexión
+     */
+    hideConnectionIndicator() {
+        const indicator = document.querySelector('.realtime-connection-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    onUserActivity() {
+        // Reiniciar timeout de inactividad
+        clearTimeout(this.userActivityTimeout);
+        
+        // Si está inactivo, reactivar
+        if (!this.isRunning) {
+            console.log('🔄 [PedidosRealtime] Reactivando por actividad del usuario');
+            this.start();
+        }
+        
+        // Marcar como activo por 5 minutos
+        this.userActivityTimeout = setTimeout(() => {
+            console.log('🔄 [PedidosRealtime] Usuario inactivo, pausando monitoreo');
+            this.pause();
+        }, 300000); // 5 minutos
+    }
+
+    adjustPollingInterval() {
+        if (!this.isRunning) return;
+        
+        // Temporalmente desactivado para pruebas - siempre 10 segundos para pruebas rápidas
+        let newInterval = 10000; // 10 segundos para pruebas
+        
+        console.log('🔄 [PedidosRealtime] 👀 Polling fijo a 10 segundos (pruebas rápidas)');
+        
+        this.checkInterval = newInterval;
     }
 
     start() {
@@ -121,86 +290,162 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        console.log('🔄 [PedidosRealtime] ✅ Iniciando monitoreo de cambios');
+        console.log(`🔄 [PedidosRealtime] ✅ Iniciando monitoreo con polling (WebSockets desactivados)`);
         this.isRunning = true;
-        this.actualizarIndicador();
         
-        // Verificar cambios cada segundo
-        this.intervaloId = setInterval(() => this.verificar(), this.checkInterval);
+        // Iniciar sistema de polling como fallback
+        this.startPollingFallback();
+    }
+    
+    /**
+     * Sistema de polling fallback cuando WebSockets fallan
+     */
+    startPollingFallback() {
+        if (!this.isRunning) return;
+        
+        console.log('🔄 [PedidosRealtime] Iniciando polling fallback cada', this.checkInterval, 'ms');
+        console.log('🔄 [PedidosRealtime] API URL:', this.getApiUrl());
+        
+        const checkForUpdates = async () => {
+            // Temporalmente desactivado para pruebas - siempre ejecutar
+            if (!this.isRunning) {
+                console.log('🔄 [PedidosRealtime] Polling detenido - isRunning:', this.isRunning);
+                return;
+            }
+            
+            console.log('🔄 [PedidosRealtime] 🔍 Verificando actualizaciones...');
+            
+            try {
+                const response = await fetch(this.getApiUrl(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                console.log('🔄 [PedidosRealtime] 📡 Respuesta recibida:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('🔄 [PedidosRealtime] ❌ Error response:', errorText);
+                    
+                    // Intentar parsear como JSON para ver debug info
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        console.error('🔄 [PedidosRealtime] 🐛 Debug info:', errorJson.debug);
+                    } catch (e) {
+                        // No es JSON, mostrar texto plano
+                    }
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('🔄 [PedidosRealtime] 📊 Datos recibidos:', data?.data?.length || 0, 'pedidos');
+                
+                if (data && data.data) {
+                    await this.checkForChanges(data.data);
+                }
+            } catch (error) {
+                console.error('❌ [PedidosRealtime] Error en polling:', error);
+            }
+            
+            // Programar siguiente verificación
+            if (this.isRunning) {
+                console.log('🔄 [PedidosRealtime] ⏰ Siguiente verificación en', this.checkInterval, 'ms');
+                setTimeout(checkForUpdates, this.checkInterval);
+            }
+        };
+        
+        // Iniciar primera verificación después de 2 segundos
+        setTimeout(checkForUpdates, 2000);
+    }
+
+    pause() {
+        if (!this.isRunning) return;
+        
+        console.log('🔄 [PedidosRealtime] ⏸️ Pausado por inactividad');
+        this.isRunning = false;
     }
 
     stop() {
-        if (!this.isRunning) {
-            console.log('🔄 [PedidosRealtime] Ya está pausado');
-            return;
-        }
+        if (!this.isRunning) return;
         
-        console.log('🔄 [PedidosRealtime] ⏸️ Pausado');
+        console.log('🔄 [PedidosRealtime] ⏹️ Detenido');
         this.isRunning = false;
-        clearInterval(this.intervaloId);
-        this.actualizarIndicador();
-    }
-
-    togglePausa() {
-        if (this.isRunning) {
-            this.stop();
-        } else {
-            this.start();
+        clearTimeout(this.userActivityTimeout);
+        
+        // Desconectar canal Echo si existe
+        if (this.echoChannel) {
+            // Laravel Echo no tiene un método destroy explícito para canales individuales
+            // El canal se desconectará automáticamente cuando el objeto Echo se destruya
+            this.echoChannel = null;
         }
     }
 
-    verificarAhora() {
-        console.log('🔄 [PedidosRealtime] Verificando cambios ahora...');
-        this.verificar();
+    /**
+     * Obtener estado del sistema
+     */
+    getStatus() {
+        return {
+            isRunning: this.isRunning,
+            usingWebSockets: this.usingWebSockets,
+            isVisible: this.isVisible,
+            hasFocus: this.hasFocus,
+            checkInterval: this.checkInterval,
+            pedidosCount: this.pedidosAnterior.size,
+            lastChangeTime: this.lastChangeTime,
+            echoChannel: this.echoChannel ? 'active' : 'inactive'
+        };
     }
 
+    /**
+     * Método legacy para compatibilidad - ya no se usa
+     */
     async verificar() {
-        try {
-            // Obtener parámetros de URL actuales
-            const urlParams = new URLSearchParams(window.location.search);
-            const tipo = urlParams.get('tipo') || '';
-            const estado = urlParams.get('estado') || '';
-            const search = urlParams.get('search') || '';
+        // Este método ya no se usa directamente, pero se mantiene por compatibilidad
+        console.log('🔄 [PedidosRealtime] Método verificar() legacy - usando Laravel Echo');
+        return;
+    }
+
+    /**
+     * Obtener URL de API según la página actual
+     */
+    getApiUrl() {
+        if (this.isCarteraPage) {
+            return '/api/cartera/pedidos?estado=pendiente_cartera';
+        } else {
+            return '/asesores/realtime/pedidos'; // Nueva API específica para tiempo real
+        }
+    }
+    
+    /**
+     * Verificar si hay cambios y actualizar tabla
+     */
+    async checkForChanges(pedidosNuevos) {
+        console.log('🔄 [PedidosRealtime] 🔍 Analizando', pedidosNuevos.length, 'pedidos para cambios');
+        
+        const hayCambios = this.detectarCambios(pedidosNuevos);
+        
+        console.log('🔄 [PedidosRealtime] 📊 ¿Hay cambios?', hayCambios);
+        
+        if (hayCambios) {
+            console.log('🔄 [PedidosRealtime] 🔄 Cambios detectados, actualizando tabla');
+            this.lastChangeTime = new Date();
             
-            // Construir URL de API
-            let url = '/asesores/pedidos/api/listar';
-            const params = new URLSearchParams();
-            if (tipo) params.append('tipo', tipo);
-            if (estado) params.append('estado', estado);
-            if (search) params.append('search', search);
-            
-            if (params.toString()) {
-                url += '?' + params.toString();
+            // Recargar la tabla completa
+            if (typeof window.cargarPedidos === 'function') {
+                console.log('🔄 [PedidosRealtime] 📞 Llamando a window.cargarPedidos()');
+                await window.cargarPedidos();
+            } else if (this.isCarteraPage && typeof window.cargarPedidosCartera === 'function') {
+                console.log('🔄 [PedidosRealtime] 📞 Llamando a window.cargarPedidosCartera()');
+                await window.cargarPedidosCartera();
+            } else {
+                console.log('🔄 [PedidosRealtime] ❌ No se encontró función para recargar tabla');
+                console.log('🔄 [PedidosRealtime]   - window.cargarPedidos:', typeof window.cargarPedidos);
+                console.log('🔄 [PedidosRealtime]   - window.cargarPedidosCartera:', typeof window.cargarPedidosCartera);
+                console.log('🔄 [PedidosRealtime]   - isCarteraPage:', this.isCarteraPage);
             }
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data) {
-                // Detectar cambios comparando con datos anteriores
-                const haysCambios = this.detectarCambios(result.data);
-                
-                if (haysCambios) {
-                    console.log('🔄 [PedidosRealtime] ✅ Cambios detectados, actualizando tabla...');
-                    this.actualizarTabla(result.data);
-                    this.lastChangeTime = new Date();
-                    this.actualizarIndicadorCambio();
-                }
-            }
-            
-        } catch (error) {
-            console.error('❌ [PedidosRealtime] Error al verificar:', error);
+        } else {
+            console.log('🔄 [PedidosRealtime] ✅ Sin cambios, tabla actualizada');
         }
     }
 
@@ -212,12 +457,12 @@ class PedidosRealtimeRefresh {
         }
         
         // Verificar si hay cambios
-        let haysCambios = false;
+        let hayCambios = false;
         
         // Verificar nuevos pedidos
         if (pedidosNuevos.length !== this.pedidosAnterior.size) {
             console.log('📊 [PedidosRealtime] Cantidad de pedidos cambió:', this.pedidosAnterior.size, '->', pedidosNuevos.length);
-            haysCambios = true;
+            hayCambios = true;
         }
         
         // Verificar cambios en pedidos existentes
@@ -226,26 +471,26 @@ class PedidosRealtimeRefresh {
             
             if (!anterior) {
                 console.log('➕ [PedidosRealtime] Nuevo pedido:', pedido.id);
-                haysCambios = true;
+                hayCambios = true;
                 continue;
             }
             
             // Comparar campos importantes
             if (anterior.estado !== pedido.estado) {
                 console.log('🔄 [PedidosRealtime] Estado cambió (Pedido #' + pedido.id + '):', anterior.estado, '->', pedido.estado);
-                haysCambios = true;
+                hayCambios = true;
             }
             
             if (anterior.novedades !== pedido.novedades) {
-                console.log('📝 [PedidosRealtime] Novedades cambió (Pedido #' + pedido.id + ')');
-                haysCambios = true;
+                console.log('[PedidosRealtime] Novedades cambió (Pedido #' + pedido.id + ')');
+                hayCambios = true;
             }
         }
         
         // Guardar estado actual para próxima comparación
         this.guardarEstadoPedidos(pedidosNuevos);
         
-        return haysCambios;
+        return hayCambios;
     }
 
     guardarEstadoPedidos(pedidos) {
@@ -337,80 +582,14 @@ class PedidosRealtimeRefresh {
     agregarFilaNueva(pedido) {
         // Aquí se agregría lógica para crear una nueva fila con animación
         // Por ahora, se deja para recargar la página si hay nuevos pedidos
-        console.log('📝 Nueva fila:', pedido);
-    }
-
-    actualizarIndicador() {
-        const status = document.querySelector('.refresh-status');
-        if (!status) return;
-        
-        if (this.isRunning) {
-            status.innerHTML = '✅ Monitoreo activo';
-            status.style.color = '#10b981';
-            document.getElementById('btn-pausa-refresco').textContent = '⏸️ Pausar';
-            document.getElementById('btn-pausa-refresco').style.background = '#6b7280';
-        } else {
-            status.innerHTML = '⏸️ Pausado';
-            status.style.color = '#6b7280';
-            document.getElementById('btn-pausa-refresco').textContent = '▶️ Reanudar';
-            document.getElementById('btn-pausa-refresco').style.background = '#10b981';
-        }
-    }
-
-    actualizarIndicadorCambio() {
-        const status = document.querySelector('.refresh-status');
-        const timeEl = document.querySelector('.refresh-time');
-        
-        if (status) {
-            status.innerHTML = '✨ Cambio detectado';
-            status.style.color = '#f59e0b';
-            
-            setTimeout(() => {
-                if (this.isRunning) {
-                    status.innerHTML = '✅ Monitoreo activo';
-                    status.style.color = '#10b981';
-                }
-            }, 2000);
-        }
-        
-        if (timeEl) {
-            timeEl.textContent = 'Cambio hace unos segundos';
-        }
-    }
-
-    actualizarTimestamp() {
-        const timeEl = document.querySelector('.refresh-time');
-        if (!timeEl || !this.lastChangeTime) {
-            if (timeEl && !this.isRunning) {
-                timeEl.textContent = 'Monitoreo pausado';
-            }
-            return;
-        }
-        
-        const ahora = new Date();
-        const diferencia = Math.floor((ahora - this.lastChangeTime) / 1000);
-        
-        let texto = 'Esperando cambios...';
-        if (diferencia < 60) {
-            texto = 'Cambio hace ' + diferencia + 's';
-        } else if (diferencia < 3600) {
-            const minutos = Math.floor(diferencia / 60);
-            texto = 'Cambio hace ' + minutos + 'm';
-        }
-        
-        timeEl.textContent = texto;
+        console.log('Nueva fila:', pedido);
     }
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
-        checkInterval: 1000, // Verificar cada 1 segundo, pero solo actualizar si hay cambios
+        checkInterval: 30000, // 30 segundos
         autoStart: true
     });
-    
-    // Actualizar timestamp cada segundo
-    setInterval(() => {
-        window.pedidosRealtimeRefresh?.actualizarTimestamp();
-    }, 1000);
 });

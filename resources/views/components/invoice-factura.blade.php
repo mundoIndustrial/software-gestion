@@ -495,7 +495,7 @@
 
 <div class="invoice-wrapper">
     <button class="print-button" onclick="window.print()">
-        🖨️ Imprimir Factura
+         Imprimir Factura
     </button>
 
     <div class="invoice-container">

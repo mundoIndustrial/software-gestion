@@ -244,7 +244,7 @@ class PedidoController extends Controller
                 $fechaActual = now()->format('d/m/Y H:i');
                 
                 // Construir registro con información completa
-                $registroNovedad = "📝 [{$nombreUsuario} - {$rolUsuario} - {$fechaActual}]\n{$justificacion}";
+                $registroNovedad = "[{$nombreUsuario} - {$rolUsuario} - {$fechaActual}]\n{$justificacion}";
                 
                 // Si ya hay novedades, agregar con separador
                 if (!empty($novedadesActuales)) {

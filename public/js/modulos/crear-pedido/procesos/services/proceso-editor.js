@@ -135,7 +135,7 @@ class ProcesosEditor {
             return;
         }
 
-        console.log('📝 [PROCESO-EDITOR] Registrando cambio de observaciones:', {
+        console.log('[PROCESO-EDITOR] Registrando cambio de observaciones:', {
             anterior: this.cambios.observaciones || this.procesoOriginal.observaciones,
             nueva: nuevasObservaciones
         });

@@ -14,6 +14,7 @@ class DespachoParcialesDTO
         public string $tipo,                // 'prenda' | 'epp'
         public int|string $id,              // ID del ítem
         public int|string|null $tallaId = null,  // ID de la talla
+        public ?string $genero = null,     // Género (DAMA, CABALLERO, UNISEX)
         public int $pendienteInicial = 0,   // Cantidad pendiente al inicio
         public int $parcial1 = 0,
         public int $pendiente1 = 0,
@@ -40,6 +41,7 @@ class DespachoParcialesDTO
             'tipo' => $this->tipo,
             'id' => $this->id,
             'talla_id' => $this->tallaId,
+            'genero' => $this->genero,
             'pendiente_inicial' => $this->pendienteInicial,
             'parcial_1' => $this->parcial1,
             'pendiente_1' => $this->pendiente1,

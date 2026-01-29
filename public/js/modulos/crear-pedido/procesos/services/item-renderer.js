@@ -440,7 +440,7 @@ class ItemRenderer {
             }
         }
         
-        console.log('[item-renderer] 📝 procesosHTML final:', procesosHTML);
+        console.log('[item-renderer] procesosHTML final:', procesosHTML);
 
         itemDiv.innerHTML = `
             <div style="${estilos.itemTitulo || this.getEstiloItemTitulo()}">
@@ -467,7 +467,7 @@ class ItemRenderer {
         footer.style.cssText = estilos.footer || this.getEstiloFooter();
         
         const btnImpreso = document.createElement('button');
-        btnImpreso.textContent = '🖨️ Imprimir';
+        btnImpreso.textContent = ' Imprimir';
         btnImpreso.style.cssText = estilos.btnAccion || this.getEstiloBtnAccion();
         btnImpreso.onclick = () => window.print();
         footer.appendChild(btnImpreso);

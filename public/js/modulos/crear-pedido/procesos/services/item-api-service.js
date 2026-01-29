@@ -128,7 +128,7 @@ class ItemAPIService {
             // PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
             const jsonString = JSON.stringify(pedidoData);
             console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
-            console.log('[validarPedido] 📝 JSON String que se enviará:', jsonString);
+            console.log('[validarPedido] JSON String que se enviará:', jsonString);
             
             // PASO 2: Enviar en FormData con campo "pedido"
             const formData = new FormData();

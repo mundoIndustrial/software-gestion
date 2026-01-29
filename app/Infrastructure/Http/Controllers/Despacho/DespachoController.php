@@ -7,6 +7,7 @@ use App\Models\PedidoProduccion;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use Illuminate\Http\Request;
 
 class DespachoController extends Controller
@@ -14,6 +15,7 @@ class DespachoController extends Controller
     public function __construct(
         private ObtenerFilasDespachoUseCase $obtenerFilas,
         private GuardarDespachoUseCase $guardarDespacho,
+        private PedidoProduccionRepository $pedidoRepository,
     ) {}
 
     public function index(Request $request)
@@ -21,6 +23,9 @@ class DespachoController extends Controller
         $search = $request->query('search', '');
         
         $query = PedidoProduccion::query();
+        
+        // Excluir pedidos con estados no deseados
+        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
         
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -96,5 +101,13 @@ class DespachoController extends Controller
             });
 
         return response()->json(['despachos' => $despachos]);
+    }
+
+    public function obtenerFacturaDatos(PedidoProduccion $pedido)
+    {
+        // Usar el repositorio que ya obtiene los datos completos (igual que asesores)
+        $datos = $this->pedidoRepository->obtenerDatosFactura($pedido->id);
+        
+        return response()->json($datos);
     }
 }

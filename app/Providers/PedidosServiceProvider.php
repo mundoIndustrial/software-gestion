@@ -11,8 +11,8 @@ use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
 use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
-use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
-use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
+use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
@@ -82,7 +82,9 @@ class PedidosServiceProvider extends ServiceProvider
 
         // Registrar DespachoGeneradorService como singleton
         $this->app->singleton(DespachoGeneradorService::class, function ($app) {
-            return new DespachoGeneradorService();
+            return new DespachoGeneradorService(
+                $app->make(ObtenerPedidoUseCase::class)
+            );
         });
 
         // Registrar DespachoValidadorService como singleton

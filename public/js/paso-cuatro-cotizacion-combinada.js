@@ -43,7 +43,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- TIPO DE PRENDA - DROPDOWN CON PRENDAS DEL PASO 2 -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">👕 TIPO DE PRENDA</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">TIPO DE PRENDA</label>
                 <select class="tipo-prenda-reflectivo select-prenda-paso2-reflectivo" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
                     <option value="">-- Selecciona una prenda --</option>
                     ${prendasPaso2.map(prenda => {
@@ -67,7 +67,7 @@ function agregarPrendaReflectivoPaso4() {
             
             <!-- DESCRIPCIÓN -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">📝 DESCRIPCIÓN</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">DESCRIPCIÓN</label>
                 <textarea class="descripcion-reflectivo" rows="2" placeholder="Describe el reflectivo para esta prenda (tipo, tamaño, color, ubicación, etc.)..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
             </div>
             

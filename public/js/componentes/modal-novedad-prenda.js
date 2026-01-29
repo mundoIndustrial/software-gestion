@@ -60,7 +60,7 @@ class ModalNovedadPrenda {
             `;
 
             Swal.fire({
-                title: '📝 Agregar Novedad del Cambio',
+                title: 'Agregar Novedad del Cambio',
                 html: html,
                 icon: 'info',
                 confirmButtonText: '✓ Guardar y Crear Prenda',

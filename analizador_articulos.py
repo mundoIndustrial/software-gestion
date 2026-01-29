@@ -98,7 +98,7 @@ class AnalizadorArticulos:
     
     def procesar_listado_desordenado(self, texto: str) -> List[Dict]:
         """Procesa listado desordenado sin estructura"""
-        print("📝 Procesando listado desordenado...")
+        print("Procesando listado desordenado...")
         
         lineas = [l.strip().strip('"') for l in texto.split('\n') if l.strip() and l.strip() != '""']
         

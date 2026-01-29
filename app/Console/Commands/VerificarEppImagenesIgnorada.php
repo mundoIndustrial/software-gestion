@@ -14,7 +14,7 @@ class VerificarEppImagenesIgnorada extends Command
     public function handle()
     {
         $this->info("\n╔════════════════════════════════════════════════════════════╗");
-        $this->info("║  🛡️  VERIFICACIÓN: Tabla epp_imagenes Ignorada            ║");
+        $this->info("║    VERIFICACIÓN: Tabla epp_imagenes Ignorada            ║");
         $this->info("╚════════════════════════════════════════════════════════════╝\n");
 
         // 1. Verificar que epp_imagenes no existe

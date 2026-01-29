@@ -3,74 +3,52 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-/**
- * Echo exposes an expressive API for subscribing to channels and listening
- * for events that are broadcast by Laravel. Echo and event broadcasting
- * allows your team to easily build robust real-time web applications.
- */
-
-import Echo from 'laravel-echo';
+// Importar Pusher JS para Reverb
 import Pusher from 'pusher-js';
-
 window.Pusher = Pusher;
 
+import Echo from 'laravel-echo';
+
 /**
- * WebSocket Configuration for Reverb
- * 
- * DEVELOPMENT: Always use the current browser hostname
- * PRODUCTION: Use sistemamundoindustrial.online
+ * Configuración Reverb - Con Pusher JS importado
+ * Pusher JS ahora está disponible globalmente para Laravel Echo
  */
 const hostname = window.location.hostname;
-const port = window.location.port;
-const protocol = window.location.protocol;
-
-// Only treat as production if explicitly accessing the production domain
 const isProduction = hostname === 'sistemamundoindustrial.online';
 
-// WebSocket host and port configuration
-let wsHost = hostname;
-let wsPort = 8080;
-let wsScheme = 'http';
+// Usar IP específica para desarrollo
+const wsHost = isProduction ? 'sistemamundoindustrial.online' : '192.168.0.173';
+const wsPort = isProduction ? 443 : 8080;
+const forceTLS = isProduction;
 
-if (isProduction) {
-    wsHost = 'sistemamundoindustrial.online';
-    wsPort = 443;
-    wsScheme = 'https';
-}
-
-// Echo configuration
-const echoConfig = {
-    broadcaster: 'reverb',
-    key: 'mundo-industrial-key', // fallback key
-    wsHost: wsHost,
-    wsPort: wsPort,
-    wssPort: wsPort,
-    forceTLS: wsScheme === 'https',
-    enabledTransports: ['ws', 'wss'],
-    disableStats: true,
-};
-
-// Debug logging
-if (!isProduction) {
-    console.log('[Reverb] Connecting to development server:', {
+try {
+    // WebSockets desactivados - Usar solo polling fallback
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
         wsHost,
         wsPort,
-        wsScheme,
-        url: `${wsScheme}://${wsHost}:${wsPort}`
+        wssPort: wsPort,
+        forceTLS,
+        enabledTransports: [], // Desactivar WebSockets - usar solo polling
+        disableStats: true,
+        authEndpoint: '/broadcasting/auth',
+        auth: {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+        },
+        wsErrorMessage: 'WebSocket connection failed',
     });
+
+    if (!isProduction) {
+        console.log('[Reverb] Echo conectado exitosamente', {
+            wsHost,
+            wsPort,
+            key: import.meta.env.VITE_REVERB_APP_KEY,
+        });
+    }
+} catch (error) {
+    console.error('[Reverb] Error inicializando Echo:', error);
+    // Echo no disponible, las funciones real-time no funcionarán
 }
-
-window.Echo = new Echo(echoConfig);
-
-// Verificar conexión
-window.Echo.connector.pusher.connection.bind('connected', () => {
-    // Conectado
-});
-
-window.Echo.connector.pusher.connection.bind('error', (err) => {
-    console.error('WebSocket error:', err);
-});
-
-window.Echo.connector.pusher.connection.bind('disconnected', () => {
-    console.warn('WebSocket disconnected');
-});

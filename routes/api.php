@@ -325,3 +325,20 @@ Route::prefix('articulos')->group(function () {
 // Test endpoint para procesamiento de imágenes (sin autenticación por ahora)
 Route::post('test-image', [\App\Http\Controllers\TestImageController::class, 'processImage'])
     ->middleware('web');
+
+/**
+ * API Routes for Cartera de Pedidos (Tiempo Real)
+ */
+Route::prefix('cartera')->name('cartera.')->middleware(['auth'])->group(function () {
+    Route::get('pedidos', function () {
+        $pedidos = \App\Models\PedidoProduccion::where('estado', 'pendiente_cartera')
+            ->select('id', 'numero_pedido', 'cliente', 'estado', 'area', 'novedades', 'forma_pago', 'fecha_creacion', 'fecha_estimada')
+            ->orderBy('fecha_creacion', 'desc')
+            ->get();
+            
+        return response()->json([
+            'success' => true,
+            'data' => $pedidos->toArray()
+        ]);
+    })->name('pedidos.list');
+});

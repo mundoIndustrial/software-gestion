@@ -69,7 +69,7 @@ function seleccionarTipoCotizacion(tipo) {
  */
 function mostrarNotificacionTipoCotizacion(tipo) {
     const info = {
-        'prenda': '👕 Prendas Sin Logo',
+        'prenda': 'Prendas Sin Logo',
         'logo': '🎨 Solo Logos',
         'prenda-bordado': ' Prendas Con Bordado/Logo'
     };
@@ -289,7 +289,7 @@ function actualizarResumenFriendly() {
         if (tienePrendas && (tieneLogo || tieneTecnicas)) {
             tipoDetectado = ' Combinada';
         } else if (tienePrendas) {
-            tipoDetectado = '👕 Solo Prendas';
+            tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo || tieneTecnicas) {
             tipoDetectado = '🎨 Solo Logo/Bordado';
         } else {
@@ -558,7 +558,7 @@ function actualizarResumenFriendly() {
                 div.style.cssText = 'padding: 15px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 10px;';
                 
                 let html = `<div style="margin-bottom: 12px;">
-                    <strong style="font-size: 1.05rem; color: #0066cc;">👕 Prenda ${index + 1}: ${nombre}</strong>
+                    <strong style="font-size: 1.05rem; color: #0066cc;">Prenda ${index + 1}: ${nombre}</strong>
                 </div>`;
                 
                 if (descripcion) {
@@ -1178,7 +1178,7 @@ function recopilarDatos() {
 
         }
         
-        console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
+        console.log('RESUMEN VARIANTES CAPTURADAS:', {
             ' Color': variantes.color || '(vacío)',
             ' Tela': variantes.tela || '(vacío)',
             ' Referencia': variantes.referencia || '(vacío)',
@@ -1194,7 +1194,7 @@ function recopilarDatos() {
             '🔗 Obs Broche': variantes.obs_broche || '(vacío)',
             ' Tiene Reflectivo': variantes.tiene_reflectivo || false,
             ' Obs Reflectivo': variantes.obs_reflectivo || '(vacío)',
-            '📝 Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
+            'Descripción Adicional': variantes.descripcion_adicional || '(vacío)',
             ' Prenda de Bodega': variantes.prenda_bodega || false,
             'Todas las keys': Object.keys(variantes)
         });
@@ -1374,7 +1374,7 @@ function recopilarDatos() {
     
     // Obtener descripción del logo
     const descripcionLogo = document.getElementById('descripcion_logo')?.value || '';
-    console.log('📝 Descripción del logo capturada:', {
+    console.log('Descripción del logo capturada:', {
         elemento_encontrado: !!document.getElementById('descripcion_logo'),
         valor: descripcionLogo,
         longitud: descripcionLogo.length

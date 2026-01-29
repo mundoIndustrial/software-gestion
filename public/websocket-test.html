@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Integración - WebSockets Pedidos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.connected { background: #d4edda; color: #155724; }
+        .status.disconnected { background: #f8d7da; color: #721c24; }
+        .status.fallback { background: #fff3cd; color: #856404; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover { background: #0056b3; }
+        .test-button:disabled { background: #6c757d; cursor: not-allowed; }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Integración - WebSockets Pedidos</h1>
+    
+    <div class="container">
+        <h2>Estado de Conexión</h2>
+        <div id="connectionStatus" class="status disconnected">Desconectado</div>
+        
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value" id="wsStatus">❌</div>
+                <div class="metric-label">WebSocket</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="fallbackStatus">❌</div>
+                <div class="metric-label">Fallback</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="messagesCount">0</div>
+                <div class="metric-label">Mensajes</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="lastUpdate">--:--</div>
+                <div class="metric-label">Última Actualización</div>
+            </div>
+        </div>
+        
+        <div>
+            <button class="test-button" onclick="testWebSocket()">Probar WebSocket</button>
+            <button class="test-button" onclick="testFallback()">Forzar Fallback</button>
+            <button class="test-button" onclick="simulatePedidoUpdate()">Simular Actualización</button>
+            <button class="test-button" onclick="clearLog()">Limpiar Log</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Log de Eventos</h2>
+        <div id="eventLog" class="log">Esperando eventos...</div>
+    </div>
+
+    <div class="container">
+        <h2>Configuración Actual</h2>
+        <div id="configInfo"></div>
+    </div>
+
+    <!-- Meta tags para WebSocket (simulados para prueba) -->
+    <meta name="reverb-key" content="test-key">
+    <meta name="reverb-app-id" content="test-app">
+    <meta name="reverb-host" content="localhost">
+    <meta name="reverb-port" content="8080">
+    <meta name="reverb-scheme" content="http">
+    <meta name="user-id" content="1">
+
+    <!-- Scripts -->
+    <script src="/js/modulos/asesores/pedidos-realtime.js"></script>
+
+    <script>
+        let pedidosRealtime = null;
+        let messageCount = 0;
+        let logContainer = document.getElementById('eventLog');
+        let statusContainer = document.getElementById('connectionStatus');
+
+        // Inicializar sistema
+        function initSystem() {
+            log('🚀 Inicializando sistema de WebSockets...');
+            
+            try {
+                pedidosRealtime = new PedidosRealtimeRefresh({
+                    checkInterval: 5000, // 5 segundos para pruebas
+                    autoStart: true
+                });
+                
+                log('✅ Sistema inicializado correctamente');
+                updateConfigInfo();
+                
+            } catch (error) {
+                log('❌ Error inicializando sistema: ' + error.message);
+            }
+        }
+
+        // Probar WebSocket
+        function testWebSocket() {
+            if (!pedidosRealtime) {
+                log('❌ Sistema no inicializado');
+                return;
+            }
+            
+            log('🔄 Probando reconexión WebSocket...');
+            pedidosRealtime.reconnect();
+        }
+
+        // Forzar fallback
+        function testFallback() {
+            if (!pedidosRealtime || !pedidosRealtime.wsManager) {
+                log('❌ WebSocket Manager no disponible');
+                return;
+            }
+            
+            log('🔄 Forzando fallback a polling...');
+            pedidosRealtime.wsManager.activateFallback();
+        }
+
+        // Simular actualización de pedido
+        function simulatePedidoUpdate() {
+            log('🔄 Simulando actualización de pedido...');
+            
+            // Simular mensaje WebSocket
+            const simulatedMessage = {
+                action: 'pedido.actualizado',
+                pedido: {
+                    id: Math.floor(Math.random() * 1000),
+                    cliente: 'Cliente Test',
+                    estado: 'En Ejecución',
+                    novedades: 'Novedad de prueba\nOtra novedad',
+                    forma_pago: 'Contado',
+                    fecha_estimada: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                changedFields: {
+                    estado: { old: 'Pendiente', new: 'En Ejecución' },
+                    novedades: { old: null, new: 'Novedad de prueba\nOtra novedad' }
+                },
+                timestamp: new Date().toISOString()
+            };
+            
+            // Enviar al sistema
+            if (pedidosRealtime) {
+                pedidosRealtime.onWebSocketMessage(simulatedMessage);
+                log('✅ Mensaje simulado enviado');
+            }
+        }
+
+        // Actualizar información de configuración
+        function updateConfigInfo() {
+            const config = {
+                apiKey: document.querySelector('meta[name="reverb-key"]')?.content,
+                appId: document.querySelector('meta[name="reverb-app-id"]')?.content,
+                host: document.querySelector('meta[name="reverb-host"]')?.content,
+                port: document.querySelector('meta[name="reverb-port"]')?.content,
+                scheme: document.querySelector('meta[name="reverb-scheme"]')?.content,
+                userId: document.querySelector('meta[name="user-id"]')?.content
+            };
+            
+            document.getElementById('configInfo').innerHTML = `
+                <pre>${JSON.stringify(config, null, 2)}</pre>
+            `;
+        }
+
+        // Actualizar métricas
+        function updateMetrics() {
+            if (!pedidosRealtime) return;
+            
+            const status = pedidosRealtime.getStatus();
+            
+            // WebSocket Status
+            document.getElementById('wsStatus').textContent = status.usingWebSockets ? '✅' : '❌';
+            
+            // Fallback Status
+            document.getElementById('fallbackStatus').textContent = 
+                (status.webSocketStatus && status.webSocketStatus.usingFallback) ? '✅' : '❌';
+            
+            // Messages Count
+            document.getElementById('messagesCount').textContent = messageCount;
+            
+            // Last Update
+            if (status.lastChangeTime) {
+                const date = new Date(status.lastChangeTime);
+                document.getElementById('lastUpdate').textContent = 
+                    date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Connection Status
+            if (status.isRunning && status.usingWebSockets) {
+                statusContainer.className = 'status connected';
+                statusContainer.textContent = 'Conectado via WebSocket';
+            } else if (status.isRunning && status.webSocketStatus?.usingFallback) {
+                statusContainer.className = 'status fallback';
+                statusContainer.textContent = 'Conectado via Fallback Polling';
+            } else {
+                statusContainer.className = 'status disconnected';
+                statusContainer.textContent = 'Desconectado';
+            }
+        }
+
+        // Logging
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('es-ES');
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logMessage;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            messageCount++;
+            updateMetrics();
+        }
+
+        // Limpiar log
+        function clearLog() {
+            logContainer.textContent = 'Log limpiado...\n';
+            messageCount = 0;
+            updateMetrics();
+        }
+
+        // Intercept logs para mostrar en la interfaz
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
+                log('📋 ' + args.join(' '));
+            }
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
+                log('❌ ' + args.join(' '));
+            }
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
+                log('⚠️ ' + args.join(' '));
+            }
+        };
+
+        // Inicializar al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            log('📄 Página de prueba cargada');
+            initSystem();
+            
+            // Actualizar métricas cada 2 segundos
+            setInterval(updateMetrics, 2000);
+        });
+    </script>
+</body>
+</html>
