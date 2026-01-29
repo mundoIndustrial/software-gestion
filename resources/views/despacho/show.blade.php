@@ -94,7 +94,12 @@
                                     data-cantidad="{{ $fila->cantidadTotal }}">
                                     
                                     <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
-                                        <div class="font-semibold text-slate-900 mb-1">{{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}</div>
+                                        <div class="font-semibold text-slate-900 mb-1">
+                                            {{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}
+                                            @if(isset($fila->objetoPrenda['de_bodega']) && $fila->objetoPrenda['de_bodega'])
+                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                            @endif
+                                        </div>
                                         
                                         <!-- Tela y Color -->
                                         @if($fila->objetoPrenda && (isset($fila->objetoPrenda['tela']) || isset($fila->objetoPrenda['color'])))
@@ -762,7 +767,7 @@ function generarHTMLFactura(datos) {
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
                 <!-- Header simple -->
                 <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
                     ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
                 </div>
                 

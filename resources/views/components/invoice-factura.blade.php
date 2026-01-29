@@ -547,7 +547,7 @@
             @foreach($orden->prendas as $index => $prenda)
                 <div class="prenda-block">
                     <div class="prenda-nombre">
-                        Prenda {{ $index + 1 }}: {{ $prenda->nombre ?? 'Sin nombre' }}
+                        Prenda {{ $index + 1 }}: {{ $prenda->nombre ?? 'Sin nombre' }}@if(isset($prenda->de_bodega) && $prenda->de_bodega) - SE SACA DE BODEGA@endif
                     </div>
                     
                     <div class="prenda-detalles">

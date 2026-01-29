@@ -299,7 +299,12 @@
                             @foreach($prendas as $fila)
                                 <tr>
                                     <td>
-                                        <div style="font-weight: bold; margin-bottom: 4px;">{{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}</div>
+                                        <div style="font-weight: bold; margin-bottom: 4px;">
+                                            {{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}
+                                            @if(isset($fila->objetoPrenda['de_bodega']) && $fila->objetoPrenda['de_bodega'])
+                                                <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
+                                            @endif
+                                        </div>
                                         @if($fila->objetoPrenda && isset($fila->objetoPrenda['variantes']) && is_array($fila->objetoPrenda['variantes']) && count($fila->objetoPrenda['variantes']) > 0)
                                             @php
                                                 $primeraVariante = $fila->objetoPrenda['variantes'][0];
