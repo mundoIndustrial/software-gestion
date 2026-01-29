@@ -228,7 +228,7 @@ class PedidoController extends Controller
                     \Log::info('[actualizarDescripcion] Roles del usuario:', [
                         'roles_ids' => $usuario->roles_ids,
                         'roles_count' => $rolesUsuario->count(),
-                        'roles_data' => $rolesUsuario->toArray(),
+                        'roles_data' => $rolesUsuario->get()->toArray(),
                     ]);
                     
                     if ($rolesUsuario && $rolesUsuario->count() > 0) {

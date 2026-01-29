@@ -601,6 +601,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     Route::post('/api/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTela'])->name('api.telas.create');
     Route::get('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.colores');
     Route::post('/api/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.colores.create');
+    Route::get('/api/prendas/autocomplete', [App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
 });
 
 // ========================================

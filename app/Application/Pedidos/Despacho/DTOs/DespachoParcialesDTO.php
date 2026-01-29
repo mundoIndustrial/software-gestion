@@ -11,11 +11,16 @@ namespace App\Application\Pedidos\Despacho\DTOs;
 class DespachoParcialesDTO
 {
     public function __construct(
-        public string $tipo,            // 'prenda' | 'epp'
-        public int|string $id,          // ID del ítem
+        public string $tipo,                // 'prenda' | 'epp'
+        public int|string $id,              // ID del ítem
+        public int|string|null $tallaId = null,  // ID de la talla
+        public int $pendienteInicial = 0,   // Cantidad pendiente al inicio
         public int $parcial1 = 0,
+        public int $pendiente1 = 0,
         public int $parcial2 = 0,
+        public int $pendiente2 = 0,
         public int $parcial3 = 0,
+        public int $pendiente3 = 0,
     ) {}
 
     /**
@@ -34,9 +39,14 @@ class DespachoParcialesDTO
         return [
             'tipo' => $this->tipo,
             'id' => $this->id,
+            'talla_id' => $this->tallaId,
+            'pendiente_inicial' => $this->pendienteInicial,
             'parcial_1' => $this->parcial1,
+            'pendiente_1' => $this->pendiente1,
             'parcial_2' => $this->parcial2,
+            'pendiente_2' => $this->pendiente2,
             'parcial_3' => $this->parcial3,
+            'pendiente_3' => $this->pendiente3,
         ];
     }
 }

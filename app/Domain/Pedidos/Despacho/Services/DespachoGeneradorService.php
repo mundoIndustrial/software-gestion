@@ -79,11 +79,12 @@ class DespachoGeneradorService
 
             if ($tallas->count() > 0) {
                 // Una fila por talla
+                // IMPORTANTE: El 'id' debe ser el de prenda_pedido_tallas para guardar correctamente
                 foreach ($tallas as $talla) {
                     $filas->push(new FilaDespachoDTO(
                         tipo: 'prenda',
-                        id: $prenda->id,
-                        tallaId: $talla->id,
+                        id: $talla->id,  // ID de prenda_pedido_tallas
+                        tallaId: $talla->id,  // También se guarda aquí para referencia
                         descripcion: "{$prenda->nombre_prenda} - {$talla->genero}",
                         cantidadTotal: $talla->cantidad,
                         talla: $talla->talla,
@@ -94,7 +95,7 @@ class DespachoGeneradorService
                     ));
                 }
             } else {
-                // Una fila única sin talla
+                // Una fila única sin talla (fallback)
                 $filas->push(new FilaDespachoDTO(
                     tipo: 'prenda',
                     id: $prenda->id,

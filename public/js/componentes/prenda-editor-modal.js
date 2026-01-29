@@ -811,7 +811,9 @@ async function cargarPrendasDatalist() {
         
         console.log('[cargarPrendasDatalist] Buscando prendas:', busqueda || 'todas');
         
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            credentials: 'include'
+        });
         
         if (!response.ok) {
             console.error('[cargarPrendasDatalist] Error en la respuesta:', response.status);

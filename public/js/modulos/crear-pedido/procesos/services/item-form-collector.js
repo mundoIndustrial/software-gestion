@@ -18,24 +18,24 @@ class ItemFormCollector {
      * Recolectar datos completos del pedido
      */
     recolectarDatosPedido() {
-        // Obtener items desde GestionItemsUI (prendas nuevas) y window.itemsPedido (EPPs)
+        // Obtener items desde GestionItemsUI (prendas nuevas + EPPs)
+        // GestionItemsUI ya incluye tanto prendas como EPPs en orden correcto
         let items = [];
         
-        // Obtener prendas desde GestionItemsUI
+        // ✅ Obtener todos los items (prendas + EPPs) en orden desde GestionItemsUI
         if (window.gestionItemsUI && window.gestionItemsUI.obtenerItemsOrdenados) {
             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
             items = items.concat(itemsOrdenados);
-
+            console.log('[ItemFormCollector] 📦 Items recolectados desde gestionItemsUI:', {
+                total: itemsOrdenados.length,
+                prendas: itemsOrdenados.filter(i => i.tipo !== 'epp').length,
+                epps: itemsOrdenados.filter(i => i.tipo === 'epp').length
+            });
         }
         
-        // Obtener EPPs desde window.itemsPedido (si no están ya en GestionItemsUI)
-        if (window.itemsPedido && window.itemsPedido.length > 0) {
-            const eppsDirectos = window.itemsPedido.filter(item => item.tipo === 'epp');
-            if (eppsDirectos.length > 0) {
-                items = items.concat(eppsDirectos);
-
-            }
-        }
+        // ✅ IMPORTANTE: NO agregar EPPs nuevamente desde window.itemsPedido
+        // Ya están incluidos en gestionItemsUI.obtenerItemsOrdenados()
+        // Esto evita la duplicación de EPPs
         
 
         const itemsFormato = items.map((item, itemIndex) => {

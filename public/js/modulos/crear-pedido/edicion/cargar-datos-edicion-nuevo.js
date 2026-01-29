@@ -361,6 +361,18 @@ function cargarEPPs(epps) {
             }
         }
         
+        // ✅ IMPORTANTE: Registrar EPPs en gestionItemsUI para que no se pierdan al agregar prendas
+        if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
+            epps.forEach((epp) => {
+                try {
+                    window.gestionItemsUI.agregarEPPAlOrden(epp);
+
+                } catch (error) {
+
+                }
+            });
+        }
+        
         // Si el gestor tiene método para agregar EPPs
         if (window.gestorPrendaSinCotizacion && typeof window.gestorPrendaSinCotizacion.agregarEpp === 'function') {
             epps.forEach((epp, index) => {

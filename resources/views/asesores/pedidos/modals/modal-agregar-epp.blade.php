@@ -855,15 +855,24 @@ function finalizarAgregarEPP() {
         }
         
         // También guardar en window.itemsPedido para que se envíe al servidor
-        window.itemsPedido.push({
+        const eppData = {
             tipo: 'epp',
             epp_id: epp.id,
             nombre_epp: epp.nombre_completo,
             cantidad: epp.cantidad,
             observaciones: epp.observaciones,
             imagenes: []
-        });
+        };
+        window.itemsPedido.push(eppData);
         console.log(`📦 [finalizarAgregarEPP] EPP guardado en window.itemsPedido:`, epp);
+        
+        // ✅ CRÍTICO: También registrar en gestionItemsUI para mantener sincronizado
+        if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
+            window.gestionItemsUI.agregarEPPAlOrden(eppData);
+            console.log(`✅ [finalizarAgregarEPP] EPP registrado en gestionItemsUI:`, epp.nombre_completo);
+        } else {
+            console.warn('⚠️ [finalizarAgregarEPP] gestionItemsUI no disponible');
+        }
     });
     
     console.log('✅ [finalizarAgregarEPP] Todos los EPP han sido agregados');

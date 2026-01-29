@@ -79,6 +79,7 @@
                             <th class="px-4 py-3 text-left font-medium text-slate-700">Descripción</th>
                             <th class="px-4 py-3 text-center font-medium text-slate-700">Talla</th>
                             <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Cantidad</th>
+                            <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
                             <th class="px-4 py-3 text-center font-medium text-slate-700 w-20">Parcial 1</th>
                             <th class="px-4 py-3 text-center font-medium text-slate-700 w-16">Pendiente</th>
                             <th class="px-4 py-3 text-center font-medium text-slate-700 w-20">Parcial 2</th>
@@ -91,7 +92,7 @@
                         <!-- PRENDAS -->
                         @if($prendas->count() > 0)
                             <tr class="bg-slate-50">
-                                <td colspan="9" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="10" class="px-4 py-2 font-semibold text-slate-900">
                                     Prendas ({{ $prendas->count() }})
                                 </td>
                             </tr>
@@ -110,50 +111,57 @@
                                         {{ $fila->talla }}
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-inicial">
+                                    <td class="px-4 py-3 text-center font-medium text-slate-900">
                                         {{ $fila->cantidadTotal }}
+                                    </td>
+                                    
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-1">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-2">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-3">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                 </tr>
                             @endforeach
@@ -162,7 +170,7 @@
                         <!-- EPP -->
                         @if($epps->count() > 0)
                             <tr class="bg-slate-50">
-                                <td colspan="9" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="10" class="px-4 py-2 font-semibold text-slate-900">
                                     EPP ({{ $epps->count() }})
                                 </td>
                             </tr>
@@ -180,50 +188,57 @@
                                         —
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-inicial">
+                                    <td class="px-4 py-3 text-center font-medium text-slate-900">
                                         {{ $fila->cantidadTotal }}
+                                    </td>
+                                    
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-1">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-2">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                     
                                     <td class="px-4 py-3">
                                         <input type="number" 
                                                class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
-                                               min="0"
-                                               max="{{ $fila->cantidadTotal }}"
                                                value="0"
-                                               data-cantidad="{{ $fila->cantidadTotal }}"
                                                placeholder="0">
                                     </td>
                                     
-                                    <td class="px-4 py-3 text-center font-medium text-slate-900 pendiente-3">
-                                        {{ $fila->cantidadTotal }}
+                                    <td class="px-4 py-3">
+                                        <input type="number" 
+                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
+                                               value="0"
+                                               placeholder="0">
                                     </td>
                                 </tr>
                             @endforeach
@@ -231,7 +246,7 @@
 
                         @if($prendas->count() === 0 && $epps->count() === 0)
                             <tr>
-                                <td colspan="9" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="10" class="px-6 py-12 text-center text-slate-500">
                                     No hay ítems en este pedido
                                 </td>
                             </tr>
@@ -261,19 +276,15 @@
     </div>
 </div>
 
-<!-- JavaScript para cálculos de despacho -->
+<!-- JavaScript para despacho -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Variables
     const formDespacho = document.getElementById('formDespacho');
-    const parcialInputs = document.querySelectorAll('.parcial-input');
     const btnGuardar = document.getElementById('btnGuardar');
 
-    // Event listeners para cálculo de pendientes
-    parcialInputs.forEach(input => {
-        input.addEventListener('change', calcularPendientes);
-        input.addEventListener('input', calcularPendientes);
-    });
+    // Cargar despachos guardados al cargar la página
+    cargarDespachos();
 
     // Event listener para guardar
     formDespacho.addEventListener('submit', async function(e) {
@@ -282,63 +293,76 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     /**
-     * Calcular pendientes automáticamente
+     * Cargar despachos guardados desde la base de datos
      */
-    function calcularPendientes(event) {
-        const input = event.target;
-        const fila = input.closest('tr');
-        
-        // Obtener cantidad total
-        const cantidadTotal = parseInt(fila.dataset.cantidad);
-        
-        // Obtener valores de parciales
-        const parcial1Input = fila.querySelector('.parcial-1');
-        const parcial2Input = fila.querySelector('.parcial-2');
-        const parcial3Input = fila.querySelector('.parcial-3');
-        
-        let parcial1 = parseInt(parcial1Input.value) || 0;
-        let parcial2 = parseInt(parcial2Input.value) || 0;
-        let parcial3 = parseInt(parcial3Input.value) || 0;
+    async function cargarDespachos() {
+        try {
+            const response = await fetch('{{ route("despacho.obtener", $pedido->id) }}', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                },
+            });
 
-        // Validaciones
-        // No permitir números negativos
-        if (parcial1 < 0) parcial1 = 0;
-        if (parcial2 < 0) parcial2 = 0;
-        if (parcial3 < 0) parcial3 = 0;
+            const data = await response.json();
 
-        // No permitir exceder la cantidad total
-        if (parcial1 > cantidadTotal) parcial1 = cantidadTotal;
-        if (parcial2 > cantidadTotal) parcial2 = cantidadTotal;
-        if (parcial3 > cantidadTotal) parcial3 = cantidadTotal;
+            if (data.despachos && data.despachos.length > 0) {
+                console.log('📥 Despachos cargados desde DB:', data.despachos);
+                
+                // Poblar los campos del formulario con los despachos guardados
+                data.despachos.forEach(despacho => {
+                    let fila;
+                    
+                    // Buscar fila: con talla_id si existe, sin talla_id si es null
+                    if (despacho.talla_id) {
+                        fila = document.querySelector(
+                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-id="${despacho.id}"][data-talla-id="${despacho.talla_id}"]`
+                        );
+                        console.log(`🔍 Buscando: tipo=${despacho.tipo}, id=${despacho.id}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
+                    } else {
+                        // Para items sin talla (EPPs), buscar solo por tipo e id
+                        const filas = document.querySelectorAll(
+                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-id="${despacho.id}"]`
+                        );
+                        fila = filas[0];
+                        console.log(`🔍 Buscando EPP: tipo=${despacho.tipo}, id=${despacho.id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
+                    }
 
-        // Actualizar inputs si cambiaron
-        parcial1Input.value = parcial1;
-        parcial2Input.value = parcial2;
-        parcial3Input.value = parcial3;
-
-        // Calcular pendientes
-        // P1 = Cantidad - Parcial1
-        // P2 = P1 - Parcial2
-        // P3 = P2 - Parcial3
-        const pendiente1 = Math.max(0, cantidadTotal - parcial1);
-        const pendiente2 = Math.max(0, pendiente1 - parcial2);
-        const pendiente3 = Math.max(0, pendiente2 - parcial3);
-
-        // Actualizar elementos DOM
-        fila.querySelector('.pendiente-1').textContent = pendiente1;
-        fila.querySelector('.pendiente-2').textContent = pendiente2;
-        fila.querySelector('.pendiente-3').textContent = pendiente3;
-
-        // Cambiar color de fondo según progreso
-        if (pendiente3 === 0) {
-            fila.classList.remove('hover:bg-blue-50', 'hover:bg-green-50');
-            fila.classList.add('bg-green-100');
-        } else if (pendiente3 < cantidadTotal) {
-            fila.classList.remove('bg-green-100');
-            fila.classList.add(fila.dataset.tipo === 'prenda' ? 'hover:bg-blue-50' : 'hover:bg-green-50');
-        } else {
-            fila.classList.remove('bg-green-100');
-            fila.classList.add(fila.dataset.tipo === 'prenda' ? 'hover:bg-blue-50' : 'hover:bg-green-50');
+                    if (fila) {
+                        // Rellenar los valores guardados
+                        if (despacho.pendiente_inicial) {
+                            fila.querySelector('.pendiente-inicial').value = despacho.pendiente_inicial;
+                        }
+                        if (despacho.parcial_1) {
+                            fila.querySelector('.parcial-1').value = despacho.parcial_1;
+                        }
+                        if (despacho.pendiente_1) {
+                            fila.querySelector('.pendiente-1').value = despacho.pendiente_1;
+                        }
+                        if (despacho.parcial_2) {
+                            fila.querySelector('.parcial-2').value = despacho.parcial_2;
+                        }
+                        if (despacho.pendiente_2) {
+                            fila.querySelector('.pendiente-2').value = despacho.pendiente_2;
+                        }
+                        if (despacho.parcial_3) {
+                            fila.querySelector('.parcial-3').value = despacho.parcial_3;
+                        }
+                        if (despacho.pendiente_3) {
+                            fila.querySelector('.pendiente-3').value = despacho.pendiente_3;
+                        }
+                        console.log('✅ Fila poblada:', despacho);
+                    }
+                });
+                
+                console.log('📋 Todas las filas de la tabla:');
+                document.querySelectorAll('#tablaDespacho tr[data-tipo]').forEach(tr => {
+                    console.log('  -', tr.dataset);
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar despachos:', error);
         }
     }
 
@@ -352,25 +376,35 @@ document.addEventListener('DOMContentLoaded', function() {
         filas.forEach(fila => {
             const tipo = fila.dataset.tipo;
             const id = parseInt(fila.dataset.id);
+            const tallaId = parseInt(fila.dataset.tallaId) || null;
             
+            const pendienteInicial = parseInt(fila.querySelector('.pendiente-inicial').value) || 0;
             const parcial1 = parseInt(fila.querySelector('.parcial-1').value) || 0;
+            const pendiente1 = parseInt(fila.querySelector('.pendiente-1').value) || 0;
             const parcial2 = parseInt(fila.querySelector('.parcial-2').value) || 0;
+            const pendiente2 = parseInt(fila.querySelector('.pendiente-2').value) || 0;
             const parcial3 = parseInt(fila.querySelector('.parcial-3').value) || 0;
+            const pendiente3 = parseInt(fila.querySelector('.pendiente-3').value) || 0;
 
-            // Solo agregar si hay al menos un parcial
-            if (parcial1 > 0 || parcial2 > 0 || parcial3 > 0) {
-                despachos.push({
-                    tipo,
-                    id,
-                    parcial_1: parcial1,
-                    parcial_2: parcial2,
-                    parcial_3: parcial3,
-                });
-            }
+            console.log(`📤 Enviando: tipo=${tipo}, id=${id}, tallaId=${tallaId}, dataset=`, fila.dataset);
+
+            // Agregar siempre el registro (el usuario decide qué ingresar)
+            despachos.push({
+                tipo,
+                id,
+                talla_id: tallaId,
+                pendiente_inicial: pendienteInicial,
+                parcial_1: parcial1,
+                pendiente_1: pendiente1,
+                parcial_2: parcial2,
+                pendiente_2: pendiente2,
+                parcial_3: parcial3,
+                pendiente_3: pendiente3,
+            });
         });
 
         if (despachos.length === 0) {
-            alert('Debe ingresar al menos un parcial antes de guardar');
+            alert('No hay ítems para guardar');
             return;
         }
 
@@ -395,29 +429,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success) {
                 alert('✓ Despacho guardado exitosamente');
-                // Recargar página o redirigir
+                
+                // Limpiar los inputs para mostrar que se guardó
+                const filas = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
+                filas.forEach(fila => {
+                    fila.querySelectorAll('input[type="number"]').forEach(input => {
+                        input.value = '';
+                    });
+                });
+                
+                btnGuardar.innerHTML = '✓ Guardado';
                 setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                    btnGuardar.innerHTML = '💾 Guardar Despacho';
+                }, 2000);
             } else {
-                alert(' Error: ' + data.message);
+                alert('❌ Error: ' + data.message);
                 if (data.errors) {
                     console.error('Errores:', data.errors);
                 }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert(' Error al guardar: ' + error.message);
+            alert('❌ Error al guardar: ' + error.message);
         } finally {
             btnGuardar.disabled = false;
-            btnGuardar.innerHTML = ' Guardar Despacho';
+            btnGuardar.innerHTML = '💾 Guardar Despacho';
         }
     }
-
-    // Ejecutar cálculo inicial
-    parcialInputs.forEach(input => {
-        calcularPendientes({ target: input });
-    });
 });
 </script>
 

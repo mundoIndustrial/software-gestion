@@ -48,12 +48,21 @@ class DespachoController extends Controller
     {
         $validated = $request->validate([
             'despachos' => 'required|array',
+            'fecha_hora' => 'nullable|date_format:Y-m-d\TH:i',
+            'cliente_empresa' => 'nullable|string',
         ]);
+
+        $fechaHora = null;
+        if ($validated['fecha_hora']) {
+            $fechaHora = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['fecha_hora']);
+        }
 
         $control = new ControlEntregasDTO(
             pedidoId: $pedido->id,
             numeroPedido: $pedido->numero_pedido,
             cliente: $pedido->cliente,
+            fechaHora: $fechaHora,
+            clienteEmpresa: $validated['cliente_empresa'] ?? $pedido->cliente,
             despachos: $validated['despachos'],
         );
 
@@ -64,5 +73,28 @@ class DespachoController extends Controller
     {
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
         return view('despacho.print', ['pedido' => $pedido, 'filas' => $filas]);
+    }
+
+    public function obtenerDespachos(PedidoProduccion $pedido)
+    {
+        $despachos = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+            ->whereNull('deleted_at')
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'tipo' => $d->tipo_item,
+                    'id' => $d->item_id,
+                    'talla_id' => $d->talla_id,
+                    'pendiente_inicial' => $d->pendiente_inicial,
+                    'parcial_1' => $d->parcial_1,
+                    'pendiente_1' => $d->pendiente_1,
+                    'parcial_2' => $d->parcial_2,
+                    'pendiente_2' => $d->pendiente_2,
+                    'parcial_3' => $d->parcial_3,
+                    'pendiente_3' => $d->pendiente_3,
+                ];
+            });
+
+        return response()->json(['despachos' => $despachos]);
     }
 }

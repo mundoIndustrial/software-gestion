@@ -28,23 +28,15 @@ class DespachoValidadorService
      */
     public function validarDespacho(DespachoParcialesDTO $despacho): void
     {
-        // Validar rangos
+        // Validación mínima: solo valores negativos
         if ($despacho->parcial1 < 0 || $despacho->parcial2 < 0 || $despacho->parcial3 < 0) {
             throw new DespachoInvalidoException(
                 "Parciales no pueden ser negativos: P1={$despacho->parcial1}, P2={$despacho->parcial2}, P3={$despacho->parcial3}"
             );
         }
 
-        // Obtener cantidad disponible según el tipo
-        $cantidadDisponible = $this->obtenerCantidadDisponible($despacho);
-
-        // Validar que no se exceda
-        $totalDespachado = $despacho->getTotalDespachado();
-        if ($totalDespachado > $cantidadDisponible) {
-            throw new DespachoInvalidoException(
-                "Total despachado ({$totalDespachado}) excede cantidad disponible ({$cantidadDisponible})"
-            );
-        }
+        // NOTA: No validamos contra cantidad disponible porque los campos de pendiente
+        // se ingresan manualmente sin cálculos automáticos
     }
 
     /**

@@ -1376,12 +1376,12 @@ window.agregarProcesoAlPedido = function() {
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);
         
-        // ✅ CRÍTICO: Renderizar DESPUÉS de cerrar el modal para garantizar DOM actualizado
-        // Se llama SIEMPRE para ambos modos, pero con lógica diferente
-        if (window.renderizarTarjetasProcesos) {
+        // ✅ CRÍTICO: Renderizar SOLO en modo EDICIÓN
+        // En modo CREATE (agregar nuevo proceso), no hay tarjetas que renderizar
+        if (modoActual === 'editar' && window.renderizarTarjetasProcesos) {
             // Pequeño delay para garantizar que el modal se ha cerrado y el DOM está actualizado
             setTimeout(() => {
-                console.log('🎨 [agregarProcesoAlPedido] Renderizando tarjetas con retry...');
+                console.log('🎨 [agregarProcesoAlPedido] Renderizando tarjetas con retry (modo EDICIÓN)...');
                 window.renderizarTarjetasProcesos();
                 
                 // VERIFICACIÓN: Confirmar que se renderizó correctamente
@@ -1397,6 +1397,17 @@ window.agregarProcesoAlPedido = function() {
                     }
                 }, 100);
             }, 50);
+        } else if (modoActual === 'crear') {
+            console.log('✅ [agregarProcesoAlPedido] Modo CREATE: Proceso guardado en window.procesosSeleccionados');
+            console.log('✅ [agregarProcesoAlPedido] Actualizando visualización de procesos en modal...');
+            
+            // ✅ IMPORTANTE: En modo CREATE, también renderizar para mostrar el nuevo proceso
+            if (window.renderizarTarjetasProcesos) {
+                setTimeout(() => {
+                    console.log('🎨 [agregarProcesoAlPedido] Llamando renderizarTarjetasProcesos() en modo CREATE...');
+                    window.renderizarTarjetasProcesos();
+                }, 100);
+            }
         }
         
         // Actualizar resumen en prenda modal

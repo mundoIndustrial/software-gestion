@@ -38,4 +38,9 @@ Route::prefix('despacho')
         Route::get('/{pedido}/print', [DespachoController::class, 'printDespacho'])
             ->name('despacho.print')
             ->where('pedido', '[0-9]+');
+
+        // Obtener despachos guardados para un pedido
+        Route::get('/{pedido}/obtener-despachos', [DespachoController::class, 'obtenerDespachos'])
+            ->name('despacho.obtener')
+            ->where('pedido', '[0-9]+');
     });

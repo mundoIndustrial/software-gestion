@@ -25,6 +25,11 @@ class ItemRenderer {
             return;
         }
 
+        console.log('[ItemRenderer] 🎬 actualizar() - Items recibidos:', items.length);
+        items.forEach((item, idx) => {
+            console.log('[ItemRenderer]   Item', idx, ':', item.nombre_prenda || item.nombre_completo || item.nombre);
+        });
+
         if (!items || items.length === 0) {
             container.innerHTML = this.obtenerPlantillaVacia();
             return;

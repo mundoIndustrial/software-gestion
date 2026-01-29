@@ -10,6 +10,9 @@ use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use App\Application\Services\ColorGeneroMangaBrocheService;
 use App\Domain\Pedidos\Despacho\Services\DespachoGeneradorService;
 use App\Domain\Pedidos\Despacho\Services\DespachoValidadorService;
+use App\Domain\Pedidos\Despacho\Services\DesparChoParcialesPersistenceService;
+use App\Domain\Pedidos\Despacho\Repositories\DesparChoParcialesRepository;
+use App\Infrastructure\Repositories\Pedidos\Despacho\DesparChoParcialesRepositoryImpl;
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
@@ -60,6 +63,15 @@ class PedidosServiceProvider extends ServiceProvider
         });
 
         // ========================================
+        // REPOSITORIOS (DOMAIN INTERFACES)
+        // ========================================
+
+        // Registrar interfaz DesparChoParcialesRepository con implementación
+        $this->app->bind(DesparChoParcialesRepository::class, function ($app) {
+            return new DesparChoParcialesRepositoryImpl();
+        });
+
+        // ========================================
         // SERVICIOS DE DESPACHO (DOMAIN LAYER)
         // ========================================
 
@@ -78,6 +90,13 @@ class PedidosServiceProvider extends ServiceProvider
             return new DespachoValidadorService();
         });
 
+        // Registrar DesparChoParcialesPersistenceService como singleton
+        $this->app->singleton(DesparChoParcialesPersistenceService::class, function ($app) {
+            return new DesparChoParcialesPersistenceService(
+                $app->make(DesparChoParcialesRepository::class)
+            );
+        });
+
         // ========================================
         // USE CASES DE DESPACHO (APPLICATION LAYER)
         // ========================================
@@ -92,7 +111,8 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar GuardarDespachoUseCase
         $this->app->bind(GuardarDespachoUseCase::class, function ($app) {
             return new GuardarDespachoUseCase(
-                $app->make(DespachoValidadorService::class)
+                $app->make(DespachoValidadorService::class),
+                $app->make(DesparChoParcialesPersistenceService::class)
             );
         });
 

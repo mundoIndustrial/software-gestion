@@ -145,4 +145,5 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
     Route::post('/api/telas', [PedidoController::class, 'crearObtenerTela'])->name('api.telas.create');
     Route::get('/api/colores', [PedidoController::class, 'obtenerColores'])->name('api.colores');
     Route::post('/api/colores', [PedidoController::class, 'crearObtenerColor'])->name('api.colores.create');
+    Route::get('/api/prendas/autocomplete', [\App\Infrastructure\Http\Controllers\Asesores\CrearPedidoEditableController::class, 'obtenerPrendasAutocomplete'])->name('api.prendas.autocomplete');
 });

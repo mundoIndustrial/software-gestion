@@ -391,16 +391,27 @@ class EppService {
             // Solo agregar a GestionItemsUI o itemsPedido si es NUEVO (no editando)
             if (!eppId) {
                 console.log('[EppService] 📝 Agregando EPP nuevo a estado');
+                console.log('[EppService] 📝 ¿window.gestionItemsUI existe?', !!window.gestionItemsUI);
+                console.log('[EppService] 📝 ¿agregarEPPDesdeModal existe?', window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function');
                 
                 // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
                 if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
+                    console.log('[EppService] ✅ USANDO GESTION ITEMS UI');
                     window.gestionItemsUI.agregarEPPDesdeModal(eppData);
                 } else {
                     // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
+                    console.log('[EppService] ⚠️ FALLBACK A window.itemsPedido (gestionItemsUI no disponible)');
                     if (!window.itemsPedido) {
                         window.itemsPedido = [];
                     }
                     window.itemsPedido.push(eppData);
+                    console.log('[EppService] 📦 EPP agregado a window.itemsPedido. Total:', window.itemsPedido.length);
+                    
+                    // ✅ TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
+                    if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
+                        console.log('[EppService] ✅ TAMBIÉN agregando a gestionItemsUI.agregarEPPAlOrden');
+                        window.gestionItemsUI.agregarEPPAlOrden(eppData);
+                    }
                 }
             }
 

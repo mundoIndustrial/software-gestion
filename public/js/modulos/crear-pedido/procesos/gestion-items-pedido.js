@@ -41,13 +41,23 @@ class GestionItemsUI {
      */
     obtenerItemsOrdenados() {
         const itemsOrdenados = [];
+        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.ordenItems:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.prendas:', this.prendas.length, 'items');
+        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.epps:', this.epps.length, 'items');
+        
         this.ordenItems.forEach(({ tipo, index }) => {
             if (tipo === 'prenda' && this.prendas[index]) {
                 itemsOrdenados.push(this.prendas[index]);
+                console.log('[gestionItemsUI] ✅ Agregado PRENDA index:', index);
             } else if (tipo === 'epp' && this.epps[index]) {
                 itemsOrdenados.push(this.epps[index]);
+                console.log('[gestionItemsUI] ✅ Agregado EPP index:', index);
+            } else {
+                console.log('[gestionItemsUI] ⚠️ ITEM NO ENCONTRADO - tipo:', tipo, 'index:', index);
             }
         });
+        
+        console.log('[gestionItemsUI] 📦 Total items a renderizar:', itemsOrdenados.length);
         return itemsOrdenados;
     }
 
@@ -58,7 +68,12 @@ class GestionItemsUI {
         const index = this.prendas.length;
         this.prendas.push(prenda);
         this.ordenItems.push({ tipo: 'prenda', index });
-
+        
+        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
+        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
+        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
+        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
     }
 
     /**
@@ -68,6 +83,11 @@ class GestionItemsUI {
         const index = this.epps.length;
         this.epps.push(epp);
         this.ordenItems.push({ tipo: 'epp', index });
+        
+        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - EPP agregado:', epp.nombre_completo || epp.nombre);
+        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - Nuevo index EPP:', index);
+        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - Total EPPs:', this.epps.length);
 
         return index;
     }
@@ -78,9 +98,14 @@ class GestionItemsUI {
     async agregarEPPDesdeModal(eppData) {
         try {
 
+            console.log('[gestionItemsUI] 📥 agregarEPPDesdeModal() iniciado con EPP:', eppData.nombre_completo || eppData.nombre);
             
             // Agregar al orden
             this.agregarEPPAlOrden(eppData);
+            
+            console.log('[gestionItemsUI] 📥 Después de agregarEPPAlOrden()');
+            console.log('[gestionItemsUI] 📥 this.epps:', this.epps.length);
+            console.log('[gestionItemsUI] 📥 this.ordenItems:', JSON.stringify(this.ordenItems));
             
             // Notificar éxito
             this.notificationService?.exito('EPP agregado correctamente');
@@ -88,6 +113,7 @@ class GestionItemsUI {
             // Actualizar visualización en orden
             if (this.renderer) {
                 const itemsOrdenados = this.obtenerItemsOrdenados();
+                console.log('[gestionItemsUI] 📥 Renderizando', itemsOrdenados.length, 'items');
                 await this.renderer.actualizar(itemsOrdenados);
             }
             
@@ -130,7 +156,9 @@ class GestionItemsUI {
             }
             const resultado = await this.apiService.obtenerItems();
             this.items = resultado.items;
-            await this.renderer.actualizar(this.items);
+            // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
+            const itemsOrdenados = this.obtenerItemsOrdenados();
+            await this.renderer.actualizar(itemsOrdenados);
         } catch (error) {
 
             if (this.notificationService) {
@@ -148,7 +176,9 @@ class GestionItemsUI {
             const resultado = await this.apiService.agregarItem(itemData);
             if (resultado.success) {
                 this.items = resultado.items;
-                await this.renderer.actualizar(this.items);
+                // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
+                const itemsOrdenados = this.obtenerItemsOrdenados();
+                await this.renderer.actualizar(itemsOrdenados);
                 this.notificationService.exito('Ítem agregado correctamente');
                 return true;
             }
@@ -171,7 +201,9 @@ class GestionItemsUI {
             const resultado = await this.apiService.eliminarItem(index);
             if (resultado.success) {
                 this.items = resultado.items;
-                await this.renderer.actualizar(this.items);
+                // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
+                const itemsOrdenados = this.obtenerItemsOrdenados();
+                await this.renderer.actualizar(itemsOrdenados);
                 this.notificationService.exito('Ítem eliminado');
             }
         } catch (error) {
@@ -347,9 +379,24 @@ class GestionItemsUI {
 
                     if (this.prendas[this.prendaEditIndex]) {
                         this.prendas[this.prendaEditIndex] = prendaData;
+                        
+                        // ✅ CRÍTICO: Renderizar inmediatamente después de actualizar
+                        console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');
+                        if (this.renderer) {
+                            const itemsOrdenados = this.obtenerItemsOrdenados();
+                            this.renderer.actualizar(itemsOrdenados).catch(err => {
+                                console.error('[gestionItemsUI] Error renderizando:', err);
+                            });
+                        }
 
                         this.notificationService?.exito('Prenda actualizada correctamente');
                     }
+                    
+                    // ✅ Cerrar modal AQUÍ en modo edición
+                    this.cerrarModalAgregarPrendaNueva();
+                    
+                    // ✅ IMPORTANTE: Salir completamente para evitar que se agregue nueva prenda
+                    return;
                 }
             } else {
 
@@ -377,15 +424,19 @@ class GestionItemsUI {
             // Cerrar el modal
             this.cerrarModalAgregarPrendaNueva();
             
-            // Actualizar la visualización de items en orden
+            console.log('[gestionItemsUI] 📤 PUNTO CRÍTICO: Después de agregar prenda');
+            console.log('[gestionItemsUI] 📤 this.prendas:', this.prendas.length);
+            console.log('[gestionItemsUI] 📤 this.epps:', this.epps.length);
+            console.log('[gestionItemsUI] 📤 this.ordenItems:', JSON.stringify(this.ordenItems));
+            
+            // ✅ Solo en modo CREACIÓN: renderizar
+            // En modo EDICIÓN ya salimos arriba con return
             if (this.renderer) {
                 const itemsOrdenados = this.obtenerItemsOrdenados();
+                console.log('[gestionItemsUI] 📤 Llamando renderer.actualizar() con', itemsOrdenados.length, 'items (CREACIÓN)');
                 await this.renderer.actualizar(itemsOrdenados);
             }
 
-            // Resetear índice de edición
-            this.prendaEditIndex = null;
-            
             // IMPORTANTE: Actualizar window.datosEdicionPedido.prendas (sin reabrirse automáticamente)
             if (window.datosEdicionPedido) {
 
