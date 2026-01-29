@@ -29,34 +29,8 @@ function openCotizacionModal(cotizacionId) {
             // Construir HTML del modal sin el encabezado (que ya está en el layout)
             let html = '';
             
-            // Determinar si se necesitan tabs (cuando hay tanto prendas como logo)
-            const tieneTabsNecesarios = data.tiene_prendas && data.tiene_logo;
-            
-            if (tieneTabsNecesarios) {
-                // Crear estructura de tabs
-                html += `
-                    <div class="cotizacion-tabs-container">
-                        <div class="cotizacion-tabs-header">
-                            <button class="cotizacion-tab-button active" data-tab="prendas">
-                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 0.5rem;">checkroom</span>
-                                PRENDAS
-                            </button>
-                            <button class="cotizacion-tab-button" data-tab="logo">
-                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 0.5rem;">image</span>
-                                LOGO
-                            </button>
-                        </div>
-                        <div class="cotizacion-tabs-content">
-                            <div id="tab-prendas" class="cotizacion-tab-content active">
-                                <!-- Contenido de prendas se insertará aquí -->
-                            </div>
-                            <div id="tab-logo" class="cotizacion-tab-content">
-                                <!-- Contenido de logo se insertará aquí -->
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
+            // No se crean tabs - el logo se integrará directamente en las prendas
+            const tieneTabsNecesarios = false;
 
             // Construir contenido de prendas
             let htmlPrendas = '';
@@ -191,6 +165,88 @@ function openCotizacionModal(cotizacionId) {
                         const tecnicasPrendaArray = data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
                         
                         if (tecnicasPrendaArray.length > 0) {
+                            // TABLA DE LOGO (Ubicaciones + Imágenes) - RESPONSIVE
+                            htmlPrendas += `
+                                <div style="margin-top: 1rem;">
+                                    <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">LOGO:</h6>
+                                    <div class="logo-table-wrapper">
+                                        <table class="logo-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="min-width: 150px;">Técnica(s)</th>
+                                                    <th style="min-width: 200px;">Ubicaciones</th>
+                                                    <th style="min-width: 200px; text-align: center;">Imagen(es)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                            `;
+
+                            tecnicasPrendaArray.forEach(tp => {
+                                const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
+                                
+                                // Procesar ubicaciones - mostrar con bullets si hay más de 1
+                                let ubicacionesHtml = 'Sin especificar';
+                                if (tp.ubicaciones) {
+                                    let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
+                                    
+                                    if (ubicacionesArray.length > 1) {
+                                        // Múltiples ubicaciones: mostrar como lista con bullets azules
+                                        ubicacionesHtml = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+                                        ubicacionesArray.forEach(ubi => {
+                                            if (ubi) {
+                                                ubicacionesHtml += `
+                                                    <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                                                        <span style="color: #0ea5e9; font-weight: bold; margin-top: 2px;">•</span>
+                                                        <span style="color: #0ea5e9; font-weight: 500;">${ubi}</span>
+                                                    </div>
+                                                `;
+                                            }
+                                        });
+                                        ubicacionesHtml += '</div>';
+                                    } else if (ubicacionesArray.length === 1 && ubicacionesArray[0]) {
+                                        // Una ubicación: mostrar normal
+                                        ubicacionesHtml = `<span style="color: #0ea5e9; font-weight: 500;">${ubicacionesArray[0]}</span>`;
+                                    }
+                                }
+                                
+                                // Construir HTML de imágenes
+                                let fotosHtml = '';
+                                if (tp.fotos && tp.fotos.length > 0) {
+                                    fotosHtml = '<div class="logo-images-container">';
+                                    tp.fotos.forEach((foto, fotoIdx) => {
+                                        if (foto.url) {
+                                            fotosHtml += `
+                                                <div class="logo-image-wrapper">
+                                                    <img src="${foto.url}" 
+                                                         alt="Técnica: ${tecnicaNombre}" 
+                                                         title="${tecnicaNombre}"
+                                                         onclick="abrirImagenGrande('${foto.url}', 'logo-tecnica-${tp.id}', ${fotoIdx})"/>
+                                                    <span class="logo-image-badge">${fotoIdx + 1}</span>
+                                                </div>
+                                            `;
+                                        }
+                                    });
+                                    fotosHtml += '</div>';
+                                } else {
+                                    fotosHtml = '<span class="logo-no-images">Sin imágenes</span>';
+                                }
+                                
+                                htmlPrendas += `
+                                    <tr>
+                                        <td style="font-weight: 600; color: #0f172a;">${tecnicaNombre}</td>
+                                        <td style="padding: 0.75rem;">${ubicacionesHtml}</td>
+                                        <td style="text-align: center;">${fotosHtml}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            htmlPrendas += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `;
+
                             // Consolidar todas las variaciones
                             const variacionesFormateadas = {};
                             tecnicasPrendaArray.forEach(tp => {
@@ -239,6 +295,42 @@ function openCotizacionModal(cotizacionId) {
                                         </table>
                                     </div>
                                 `;
+                            }
+
+                            // TALLAS Y CANTIDADES
+                            if (tecnicasPrendaArray.some(tp => tp.talla_cantidad && (Array.isArray(tp.talla_cantidad) ? tp.talla_cantidad.length > 0 : Object.keys(tp.talla_cantidad).length > 0))) {
+                                // Consolidar tallas de todas las técnicas
+                                const tallasSet = new Set();
+                                tecnicasPrendaArray.forEach(tp => {
+                                    if (tp.talla_cantidad) {
+                                        let tallaArray = [];
+                                        
+                                        // Si es array directo
+                                        if (Array.isArray(tp.talla_cantidad)) {
+                                            tallaArray = tp.talla_cantidad;
+                                        } 
+                                        // Si es objeto con tallas
+                                        else if (typeof tp.talla_cantidad === 'object') {
+                                            tallaArray = Object.values(tp.talla_cantidad);
+                                        }
+
+                                        tallaArray.forEach(item => {
+                                            if (item && item.talla) {
+                                                tallasSet.add(item.talla);
+                                            }
+                                        });
+                                    }
+                                });
+
+                                if (tallasSet.size > 0) {
+                                    const tallasTexto = Array.from(tallasSet).join('-');
+                                    htmlPrendas += `
+                                        <div style="margin-top: 1rem;">
+                                            <span style="color: #1e5ba8; font-weight: 600; font-size: 0.95rem;">TALLAS </span>
+                                            <span style="color: #dc2626; font-weight: 700; font-size: 1rem;">(${tallasTexto})</span>
+                                        </div>
+                                    `;
+                                }
                             }
                         }
                     }
@@ -477,50 +569,12 @@ function openCotizacionModal(cotizacionId) {
                 htmlLogo += '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de logo para mostrar</p>';
             }
 
-            // Insertar contenido en el modal
-            if (tieneTabsNecesarios) {
-                // Insertar HTML en tabs
-                document.getElementById('modalBody').innerHTML = html;
-                document.getElementById('tab-prendas').innerHTML = htmlPrendas;
-                document.getElementById('tab-logo').innerHTML = htmlLogo;
-                
-                // Agregar event listeners a los tabs
-                setTimeout(() => {
-                    const tabButtons = document.querySelectorAll('.cotizacion-tab-button');
-                    tabButtons.forEach(button => {
-                        button.addEventListener('click', function() {
-                            const tabName = this.getAttribute('data-tab');
-                            
-                            // Remover clase active de todos los botones
-                            tabButtons.forEach(btn => btn.classList.remove('active'));
-                            
-                            // Agregar clase active al botón clickeado
-                            this.classList.add('active');
-                            
-                            // Ocultar todos los contenidos
-                            document.querySelectorAll('.cotizacion-tab-content').forEach(content => {
-                                content.classList.remove('active');
-                                content.style.display = 'none';
-                            });
-                            
-                            // Mostrar el contenido del tab
-                            const tabContent = document.getElementById(`tab-${tabName}`);
-                            if (tabContent) {
-                                tabContent.classList.add('active');
-                                tabContent.style.display = 'block';
-                            }
-                        });
-                    });
-                }, 100);
-            } else {
-                // Sin tabs, insertar contenido normal
-                if (data.tiene_prendas) {
-                    html += htmlPrendas;
-                } else if (data.tiene_logo) {
-                    html += htmlLogo;
-                }
-                document.getElementById('modalBody').innerHTML = html;
+            // Insertar contenido en el modal sin tabs
+            // El logo ahora se renderiza directamente dentro de cada prenda
+            if (data.tiene_prendas) {
+                html += htmlPrendas;
             }
+            document.getElementById('modalBody').innerHTML = html;
 
             document.getElementById('cotizacionModal').style.display = 'flex';
 

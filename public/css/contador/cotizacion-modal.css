@@ -402,3 +402,137 @@
         font-size: 0.8rem;
     }
 }
+
+/* ============================================
+   TABLA DE LOGO - RESPONSIVE & IMÁGENES
+   ============================================ */
+
+.logo-table-wrapper {
+    overflow-x: auto;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+}
+
+.logo-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.logo-table thead tr {
+    background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%);
+    color: white;
+}
+
+.logo-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logo-table td {
+    padding: 0.75rem;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.logo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Contenedor de imágenes */
+.logo-images-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-image-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.logo-image-wrapper img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logo-image-wrapper img:hover {
+    box-shadow: 0 2px 8px rgba(30, 91, 168, 0.3);
+    transform: scale(1.05);
+}
+
+.logo-image-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(30, 91, 168, 0.9);
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.logo-no-images {
+    color: #999;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+/* Responsive para tablas de logo */
+@media (max-width: 768px) {
+    .logo-table {
+        min-width: 500px;
+    }
+
+    .logo-table th,
+    .logo-table td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .logo-image-wrapper img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .logo-images-container {
+        gap: 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-table {
+        min-width: 400px;
+    }
+
+    .logo-table th,
+    .logo-table td {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .logo-image-wrapper img {
+        width: 50px;
+        height: 50px;
+    }
+
+    .logo-image-badge {
+        font-size: 0.6rem;
+        padding: 1px 3px;
+    }
+
+    .logo-no-images {
+        font-size: 0.8rem;
+    }
+}
+

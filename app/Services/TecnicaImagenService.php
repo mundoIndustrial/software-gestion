@@ -11,8 +11,7 @@ use Intervention\Image\ImageManager;
  * Servicio para procesar y guardar imágenes de técnicas en cotizaciones
  * 
  * Guarda en estructura:
- * - Individual: /public/cotizaciones/{cotizacion_id}/simple/{tipo_logo}/{imagen}.webp
- * - Combinada: /public/cotizaciones/{cotizacion_id}/combinada/{grupo}/{tipo_logo}/{imagen}.webp
+ * /public/cotizaciones/{cotizacion_id}/logo/{tipo_logo}/{imagen}.webp
  */
 class TecnicaImagenService
 {
@@ -29,8 +28,8 @@ class TecnicaImagenService
      * @param UploadedFile $file Archivo subido
      * @param int $cotizacionId ID de la cotización
      * @param string $tipoLogoNombre Nombre del tipo de logo (bordado, estampado, etc)
-     * @param int|null $grupoCombinado Si es técnica combinada, el ID del grupo
-     * @return array Rutas guardadas [ruta_original, ruta_webp, ruta_miniatura]
+     * @param int|null $grupoCombinado Si es técnica combinada, el ID del grupo (no usado en nueva ruta)
+     * @return array Ruta única [ruta_webp]
      */
     public function guardarImagen(UploadedFile $file, int $cotizacionId, string $tipoLogoNombre, ?int $grupoCombinado = null)
     {
@@ -44,29 +43,15 @@ class TecnicaImagenService
             ]);
 
             // Generar nombre único
-            $nombreUnico = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $nombreUnico = Str::uuid() . '.webp';
             
-            // Determinar ruta base según si es simple o combinada
-            if ($grupoCombinado !== null) {
-                // COMBINADA: /cotizaciones/{cot_id}/combinada/{grupo}/{tipo_logo}/
-                $rutaBase = "cotizaciones/{$cotizacionId}/combinada/{$grupoCombinado}/{$tipoLogoNombre}";
-            } else {
-                // SIMPLE: /cotizaciones/{cot_id}/simple/{tipo_logo}/
-                $rutaBase = "cotizaciones/{$cotizacionId}/simple/{$tipoLogoNombre}";
-            }
+            // Nueva ruta simplificada: /cotizaciones/{cot_id}/logo/{tipo_logo}/
+            $rutaBase = "cotizaciones/{$cotizacionId}/logo/{$tipoLogoNombre}";
 
             // Crear directorio si no existe
             if (!Storage::disk('public')->exists($rutaBase)) {
                 Storage::disk('public')->makeDirectory($rutaBase, 0755, true);
             }
-
-            // 1. Guardar imagen original
-            $rutaOriginal = "{$rutaBase}/original_{$nombreUnico}";
-            Storage::disk('public')->putFileAs(
-                dirname($rutaOriginal),
-                $file,
-                basename($rutaOriginal)
-            );
 
             // Leer contenido para procesamiento
             $contenido = file_get_contents($file->getRealPath());
@@ -75,14 +60,13 @@ class TecnicaImagenService
             $ancho = $image->width();
             $alto = $image->height();
 
-            \Log::info('✓ Imagen original guardada', [
-                'ruta' => $rutaOriginal,
+            \Log::info('✓ Imagen cargada y procesada', [
                 'ancho' => $ancho,
                 'alto' => $alto,
                 'tamaño_bytes' => filesize($file->getRealPath())
             ]);
 
-            // 2. Redimensionar si es muy grande (máximo 2000x2000)
+            // Redimensionar si es muy grande (máximo 2000x2000)
             if ($ancho > 2000 || $alto > 2000) {
                 $image->scaleDown(2000, 2000);
                 \Log::info('✓ Imagen redimensionada', [
@@ -91,35 +75,23 @@ class TecnicaImagenService
                 ]);
             }
 
-            // 3. Guardar como WebP (optimizado)
-            $rutaWebp = "{$rutaBase}/{$nombreUnico}.webp";
+            // Guardar como WebP (optimizado) - ÚNICO ARCHIVO
+            $rutaWebp = "{$rutaBase}/{$nombreUnico}";
             $contenidoWebP = $image->toWebp(85);
             Storage::disk('public')->put($rutaWebp, $contenidoWebP);
 
             $tamañoWebP = Storage::disk('public')->size($rutaWebp);
 
-            \Log::info(' WebP guardado', [
+            \Log::info('✓ WebP guardado (imagen única)', [
                 'ruta' => $rutaWebp,
-                'tamaño_bytes' => $tamañoWebP
+                'tamaño_bytes' => $tamañoWebP,
+                'ancho' => $image->width(),
+                'alto' => $image->height()
             ]);
 
-            // 4. Crear miniatura (máximo 300x300)
-            $rutaMiniatura = "{$rutaBase}/thumb_{$nombreUnico}.webp";
-            $thumbnail = clone $image;
-            $thumbnail->scaleDown(300, 300);
-            $contenidoThumb = $thumbnail->toWebp(75);
-            Storage::disk('public')->put($rutaMiniatura, $contenidoThumb);
-
-            \Log::info(' Miniatura guardada', [
-                'ruta' => $rutaMiniatura,
-                'tamaño_bytes' => Storage::disk('public')->size($rutaMiniatura)
-            ]);
-
-            // Retornar las 3 rutas (relativas a public/)
+            // Retornar una única ruta
             return [
-                'ruta_original' => $rutaOriginal,
                 'ruta_webp' => $rutaWebp,
-                'ruta_miniatura' => $rutaMiniatura,
                 'ancho' => $image->width(),
                 'alto' => $image->height(),
                 'tamaño' => $tamañoWebP

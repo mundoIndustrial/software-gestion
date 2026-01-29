@@ -239,12 +239,12 @@ class LogoCotizacionTecnicaController extends Controller
                                 $grupoCombinado
                             );
 
-                            // Guardar metadata en BD
+                            // Guardar metadata en BD - SOLO UNA RUTA WEBP
                             $foto = LogoCotizacionTecnicaPrendaFoto::create([
                                 'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
-                                'ruta_original' => $rutasImagen['ruta_original'],
-                                'ruta_webp' => $rutasImagen['ruta_webp'],
-                                'ruta_miniatura' => $rutasImagen['ruta_miniatura'],
+                                'ruta_original' => $rutasImagen['ruta_webp'],  // Una sola ruta WebP
+                                'ruta_webp' => $rutasImagen['ruta_webp'],      // Una sola ruta WebP
+                                'ruta_miniatura' => $rutasImagen['ruta_webp'], // Una sola ruta WebP
                                 'orden' => $imagenIndex,
                                 'ancho' => $rutasImagen['ancho'],
                                 'alto' => $rutasImagen['alto'],
@@ -253,7 +253,8 @@ class LogoCotizacionTecnicaController extends Controller
 
                             Log::info(' Imagen guardada en BD', [
                                 'foto_id' => $foto->id,
-                                'ruta_webp' => $rutasImagen['ruta_webp']
+                                'ruta_webp' => $rutasImagen['ruta_webp'],
+                                'tamaño_bytes' => $rutasImagen['tamaño']
                             ]);
 
                         } catch (\Exception $e) {
