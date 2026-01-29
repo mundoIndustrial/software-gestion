@@ -1024,9 +1024,13 @@ window.abrirModalAgregarPrendaTecnicaLogo = async function() {
                 
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
-                        Ubicaciones (separadas por coma):
+                        Ubicaciones:
                     </label>
-                    <input id="swal-ubicaciones" class="swal2-input" placeholder="Ej: pecho, espalda" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input id="swal-ubicacion-input" class="swal2-input" placeholder="Ej: pecho, espalda, manga..." style="flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;">
+                        <button type="button" id="swal-agregar-ubicacion" style="background: #0066cc; color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">+ Agregar</button>
+                    </div>
+                    <div id="swal-ubicaciones-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 28px; align-content: flex-start;"></div>
                 </div>
                 
                 <div style="margin-bottom: 1rem;">
@@ -1042,10 +1046,61 @@ window.abrirModalAgregarPrendaTecnicaLogo = async function() {
         confirmButtonText: 'Agregar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#0066cc',
+        didOpen: () => {
+            // Manejar el array de ubicaciones en el modal
+            window.ubicacionesEnModal = [];
+            
+            const btnAgregar = document.getElementById('swal-agregar-ubicacion');
+            const inputUbicacion = document.getElementById('swal-ubicacion-input');
+            const listaUbicaciones = document.getElementById('swal-ubicaciones-list');
+            
+            if (btnAgregar && inputUbicacion) {
+                btnAgregar.addEventListener('click', () => {
+                    const ubicacion = inputUbicacion.value.trim().toUpperCase();
+                    
+                    if (!ubicacion) {
+                        Swal.showValidationMessage('Escribe una ubicación primero');
+                        return;
+                    }
+                    
+                    if (window.ubicacionesEnModal.includes(ubicacion)) {
+                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
+                        return;
+                    }
+                    
+                    window.ubicacionesEnModal.push(ubicacion);
+                    inputUbicacion.value = '';
+                    
+                    // Actualizar la lista visual
+                    listaUbicaciones.innerHTML = window.ubicacionesEnModal.map((ub, idx) => `
+                        <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                            ${ub}
+                            <button type="button" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0;" onclick="(function(){ window.ubicacionesEnModal.splice(${idx}, 1); document.getElementById('swal-ubicaciones-list').innerHTML = window.ubicacionesEnModal.map((ub, i) => \`
+                                <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                                    \${ub}
+                                    <button type="button" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0;" onclick="(function(){ window.ubicacionesEnModal.splice(\${i}, 1); location.reload(); })()" style="margin-left: 0.25rem;">✕</button>
+                                </span>
+                            \`).join(''); })();">✕</button>
+                        </span>
+                    `).join('');
+                    
+                    inputUbicacion.focus();
+                });
+                
+                inputUbicacion.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btnAgregar.click();
+                    }
+                });
+            }
+        },
+        didRender: () => {
+            // Este hook se ejecuta después de cada render para asegurar que los event listeners estén actualizados
+        },
         preConfirm: () => {
             const tecnicaId = document.getElementById('swal-tecnica').value;
             const nombrePrenda = document.getElementById('swal-nombre-prenda').value.trim();
-            const ubicaciones = document.getElementById('swal-ubicaciones').value.trim();
             const observaciones = document.getElementById('swal-observaciones').value.trim();
             
             if (!tecnicaId) {
@@ -1058,15 +1113,15 @@ window.abrirModalAgregarPrendaTecnicaLogo = async function() {
                 return false;
             }
             
-            if (!ubicaciones) {
-                Swal.showValidationMessage('Ingresa al menos una ubicación');
+            if (window.ubicacionesEnModal.length === 0) {
+                Swal.showValidationMessage('Agrega al menos una ubicación');
                 return false;
             }
             
             return {
                 tecnicaId: parseInt(tecnicaId),
                 nombrePrenda,
-                ubicaciones: ubicaciones.split(',').map(u => u.trim()).filter(u => u),
+                ubicaciones: window.ubicacionesEnModal,
                 observaciones
             };
         }
@@ -1090,6 +1145,9 @@ window.abrirModalAgregarPrendaTecnicaLogo = async function() {
             fotos: [],
             existeEnBD: false // Marcar como nueva
         };
+        
+        // Limpiar variable temporal
+        delete window.ubicacionesEnModal;
         
         // Agregar al array global
         logoPrendasTecnicas.push(nuevaPrenda);

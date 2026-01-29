@@ -370,23 +370,98 @@ function abrirModalDatosIguales(tecnicas) {
             
             // Crear inputs de ubicación por técnica
             tecnicas.forEach((tecnica, idx) => {
-                // Ubicación
+                // Ubicación con múltiples valores
                 const divUbicacion = document.createElement('div');
-                divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
+                divUbicacion.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
                 
                 const labelUbicacion = document.createElement('label');
-                labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
-                labelUbicacion.textContent = tecnica.nombre + ':';
+                labelUbicacion.style.cssText = 'font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;';
+                labelUbicacion.textContent = tecnica.nombre + ' - Ubicaciones';
+                
+                const inputDiv = document.createElement('div');
+                inputDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
                 
                 const inputUbicacion = document.createElement('input');
                 inputUbicacion.type = 'text';
-                inputUbicacion.className = 'dUbicacion-' + idx;
+                inputUbicacion.className = 'dUbicacionInput-' + idx;
                 inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
                 inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
                 
+                const btnAgregar = document.createElement('button');
+                btnAgregar.type = 'button';
+                btnAgregar.textContent = '+ Agregar';
+                btnAgregar.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;';
+                btnAgregar.className = 'dBtnAgregarUbicacion-' + idx;
+                
+                inputDiv.appendChild(inputUbicacion);
+                inputDiv.appendChild(btnAgregar);
+                
+                const ubicacionesContainer = document.createElement('div');
+                ubicacionesContainer.className = 'dUbicacionesList-' + idx;
+                ubicacionesContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;';
+                
                 divUbicacion.appendChild(labelUbicacion);
-                divUbicacion.appendChild(inputUbicacion);
+                divUbicacion.appendChild(inputDiv);
+                divUbicacion.appendChild(ubicacionesContainer);
+                
                 ubicacionesPorTecnicaDiv.appendChild(divUbicacion);
+                
+                // Manejar agregar ubicaciones
+                let ubicacionesTecnica = [];
+                btnAgregar.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const ubicacion = inputUbicacion.value.trim().toUpperCase();
+                    
+                    if (!ubicacion) {
+                        Swal.showValidationMessage('Escribe una ubicación primero');
+                        return;
+                    }
+                    
+                    if (ubicacionesTecnica.includes(ubicacion)) {
+                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
+                        return;
+                    }
+                    
+                    ubicacionesTecnica.push(ubicacion);
+                    inputUbicacion.value = '';
+                    
+                    // Actualizar vista
+                    actualizarUbicacionesList();
+                    inputUbicacion.focus();
+                });
+                
+                inputUbicacion.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btnAgregar.click();
+                    }
+                });
+                
+                function actualizarUbicacionesList() {
+                    ubicacionesContainer.innerHTML = ubicacionesTecnica.map((ub, i) => `
+                        <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                            ${ub}
+                            <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
+                        </span>
+                    `).join('');
+                    
+                    // Agregar event listeners a los botones de eliminar
+                    ubicacionesContainer.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
+                            ubicacionesTecnica.splice(idxAEliminar, 1);
+                            actualizarUbicacionesList();
+                        });
+                    });
+                }
+                
+                // Guardar referencia global para acceso en preConfirm
+                window['dUbicacionesTecnica' + idx] = ubicacionesTecnica;
+                
+                // Guardar referencias de los inputs y lista para el preConfirm
+                inputUbicacion.setAttribute('data-tecnica-idx', idx);
+                inputUbicacion.setAttribute('data-ubicaciones-list', 'dUbicacionesList-' + idx);
             });
             
             // Crear inputs de imagen por técnica con Drag and Drop
@@ -535,13 +610,13 @@ function abrirModalDatosIguales(tecnicas) {
             let valido = true;
             
             window.tecnicasCombinadas.forEach((tecnica, idx) => {
-                const ubicacion = document.querySelector('.dUbicacion-' + idx)?.value.trim() || '';
-                if (!ubicacion) {
-                    Swal.showValidationMessage(`Agrega ubicación para ${tecnica.nombre}`);
+                const ubicacionesList = window['dUbicacionesTecnica' + idx] || [];
+                if (!ubicacionesList || ubicacionesList.length === 0) {
+                    Swal.showValidationMessage(`Agrega al menos una ubicación para ${tecnica.nombre}`);
                     valido = false;
                     return;
                 }
-                ubicacionesPorTecnica[idx] = [ubicacion];
+                ubicacionesPorTecnica[idx] = ubicacionesList;
             });
             
             if (!valido) return false;
