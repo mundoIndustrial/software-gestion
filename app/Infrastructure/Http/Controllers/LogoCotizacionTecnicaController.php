@@ -150,28 +150,54 @@ class LogoCotizacionTecnicaController extends Controller
 
             // Crear prendas con imágenes
             $prendas = [];
+            
             foreach ($prendasData as $prendasIndex => $prendaData) {
                 Log::info(' Creando prenda de catálogo', [
                     'nombre_producto' => $prendaData['nombre_prenda'],
                     'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                     'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
                     'variaciones_prenda' => $prendaData['variaciones_prenda'] ?? 'NULL',
-                    'prenda_index' => $prendasIndex
+                    'prenda_index' => $prendasIndex,
+                    'grupo_combinado' => $grupoCombinado
                 ]);
 
-                // Primero, crear registro en prendas_cot
-                $prendaCot = PrendaCot::create([
-                    'cotizacion_id' => $logoCotizacion->cotizacion_id,
-                    'nombre_producto' => $prendaData['nombre_prenda'],
-                    'descripcion' => $prendaData['observaciones'] ?? '',
-                    'cantidad' => $prendaData['cantidad'] ?? 1,
-                    'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
-                ]);
+                // CLAVE: Si hay grupo_combinado, buscar si ya existe una PrendaCot con el mismo nombre
+                $prendaCot = null;
+                
+                if ($grupoCombinado) {
+                    // Buscar una prenda con el mismo nombre y grupo_combinado en esta cotización
+                    $prendaCot = PrendaCot::whereHas('logoCotizacionesTecnicas', function($query) use ($grupoCombinado) {
+                        $query->where('grupo_combinado', $grupoCombinado);
+                    })
+                    ->where('cotizacion_id', $logoCotizacion->cotizacion_id)
+                    ->where('nombre_producto', $prendaData['nombre_prenda'])
+                    ->first();
 
-                Log::info(' Prenda guardada en prendas_cot', [
-                    'prenda_cot_id' => $prendaCot->id,
-                    'cotizacion_id' => $logoCotizacion->cotizacion_id
-                ]);
+                    if ($prendaCot) {
+                        Log::info('✓ Reutilizando PrendaCot existente del grupo_combinado', [
+                            'prenda_cot_id' => $prendaCot->id,
+                            'nombre_prenda' => $prendaData['nombre_prenda'],
+                            'grupo_combinado' => $grupoCombinado
+                        ]);
+                    }
+                }
+                
+                // Si no existe o no es grupo_combinado, crear nuevo registro en prendas_cot
+                if (!$prendaCot) {
+                    $prendaCot = PrendaCot::create([
+                        'cotizacion_id' => $logoCotizacion->cotizacion_id,
+                        'nombre_producto' => $prendaData['nombre_prenda'],
+                        'descripcion' => $prendaData['observaciones'] ?? '',
+                        'cantidad' => $prendaData['cantidad'] ?? 1,
+                        'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
+                    ]);
+
+                    Log::info(' Prenda guardada en prendas_cot', [
+                        'prenda_cot_id' => $prendaCot->id,
+                        'cotizacion_id' => $logoCotizacion->cotizacion_id,
+                        'es_primera_del_grupo' => $grupoCombinado ? true : false
+                    ]);
+                }
 
                 // Crear prenda en logo_cotizacion_tecnica_prendas con referencia a prendas_cot
                 $prenda = LogoCotizacionTecnicaPrenda::create([
@@ -188,7 +214,8 @@ class LogoCotizacionTecnicaController extends Controller
                 Log::info(' Prenda creada en logo_cotizacion_tecnica_prendas', [
                     'prenda_id' => $prenda->id,
                     'prenda_cot_id' => $prenda->prenda_cot_id,
-                    'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL'
+                    'variaciones_guardadas' => $prenda->variaciones_prenda ?? 'NULL',
+                    'grupo_combinado' => $grupoCombinado
                 ]);
 
                 // Procesar imágenes para esta prenda

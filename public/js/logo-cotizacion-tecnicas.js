@@ -1420,36 +1420,48 @@ function guardarPrendaTecnicasPorTalla(datos) {
     
     const tecnicas = window.tecnicasCombinadas;
     
-    // Por cada talla
+    // Construir el objeto talla_cantidad para la prenda (compartido para todas las técnicas)
+    const tallaCantidad = {};
     Object.keys(datos.tallaTecnicas).forEach(talla => {
         const tallaData = datos.tallaTecnicas[talla];
-        const tecnicasIds = tallaData.tecnicas;
-        const cantidad = tallaData.cantidad;
+        tallaCantidad[talla] = tallaData.cantidad;
+    });
+    
+    // Obtener todas las técnicas seleccionadas (de la primera talla, ya que son iguales para todas)
+    const primerasTecnicas = datos.tallaTecnicas[Object.keys(datos.tallaTecnicas)[0]]?.tecnicas || [];
+    
+    // Crear UNA SOLA prenda con TODAS las técnicas
+    const nuevaPrenda = {
+        nombre_prenda: datos.nombre,
+        observaciones: datos.observaciones,
+        ubicaciones: datos.ubicaciones,
+        talla_cantidad: tallaCantidad
+    };
+    
+    // Para cada técnica seleccionada, crear un registro en tecnicasAgregadas apuntando a la misma prenda
+    // Esto será manejado en el backend como un grupo combinado
+    
+    // Generar un ID único para el grupo (basado en timestamp)
+    const grupoId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
+    
+    // Crear una técnica por cada técnica seleccionada, pero todas con los MISMOS datos de prenda y el MISMO grupo_combinado
+    primerasTecnicas.forEach(tecnicaId => {
+        const tipo = tecnicas.find(t => t.id === tecnicaId);
         
-        // Por cada técnica seleccionada para esa talla
-        tecnicasIds.forEach(tecnicaId => {
-            const tipo = tecnicas.find(t => t.id === tecnicaId);
-            
-            if (!tipo) {
+        if (!tipo) {
 
-                return;
-            }
-            
-            const nuevaTecnica = {
-                tipo_logo: tipo,
-                prendas: [{
-                    nombre_prenda: datos.nombre,
-                    observaciones: datos.observaciones,
-                    ubicaciones: datos.ubicaciones,
-                    talla_cantidad: [{ talla, cantidad }]
-                }],
-                es_combinada: true,
-                grupo_combinado: null // El backend generará el grupo_combinado automáticamente El backend generará el grupo_combinado automáticamente
-            };
-            
+            return;
+        }
+        
+        const nuevaTecnica = {
+            tipo_logo: tipo,
+            prendas: [nuevaPrenda],  // Misma prenda para todas las técnicas
+            es_combinada: true,
+            grupo_combinado: grupoId  // CRUCIAL: Todas las técnicas comparten el mismo grupo_combinado
+        };
+        
 
-            tecnicasAgregadas.push(nuevaTecnica);
-        });
+        tecnicasAgregadas.push(nuevaTecnica);
     });
     
     window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global

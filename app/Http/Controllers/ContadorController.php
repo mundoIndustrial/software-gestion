@@ -195,7 +195,9 @@ class ContadorController extends Controller
                     ]);
                 },
                 'logoCotizacion' => function($query) {
-                    $query->with('fotos');
+                    $query->with(['fotos', 'tecnicasPrendas' => function($q) {
+                        $q->with(['prenda', 'tipoLogo', 'fotos']);
+                    }]);
                 }
             ])->findOrFail($id);
 
@@ -323,6 +325,26 @@ class ContadorController extends Controller
                     'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
                     'observaciones_generales' => $cotizacionModelo->logoCotizacion->observaciones_generales ?? [],
                     'fotos' => $logoFotos,
+                    'tecnicas_prendas' => $cotizacionModelo->logoCotizacion->tecnicasPrendas ? $cotizacionModelo->logoCotizacion->tecnicasPrendas->map(function($tecnicaPrenda) {
+                        return [
+                            'id' => $tecnicaPrenda->id,
+                            'prenda_id' => $tecnicaPrenda->prenda_cot_id,
+                            'prenda_nombre' => $tecnicaPrenda->prenda ? $tecnicaPrenda->prenda->nombre_producto : 'Sin nombre',
+                            'tipo_logo_nombre' => $tecnicaPrenda->tipoLogo ? $tecnicaPrenda->tipoLogo->nombre : 'Logo',
+                            'variaciones_prenda' => $tecnicaPrenda->variaciones_prenda ?? null,
+                            'ubicaciones' => $tecnicaPrenda->ubicaciones ?? null,
+                            'talla_cantidad' => $tecnicaPrenda->talla_cantidad ?? null,
+                            'observaciones' => $tecnicaPrenda->observaciones ?? null,
+                            'grupo_combinado' => $tecnicaPrenda->grupo_combinado ?? null,
+                            'fotos' => $tecnicaPrenda->fotos ? $tecnicaPrenda->fotos->map(function($foto) {
+                                return [
+                                    'id' => $foto->id,
+                                    'url' => $foto->url ?? null,
+                                    'orden' => $foto->orden ?? 1,
+                                ];
+                            })->toArray() : [],
+                        ];
+                    })->toArray() : [],
                 ];
             }
 

@@ -175,10 +175,56 @@
                             </table>
                         </div>
 
-                        <!-- Variaciones Específicas en tabla con imágenes -->
+                        <!-- Variaciones de Logo Técnica (desde tabla logo_cotizacion_tecnica_prendas) -->
+                        @php
+                            $variacionesFormateadas = [];
+                            foreach ($prendasAgrupadas as $tecnicaPrenda) {
+                                $variaciones = is_string($tecnicaPrenda->variaciones_prenda) 
+                                    ? json_decode($tecnicaPrenda->variaciones_prenda, true) ?? [] 
+                                    : $tecnicaPrenda->variaciones_prenda;
+                                
+                                if (!empty($variaciones) && is_array($variaciones)) {
+                                    foreach ($variaciones as $opcionNombre => $detalles) {
+                                        if (is_array($detalles) && isset($detalles['opcion'])) {
+                                            $nombreFormato = ucfirst(str_replace('_', ' ', $opcionNombre));
+                                            $variacionesFormateadas[$nombreFormato] = [
+                                                'opcion' => $detalles['opcion'],
+                                                'observacion' => $detalles['observacion'] ?? ''
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+
+                        @if(!empty($variacionesFormateadas))
+                        <div style="margin-bottom: 2rem;">
+                            <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem;">VARIACIONES DEL LOGO</h6>
+                            <table style="border-collapse: collapse; table-layout: auto; width: 100%;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%); color: white;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 250px; white-space: nowrap;">Tipo</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 300px;">Valor</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 250px;">Observación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($variacionesFormateadas as $tipo => $datos)
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600;">{{ $tipo }}</td>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; color: #0ea5e9; font-weight: 500;">{{ $datos['opcion'] ?? '-' }}</td>
+                                        <td style="padding: 0.75rem; color: #64748b;">{{ !empty($datos['observacion']) ? $datos['observacion'] : '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @endif
+
+                        <!-- Variaciones Específicas en tabla con imágenes (de la prenda) -->
                         @if($variante)
                         <div>
-                            <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem;">VARIACIONES ESPECÍFICAS</h6>
+                            <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem;">VARIACIONES DE LA PRENDA</h6>
                             <table style="border-collapse: collapse; table-layout: auto; width: 100%;">
                                 <thead>
                                     <tr style="background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%); color: white;">

@@ -185,6 +185,64 @@ function openCotizacionModal(cotizacionId) {
                         htmlPrendas += `</div>`;
                     }
 
+                    // Renderizar variaciones de técnicas prendas si existen (solo para cotizaciones con logo)
+                    if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas && Array.isArray(data.logo_cotizacion.tecnicas_prendas)) {
+                        // Buscar técnicas prendas para esta prenda
+                        const tecnicasPrendaArray = data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
+                        
+                        if (tecnicasPrendaArray.length > 0) {
+                            // Consolidar todas las variaciones
+                            const variacionesFormateadas = {};
+                            tecnicasPrendaArray.forEach(tp => {
+                                if (tp.variaciones_prenda && typeof tp.variaciones_prenda === 'object') {
+                                    for (const [opcionNombre, detalles] of Object.entries(tp.variaciones_prenda)) {
+                                        if (typeof detalles === 'object' && detalles.opcion) {
+                                            const nombreFormato = opcionNombre.charAt(0).toUpperCase() + opcionNombre.slice(1).replace(/_/g, ' ');
+                                            if (!variacionesFormateadas[nombreFormato]) {
+                                                variacionesFormateadas[nombreFormato] = detalles;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            // Si hay variaciones, renderizar la tabla
+                            if (Object.keys(variacionesFormateadas).length > 0) {
+                                htmlPrendas += `
+                                    <div style="margin-top: 1rem;">
+                                        <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIACIONES</h6>
+                                        <table style="border-collapse: collapse; table-layout: auto; width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                            <thead>
+                                                <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
+                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 200px; border-right: 1px solid rgba(255,255,255,0.2);">Tipo</th>
+                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 250px; border-right: 1px solid rgba(255,255,255,0.2);">Valor</th>
+                                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 200px;">Observación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                `;
+                                
+                                for (const [tipo, datos] of Object.entries(variacionesFormateadas)) {
+                                    const opcion = datos.opcion || '-';
+                                    const observacion = datos.observacion || '-';
+                                    htmlPrendas += `
+                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                            <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600; color: #0f172a;">${tipo}</td>
+                                            <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; color: #0ea5e9; font-weight: 500;">${opcion}</td>
+                                            <td style="padding: 0.75rem; color: #64748b;">${observacion}</td>
+                                        </tr>
+                                    `;
+                                }
+                                
+                                htmlPrendas += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+
                     htmlPrendas += `</div>`;
                 });
             } else {
@@ -193,8 +251,8 @@ function openCotizacionModal(cotizacionId) {
 
             htmlPrendas += '</div>';
 
-            // Agregar tabla de Especificaciones Generales
-            if (data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+            // Agregar tabla de Especificaciones Generales (solo si NO es una cotización de logo)
+            if (!data.tiene_logo && data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
                 const especificacionesMap = {
                     'disponibilidad': 'DISPONIBILIDAD',
                     'forma_pago': 'FORMA DE PAGO',
