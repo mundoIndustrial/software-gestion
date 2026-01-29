@@ -399,6 +399,9 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     // Ruta para obtener costos de prendas
     Route::get('/cotizacion/{id}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
     
+    // Ruta para guardar tallas costos
+    Route::post('/tallas-costos', [App\Http\Controllers\ContadorController::class, 'guardarTallasCostos'])->name('tallas-costos.guardar');
+    
     // Ruta para obtener contador de cotizaciones pendientes
     Route::get('/cotizaciones-pendientes-count', [App\Http\Controllers\ContadorController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
     

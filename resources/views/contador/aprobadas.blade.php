@@ -328,8 +328,5 @@ document.addEventListener('click', function(event) {
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
 
-<!-- Script de Cotizaciones -->
-<script src="{{ asset('js/contador/cotizacion.js') }}"></script>
-
 @endsection
 

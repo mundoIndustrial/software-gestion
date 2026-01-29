@@ -173,9 +173,6 @@
     </div>
 </section>
 
-<!-- Script de Cotización Modal -->
-<script src="{{ asset('js/contador/cotizacion.js') }}"></script>
-
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
 

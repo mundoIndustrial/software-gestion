@@ -198,11 +198,24 @@ class ContadorController extends Controller
                     $query->with(['fotos', 'tecnicasPrendas' => function($q) {
                         $q->with(['prenda', 'tipoLogo', 'fotos']);
                     }]);
+                },
+                'reflectivoPrendas' => function($query) {
+                    $query->with(['fotos']);
                 }
             ])->findOrFail($id);
 
             \Log::info('getCotizacionDetail - Cotización ID: ' . $id);
             \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());
+
+            // Mapear reflectivos por prenda_cot_id para acceso rápido
+            $reflectivosPorPrenda = [];
+            if ($cotizacionModelo->reflectivoPrendas) {
+                foreach ($cotizacionModelo->reflectivoPrendas as $reflectivo) {
+                    if ($reflectivo->prenda_cot_id) {
+                        $reflectivosPorPrenda[$reflectivo->prenda_cot_id] = $reflectivo;
+                    }
+                }
+            }
 
             // Preparar datos de la cotización
             $datos = [
@@ -217,7 +230,7 @@ class ContadorController extends Controller
                     'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
                     'especificaciones' => $cotizacionModelo->especificaciones ?? [],
                 ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($reflectivosPorPrenda) {
                     // Generar descripción formateada usando el método del modelo
                     $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
                     
@@ -282,6 +295,20 @@ class ContadorController extends Controller
                                 'descripcion_adicional' => $variante->descripcion_adicional ?? null,
                             ];
                         })->toArray() : [],
+                        // Reflectivo de esta prenda
+                        'reflectivo' => isset($reflectivosPorPrenda[$prenda->id]) ? [
+                            'id' => $reflectivosPorPrenda[$prenda->id]->id,
+                            'descripcion' => $reflectivosPorPrenda[$prenda->id]->descripcion ?? null,
+                            'ubicaciones' => [],
+                            'variaciones' => [],
+                            'fotos' => $reflectivosPorPrenda[$prenda->id]->fotos ? $reflectivosPorPrenda[$prenda->id]->fotos->map(function($foto) {
+                                return [
+                                    'id' => $foto->id,
+                                    'url' => $foto->url ?? null,
+                                    'orden' => $foto->orden ?? 1,
+                                ];
+                            })->toArray() : [],
+                        ] : null,
                     ];
                 })->toArray(),
             ];
@@ -896,6 +923,44 @@ class ContadorController extends Controller
             ->get();
 
         return view('contador.aprobadas', compact('cotizacionesAprobadas'));
+    }
+
+    /**
+     * Guardar tallas costos cotización
+     */
+    public function guardarTallasCostos(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'cotizacion_id' => 'required|integer|exists:cotizaciones,id',
+                'prenda_cot_id' => 'required|integer|exists:prendas_cot,id',
+                'descripcion' => 'nullable|string',
+            ]);
+
+            // Buscar si ya existe un registro
+            $tallasCostos = \App\Models\TallasCostosCot::where('cotizacion_id', $validated['cotizacion_id'])
+                ->where('prenda_cot_id', $validated['prenda_cot_id'])
+                ->first();
+
+            if ($tallasCostos) {
+                // Actualizar
+                $tallasCostos->update(['descripcion' => $validated['descripcion']]);
+            } else {
+                // Crear nuevo
+                \App\Models\TallasCostosCot::create($validated);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tallas costos guardado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en guardarTallasCostos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }
