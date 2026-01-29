@@ -16,19 +16,19 @@
 @section('content')
 
 <!-- Header Personalizado -->
-<div style="background: white; color: #0f172a; padding: 1.5rem 2rem; margin: 0; border-bottom: 3px solid #e11d48;">
+<div style="background: white; color: #0f172a; padding: 0; margin: 0; border-bottom: 3px solid #1d78e1;">
     <div class="container-fluid">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
             <!-- Izquierda: Logo y Cotización -->
-            <div style="display: flex; align-items: center; gap: 3rem;">
+            <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
                 <div>
-                    <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial" style="height: 170px; width: 50;">
+                    <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial" style="height: 120px; width: auto; display: block; margin: 0;">
                 </div>
-                <div>
-                    <div style="font-size: 1.5rem; font-weight: 700; letter-spacing: 0.05em; color: #0f172a;">
+                <div style="padding-top: 0;">
+                    <div style="font-size: 1.2rem; font-weight: 700; letter-spacing: 0.05em; color: #0f172a; margin: 0; padding-top: 2.5rem;">
                         #{{ $cotizacion->numero_cotizacion }}
                     </div>
-                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem; font-size: 0.95rem; color: #0f172a;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem; font-size: 0.85rem; color: #0f172a;">
                         <span>Tipo de Venta:</span>
                         @if($cotizacion->logoCotizacion)
                             @switch($cotizacion->logoCotizacion->tipo_venta)
@@ -50,20 +50,20 @@
             </div>
 
             <!-- Centro: Fecha -->
-            <div style="text-align: right;">
-                <div style="font-size: 0.9rem; color: #64748b;">Fecha</div>
-                <div style="font-size: 1.3rem; font-weight: 700; color: #0f172a;">
+            <div style="text-align: center; padding-top: 3rem;">
+                <div style="font-size: 0.8rem; color: #64748b; margin: 0;">Fecha</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">
                     {{ $cotizacion->fecha_envio ? $cotizacion->fecha_envio->format('d M Y') : $cotizacion->created_at->format('d M Y') }}
                 </div>
             </div>
 
             <!-- Derecha: Botones -->
-            <div style="display: flex; gap: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem; padding-top: 3rem;">
                 <a href="{{ route('visualizador-logo.dashboard') }}" 
                    style="
                        background: transparent;
                        color: #0f172a;
-                       border: 1px solid #e11d48;
+                       border: 1px solid #1d78e1;
                        padding: 0.6rem 1.2rem;
                        border-radius: 6px;
                        text-decoration: none;
@@ -75,7 +75,7 @@
                        align-items: center;
                        gap: 0.5rem;
                    "
-                   onmouseover="this.style.background='#e11d48'; this.style.color='white';"
+                   onmouseover="this.style.background='#1d78e1'; this.style.color='white';"
                    onmouseout="this.style.background='transparent'; this.style.color='#0f172a';">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
@@ -91,156 +91,137 @@
     @if($cotizacion->logoCotizacion && $cotizacion->logoCotizacion->tecnicasPrendas && count($cotizacion->logoCotizacion->tecnicasPrendas) > 0)
     <div class="row mt-4">
         <div class="col-12">
-            <h4 class="mb-4"><i class="fas fa-shirt me-2"></i>Prendas con Logo</h4>
             
             @foreach($cotizacion->logoCotizacion->tecnicasPrendas->groupBy('prenda_cot_id') as $prendasAgrupadas)
-                @php $prenda = $prendasAgrupadas->first()->prenda; @endphp
+                @php 
+                    $prenda = $prendasAgrupadas->first()->prenda; 
+                    $variante = $prenda->variantes->first();
+                    $telasMultiples = [];
+                    if ($variante && $variante->telas_multiples) {
+                        $telasMultiples = is_string($variante->telas_multiples) 
+                            ? json_decode($variante->telas_multiples, true) 
+                            : $variante->telas_multiples;
+                        $telasMultiples = is_array($telasMultiples) ? $telasMultiples : [];
+                    }
+                    $telaInfo = $telasMultiples[0] ?? [];
+                @endphp
                 
                 <div class="card border-0 shadow-sm mb-4" style="background: #fff;">
-                    <!-- Card Header -->
-                    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 1.5rem; border-radius: 8px 8px 0 0;">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5 class="mb-1" style="font-size: 1.3rem; font-weight: 700;">{{ $prenda->nombre_producto }}</h5>
-                                @if($prenda->descripcion)
-                                <p class="mb-0" style="color: #cbd5e1; font-size: 0.9rem;">{{ $prenda->descripcion }}</p>
-                                @endif
-                            </div>
+                    <!-- Card Header - Estilo como en la imagen -->
+                    <div style="background: white; color: #0f172a; padding: 1.5rem; border-left: 4px solid #1d78e1; border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-2" style="font-size: 1.1rem; font-weight: 700; margin: 0;">{{ $prenda->nombre_producto }}</h5>
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; font-size: 0.9rem; color: #0f172a;">
+                            @if($telaInfo)
+                                <span><strong>Color:</strong> {{ $telaInfo['color'] ?? '-' }}</span>
+                                <span><strong>Tela:</strong> {{ $telaInfo['tela'] ?? '-' }}</span>
+                                <span><strong>Referencia:</strong> {{ $telaInfo['referencia'] ?? '-' }}</span>
+                            @endif
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <!-- Variantes de la Prenda -->
-                        @if($prenda->variantes && count($prenda->variantes) > 0)
-                        <div class="row mb-4">
-                            @foreach($prenda->variantes as $variante)
-                            <div class="col-md-6">
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
-                                    <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem; border-bottom: 2px solid #0ea5e9; padding-bottom: 0.5rem;">
-                                        <i class="fas fa-cogs me-2" style="color: #0ea5e9;"></i>Especificaciones
-                                    </h6>
-                                    
-                                    @if($variante->tipo_prenda)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Tipo:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">{{ $variante->tipo_prenda }}</span>
-                                    </div>
-                                    @endif
+                        <!-- Logo section con tabla y fotos -->
+                        <div style="margin-bottom: 2rem;">
+                            <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem;">LOGO:</h6>
+                            <table style="border-collapse: collapse; width: 100%;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%); color: white;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; white-space: nowrap;">Técnica(s)</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Ubicaciones</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600;">Imágenes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($prendasAgrupadas as $tecnicaPrenda)
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600;">{{ $tecnicaPrenda->tipoLogo->nombre ?? 'Logo' }}</td>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">
+                                            @if($tecnicaPrenda->ubicaciones)
+                                                @php
+                                                    $ubicaciones = is_array($tecnicaPrenda->ubicaciones) 
+                                                        ? $tecnicaPrenda->ubicaciones 
+                                                        : json_decode($tecnicaPrenda->ubicaciones, true) ?? [];
+                                                @endphp
+                                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                                    @foreach($ubicaciones as $ubicacion)
+                                                        <span style="color: #0ea5e9; font-weight: 500;">
+                                                            • {{ is_array($ubicacion) ? ($ubicacion['ubicacion'] ?? $ubicacion['nombre'] ?? $ubicacion) : $ubicacion }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                                @if($tecnicaPrenda->observaciones)
+                                                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #0f172a;">{{ $tecnicaPrenda->observaciones }}</div>
+                                                @endif
+                                            @endif
+                                        </td>
+                                        <td style="padding: 0.75rem; text-align: center;">
+                                            @if($tecnicaPrenda->fotos && count($tecnicaPrenda->fotos) > 0)
+                                                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                                    @foreach($tecnicaPrenda->fotos->sortBy('orden') as $foto)
+                                                    <img src="{{ asset('storage/' . $foto->ruta_webp) }}" alt="Foto logo" 
+                                                         style="max-width: 100px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s;" 
+                                                         onmouseover="this.style.transform='scale(1.05)'"
+                                                         onmouseout="this.style.transform='scale(1)'"
+                                                         onclick="verImagenCompleta('{{ asset('storage/' . $foto->ruta_original) }}')">
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span style="color: #64748b;">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
 
-                                    @if($variante->color)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Color:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">{{ $variante->color }}</span>
-                                    </div>
-                                    @endif
-
-                                    @if($variante->genero_id)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Género:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">{{ $variante->genero->nombre ?? '-' }}</span>
-                                    </div>
-                                    @endif
-
+                        <!-- Variaciones Específicas en tabla con imágenes -->
+                        @if($variante)
+                        <div>
+                            <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem;">VARIACIONES ESPECÍFICAS</h6>
+                            <table style="border-collapse: collapse; table-layout: auto; width: 100%;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%); color: white;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 250px; white-space: nowrap;">Variación</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; min-width: 310px;">Observación</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; min-width: 250px;">Imágenes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     <!-- Manga -->
-                                    @if($variante->aplica_manga)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Manga:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">{{ $variante->tipo_manga ?? '-' }}</span>
-                                        @if($variante->obs_manga)
-                                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_manga }}</div>
-                                        @endif
-                                    </div>
-                                    @endif
-
-                                    <!-- Broche/Botón -->
-                                    @if($variante->aplica_broche)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Broche/Botón:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">{{ $variante->broche->nombre ?? '-' }}</span>
-                                        @if($variante->obs_broche)
-                                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_broche }}</div>
-                                        @endif
-                                    </div>
-                                    @endif
-
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">Manga</td>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">{{ $variante->tipo_manga ?? '-' }} @if($variante->obs_manga)<div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_manga }}</div>@endif</td>
+                                        <td style="padding: 0.75rem; text-align: center; vertical-align: middle;" rowspan="3">
+                                            @if($prenda->fotos && count($prenda->fotos) > 0)
+                                                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                                    @foreach($prenda->fotos->sortBy('orden') as $foto)
+                                                    <img src="{{ asset('storage/' . $foto->ruta_webp) }}" alt="Foto prenda" 
+                                                         style="max-width: 120px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s;" 
+                                                         onmouseover="this.style.transform='scale(1.05)'"
+                                                         onmouseout="this.style.transform='scale(1)'"
+                                                         onclick="verImagenCompleta('{{ asset('storage/' . $foto->ruta_original ?? $foto->ruta_webp) }}')">
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span style="color: #64748b;">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                     <!-- Bolsillos -->
-                                    @if($variante->tiene_bolsillos)
-                                    <div class="mb-2">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Bolsillos:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">Sí</span>
-                                        @if($variante->obs_bolsillos)
-                                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_bolsillos }}</div>
-                                        @endif
-                                    </div>
-                                    @endif
-
-                                    <!-- Reflectivo -->
-                                    @if($variante->tiene_reflectivo)
-                                    <div class="mb-0">
-                                        <span style="color: #64748b; font-size: 0.9rem;"><strong>Reflectivo:</strong></span>
-                                        <span style="color: #0f172a; font-weight: 500;">Sí</span>
-                                        @if($variante->obs_reflectivo)
-                                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_reflectivo }}</div>
-                                        @endif
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                            @endforeach
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">Bolsillos</td>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">{{ $variante->tiene_bolsillos ? 'Sí' : 'No' }} @if($variante->obs_bolsillos)<div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_bolsillos }}</div>@endif</td>
+                                    </tr>
+                                    <!-- Broche/Botón -->
+                                    <tr>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">Broche/Botón</td>
+                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0;">{{ $variante->broche->nombre ?? '-' }} @if($variante->obs_broche)<div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">{{ $variante->obs_broche }}</div>@endif</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         @endif
-
-                        <!-- Técnicas de Logo y Ubicaciones -->
-                        <div class="row">
-                            @foreach($prendasAgrupadas as $tecnicaPrenda)
-                            <div class="col-12 mb-3">
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
-                                    <h6 style="color: #0f172a; font-weight: 600; margin-bottom: 1rem; border-bottom: 2px solid #e11d48; padding-bottom: 0.5rem;">
-                                        <i class="fas fa-palette me-2" style="color: #e11d48;"></i>
-                                        {{ $tecnicaPrenda->tipoLogo->nombre ?? 'Logo' }}
-                                    </h6>
-
-                                    @if($tecnicaPrenda->ubicaciones)
-                                    <div>
-                                        <p style="color: #64748b; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
-                                            <i class="fas fa-map-pin me-2"></i>Ubicaciones:
-                                        </p>
-                                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                            @php
-                                                $ubicaciones = is_array($tecnicaPrenda->ubicaciones) 
-                                                    ? $tecnicaPrenda->ubicaciones 
-                                                    : json_decode($tecnicaPrenda->ubicaciones, true) ?? [];
-                                            @endphp
-                                            @foreach($ubicaciones as $ubicacion)
-                                            <span style="
-                                                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-                                                color: white;
-                                                padding: 0.4rem 0.8rem;
-                                                border-radius: 20px;
-                                                font-size: 0.85rem;
-                                                font-weight: 500;
-                                            ">
-                                                • {{ is_array($ubicacion) ? ($ubicacion['ubicacion'] ?? $ubicacion['nombre'] ?? $ubicacion) : $ubicacion }}
-                                            </span>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                    @if($tecnicaPrenda->observaciones)
-                                    <div style="margin-top: 1rem;">
-                                        <p style="color: #64748b; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
-                                            <i class="fas fa-note-sticky me-2"></i>Observaciones:
-                                        </p>
-                                        <p style="color: #334155; background: white; padding: 0.75rem; border-left: 3px solid #e11d48; border-radius: 4px; margin: 0;">
-                                            {{ $tecnicaPrenda->observaciones }}
-                                        </p>
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
                     </div>
                 </div>
             @endforeach
@@ -306,7 +287,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p style="color: #64748b; margin: 0; font-size: 1rem;">{{ $obs }}</p>
+                    <p style="color: #64748b; margin: 0; font-size: 1rem;">{{ is_array($obs) ? json_encode($obs) : $obs }}</p>
                 @endif
             </div>
         </div>
