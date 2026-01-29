@@ -53,6 +53,15 @@ class LogoCotizacion extends Model
     }
 
     /**
+     * Alias para prendas: técnicas prendas con todas sus relaciones
+     */
+    public function tecnicasPrendas(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTecnicaPrenda::class, 'logo_cotizacion_id')
+            ->with('prenda', 'tipoLogo');
+    }
+
+    /**
      * Relación ANTIGUA: Un logo puede tener múltiples técnicas (bordado, estampado, etc)
      * NOTA: Esta tabla no existe en la versión nueva. Se mantiene para compatibilidad.
      */

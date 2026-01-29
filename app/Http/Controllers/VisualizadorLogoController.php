@@ -33,23 +33,21 @@ class VisualizadorLogoController extends Controller
         ->where('es_borrador', false);
 
         // Filtrar por tipo de cotización
-        // Obtener IDs de tipos L (Logo) y PL (Combinada)
-        $tipoLogoId = \App\Models\TipoCotizacion::where('codigo', 'L')->value('id');
-        $tipoCombinada1Id = \App\Models\TipoCotizacion::where('codigo', 'PL')->value('id');
-        $tipoCombinada2Id = \App\Models\TipoCotizacion::where('codigo', 'C')->value('id'); // Por si aún existe el código antiguo
-
-        $tiposPermitidos = array_filter([$tipoLogoId, $tipoCombinada1Id, $tipoCombinada2Id]);
+        // Mostrar:
+        // 1. Cotizaciones tipo_cotizacion_id = 2 (tipo Logo)
+        // 2. Cotizaciones tipo_cotizacion_id = 1 que tengan relación en logo_cotizaciones
+        $query->where(function($q) {
+            $q->where('tipo_cotizacion_id', 2) // Tipo Logo siempre
+              ->orWhere(function($subQ) {
+                  // O tipo 1 pero SOLO si están relacionadas a logo_cotizaciones
+                  $subQ->where('tipo_cotizacion_id', 1)
+                       ->whereHas('logoCotizacion');
+              });
+        });
         
-        \Log::info(' Tipos de cotización permitidos:', [
-            'tipoLogoId' => $tipoLogoId,
-            'tipoCombinada1Id' => $tipoCombinada1Id,
-            'tipoCombinada2Id' => $tipoCombinada2Id,
-            'tiposPermitidos' => $tiposPermitidos
+        \Log::info(' Filtro de tipos de cotización aplicado:', [
+            'filtro' => 'tipo_cotizacion_id = 2 O (tipo_cotizacion_id = 1 Y tiene logoCotizacion)'
         ]);
-
-        if (!empty($tiposPermitidos)) {
-            $query->whereIn('tipo_cotizacion_id', $tiposPermitidos);
-        }
 
         // Filtros adicionales
         if ($request->filled('search')) {
@@ -118,13 +116,18 @@ class VisualizadorLogoController extends Controller
             'asesor',
             'logoCotizacion',
             'logoCotizacion.fotos',
-            'tipoCotizacion'
+            'tipoCotizacion',
+            'prendas.variantes.genero', // Cargar prendas, variantes y género
+            'logoCotizacion.tecnicasPrendas.prenda.variantes.genero', // Cargar prendas técnicas con sus variantes y género
+            'logoCotizacion.tecnicasPrendas.tipoLogo', // Cargar tipo de logo (BORDADO, ESTAMPADO, etc)
         ])->findOrFail($id);
 
-        // Verificar que sea tipo Logo o Combinada
-        $tiposCodigos = ['L', 'PL', 'C'];
-        if (!in_array($cotizacion->tipoCotizacion->codigo ?? '', $tiposCodigos)) {
-            abort(403, 'No tienes permiso para ver esta cotización.');
+        // Verificar que sea tipo 2 o tipo 1 con logoCotizacion
+        $tipoPermitido = $cotizacion->tipo_cotizacion_id == 2 || 
+                        ($cotizacion->tipo_cotizacion_id == 1 && $cotizacion->logoCotizacion);
+        
+        if (!$tipoPermitido) {
+            abort(403, 'No tienes permiso para ver esta cotización. Solo se puede ver cotizaciones tipo Logo (2) o combinadas (1) relacionadas a logo.');
         }
 
         // Verificar que tenga información de logo
@@ -140,19 +143,16 @@ class VisualizadorLogoController extends Controller
      */
     public function getEstadisticas()
     {
-        // Obtener IDs de tipos permitidos
-        $tipoLogoId = \App\Models\TipoCotizacion::where('codigo', 'L')->value('id');
-        $tipoCombinada1Id = \App\Models\TipoCotizacion::where('codigo', 'PL')->value('id');
-        $tipoCombinada2Id = \App\Models\TipoCotizacion::where('codigo', 'C')->value('id');
-
-        $tiposPermitidos = array_filter([$tipoLogoId, $tipoCombinada1Id, $tipoCombinada2Id]);
-
         $baseQuery = Cotizacion::whereNotNull('numero_cotizacion')
-            ->where('es_borrador', false);
-
-        if (!empty($tiposPermitidos)) {
-            $baseQuery->whereIn('tipo_cotizacion_id', $tiposPermitidos);
-        }
+            ->where('es_borrador', false)
+            ->where(function($q) {
+                // Tipo 2 siempre o tipo 1 con logoCotizacion
+                $q->where('tipo_cotizacion_id', 2)
+                  ->orWhere(function($subQ) {
+                      $subQ->where('tipo_cotizacion_id', 1)
+                           ->whereHas('logoCotizacion');
+                  });
+            });
 
         $estadisticas = [
             'total' => (clone $baseQuery)->count(),

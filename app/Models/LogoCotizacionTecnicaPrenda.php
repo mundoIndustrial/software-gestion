@@ -52,6 +52,14 @@ class LogoCotizacionTecnicaPrenda extends Model
     }
 
     /**
+     * Alias: Acceso a prenda (mismo que prendaCot)
+     */
+    public function prenda(): BelongsTo
+    {
+        return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
+    }
+
+    /**
      * Relación: Tiene muchas fotos
      */
     public function fotos(): HasMany

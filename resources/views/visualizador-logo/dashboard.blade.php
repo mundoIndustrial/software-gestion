@@ -65,7 +65,7 @@
                     color: white;
                     padding: 1rem 1.5rem;
                     display: grid;
-                    grid-template-columns: 100px 240px 160px 120px 80px;
+                    grid-template-columns: 100px 240px 160px 120px 130px;
                     gap: 1rem;
                     font-weight: 700;
                     font-size: 0.9rem;
@@ -76,7 +76,7 @@
                     <div style="color: #cbd5e1;">Cliente</div>
                     <div style="color: #cbd5e1;">Asesor</div>
                     <div style="color: #cbd5e1;">Fecha</div>
-                    <div style="text-align: center; color: #cbd5e1;">Acción</div>
+                    <div style="text-align: center; color: #cbd5e1;">Acciones</div>
                 </div>
 
                 <!-- Filas -->
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <div style="
                     display: grid;
-                    grid-template-columns: 100px 240px 160px 120px 80px;
+                    grid-template-columns: 100px 240px 160px 120px 130px;
                     gap: 1rem;
                     padding: 1rem 1.5rem;
                     align-items: center;
@@ -250,7 +250,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreAsesor}</div>
                     <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(cot.fecha_envio)}</div>
-                    <div style="display: flex; justify-content: center;">
+                    <div style="display: flex; justify-content: center; gap: 0.5rem;">
+                        <a href="/visualizador-logo/cotizaciones/${cot.id}" 
+                           title="Ver detalle"
+                           style="
+                               background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                               color: white;
+                               border: none;
+                               padding: 0.6rem;
+                               border-radius: 8px;
+                               cursor: pointer;
+                               font-size: 1rem;
+                               transition: all 0.3s ease;
+                               display: flex;
+                               align-items: center;
+                               justify-content: center;
+                               width: 40px;
+                               height: 40px;
+                               box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+                               text-decoration: none;
+                           " onmouseover="this.style.transform='translateY(-3px) scale(1.1)'; this.style.boxShadow='0 6px 16px rgba(14, 165, 233, 0.35)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.2)'">
+                            <i class="fas fa-eye"></i>
+                        </a>
                         <a href="/cotizacion/${cot.id}/pdf?tipo=logo" 
                            target="_blank"
                            title="Descargar PDF Logo"
