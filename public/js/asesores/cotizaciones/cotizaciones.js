@@ -210,9 +210,13 @@ function irAlPaso(paso) {
     if (paso === 5) {
 
         setTimeout(() => {
-            // Actualizar el resumen dinámico del paso 5
-
-            actualizarResumenFriendly();
+            // Usar la nueva función de resumen completo si está disponible
+            if (typeof actualizarResumenPaso5Completo === 'function') {
+                actualizarResumenPaso5Completo();
+            } else {
+                // Fallback a la función antigua
+                actualizarResumenFriendly();
+            }
         }, 200);
     }
 }

@@ -4,6 +4,7 @@
 @section('page-title', 'Cotizaciones')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/asesores/paso-cinco.css') }}">
 <style>
     /* Estilos específicos para cotizaciones */
     
@@ -86,7 +87,7 @@
         <x-paso-dos />
         {{-- <x-paso-cuatro-reflectivo /> --}}
         <x-paso-tres />
-        <x-paso-cuatro />
+        <x-paso-cinco />
     </form>
 </div>
 
@@ -152,6 +153,9 @@
 
 <!-- 3c. Configuración dinámica del stepper -->
 <script src="{{ asset('js/asesores/cotizaciones/config-stepper.js') }}"></script>
+
+<!-- 3d. Resumen completo del Paso 5 (Revisar) -->
+<script src="{{ asset('js/asesores/cotizaciones/resumen-paso5-completo.js') }}"></script>
 
 <!-- 4. Configuración global -->
 <script>
