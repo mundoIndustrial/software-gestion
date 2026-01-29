@@ -259,8 +259,13 @@
     </div>
 
     <!-- Modal - Marcas Faltantes -->
-    <div id="marcasFaltantesModal" class="modal-overlay modal-detail-overlay" style="display: none;">
-        <div class="modal-content modal-detail-content" style="max-width: 1200px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;">
+    <div id="marcasFaltantesModal" class="modal-overlay modal-detail-overlay" style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 9999;">
+        <div class="modal-content modal-detail-content" style="max-width: 1200px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; position: relative; margin: 0 auto; margin-top: 50px;">
+            <!-- Botón de cierre en esquina superior -->
+            <button id="btnCerrarMarcasFaltantes" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 28px; cursor: pointer; color: #666; transition: color 0.2s; z-index: 10;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#666'">
+                ×
+            </button>
+            
             <div class="modal-detail-body" style="flex: 1; overflow-y: auto; overflow-x: auto;">
                 <div id="marcasFaltantesContainer">
                     <!-- Se generará dinámicamente -->

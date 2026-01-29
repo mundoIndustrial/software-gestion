@@ -267,7 +267,64 @@ class AsistenciaPersonalController extends Controller
 
         try {
             $numeroReporte = 'REP-' . date('Ymd') . '-' . time();
+            
+            // Extraer fechas para obtener el rango
+            $fechas = [];
+            foreach ($request->input('registros') as $registro) {
+                $timestamp = $registro['timestamp'];
+                $partes = explode(' ', $timestamp);
+                if (count($partes) >= 1) {
+                    $fechas[] = $partes[0];
+                }
+            }
+            
+            // Obtener fecha mínima y máxima
             $nombreReporte = 'Reporte Asistencia ' . date('d/m/Y H:i');
+            if (!empty($fechas)) {
+                sort($fechas);
+                $fechaInicio = $fechas[0];
+                $fechaFin = $fechas[count($fechas) - 1];
+                
+                // Convertir fechas a formato legible (ej: "16 al 30 de Enero")
+                $fechaInicioObj = \DateTime::createFromFormat('Y-m-d', $fechaInicio);
+                $fechaFinObj = \DateTime::createFromFormat('Y-m-d', $fechaFin);
+                
+                if ($fechaInicioObj && $fechaFinObj) {
+                    $diaInicio = intval($fechaInicioObj->format('d'));
+                    $diaFin = intval($fechaFinObj->format('d'));
+                    $mesInicio = $fechaInicioObj->format('F');
+                    $mesFin = $fechaFinObj->format('F');
+                    
+                    // Convertir nombres de meses a español
+                    $mesesEnEspanol = [
+                        'January' => 'Enero',
+                        'February' => 'Febrero',
+                        'March' => 'Marzo',
+                        'April' => 'Abril',
+                        'May' => 'Mayo',
+                        'June' => 'Junio',
+                        'July' => 'Julio',
+                        'August' => 'Agosto',
+                        'September' => 'Septiembre',
+                        'October' => 'Octubre',
+                        'November' => 'Noviembre',
+                        'December' => 'Diciembre'
+                    ];
+                    
+                    $mesInicioEs = $mesesEnEspanol[$mesInicio] ?? $mesInicio;
+                    $mesFinEs = $mesesEnEspanol[$mesFin] ?? $mesFin;
+                    
+                    // Crear nombre del reporte con rango de fechas
+                    if ($mesInicio === $mesFin) {
+                        // Mismo mes
+                        $nombreReporte = "Reporte Asistencia del {$diaInicio} al {$diaFin} de {$mesInicioEs}";
+                    } else {
+                        // Meses diferentes
+                        $nombreReporte = "Reporte Asistencia del {$diaInicio} de {$mesInicioEs} al {$diaFin} de {$mesFinEs}";
+                    }
+                }
+            }
+            
             $reporte = ReportePersonal::create([
                 'numero_reporte' => $numeroReporte,
                 'nombre_reporte' => $nombreReporte

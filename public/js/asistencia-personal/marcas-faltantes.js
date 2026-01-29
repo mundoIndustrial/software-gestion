@@ -22,6 +22,14 @@ const AsistenciaMarcasFaltantes = (() => {
         cargarDatos(reporte);
         modal.style.display = 'block';
 
+        // Botón de cierre en la esquina superior
+        const btnCerrar = document.getElementById('btnCerrarMarcasFaltantes');
+        if (btnCerrar) {
+            btnCerrar.onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+
         const closeBtn = modal.querySelector('.btn-modal-close-detail');
         if (closeBtn) {
             closeBtn.onclick = function() {
