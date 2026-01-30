@@ -243,48 +243,48 @@ document.addEventListener('click', function(event) {
 
 <!-- Modal de Cálculo de Costos por Prenda -->
 <div id="calculoCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9997; justify-content: center; align-items: center; padding: 2rem; flex-direction: column;">
-    <div style="background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%); border-radius: 12px; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(59, 130, 246, 0.3); overflow: hidden;">
+    <div style="background: white; border-radius: 12px; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); border: 2px solid #1e5ba8; overflow: hidden;">
         
         <!-- Contenedor con scroll general -->
         <div style="overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column;">
             
             <!-- Tabs de Prendas con Scroll Horizontal -->
-            <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid rgba(59, 130, 246, 0.3); flex-shrink: 0;">
+            <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 2px solid #e5e7eb; flex-shrink: 0;">
                 <!-- Se llenará dinámicamente -->
             </div>
 
             <!-- Descripción de Prenda -->
-            <div id="prendasDescripcion" style="padding: 1rem 1.5rem; color: #e5e7eb; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); min-height: 80px; flex-shrink: 0;">
+            <div id="prendasDescripcion" style="padding: 1rem 1.5rem; color: #475569; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 2px solid #e5e7eb; min-height: 80px; flex-shrink: 0; background: #f9fafb;">
                 <!-- Se llenará dinámicamente -->
             </div>
 
             <!-- Tabla de Precios -->
             <div style="padding: 1.5rem 1.5rem 0 1.5rem; display: flex; flex-direction: column; gap: 0;">
             <!-- Header de tabla -->
-            <div style="display: grid; grid-template-columns: 1fr 150px 80px; gap: 0; padding: 1rem; color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px 12px 0 0; border: 2px solid #3b82f6; border-bottom: none;">
+            <div style="display: grid; grid-template-columns: 1fr 150px 80px; gap: 0; padding: 1rem; color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; background: linear-gradient(135deg, #1e5ba8 0%, #1a4a8f 100%); border-radius: 12px 12px 0 0; border: 2px solid #1e5ba8; border-bottom: none;">
                 <div style="padding-right: 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Items a evaluar</div>
                 <div style="text-align: center; padding: 0 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Precio</div>
                 <div style="text-align: center; padding-left: 1rem;">Acción</div>
             </div>
 
             <!-- Filas de tabla -->
-            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; min-height: 100px;">
+            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: white; border: 2px solid #1e5ba8; border-top: none; min-height: 100px;">
                 <!-- Se llenará dinámicamente -->
             </div>
 
             <!-- Botón Agregar -->
-            <div style="padding: 1rem; text-align: center; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none;">
-                <button onclick="agregarFilaItem()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            <div style="padding: 1rem; text-align: center; background: white; border: 2px solid #1e5ba8; border-top: none;">
+                <button onclick="agregarFilaItem()" style="background: linear-gradient(135deg, #1e5ba8 0%, #1a4a8f 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                     <span>+</span> Agregar
                 </button>
             </div>
 
             <!-- Total -->
-            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px; gap: 1rem;">
+            <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1a4a8f 100%); padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; border: 2px solid #1e5ba8; border-top: none; border-radius: 0 0 12px 12px; gap: 1rem;">
                 <span>Total Costo:</span>
                 <span id="totalCosto" style="font-size: 1.2rem;">$0.00</span>
                 <div style="display: flex; gap: 0.75rem; margin-left: auto;">
-                    <button onclick="cerrarModalCalculoCostos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.3px;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                    <button onclick="cerrarModalCalculoCostos()" style="background: #94a3b8; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.3px;" onmouseover="this.style.background='#64748b'" onmouseout="this.style.background='#94a3b8'">
                         Cancelar ✕
                     </button>
                     <button onclick="guardarCalculoCostos()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
@@ -303,16 +303,16 @@ document.addEventListener('click', function(event) {
         width: 10px;
     }
     #calculoCostosModal > div > div:first-child::-webkit-scrollbar-track {
-        background: #1a1f3a;
+        background: #f5f5f5;
         border-radius: 4px;
     }
     #calculoCostosModal > div > div:first-child::-webkit-scrollbar-thumb {
-        background: #3b82f6;
+        background: #1e5ba8;
         border-radius: 4px;
-        border: 2px solid #1a1f3a;
+        border: 2px solid #f5f5f5;
     }
     #calculoCostosModal > div > div:first-child::-webkit-scrollbar-thumb:hover {
-        background: #2563eb;
+        background: #1a4a8f;
     }
 </style>
 

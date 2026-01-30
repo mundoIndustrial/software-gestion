@@ -105,7 +105,10 @@ function openCotizacionModal(cotizacionId) {
                                             const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
                                             if (tp.ubicaciones) {
                                                 let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
-                                                ubicacionesArray = ubicacionesArray.filter(u => u); // Filtrar vacíos
+                                                // Filtrar vacíos y remover corchetes
+                                                ubicacionesArray = ubicacionesArray
+                                                    .map(u => String(u).replace(/[\[\]]/g, '').trim())
+                                                    .filter(u => u);
                                                 if (ubicacionesArray.length > 0) {
                                                     if (!ubicacionesPorTecnica[tecnicaNombre]) {
                                                         ubicacionesPorTecnica[tecnicaNombre] = [];
@@ -115,7 +118,7 @@ function openCotizacionModal(cotizacionId) {
                                             }
                                         });
                                         
-                                        // Agregar ubicaciones a la descripción
+                                        // Agregar ubicaciones a la descripción SIN corchetes
                                         if (Object.keys(ubicacionesPorTecnica).length > 0) {
                                             if (descripcionCompleta) {
                                                 descripcionCompleta += ', ';
@@ -127,30 +130,29 @@ function openCotizacionModal(cotizacionId) {
                                         }
                                     }
                                     
-                                    // Agregar descripción y ubicaciones de reflectivo si existen
-                                    if (prenda.reflectivo) {
-                                        const reflectivo = prenda.reflectivo;
-                                        if (reflectivo.descripcion || (reflectivo.ubicaciones && reflectivo.ubicaciones.length > 0)) {
+                                    // Agregar descripción y ubicaciones de prenda_cot_reflectivo
+                                    console.log('Prenda:', prenda.nombre_prenda, 'prenda_cot_reflectivo:', prenda.prenda_cot_reflectivo);
+                                    if (prenda.prenda_cot_reflectivo) {
+                                        const pcrRef = prenda.prenda_cot_reflectivo;
+                                        
+                                        // Agregar descripción del reflectivo
+                                        if (pcrRef.descripcion) {
                                             if (descripcionCompleta) {
                                                 descripcionCompleta += ', ';
                                             }
-                                            
-                                            let textoReflectivo = '';
-                                            if (reflectivo.descripcion) {
-                                                textoReflectivo += reflectivo.descripcion;
+                                            descripcionCompleta += pcrRef.descripcion;
+                                        }
+                                        
+                                        // Agregar ubicaciones del reflectivo con negrita
+                                        if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
+                                            if (descripcionCompleta) {
+                                                descripcionCompleta += ', ';
                                             }
-                                            
-                                            if (reflectivo.ubicaciones && reflectivo.ubicaciones.length > 0) {
-                                                if (textoReflectivo) {
-                                                    textoReflectivo += ', ';
-                                                }
-                                                let ubicacionesReflectivo = Array.isArray(reflectivo.ubicaciones) 
-                                                    ? reflectivo.ubicaciones 
-                                                    : Object.values(reflectivo.ubicaciones || {});
-                                                textoReflectivo += ubicacionesReflectivo.filter(u => u).join(', ');
-                                            }
-                                            
-                                            descripcionCompleta += textoReflectivo;
+                                            const ubicacionesReflectivo = pcrRef.ubicaciones
+                                                .map(u => u.ubicacion ? '<strong>' + u.ubicacion + '</strong>' + (u.descripcion ? ': ' + u.descripcion : '') : '')
+                                                .filter(u => u)
+                                                .join(', ');
+                                            descripcionCompleta += ubicacionesReflectivo;
                                         }
                                     }
                                     
@@ -180,103 +182,12 @@ function openCotizacionModal(cotizacionId) {
                         `;
                     }
 
-                    // Mostrar fotos de la prenda si existen
-                    if (prenda.fotos && prenda.fotos.length > 0) {
-                        htmlPrendas += `
-                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
-                                IMAGENES:
-                            </p>
-                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                        `;
-                        prenda.fotos.forEach((foto, idx) => {
-                            htmlPrendas += `
-                                <img src="${foto}" 
-                                     data-gallery="prenda-fotos-${prenda.id}" 
-                                     data-index="${idx}"
-                                     alt="Foto prenda" 
-                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
-                                     onclick="abrirImagenGrande('${foto}', 'prenda-fotos-${prenda.id}', ${idx})">
-                            `;
-                        });
-                        htmlPrendas += `</div>`;
-                    }
-
-                    // Mostrar fotos de telas si existen
-                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
-                        htmlPrendas += `
-                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
-                                TELAS:
-                            </p>
-                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                        `;
-                        prenda.tela_fotos.forEach((foto, idx) => {
-                            if (foto) {
-                                htmlPrendas += `
-                                    <img src="${foto}" 
-                                         data-gallery="tela-fotos-${prenda.id}" 
-                                         data-index="${idx}"
-                                         alt="Foto tela" 
-                                         style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
-                                         onclick="abrirImagenGrande('${foto}', 'tela-fotos-${prenda.id}', ${idx})">
-                                `;
-                            }
-                        });
-                        htmlPrendas += `</div>`;
-                    }
-
                     // Renderizar variaciones de técnicas prendas si existen (solo para cotizaciones con logo)
                     if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas && Array.isArray(data.logo_cotizacion.tecnicas_prendas)) {
                         // Buscar técnicas prendas para esta prenda
                         const tecnicasPrendaArray = data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
                         
                         if (tecnicasPrendaArray.length > 0) {
-                            // SECCIÓN IMAGEN TECNICAS
-                            let tieneImagenes = false;
-                            for (let tp of tecnicasPrendaArray) {
-                                if (tp.fotos && tp.fotos.length > 0) {
-                                    tieneImagenes = true;
-                                    break;
-                                }
-                            }
-
-                            if (tieneImagenes) {
-                                htmlPrendas += `
-                                    <div style="margin-top: 1rem;">
-                                        <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">IMAGEN TECNICAS</h6>
-                                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start;">
-                                `;
-
-                                tecnicasPrendaArray.forEach(tp => {
-                                    const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
-                                    
-                                    if (tp.fotos && tp.fotos.length > 0) {
-                                        tp.fotos.forEach((foto, fotoIdx) => {
-                                            if (foto.url) {
-                                                htmlPrendas += `
-                                                    <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
-                                                        <img src="${foto.url}" 
-                                                             alt="Técnica: ${tecnicaNombre}" 
-                                                             title="${tecnicaNombre}"
-                                                             style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #1e5ba8; cursor: pointer; transition: all 0.3s;"
-                                                             onclick="abrirImagenGrande('${foto.url}', 'logo-tecnica-${tp.id}', ${fotoIdx})"
-                                                             onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
-                                                             onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                                        <div style="margin-top: 0.5rem; background: linear-gradient(to right, rgba(30, 91, 168, 0.95), rgba(43, 126, 201, 0.95)); padding: 0.5rem 1rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.8rem; white-space: nowrap;">
-                                                            ${tecnicaNombre}
-                                                        </div>
-                                                    </div>
-                                                `;
-                                            }
-                                        });
-                                    }
-                                });
-
-                                htmlPrendas += `
-                                        </div>
-                                    </div>
-                                `;
-                            }
-
                             // Consolidar todas las variaciones
                             const variacionesFormateadas = {};
                             tecnicasPrendaArray.forEach(tp => {
@@ -378,39 +289,71 @@ function openCotizacionModal(cotizacionId) {
                     if (prenda.variantes && prenda.variantes.length > 0) {
                         htmlPrendas += `
                             <div style="margin-top: 1.5rem;">
-                                <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIANTES</h6>
+                                <h6 style="color: #1e5ba8; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">VARIACIONES ESPECIFICAS</h6>
                                 <table style="border-collapse: collapse; table-layout: auto; width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
                                     <thead>
                                         <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
-                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">Propiedad</th>
-                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.85rem;">Valor</th>
+                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem; min-width: 150px;">Variación</th>
+                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem; min-width: 200px;">Tipo</th>
+                                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; font-size: 0.85rem;">Observaciones</th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
+                            </thead>
+                            <tbody>
                         `;
 
                         const variante = prenda.variantes[0];
-                        const propiedades = [
-                            { label: 'Tipo Prenda', value: variante.tipo_prenda },
-                            { label: 'Género', value: variante.genero_id ? `ID: ${variante.genero_id}` : '-' },
-                            { label: 'Color', value: variante.color || '-' },
-                            { label: 'Tipo Manga', value: variante.tipo_manga || '-' },
-                            { label: 'Bolsillos', value: variante.tiene_bolsillos ? 'Sí' : 'No' },
-                            { label: 'Broche', value: variante.aplica_broche ? 'Sí' : 'No' },
-                            { label: 'Manga', value: variante.aplica_manga ? 'Sí' : 'No' },
-                            { label: 'Reflectivo', value: variante.tiene_reflectivo ? 'Sí' : 'No' },
-                            { label: 'Descripción Adicional', value: variante.descripcion_adicional || '-' },
-                        ];
-
-                        propiedades.forEach((prop, idx) => {
-                            if (prop.value) {
-                                htmlPrendas += `
-                                    <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 0 ? 'background: #f9fafb;' : ''}">
-                                        <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600; color: #0f172a; font-size: 0.85rem;">${prop.label}</td>
-                                        <td style="padding: 0.75rem; color: #0ea5e9; font-weight: 500; font-size: 0.85rem;">${prop.value}</td>
-                                    </tr>
-                                `;
+                        
+                        // Construir filas de variaciones con estructura: variacion, tipo, observacion
+                        const filas = [];
+                        
+                        // Si es cotización de reflectivo (tipo_cotizacion_id === 4), usar variaciones de prenda_cot_reflectivo
+                        if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.variaciones && Array.isArray(prenda.prenda_cot_reflectivo.variaciones)) {
+                            // Filtrar solo variaciones con checked: true
+                            const variacionesSeleccionadas = prenda.prenda_cot_reflectivo.variaciones.filter(v => v.checked === true || v.checked === 'true');
+                            
+                            variacionesSeleccionadas.forEach(variacion => {
+                                filas.push({
+                                    variacion: variacion.variacion || '-',
+                                    tipo: variacion.observacion || '-',
+                                    obs: ''
+                                });
+                            });
+                        } else {
+                            // Caso normal (no reflectivo)
+                            if (variante.tipo_prenda) filas.push({ variacion: 'Tipo Prenda', tipo: variante.tipo_prenda, obs: '' });
+                            if (variante.tipo_jean_pantalon) filas.push({ variacion: 'Tipo Jean/Pantalón', tipo: variante.tipo_jean_pantalon, obs: '' });
+                            
+                            // Tipo Manga
+                            if (variante.tipo_manga_id || variante.tipo_manga) {
+                                let tipo = variante.tipo_manga_nombre || variante.tipo_manga || 'Sin especificar';
+                                filas.push({ variacion: 'Tipo Manga', tipo: tipo, obs: variante.obs_manga || '' });
                             }
+                            
+                            // Bolsillos: si tiene_bolsillos = true, mostrar la observación
+                            if (variante.tiene_bolsillos !== null && variante.tiene_bolsillos) {
+                                let obs = variante.obs_bolsillos || '';
+                                filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: obs });
+                            }
+                            
+                            // Broche: usar nombre si existe
+                            if (variante.aplica_broche !== null && variante.aplica_broche) {
+                                let tipo = variante.tipo_broche_nombre || 'Sí';
+                                let obs = variante.obs_broche || '';
+                                filas.push({ variacion: 'Broche', tipo: tipo, obs: obs });
+                            }
+                            
+                            if (variante.descripcion_adicional) filas.push({ variacion: 'Descripción Adicional', tipo: variante.descripcion_adicional, obs: '' });
+                        }
+                        
+                        // Renderizar filas
+                        filas.forEach((fila, idx) => {
+                            htmlPrendas += `
+                                <tr style="border-bottom: 1px solid #e2e8f0; ${idx % 2 === 0 ? 'background: #f9fafb;' : ''}">
+                                    <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; font-weight: 600; color: #0f172a; font-size: 0.85rem;">${fila.variacion}</td>
+                                    <td style="padding: 0.75rem; border-right: 1px solid #e2e8f0; color: #0ea5e9; font-weight: 500; font-size: 0.85rem;">${fila.tipo}</td>
+                                    <td style="padding: 0.75rem; color: #64748b; font-size: 0.85rem;">${fila.obs}</td>
+                                </tr>
+                            `;
                         });
 
                         htmlPrendas += `
@@ -461,38 +404,96 @@ function openCotizacionModal(cotizacionId) {
                                 </div>
                             `;
                         }
+                    }
 
-                        // IMÁGENES DE REFLECTIVO
-                        if (reflectivo.fotos && reflectivo.fotos.length > 0) {
-                            htmlPrendas += `
-                                <div style="margin-top: 1.5rem;">
-                                    <h6 style="color: #ef4444; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 0.95rem;">IMÁGENES REFLECTIVO</h6>
-                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                            `;
-
-                            reflectivo.fotos.forEach((foto, idx) => {
-                                if (foto.url) {
-                                    htmlPrendas += `
-                                        <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
-                                            <img src="${foto.url}" 
-                                                 alt="Reflectivo" 
-                                                 style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #dc2626; cursor: pointer; transition: all 0.3s;"
-                                                 onclick="abrirImagenGrande('${foto.url}', 'reflectivo-${prenda.id}', ${idx})"
-                                                 onmouseover="this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.4)'; this.style.transform='scale(1.05)';"
-                                                 onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                            <div style="margin-top: 0.5rem; background: linear-gradient(to right, rgba(220, 38, 38, 0.95), rgba(239, 68, 68, 0.95)); padding: 0.5rem 1rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.75rem; white-space: nowrap;">
-                                                Reflectivo ${idx + 1}
-                                            </div>
-                                        </div>
-                                    `;
-                                }
+                    // ===== IMÁGENES LADO A LADO: LOGO | PRENDA | REFLECTIVO =====
+                    const imagenesParaMostrar = [];
+                    
+                    // Recolectar imágenes de logo para esta prenda
+                    if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas) {
+                        data.logo_cotizacion.tecnicas_prendas.forEach(tp => {
+                            if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                                tp.fotos.forEach((foto, idx) => {
+                                    if (foto.url) {
+                                        imagenesParaMostrar.push({
+                                            grupo: `Logo - ${tp.tipo_logo_nombre || 'Logo'}`,
+                                            url: foto.url,
+                                            titulo: `${tp.tipo_logo_nombre || 'Logo'} ${idx + 1}`,
+                                            color: '#1e5ba8'
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Recolectar imágenes de tela para esta prenda
+                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
+                        prenda.tela_fotos.forEach((foto, idx) => {
+                            if (foto) {
+                                imagenesParaMostrar.push({
+                                    grupo: 'Tela',
+                                    url: foto,
+                                    titulo: `Tela ${idx + 1}`,
+                                    color: '#1e5ba8'
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Recolectar imágenes de prenda
+                    if (prenda.fotos && prenda.fotos.length > 0) {
+                        prenda.fotos.forEach((foto, idx) => {
+                            imagenesParaMostrar.push({
+                                grupo: 'Prenda',
+                                url: foto,
+                                titulo: `${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
+                                color: '#1e5ba8'
                             });
-
+                        });
+                    }
+                    
+                    // Recolectar imágenes de reflectivo
+                    if (prenda.reflectivo && prenda.reflectivo.fotos && prenda.reflectivo.fotos.length > 0) {
+                        prenda.reflectivo.fotos.forEach((foto, idx) => {
+                            if (foto.url) {
+                                imagenesParaMostrar.push({
+                                    grupo: 'Reflectivo',
+                                    url: foto.url,
+                                    titulo: `Reflectivo ${idx + 1}`,
+                                    color: '#1e5ba8'
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Mostrar imágenes lado a lado si existen
+                    if (imagenesParaMostrar.length > 0) {
+                        htmlPrendas += `
+                            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
+                        `;
+                        
+                        imagenesParaMostrar.forEach((img, idx) => {
                             htmlPrendas += `
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <img src="${img.url}" 
+                                         alt="${img.titulo}"
+                                         data-gallery="galeria-${prenda.id}"
+                                         data-index="${idx}"
+                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid ${img.color}; cursor: pointer; transition: all 0.3s;"
+                                         onclick="abrirImagenGrande('${img.url}', 'galeria-${prenda.id}', ${idx})"
+                                         onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
+                                         onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
+                                    <div style="margin-top: 0.5rem; background: linear-gradient(to right, ${img.color}, ${img.color}); padding: 0.5rem 0.75rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.7rem; white-space: nowrap;">
+                                        ${img.grupo}
                                     </div>
                                 </div>
                             `;
-                        }
+                        });
+                        
+                        htmlPrendas += `
+                            </div>
+                        `;
                     }
 
                     htmlPrendas += `</div>`;
@@ -503,8 +504,9 @@ function openCotizacionModal(cotizacionId) {
 
             htmlPrendas += '</div>';
 
-            // Agregar tabla de Especificaciones Generales (solo si NO es una cotización de logo)
-            if (!data.tiene_logo && data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+            // SECCIÓN ESPECIFICACIONES GENERALES (solo para cotización combinada, no reflectivo)
+            // Si tiene prendas, NO es reflectivo (tipo_cotizacion_id !== 4), y tiene especificaciones, mostrar tabla de especificaciones
+            if (data.tiene_prendas && data.cotizacion && data.cotizacion.tipo_cotizacion_id !== 4 && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
                 const especificacionesMap = {
                     'disponibilidad': 'DISPONIBILIDAD',
                     'forma_pago': 'FORMA DE PAGO',
@@ -521,31 +523,37 @@ function openCotizacionModal(cotizacionId) {
                             <thead>
                                 <tr style="background: #f5f5f5; border-bottom: 2px solid #1e5ba8;">
                                     <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Especificación</th>
-                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Opciones Seleccionadas</th>
+                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Valor</th>
                                 </tr>
                             </thead>
                             <tbody>
                 `;
 
-                for (const [clave, nombreCategoria] of Object.entries(especificacionesMap)) {
-                    const valores = data.cotizacion.especificaciones[clave] || [];
-                    let valoresText = '-';
+                for (const [clave, nombreEspec] of Object.entries(especificacionesMap)) {
+                    const valor = data.cotizacion.especificaciones[clave];
+                    let valorTexto = '-';
 
-                    if (Array.isArray(valores) && valores.length > 0) {
-                        valoresText = valores.map(v => {
-                            if (typeof v === 'object') {
-                                return Object.values(v).join(', ');
-                            }
-                            return String(v);
-                        }).join(', ');
-                    } else if (typeof valores === 'string' && valores.trim() !== '') {
-                        valoresText = valores;
+                    if (valor) {
+                        if (Array.isArray(valor) && valor.length > 0) {
+                            // Es un array con objetos {valor, observacion}
+                            valorTexto = valor
+                                .map(v => {
+                                    let texto = v.valor || '';
+                                    if (v.observacion) {
+                                        texto += ` (${v.observacion})`;
+                                    }
+                                    return texto;
+                                })
+                                .join(', ');
+                        } else if (typeof valor === 'string') {
+                            valorTexto = valor;
+                        }
                     }
 
                     htmlPrendas += `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 0.75rem 1rem; color: #333; font-weight: 600; font-size: 0.85rem;">${nombreCategoria}</td>
-                                    <td style="padding: 0.75rem 1rem; color: #666; font-size: 0.85rem;">${valoresText}</td>
+                                    <td style="padding: 0.75rem 1rem; color: #333; font-weight: 600; font-size: 0.85rem;">${nombreEspec}</td>
+                                    <td style="padding: 0.75rem 1rem; color: #666; font-size: 0.85rem;">${valorTexto}</td>
                                 </tr>
                     `;
                 }
@@ -556,9 +564,8 @@ function openCotizacionModal(cotizacionId) {
                     </div>
                 `;
             }
-
-            // SECCIÓN OBSERVACIONES GENERALES
-            if (data.logo_cotizacion && data.logo_cotizacion.observaciones_generales) {
+            // Si NO es cotización combinada ni reflectivo (es solo logo), mostrar observaciones generales
+            else if (!data.tiene_prendas && data.logo_cotizacion && data.logo_cotizacion.observaciones_generales) {
                 let observacionesArray = [];
                 
                 try {
@@ -774,203 +781,10 @@ function openCotizacionModal(cotizacionId) {
                 htmlLogo += '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de logo para mostrar</p>';
             }
 
-            // ===== SECCIÓN GALERÍA CONSOLIDADA =====
-            let htmlGaleria = '';
-            let tieneImagenesPrendas = false;
-            let tieneImagenesLogo = false;
-            let tieneImagenesReflectivo = false;
-
-            // Recolectar todas las imágenes
-            const imagenesPrendas = [];
-            const imagenesLogo = [];
-            const imagenesReflectivo = [];
-
-            if (data.prendas_cotizaciones) {
-                data.prendas_cotizaciones.forEach(prenda => {
-                    // Imágenes de prendas
-                    if (prenda.fotos && prenda.fotos.length > 0) {
-                        prenda.fotos.forEach((foto, idx) => {
-                            imagenesPrendas.push({
-                                url: foto,
-                                titulo: `${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                                tipo: 'Prenda'
-                            });
-                        });
-                    }
-
-                    // Imágenes de telas
-                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
-                        prenda.tela_fotos.forEach((foto, idx) => {
-                            if (foto) {
-                                imagenesPrendas.push({
-                                    url: foto,
-                                    titulo: `Tela ${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                                    tipo: 'Tela'
-                                });
-                            }
-                        });
-                    }
-
-                    // Imágenes de reflectivo
-                    if (prenda.reflectivo && prenda.reflectivo.fotos) {
-                        prenda.reflectivo.fotos.forEach((foto, idx) => {
-                            if (foto.url) {
-                                imagenesReflectivo.push({
-                                    url: foto.url,
-                                    titulo: `Reflectivo ${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                                    tipo: 'Reflectivo'
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Imágenes de logo técnicas
-            if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas) {
-                data.logo_cotizacion.tecnicas_prendas.forEach(tp => {
-                    if (tp.fotos && tp.fotos.length > 0) {
-                        tp.fotos.forEach((foto, idx) => {
-                            if (foto.url) {
-                                imagenesLogo.push({
-                                    url: foto.url,
-                                    titulo: `${tp.tipo_logo_nombre || 'Logo'} - ${tp.prenda_nombre || 'Prenda'} ${idx + 1}`,
-                                    tipo: 'Logo'
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-
-            tieneImagenesPrendas = imagenesPrendas.length > 0;
-            tieneImagenesLogo = imagenesLogo.length > 0;
-            tieneImagenesReflectivo = imagenesReflectivo.length > 0;
-
-            // Si hay imágenes, crear galería
-            if (tieneImagenesPrendas || tieneImagenesLogo || tieneImagenesReflectivo) {
-                htmlGaleria = `
-                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 3px solid #e2e8f0;">
-                        <h2 style="color: #1e5ba8; font-size: 1.3rem; font-weight: 700; margin: 0 0 1.5rem 0; text-transform: uppercase;">GALERÍA DE IMÁGENES</h2>
-                `;
-
-                // Galería de prendas
-                if (tieneImagenesPrendas) {
-                    htmlGaleria += `
-                        <div style="margin-bottom: 2rem;">
-                            <h3 style="color: #1e5ba8; font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="width: 4px; height: 4px; background: #1e5ba8; border-radius: 50%; display: inline-block;"></span>
-                                IMÁGENES PRENDAS
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-                    `;
-
-                    imagenesPrendas.forEach((imagen, idx) => {
-                        htmlGaleria += `
-                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" 
-                                 onclick="abrirImagenGrande('${imagen.url}', 'galeria-prendas', ${idx})">
-                                <div style="position: relative; width: 100%; padding-top: 100%;">
-                                    <img src="${imagen.url}" 
-                                         alt="${imagen.titulo}" 
-                                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #1e5ba8; transition: all 0.3s;"
-                                         onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
-                                         onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                </div>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #333; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
-                                    ${imagen.titulo}
-                                </p>
-                            </div>
-                        `;
-                    });
-
-                    htmlGaleria += `
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Galería de logo
-                if (tieneImagenesLogo) {
-                    htmlGaleria += `
-                        <div style="margin-bottom: 2rem;">
-                            <h3 style="color: #1e5ba8; font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="width: 4px; height: 4px; background: #1e5ba8; border-radius: 50%; display: inline-block;"></span>
-                                IMÁGENES LOGO
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-                    `;
-
-                    imagenesLogo.forEach((imagen, idx) => {
-                        htmlGaleria += `
-                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" 
-                                 onclick="abrirImagenGrande('${imagen.url}', 'galeria-logo', ${idx})">
-                                <div style="position: relative; width: 100%; padding-top: 100%;">
-                                    <img src="${imagen.url}" 
-                                         alt="${imagen.titulo}" 
-                                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #7c3aed; transition: all 0.3s;"
-                                         onmouseover="this.style.boxShadow='0 4px 12px rgba(124, 58, 237, 0.4)'; this.style.transform='scale(1.05)';"
-                                         onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                </div>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #333; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
-                                    ${imagen.titulo}
-                                </p>
-                            </div>
-                        `;
-                    });
-
-                    htmlGaleria += `
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Galería de reflectivo
-                if (tieneImagenesReflectivo) {
-                    htmlGaleria += `
-                        <div style="margin-bottom: 2rem;">
-                            <h3 style="color: #dc2626; font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="width: 4px; height: 4px; background: #dc2626; border-radius: 50%; display: inline-block;"></span>
-                                IMÁGENES REFLECTIVO
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-                    `;
-
-                    imagenesReflectivo.forEach((imagen, idx) => {
-                        htmlGaleria += `
-                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;" 
-                                 onclick="abrirImagenGrande('${imagen.url}', 'galeria-reflectivo', ${idx})">
-                                <div style="position: relative; width: 100%; padding-top: 100%;">
-                                    <img src="${imagen.url}" 
-                                         alt="${imagen.titulo}" 
-                                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #dc2626; transition: all 0.3s;"
-                                         onmouseover="this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.4)'; this.style.transform='scale(1.05)';"
-                                         onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
-                                </div>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #333; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
-                                    ${imagen.titulo}
-                                </p>
-                            </div>
-                        `;
-                    });
-
-                    htmlGaleria += `
-                            </div>
-                        </div>
-                    `;
-                }
-
-                htmlGaleria += `</div>`;
-            }
-
             // Insertar contenido en el modal sin tabs
             // El logo ahora se renderiza directamente dentro de cada prenda
             if (data.tiene_prendas) {
                 html += htmlPrendas;
-            }
-            
-            // Agregar galería
-            if (htmlGaleria) {
-                html += htmlGaleria;
             }
             
             document.getElementById('modalBody').innerHTML = html;
@@ -1295,9 +1109,11 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
  * Abre una imagen en grande en un modal
  * @param {string} imagenUrl - URL de la imagen
  */
-let imagenGaleraActual = [];
-let imagenIndiceActualGaleria = 0;
-let imagenGaleriaIdActual = null;
+if (typeof imagenGaleraActual === 'undefined') {
+    var imagenGaleraActual = [];
+    var imagenIndiceActualGaleria = 0;
+    var imagenGaleriaIdActual = null;
+}
 
 function abrirImagenGrande(imagenUrl, galleryId = null, index = 0) {
     // Preparar galería si viene un grupo

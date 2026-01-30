@@ -95,4 +95,24 @@ class CostoPrendaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Elimina todos los costos de una cotización
+     */
+    public function eliminar($cotizacionId)
+    {
+        try {
+            CostoPrenda::where('cotizacion_id', $cotizacionId)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Costos eliminados correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar los costos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -27,7 +27,7 @@ let costosTodasPrendas = {};
  * @param {number} cotizacionId - ID de la cotización
  * @param {string} cliente - Nombre del cliente
  */
-function abrirModalCalculoCostos(cotizacionId, cliente) {
+window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
     // Guardar cotización ID para guardar después
     window.cotizacionIdActual = cotizacionId;
     prendaActualIndex = 0;
@@ -43,11 +43,78 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
             let prendas = [];
             
             if (data.prendas_cotizaciones && Array.isArray(data.prendas_cotizaciones)) {
-                prendas = data.prendas_cotizaciones.map((prenda, index) => ({
-                    id: index,
-                    nombre: prenda.nombre_prenda || `Prenda ${index + 1}`,
-                    descripcion: prenda.descripcion_formateada || prenda.descripcion || ''
-                }));
+                prendas = data.prendas_cotizaciones.map((prenda, index) => {
+                    // Generar descripción exactamente igual a cotizacion.js
+                    let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
+                    
+                    // Si hay técnicas de logo para esta prenda, agregar ubicaciones
+                    const tecnicasPrendaArray = data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas 
+                        ? data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
+                        : [];
+                    
+                    if (tecnicasPrendaArray && tecnicasPrendaArray.length > 0) {
+                        // Consolidar ubicaciones por técnica
+                        const ubicacionesPorTecnica = {};
+                        tecnicasPrendaArray.forEach(tp => {
+                            const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
+                            if (tp.ubicaciones) {
+                                let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
+                                // Filtrar vacíos y remover corchetes
+                                ubicacionesArray = ubicacionesArray
+                                    .map(u => String(u).replace(/[\[\]]/g, '').trim())
+                                    .filter(u => u);
+                                if (ubicacionesArray.length > 0) {
+                                    if (!ubicacionesPorTecnica[tecnicaNombre]) {
+                                        ubicacionesPorTecnica[tecnicaNombre] = [];
+                                    }
+                                    ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
+                                }
+                            }
+                        });
+                        
+                        // Agregar ubicaciones a la descripción SIN corchetes
+                        if (Object.keys(ubicacionesPorTecnica).length > 0) {
+                            if (descripcionCompleta) {
+                                descripcionCompleta += ', ';
+                            }
+                            const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
+                                .map(([tecnica, ubicaciones]) => ubicaciones.join(', '))
+                                .join(', ');
+                            descripcionCompleta += ubicacionesTexto;
+                        }
+                    }
+                    
+                    // Agregar descripción y ubicaciones de prenda_cot_reflectivo
+                    if (prenda.prenda_cot_reflectivo) {
+                        const pcrRef = prenda.prenda_cot_reflectivo;
+                        
+                        // Agregar descripción del reflectivo
+                        if (pcrRef.descripcion) {
+                            if (descripcionCompleta) {
+                                descripcionCompleta += ', ';
+                            }
+                            descripcionCompleta += pcrRef.descripcion;
+                        }
+                        
+                        // Agregar ubicaciones del reflectivo
+                        if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
+                            if (descripcionCompleta) {
+                                descripcionCompleta += ', ';
+                            }
+                            const ubicacionesReflectivo = pcrRef.ubicaciones
+                                .map(u => u.ubicacion ? u.ubicacion + (u.descripcion ? ': ' + u.descripcion : '') : '')
+                                .filter(u => u)
+                                .join(', ');
+                            descripcionCompleta += ubicacionesReflectivo;
+                        }
+                    }
+                    
+                    return {
+                        id: index,
+                        nombre: prenda.nombre_prenda || `Prenda ${index + 1}`,
+                        descripcion: descripcionCompleta || prenda.descripcion_formateada || prenda.descripcion || ''
+                    };
+                });
             }
             
             if (prendas.length === 0) {
@@ -81,13 +148,13 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
             });
             
             // Mostrar primera prenda
-            cambiarPrendaTab(0, prendas);
+            window.cambiarPrendaTab(0, prendas);
             
             // Inicializar tabla vacía
-            limpiarTablaPrecios();
+            window.limpiarTablaPrecios();
             
             // Cargar items guardados si existen
-            cargarItemsGuardados(cotizacionId);
+            window.cargarItemsGuardados(cotizacionId);
             
             // Mostrar modal
             document.getElementById('calculoCostosModal').style.display = 'flex';
@@ -103,7 +170,7 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
  * @param {number} prendaId - ID de la prenda
  * @param {array} prendas - Array de prendas
  */
-function cambiarPrendaTab(prendaId, prendas) {
+window.cambiarPrendaTab = function(prendaId, prendas) {
     // Guardar los costos de la prenda actual antes de cambiar
     guardarCostosPrendaActual();
     
@@ -137,7 +204,7 @@ function cambiarPrendaTab(prendaId, prendas) {
 /**
  * Guarda los costos de la prenda actual en memoria temporal
  */
-function guardarCostosPrendaActual() {
+window.guardarCostosPrendaActual = function() {
     const body = document.getElementById('tablaPreciosBody');
     const rows = body.querySelectorAll('div[style*="grid-template-columns"]');
     
@@ -201,16 +268,16 @@ function cargarCostosPrendaDesdeMemoria(prendaIndex) {
                 <input type="text" 
                        placeholder="Ej: Corte, Confección, Bordado..."
                        value="${item.item || ''}"
-                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-                       onchange="actualizarTotal()">
+                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+                       onchange="window.actualizarTotal()">
                 <input type="number" 
                        placeholder="0.00"
                        value="${parseFloat(item.precio) || 0}"
                        step="0.01"
                        min="0"
-                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-                       onchange="actualizarTotal()">
-                <button onclick="eliminarFilaItem(this)" 
+                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+                       onchange="window.actualizarTotal()">
+                <button onclick="window.eliminarFilaItem(this)" 
                         style="padding: 0.75rem; background: transparent; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; transition: all 0.2s; width: 100%; height: 100%;"
                         onmouseover="this.style.background='#fee2e2'"
                         onmouseout="this.style.background='transparent'"
@@ -222,7 +289,7 @@ function cargarCostosPrendaDesdeMemoria(prendaIndex) {
             body.appendChild(row);
         });
         
-        actualizarTotal();
+        window.actualizarTotal();
 
     }
 }
@@ -230,18 +297,18 @@ function cargarCostosPrendaDesdeMemoria(prendaIndex) {
 /**
  * Limpia la tabla de precios
  */
-function limpiarTablaPrecios() {
+window.limpiarTablaPrecios = function() {
     const body = document.getElementById('tablaPreciosBody');
     body.innerHTML = '';
     
     // Agregar una fila inicial
-    agregarFilaItem();
+    window.agregarFilaItem();
 }
 
 /**
  * Agrega una nueva fila de item a la tabla
  */
-function agregarFilaItem() {
+window.agregarFilaItem = function() {
     const body = document.getElementById('tablaPreciosBody');
     
     const row = document.createElement('div');
@@ -263,15 +330,15 @@ function agregarFilaItem() {
     row.innerHTML = `
         <input type="text" 
                placeholder="Ej: Corte, Confección, Bordado..."
-               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-               onchange="actualizarTotal()">
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+               onchange="window.actualizarTotal()">
         <input type="number" 
                placeholder="0.00"
                step="0.01"
                min="0"
-               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-               onchange="actualizarTotal()">
-        <button onclick="eliminarFilaItem(this)" 
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+               onchange="window.actualizarTotal()">
+        <button onclick="window.eliminarFilaItem(this)" 
                 style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
                 onmouseover="this.style.background='#dc2626'"
                 onmouseout="this.style.background='#ef4444'"
@@ -291,7 +358,7 @@ function agregarFilaItem() {
 /**
  * Actualiza el total de costos
  */
-function actualizarTotal() {
+window.actualizarTotal = function() {
     const tablaPreciosBody = document.getElementById('tablaPreciosBody');
     const filas = tablaPreciosBody.querySelectorAll('div[style*="grid-template-columns"]');
     
@@ -310,16 +377,16 @@ function actualizarTotal() {
 /**
  * Elimina una fila de item
  */
-function eliminarFilaItem(button) {
+window.eliminarFilaItem = function(button) {
     button.closest('div').remove();
-    actualizarTotal();
+    window.actualizarTotal();
 }
 
 /**
  * Carga los items guardados desde la base de datos
  * @param {number} cotizacionId - ID de la cotización
  */
-function cargarItemsGuardados(cotizacionId) {
+window.cargarItemsGuardados = function(cotizacionId) {
     fetch(`/contador/costos/obtener/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
@@ -373,7 +440,7 @@ function cargarItemsGuardados(cotizacionId) {
 /**
  * Cierra el modal de cálculo de costos
  */
-function cerrarModalCalculoCostos() {
+window.cerrarModalCalculoCostos = function() {
     document.getElementById('calculoCostosModal').style.display = 'none';
     window.costosPorPrenda = {};
 }
@@ -381,7 +448,7 @@ function cerrarModalCalculoCostos() {
 /**
  * Guarda los costos calculados en la base de datos
  */
-function guardarCalculoCostos() {
+window.guardarCalculoCostos = function() {
     // Recopilar datos de las filas de la tabla
     const tablaPreciosBody = document.getElementById('tablaPreciosBody');
     const filas = tablaPreciosBody.querySelectorAll('div[style*="grid-template-columns"]');
@@ -403,61 +470,17 @@ function guardarCalculoCostos() {
         }
     });
     
-    // Validar que haya al menos un item
-    if (items.length === 0) {
-
-        Swal.fire({
-            title: ' Sin Items',
-            html: `
-                <div style="text-align: left; color: #4b5563;">
-                    <p style="margin: 0; font-size: 0.95rem;">
-                        Por favor, agrega al menos un item con nombre y precio antes de guardar.
-                    </p>
-                    <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #7f8c8d;">
-                        Haz clic en "+ AGREGAR" para agregar un nuevo item.
-                    </p>
-                </div>
-            `,
-            icon: 'warning',
-            confirmButtonColor: '#f59e0b',
-            confirmButtonText: 'Entendido',
-            customClass: {
-                container: 'swal-high-z-index'
-            }
-        });
-        return;
-    }
-    
-    // Obtener información de la prenda actual
-    const prendasDescripcion = document.getElementById('prendasDescripcion');
-    const prendasTabs = document.querySelectorAll('#prendasTabs button');
-    
-    let prendaNombre = 'Prenda sin nombre';
-    let prendaDescripcion = '';
-    
-    // Encontrar el tab activo (con el color azul)
-    prendasTabs.forEach((tab) => {
-        if (tab.style.background.includes('3b82f6')) {
-            prendaNombre = tab.textContent.trim();
-        }
-    });
-    
-    prendaDescripcion = prendasDescripcion.textContent.trim();
-    
     // Guardar los costos de la prenda actual antes de enviar
     guardarCostosPrendaActual();
     
-
-    
     // Validar que haya costos para guardar
     if (Object.keys(costosTodasPrendas).length === 0) {
-
         Swal.fire({
             title: ' Sin Costos',
             html: `
                 <div style="text-align: left; color: #4b5563;">
                     <p style="margin: 0; font-size: 0.95rem;">
-                        No hay costos para guardar. Por favor, agrega items a la prenda actual antes de guardar.
+                        No hay costos para guardar. Por favor, agrega items a las prendas antes de guardar.
                     </p>
                 </div>
             `,
@@ -471,7 +494,7 @@ function guardarCalculoCostos() {
         return;
     }
     
-    // Enviar al servidor todos los costos guardados
+    // Enviar al servidor todos los costos guardados (incluyendo los que se eliminaron)
     fetch('/contador/costos/guardar', {
         method: 'POST',
         headers: {
@@ -486,8 +509,6 @@ function guardarCalculoCostos() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-
-            
             // Mostrar modal de éxito
             Swal.fire({
                 title: '✓ Costos Guardados',
@@ -498,7 +519,7 @@ function guardarCalculoCostos() {
                         </p>
                         <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                             <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
-                                 Los costos han sido registrados correctamente en la base de datos
+                                 Los costos han sido actualizados correctamente en la base de datos
                             </p>
                         </div>
                     </div>
@@ -512,7 +533,11 @@ function guardarCalculoCostos() {
                 didClose: () => {
                     // Limpiar memoria de costos
                     costosTodasPrendas = {};
-                    cerrarModalCalculoCostos();
+                    window.cerrarModalCalculoCostos();
+                    // Recargar tabla de cotizaciones
+                    if (window.location.href.includes('/contador')) {
+                        location.reload();
+                    }
                 }
             });
         } else {
@@ -535,8 +560,6 @@ function guardarCalculoCostos() {
         }
     })
     .catch(error => {
-
-        
         Swal.fire({
             title: ' Error de Conexión',
             html: `
@@ -563,14 +586,28 @@ function guardarCalculoCostos() {
 document.addEventListener('click', function(event) {
     const modal = document.getElementById('calculoCostosModal');
     if (modal && event.target === modal) {
-        cerrarModalCalculoCostos();
+        window.cerrarModalCalculoCostos();
     }
 });
 
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
-        cerrarModalCalculoCostos();
+        window.cerrarModalCalculoCostos();
     }
 });
+
+// Exportar funciones al objeto global window para asegurar accesibilidad
+if (typeof window !== 'undefined') {
+    // Estas funciones se crean aquí nuevamente como window.* para máxima compatibilidad
+    window.cambiarPrendaTab = window.cambiarPrendaTab || cambiarPrendaTab;
+    window.guardarCostosPrendaActual = window.guardarCostosPrendaActual || guardarCostosPrendaActual;
+    window.limpiarTablaPrecios = window.limpiarTablaPrecios || limpiarTablaPrecios;
+    window.agregarFilaItem = window.agregarFilaItem || agregarFilaItem;
+    window.actualizarTotal = window.actualizarTotal || actualizarTotal;
+    window.eliminarFilaItem = window.eliminarFilaItem || eliminarFilaItem;
+    window.cargarItemsGuardados = window.cargarItemsGuardados || cargarItemsGuardados;
+    window.cerrarModalCalculoCostos = window.cerrarModalCalculoCostos || cerrarModalCalculoCostos;
+    window.guardarCalculoCostos = window.guardarCalculoCostos || guardarCalculoCostos;
+}
 

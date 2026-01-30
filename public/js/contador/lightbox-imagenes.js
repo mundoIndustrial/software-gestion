@@ -12,17 +12,17 @@ let lightboxActual = {
  * Abre el lightbox de imágenes para una prenda específica
  */
 function abrirLightboxImagenes(prendaIndex) {
-    const prenda = visorCostosActual.prendas[prendaIndex];
+    const detalles = visorCostosActual.prendaDetalles[prendaIndex];
     
-    // Combinar fotos de prenda y fotos de tela
+    // Combinar fotos de prenda y fotos de tela desde los detalles
     let todasLasImagenes = [];
     
-    if (prenda.fotos && prenda.fotos.length > 0) {
-        todasLasImagenes = [...prenda.fotos];
+    if (detalles && detalles.fotos && detalles.fotos.length > 0) {
+        todasLasImagenes = [...detalles.fotos];
     }
     
-    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
-        todasLasImagenes = [...todasLasImagenes, ...prenda.tela_fotos];
+    if (detalles && detalles.tela_fotos && detalles.tela_fotos.length > 0) {
+        todasLasImagenes = [...todasLasImagenes, ...detalles.tela_fotos];
     }
     
     if (todasLasImagenes.length === 0) {

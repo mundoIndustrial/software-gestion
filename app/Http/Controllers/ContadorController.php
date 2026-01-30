@@ -216,6 +216,15 @@ class ContadorController extends Controller
                     }
                 }
             }
+            
+            // Mapear prenda_cot_reflectivos por prenda_cot_id
+            $prendaCotReflectivos = \App\Models\PrendaCotReflectivo::where('cotizacion_id', $id)->get();
+            $prendaCotReflectivoPorPrenda = [];
+            foreach ($prendaCotReflectivos as $pcr) {
+                if ($pcr->prenda_cot_id) {
+                    $prendaCotReflectivoPorPrenda[$pcr->prenda_cot_id] = $pcr;
+                }
+            }
 
             // Preparar datos de la cotización
             $datos = [
@@ -228,9 +237,10 @@ class ContadorController extends Controller
                     'created_at' => $cotizacionModelo->created_at,
                     'estado' => $cotizacionModelo->estado,
                     'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
+                    'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
                     'especificaciones' => $cotizacionModelo->especificaciones ?? [],
                 ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($reflectivosPorPrenda) {
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($reflectivosPorPrenda, $prendaCotReflectivoPorPrenda) {
                     // Generar descripción formateada usando el método del modelo
                     $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
                     
@@ -279,6 +289,18 @@ class ContadorController extends Controller
                         'texto_personalizado_tallas' => $prenda->texto_personalizado_tallas ?? null,
                         // Variantes
                         'variantes' => $prenda->variantes ? $prenda->variantes->map(function($variante) {
+                            // Obtener nombre de tipo_manga si existe
+                            $nombreTipoManga = null;
+                            if ($variante->tipo_manga_id && $variante->relationLoaded('manga') && $variante->manga) {
+                                $nombreTipoManga = $variante->manga->nombre;
+                            }
+                            
+                            // Obtener nombre de tipo_broche si existe
+                            $nombreTipoBroche = null;
+                            if ($variante->tipo_broche_id && $variante->relationLoaded('broche') && $variante->broche) {
+                                $nombreTipoBroche = $variante->broche->nombre;
+                            }
+                            
                             return [
                                 'id' => $variante->id,
                                 'tipo_prenda' => $variante->tipo_prenda ?? null,
@@ -287,11 +309,18 @@ class ContadorController extends Controller
                                 'genero_id' => $variante->genero_id ?? null,
                                 'color' => $variante->color ?? null,
                                 'tiene_bolsillos' => $variante->tiene_bolsillos ?? null,
+                                'obs_bolsillos' => $variante->obs_bolsillos ?? null,
                                 'aplica_manga' => $variante->aplica_manga ?? null,
+                                'tipo_manga_id' => $variante->tipo_manga_id ?? null,
+                                'tipo_manga_nombre' => $nombreTipoManga,
                                 'tipo_manga' => $variante->tipo_manga ?? null,
+                                'obs_manga' => $variante->obs_manga ?? null,
                                 'aplica_broche' => $variante->aplica_broche ?? null,
                                 'tipo_broche_id' => $variante->tipo_broche_id ?? null,
+                                'tipo_broche_nombre' => $nombreTipoBroche,
+                                'obs_broche' => $variante->obs_broche ?? null,
                                 'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
+                                'obs_reflectivo' => $variante->obs_reflectivo ?? null,
                                 'descripcion_adicional' => $variante->descripcion_adicional ?? null,
                             ];
                         })->toArray() : [],
@@ -308,6 +337,13 @@ class ContadorController extends Controller
                                     'orden' => $foto->orden ?? 1,
                                 ];
                             })->toArray() : [],
+                        ] : null,
+                        // Prenda Cot Reflectivo
+                        'prenda_cot_reflectivo' => isset($prendaCotReflectivoPorPrenda[$prenda->id]) ? [
+                            'id' => $prendaCotReflectivoPorPrenda[$prenda->id]->id,
+                            'descripcion' => $prendaCotReflectivoPorPrenda[$prenda->id]->descripcion ?? null,
+                            'ubicaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) : null,
+                            'variaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) : null,
                         ] : null,
                     ];
                 })->toArray(),

@@ -2,7 +2,9 @@
 let visorCostosActual = {
     cotizacionId: null,
     cliente: null,
+    cotizacionData: null,
     prendas: [],
+    prendaDetalles: {},
     indiceActual: 0
 };
 
@@ -10,57 +12,132 @@ let visorCostosActual = {
  * Abre el modal visor de costos
  */
 function abrirModalVisorCostos(cotizacionId, cliente) {
-    visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, prendas: [], indiceActual: 0 };
+    visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, cotizacionData: null, prendas: [], prendaDetalles: {}, indiceActual: 0 };
     
-    // Primero obtener los nombres de las prendas desde el endpoint de cotización
-    fetch(`/contador/cotizacion/${cotizacionId}`)
-        .then(response => response.json())
-        .then(cotizacionData => {
-            // Mapear nombres de prendas
-            const prendasNombres = {};
-            if (cotizacionData.prendas_cotizaciones && Array.isArray(cotizacionData.prendas_cotizaciones)) {
-                cotizacionData.prendas_cotizaciones.forEach((prenda, idx) => {
-                    prendasNombres[idx] = prenda.nombre_prenda || `Prenda ${idx + 1}`;
-                });
-            }
+    // Obtener datos de cotización Y costos en paralelo
+    Promise.all([
+        fetch(`/contador/cotizacion/${cotizacionId}`).then(response => response.json()),
+        fetch(`/contador/cotizacion/${cotizacionId}/costos`).then(response => response.json())
+    ])
+    .then(([cotizacionData, costosData]) => {
+        // Guardar cotizacionData para usar en mostrarPrendaVisor
+        visorCostosActual.cotizacionData = cotizacionData;
+        
+        // Declarar prendaDetalles
+        const prendaDetalles = {};
+        
+        if (cotizacionData.prendas_cotizaciones && Array.isArray(cotizacionData.prendas_cotizaciones)) {
+            cotizacionData.prendas_cotizaciones.forEach((prenda, idx) => {
+                // Construir descripción concatenada igual que en el modal de cotización
+                let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
+                
+                // Si hay técnicas de logo para esta prenda, agregar ubicaciones
+                const tecnicasPrendaArray = cotizacionData.logo_cotizacion && cotizacionData.logo_cotizacion.tecnicas_prendas 
+                    ? cotizacionData.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
+                    : [];
+                
+                if (tecnicasPrendaArray && tecnicasPrendaArray.length > 0) {
+                    // Consolidar ubicaciones por técnica
+                    const ubicacionesPorTecnica = {};
+                    tecnicasPrendaArray.forEach(tp => {
+                        const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
+                        if (tp.ubicaciones) {
+                            let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
+                            // Filtrar vacíos y remover corchetes
+                            ubicacionesArray = ubicacionesArray
+                                .map(u => String(u).replace(/[\[\]]/g, '').trim())
+                                .filter(u => u);
+                            if (ubicacionesArray.length > 0) {
+                                if (!ubicacionesPorTecnica[tecnicaNombre]) {
+                                    ubicacionesPorTecnica[tecnicaNombre] = [];
+                                }
+                                ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
+                            }
+                        }
+                    });
+                    
+                    // Agregar ubicaciones a la descripción SIN corchetes
+                    if (Object.keys(ubicacionesPorTecnica).length > 0) {
+                        if (descripcionCompleta) {
+                            descripcionCompleta += ', ';
+                        }
+                        const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
+                            .map(([tecnica, ubicaciones]) => ubicaciones.join(', '))
+                            .join(', ');
+                        descripcionCompleta += ubicacionesTexto;
+                    }
+                }
+                
+                // Agregar descripción y ubicaciones de prenda_cot_reflectivo
+                if (prenda.prenda_cot_reflectivo) {
+                    const pcrRef = prenda.prenda_cot_reflectivo;
+                    
+                    // Agregar descripción del reflectivo
+                    if (pcrRef.descripcion) {
+                        if (descripcionCompleta) {
+                            descripcionCompleta += ', ';
+                        }
+                        descripcionCompleta += pcrRef.descripcion;
+                    }
+                    
+                    // Agregar ubicaciones del reflectivo con negrita
+                    if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
+                        if (descripcionCompleta) {
+                            descripcionCompleta += ', ';
+                        }
+                        const ubicacionesReflectivo = pcrRef.ubicaciones
+                            .map(u => u.ubicacion ? '<strong>' + u.ubicacion + '</strong>' + (u.descripcion ? ': ' + u.descripcion : '') : '')
+                            .filter(u => u)
+                            .join(', ');
+                        descripcionCompleta += ubicacionesReflectivo;
+                    }
+                }
+                
+                prendaDetalles[idx] = {
+                    nombre_prenda: prenda.nombre_prenda || `Prenda ${idx + 1}`,
+                    descripcion_formateada: descripcionCompleta,
+                    fotos: prenda.fotos || [],
+                    tela_fotos: prenda.tela_fotos || [],
+                    reflectivo: prenda.reflectivo || null,
+                    color: (prenda.variantes && prenda.variantes[0]) ? prenda.variantes[0].color : '',
+                    tela: (prenda.telas && prenda.telas[0]) ? prenda.telas[0].nombre_tela : '',
+                    tela_referencia: (prenda.telas && prenda.telas[0]) ? prenda.telas[0].referencia : '',
+                    manga_nombre: (prenda.variantes && prenda.variantes[0]) ? prenda.variantes[0].tipo_manga_nombre : ''
+                };
+            });
+        }
+        
+        visorCostosActual.prendaDetalles = prendaDetalles;
+        
+        if (costosData.success && costosData.prendas.length > 0) {
+            // Asignar nombres y detalles a las prendas de costos
+            costosData.prendas.forEach((prenda, idx) => {
+                if (!prenda.nombre_producto || prenda.nombre_producto === 'Prenda sin nombre') {
+                    prenda.nombre_producto = prendaDetalles[idx]?.nombre_prenda || `Prenda ${idx + 1}`;
+                }
+            });
             
-            // Ahora obtener los costos
-            return fetch(`/contador/cotizacion/${cotizacionId}/costos`)
-                .then(response => response.json())
-                .then(data => ({ costos: data, nombres: prendasNombres }));
-        })
-        .then(({ costos, nombres }) => {
+            visorCostosActual.prendas = costosData.prendas;
 
-            if (costos.success && costos.prendas.length > 0) {
-                // Asignar nombres a las prendas
-                costos.prendas.forEach((prenda, idx) => {
-                    if (!prenda.nombre_producto || prenda.nombre_producto === 'Prenda sin nombre') {
-                        prenda.nombre_producto = nombres[idx] || `Prenda ${idx + 1}`;
-                    }
-                });
-                
-                visorCostosActual.prendas = costos.prendas;
-
-                document.getElementById('visorCostosModal').style.display = 'flex';
-                
-                // Resetear scroll al abrir
-                setTimeout(() => {
-                    const contenido = document.getElementById('visorCostosContenido');
-                    if (contenido) {
-                        contenido.scrollTop = 0;
-                    }
-                }, 0);
-                
-                mostrarPrendaVisor(0);
-            } else {
-                // Mostrar modal de "sin costos" en lugar de alerta
-                mostrarModalSinCostos(cliente);
-            }
-        })
-        .catch(error => {
-
-            mostrarModalErrorCostos(error.message);
-        });
+            document.getElementById('visorCostosModal').style.display = 'flex';
+            
+            // Resetear scroll al abrir
+            setTimeout(() => {
+                const contenido = document.getElementById('visorCostosContenido');
+                if (contenido) {
+                    contenido.scrollTop = 0;
+                }
+            }, 0);
+            
+            mostrarPrendaVisor(0);
+        } else {
+            // Mostrar modal de "sin costos" en lugar de alerta
+            mostrarModalSinCostos(cliente);
+        }
+    })
+    .catch(error => {
+        mostrarModalErrorCostos(error.message);
+    });
 }
 
 /**
@@ -277,6 +354,7 @@ function generarTabsPrendas() {
  */
 function mostrarPrendaVisor(indice) {
     const prenda = visorCostosActual.prendas[indice];
+    const detalles = visorCostosActual.prendaDetalles[indice] || {};
     
     if (!prenda) return;
     
@@ -300,18 +378,79 @@ function mostrarPrendaVisor(indice) {
     
     // Construir detalles en una línea compacta
     let detallesLinea = [];
-    if (prenda.color) detallesLinea.push(`<strong>Color:</strong> ${prenda.color}`);
-    if (prenda.tela) {
-        const tela = prenda.tela_referencia ? `${prenda.tela} (Ref: ${prenda.tela_referencia})` : prenda.tela;
+    if (detalles.color) detallesLinea.push(`<strong>Color:</strong> ${detalles.color}`);
+    if (detalles.tela) {
+        const tela = detalles.tela_referencia ? `${detalles.tela} (Ref: ${detalles.tela_referencia})` : detalles.tela;
         detallesLinea.push(`<strong>Tela:</strong> ${tela}`);
     }
-    if (prenda.manga_nombre) detallesLinea.push(`<strong>Manga:</strong> ${prenda.manga_nombre}`);
+    if (detalles.manga_nombre) detallesLinea.push(`<strong>Manga:</strong> ${detalles.manga_nombre}`);
+    
+    // Recopilar todas las imágenes (logo, tela, prenda, reflectivo) como lo hace el modal de cotización
+    const imagenesParaMostrar = [];
+    
+    // Recolectar imágenes de logo para esta prenda
+    if (visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion && visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas) {
+        visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas.forEach(tp => {
+            if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                tp.fotos.forEach((foto, idx) => {
+                    if (foto.url) {
+                        imagenesParaMostrar.push({
+                            grupo: `Logo - ${tp.tipo_logo_nombre || 'Logo'}`,
+                            url: foto.url,
+                            titulo: `${tp.tipo_logo_nombre || 'Logo'} ${idx + 1}`,
+                            color: '#1e5ba8'
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    // Recolectar imágenes de tela para esta prenda
+    if (detalles.tela_fotos && detalles.tela_fotos.length > 0) {
+        detalles.tela_fotos.forEach((foto, idx) => {
+            if (foto) {
+                imagenesParaMostrar.push({
+                    grupo: 'Tela',
+                    url: foto,
+                    titulo: `Tela ${idx + 1}`,
+                    color: '#1e5ba8'
+                });
+            }
+        });
+    }
+    
+    // Recolectar imágenes de prenda
+    if (detalles.fotos && detalles.fotos.length > 0) {
+        detalles.fotos.forEach((foto, idx) => {
+            imagenesParaMostrar.push({
+                grupo: 'Prenda',
+                url: foto,
+                titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
+                color: '#1e5ba8'
+            });
+        });
+    }
+    
+    // Recolectar imágenes de reflectivo
+    if (detalles.reflectivo && detalles.reflectivo.fotos && detalles.reflectivo.fotos.length > 0) {
+        detalles.reflectivo.fotos.forEach((foto, idx) => {
+            if (foto.url) {
+                imagenesParaMostrar.push({
+                    grupo: 'Reflectivo',
+                    url: foto.url,
+                    titulo: `Reflectivo ${idx + 1}`,
+                    color: '#1e5ba8'
+                });
+            }
+        });
+    }
     
     // Calcular cantidad de filas: items + 1 fila de total
     const cantidadItems = prenda.items ? prenda.items.length : 0;
     const cantidadFilas = Math.max(cantidadItems, 1); // Mínimo 1 fila
     
-    // Construir HTML del contenido - Diseño compacto como en la imagen
+    // Construir HTML del contenido - Diseño compacto con descripción concatenada e imágenes
     let html = `
         <div style="padding: 0; margin-top: -1.5rem; transform: scale(0.8); transform-origin: top left; width: 125%;">
             <!-- Sección Detalles Compacta -->
@@ -321,20 +460,20 @@ function mostrarPrendaVisor(indice) {
                     ${detallesLinea.join(' | ')}
                 </div>
                 
-                <!-- Descripción + Especificaciones -->
-                ${prenda.descripcion ? `<div id="descripcionPrenda" style="color: #333; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;"></div>` : ''}
+                <!-- Descripción Concatenada según tipo de cotización -->
+                ${detalles.descripcion_formateada ? `<div id="descripcionPrenda" style="color: #333; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;">${detalles.descripcion_formateada.replace(/\n/g, '<br>')}</div>` : '<div id="descripcionPrenda" style="color: #999; font-size: 0.9rem;">Sin descripción</div>'}
             </div>
             
             <!-- Contenedor de Tabla e Imágenes -->
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; gap: 2rem; margin-bottom: 1rem;">
                 <!-- Tabla de Costos con filas dinámicas -->
-                <div style="flex: 1; overflow-x: auto;">
+                <div style="flex: 0 0 480px; overflow-x: auto;">
                     <div style="background: white; border-radius: 8px; padding: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); overflow: hidden;">
-                        <table style="width: 100%; border-collapse: collapse;">
+                        <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                             <thead>
                                 <tr style="background: #1e40af; border-bottom: 2px solid #1e40af;">
-                                    <th style="padding: 8px 10px; text-align: left; font-weight: 700; color: white; border-right: 1px solid #163a8f; font-size: 0.9rem;">CONCEPTO</th>
-                                    <th style="padding: 8px 10px; text-align: right; font-weight: 700; color: white; font-size: 0.9rem;">VALOR</th>
+                                    <th style="padding: 6px 8px; text-align: left; font-weight: 700; color: white; border-right: 1px solid #163a8f; font-size: 0.8rem; word-wrap: break-word; width: 65%;">CONCEPTO</th>
+                                    <th style="padding: 6px 8px; text-align: right; font-weight: 700; color: white; font-size: 0.8rem; width: 35%;">VALOR</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -343,10 +482,10 @@ function mostrarPrendaVisor(indice) {
                                     const item = prenda.items && prenda.items[idx];
                                     return `
                                         <tr style="border-bottom: 1px solid #e2e8f0;">
-                                            <td style="padding: 6px 10px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0; font-size: 0.85rem;">
+                                            <td style="padding: 5px 8px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0; font-size: 0.75rem; word-wrap: break-word; white-space: normal;">
                                                 ${item ? item.item : ''}
                                             </td>
-                                            <td style="padding: 6px 10px; text-align: right; color: #333; font-weight: 600; font-size: 0.85rem;">
+                                            <td style="padding: 5px 8px; text-align: right; color: #333; font-weight: 600; font-size: 0.75rem;">
                                                 ${item ? '$' + parseFloat(item.precio || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : ''}
                                             </td>
                                         </tr>
@@ -355,10 +494,10 @@ function mostrarPrendaVisor(indice) {
                                 
                                 <!-- Fila de Total -->
                                 <tr style="background: #1e40af; border-top: 2px solid #1e40af;">
-                                    <td style="padding: 8px 10px; color: white; font-weight: 700; border-right: 1px solid #163a8f; font-size: 0.9rem;">
+                                    <td style="padding: 6px 8px; color: white; font-weight: 700; border-right: 1px solid #163a8f; font-size: 0.8rem; word-wrap: break-word; white-space: normal;">
                                         TOTAL COSTO
                                     </td>
-                                    <td style="padding: 8px 10px; text-align: right; color: white; font-weight: 700; font-size: 1rem;">
+                                    <td style="padding: 6px 8px; text-align: right; color: white; font-weight: 700; font-size: 0.9rem;">
                                         $${parseFloat(prenda.costo_total || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </td>
                                 </tr>
@@ -368,21 +507,26 @@ function mostrarPrendaVisor(indice) {
                 </div>
                 
                 <!-- Sección de Imágenes -->
-                <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: flex-start; align-items: center; min-width: 280px; padding: 0.5rem; margin-top: -5px;">
+                <div style="display: flex; flex-direction: column; gap: 1rem; justify-content: flex-start; align-items: flex-start; min-width: auto; padding: 0.5rem; margin-top: -5px;">
                     ${(() => {
-                        const totalImagenes = (prenda.fotos?.length || 0) + (prenda.tela_fotos?.length || 0);
-                        if (totalImagenes === 0) {
-                            return '<div style="width: 100%; height: 280px; max-width: 280px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>';
+                        if (imagenesParaMostrar.length === 0) {
+                            return '<div style="width: 700px; height: 700px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>';
                         }
-                        const primeraImagen = prenda.fotos?.[0] || prenda.tela_fotos?.[0];
+                        // Mostrar imágenes lado a lado como en el modal de cotización
                         return `
-                            <div style="position: relative; width: 100%; max-width: 280px; cursor: pointer;" onclick="abrirLightboxImagenes(${indice})">
-                                <img src="${primeraImagen}" alt="Prenda" style="width: 100%; height: 280px; border-radius: 4px; border: 1px solid #ddd; object-fit: contain; background: #f5f5f5;">
-                                ${totalImagenes > 1 ? `
-                                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; backdrop-filter: blur(4px);">
-                                        IMAGENES ( ${totalImagenes} )
+                            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: flex-start;">
+                                ${imagenesParaMostrar.map((img, idx) => `
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <img src="${img.url}" 
+                                             alt="${img.titulo}"
+                                             style="width: 250px; height: 250px; object-fit: contain; border-radius: 8px; border: 2px solid ${img.color}; cursor: pointer; transition: all 0.3s;"
+                                             onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
+                                             onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
+                                        <div style="margin-top: 0.75rem; background: linear-gradient(to right, ${img.color}, ${img.color}); padding: 0.5rem 0.75rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.75rem; white-space: nowrap;">
+                                            ${img.grupo}
+                                        </div>
                                     </div>
-                                ` : ''}
+                                `).join('')}
                             </div>
                         `;
                     })()}
@@ -392,31 +536,6 @@ function mostrarPrendaVisor(indice) {
     `;
     
     document.getElementById('visorCostosContenido').innerHTML = html;
-    
-    // Procesar descripción para formatear títulos en negrilla y agregar saltos de línea
-    if (prenda.descripcion) {
-        const descripcionDiv = document.getElementById('descripcionPrenda');
-        if (descripcionDiv) {
-            let texto = prenda.descripcion.trim();
-            
-            // Títulos a buscar
-            const labels = ['Reflectivo', 'Bolsillos', 'Botón', 'Broche', 'Otros detalles', 'TALLAS', 'DESCRIPCIÓN'];
-            
-            // Reemplazar títulos con versión en negrilla y agregar saltos de línea
-            labels.forEach(label => {
-                const regex = new RegExp(`(\\*\\*\\*\\s)?${label}:`, 'gi');
-                texto = texto.replace(regex, `\n<strong>${label}:</strong>`);
-            });
-            
-            // Limpiar saltos de línea múltiples al inicio
-            texto = texto.replace(/^\n+/, '');
-            
-            // Convertir saltos de línea en <br>
-            texto = texto.replace(/\n/g, '<br>');
-            
-            descripcionDiv.innerHTML = texto;
-        }
-    }
     
     // Ajustar altura del modal automáticamente
     setTimeout(() => {

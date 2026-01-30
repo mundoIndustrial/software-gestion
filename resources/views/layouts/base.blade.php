@@ -171,6 +171,9 @@
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
     @endauth
 
+    <!-- Modal de Cotización Global -->
+    <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+
     <!-- Page-specific scripts -->
     @stack('scripts')
     
