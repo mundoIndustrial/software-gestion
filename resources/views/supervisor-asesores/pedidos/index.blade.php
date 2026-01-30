@@ -627,7 +627,7 @@
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
                     
                     <!-- Acciones -->
-                    <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
+                    <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido ?? 'sin-numero' }}" data-pedido="{{ $pedido->numero_pedido ?? 'sin-numero' }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
                         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                         color: white;
                         border: none;
@@ -679,7 +679,7 @@
 
                     <!-- Pedido -->
                     <div style="color: #2563eb; font-weight: 700; font-size: 0.875rem;">
-                        #{{ $pedido->numero_pedido }}
+                        #{{ $pedido->numero_pedido ?? '-' }}
                     </div>
 
                     <!-- Cliente -->

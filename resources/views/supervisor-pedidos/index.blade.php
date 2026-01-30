@@ -85,7 +85,7 @@
                         <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                             <!-- Botón Ver (con dropdown) -->
                             @php
-                                $numeroPedido = $orden->numero_pedido;
+                                $numeroPedido = $orden->numero_pedido ?? 'sin-numero';
                                 $pedidoId = $orden->id;
                                 $estado = $orden->estado ?? 'Pendiente';
                             @endphp
@@ -175,7 +175,7 @@
                         
                         <!-- Número -->
                         <div>
-                            <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido }}</span>
+                            <span style="font-weight: 600; color: #1e5ba8;">#{{ $orden->numero_pedido ?? '-' }}</span>
                         </div>
                         
                         <!-- Cliente -->

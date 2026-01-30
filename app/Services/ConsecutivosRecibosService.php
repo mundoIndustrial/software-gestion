@@ -53,51 +53,28 @@ class ConsecutivosRecibosService
         // Generar consecutivos en transacción
         return DB::transaction(function () use ($pedido, $tiposPorPrenda) {
             try {
-                $anioActual = date('Y');
                 $consecutivosGenerados = [];
 
                 foreach ($tiposPorPrenda as $prendaId => $tiposRecibo) {
                     foreach ($tiposRecibo as $tipoRecibo) {
-                        // Obtener y bloquear el consecutivo actual
-                        $consecutivoMaestro = DB::table('consecutivos_recibos')
+                        // Obtener el último consecutivo para este tipo de recibo
+                        $ultimoConsecutivo = DB::table('consecutivos_recibos_pedidos')
                             ->where('tipo_recibo', $tipoRecibo)
-                            ->where('año', $anioActual)
                             ->where('activo', 1)
+                            ->orderBy('consecutivo_actual', 'desc')
                             ->lockForUpdate()
                             ->first();
 
-                        if (!$consecutivoMaestro) {
-                            // Crear nuevo registro maestro si no existe
-                            $consecutivoMaestro = DB::table('consecutivos_recibos')->insertGetId([
-                                'tipo_recibo' => $tipoRecibo,
-                                'año' => $anioActual,
-                                'consecutivo_actual' => 1,
-                                'consecutivo_inicial' => 1,
-                                'activo' => 1,
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ]);
+                        $nuevoConsecutivo = $ultimoConsecutivo ? $ultimoConsecutivo->consecutivo_actual + 1 : 1;
 
-                            $nuevoConsecutivo = 1;
-                        } else {
-                            // Incrementar consecutivo
-                            $nuevoConsecutivo = $consecutivoMaestro->consecutivo_actual + 1;
-                            
-                            DB::table('consecutivos_recibos')
-                                ->where('id', $consecutivoMaestro->id)
-                                ->update([
-                                    'consecutivo_actual' => $nuevoConsecutivo,
-                                    'updated_at' => now()
-                                ]);
-                        }
-
-                        // Insertar registro para el pedido y prenda específica
+                        // Insertar registro para el pedido y tipo específico
                         DB::table('consecutivos_recibos_pedidos')->insert([
                             'pedido_produccion_id' => $pedido->id,
                             'tipo_recibo' => $tipoRecibo,
                             'consecutivo_inicial' => $nuevoConsecutivo,
                             'consecutivo_actual' => $nuevoConsecutivo,
                             'activo' => 1,
+                            'notas' => "Generado automáticamente para pedido #{$pedido->numero_pedido} - prenda #{$prendaId}",
                             'created_at' => now(),
                             'updated_at' => now()
                         ]);

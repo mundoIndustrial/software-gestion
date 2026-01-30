@@ -116,7 +116,7 @@
                     <tbody>
                         @forelse($ultimosPedidos as $pedido)
                             <tr>
-                                <td>{{ $pedido->numero_pedido }}</td>
+                                <td>{{ $pedido->numero_pedido ?? '-' }}</td>
                                 <td>{{ $pedido->cliente }}</td>
                                 <td>
                                     <span class="badge badge-{{ strtolower($pedido->estado) }}">

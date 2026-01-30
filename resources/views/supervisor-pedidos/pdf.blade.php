@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orden #{{ $orden->numero_pedido }}</title>
+    <title>Orden #{{ $orden->numero_pedido ?? 'Pendiente' }}</title>
     <style>
         * {
             margin: 0;
@@ -218,7 +218,7 @@
             <div class="logo">MUNDO INDUSTRIAL</div>
             <div class="titulo">
                 <h1>ORDEN DE PRODUCCIÓN</h1>
-                <div class="numero-orden">#{{ $orden->numero_pedido }}</div>
+                <div class="numero-orden">#{{ $orden->numero_pedido ?? 'Pendiente' }}</div>
             </div>
             <div class="fecha-impresion">
                 <strong>Fecha de Impresión:</strong><br>

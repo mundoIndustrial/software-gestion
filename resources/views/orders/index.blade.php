@@ -163,13 +163,13 @@
                                     $descripcionConTallas = $descripcionBase;
                                 }
                             @endphp
-                            <div class="table-row" data-orden-id="{{ $orden->numero_pedido }}">
+                            <div class="table-row" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
-                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->numero_pedido }}">
+                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <div class="action-menu" data-orden-id="{{ $orden->numero_pedido }}">
+                                    <div class="action-menu" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                         <a href="#" class="action-menu-item" data-action="detalle">
                                             <i class="fas fa-eye"></i>
                                             <span>Detalle</span>
@@ -184,7 +184,7 @@
                                 <!-- Estado (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->numero_pedido }}">
+                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
                                                 <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
                                             @endforeach
@@ -195,7 +195,7 @@
                                 <!-- Área (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="area-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
+                                        <select class="area-dropdown" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             @foreach($areaOptions as $area)
                                                 <option value="{{ $area }}" {{ $orden->area === $area ? 'selected' : '' }}>{{ $area }}</option>
                                             @endforeach
@@ -206,7 +206,7 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             <option value="">Seleccionar</option>
                                             @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
                                                 <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>
@@ -273,7 +273,7 @@
                                         <button 
                                             class="btn-edit-novedades"
                                             data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
-                                            onclick="event.stopPropagation(); openNovedadesModal('{{ $orden->numero_pedido }}', `{{ addslashes($orden->novedades ?? '') }}`)"
+                                            onclick="event.stopPropagation(); openNovedadesModal('{{ $orden->numero_pedido ?? 'sin-numero' }}', `{{ addslashes($orden->novedades ?? '') }}`)"
                                             title="Editar novedades"
                                             type="button">
                                             @if($orden->novedades)

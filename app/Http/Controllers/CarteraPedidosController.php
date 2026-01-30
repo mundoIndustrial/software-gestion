@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PedidoProduccion;
 use App\Application\Services\Asesores\ObtenerDatosFacturaService;
+use App\Domain\Pedidos\Services\PedidoSequenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +18,11 @@ class CarteraPedidosController extends Controller
         try {
             // Estados que deben estar listos para cartera
             $estadosPendientes = ['pendiente_cartera'];
+            
+            // Si se especifica un estado específico, usarlo
+            if ($request->has('estado') && in_array($request->estado, $estadosPendientes)) {
+                $estadosPendientes = [$request->estado];
+            }
             
             // Usar PedidoProduccion modelo con la tabla correcta
             $pedidos = PedidoProduccion::whereIn('estado', $estadosPendientes)
@@ -65,8 +71,9 @@ class CarteraPedidosController extends Controller
                     ], 404);
                 }
                 
-                // Generar número de pedido correlativo solo al aprobar
-                $siguienteNumero = $this->generarSiguienteNumeroPedido();
+                // Generar número de pedido correlativo solo al aprobar usando servicio centralizado
+                $pedidoSequenceService = app(PedidoSequenceService::class);
+                $siguienteNumero = $pedidoSequenceService->generarNumeroPedido();
                 
                 // Obtener ID de usuario autenticado o null para evitar foreign key issues
                 $usuarioId = auth()->check() ? auth()->user()->id : null;
@@ -97,52 +104,6 @@ class CarteraPedidosController extends Controller
                 'message' => 'Error al aprobar: ' . $e->getMessage()
             ], 500);
         }
-    }
-    
-    /**
-     * Generar el siguiente número de pedido correlativo de forma segura
-     * Usa tabla de secuencias con control de concurrencia
-     */
-    private function generarSiguienteNumeroPedido(): int
-    {
-        return DB::transaction(function () {
-            // Obtener y bloquear la secuencia para evitar concurrencia
-            $secuencia = DB::table('numero_secuencias')
-                ->where('tipo', 'pedido_produccion')
-                ->lockForUpdate()
-                ->first();
-            
-            if (!$secuencia) {
-                // Crear secuencia si no existe
-                $secuenciaId = DB::table('numero_secuencias')->insertGetId([
-                    'tipo' => 'pedido_produccion',
-                    'siguiente' => 2, // El siguiente será 2, este es 1
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                
-                $numeroPedido = 1;
-            } else {
-                // Usar el siguiente número disponible
-                $numeroPedido = $secuencia->siguiente;
-                
-                // Incrementar para la próxima vez
-                DB::table('numero_secuencias')
-                    ->where('tipo', 'pedido_produccion')
-                    ->update([
-                        'siguiente' => $numeroPedido + 1,
-                        'updated_at' => now(),
-                    ]);
-            }
-            
-            \Log::info('[CARTERA] Número de pedido generado desde secuencia', [
-                'numero_pedido' => $numeroPedido,
-                'secuencia_id' => $secuencia->id ?? $secuenciaId,
-                'tipo_secuencia' => 'pedido_produccion',
-            ]);
-            
-            return $numeroPedido;
-        });
     }
     
     /**

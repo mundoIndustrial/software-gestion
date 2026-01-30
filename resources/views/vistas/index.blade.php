@@ -98,7 +98,7 @@
                             // Para Costura - Pedidos: agrupar prendas_pedido por pedido
                             if ($tipo === 'pedidos') {
                                 $groupedRegistros = $registros->groupBy(function($prenda) {
-                                    return $prenda->pedido->numero_pedido . '-' . $prenda->pedido->cliente;
+                                    return ($prenda->pedido->numero_pedido ?? 'P-' . $prenda->pedido->id) . '-' . $prenda->pedido->cliente;
                                 });
                             } else {
                                 // Para Costura - Bodega: agrupar por pedido-cliente
@@ -163,7 +163,7 @@
                                                         @foreach($tallaRecords as $tallaRecord)
                                                             @php
                                                                 // Buscar entrega_prenda_pedido relacionada
-                                                                $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $registro->pedido->numero_pedido)
+                                                                $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $registro->pedido->numero_pedido ?? 'P-' . $registro->pedido->id)
                                                                     ->where('nombre_prenda', $registro->nombre_prenda)
                                                                     ->where('talla', $tallaRecord->talla)
                                                                     ->first();

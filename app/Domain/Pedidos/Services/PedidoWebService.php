@@ -69,7 +69,7 @@ class PedidoWebService
             
             Log::info('[PedidoWebService] Pedido base creado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido,
+                'numero_pedido' => $pedido->numero_pedido, // null hasta aprobación de cartera
                 'area_guardada' => $pedido->area,
                 'estado' => $pedido->estado,
                 'tiempo_base_ms' => round($tiempoBase, 2),
@@ -98,10 +98,6 @@ class PedidoWebService
      */
     private function crearPedidoBase(array $datos, int $asesorId): PedidoProduccion
     {
-        $tiempoInicioSecuencia = microtime(true);
-        $numeroPedido = $this->pedidoSequenceService->generarNumeroPedido();
-        $tiempoSecuencia = (microtime(true) - $tiempoInicioSecuencia) * 1000;
-
         //  EXTRAER ÁREA CON DEFAULT
         $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';
         if (is_string($area)) {
@@ -111,13 +107,13 @@ class PedidoWebService
             $area = 'creacion de pedido';
         }
 
-        Log::info('[PedidoWebService] Generando número de pedido', [
-            'tiempo_secuencia_ms' => round($tiempoSecuencia, 2),
-            'numero_pedido' => $numeroPedido,
+        Log::info('[PedidoWebService] Creando pedido base sin número (se asignará al aprobar cartera)', [
+            'area' => $area,
+            'estado' => 'pendiente_cartera',
         ]);
 
         return PedidoProduccion::create([
-            'numero_pedido' => $numeroPedido,
+            'numero_pedido' => null, // Se asignará cuando cartera apruebe
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
             'asesor_id' => $asesorId,
             'cliente_id' => $datos['cliente_id'] ?? null,
@@ -126,6 +122,7 @@ class PedidoWebService
             'estado' => 'pendiente_cartera',
             'cantidad_total' => 0,
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
+            'fecha_de_creacion_de_orden' => now(), // Fecha actual de creación de la orden
         ]);
     }
 
