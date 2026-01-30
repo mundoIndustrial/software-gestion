@@ -106,7 +106,7 @@ class CrearPedidoEditableController extends Controller
             'Tejido',
             'Serigrafía'
         ];
-        Log::debug('[CREAR-DESDE-COTIZACION] 🎨 Técnicas configuradas', ['cantidad' => count($tecnicas)]);
+        Log::debug('[CREAR-DESDE-COTIZACION]  Técnicas configuradas', ['cantidad' => count($tecnicas)]);
         
         // ========================================
         // DATO CRÍTICO: COTIZACIONES DEL USUARIO (IMPORTANTE AQUÍ)
@@ -249,7 +249,7 @@ class CrearPedidoEditableController extends Controller
             'Tejido',
             'Serigrafía'
         ];
-        Log::debug('[CREAR-PEDIDO-NUEVO] 🎨 Técnicas configuradas', ['cantidad' => count($tecnicas)]);
+        Log::debug('[CREAR-PEDIDO-NUEVO]  Técnicas configuradas', ['cantidad' => count($tecnicas)]);
         
         // ========================================
         // COTIZACIONES: Vacía para crear nuevo
@@ -860,7 +860,7 @@ class CrearPedidoEditableController extends Controller
                                 $colorId = $this->colorTelaService->obtenerOCrearColor($tela['color']);
                                 $telaId = $this->colorTelaService->obtenerOCrearTela($tela['tela']);
                                 
-                                Log::info('[CrearPedidoEditableController] 🎨 Color/Tela procesados', [
+                                Log::info('[CrearPedidoEditableController]  Color/Tela procesados', [
                                     'color_nombre' => $tela['color'],
                                     'color_id' => $colorId,
                                     'tela_nombre' => $tela['tela'],

@@ -378,7 +378,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
     `;
     header.innerHTML = `
         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">
-            🎨 Selecciona una Prenda
+             Selecciona una Prenda
         </h3>
         <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
             Cotización: ${cotizacion.numero_cotizacion} - ${cotizacion.cliente}
@@ -415,27 +415,88 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
         const cantidad = prenda.talla_cantidad && Array.isArray(prenda.talla_cantidad)
             ? prenda.talla_cantidad.reduce((sum, tc) => sum + (tc.cantidad || 0), 0)
             : 0;
+        const numeroPrenda = idx + 1;
+        
+        // Debug: Verificar estructura de datos de la prenda
+        console.log('[DEBUG] Estructura de prenda:', prenda);
+        console.log('[DEBUG] Todas las propiedades de prenda:', Object.keys(prenda));
+        console.log('[DEBUG] prenda.telas:', prenda.telas);
+        console.log('[DEBUG] prenda.tela:', prenda.tela);
+        console.log('[DEBUG] prenda.color:', prenda.color);
+        console.log('[DEBUG] prenda.telasAgregadas:', prenda.telasAgregadas);
+        console.log('[DEBUG] prenda.variantes:', prenda.variantes);
+        console.log('[DEBUG] prenda.colores_telas:', prenda.colores_telas);
+        
+        // Extraer información de tela y color
+        let telaColor = '';
+        if (prenda.telas && prenda.telas.length > 0) {
+            const primeraTela = prenda.telas[0];
+            console.log('[DEBUG] Primera tela encontrada:', primeraTela);
+            const nombreTela = primeraTela.nombre_tela || primeraTela.tela || 'N/A';
+            const color = primeraTela.color || 'N/A';
+            telaColor = `${nombreTela} - ${color}`;
+        } else if (prenda.tela || prenda.color) {
+            console.log('[DEBUG] Usando tela/color directos');
+            telaColor = `${prenda.tela || 'N/A'} - ${prenda.color || 'N/A'}`;
+        } else if (prenda.variantes && prenda.variantes.length > 0) {
+            console.log('[DEBUG] Revisando variantes para tela/color');
+            const primeraVariante = prenda.variantes[0];
+            console.log('[DEBUG] Primera variante:', primeraVariante);
+            console.log('[DEBUG] Todas las propiedades de la variante:', Object.keys(primeraVariante));
+            console.log('[DEBUG] Contenido de telas_multiples:', primeraVariante.telas_multiples);
+            
+            // Buscar en múltiples propiedades posibles
+            let nombreTela = 'N/A';
+            let color = primeraVariante.color || 'N/A';
+            
+            // Primero intentar desde telas_multiples
+            if (primeraVariante.telas_multiples) {
+                console.log('[DEBUG] Analizando telas_multiples:', primeraVariante.telas_multiples);
+                try {
+                    const telasMultiples = typeof primeraVariante.telas_multiples === 'string' 
+                        ? JSON.parse(primeraVariante.telas_multiples) 
+                        : primeraVariante.telas_multiples;
+                    
+                    console.log('[DEBUG] telas_multiples parseado:', telasMultiples);
+                    
+                    if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
+                        const primeraTela = telasMultiples[0];
+                        console.log('[DEBUG] Primera tela de telas_multiples:', primeraTela);
+                        nombreTela = primeraTela.tela || primeraTela.nombre_tela || primeraTela.nombre || 'N/A';
+                        color = primeraTela.color || color;
+                    }
+                } catch (e) {
+                    console.error('[DEBUG] Error parseando telas_multiples:', e);
+                }
+            }
+            
+            // Si no se encontró en telas_multiples, buscar en otras propiedades
+            if (nombreTela === 'N/A') {
+                nombreTela = primeraVariante.tela || 
+                              primeraVariante.nombre_tela || 
+                              primeraVariante.tipo_tela ||
+                              primeraVariante.tela_nombre ||
+                              'N/A';
+            }
+            
+            console.log('[DEBUG] nombreTela extraído:', nombreTela);
+            console.log('[DEBUG] color extraído:', color);
+            
+            telaColor = `${nombreTela} - ${color}`;
+        }
+        
+        console.log('[DEBUG] telaColor final:', telaColor);
 
         prendaItem.innerHTML = `
             <div>
                 <h4 style="margin: 0 0 0.5rem 0; color: #1f2937; font-weight: 700;">
-                    ${nombrePrenda}
+                    Prenda ${numeroPrenda} - ${nombrePrenda}
                 </h4>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                    <span style="padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem;">
-                        📦 ${cantidad} unidades
-                    </span>
-                    ${prenda.telas && prenda.telas.length > 0 ? `
-                        <span style="padding: 0.25rem 0.75rem; background: #f0fdf4; color: #15803d; border-radius: 12px; font-size: 0.875rem;">
-                            🎨 ${prenda.telas.length} tela(s)
-                        </span>
-                    ` : ''}
-                    ${prenda.fotos && prenda.fotos.length > 0 ? `
-                        <span style="padding: 0.25rem 0.75rem; background: #fef3c7; color: #92400e; border-radius: 12px; font-size: 0.875rem;">
-                            📷 ${prenda.fotos.length} foto(s)
-                        </span>
-                    ` : ''}
-                </div>
+                ${telaColor ? `
+                    <p style="margin: 0 0 0.5rem 0; color: #6b7280; font-size: 0.875rem; font-weight: 500;">
+                         ${telaColor}
+                    </p>
+                ` : ''}
             </div>
         `;
 

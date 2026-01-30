@@ -72,7 +72,7 @@ class TestCargarPedido extends Command
                 }
                 
                 // Colores-Telas
-                $this->line("\n🎨 COLORES-TELAS: " . $prenda->coloresTelas->count());
+                $this->line("\n COLORES-TELAS: " . $prenda->coloresTelas->count());
                 if ($prenda->coloresTelas->count() > 0) {
                     foreach ($prenda->coloresTelas as $ct) {
                         $this->line("  ✓ ID: " . $ct->id);

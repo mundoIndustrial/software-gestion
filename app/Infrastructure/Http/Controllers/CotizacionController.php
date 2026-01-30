@@ -1762,7 +1762,7 @@ final class CotizacionController extends Controller
                     $tecnicasAgregadas = (array)$tecnicasAgregadasJson;
                 }
                 
-                Log::info('🎨 Procesando técnicas agregadas para cotización combinada', [
+                Log::info(' Procesando técnicas agregadas para cotización combinada', [
                     'cotizacion_id' => $cotizacionId,
                     'logo_cotizacion_id' => $logoCotizacion->id ?? null,
                     'tecnicas_count' => count($tecnicasAgregadas),
@@ -1772,7 +1772,7 @@ final class CotizacionController extends Controller
                 if (!empty($tecnicasAgregadas)) {
                     try {
                         foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
-                            Log::info("🎨 Procesando técnica {$tecnicaIndex}", [
+                            Log::info(" Procesando técnica {$tecnicaIndex}", [
                                 'tipo_logo_id' => $tecnicaData['tipo_logo']['id'] ?? null,
                                 'prendas_count' => count($tecnicaData['prendas'] ?? [])
                             ]);
@@ -1824,7 +1824,7 @@ final class CotizacionController extends Controller
                                 
                                 $prendasKeys[] = $prendaKey;
                                 
-                                Log::info("🎨   Procesando prenda {$prendaIndex} de técnica {$tecnicaIndex}");
+                                Log::info("   Procesando prenda {$prendaIndex} de técnica {$tecnicaIndex}");
                                 
                                 // Buscar si la prenda ya existe en prendas_cot (del PASO 2)
                                 // El nombre viene con formato: "PRENDA - genero - Color: color"

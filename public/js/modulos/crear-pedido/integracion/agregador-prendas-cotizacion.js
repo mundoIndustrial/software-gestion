@@ -34,7 +34,7 @@
         
         // Renderizar usando el renderizador de cotizaciones
         if (window.renderizarPrendasDesdeCotizacion) {
-            console.log('[agregador-prendas-cotizacion] 🎨 Renderizando con renderizador de cotizaciones');
+            console.log('[agregador-prendas-cotizacion]  Renderizando con renderizador de cotizaciones');
             window.renderizarPrendasDesdeCotizacion(window.gestorPedidoSinCotizacion.obtenerTodas());
         } else {
             console.warn('[agregador-prendas-cotizacion] ⚠️ renderizador no disponible');

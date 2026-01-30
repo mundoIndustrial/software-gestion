@@ -309,7 +309,7 @@ class PedidoPrendaService
                     
                     if (!$colorId && isset($primeraTela['color'])) {
                         $colorId = $colorTelaService->obtenerOCrearColor($primeraTela['color']);
-                        Log::info('[PedidoPrendaService] 🎨 Color procesado desde telas', [
+                        Log::info('[PedidoPrendaService]  Color procesado desde telas', [
                             'color_nombre' => $primeraTela['color'],
                             'color_id' => $colorId,
                         ]);

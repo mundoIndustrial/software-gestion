@@ -67,7 +67,7 @@ class PrendaCardService {
             console.log('[PrendaCardService.generar]   - Procesos HTML length:', procesosHTML ? procesosHTML.length : 0);
 
             // 4. Generar HTML completo
-            console.log('[PrendaCardService.generar] 🎨 GENERANDO HTML COMPLETO...');
+            console.log('[PrendaCardService.generar]  GENERANDO HTML COMPLETO...');
             const htmlCompleto = this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
             console.log('[PrendaCardService.generar] ✅ HTML generado, length:', htmlCompleto ? htmlCompleto.length : 0);
             

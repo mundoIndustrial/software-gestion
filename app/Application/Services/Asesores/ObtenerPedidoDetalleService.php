@@ -647,7 +647,7 @@ class ObtenerPedidoDetalleService
             ->get(['id', 'color_id', 'tela_id'])
             ->toArray();
 
-        Log::info('🎨 [COLORES-TELAS-INICIO] Encontradas ' . count($relaciones) . ' relaciones color-tela');
+        Log::info(' [COLORES-TELAS-INICIO] Encontradas ' . count($relaciones) . ' relaciones color-tela');
 
         foreach ($relaciones as $rel) {
             $color = DB::table('colores_prenda')->find($rel->color_id);
@@ -659,7 +659,7 @@ class ObtenerPedidoDetalleService
                 ->get(['ruta_original', 'ruta_webp', 'orden'])
                 ->toArray();
 
-            Log::info('🎨 [COLOR-TELA] Color: ' . ($color->nombre ?? 'N/A') . ', Tela: ' . ($tela->nombre ?? 'N/A') . ', Fotos: ' . count($fotos));
+            Log::info(' [COLOR-TELA] Color: ' . ($color->nombre ?? 'N/A') . ', Tela: ' . ($tela->nombre ?? 'N/A') . ', Fotos: ' . count($fotos));
 
             $coloresTelas[] = [
                 'id' => $rel->id,

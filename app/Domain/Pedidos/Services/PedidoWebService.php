@@ -357,7 +357,7 @@ class PedidoWebService
                         $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
                         $colorId = $colorTelaService->obtenerOCrearColor($telaData['color']);
                         
-                        Log::info('[PedidoWebService] 🎨 Color procesado', [
+                        Log::info('[PedidoWebService]  Color procesado', [
                             'color_nombre' => $telaData['color'],
                             'color_id' => $colorId,
                         ]);
@@ -385,7 +385,7 @@ class PedidoWebService
                             $color = ColorPrenda::where('nombre', 'like', '%' . $telaData['color'] . '%')->first();
                             if ($color) {
                                 $colorId = $color->id;
-                                Log::info('[PedidoWebService] 🎨 Color encontrado por fallback', [
+                                Log::info('[PedidoWebService]  Color encontrado por fallback', [
                                     'color_nombre' => $telaData['color'],
                                     'color_id' => $colorId,
                                 ]);

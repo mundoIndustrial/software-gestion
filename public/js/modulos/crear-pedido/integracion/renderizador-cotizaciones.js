@@ -34,7 +34,7 @@
         let html = '';
         prendas.forEach((prenda, index) => {
             if (typeof window.generarTarjetaPrendaReadOnly === 'function') {
-                console.log('[renderizador-cotizaciones] 🎨 Usando generarTarjetaPrendaReadOnly para prenda:', index);
+                console.log('[renderizador-cotizaciones]  Usando generarTarjetaPrendaReadOnly para prenda:', index);
                 const tarjetaHtml = window.generarTarjetaPrendaReadOnly(prenda, index);
                 if (tarjetaHtml) {
                     html += tarjetaHtml;

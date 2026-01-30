@@ -51,7 +51,7 @@ function generarHTMLDatosPrenda(prenda) {
     
     // ===== COLORES Y TELAS =====
     if (prenda.colores_telas && prenda.colores_telas.length > 0) {
-        console.log('[generarHTMLDatosPrenda] 🎨 Renderizando colores y telas:', {
+        console.log('[generarHTMLDatosPrenda]  Renderizando colores y telas:', {
             count: prenda.colores_telas.length,
             items: prenda.colores_telas.map(ct => ({
                 id: ct.id,
@@ -62,7 +62,7 @@ function generarHTMLDatosPrenda(prenda) {
         });
         
         html += '<div style="margin: 20px 0; padding: 15px; background: #fef3f2; border-radius: 8px; border-left: 4px solid #ef4444;">';
-        html += '<h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">🎨 Colores y Telas</h4>';
+        html += '<h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;"> Colores y Telas</h4>';
         
         prenda.colores_telas.forEach((ct, idx) => {
             console.log(`[generarHTMLDatosPrenda] Tela ${idx}:`, {
@@ -81,7 +81,7 @@ function generarHTMLDatosPrenda(prenda) {
             
             // Nombre color y tela
             html += '<div>';
-            html += `<strong style="color: #334155; font-size: 11px;">🎨 ${ct.color_nombre}</strong><br>`;
+            html += `<strong style="color: #334155; font-size: 11px;"> ${ct.color_nombre}</strong><br>`;
             html += `<span style="color: #64748b; font-size: 10px;">Tela: <strong>${ct.tela_nombre}</strong></span>`;
             if (ct.tela_referencia) {
                 html += `<br><span style="color: #94a3b8; font-size: 9px;">Ref: ${ct.tela_referencia}</span>`;
@@ -297,24 +297,24 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         return;
     }
     
-    console.log('🎨 [HTML-INICIO] Iniciando generación de HTML');
+    console.log(' [HTML-INICIO] Iniciando generación de HTML');
     let htmlFactura = generarHTMLFactura(datosParaFactura);
-    console.log('🎨 [HTML-FACTURA] HTML de factura generado, largo:', htmlFactura.length);
+    console.log(' [HTML-FACTURA] HTML de factura generado, largo:', htmlFactura.length);
     
     // Agregar sección de datos de la prenda (tallas, colores, telas, variantes)
-    console.log('🎨 [HTML-DATOS] Agregando datos de prenda:', {
+    console.log(' [HTML-DATOS] Agregando datos de prenda:', {
         tallas_dama: prendaEditable.tallas_dama?.length ?? 0,
         tallas_caballero: prendaEditable.tallas_caballero?.length ?? 0,
         variantes: prendaEditable.variantes?.length ?? 0,
         colores_telas: prendaEditable.colores_telas?.length ?? 0
     });
     htmlFactura += generarHTMLDatosPrenda(prendaEditable);
-    console.log('🎨 [HTML-DATOS-COMPLETADO] HTML actualizado, largo total:', htmlFactura.length);
+    console.log(' [HTML-DATOS-COMPLETADO] HTML actualizado, largo total:', htmlFactura.length);
     
     // Convertir a editable: inputs en campos importantes
-    console.log('🎨 [HTML-EDITABLE] Iniciando conversión a editable');
+    console.log(' [HTML-EDITABLE] Iniciando conversión a editable');
     htmlFactura = hacerFacturaEditable(htmlFactura, prendaEditable);
-    console.log('🎨 [HTML-EDITABLE-COMPLETADO] HTML editable completado, largo:', htmlFactura.length);
+    console.log(' [HTML-EDITABLE-COMPLETADO] HTML editable completado, largo:', htmlFactura.length);
     
     // Mostrar modal
     console.log('📱 [MODAL-MOSTRAR] Mostrando modal SweetAlert2');

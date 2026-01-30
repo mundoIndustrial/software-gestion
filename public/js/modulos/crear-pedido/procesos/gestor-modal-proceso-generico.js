@@ -1381,7 +1381,7 @@ window.agregarProcesoAlPedido = function() {
         if (modoActual === 'editar' && window.renderizarTarjetasProcesos) {
             // Pequeño delay para garantizar que el modal se ha cerrado y el DOM está actualizado
             setTimeout(() => {
-                console.log('🎨 [agregarProcesoAlPedido] Renderizando tarjetas con retry (modo EDICIÓN)...');
+                console.log(' [agregarProcesoAlPedido] Renderizando tarjetas con retry (modo EDICIÓN)...');
                 window.renderizarTarjetasProcesos();
                 
                 // VERIFICACIÓN: Confirmar que se renderizó correctamente
@@ -1404,7 +1404,7 @@ window.agregarProcesoAlPedido = function() {
             // ✅ IMPORTANTE: En modo CREATE, también renderizar para mostrar el nuevo proceso
             if (window.renderizarTarjetasProcesos) {
                 setTimeout(() => {
-                    console.log('🎨 [agregarProcesoAlPedido] Llamando renderizarTarjetasProcesos() en modo CREATE...');
+                    console.log(' [agregarProcesoAlPedido] Llamando renderizarTarjetasProcesos() en modo CREATE...');
                     window.renderizarTarjetasProcesos();
                 }, 100);
             }

@@ -160,12 +160,12 @@
         console.log('  - .submenu-arrow:', document.querySelectorAll('.submenu-arrow').length);
 
         // LOG DE ESTILOS APLICADOS
-        console.log('🎨 [ESTILOS] Verificando estilos CSS aplicados...');
+        console.log(' [ESTILOS] Verificando estilos CSS aplicados...');
         
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) {
             const sidebarStyles = window.getComputedStyle(sidebar);
-            console.log('🎨 [SIDEBAR-STYLES]');
+            console.log(' [SIDEBAR-STYLES]');
             console.log('  - width:', sidebarStyles.width);
             console.log('  - background:', sidebarStyles.background);
             console.log('  - display:', sidebarStyles.display);
@@ -173,7 +173,7 @@
         }
 
         const navItems = document.querySelectorAll('.nav-item');
-        console.log('🎨 [NAV-ITEM-STYLES] Encontrados:', navItems.length);
+        console.log(' [NAV-ITEM-STYLES] Encontrados:', navItems.length);
         if (navItems.length > 0) {
             const navItemStyles = window.getComputedStyle(navItems[0]);
             console.log('  - display:', navItemStyles.display);
@@ -186,7 +186,7 @@
         const navSubmenu = document.querySelector('.nav-submenu');
         if (navSubmenu) {
             const submenuStyles = window.getComputedStyle(navSubmenu);
-            console.log('🎨 [NAV-SUBMENU-STYLES]');
+            console.log(' [NAV-SUBMENU-STYLES]');
             console.log('  - display:', submenuStyles.display);
             console.log('  - background-color:', submenuStyles.backgroundColor);
             console.log('  - flex-direction:', submenuStyles.flexDirection);
@@ -196,7 +196,7 @@
         const navSubmenuItem = document.querySelector('.nav-submenu-item');
         if (navSubmenuItem) {
             const submenuItemStyles = window.getComputedStyle(navSubmenuItem);
-            console.log('🎨 [NAV-SUBMENU-ITEM-STYLES]');
+            console.log(' [NAV-SUBMENU-ITEM-STYLES]');
             console.log('  - display:', submenuItemStyles.display);
             console.log('  - padding:', submenuItemStyles.padding);
             console.log('  - color:', submenuItemStyles.color);

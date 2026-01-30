@@ -70,7 +70,7 @@ function seleccionarTipoCotizacion(tipo) {
 function mostrarNotificacionTipoCotizacion(tipo) {
     const info = {
         'prenda': 'Prendas Sin Logo',
-        'logo': '🎨 Solo Logos',
+        'logo': ' Solo Logos',
         'prenda-bordado': ' Prendas Con Bordado/Logo'
     };
     
@@ -291,7 +291,7 @@ function actualizarResumenFriendly() {
         } else if (tienePrendas) {
             tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo || tieneTecnicas) {
-            tipoDetectado = '🎨 Solo Logo/Bordado';
+            tipoDetectado = ' Solo Logo/Bordado';
         } else {
             tipoDetectado = '-';
         }
@@ -1220,7 +1220,7 @@ function recopilarDatos() {
             '📸 Fotos': prod.fotos.length,
             '🧵 Telas': prod.telas.length,
             ' Tallas': prod.tallas.length,
-            '🎨 Variantes': Object.keys(prod.variantes).length
+            ' Variantes': Object.keys(prod.variantes).length
         });
     });
     

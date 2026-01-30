@@ -80,7 +80,7 @@ Array.from(document.styleSheets).forEach((sheet, idx) => {
 console.groupEnd();
 
 // Variables CSS
-console.group('%c🎨 VARIABLES CSS', 'color: #10b981; font-weight: bold; font-size: 13px;');
+console.group('%c VARIABLES CSS', 'color: #10b981; font-weight: bold; font-size: 13px;');
 const root = document.documentElement;
 const style = getComputedStyle(root);
 const vars = ['--primary', '--primary-hover', '--surface-white', '--surface-gray', '--border-light'];

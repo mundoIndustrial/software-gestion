@@ -347,7 +347,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 
 ---
 
-## 🎨 Mejoras de UX Implementadas
+##  Mejoras de UX Implementadas
 
 ### ✅ Modal de Éxito
 - Aparece al guardar
@@ -443,7 +443,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 | **⚡ Velocidad** | Actualización en tiempo real sin recarga |
 | **🔒 Seguridad** | Transacciones DB, auditoría de usuario |
 | **📊 Escalabilidad** | Fácil agregar más parciales si es necesario |
-| **🎨 UX** | Modal elegante, feedback visual claro |
+| ** UX** | Modal elegante, feedback visual claro |
 | **📱 Responsive** | Funciona en desktop y mobile |
 | **♿ Accesibilidad** | Inputs semánticos, labels claros |
 

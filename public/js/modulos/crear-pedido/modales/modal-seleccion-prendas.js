@@ -481,7 +481,7 @@ function renderizarItemsCotizacionEnDOM() {
         // Construir HTML de telas
         let htmlTelas = '';
         if (Array.isArray(telas) && telas.length > 0) {
-            htmlTelas = '<div style="margin-top: 1rem; padding: 0.75rem; background: #f0f7ff; border-radius: 6px;"><strong style="color: #0066cc;">🎨 Telas:</strong><ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">';
+            htmlTelas = '<div style="margin-top: 1rem; padding: 0.75rem; background: #f0f7ff; border-radius: 6px;"><strong style="color: #0066cc;"> Telas:</strong><ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">';
             telas.forEach(tela => {
                 const colorNombre = tela.color?.nombre || 'Sin color';
                 const telaNombre = tela.tela?.nombre || 'Sin tela';

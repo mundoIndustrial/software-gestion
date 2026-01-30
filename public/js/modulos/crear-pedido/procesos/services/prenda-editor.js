@@ -987,7 +987,7 @@ class PrendaEditor {
 
         // Renderizar tarjetas de procesos
         if (window.renderizarTarjetasProcesos) {
-            console.log('🎨 [CARGAR-PROCESOS] Renderizando tarjetas...');
+            console.log(' [CARGAR-PROCESOS] Renderizando tarjetas...');
             window.renderizarTarjetasProcesos();
         } else {
             console.error(' [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe');

@@ -56,11 +56,11 @@ function actualizarResumenClientePaso5() {
         } else if (tienePrendas && tieneReflectivo) {
             tipoDetectado = '📦 Combinada (Prendas + Reflectivo)';
         } else if (tieneLogo && tieneReflectivo) {
-            tipoDetectado = '🎨 Logo + Reflectivo';
+            tipoDetectado = ' Logo + Reflectivo';
         } else if (tienePrendas) {
             tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo) {
-            tipoDetectado = '🎨 Logo/Bordado';
+            tipoDetectado = ' Logo/Bordado';
         } else if (tieneReflectivo) {
             tipoDetectado = '🔸 Reflectivo';
         }

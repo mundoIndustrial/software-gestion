@@ -10,6 +10,43 @@ window.PrendaCardHandlers = {
     },
 
     _setupEventListeners() {
+        // Debug: Capturar todos los clicks en botones de tres puntos para diagnóstico
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-menu-tres-puntos')) {
+                console.log('[DEBUG GLOBAL] 🖱️ Click capturado en listener global - btn-menu-tres-puntos');
+                console.log('[DEBUG GLOBAL] 📦 Target:', e.target);
+                console.log('[DEBUG GLOBAL] 📦 Closest:', e.target.closest('.btn-menu-tres-puntos'));
+            }
+        }, true); // Use capture phase
+        
+        // Listener específico para menú de 3 puntos - PRIORIDAD MÁXIMA
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-menu-tres-puntos');
+            if (btn) {
+                console.log('[PrendaCardHandlers] 🖱️ CLICK en btn-menu-tres-puntos (listener específico)');
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Evitar otros listeners
+                
+                const submenu = btn.nextElementSibling;
+                
+                console.log('[PrendaCardHandlers] 📦 Botón:', btn);
+                console.log('[PrendaCardHandlers] 📦 Submenú:', submenu);
+                
+                document.querySelectorAll('.submenu-prenda').forEach(menu => {
+                    if (menu !== submenu) menu.style.display = 'none';
+                });
+                
+                if (submenu) {
+                    submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+                    console.log('[PrendaCardHandlers] 🔄 Submenú display cambiado a:', submenu.style.display);
+                } else {
+                    console.error('[PrendaCardHandlers] ❌ No se encontró el submenú');
+                }
+                return; // Salir para no procesar otros listeners
+            }
+        }, true); // Use capture phase con máxima prioridad
+        
         // Expandir/contraer secciones
         document.addEventListener('click', (e) => {
             if (e.target.closest('.seccion-expandible-header')) {
@@ -72,7 +109,7 @@ window.PrendaCardHandlers = {
                             }
                         }, 50);
                         
-                        console.log('[PrendaCardHandlers] 🎨 Estilos inline limpiados completamente, usando clases CSS');
+                        console.log('[PrendaCardHandlers]  Estilos inline limpiados completamente, usando clases CSS');
                     } else {
                         // LIMPIAR COMPLETAMENTE todos los estilos inline
                         content.style.cssText = '';
@@ -94,7 +131,7 @@ window.PrendaCardHandlers = {
                             }
                         }, 50);
                         
-                        console.log('[PrendaCardHandlers] 🎨 Estilos inline limpiados completamente, dejando CSS controlar el display');
+                        console.log('[PrendaCardHandlers]  Estilos inline limpiados completamente, dejando CSS controlar el display');
                     }
                     
                     // Verificar estilos computados con más tiempo para asegurar que se aplique
@@ -102,10 +139,10 @@ window.PrendaCardHandlers = {
                         const computedStyle = window.getComputedStyle(content);
                         const displayStyle = computedStyle.getPropertyValue('display');
                         const inlineStyle = content.getAttribute('style');
-                        console.log('[PrendaCardHandlers] 🎨 Computed style display:', displayStyle);
-                        console.log('[PrendaCardHandlers] 🎨 Inline style actual:', inlineStyle);
-                        console.log('[PrendaCardHandlers] 🎨 Computed style visibility:', computedStyle.getPropertyValue('visibility'));
-                        console.log('[PrendaCardHandlers] 🎨 Computed style height:', computedStyle.getPropertyValue('height'));
+                        console.log('[PrendaCardHandlers]  Computed style display:', displayStyle);
+                        console.log('[PrendaCardHandlers]  Inline style actual:', inlineStyle);
+                        console.log('[PrendaCardHandlers]  Computed style visibility:', computedStyle.getPropertyValue('visibility'));
+                        console.log('[PrendaCardHandlers]  Computed style height:', computedStyle.getPropertyValue('height'));
                         
                         // Medición inicial
                         console.log('[PrendaCardHandlers] 📏 Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
@@ -133,7 +170,7 @@ window.PrendaCardHandlers = {
                         
                         // Verificar si hay otros estilos aplicados
                         const allStyles = window.getComputedStyle(content, null);
-                        console.log('[PrendaCardHandlers] 🎨 Todos los estilos aplicados:', {
+                        console.log('[PrendaCardHandlers]  Todos los estilos aplicados:', {
                             display: allStyles.display,
                             visibility: allStyles.visibility,
                             height: allStyles.height,
@@ -239,20 +276,6 @@ window.PrendaCardHandlers = {
                 } else {
                     console.log('[PrendaCardHandlers] ❌ Content no válido o no tiene clase seccion-expandible-content');
                 }
-            }
-
-            // Menú de 3 puntos
-            if (e.target.closest('.btn-menu-tres-puntos')) {
-
-                e.stopPropagation();
-                const btn = e.target.closest('.btn-menu-tres-puntos');
-                const submenu = btn.nextElementSibling;
-                
-                document.querySelectorAll('.submenu-prenda').forEach(menu => {
-                    if (menu !== submenu) menu.style.display = 'none';
-                });
-                
-                submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
             }
 
             // Botón EDITAR
