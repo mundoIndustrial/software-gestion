@@ -389,6 +389,17 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     </div>
                 </div>
                 
+                <!-- LOGOS COMPARTIDOS -->
+                <div style="margin-bottom: 25px;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border-radius: 4px; border: 1px solid #dbeafe;">
+                        <input type="checkbox" id="dUsarLogoCompartido" style="width: 18px; height: 18px; cursor: pointer;">
+                        <label for="dUsarLogoCompartido" style="font-weight: 600; color: #333; cursor: pointer; margin: 0;">Usar el mismo logo en múltiples técnicas</label>
+                    </div>
+                    <div id="dLogosCompartidosP3" style="margin-top: 12px; display: none; display: grid; gap: 12px;">
+                        <!-- Se agrega dinámicamente cuando está checked -->
+                    </div>
+                </div>
+                
                 <!-- VARIACIONES -->
                 <div style="margin-bottom: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones por Técnica</h3>
@@ -488,49 +499,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     }
                 }
                 
-                // Cargar imágenes de la prenda seleccionada en todos los dropzones
-                if (imagenesJson) {
-                    try {
-                        const imagenes = JSON.parse(imagenesJson);
-                        if (Array.isArray(imagenes) && imagenes.length > 0) {
-                            tecnicas.forEach((tecnica, idx) => {
-                                const previewContainer = document.querySelector(`.dImagenesPreview-p3-${idx}`);
-                                if (previewContainer) {
-                                    // Limpiar previews anteriores
-                                    previewContainer.innerHTML = '';
-                                    imagenesAgregadasPorTecnica[idx] = [];
-                                    
-                                    // Cargar las imágenes
-                                    imagenes.slice(0, 3).forEach((imagenSrc, imgIdx) => {
-                                        const divPreview = document.createElement('div');
-                                        divPreview.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer; border: 1px solid #ddd;';
-                                        divPreview.innerHTML = `
-                                            <img src="${imagenSrc}" style="width: 100%; height: 100%; object-fit: cover;">
-                                            <span style="position: absolute; top: 2px; right: 2px; background: #0066cc; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${imgIdx + 1}</span>
-                                            <button type="button" onclick="event.stopPropagation(); this.closest('[style*=\"position: relative\"]').remove();" style="position: absolute; top: 2px; left: 2px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
-                                        `;
-                                        divPreview.addEventListener('mouseenter', function() {
-                                            this.querySelector('button').style.opacity = '1';
-                                        });
-                                        divPreview.addEventListener('mouseleave', function() {
-                                            this.querySelector('button').style.opacity = '0';
-                                        });
-                                        
-                                        previewContainer.appendChild(divPreview);
-                                        // Almacenar la URL de la imagen para que se pueda renderizar luego
-                                        imagenesAgregadasPorTecnica[idx].push({
-                                            src: imagenSrc,
-                                            type: 'url'  // Indicar que es una URL, no un File
-                                        });
-                                    });
-                                }
-                            });
-                        }
-                    } catch (err) {
-                        console.error('Error al parsear imágenes:', err);
-                    }
-                }
-                
                 // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
                 const variacionesJson = selectedOption.getAttribute('data-variaciones');
                 let variacionesPaso2 = {};
@@ -592,23 +560,94 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             const variacionesPorTecnica = {};
             
             tecnicas.forEach((tecnica, idx) => {
-                // UBICACIÓN
+                // UBICACIÓN CON MÚLTIPLES VALORES (igual a logo individual)
                 const divUbicacion = document.createElement('div');
-                divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
+                divUbicacion.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
                 
                 const labelUbicacion = document.createElement('label');
-                labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
-                labelUbicacion.textContent = tecnica.nombre + ':';
+                labelUbicacion.style.cssText = 'font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;';
+                labelUbicacion.textContent = tecnica.nombre + ' - Ubicaciones';
+                
+                const inputDiv = document.createElement('div');
+                inputDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
                 
                 const inputUbicacion = document.createElement('input');
                 inputUbicacion.type = 'text';
-                inputUbicacion.className = 'dUbicacion-p3-' + idx;
+                inputUbicacion.className = 'dUbicacionInput-p3-' + idx;
                 inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
                 inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
                 
+                const btnAgregarUbicacion = document.createElement('button');
+                btnAgregarUbicacion.type = 'button';
+                btnAgregarUbicacion.textContent = '+ Agregar';
+                btnAgregarUbicacion.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;';
+                btnAgregarUbicacion.className = 'dBtnAgregarUbicacion-p3-' + idx;
+                
+                inputDiv.appendChild(inputUbicacion);
+                inputDiv.appendChild(btnAgregarUbicacion);
+                
+                const ubicacionesContainer = document.createElement('div');
+                ubicacionesContainer.className = 'dUbicacionesList-p3-' + idx;
+                ubicacionesContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;';
+                
                 divUbicacion.appendChild(labelUbicacion);
-                divUbicacion.appendChild(inputUbicacion);
+                divUbicacion.appendChild(inputDiv);
+                divUbicacion.appendChild(ubicacionesContainer);
+                
                 ubicacionesPorTecnicaDiv.appendChild(divUbicacion);
+                
+                // Manejar agregar ubicaciones
+                let ubicacionesTecnica = [];
+                btnAgregarUbicacion.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const ubicacion = inputUbicacion.value.trim().toUpperCase();
+                    
+                    if (!ubicacion) {
+                        Swal.showValidationMessage('Escribe una ubicación primero');
+                        return;
+                    }
+                    
+                    if (ubicacionesTecnica.includes(ubicacion)) {
+                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
+                        return;
+                    }
+                    
+                    ubicacionesTecnica.push(ubicacion);
+                    inputUbicacion.value = '';
+                    
+                    // Actualizar vista
+                    actualizarUbicacionesList();
+                    inputUbicacion.focus();
+                });
+                
+                inputUbicacion.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btnAgregarUbicacion.click();
+                    }
+                });
+                
+                function actualizarUbicacionesList() {
+                    ubicacionesContainer.innerHTML = ubicacionesTecnica.map((ub, i) => `
+                        <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                            ${ub}
+                            <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
+                        </span>
+                    `).join('');
+                    
+                    // Agregar event listeners a los botones de eliminar
+                    ubicacionesContainer.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
+                            ubicacionesTecnica.splice(idxAEliminar, 1);
+                            actualizarUbicacionesList();
+                        });
+                    });
+                }
+                
+                // Guardar referencia global para acceso en preConfirm
+                window['dUbicacionesTecnicaP3' + idx] = ubicacionesTecnica;
                 
                 // IMÁGENES
                 imagenesAgregadasPorTecnica[idx] = [];
@@ -756,6 +795,42 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 variacionesPorTecnicaDiv.appendChild(divVariaciones);
             }
             
+            // ============================================================
+            // MANEJO DE LOGOS COMPARTIDOS
+            // ============================================================
+            const checkboxLogoCompartido = document.getElementById('dUsarLogoCompartido');
+            const logosCompartidosContainer = document.getElementById('dLogosCompartidosP3');
+            const imagenesCompartidas = {}; // { "TECNICA1-TECNICA2": [archivos] }
+            
+            checkboxLogoCompartido.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    logosCompartidosContainer.style.display = 'grid';
+                    // Crear botón para agregar logos compartidos
+                    logosCompartidosContainer.innerHTML = '';
+                    const btnAgregarLogoCompartido = document.createElement('button');
+                    btnAgregarLogoCompartido.type = 'button';
+                    btnAgregarLogoCompartido.textContent = '+ Agregar Logo Compartido';
+                    btnAgregarLogoCompartido.style.cssText = 'background: #1e40af; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600;';
+                    
+                    btnAgregarLogoCompartido.addEventListener('click', (evt) => {
+                        evt.preventDefault();
+                        abrirModalSeleccionarTecnicasCompartidas(tecnicas, imagenesCompartidas);
+                    });
+                    
+                    logosCompartidosContainer.appendChild(btnAgregarLogoCompartido);
+                } else {
+                    logosCompartidosContainer.style.display = 'none';
+                    logosCompartidosContainer.innerHTML = '';
+                    // Limpiar imágenes compartidas
+                    for (let key in imagenesCompartidas) {
+                        delete imagenesCompartidas[key];
+                    }
+                }
+            });
+            
+            // Guardar referencia global para preConfirm
+            window.imagenesCompartidasP3 = imagenesCompartidas;
+            
             // Agregar talla inicial (vacía)
             function agregarFilaTallaPaso3() {
                 const idTalla = 'talla-p3-' + (contadorTallas++);
@@ -826,18 +901,20 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
             }
             
-            // Validar ubicaciones
+            // Validar ubicaciones (múltiples por técnica)
             const ubicacionesPorTecnica = {};
             let valido = true;
             
             window.tecnicasCombinadas.forEach((tecnica, idx) => {
-                const ubicacion = document.querySelector('.dUbicacion-p3-' + idx)?.value.trim() || '';
-                if (!ubicacion) {
-                    Swal.showValidationMessage(`Agrega ubicación para ${tecnica.nombre}`);
+                // Obtener ubicaciones desde la referencia global que se crea en didOpen
+                const ubicacionesTecnica = window['dUbicacionesTecnicaP3' + idx] || [];
+                
+                if (!ubicacionesTecnica || ubicacionesTecnica.length === 0) {
+                    Swal.showValidationMessage(`Agrega al menos una ubicación para ${tecnica.nombre}`);
                     valido = false;
                     return;
                 }
-                ubicacionesPorTecnica[idx] = [ubicacion];
+                ubicacionesPorTecnica[idx] = ubicacionesTecnica;
             });
             
             if (!valido) return false;
@@ -886,13 +963,397 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 tallas: tallas,
                 variaciones_prenda: variaciones_prenda,
-                imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3
+                imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3,
+                imagenesCompartidas: window.imagenesCompartidasP3 || {}
             };
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
             guardarTecnicaCombinada(result.value, window.tecnicasCombinadas);
         }
+    });
+}
+
+// =========================================================
+// MODAL PARA SELECCIONAR TÉCNICAS COMPARTIDAS (HTML PERSONALIZADO)
+// =========================================================
+
+function abrirModalSeleccionarTecnicasCompartidas(tecnicas, imagenesCompartidas) {
+    const checkboxesTecnicas = tecnicas.map((tecnica, idx) => `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">
+            <input type="checkbox" class="dCheckTecnicaCompartida" data-tecnica-idx="${idx}" data-tecnica-nombre="${tecnica.nombre}" style="width: 18px; height: 18px; cursor: pointer;">
+            <label style="flex: 1; cursor: pointer; margin: 0; font-weight: 500; color: #333;">${tecnica.nombre}</label>
+        </div>
+    `).join('');
+    
+    // Crear modal HTML flotante (no es Swal, es un div HTML puro)
+    const modalHTML = `
+        <div id="dModalLogosCompartidosEmergente" style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 80vh;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 2000;
+            padding: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-y: auto;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #333;">Logos Compartidos por Técnicas</h2>
+                <button type="button" id="dBtnCerrarModalCompartido" style="
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: #666;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">✕</button>
+            </div>
+            
+            <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666;">Selecciona las técnicas que comparten el mismo logo:</p>
+            
+            <div style="display: grid; gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                ${checkboxesTecnicas}
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 15px; margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 10px; color: #333;">Imagen del Logo:</label>
+                <div class="dImagenesCompartidasDropzone" style="
+                    border: 2px dashed #ddd;
+                    border-radius: 6px;
+                    padding: 20px;
+                    text-align: center;
+                    background: #fafafa;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">
+                    <div style="margin-bottom: 8px; font-size: 1.3rem;">📁</div>
+                    <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imagen aquí</p>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
+                    <input type="file" class="dImagenCompartidasInput" accept="image/*" style="display: none;" />
+                </div>
+                <div class="dImagenCompartidasPreview" style="margin-top: 12px; display: flex; justify-content: center;">
+                    <!-- Preview de imagen -->
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button type="button" id="dBtnCancelarCompartido" style="
+                    background: #f0f0f0;
+                    color: #333;
+                    border: 1px solid #ddd;
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                ">Cancelar</button>
+                <button type="button" id="dBtnGuardarCompartido" style="
+                    background: #1e40af;
+                    color: white;
+                    border: none;
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                ">Guardar Logo Compartido</button>
+            </div>
+        </div>
+        
+        <!-- Backdrop oscuro -->
+        <div id="dBackdropLogosCompartidos" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1999;
+        "></div>
+    `;
+    
+    // Insertar en el DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    const modalElement = document.getElementById('dModalLogosCompartidosEmergente');
+    const backdropElement = document.getElementById('dBackdropLogosCompartidos');
+    const btnCerrar = document.getElementById('dBtnCerrarModalCompartido');
+    const btnCancelar = document.getElementById('dBtnCancelarCompartido');
+    const btnGuardar = document.getElementById('dBtnGuardarCompartido');
+    const dropzone = modalElement.querySelector('.dImagenesCompartidasDropzone');
+    const inputFile = modalElement.querySelector('.dImagenCompartidasInput');
+    const previewDiv = modalElement.querySelector('.dImagenCompartidasPreview');
+    const tecnicasCheckboxes = modalElement.querySelectorAll('.dCheckTecnicaCompartida');
+    
+    let imagenSeleccionada = null;
+    window.imagenCompartidasActual = null;
+    
+    // Setup dropzone
+    dropzone.addEventListener('click', () => inputFile.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#e8f1ff';
+        dropzone.style.borderColor = '#1e40af';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+        procesarArchivoCompartido(Array.from(e.dataTransfer.files));
+    });
+    
+    inputFile.addEventListener('change', (e) => {
+        procesarArchivoCompartido(Array.from(e.target.files));
+    });
+    
+    function procesarArchivoCompartido(archivos) {
+        const imagenes = archivos.filter(f => f.type.startsWith('image/'));
+        if (imagenes.length > 0) {
+            imagenSeleccionada = imagenes[0];
+            window.imagenCompartidasActual = imagenSeleccionada;
+            mostrarPreviewCompartido();
+        }
+    }
+    
+    function mostrarPreviewCompartido() {
+        if (!imagenSeleccionada) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewDiv.innerHTML = `
+                <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #1e40af;">
+                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            `;
+        };
+        reader.readAsDataURL(imagenSeleccionada);
+    }
+    
+    function cerrarModal() {
+        modalElement.remove();
+        backdropElement.remove();
+    }
+    
+    function guardarYCerrar() {
+        const tecnicasSeleccionadas = Array.from(tecnicasCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.getAttribute('data-tecnica-nombre'));
+        
+        if (tecnicasSeleccionadas.length < 2) {
+            alert('Selecciona al menos 2 técnicas');
+            return;
+        }
+        
+        if (!window.imagenCompartidasActual) {
+            alert('Sube una imagen para las técnicas compartidas');
+            return;
+        }
+        
+        // Procesar el resultado
+        const clave = tecnicasSeleccionadas.sort().join('-');
+        window.imagenesCompartidasP3[clave] = window.imagenCompartidasActual;
+        
+        // ACTUALIZAR DINÁMICAMENTE el formulario de agregar prenda
+        actualizarSeccionImagenesConLogosCompartidos(tecnicasSeleccionadas, window.imagenesCompartidasP3);
+        
+        // Mostrar en el contenedor de logos compartidos
+        mostrarLogosCompartidosAgregados(window.imagenesCompartidasP3, tecnicasSeleccionadas);
+        
+        cerrarModal();
+    }
+    
+    // Event listeners
+    btnCerrar.addEventListener('click', cerrarModal);
+    btnCancelar.addEventListener('click', cerrarModal);
+    btnGuardar.addEventListener('click', guardarYCerrar);
+    backdropElement.addEventListener('click', cerrarModal);
+}
+
+// =========================================================
+// ACTUALIZAR SECCIÓN DE IMÁGENES CON LOGOS COMPARTIDOS
+// =========================================================
+
+function actualizarSeccionImagenesConLogosCompartidos(tecnicasCompartidas, imagenesCompartidas) {
+    const imagenesPorTecnicaDiv = document.getElementById('dImagenesPorTecnicaP3');
+    if (!imagenesPorTecnicaDiv) return;
+    
+    const clave = tecnicasCompartidas.sort().join('-');
+    const imagenCompartida = imagenesCompartidas[clave];
+    if (!imagenCompartida) return;
+    
+    // Obtener todas las técnicas del modal actual
+    const tecnicas = window.tecnicasCombinadas || [];
+    
+    // Ocultar/eliminar dropzones de las técnicas que comparten logo
+    tecnicasCompartidas.forEach(nombreTecnica => {
+        // Buscar el índice de esta técnica
+        const tecnicaIdx = tecnicas.findIndex(t => t.nombre === nombreTecnica);
+        if (tecnicaIdx >= 0) {
+            const dropzone = imagenesPorTecnicaDiv.querySelector(`.dImagenesDropzone-p3-${tecnicaIdx}`);
+            const preview = imagenesPorTecnicaDiv.querySelector(`.dImagenesPreview-p3-${tecnicaIdx}`);
+            
+            // Ocultar el contenedor de la dropzone
+            if (dropzone) {
+                const container = dropzone.closest('[data-tecnica-container]') || dropzone.parentElement;
+                if (container) container.style.display = 'none';
+            }
+            
+            // Ocultar el contenedor del preview
+            if (preview) {
+                const container = preview.closest('[data-tecnica-container]') || preview.parentElement;
+                if (container) container.style.display = 'none';
+            }
+        }
+    });
+    
+    // Crear y agregar sección de imágenes compartidas
+    const divImagenCompartida = document.createElement('div');
+    divImagenCompartida.className = 'dImagenCompartidaSeccion';
+    divImagenCompartida.style.cssText = 'padding: 12px; background: #e0f2fe; border: 2px solid #0284c7; border-radius: 4px; margin-bottom: 16px;';
+    
+    divImagenCompartida.innerHTML = `
+        <label style="font-weight: 600; font-size: 0.95rem; color: #0c4a6e; display: block; margin-bottom: 12px;">
+            ✓ Imagen Compartida: ${tecnicasCompartidas.join(' + ')}
+        </label>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="dImagenCompartidaPreview-${clave}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <!-- Preview de imagen compartida -->
+            </div>
+            <button type="button" class="dBtnEliminarCompartida-${clave}" style="background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; margin-top: auto;">
+                ✕ Eliminar
+            </button>
+        </div>
+    `;
+    
+    imagenesPorTecnicaDiv.insertBefore(divImagenCompartida, imagenesPorTecnicaDiv.firstChild);
+    
+    // Mostrar preview de la imagen compartida
+    const previewContainer = divImagenCompartida.querySelector(`.dImagenCompartidaPreview-${clave}`);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewContainer.innerHTML = `
+            <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #0284c7;">
+                <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        `;
+    };
+    reader.readAsDataURL(imagenCompartida);
+    
+    // Botón para eliminar logo compartido
+    const btnEliminar = divImagenCompartida.querySelector(`.dBtnEliminarCompartida-${clave}`);
+    btnEliminar.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Eliminar de imagenesCompartidas
+        delete imagenesCompartidas[clave];
+        
+        // Mostrar nuevamente los dropzones de las técnicas
+        tecnicasCompartidas.forEach(nombreTecnica => {
+            const tecnicaIdx = tecnicas.findIndex(t => t.nombre === nombreTecnica);
+            if (tecnicaIdx >= 0) {
+                const dropzoneParent = imagenesPorTecnicaDiv.querySelector(`.dImagenesDropzone-p3-${tecnicaIdx}`)?.parentElement;
+                const previewParent = imagenesPorTecnicaDiv.querySelector(`.dImagenesPreview-p3-${tecnicaIdx}`)?.parentElement;
+                
+                if (dropzoneParent) dropzoneParent.style.display = 'block';
+                if (previewParent) previewParent.style.display = 'block';
+            }
+        });
+        
+        // Eliminar la sección compartida
+        divImagenCompartida.remove();
+        
+        // Actualizar referencia global
+        window.imagenesCompartidasP3 = imagenesCompartidas;
+    });
+    
+    // Actualizar referencia global
+    window.imagenesCompartidasP3 = imagenesCompartidas;
+}
+
+function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
+    const logosCompartidosContainer = document.getElementById('dLogosCompartidosP3');
+    if (!logosCompartidosContainer) return;
+    
+    // Limpiar y reconstruir
+    logosCompartidosContainer.innerHTML = '';
+    
+    const btnAgregarLogoCompartido = document.createElement('button');
+    btnAgregarLogoCompartido.type = 'button';
+    btnAgregarLogoCompartido.textContent = '+ Agregar Logo Compartido';
+    btnAgregarLogoCompartido.style.cssText = 'background: #1e40af; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; grid-column: 1 / -1;';
+    
+    logosCompartidosContainer.appendChild(btnAgregarLogoCompartido);
+    
+    // Mostrar cada logo compartido
+    for (let clave in imagenesCompartidas) {
+        const tecnicas = clave.split('-');
+        const imagen = imagenesCompartidas[clave];
+        
+        const divLogo = document.createElement('div');
+        divLogo.style.cssText = 'padding: 12px; background: #f0f7ff; border: 1px solid #dbeafe; border-radius: 4px; display: flex; gap: 12px; align-items: flex-start;';
+        
+        const img = document.createElement('img');
+        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;';
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(imagen);
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'flex: 1;';
+        infoDiv.innerHTML = `
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #333; font-size: 0.9rem;">
+                IMAGEN-${tecnicas.join('-')}
+            </p>
+            <p style="margin: 0; font-size: 0.8rem; color: #666;">
+                ${tecnicas.join(' + ')}
+            </p>
+        `;
+        
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.textContent = '✕';
+        btnEliminar.style.cssText = 'background: #f44336; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: 600; flex-shrink: 0;';
+        btnEliminar.addEventListener('click', () => {
+            delete imagenesCompartidas[clave];
+            mostrarLogosCompartidosAgregados(imagenesCompartidas, []);
+        });
+        
+        divLogo.appendChild(img);
+        divLogo.appendChild(infoDiv);
+        divLogo.appendChild(btnEliminar);
+        
+        logosCompartidosContainer.appendChild(divLogo);
+    }
+    
+    // Re-agregar botón de agregar
+    logosCompartidosContainer.appendChild(btnAgregarLogoCompartido);
+    
+    // Event listener para nuevos botones
+    const nuevoBtnAgregar = logosCompartidosContainer.querySelector('button:last-child');
+    nuevoBtnAgregar.addEventListener('click', (e) => {
+        e.preventDefault();
+        abrirModalSeleccionarTecnicasCompartidas(window.tecnicasCombinadas, imagenesCompartidas);
     });
 }
 
@@ -922,8 +1383,12 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
                     <input type="text" id="dNombrePrendaDifP3" placeholder="POLO, CAMISA, PANTALÓN..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Ubicación:</label>
-                    <input type="text" id="dUbicacionDifP3" placeholder="Ej: Pecho, Espalda..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Ubicaciones:</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" id="dUbicacionInputDifP3" placeholder="Ej: Pecho, Espalda, Manga" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        <button type="button" id="dBtnAgregarUbicacionDifP3" style="background: #0066cc; color: white; border: none; padding: 10px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">+ Agregar</button>
+                    </div>
+                    <div id="dUbicacionesListDifP3" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;"></div>
                 </div>
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
@@ -964,18 +1429,74 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
         confirmButtonText: 'Siguiente',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#1e40af',
+        didOpen: (modal) => {
+            const inputUbicacionDif = document.getElementById('dUbicacionInputDifP3');
+            const btnAgregarDif = document.getElementById('dBtnAgregarUbicacionDifP3');
+            const ubicacionesListDif = document.getElementById('dUbicacionesListDifP3');
+            
+            let ubicacionesDif = [];
+            
+            btnAgregarDif.addEventListener('click', (e) => {
+                e.preventDefault();
+                const ubicacion = inputUbicacionDif.value.trim().toUpperCase();
+                
+                if (!ubicacion) {
+                    Swal.showValidationMessage('Escribe una ubicación primero');
+                    return;
+                }
+                
+                if (ubicacionesDif.includes(ubicacion)) {
+                    Swal.showValidationMessage('Esta ubicación ya fue agregada');
+                    return;
+                }
+                
+                ubicacionesDif.push(ubicacion);
+                inputUbicacionDif.value = '';
+                
+                actualizarUbicacionesListDif();
+                inputUbicacionDif.focus();
+            });
+            
+            inputUbicacionDif.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    btnAgregarDif.click();
+                }
+            });
+            
+            function actualizarUbicacionesListDif() {
+                ubicacionesListDif.innerHTML = ubicacionesDif.map((ub, i) => `
+                    <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                        ${ub}
+                        <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
+                    </span>
+                `).join('');
+                
+                ubicacionesListDif.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
+                        ubicacionesDif.splice(idxAEliminar, 1);
+                        actualizarUbicacionesListDif();
+                    });
+                });
+            }
+            
+            // Guardar referencia para preConfirm
+            window.ubicacionesDifActuales = ubicacionesDif;
+        },
         preConfirm: () => {
             const nombre = document.getElementById('dNombrePrendaDifP3').value.trim();
-            const ubicacion = document.getElementById('dUbicacionDifP3').value.trim();
+            const ubicacionesDif = window.ubicacionesDifActuales || [];
             
-            if (!nombre || !ubicacion) {
-                Swal.showValidationMessage('Completa los campos requeridos');
+            if (!nombre || ubicacionesDif.length === 0) {
+                Swal.showValidationMessage('Completa prenda y agrega al menos una ubicación');
                 return false;
             }
             
             return {
                 nombre_prenda: nombre.toUpperCase(),
-                ubicacion: ubicacion,
+                ubicaciones: ubicacionesDif,
                 observaciones: document.getElementById('dObservacionesDifP3').value.trim(),
                 variaciones_prenda: {
                     manga: {
@@ -1091,8 +1612,10 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
     
     // Guardar una prenda por técnica con sus imágenes y variaciones
     tecnicasUnicas.forEach((tecnica, idx) => {
-        // CAPTURAR IMÁGENES (tanto del PASO 2 como nuevas del PASO 3)
+        // CAPTURAR IMÁGENES (tanto del PASO 2 como nuevas del PASO 3 como imágenes compartidas)
         const imagenesCapturadas = [];
+        
+        // Imágenes específicas por técnica
         if (datosForm.imagenesAgregadas && datosForm.imagenesAgregadas[idx] && Array.isArray(datosForm.imagenesAgregadas[idx])) {
             datosForm.imagenesAgregadas[idx].forEach(archivo => {
                 // Si es URL del PASO 2
@@ -1110,6 +1633,23 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
                     });
                 }
             });
+        }
+        
+        // Imágenes compartidas - buscar si esta técnica está en alguna combinación compartida
+        const tecnicaNombre = tecnica.nombre;
+        if (datosForm.imagenesCompartidas) {
+            for (let clave in datosForm.imagenesCompartidas) {
+                const tecnicasEnClave = clave.split('-');
+                if (tecnicasEnClave.includes(tecnicaNombre)) {
+                    const imagenCompartida = datosForm.imagenesCompartidas[clave];
+                    imagenesCapturadas.push({
+                        file: imagenCompartida,
+                        tipo: 'paso3',
+                        nombreCompartido: `IMAGEN-${clave}`,  // Nombre especial para imágenes compartidas
+                        tecnicasCompartidas: tecnicasEnClave  // Array con los nombres de técnicas que la comparten
+                    });
+                }
+            }
         }
         
         const nuevaTecnica = {
@@ -1517,7 +2057,20 @@ function renderizarTecnicasAgregadasPaso3() {
             
             actualizarGridImagenes(tarjeta, imagenesMaps);
         }
-        // CASO 3: Objeto con {file, tipo} - File del PASO 3 (nuevo formato)
+        // CASO 3: Objeto con {file, tipo, nombreCompartido} - File del PASO 3 con imagen compartida (nuevo formato)
+        else if (typeof imagen === 'object' && imagen.file && imagen.tipo === 'paso3' && imagen.nombreCompartido && (imagen.file instanceof Blob || imagen.file instanceof File)) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagenesMaps.push({
+                    data: e.target.result,
+                    tecnica: imagen.nombreCompartido  // Usar el nombre compartido en lugar del nombre de técnica
+                });
+                
+                actualizarGridImagenes(tarjeta, imagenesMaps);
+            };
+            reader.readAsDataURL(imagen.file);
+        }
+        // CASO 4: Objeto con {file, tipo} - File del PASO 3 (nuevo formato)
         else if (typeof imagen === 'object' && imagen.file && imagen.tipo === 'paso3' && (imagen.file instanceof Blob || imagen.file instanceof File)) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1530,7 +2083,7 @@ function renderizarTecnicasAgregadasPaso3() {
             };
             reader.readAsDataURL(imagen.file);
         }
-        // CASO 4: Blob/File directo (Backward compatibility)
+        // CASO 5: Blob/File directo (Backward compatibility)
         else if (imagen instanceof Blob || imagen instanceof File) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1552,28 +2105,29 @@ function renderizarTecnicasAgregadasPaso3() {
             imgSection.style.display = 'block';
             const grid = imgSection.querySelector('.imagenes-grid');
             if (grid) {
-                grid.innerHTML = imagenesMaps.map((img, idx) => `
-                    <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
-                        <img src="${img.data}" style="width: 100%; aspect-ratio: 1; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
-                        <div style="
-                            position: absolute;
-                            bottom: 0;
-                            left: 0;
-                            right: 0;
-                            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-                            padding: 0.4rem;
-                        ">
-                            <span style="
-                                color: white;
-                                font-size: 0.7rem;
-                                font-weight: 600;
-                                background: #1e40af;
-                                padding: 0.2rem 0.4rem;
-                                border-radius: 2px;
-                                display: inline-block;
-                            ">
-                                ${img.tecnica}
-                            </span>
+                // Deduplicar imágenes compartidas: si una imagen compartida ya está, no la duplicar
+                const imagenesUnicas = [];
+                const imagenesVistas = new Set();
+                
+                imagenesMaps.forEach((img) => {
+                    // Si es una imagen compartida, solo incluirla una vez
+                    if (img.tecnica.startsWith('IMAGEN-')) {
+                        if (!imagenesVistas.has(img.data)) {
+                            imagenesUnicas.push(img);
+                            imagenesVistas.add(img.data);
+                        }
+                    } else {
+                        imagenesUnicas.push(img);
+                    }
+                });
+                
+                grid.innerHTML = imagenesUnicas.map((img, idx) => `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer; width: 100%; aspect-ratio: 1;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
+                            <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
+                        </div>
+                        <div style="margin-top: 8px; text-align: center; font-size: 0.75rem; font-weight: 600; color: #1e40af; word-break: break-word; width: 100%;">
+                            ${img.tecnica}
                         </div>
                     </div>
                 `).join('');
@@ -1704,20 +2258,95 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
                 
                 const labelUbicacion = document.createElement('label');
-                labelUbicacion.style.cssText = 'font-weight: 600; min-width: 100px; font-size: 0.9rem; color: #333; flex-shrink: 0;';
+                labelUbicacion.style.cssText = 'font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;';
                 const tecnicaNombreInfo = tecnicaInfo.tipo_logo ? tecnicaInfo.tipo_logo.nombre : tecnicaInfo.tipo;
-                labelUbicacion.textContent = tecnicaNombreInfo + ':';
+                labelUbicacion.textContent = tecnicaNombreInfo + ' - Ubicaciones';
+                
+                const inputDiv = document.createElement('div');
+                inputDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
                 
                 const inputUbicacion = document.createElement('input');
                 inputUbicacion.type = 'text';
-                inputUbicacion.className = 'dUbicacionEditar-p3-' + idx;
-                inputUbicacion.value = (tecnicaInfo.prenda.ubicaciones && tecnicaInfo.prenda.ubicaciones[0]) || '';
+                inputUbicacion.className = 'dUbicacionInputEditar-p3-' + idx;
                 inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
                 inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
                 
+                const btnAgregarUbicacion = document.createElement('button');
+                btnAgregarUbicacion.type = 'button';
+                btnAgregarUbicacion.textContent = '+ Agregar';
+                btnAgregarUbicacion.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;';
+                btnAgregarUbicacion.className = 'dBtnAgregarUbicacionEditar-p3-' + idx;
+                
+                inputDiv.appendChild(inputUbicacion);
+                inputDiv.appendChild(btnAgregarUbicacion);
+                
+                const ubicacionesContainer = document.createElement('div');
+                ubicacionesContainer.className = 'dUbicacionesListEditar-p3-' + idx;
+                ubicacionesContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;';
+                
                 divUbicacion.appendChild(labelUbicacion);
-                divUbicacion.appendChild(inputUbicacion);
+                divUbicacion.appendChild(inputDiv);
+                divUbicacion.appendChild(ubicacionesContainer);
                 ubicacionesDiv.appendChild(divUbicacion);
+                
+                // Manejar agregar ubicaciones en el edit form
+                let ubicacionesEditarTecnica = [];
+                // Inicializar con ubicaciones existentes
+                if (tecnicaInfo.prenda.ubicaciones && Array.isArray(tecnicaInfo.prenda.ubicaciones)) {
+                    ubicacionesEditarTecnica = [...tecnicaInfo.prenda.ubicaciones];
+                }
+                
+                btnAgregarUbicacion.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const ubicacion = inputUbicacion.value.trim().toUpperCase();
+                    
+                    if (!ubicacion) {
+                        Swal.showValidationMessage('Escribe una ubicación primero');
+                        return;
+                    }
+                    
+                    if (ubicacionesEditarTecnica.includes(ubicacion)) {
+                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
+                        return;
+                    }
+                    
+                    ubicacionesEditarTecnica.push(ubicacion);
+                    inputUbicacion.value = '';
+                    
+                    actualizarUbicacionesListEditar();
+                    inputUbicacion.focus();
+                });
+                
+                inputUbicacion.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btnAgregarUbicacion.click();
+                    }
+                });
+                
+                function actualizarUbicacionesListEditar() {
+                    ubicacionesContainer.innerHTML = ubicacionesEditarTecnica.map((ub, i) => `
+                        <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                            ${ub}
+                            <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
+                        </span>
+                    `).join('');
+                    
+                    ubicacionesContainer.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
+                            ubicacionesEditarTecnica.splice(idxAEliminar, 1);
+                            actualizarUbicacionesListEditar();
+                        });
+                    });
+                }
+                
+                // Renderizar ubicaciones iniciales
+                actualizarUbicacionesListEditar();
+                
+                // Guardar referencia global para preConfirm
+                window['dUbicacionesEditarTecnicaP3' + idx] = ubicacionesEditarTecnica;
                 
                 // IMÁGENES - Inicializar con archivos File reales (NO convertidos a base64)
                 // Solo guardamos los File objects, no las URL de paso2
@@ -1968,12 +2597,12 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 return false;
             }
             
-            // Capturar ubicaciones
+            // Capturar ubicaciones (múltiples por técnica)
             const ubicacionesActualizadas = {};
             window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
-                const ubicacion = document.querySelector(`.dUbicacionEditar-p3-${idx}`)?.value.trim() || '';
-                if (ubicacion) {
-                    ubicacionesActualizadas[tecnicaInfo.tipo] = [ubicacion];
+                const ubicacionesEditarTecnica = window['dUbicacionesEditarTecnicaP3' + idx] || [];
+                if (ubicacionesEditarTecnica.length > 0) {
+                    ubicacionesActualizadas[tecnicaInfo.tipo] = ubicacionesEditarTecnica;
                 }
             });
             

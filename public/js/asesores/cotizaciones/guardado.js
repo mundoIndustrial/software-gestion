@@ -473,7 +473,8 @@ async function guardarCotizacion() {
                             has_file: !!img.file,
                             has_ruta: !!img.ruta,
                             file_type: img.file ? img.file.constructor.name : 'N/A',
-                            file_size: img.file ? img.file.size : 'N/A'
+                            file_size: img.file ? img.file.size : 'N/A',
+                            nombreCompartido: img.nombreCompartido || null
                         })) : []
                     })) : []
                 }))), 
@@ -481,23 +482,78 @@ async function guardarCotizacion() {
                 
                 let totalImagenesP3 = 0;
                 const archivosAgregados = [];
+                const imagenesCompartidasProcesadas = new Map(); // Almacenar {clave: {file, fieldName}}
                 
+                // PASO 1: Identificar y procesar imágenes compartidas PRIMERO (una sola vez)
+                const imagenesCompartidasEnProceso = {};
                 window.tecnicasAgregadasPaso3.forEach((tecnica, tecnicaIndex) => {
                     if (tecnica.prendas && Array.isArray(tecnica.prendas)) {
                         tecnica.prendas.forEach((prenda, prendaIndex) => {
                             if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
                                 prenda.imagenes.forEach((imagen, imagenIndex) => {
-                                    // Debug cada imagen
-
-                                    
-                                    // Solo procesar imágenes nuevas del PASO 3 (que son archivos Blob/File)
-                                    if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso3') {
+                                    // Buscar imágenes compartidas
+                                    if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso3' && imagen.nombreCompartido && imagen.tecnicasCompartidas) {
+                                        const clave = imagen.nombreCompartido;
+                                        
+                                        // Guardar solo la primera ocurrencia
+                                        if (!imagenesCompartidasEnProceso[clave]) {
+                                            const fieldName = `logo[imagenes_paso3][${tecnicaIndex}][${prendaIndex}][${imagenIndex}]`;
+                                            imagenesCompartidasEnProceso[clave] = {
+                                                file: imagen.file,
+                                                fieldName: fieldName,
+                                                tecnicasCompartidas: imagen.tecnicasCompartidas
+                                            };
+                                            
+                                            console.log('🔴 Imagen compartida encontrada:', {
+                                                clave: clave,
+                                                tecnicas: imagen.tecnicasCompartidas,
+                                                fieldName: fieldName
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                // Procesar imágenes compartidas identificadas
+                for (let clave in imagenesCompartidasEnProceso) {
+                    const dato = imagenesCompartidasEnProceso[clave];
+                    formData.append(dato.fieldName, dato.file);
+                    
+                    // Agregar metadatos de imagen compartida
+                    formData.append(`logo[imagenes_compartidas][${clave}]`, JSON.stringify({
+                        nombreCompartido: clave,
+                        tecnicasCompartidas: dato.tecnicasCompartidas
+                    }));
+                    
+                    archivosAgregados.push({
+                        fieldName: dato.fieldName,
+                        size: dato.file.size,
+                        type: dato.file.type,
+                        esCompartida: true,
+                        tecnicasCompartidas: dato.tecnicasCompartidas
+                    });
+                    
+                    totalImagenesP3++;
+                }
+                
+                // PASO 2: Procesar imágenes no compartidas
+                window.tecnicasAgregadasPaso3.forEach((tecnica, tecnicaIndex) => {
+                    if (tecnica.prendas && Array.isArray(tecnica.prendas)) {
+                        tecnica.prendas.forEach((prenda, prendaIndex) => {
+                            if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                                prenda.imagenes.forEach((imagen, imagenIndex) => {
+                                    // Solo procesar imágenes nuevas del PASO 3 que NO sean compartidas
+                                    if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso3' && !imagen.nombreCompartido) {
                                         const fieldName = `logo[imagenes_paso3][${tecnicaIndex}][${prendaIndex}][${imagenIndex}]`;
                                         formData.append(fieldName, imagen.file);
                                         archivosAgregados.push({
                                             fieldName: fieldName,
                                             size: imagen.file.size,
-                                            type: imagen.file.type
+                                            type: imagen.file.type,
+                                            esCompartida: false
                                         });
                                         totalImagenesP3++;
 

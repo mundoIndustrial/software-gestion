@@ -151,6 +151,82 @@ class LogoCotizacionTecnicaController extends Controller
             // Crear prendas con imágenes
             $prendas = [];
             
+            // PASO 1: Procesar imágenes compartidas PRIMERO (una sola vez)
+            $imagenesCompartidasMap = []; // Mapeo de clave -> ruta guardada
+            $imagenesCompartidas = [];
+            
+            // Obtener metadatos de imágenes compartidas desde FormData
+            foreach ($request->all() as $key => $value) {
+                if (preg_match("/^logo\[imagenes_compartidas\]/", $key) && is_string($value)) {
+                    $metadatos = json_decode($value, true);
+                    if ($metadatos) {
+                        $imagenesCompartidas[$metadatos['nombreCompartido']] = $metadatos;
+                    }
+                }
+            }
+            
+            Log::info(' Metadatos de imágenes compartidas encontrados:', [
+                'count' => count($imagenesCompartidas),
+                'claves' => array_keys($imagenesCompartidas)
+            ]);
+            
+            // Procesar archivos de imágenes compartidas
+            // Los archivos están en logo[imagenes_paso3][0][prendaIndex][imagenIndex]
+            foreach ($imagenesCompartidas as $clave => $metadatos) {
+                $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
+                
+                if (empty($tecnicasCompartidas)) {
+                    continue;
+                }
+                
+                // Buscar el archivo correspondiente a esta imagen compartida
+                foreach ($request->files->all() as $fieldName => $archivo) {
+                    // Buscar si este es el archivo de esta imagen compartida
+                    if (preg_match("/^logo\[imagenes_paso3\]\[\d+\]\[\d+\]\[\d+\]$/", $fieldName)) {
+                        // AQUÍ está el archivo - procesar solo el primero encontrado para esta clave
+                        try {
+                            Log::info(' Procesando imagen compartida', [
+                                'fieldName' => $fieldName,
+                                'clave' => $clave,
+                                'tecnicas' => implode('-', $tecnicasCompartidas)
+                            ]);
+                            
+                            // Guardar imagen con nombre que incluye todas las técnicas
+                            $rutasImagen = $imagenService->guardarImagen(
+                                $archivo,
+                                $logoCotizacionId,
+                                implode('-', $tecnicasCompartidas), // Pasar técnicas combinadas como "nombre"
+                                null // No usar grupo_combinado para imágenes compartidas
+                            );
+                            
+                            // Guardar la ruta para usarla en todas las técnicas
+                            $imagenesCompartidasMap[$clave] = $rutasImagen['ruta_webp'];
+                            
+                            Log::info(' Imagen compartida guardada', [
+                                'clave' => $clave,
+                                'ruta' => $rutasImagen['ruta_webp'],
+                                'tecnicas' => implode('-', $tecnicasCompartidas),
+                                'tamaño' => $rutasImagen['tamaño']
+                            ]);
+                            
+                            // Salir - solo procesar una vez por clave
+                            break;
+                        } catch (\Exception $e) {
+                            Log::error(' Error procesando imagen compartida', [
+                                'error' => $e->getMessage(),
+                                'clave' => $clave
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            Log::info(' Imágenes compartidas procesadas:', [
+                'count' => count($imagenesCompartidasMap),
+                'rutas' => $imagenesCompartidasMap
+            ]);
+            
+            // PASO 2: Procesar prendas e imágenes no compartidas
             foreach ($prendasData as $prendasIndex => $prendaData) {
                 Log::info(' Creando prenda de catálogo', [
                     'nombre_producto' => $prendaData['nombre_prenda'],
@@ -219,59 +295,96 @@ class LogoCotizacionTecnicaController extends Controller
                 ]);
 
                 // Procesar imágenes para esta prenda
-                // Las imágenes vienen con clave: imagenes_prenda_{prendasIndex}_{imagenIndex}
+                // Las imágenes vienen con clave: imagenes_paso3[{tecnicaIndex}][{prendaIndex}][{imagenIndex}]
                 foreach ($request->files->all() as $fieldName => $archivo) {
-                    if (preg_match("/^imagenes_prenda_{$prendasIndex}_(\d+)$/", $fieldName, $matches)) {
-                        $imagenIndex = (int)$matches[1];
+                    // Procesar solo archivos de este índice de prenda
+                    if (preg_match("/^logo\[imagenes_paso3\]\[.+\]\[\d+\]\[\d+\]$/", $fieldName)) {
+                        // Extraer índices
+                        if (preg_match("/\[(\d+)\]\[(\d+)\]\[(\d+)\]$/", $fieldName, $matches)) {
+                            $tecnicaIdx = (int)$matches[1];
+                            $currentPrendaIdx = (int)$matches[2];
+                            $imagenIndex = (int)$matches[3];
+                            
+                            // Solo procesar si es de esta prenda
+                            if ($currentPrendaIdx !== $prendasIndex) {
+                                continue;
+                            }
 
-                        try {
-                            Log::info(' Procesando imagen', [
-                                'prenda_id' => $prenda->id,
-                                'imagen_index' => $imagenIndex,
-                                'fieldName' => $fieldName
-                            ]);
+                            try {
+                                Log::info(' Procesando imagen de prenda', [
+                                    'prenda_id' => $prenda->id,
+                                    'imagen_index' => $imagenIndex,
+                                    'fieldName' => $fieldName
+                                ]);
 
-                            // Guardar imagen en disco
-                            $rutasImagen = $imagenService->guardarImagen(
-                                $archivo,
-                                $logoCotizacionId,
-                                $tipoLogo->nombre,
-                                $grupoCombinado
-                            );
+                                // Guardar imagen normal (no compartida)
+                                $rutasImagen = $imagenService->guardarImagen(
+                                    $archivo,
+                                    $logoCotizacionId,
+                                    $tipoLogo->nombre,
+                                    $grupoCombinado
+                                );
 
-                            // Guardar metadata en BD - SOLO UNA RUTA WEBP
-                            $foto = LogoCotizacionTecnicaPrendaFoto::create([
-                                'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
-                                'ruta_original' => $rutasImagen['ruta_webp'],  // Una sola ruta WebP
-                                'ruta_webp' => $rutasImagen['ruta_webp'],      // Una sola ruta WebP
-                                'ruta_miniatura' => $rutasImagen['ruta_webp'], // Una sola ruta WebP
-                                'orden' => $imagenIndex,
-                                'ancho' => $rutasImagen['ancho'],
-                                'alto' => $rutasImagen['alto'],
-                                'tamaño' => $rutasImagen['tamaño'],
-                            ]);
+                                // Guardar metadata en BD
+                                $foto = LogoCotizacionTecnicaPrendaFoto::create([
+                                    'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
+                                    'ruta_original' => $rutasImagen['ruta_webp'],
+                                    'ruta_webp' => $rutasImagen['ruta_webp'],
+                                    'ruta_miniatura' => $rutasImagen['ruta_webp'],
+                                    'orden' => $imagenIndex,
+                                    'ancho' => $rutasImagen['ancho'],
+                                    'alto' => $rutasImagen['alto'],
+                                    'tamaño' => $rutasImagen['tamaño'],
+                                ]);
 
-                            Log::info(' Imagen guardada en BD', [
-                                'foto_id' => $foto->id,
-                                'ruta_webp' => $rutasImagen['ruta_webp'],
-                                'tamaño_bytes' => $rutasImagen['tamaño']
-                            ]);
+                                Log::info(' Imagen de prenda guardada en BD', [
+                                    'foto_id' => $foto->id,
+                                    'ruta_webp' => $rutasImagen['ruta_webp']
+                                ]);
 
-                        } catch (\Exception $e) {
-                            Log::error(' Error procesando imagen', [
-                                'error' => $e->getMessage(),
-                                'fieldName' => $fieldName,
-                                'prenda_id' => $prenda->id
-                            ]);
-                            // Continuar con siguiente imagen
+                            } catch (\Exception $e) {
+                                Log::error(' Error procesando imagen de prenda', [
+                                    'error' => $e->getMessage(),
+                                    'fieldName' => $fieldName,
+                                    'prenda_id' => $prenda->id
+                                ]);
+                            }
                         }
+                    }
+                }
+                
+                // Agregar imágenes compartidas a esta prenda
+                foreach ($imagenesCompartidasMap as $clave => $rutaCompartida) {
+                    try {
+                        // Crear entrada en BD apuntando a la ruta compartida
+                        $foto = LogoCotizacionTecnicaPrendaFoto::create([
+                            'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
+                            'ruta_original' => $rutaCompartida,
+                            'ruta_webp' => $rutaCompartida,
+                            'ruta_miniatura' => $rutaCompartida,
+                            'orden' => 0,
+                            'ancho' => 0,
+                            'alto' => 0,
+                            'tamaño' => 0,
+                        ]);
+
+                        Log::info(' Imagen compartida vinculada a prenda', [
+                            'foto_id' => $foto->id,
+                            'prenda_id' => $prenda->id,
+                            'ruta_compartida' => $rutaCompartida
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error(' Error vinculando imagen compartida a prenda', [
+                            'error' => $e->getMessage(),
+                            'prenda_id' => $prenda->id
+                        ]);
                     }
                 }
 
                 $prendas[] = $prenda;
             }
 
-            Log::info(' Técnica agregada completamente', [
+            Log::info('Técnica agregada completamente', [
                 'logo_cotizacion_id' => $logoCotizacionId,
                 'tipo_logo_id' => $tipoLogoId,
                 'grupo_combinado' => $grupoCombinado,
@@ -297,7 +410,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning(' Errores de validación', ['errors' => $e->errors()]);
+            Log::warning('Errores de validación', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Errores de validación',
@@ -305,7 +418,7 @@ class LogoCotizacionTecnicaController extends Controller
             ], 422);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error(' Modelo no encontrado', [
+            Log::error('Modelo no encontrado', [
                 'error' => $e->getMessage(),
                 'model' => class_basename($e->getModel())
             ]);
