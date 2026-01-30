@@ -282,6 +282,31 @@ function abrirModalDatosIguales(tecnicas) {
                     </table>
                 </div>
                 
+                <!-- LOGO COMPARTIDO (Nuevo) -->
+                <div style="margin-bottom: 25px; padding: 12px; background: #f0f7ff; border: 2px solid #dbeafe; border-radius: 6px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 12px;">
+                        <input type="checkbox" id="dUsarLogoCompartido" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-weight: 600; color: #0369a1;">Usar el mismo logo en múltiples técnicas</span>
+                    </label>
+                    <div id="dSeccionLogoCompartido" style="display: none;">
+                        <button type="button" id="dBtnAgregarLogoCompartido" style="
+                            background: #0284c7;
+                            color: white;
+                            border: none;
+                            padding: 10px 16px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.9rem;
+                            width: 100%;
+                            margin-bottom: 12px;
+                        ">+ Agregar Logo Compartido</button>
+                        <div id="dLogosCompartidosContenedor" style="display: grid; gap: 10px;">
+                            <!-- Se agregan logos compartidos aquí -->
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- IMÁGENES POR TÉCNICA -->
                 <div style="margin-top: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Imágenes por Técnica</h3>
@@ -472,6 +497,7 @@ function abrirModalDatosIguales(tecnicas) {
                     const imagenesAgregadas = [];
                     
                     const divImagen = document.createElement('div');
+                    divImagen.setAttribute('data-tecnica-idx', idx);
                     divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
                     divImagen.innerHTML = `
                         <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
@@ -586,6 +612,35 @@ function abrirModalDatosIguales(tecnicas) {
                     agregarFilaTalla();
                 });
             }
+            
+            // ========================================
+            // LÓGICA DE LOGO COMPARTIDO
+            // ========================================
+            const checkboxLogoCompartido = document.getElementById('dUsarLogoCompartido');
+            const seccionLogoCompartido = document.getElementById('dSeccionLogoCompartido');
+            const btnAgregarLogoCompartido = document.getElementById('dBtnAgregarLogoCompartido');
+            
+            // Almacenar logos compartidos en contexto
+            const logosCompartidos = {};
+            window.logosCompartidosCotizacionIndividual = logosCompartidos;
+            
+            checkboxLogoCompartido.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    seccionLogoCompartido.style.display = 'block';
+                } else {
+                    seccionLogoCompartido.style.display = 'none';
+                    // Limpiar logos compartidos
+                    for (let key in logosCompartidos) {
+                        delete logosCompartidos[key];
+                    }
+                    document.getElementById('dLogosCompartidosContenedor').innerHTML = '';
+                }
+            });
+            
+            btnAgregarLogoCompartido.addEventListener('click', (e) => {
+                e.preventDefault();
+                abrirModalLogoCompartido(tecnicas, logosCompartidos);
+            });
         },
         preConfirm: () => {
             // Validar prenda
@@ -695,6 +750,7 @@ function abrirModalDatosIguales(tecnicas) {
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 tallasPorTecnica: tallasPorTecnica,
                 imagenesPorTecnica: imagenesPorTecnica,
+                logosCompartidos: window.logosCompartidosCotizacionIndividual || {},
                 variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null
             };
         }
@@ -706,6 +762,327 @@ function abrirModalDatosIguales(tecnicas) {
             guardarTecnicaCombinada(result.value);
         }
     });
+}
+
+// =========================================================
+// 4.3 MODAL LOGO COMPARTIDO
+// =========================================================
+
+function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
+    const checkboxesTecnicas = tecnicas.map((tecnica, idx) => `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">
+            <input type="checkbox" class="dCheckTecnicaCompartidaLogo" data-tecnica-idx="${idx}" data-tecnica-nombre="${tecnica.nombre}" style="width: 18px; height: 18px; cursor: pointer;">
+            <label style="flex: 1; cursor: pointer; margin: 0; font-weight: 500; color: #333;">${tecnica.nombre}</label>
+        </div>
+    `).join('');
+    
+    // Modal emergente flotante
+    const modalHTML = `
+        <div id="dModalLogoCompartidoEmergente" style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 80vh;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 3000;
+            padding: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-y: auto;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #333;">Logos Compartidos</h2>
+                <button type="button" id="dBtnCerrarModalLogoCompartido" style="
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: #666;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">✕</button>
+            </div>
+            
+            <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666;">Selecciona las técnicas que comparten el mismo logo:</p>
+            
+            <div style="display: grid; gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                ${checkboxesTecnicas}
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 15px; margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 10px; color: #333;">Imagen del Logo:</label>
+                <div class="dImagenesLogoCompartidoDropzone" style="
+                    border: 2px dashed #ddd;
+                    border-radius: 6px;
+                    padding: 20px;
+                    text-align: center;
+                    background: #fafafa;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">
+                    <div style="margin-bottom: 8px; font-size: 1.3rem;">📁</div>
+                    <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imagen aquí</p>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
+                    <input type="file" class="dImagenLogoCompartidoInput" accept="image/*" style="display: none;" />
+                </div>
+                <div class="dImagenLogoCompartidoPreview" style="margin-top: 12px; display: flex; justify-content: center;">
+                    <!-- Preview de imagen -->
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button type="button" id="dBtnCancelarLogoCompartido" style="
+                    background: #f0f0f0;
+                    color: #333;
+                    border: 1px solid #ddd;
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                ">Cancelar</button>
+                <button type="button" id="dBtnGuardarLogoCompartido" style="
+                    background: #0284c7;
+                    color: white;
+                    border: none;
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                ">Guardar Logo Compartido</button>
+            </div>
+        </div>
+        
+        <!-- Backdrop -->
+        <div id="dBackdropLogoCompartido" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2999;
+        "></div>
+    `;
+    
+    // Insertar en DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    const modalElement = document.getElementById('dModalLogoCompartidoEmergente');
+    const backdropElement = document.getElementById('dBackdropLogoCompartido');
+    const btnCerrar = document.getElementById('dBtnCerrarModalLogoCompartido');
+    const btnCancelar = document.getElementById('dBtnCancelarLogoCompartido');
+    const btnGuardar = document.getElementById('dBtnGuardarLogoCompartido');
+    const dropzone = modalElement.querySelector('.dImagenesLogoCompartidoDropzone');
+    const inputFile = modalElement.querySelector('.dImagenLogoCompartidoInput');
+    const previewDiv = modalElement.querySelector('.dImagenLogoCompartidoPreview');
+    const tecnicasCheckboxes = modalElement.querySelectorAll('.dCheckTecnicaCompartidaLogo');
+    
+    let imagenSeleccionada = null;
+    
+    // Setup dropzone
+    dropzone.addEventListener('click', () => inputFile.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#e8f1ff';
+        dropzone.style.borderColor = '#0284c7';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+        procesarArchivoLogoCompartido(Array.from(e.dataTransfer.files));
+    });
+    
+    inputFile.addEventListener('change', (e) => {
+        procesarArchivoLogoCompartido(Array.from(e.target.files));
+    });
+    
+    function procesarArchivoLogoCompartido(archivos) {
+        const imagenes = archivos.filter(f => f.type.startsWith('image/'));
+        if (imagenes.length > 0) {
+            imagenSeleccionada = imagenes[0];
+            mostrarPreviewLogoCompartido();
+        }
+    }
+    
+    function mostrarPreviewLogoCompartido() {
+        if (!imagenSeleccionada) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewDiv.innerHTML = `
+                <div style="position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 2px solid #0284c7;">
+                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            `;
+        };
+        reader.readAsDataURL(imagenSeleccionada);
+    }
+    
+    function cerrarModal() {
+        modalElement.remove();
+        backdropElement.remove();
+    }
+    
+    function guardarYCerrar() {
+        const tecnicasSeleccionadas = Array.from(tecnicasCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.getAttribute('data-tecnica-nombre'));
+        
+        if (tecnicasSeleccionadas.length < 2) {
+            alert('Selecciona al menos 2 técnicas');
+            return;
+        }
+        
+        if (!imagenSeleccionada) {
+            alert('Sube una imagen para las técnicas compartidas');
+            return;
+        }
+        
+        // Procesar
+        const clave = tecnicasSeleccionadas.sort().join('-');
+        logosCompartidos[clave] = imagenSeleccionada;
+        
+        console.log('🔍 DEBUG - Logo guardado en modal:', {
+            clave: clave,
+            imagen: imagenSeleccionada,
+            imagenNombre: imagenSeleccionada.name,
+            logosCompartidos: logosCompartidos,
+            windowLogos: window.logosCompartidosCotizacionIndividual
+        });
+        
+        // Actualizar UI
+        mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasSeleccionadas);
+        cerrarModal();
+    }
+    
+    // Event listeners
+    btnCerrar.addEventListener('click', cerrarModal);
+    btnCancelar.addEventListener('click', cerrarModal);
+    btnGuardar.addEventListener('click', guardarYCerrar);
+    backdropElement.addEventListener('click', cerrarModal);
+}
+
+function mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasNuevas) {
+    const contenedor = document.getElementById('dLogosCompartidosContenedor');
+    if (!contenedor) return;
+    
+    // Reconstruir contenedor
+    contenedor.innerHTML = '';
+    
+    // Obtener el div de imágenes por técnica (para ocultar/mostrar dropzones)
+    const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
+    const tecnicas = window.tecnicasCombinadas || [];
+    
+    // Primero, mostrar TODOS los dropzones (estado inicial)
+    if (imagesPorTecnicaDiv) {
+        tecnicas.forEach((tecnica, idx) => {
+            const divTecnica = imagesPorTecnicaDiv.querySelector(`[data-tecnica-idx="${idx}"]`);
+            if (divTecnica) {
+                divTecnica.style.display = 'block';
+            }
+        });
+    }
+    
+    // Ahora, ocultar los que tienen logos compartidos
+    for (let clave in logosCompartidos) {
+        const tecnicasArray = clave.split('-');
+        const imagen = logosCompartidos[clave];
+        
+        // PASO 1: Ocultar los contenedores de las técnicas que comparten logo
+        tecnicasArray.forEach(nombreTecnica => {
+            const tecnicaIdx = tecnicas.findIndex(t => t.nombre === nombreTecnica);
+            if (tecnicaIdx >= 0 && imagesPorTecnicaDiv) {
+                const divTecnica = imagesPorTecnicaDiv.querySelector(`[data-tecnica-idx="${tecnicaIdx}"]`);
+                if (divTecnica) {
+                    divTecnica.style.display = 'none';
+                }
+            }
+        });
+        
+        // PASO 2: Crear tarjeta del logo compartido (COMPACTA COMO PASO 3)
+        const divLogo = document.createElement('div');
+        divLogo.className = 'dLogoCompartidoItem';
+        divLogo.style.cssText = 'padding: 8px 12px; background: #e0f2fe; border: 2px solid #0284c7; border-radius: 4px; display: flex; gap: 10px; align-items: center; margin-bottom: 8px;';
+        divLogo.setAttribute('data-clave', clave);
+        
+        // Crear preview ANTES que el label (para que el texto vaya a la derecha)
+        const previewDiv = document.createElement('div');
+        previewDiv.style.cssText = 'flex: 0 0 auto;';
+        previewDiv.className = `dImagenCompartidaPreview-${clave}`;
+        
+        const img = document.createElement('img');
+        img.style.cssText = 'width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #0284c7;';
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(imagen);
+        
+        previewDiv.appendChild(img);
+        
+        // Label con texto (a la derecha de la imagen)
+        const labelDiv = document.createElement('div');
+        labelDiv.style.cssText = 'flex: 1; min-width: 0;';
+        labelDiv.innerHTML = `
+            <label style="font-weight: 600; font-size: 0.9rem; color: #0c4a6e; display: block; margin: 0; word-break: break-word;">
+                ✓ Logo compartido - ${tecnicasArray.join(' - ')}
+            </label>
+        `;
+        
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.textContent = '✕';
+        btnEliminar.style.cssText = 'background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 1.1rem; flex: 0 0 auto; line-height: 1;';
+        btnEliminar.className = `dBtnEliminarCompartida-${clave}`;
+        
+        btnEliminar.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Eliminar del objeto de logos
+            delete logosCompartidos[clave];
+            
+            // Mostrar nuevamente los dropzones de las técnicas
+            tecnicasArray.forEach(nombreTecnica => {
+                const idx = tecnicas.findIndex(t => t.nombre === nombreTecnica);
+                if (idx >= 0 && imagesPorTecnicaDiv) {
+                    const divTecnica = imagesPorTecnicaDiv.querySelector(`[data-tecnica-idx="${idx}"]`);
+                    if (divTecnica) {
+                        divTecnica.style.display = 'block';
+                    }
+                }
+            });
+            
+            // Eliminar la tarjeta
+            divLogo.remove();
+            
+            // Actualizar referencia global
+            window.logosCompartidosCotizacionIndividual = logosCompartidos;
+        });
+        
+        divLogo.appendChild(previewDiv);
+        divLogo.appendChild(labelDiv);
+        divLogo.appendChild(btnEliminar);
+        
+        contenedor.appendChild(divLogo);
+    }
 }
 
 function iniciarFlujoDatosDiferentes(tecnicas) {
@@ -1707,51 +2084,105 @@ function guardarTecnicaCombinada(datosForm) {
     };
     
     processarImagenes().then((imagenesProcessadas) => {
-        // Para cada técnica
-        tecnicas.forEach((tipo, idx) => {
-            const ubicacionesTecnica = datosForm.ubicacionesPorTecnica[idx] || [];
-            const tallasTecnica = datosForm.tallasPorTecnica[idx] || [];
-            const imagenesTecnica = imagenesProcessadas[idx] || [];
+        // PROCESAR LOGOS COMPARTIDOS PRIMERO
+        const logosCompartidosProcessados = {};
+        const logosCompartidos = datosForm.logosCompartidos || {};
+        
+        // Procesar cada logo compartido
+        for (let clave in logosCompartidos) {
+            const archivo = logosCompartidos[clave];
+            const tecnicasCompartidas = clave.split('-');
             
-            const nuevaTecnica = {
-                tipo_logo: tipo,
-                prendas: [{
-                    nombre_prenda: datosForm.nombre_prenda,
-                    observaciones: datosForm.observaciones,
-                    ubicaciones: ubicacionesTecnica,
-                    talla_cantidad: tallasTecnica,
-                    variaciones_prenda: datosForm.variaciones_prenda || null,
-                    imagenes_files: datosForm.imagenesPorTecnica[idx] || [],  // Array de File objects
-                    imagenes_data_urls: imagenesTecnica.map(img => img.data_url)  // Array de Data URLs
-                }],
-                es_combinada: true,
-                grupo_combinado: grupoId  // ID numérico único para agrupar técnicas combinadas
-            };
-
-            tecnicasAgregadas.push(nuevaTecnica);
-        });
-        
-
-
-        
-        window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-        
-        // Limpiar contexto
-        window.tecnicasCombinadas = null;
-        window.modoTecnicasCombinadas = null;
-        
-        // Limpiar checkboxes
-        const checkboxes = document.querySelectorAll('input[type="checkbox"][data-tecnica-id]');
-        checkboxes.forEach(cb => cb.checked = false);
-        
-        // Actualizar renderizado
-        renderizarTecnicasAgregadas();
-        
-        // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
-        if (typeof renderizarLogoPrendasTecnicas === 'function') {
-
-            renderizarLogoPrendasTecnicas();
+            logosCompartidosProcessados[clave] = new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve({
+                        data_url: e.target.result,
+                        nombre: archivo.name,
+                        tecnicasCompartidas: tecnicasCompartidas,
+                        clave: clave
+                    });
+                };
+                reader.readAsDataURL(archivo);
+            });
         }
+        
+        // Cuando todos los logos compartidos estén procesados
+        Promise.all(Object.values(logosCompartidosProcessados)).then((logosProcessados) => {
+            // Para cada técnica
+            tecnicas.forEach((tipo, idx) => {
+                const ubicacionesTecnica = datosForm.ubicacionesPorTecnica[idx] || [];
+                const tallasTecnica = datosForm.tallasPorTecnica[idx] || [];
+                const imagenesTecnica = imagenesProcessadas[idx] || [];
+                
+                // Agregar logos compartidos de esta técnica
+                const logosParaEstaTecnica = logosProcessados.filter(logo => 
+                    logo.tecnicasCompartidas.includes(tipo.nombre)
+                );
+                
+                // Combinar imágenes: las propias + los logos compartidos
+                const todasLasImagenes = [
+                    ...imagenesTecnica.map(img => ({
+                        ...img,
+                        esCompartida: false
+                    })),
+                    ...logosParaEstaTecnica.map((logo, logoIdx) => ({
+                        data_url: logo.data_url,
+                        nombre: logo.nombre,
+                        nombreCompartido: logo.clave,
+                        tecnicasCompartidas: logo.tecnicasCompartidas,
+                        esCompartida: true,
+                        imagenIndex: imagenesTecnica.length + logoIdx
+                    }))
+                ];
+                
+                const nuevaTecnica = {
+                    tipo_logo: tipo,
+                    prendas: [{
+                        nombre_prenda: datosForm.nombre_prenda,
+                        observaciones: datosForm.observaciones,
+                        ubicaciones: ubicacionesTecnica,
+                        talla_cantidad: tallasTecnica,
+                        variaciones_prenda: datosForm.variaciones_prenda || null,
+                        imagenes_files: datosForm.imagenesPorTecnica[idx] || [],
+                        imagenes_data_urls: todasLasImagenes
+                    }],
+                    es_combinada: true,
+                    grupo_combinado: grupoId,
+                    logosCompartidos: datosForm.logosCompartidos  // Pasar logos compartidos para envío al backend
+                };
+                
+                console.log('🔍 DEBUG - nuevaTecnica armada:', {
+                    tecnica: tipo.nombre,
+                    logosCompartidos: datosForm.logosCompartidos,
+                    claves: Object.keys(datosForm.logosCompartidos || {})
+                });
+
+                tecnicasAgregadas.push(nuevaTecnica);
+            });
+            
+
+            
+            window.tecnicasAgregadas = tecnicasAgregadas;
+            
+            // Limpiar contexto
+            window.tecnicasCombinadas = null;
+            window.modoTecnicasCombinadas = null;
+            window.logosCompartidosCotizacionIndividual = {};
+            
+            // Limpiar checkboxes
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-tecnica-id]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Actualizar renderizado
+            renderizarTecnicasAgregadas();
+            
+            // Actualizar también el renderizado en logo-pedido-tecnicas.js si existe
+            if (typeof renderizarLogoPrendasTecnicas === 'function') {
+
+                renderizarLogoPrendasTecnicas();
+            }
+        });
     });
 }
 
@@ -1993,6 +2424,42 @@ async function guardarTecnicasEnBD() {
             
             // Agregar archivos de imágenes de cada prenda
             let totalArchivos = 0;
+            let imagenesCompartidasProcesadas = {};
+            
+            // PASO 1: Procesar logos compartidos (si existen) - SOLO UNA VEZ
+            const logosCompartidos = tecnica.logosCompartidos || {};
+            console.log('🔍 DEBUG - Logos compartidos recibidos:', {
+                tecnica: tecnica.tipo_logo.nombre,
+                logosCompartidos: logosCompartidos,
+                claves: Object.keys(logosCompartidos),
+                cantidad: Object.keys(logosCompartidos).length
+            });
+            const logosProcesados = {}; // Para almacenar qué claves ya procesamos
+            
+            for (let clave in logosCompartidos) {
+                // Si ya procesamos este logo, saltar
+                if (logosProcesados[clave]) continue;
+                
+                const archivo = logosCompartidos[clave];
+                const tecnicasCompartidas = clave.split('-');
+                
+                // Enviar el archivo una única vez
+                const fieldName = `imagenes_logo_compartido_${totalArchivos}`;
+                formData.append(fieldName, archivo);
+                
+                // Enviar metadatos con la información de qué técnicas comparten este logo
+                formData.append(`logo_compartido_metadata_${totalArchivos}`, JSON.stringify({
+                    nombreCompartido: clave,
+                    tecnicasCompartidas: tecnicasCompartidas,
+                    nombreArchivo: archivo.name
+                }));
+                
+                logosProcesados[clave] = true;
+                imagenesCompartidasProcesadas[clave] = true;
+                totalArchivos++;
+            }
+            
+            // PASO 2: Procesar imágenes propias (no compartidas)
             tecnica.prendas.forEach((prenda, prendasIdx) => {
                 if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
 
@@ -2075,7 +2542,6 @@ function renderizarTecnicasAgregadas() {
     const sinTecnicas = document.getElementById('sin_tecnicas');
     
     if (!container) {
-
         return;
     }
     
@@ -2089,9 +2555,9 @@ function renderizarTecnicasAgregadas() {
     if (sinTecnicas) sinTecnicas.style.display = 'none';
     
     // PASO 1: Agrupar por NOMBRE DE PRENDA (no por técnica)
-    // Esto evita duplicación cuando una prenda tiene múltiples técnicas
     const prendasMap = {};
-    const imagenesParaCargar = []; // Array para guardar imágenes de File que necesitan ser procesadas
+    const imagenesParaCargar = [];
+    const imagenesCompartidasYaProcesadas = new Set(); // Para evitar duplicados
     
     tecnicasAgregadas.forEach((tecnica, tecnicaIndex) => {
         tecnica.prendas.forEach(prenda => {
@@ -2102,8 +2568,8 @@ function renderizarTecnicasAgregadas() {
                     nombre_prenda: nombrePrenda,
                     observaciones: prenda.observaciones,
                     talla_cantidad: prenda.talla_cantidad || [],
-                    tecnicas: [], // Array de técnicas para esta prenda
-                    imagenes: [] // Array de imágenes con técnica
+                    tecnicas: [],
+                    imagenes: []
                 };
             }
             
@@ -2113,32 +2579,52 @@ function renderizarTecnicasAgregadas() {
                 tecnicaIndex: tecnicaIndex
             });
             
-            // Agregar imágenes con referencia a la técnica
-            // Para técnicas combinadas: imagenes_data_urls (URLs procesadas)
-            if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
-                prenda.imagenes_data_urls.forEach(img => {
-                    prendasMap[nombrePrenda].imagenes.push({
-                        data: img,
-                        tecnica: tecnica.tipo_logo.nombre,
-                        tecnicaColor: tecnica.tipo_logo.color
-                    });
-                });
-            }
-            // Para técnicas simples: imagenes_files (File objects sin procesar)
-            else if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
+            // Procesar imágenes - SOLO LAS DE ESTA TÉCNICA (no compartidas)
+            if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
                 prenda.imagenes_files.forEach(archivo => {
                     imagenesParaCargar.push({
                         archivo: archivo,
                         nombrePrenda: nombrePrenda,
                         tecnica: tecnica.tipo_logo.nombre,
-                        tecnicaColor: tecnica.tipo_logo.color
+                        tecnicaColor: tecnica.tipo_logo.color,
+                        esCompartida: false
                     });
+                });
+            }
+            
+            // Procesar imágenes_data_urls (pueden venir del paso 3 con referencias a tecnicas)
+            if (prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0) {
+                prenda.imagenes_data_urls.forEach(img => {
+                    const esCompartida = img.esCompartida === true || !!img.nombreCompartido;
+                    
+                    // Para imágenes compartidas: evitar duplicación
+                    if (esCompartida) {
+                        const claveCompartida = img.nombreCompartido || 'compartida';
+                        if (!imagenesCompartidasYaProcesadas.has(claveCompartida)) {
+                            imagenesCompartidasYaProcesadas.add(claveCompartida);
+                            prendasMap[nombrePrenda].imagenes.push({
+                                data: img.data_url || img,
+                                tecnica: '⭐ COMPARTIDA',
+                                tecnicaColor: '#e0a853', // Dorado para imágenes compartidas
+                                esCompartida: true,
+                                nombreCompartido: img.nombreCompartido || null,
+                                tecnicasCompartidas: img.tecnicasCompartidas || []
+                            });
+                        }
+                    } else {
+                        // Imágenes normales (no compartidas)
+                        prendasMap[nombrePrenda].imagenes.push({
+                            data: img.data_url || img,
+                            tecnica: tecnica.tipo_logo.nombre,
+                            tecnicaColor: tecnica.tipo_logo.color,
+                            esCompartida: false
+                        });
+                    }
                 });
             }
         });
     });
     
-
     
     // Procesar las imágenes de File objects de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
@@ -2369,33 +2855,64 @@ function renderizarTecnicasAgregadas() {
                          Imágenes:
                     </h6>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                        ${datosPrenda.imagenes.map((img, imgIdx) => `
-                            <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: auto; max-width: 120px; flex: 0 1 auto;">
-                                <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
-                                <div style="
-                                    position: absolute;
-                                    bottom: 0;
-                                    left: 0;
-                                    right: 0;
-                                    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-                                    padding: 0.4rem;
-                                    display: flex;
-                                    align-items: flex-end;
-                                ">
-                                    <span style="
-                                        color: white;
-                                        font-size: 0.65rem;
-                                        font-weight: 600;
-                                        background: ${img.tecnicaColor};
-                                        padding: 0.2rem 0.4rem;
-                                        border-radius: 2px;
-                                        display: inline-block;
-                                    ">
-                                        ${img.tecnica}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('')}
+                        ${datosPrenda.imagenes.map((img, imgIdx) => {
+                            // Renderizar diferente si es compartida
+                            if (img.esCompartida) {
+                                return `
+                                    <div style="position: relative; border-radius: 4px; overflow: hidden; border: 3px solid #e0a853; aspect-ratio: 1; width: auto; max-width: 120px; flex: 0 1 auto; box-shadow: 0 0 8px rgba(224, 168, 83, 0.4);">
+                                        <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Logo compartido">
+                                        <div style="
+                                            position: absolute;
+                                            top: 0;
+                                            left: 0;
+                                            right: 0;
+                                            background: linear-gradient(to bottom, rgba(224, 168, 83, 0.9), transparent);
+                                            padding: 0.4rem;
+                                        ">
+                                            <span style="
+                                                color: white;
+                                                font-size: 0.65rem;
+                                                font-weight: 700;
+                                                background: #e0a853;
+                                                padding: 0.2rem 0.4rem;
+                                                border-radius: 2px;
+                                                display: inline-block;
+                                            ">
+                                                ⭐ COMPARTIDO
+                                            </span>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <div style="position: relative; border-radius: 4px; overflow: hidden; border: 2px solid ${img.tecnicaColor}; aspect-ratio: 1; width: auto; max-width: 120px; flex: 0 1 auto;">
+                                        <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;" alt="Imagen prenda">
+                                        <div style="
+                                            position: absolute;
+                                            bottom: 0;
+                                            left: 0;
+                                            right: 0;
+                                            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+                                            padding: 0.4rem;
+                                            display: flex;
+                                            align-items: flex-end;
+                                        ">
+                                            <span style="
+                                                color: white;
+                                                font-size: 0.65rem;
+                                                font-weight: 600;
+                                                background: ${img.tecnicaColor};
+                                                padding: 0.2rem 0.4rem;
+                                                border-radius: 2px;
+                                                display: inline-block;
+                                            ">
+                                                ${img.tecnica}
+                                            </span>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
                     </div>
                 </div>
             `;

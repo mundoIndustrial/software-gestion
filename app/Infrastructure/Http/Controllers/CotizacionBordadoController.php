@@ -15,6 +15,7 @@ use App\Models\NumeroSecuencia;
 use Intervention\Image\ImageManager;
 use App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController;
 use Intervention\Image\Drivers\Gd\Driver;
+use App\Services\TecnicaImagenService;
 
 class CotizacionBordadoController extends Controller
 {
@@ -747,9 +748,20 @@ class CotizacionBordadoController extends Controller
                 'count' => count($tecnicas),
                 'logoCotizacionId' => $logoCotizacionId
             ]);
+            
+            // DEBUG: Ver qué metadatos llegaron al request
+            $todasLasClavesRequest = array_keys($request->all());
+            $clavesConMetadata = array_filter($todasLasClavesRequest, fn($k) => str_contains($k, 'logo_compartido_metadata'));
+            Log::info('🔍 METADATA en Request->all():', [
+                'todas_las_claves' => $todasLasClavesRequest,
+                'claves_con_metadata' => $clavesConMetadata,
+                'count_metadata' => count($clavesConMetadata),
+                'valores_metadata' => array_intersect_key($request->all(), array_flip($clavesConMetadata))
+            ]);
 
-            // Recopilar archivos por técnica y prenda
+            // Recopilar archivos por técnica, prenda y logos compartidos
             $archivosAgrupados = [];
+            $logosCompartidosAgrupados = [];
             foreach ($request->files->all() as $fieldName => $archivo) {
                 if (preg_match('/^tecnica_(\d+)_prenda_(\d+)_img_(\d+)$/', $fieldName, $matches)) {
                     $tecnicaIdx = (int)$matches[1];
@@ -772,6 +784,23 @@ class CotizacionBordadoController extends Controller
                         'img_idx' => $imgIdx,
                         'nombre' => $archivo->getClientOriginalName()
                     ]);
+                } elseif (preg_match('/^tecnica_(\d+)_logo_compartido_(.+)$/', $fieldName, $matches)) {
+                    // NUEVO: Procesar logos compartidos
+                    $tecnicaIdx = (int)$matches[1];
+                    $claveLogo = $matches[2];
+                    
+                    if (!isset($logosCompartidosAgrupados[$tecnicaIdx])) {
+                        $logosCompartidosAgrupados[$tecnicaIdx] = [];
+                    }
+                    
+                    $logosCompartidosAgrupados[$tecnicaIdx][$claveLogo] = $archivo;
+                    
+                    Log::info('🎨 Logo compartido encontrado', [
+                        'fieldName' => $fieldName,
+                        'tecnica_idx' => $tecnicaIdx,
+                        'clave' => $claveLogo,
+                        'nombre' => $archivo->getClientOriginalName()
+                    ]);
                 }
             }
             
@@ -780,7 +809,85 @@ class CotizacionBordadoController extends Controller
                 'estructura' => json_encode(array_map(
                     fn($t) => array_map(fn($p) => count($p), $t),
                     $archivosAgrupados
-                ))
+                )),
+                'tecnicas_con_logos_compartidos' => count($logosCompartidosAgrupados)
+            ]);
+
+            // NUEVO: PROCESAR Y GUARDAR TODOS LOS LOGOS COMPARTIDOS UNA SOLA VEZ AL INICIO
+            $imagenService = new TecnicaImagenService();
+            $logosCompartidosGuardados = []; // Mapeo de clave -> ruta guardada
+            
+            // Obtener metadatos de logos compartidos
+            $imagenesCompartidas = [];
+            foreach ($request->all() as $key => $value) {
+                if (preg_match('/^logo_compartido_metadata_(\d+)$/', $key) && is_string($value)) {
+                    $metadatos = json_decode($value, true);
+                    if ($metadatos && isset($metadatos['nombreCompartido'])) {
+                        $imagenesCompartidas[$metadatos['nombreCompartido']] = $metadatos;
+                    }
+                }
+            }
+            
+            Log::info('🎨 Metadatos de logos compartidos encontrados:', [
+                'count' => count($imagenesCompartidas),
+                'claves' => array_keys($imagenesCompartidas)
+            ]);
+            
+            // Procesar cada logo compartido UNA SOLA VEZ
+            foreach ($imagenesCompartidas as $clave => $metadatos) {
+                $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
+                
+                if (empty($tecnicasCompartidas)) {
+                    continue;
+                }
+                
+                // Buscar el archivo en el FormData
+                $archivoEncontrado = null;
+                foreach ($request->files->all() as $fieldName => $archivo) {
+                    if (preg_match("/^tecnica_(\d+)_logo_compartido_(.+)$/", $fieldName, $matches)) {
+                        $claveEnCampo = $matches[2];
+                        if ($claveEnCampo === $clave) {
+                            $archivoEncontrado = $archivo;
+                            break; // Solo procesar una vez por clave
+                        }
+                    }
+                }
+                
+                if ($archivoEncontrado) {
+                    try {
+                        Log::info('🎨 Guardando logo compartido', [
+                            'clave' => $clave,
+                            'tecnicas' => implode(' + ', $tecnicasCompartidas),
+                            'archivo' => $archivoEncontrado->getClientOriginalName()
+                        ]);
+                        
+                        // Guardar imagen UNA SOLA VEZ con nombre que incluye todas las técnicas
+                        $rutasImagen = $imagenService->guardarImagen(
+                            $archivoEncontrado,
+                            $logoCotizacionId,
+                            implode('-', $tecnicasCompartidas),
+                            null
+                        );
+                        
+                        $logosCompartidosGuardados[$clave] = $rutasImagen['ruta_webp'];
+                        
+                        Log::info('✅ Logo compartido guardado UNA SOLA VEZ', [
+                            'clave' => $clave,
+                            'ruta' => $rutasImagen['ruta_webp'],
+                            'tecnicas' => implode(' + ', $tecnicasCompartidas)
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('❌ Error guardando logo compartido', [
+                            'clave' => $clave,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
+            Log::info('✅ TODOS los logos compartidos guardados', [
+                'count' => count($logosCompartidosGuardados),
+                'claves' => array_keys($logosCompartidosGuardados)
             ]);
 
             // Procesar cada técnica
@@ -817,16 +924,29 @@ class CotizacionBordadoController extends Controller
                 $esCombinada = $tecnica['es_combinada'] ?? false;
                 $esCombinada = ($esCombinada === true || $esCombinada === 'true' || $esCombinada === 1 || $esCombinada === '1') ? 'true' : 'false';
                 
-                $fakeRequest = new Request([
+                // Preparar parámetros incluyendo metadatos de logos compartidos
+                $parametrosFakeRequest = [
                     'logo_cotizacion_id' => $logoCotizacionId,
                     'tipo_logo_id' => $tecnica['tipo_logo']['id'],
                     'prendas' => json_encode($prendasSinArchivos),
                     'es_combinada' => $esCombinada,  // ← String, no boolean
                     'grupo_combinado' => $tecnica['grupo_combinado'] ?? null,
-                ]);
+                    // NUEVO: Pasar las rutas de logos compartidos ya guardados
+                    'logos_compartidos_guardados' => json_encode($logosCompartidosGuardados),
+                ];
+                
+                // Agregar metadatos de logos compartidos desde el request original
+                foreach ($request->all() as $key => $value) {
+                    if (preg_match('/^logo_compartido_metadata_(\d+)$/', $key) && is_string($value)) {
+                        $parametrosFakeRequest[$key] = $value;
+                    }
+                }
+                
+                $fakeRequest = new Request($parametrosFakeRequest);
 
                 // Agregar archivos al Request simulado
                 $archivosEnEstaTecnica = $archivosAgrupados[$tecnicaIdx] ?? [];
+                $logosCompartidosEnEstaTecnica = $logosCompartidosAgrupados[$tecnicaIdx] ?? [];
                 $archivosCopiados = 0;
                 
                 foreach ($archivosEnEstaTecnica as $prendaIdx => $archivosPorIndice) {
@@ -841,6 +961,9 @@ class CotizacionBordadoController extends Controller
                         ]);
                     }
                 }
+                
+                // NO AGREGAR LOGOS COMPARTIDOS AL REQUEST - YA FUERON GUARDADOS
+                // Solo pasamos las rutas a través del parámetro 'logos_compartidos_guardados'
 
                 // Llamar al controlador
                 try {

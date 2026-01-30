@@ -878,7 +878,10 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             return prenda.imagenes_files && prenda.imagenes_files.length > 0;
         });
     });
-    const debeUsarFormData = tieneImagenesNuevas || tieneImagenesEnTecnicas;
+    const tieneLogosCompartidos = (data.tecnicas || []).some(tecnica => {
+        return tecnica.logosCompartidos && Object.keys(tecnica.logosCompartidos).length > 0;
+    });
+    const debeUsarFormData = tieneImagenesNuevas || tieneImagenesEnTecnicas || tieneLogosCompartidos;
 
 
 
@@ -894,6 +897,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         //  EXTRAER Y PROCESAR ARCHIVOS DE TÉCNICAS ANTES DE SERIALIZARLAS
 
         let totalArchivosEnTecnicas = 0;
+        let totalLogosCompartidos = 0;
         
         // Crear versión sin archivos para JSON
         const tecnicasParaJSON = (data.tecnicas || []).map((tecnica, tecnicaIdx) => {
@@ -924,8 +928,61 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                         variaciones_prenda: prenda.variaciones_prenda || null,
                         imagenes_files: [] // Vacío - los archivos ya están en FormData
                     };
-                })
+                }),
+                logosCompartidos: null // Se procesarán por separado
             };
+        });
+        
+        // EXTRAER LOGOS COMPARTIDOS Y METADATOS
+        let logosCompartidosMetadata = {}; // Para almacenar metadatos por clave
+        let metadataIdx = 0;
+        
+        (data.tecnicas || []).forEach((tecnica, tecnicaIdx) => {
+            if (tecnica.logosCompartidos && typeof tecnica.logosCompartidos === 'object') {
+                for (let clave in tecnica.logosCompartidos) {
+                    const archivo = tecnica.logosCompartidos[clave];
+                    if (archivo instanceof File) {
+                        // Agregar archivo
+                        const fieldName = `tecnica_${tecnicaIdx}_logo_compartido_${clave}`;
+                        formData.append(fieldName, archivo);
+                        totalLogosCompartidos++;
+                        console.log(`        ✓ Logo compartido agregado: ${fieldName} (${archivo.name})`);
+                        
+                        // Agregar metadatos SOLO UNA VEZ por clave (evitar duplicados)
+                        if (!logosCompartidosMetadata[clave]) {
+                            logosCompartidosMetadata[clave] = {
+                                nombreCompartido: clave,
+                                tecnicasCompartidas: [],
+                                archivoNombre: archivo.name,
+                                tamaño: archivo.size
+                            };
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Ahora recorrer las técnicas nuevamente para llenar qué técnicas tienen cada logo
+        (data.tecnicas || []).forEach((tecnica, tecnicaIdx) => {
+            if (tecnica.logosCompartidos && typeof tecnica.logosCompartidos === 'object') {
+                for (let clave in tecnica.logosCompartidos) {
+                    const archivo = tecnica.logosCompartidos[clave];
+                    if (archivo instanceof File && logosCompartidosMetadata[clave]) {
+                        // Agregar el nombre de la técnica si no está ya
+                        const nombreTecnica = tecnica.tipo_logo?.nombre || 'DESCONOCIDA';
+                        if (!logosCompartidosMetadata[clave].tecnicasCompartidas.includes(nombreTecnica)) {
+                            logosCompartidosMetadata[clave].tecnicasCompartidas.push(nombreTecnica);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Agregar metadatos al FormData
+        Object.keys(logosCompartidosMetadata).forEach((clave, idx) => {
+            const metadata = logosCompartidosMetadata[clave];
+            formData.append(`logo_compartido_metadata_${idx}`, JSON.stringify(metadata));
+            console.log(`        ✓ Metadata agregado: logo_compartido_metadata_${idx}`, metadata);
         });
 
         data.tecnicas = tecnicasParaJSON;
@@ -956,6 +1013,19 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             .map(img => img.id);
         // IMPORTANTE: Siempre enviar imagenes_existentes, aunque sea vacío
         formData.append('imagenes_existentes', JSON.stringify(imagenesExistentesIds));
+
+        // DEBUG: Ver EXACTAMENTE qué hay en FormData
+        console.log('=== DEBUG: FormData Contents Before POST ===');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+            } else if (typeof value === 'string' && value.length > 200) {
+                console.log(`  ${key}: String (${value.length} chars)`);
+            } else {
+                console.log(`  ${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+            }
+        }
+        console.log('=== END DEBUG ===');
 
         try {
             response = await fetch(url, {
