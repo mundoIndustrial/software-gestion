@@ -297,11 +297,44 @@ class PedidoPrendaService
             $tieneBolsillos = (bool)($variacionesParsed['tiene_bolsillos'] ?? $prendaData['tiene_bolsillos'] ?? false);
             $obsBolsillos = $variacionesParsed['obs_bolsillos'] ?? $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '';
             
+            // ✅ MEJORADO: Procesar nombres de color/tela si no vienen IDs
+            $colorId = $prendaData['color_id'] ?? null;
+            $telaId = $prendaData['tela_id'] ?? null;
+            
+            // Si no hay IDs pero hay nombres, procesarlos
+            if ((!$colorId || !$telaId) && isset($prendaData['telas']) && is_array($prendaData['telas']) && count($prendaData['telas']) > 0) {
+                try {
+                    $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
+                    $primeraTela = $prendaData['telas'][0];
+                    
+                    if (!$colorId && isset($primeraTela['color'])) {
+                        $colorId = $colorTelaService->obtenerOCrearColor($primeraTela['color']);
+                        Log::info('[PedidoPrendaService] 🎨 Color procesado desde telas', [
+                            'color_nombre' => $primeraTela['color'],
+                            'color_id' => $colorId,
+                        ]);
+                    }
+                    
+                    if (!$telaId && isset($primeraTela['tela'])) {
+                        $telaId = $colorTelaService->obtenerOCrearTela($primeraTela['tela']);
+                        Log::info('[PedidoPrendaService] 🧵 Tela procesada desde telas', [
+                            'tela_nombre' => $primeraTela['tela'],
+                            'tela_id' => $telaId,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('[PedidoPrendaService] ❌ Error procesando color/tela', [
+                        'error' => $e->getMessage(),
+                        'prenda_data' => $prendaData,
+                    ]);
+                }
+            }
+            
             $this->crearVariantesDesdeCantidadTalla(
                 $prenda->id, 
                 $prendaData['cantidad_talla'] ?? [],
-                $prendaData['color_id'] ?? null,
-                $prendaData['tela_id'] ?? null,
+                $colorId,
+                $telaId,
                 $prendaData['referencia'] ?? null,
                 $tipoMangaId,
                 $tipoBrocheBotonId,

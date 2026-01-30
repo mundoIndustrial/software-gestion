@@ -101,6 +101,11 @@ class TelaImagenService
                         elseif (is_string($foto)) {
                             $rutaAbsoluta = $foto && !str_starts_with($foto, '/') ? '/' . $foto : $foto;
                             
+                            // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                            if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
+                                $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto, $prendaId, $pedidoId, $telaIndex, $fotoIndex, 'tela');
+                            }
+                            
                             DB::table('prenda_fotos_tela_pedido')->insert([
                                 'prenda_pedido_colores_telas_id' => $colorTelaId,
                                 'ruta_original' => basename($foto),
@@ -159,6 +164,66 @@ class TelaImagenService
 
         // Usar el servicio para obtener o crear la combinación color-tela
         return $this->colorTelaService->obtenerOCrearColorTela($prendaId, $colorId, $telaId);
+    }
+    
+    /**
+     * Copiar imagen desde cotizaciones a pedidos
+     */
+    private function copiarImagenDesdeCotizacion(string $rutaOriginal, int $prendaId, int $pedidoId, int $telaIndex, int $fotoIndex, string $tipo): string
+    {
+        try {
+            // Convertir ruta de storage a ruta del sistema de archivos
+            $rutaSistema = str_replace('/storage/', storage_path('app/public/') . '/', $rutaOriginal);
+            
+            if (!file_exists($rutaSistema)) {
+                Log::warning(' [TelaImagenService] Archivo original no existe', [
+                    'ruta_original' => $rutaOriginal,
+                    'ruta_sistema' => $rutaSistema,
+                ]);
+                return $rutaOriginal; // Devolver ruta original si no existe
+            }
+            
+            // Crear directorio destino
+            $directorioDestino = storage_path("app/public/pedidos/{$pedidoId}/telas");
+            if (!is_dir($directorioDestino)) {
+                mkdir($directorioDestino, 0755, true);
+            }
+            
+            // Generar nombre de archivo único
+            $nombreOriginal = basename($rutaSistema);
+            $nombreArchivo = $telaIndex . '_' . $fotoIndex . '_' . $nombreOriginal;
+            $rutaDestino = $directorioDestino . '/' . $nombreArchivo;
+            
+            // Copiar archivo
+            if (!copy($rutaSistema, $rutaDestino)) {
+                Log::error(' [TelaImagenService] Error copiando archivo', [
+                    'ruta_origen' => $rutaSistema,
+                    'ruta_destino' => $rutaDestino,
+                ]);
+                return $rutaOriginal;
+            }
+            
+            // Generar nueva ruta para storage
+            $nuevaRuta = "/storage/pedidos/{$pedidoId}/telas/{$nombreArchivo}";
+            
+            Log::info(' [TelaImagenService] Imagen copiada exitosamente', [
+                'ruta_original' => $rutaOriginal,
+                'nueva_ruta' => $nuevaRuta,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $pedidoId,
+                'tela_index' => $telaIndex,
+                'foto_index' => $fotoIndex,
+            ]);
+            
+            return $nuevaRuta;
+            
+        } catch (\Exception $e) {
+            Log::error(' [TelaImagenService] Excepción copiando imagen', [
+                'ruta_original' => $rutaOriginal,
+                'error' => $e->getMessage(),
+            ]);
+            return $rutaOriginal; // Devolver ruta original en caso de error
+        }
     }
 }
 

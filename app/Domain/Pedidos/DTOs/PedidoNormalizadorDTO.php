@@ -3,6 +3,7 @@
 namespace App\Domain\Pedidos\DTOs;
 
 use App\Domain\Pedidos\Services\ItemTransformerService;
+use Illuminate\Support\Facades\Log;
 
 /**
  * PedidoNormalizadorDTO
@@ -69,6 +70,22 @@ class PedidoNormalizadorDTO
      */
     public static function fromFrontendJSON(array $json, int $clienteId): self
     {
+        Log::info('[PedidoNormalizadorDTO] 🚀 fromFrontendJSON - JSON crudo recibido:', [
+            'cliente' => $json['cliente'] ?? '',
+            'prendas_count' => count($json['prendas'] ?? []),
+            'epps_count' => count($json['epps'] ?? []),
+            'prendas_raw' => json_encode($json['prendas'] ?? []),
+        ]);
+        
+        // Si hay prendas, mostrar la primera para debugging
+        if (isset($json['prendas'][0])) {
+            Log::info('[PedidoNormalizadorDTO] 🔍 Primera prenda cruda:', [
+                'prenda_0' => $json['prendas'][0],
+                'telas_count' => count($json['prendas'][0]['telas'] ?? []),
+                'telas_0_raw' => json_encode($json['prendas'][0]['telas'][0] ?? []),
+            ]);
+        }
+        
         $dto = new self();
         $dto->cliente = $json['cliente'] ?? '';
         $dto->asesora = $json['asesora'] ?? null;
@@ -111,13 +128,33 @@ class PedidoNormalizadorDTO
      */
     private static function normalizarTelas(array $telas): array
     {
+        Log::info('[PedidoNormalizadorDTO] 🔍 normalizarTelas - Datos recibidos:', [
+            'telas_count' => count($telas),
+            'telas_raw' => json_encode($telas),
+        ]);
+        
         return array_map(function ($tela) {
+            Log::info('[PedidoNormalizadorDTO] 🔍 Procesando tela individual:', [
+                'tela_raw' => $tela,
+                'keys' => array_keys($tela),
+                'tiene_tela' => isset($tela['tela']),
+                'tiene_color' => isset($tela['color']),
+                'tiene_tela_nombre' => isset($tela['tela_nombre']),
+                'tiene_color_nombre' => isset($tela['color_nombre']),
+                'tiene_nombre' => isset($tela['nombre']),
+                'tela_valor' => $tela['tela'] ?? 'NO EXISTE',
+                'color_valor' => $tela['color'] ?? 'NO EXISTE',
+                'tela_nombre_valor' => $tela['tela_nombre'] ?? 'NO EXISTE',
+                'color_nombre_valor' => $tela['color_nombre'] ?? 'NO EXISTE',
+                'nombre_valor' => $tela['nombre'] ?? 'NO EXISTE',
+            ]);
+            
             return [
                 'uid' => $tela['uid'] ?? null,
                 'tela_id' => intval($tela['tela_id'] ?? 0),
                 'color_id' => intval($tela['color_id'] ?? 0),
-                'nombre' => trim($tela['nombre'] ?? ''),
-                'color' => trim($tela['color'] ?? ''),
+                'nombre' => trim($tela['tela_nombre'] ?? $tela['tela'] ?? $tela['nombre'] ?? ''),  // ✅ CORREGIDO: buscar 'tela_nombre' primero
+                'color' => trim($tela['color_nombre'] ?? $tela['color'] ?? ''),  // ✅ CORREGIDO: buscar 'color_nombre' primero
                 'referencia' => trim($tela['referencia'] ?? ''),
                 'imagenes' => self::normalizarImagenes($tela['imagenes'] ?? [])
             ];

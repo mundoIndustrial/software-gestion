@@ -15,6 +15,8 @@ use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 use App\Models\TipoPrenda;
+use App\Models\ColorPrenda;
+use App\Models\TelaPrenda;
 use App\Application\Services\ImageUploadService;
 use App\Domain\Pedidos\Services\ProcesoImagenService;
 use App\Domain\Pedidos\Services\PedidoSequenceService;
@@ -236,19 +238,35 @@ class PedidoWebService
      */
     private function crearVariantesPrenda(PrendaPedido $prenda, array $variaciones): void
     {
-        PrendaVariantePed::create([
-            'prenda_pedido_id' => $prenda->id,
-            'tipo_manga_id' => $variaciones['tipo_manga_id'] ?? null,
-            'tipo_broche_boton_id' => $variaciones['tipo_broche_boton_id'] ?? null,
-            'manga_obs' => $variaciones['obs_manga'] ?? null,
-            'broche_boton_obs' => $variaciones['obs_broche'] ?? null,
-            'tiene_bolsillos' => $variaciones['tiene_bolsillos'] ?? 0,
-            'bolsillos_obs' => $variaciones['obs_bolsillos'] ?? null,
-        ]);
-
-        Log::info('[PedidoWebService] Variantes creadas', [
+        Log::info('[PedidoWebService] 🔧 Creando variantes', [
             'prenda_id' => $prenda->id,
+            'variaciones' => $variaciones
         ]);
+        
+        try {
+            PrendaVariantePed::create([
+                'prenda_pedido_id' => $prenda->id,
+                'tipo_manga_id' => $variaciones['tipo_manga_id'] ?? null,
+                'tipo_broche_boton_id' => $variaciones['tipo_broche_boton_id'] ?? null,
+                'manga_obs' => $variaciones['obs_manga'] ?? null,
+                'broche_boton_obs' => $variaciones['obs_broche'] ?? null,
+                'tiene_bolsillos' => $variaciones['tiene_bolsillos'] ?? 0,
+                'bolsillos_obs' => $variaciones['obs_bolsillos'] ?? null,
+            ]);
+
+            Log::info('[PedidoWebService] ✅ Variantes creadas exitosamente', [
+                'prenda_id' => $prenda->id,
+                'tipo_manga_id' => $variaciones['tipo_manga_id'] ?? null,
+                'tipo_broche_boton_id' => $variaciones['tipo_broche_boton_id'] ?? null,
+                'tiene_bolsillos' => $variaciones['tiene_bolsillos'] ?? 0,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[PedidoWebService] ❌ Error creando variantes', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+                'variaciones' => $variaciones
+            ]);
+        }
     }
 
     /**
@@ -281,8 +299,21 @@ class PedidoWebService
         $telasCreadasCount = 0;
 
         foreach ($telas as $telaData) {
-            // Si tela_id y color_id ya están presentes, usarlos directamente
-            if (isset($telaData['tela_id']) && isset($telaData['color_id'])) {
+            Log::info('[PedidoWebService] 🔍 Procesando tela individual', [
+                'tela_data_original' => $telaData,
+                'tiene_tela_id' => isset($telaData['tela_id']),
+                'tiene_color_id' => isset($telaData['color_id']),
+                'tiene_tela' => isset($telaData['tela']),
+                'tiene_color' => isset($telaData['color']),
+                'tela_id' => $telaData['tela_id'] ?? 'NO EXISTE',
+                'color_id' => $telaData['color_id'] ?? 'NO EXISTE',
+                'tela' => $telaData['tela'] ?? 'NO EXISTE',
+                'color' => $telaData['color'] ?? 'NO EXISTE',
+            ]);
+
+            // Si tela_id y color_id ya están presentes y son válidos (> 0), usarlos directamente
+            if (isset($telaData['tela_id']) && isset($telaData['color_id']) && 
+                $telaData['tela_id'] > 0 && $telaData['color_id'] > 0) {
                 $colorTela = PrendaPedidoColorTela::create([
                     'prenda_pedido_id' => $prenda->id,
                     'color_id' => $telaData['color_id'],
@@ -305,22 +336,123 @@ class PedidoWebService
                 //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
                 // }
             } else {
-                // Buscar por nombre/referencia si solo hay nombres
+                // ✅ MEJORADO: Usar ColorTelaService para obtener o crear colores/telas
                 $telaId = null;
                 $colorId = null;
 
-                if (isset($telaData['tela'])) {
-                    // Buscar tela por nombre o referencia
-                    $telaModel = \App\Models\TelaPrenda::where('nombre', $telaData['tela'])
-                        ->orWhere('referencia', $telaData['referencia'] ?? null)
-                        ->first();
-                    $telaId = $telaModel->id ?? null;
+                try {
+                    if (isset($telaData['tela'])) {
+                        // Usar ColorTelaService para obtener o crear tela
+                        $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
+                        $telaId = $colorTelaService->obtenerOCrearTela($telaData['tela']);
+                        
+                        Log::info('[PedidoWebService] 🧵 Tela procesada', [
+                            'tela_nombre' => $telaData['tela'],
+                            'tela_id' => $telaId,
+                        ]);
+                    }
+
+                    if (isset($telaData['color'])) {
+                        // Usar ColorTelaService para obtener o crear color
+                        $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
+                        $colorId = $colorTelaService->obtenerOCrearColor($telaData['color']);
+                        
+                        Log::info('[PedidoWebService] 🎨 Color procesado', [
+                            'color_nombre' => $telaData['color'],
+                            'color_id' => $colorId,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('[PedidoWebService] ❌ Error procesando color/tela con servicio', [
+                        'error' => $e->getMessage(),
+                        'tela_data' => $telaData,
+                    ]);
+                    
+                    // 🔧 FALLBACK: Buscar directamente en BD si el servicio falla
+                    try {
+                        if (isset($telaData['tela']) && !$telaId) {
+                            $tela = TelaPrenda::where('nombre', 'like', '%' . $telaData['tela'] . '%')->first();
+                            if ($tela) {
+                                $telaId = $tela->id;
+                                Log::info('[PedidoWebService] 🧵 Tela encontrada por fallback', [
+                                    'tela_nombre' => $telaData['tela'],
+                                    'tela_id' => $telaId,
+                                ]);
+                            }
+                        }
+                        
+                        if (isset($telaData['color']) && !$colorId) {
+                            $color = ColorPrenda::where('nombre', 'like', '%' . $telaData['color'] . '%')->first();
+                            if ($color) {
+                                $colorId = $color->id;
+                                Log::info('[PedidoWebService] 🎨 Color encontrado por fallback', [
+                                    'color_nombre' => $telaData['color'],
+                                    'color_id' => $colorId,
+                                ]);
+                            }
+                        }
+                    } catch (\Exception $fallbackError) {
+                        Log::error('[PedidoWebService] ❌ Error en fallback también', [
+                            'error' => $fallbackError->getMessage(),
+                            'tela_data' => $telaData,
+                        ]);
+                    }
                 }
 
-                if (isset($telaData['color'])) {
-                    // Buscar color por nombre
-                    $colorModel = \App\Models\ColorPrenda::where('nombre', $telaData['color'])->first();
-                    $colorId = $colorModel->id ?? null;
+                // 🔧 MEJORADO: Si solo tiene color pero no tela, buscar tela con mismo nombre
+                Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Verificando búsqueda de tela', [
+                    'colorId' => $colorId,
+                    'telaId' => $telaId,
+                    'tiene_nombre' => isset($telaData['nombre']),
+                    'nombre_valor' => $telaData['nombre'] ?? 'NO EXISTE',
+                    'nombre_vacio' => empty($telaData['nombre'] ?? ''),
+                    'tiene_tela_nombre' => isset($telaData['tela_nombre']),
+                    'tela_nombre_valor' => $telaData['tela_nombre'] ?? 'NO EXISTE',
+                    'condicion_colorId' => !empty($colorId),
+                    'condicion_no_telaId' => !$telaId,
+                    'condicion_nombre' => isset($telaData['nombre']),
+                    'condicion_no_vacio' => !empty($telaData['nombre'] ?? ''),
+                    'condicion_completa' => ($colorId && !$telaId && isset($telaData['nombre']) && !empty($telaData['nombre'] ?? ''))
+                ]);
+                
+                if ($colorId && !$telaId && isset($telaData['nombre']) && !empty($telaData['nombre'])) {
+                    // Buscar tela con el mismo nombre
+                    $telaExistente = TelaPrenda::where('nombre', 'like', '%' . $telaData['nombre'] . '%')
+                                                ->where('activo', true)
+                                                ->first();
+                    if ($telaExistente) {
+                        $telaId = $telaExistente->id;
+                        Log::info('[PedidoWebService] 🧵 Tela encontrada por nombre', [
+                            'tela_nombre_busqueda' => $telaData['nombre'],
+                            'tela_encontrada' => $telaExistente->nombre,
+                            'tela_id' => $telaId,
+                            'color_nombre' => $telaData['color'] ?? 'N/A',
+                        ]);
+                    } else {
+                        // Si no encuentra tela con ese nombre, buscar la primera activa
+                        $telaPorDefecto = TelaPrenda::where('activo', true)->first();
+                        if ($telaPorDefecto) {
+                            $telaId = $telaPorDefecto->id;
+                            Log::info('[PedidoWebService] 🧵 Tela por defecto usada (no se encontró por nombre)', [
+                                'tela_nombre_busqueda' => $telaData['nombre'],
+                                'tela_por_defecto' => $telaPorDefecto->nombre,
+                                'tela_id' => $telaId,
+                            ]);
+                        } else {
+                            // Crear una tela genérica si no hay ninguna activa
+                            $telaPorDefecto = TelaPrenda::create([
+                                'nombre' => $telaData['nombre'] ?: 'Tela Genérica',
+                                'referencia' => 'GEN-' . time(),
+                                'descripcion' => 'Tela creada automáticamente',
+                                'activo' => true,
+                            ]);
+                            $telaId = $telaPorDefecto->id;
+                            Log::info('[PedidoWebService] 🧵 Tela creada (no existían activas)', [
+                                'tela_nombre' => $telaPorDefecto->nombre,
+                                'tela_id' => $telaId,
+                            ]);
+                        }
+                    }
                 }
 
                 if ($telaId && $colorId) {

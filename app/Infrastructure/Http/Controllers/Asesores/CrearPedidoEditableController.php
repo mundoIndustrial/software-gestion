@@ -853,26 +853,46 @@ class CrearPedidoEditableController extends Controller
                             'datos_tela' => $tela,
                         ]);
                         
-                        // INTENTAR OBTENER O CREAR USANDO ColorTelaService
-                        if (!empty($tela) && isset($tela['color_id']) && isset($tela['tela_id'])) {
+                        // ✅ MEJORADO: Procesar nombres de color y tela usando ColorTelaService
+                        if (!empty($tela) && isset($tela['color']) && isset($tela['tela'])) {
                             try {
-                                $colorTelaId = $this->colorTelaService->obtenerOCrearColorTela(
-                                    $prenda->id,
-                                    $tela['color_id'],
-                                    $tela['tela_id']
-                                );
+                                // Convertir nombres a IDs
+                                $colorId = $this->colorTelaService->obtenerOCrearColor($tela['color']);
+                                $telaId = $this->colorTelaService->obtenerOCrearTela($tela['tela']);
                                 
-                                if ($colorTelaId) {
-                                    $telaRelacion = \App\Models\PrendaPedidoColorTela::find($colorTelaId);
+                                Log::info('[CrearPedidoEditableController] 🎨 Color/Tela procesados', [
+                                    'color_nombre' => $tela['color'],
+                                    'color_id' => $colorId,
+                                    'tela_nombre' => $tela['tela'],
+                                    'tela_id' => $telaId,
+                                ]);
+                                
+                                if ($colorId && $telaId) {
+                                    $colorTelaId = $this->colorTelaService->obtenerOCrearColorTela(
+                                        $prenda->id,
+                                        $colorId,
+                                        $telaId
+                                    );
                                     
-                                    Log::info('[CrearPedidoEditableController] ✅ Tela obtenida/creada', [
-                                        'color_tela_id' => $colorTelaId,
-                                        'color_id' => $tela['color_id'],
-                                        'tela_id' => $tela['tela_id'],
-                                    ]);
+                                    if ($colorTelaId) {
+                                        $telaRelacion = \App\Models\PrendaPedidoColorTela::find($colorTelaId);
+                                        
+                                        Log::info('[CrearPedidoEditableController] ✅ Tela obtenida/creada', [
+                                            'color_tela_id' => $colorTelaId,
+                                            'color_id' => $colorId,
+                                            'tela_id' => $telaId,
+                                            'referencia' => $tela['referencia'] ?? '',
+                                        ]);
+                                        
+                                        // Actualizar referencia si existe
+                                        if (isset($tela['referencia']) && !empty($tela['referencia'])) {
+                                            $telaRelacion->referencia = $tela['referencia'];
+                                            $telaRelacion->save();
+                                        }
+                                    }
                                 }
                             } catch (\Exception $e) {
-                                Log::error('[CrearPedidoEditableController] ❌ Error al obtener/crear tela', [
+                                Log::error('[CrearPedidoEditableController] ❌ Error al procesar color/tela', [
                                     'error' => $e->getMessage(),
                                     'tela_data' => $tela,
                                 ]);

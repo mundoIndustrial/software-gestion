@@ -83,6 +83,11 @@ class PrendaImagenService
                 elseif (is_string($foto)) {
                     $rutaAbsoluta = $foto && !str_starts_with($foto, '/') ? '/' . $foto : $foto;
                     
+                    // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                    if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
+                        $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto, $prendaId, $pedidoId, $index, 'prenda');
+                    }
+                    
                     DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prendaId,
                         'ruta_original' => basename($foto),
@@ -101,6 +106,11 @@ class PrendaImagenService
                 // CASO 4: Array con string
                 elseif (is_array($foto) && isset($foto['ruta'])) {
                     $rutaAbsoluta = $foto['ruta'] && !str_starts_with($foto['ruta'], '/') ? '/' . $foto['ruta'] : $foto['ruta'];
+                    
+                    // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                    if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
+                        $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto['ruta'], $prendaId, $pedidoId, $index, 'prenda');
+                    }
                     
                     DB::table('prenda_fotos_pedido')->insert([
                         'prenda_pedido_id' => $prendaId,
@@ -124,6 +134,64 @@ class PrendaImagenService
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+    }
+    
+    /**
+     * Copiar imagen desde cotizaciones a pedidos
+     */
+    private function copiarImagenDesdeCotizacion(string $rutaOriginal, int $prendaId, int $pedidoId, int $index, string $tipo): string
+    {
+        try {
+            // Convertir ruta de storage a ruta del sistema de archivos
+            $rutaSistema = str_replace('/storage/', storage_path('app/public/') . '/', $rutaOriginal);
+            
+            if (!file_exists($rutaSistema)) {
+                Log::warning(' [PrendaImagenService] Archivo original no existe', [
+                    'ruta_original' => $rutaOriginal,
+                    'ruta_sistema' => $rutaSistema,
+                ]);
+                return $rutaOriginal; // Devolver ruta original si no existe
+            }
+            
+            // Crear directorio destino
+            $directorioDestino = storage_path("app/public/pedidos/{$pedidoId}/prendas");
+            if (!is_dir($directorioDestino)) {
+                mkdir($directorioDestino, 0755, true);
+            }
+            
+            // Generar nombre de archivo único
+            $nombreOriginal = basename($rutaSistema);
+            $nombreArchivo = $index . '_' . $nombreOriginal;
+            $rutaDestino = $directorioDestino . '/' . $nombreArchivo;
+            
+            // Copiar archivo
+            if (!copy($rutaSistema, $rutaDestino)) {
+                Log::error(' [PrendaImagenService] Error copiando archivo', [
+                    'ruta_origen' => $rutaSistema,
+                    'ruta_destino' => $rutaDestino,
+                ]);
+                return $rutaOriginal;
+            }
+            
+            // Generar nueva ruta para storage
+            $nuevaRuta = "/storage/pedidos/{$pedidoId}/prendas/{$nombreArchivo}";
+            
+            Log::info(' [PrendaImagenService] Imagen copiada exitosamente', [
+                'ruta_original' => $rutaOriginal,
+                'nueva_ruta' => $nuevaRuta,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $pedidoId,
+            ]);
+            
+            return $nuevaRuta;
+            
+        } catch (\Exception $e) {
+            Log::error(' [PrendaImagenService] Excepción copiando imagen', [
+                'ruta_original' => $rutaOriginal,
+                'error' => $e->getMessage(),
+            ]);
+            return $rutaOriginal; // Devolver ruta original en caso de error
         }
     }
 }

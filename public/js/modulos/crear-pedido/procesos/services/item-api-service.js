@@ -158,7 +158,7 @@ class ItemAPIService {
 
             // PASO 1: Extraer TODOS los Files PRIMERO (antes de cualquier normalización)
             console.debug('[crearPedido] PASO 1: Extrayendo files...');
-            const filesExtraidos = this.extraerFilesDelPedido(pedidoData);
+            const filesExtraidos = await this.extraerFilesDelPedido(pedidoData);
             console.debug('[crearPedido] PASO 1 completo:', {
                 prendas: filesExtraidos.prendas.length,
                 archivos_totales: filesExtraidos.prendas.reduce((sum, p) => 
@@ -610,7 +610,7 @@ class ItemAPIService {
      * CRÍTICO: Busca en MÚLTIPLES UBICACIONES
      * @private
      */
-    extraerFilesDelPedido(pedidoData) {
+    async extraerFilesDelPedido(pedidoData) {
         console.debug('[extraerFilesDelPedido] INICIO');
         console.debug('[extraerFilesDelPedido] ESTRUCTURA PEDIDO DATA:', {
             prendas_count: pedidoData.prendas?.length,
@@ -634,6 +634,9 @@ class ItemAPIService {
             archivosMap: {}
         };
 
+        // Array para recolectar todas las promesas de conversión
+        const conversionPromises = [];
+
         // NUEVA ESTRUCTURA: prendas y epps separados
         if (Array.isArray(pedidoData.prendas)) {
             pedidoData.prendas.forEach((item, prendaIdx) => {
@@ -648,6 +651,16 @@ class ItemAPIService {
                 // 1. IMÁGENES DE PRENDA
                 // ==========================================
                 if (Array.isArray(item.imagenes)) {
+                    console.log(`[extraerFiles] 📸 Procesando ${item.imagenes.length} imágenes de prenda:`, item.imagenes.map(img => ({
+                        tiene_ruta: !!img.ruta,
+                        ruta: img.ruta,
+                        uid: img.uid,
+                        nombre_archivo: img.nombre_archivo,
+                        formdata_key: img.formdata_key,
+                        previewUrl: img.previewUrl,
+                        urlDesdeDB: img.urlDesdeDB
+                    })));
+                    
                     item.imagenes.forEach((img, imgIdx) => {
                         if (img instanceof File) {
                             // Generar formdata_key y guardarlo para referencia
@@ -659,7 +672,32 @@ class ItemAPIService {
                             });
                             estructura.archivosMap[formdataKey] = img;
                             console.debug(`[extraerFiles] Prenda[${prendaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${item.uid || 'N/A'})`);
+                        } else if (img.ruta && typeof img.ruta === 'string') {
+                            // 🔄 CONVERTIR IMAGEN DE COTIZACIÓN A FILE
+                            console.log(`[extraerFiles] 🔄 Convirtiendo imagen de prenda con ruta:`, img.ruta);
+                            const promise = this.convertirImagenDeCotizacionAFile(img, `prendas[${prendaIdx}][imagenes][${imgIdx}]`, prendaData.imagenes, estructura.archivosMap, item.uid);
+                            conversionPromises.push(promise);
+                        } else if (img.previewUrl && typeof img.previewUrl === 'string') {
+                            // 🔄 CONVERTIR IMAGEN DE COTIZACIÓN A FILE (usando previewUrl)
+                            console.log(`[extraerFiles] 🔄 Convirtiendo imagen de prenda con previewUrl:`, img.previewUrl);
+                            const imgConRuta = { ...img, ruta: img.previewUrl };
+                            const promise = this.convertirImagenDeCotizacionAFile(imgConRuta, `prendas[${prendaIdx}][imagenes][${imgIdx}]`, prendaData.imagenes, estructura.archivosMap, item.uid);
+                            conversionPromises.push(promise);
+                        } else {
+                            console.warn(`[extraerFiles] ⚠️ Imagen de prenda[${imgIdx}] no se procesará:`, {
+                                tipo: typeof img,
+                                es_file: img instanceof File,
+                                tiene_ruta: !!img.ruta,
+                                ruta_tipo: typeof img.ruta,
+                                datos_completos: img
+                            });
                         }
+                    });
+                } else {
+                    console.warn(`[extraerFiles] ⚠️ No hay imágenes de prenda o no es array:`, {
+                        imagenes: item.imagenes,
+                        tipo: typeof item.imagenes,
+                        es_array: Array.isArray(item.imagenes)
                     });
                 }
 
@@ -683,6 +721,10 @@ class ItemAPIService {
                                     });
                                     estructura.archivosMap[formdataKey] = img;
                                     console.debug(`[extraerFiles] Prenda[${prendaIdx}].telas[${telaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${tela.uid || 'N/A'})`);
+                                } else if (img.ruta && typeof img.ruta === 'string') {
+                                    // 🔄 CONVERTIR IMAGEN DE COTIZACIÓN A FILE
+                                    const promise = this.convertirImagenDeCotizacionAFile(img, `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`, prendaData.telas[telaIdx], estructura.archivosMap, tela.uid);
+                                    conversionPromises.push(promise);
                                 }
                             });
                         }
@@ -819,6 +861,13 @@ class ItemAPIService {
 
                 estructura.prendas.push(prendaData);
             });
+        }
+
+        // 🔄 ESPERAR A QUE TODAS LAS CONVERSIONES DE IMÁGENES TERMINEN
+        if (conversionPromises.length > 0) {
+            console.log(`[extraerFilesDelPedido] 🔄 Esperando ${conversionPromises.length} conversiones de imágenes...`);
+            await Promise.all(conversionPromises);
+            console.log(`[extraerFilesDelPedido] ✅ Todas las conversiones completadas`);
         }
 
         // Contar archivos extraídos
@@ -966,6 +1015,58 @@ class ItemAPIService {
         } catch (error) {
 
             throw error;
+        }
+    }
+
+    /**
+     * Convertir imagen de cotización (con ruta) a objeto File
+     * @param {Object} img - Objeto de imagen con ruta y uid
+     * @param {string} formdataKey - Key para FormData
+     * @param {Array} targetArray - Array donde agregar el archivo
+     * @param {Object} archivosMap - Map de archivos
+     * @param {string} parentUid - UID del padre (prenda/tela)
+     * @returns {Promise<void>}
+     */
+    async convertirImagenDeCotizacionAFile(img, formdataKey, targetArray, archivosMap, parentUid) {
+        try {
+            console.log(`[convertirImagenDeCotizacionAFile] 🔄 Convirtiendo imagen:`, {
+                ruta: img.ruta,
+                uid: img.uid,
+                formdataKey,
+                parentUid
+            });
+
+            // Fetch de la imagen desde cotizaciones
+            const response = await fetch(img.ruta);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const fileName = img.ruta.split('/').pop() || 'imagen_cotizacion.png';
+            const file = new File([blob], fileName, { type: blob.type });
+
+            // Agregar a las estructuras
+            targetArray.push({
+                file: file,
+                formdata_key: formdataKey,
+                uid: parentUid || null
+            });
+            archivosMap[formdataKey] = file;
+
+            console.log(`[convertirImagenDeCotizacionAFile] ✅ Imagen convertida:`, {
+                fileName,
+                fileSize: file.size,
+                fileType: file.type,
+                formdataKey
+            });
+
+        } catch (error) {
+            console.error(`[convertirImagenDeCotizacionAFile] ❌ Error convirtiendo imagen:`, {
+                ruta: img.ruta,
+                error: error.message
+            });
+            // No lanzar el error, solo loguearlo para que continúe el proceso
         }
     }
 }

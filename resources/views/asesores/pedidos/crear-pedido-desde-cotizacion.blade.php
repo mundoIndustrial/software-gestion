@@ -30,12 +30,6 @@
             </h2>
 
             <div class="form-row">
-                <!-- Campo Número de Cotización (solo se muestra si viene de cotización) -->
-                <div id="campo-numero-cotizacion" class="form-group">
-                    <label for="numero_cotizacion_editable">Número de Cotización</label>
-                    <input type="text" id="numero_cotizacion_editable" name="numero_cotizacion" readonly>
-                </div>
-
                 <div class="form-group">
                     <label for="cliente_editable">
                         Cliente

@@ -328,8 +328,14 @@ class ItemFormCollector {
                 
                 // UIDs a imagenes de prenda
                 if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-                    prenda.imagenes.forEach(img => {
-                        if (!img.uid) {
+                    prenda.imagenes.forEach((img, index) => {
+                        // Si img es un string, convertirlo a objeto
+                        if (typeof img === 'string') {
+                            prenda.imagenes[index] = {
+                                ruta: img,
+                                uid: this.generarUID()
+                            };
+                        } else if (!img.uid) {
                             img.uid = this.generarUID();
                         }
                     });
@@ -344,8 +350,14 @@ class ItemFormCollector {
                         
                         // UIDs a imagenes de tela
                         if (tela.imagenes && Array.isArray(tela.imagenes)) {
-                            tela.imagenes.forEach(img => {
-                                if (!img.uid) {
+                            tela.imagenes.forEach((img, index) => {
+                                // Si img es un string, convertirlo a objeto
+                                if (typeof img === 'string') {
+                                    tela.imagenes[index] = {
+                                        ruta: img,
+                                        uid: this.generarUID()
+                                    };
+                                } else if (!img.uid) {
                                     img.uid = this.generarUID();
                                 }
                             });
@@ -362,16 +374,28 @@ class ItemFormCollector {
                         
                         // UIDs a imagenes dentro de procesos.datos.imagenes
                         if (proceso.datos?.imagenes && Array.isArray(proceso.datos.imagenes)) {
-                            proceso.datos.imagenes.forEach(img => {
-                                if (!img.uid) {
+                            proceso.datos.imagenes.forEach((img, index) => {
+                                // Si img es un string, convertirlo a objeto
+                                if (typeof img === 'string') {
+                                    proceso.datos.imagenes[index] = {
+                                        ruta: img,
+                                        uid: this.generarUID()
+                                    };
+                                } else if (!img.uid) {
                                     img.uid = this.generarUID();
                                 }
                             });
                         }
                         // Fallback si imagenes está directamente en proceso
                         else if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
-                            proceso.imagenes.forEach(img => {
-                                if (!img.uid) {
+                            proceso.imagenes.forEach((img, index) => {
+                                // Si img es un string, convertirlo a objeto
+                                if (typeof img === 'string') {
+                                    proceso.imagenes[index] = {
+                                        ruta: img,
+                                        uid: this.generarUID()
+                                    };
+                                } else if (!img.uid) {
                                     img.uid = this.generarUID();
                                 }
                             });
