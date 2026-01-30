@@ -222,7 +222,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
     
     <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
-    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
     
     <!-- Constantes y helpers -->

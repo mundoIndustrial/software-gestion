@@ -9,11 +9,17 @@
     'use strict';
 
     /**
-     * Inicializar GestorPedidoSinCotizacion
+     * Inicializar GestorPrendaSinCotizacion
      */
     window.inicializarGestorSinCotizacion = function() {
+        console.log('[init-gestor-sin-cotizacion.js] 🔍 Verificando disponibilidad de clase:', {
+            'GestorPrendaSinCotizacion': typeof window.GestorPrendaSinCotizacion,
+            'gestorPedidoSinCotizacion': typeof window.gestorPedidoSinCotizacion
+        });
+        
         if (!window.gestorPedidoSinCotizacion) {
-            window.gestorPedidoSinCotizacion = new GestorPedidoSinCotizacion();
+            window.gestorPedidoSinCotizacion = new GestorPrendaSinCotizacion();
+            console.log('[init-gestor-sin-cotizacion.js] ✅ GestorPedidoSinCotizacion instanciado');
         }
     };
 

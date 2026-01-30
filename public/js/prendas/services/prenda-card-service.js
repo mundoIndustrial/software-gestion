@@ -14,30 +14,81 @@ class PrendaCardService {
      */
     static generar(prendaRaw, indice) {
         try {
-            console.log('[PrendaCardService.generar] � INICIA GENERACIÓN DE TARJETA');
-            console.log('[PrendaCardService.generar] �📦 ENTRADA - prendaRaw:', prendaRaw);
+            console.log('[PrendaCardService.generar] 🚀 INICIA GENERACIÓN DE TARJETA');
+            console.log('[PrendaCardService.generar] 📦 ENTRADA - prendaRaw:', prendaRaw);
+            console.log('[PrendaCardService.generar] 📍 ÍNDICE:', indice);
+            
+            // Verificar estructura específica de datos
+            console.log('[PrendaCardService.generar] 🔍 ESTRUCTURA DE DATOS:');
+            console.log('[PrendaCardService.generar]   - tipo:', prendaRaw.tipo);
+            console.log('[PrendaCardService.generar]   - nombre_prenda:', prendaRaw.nombre_prenda);
+            console.log('[PrendaCardService.generar]   - tela (directo):', prendaRaw.tela);
+            console.log('[PrendaCardService.generar]   - color (directo):', prendaRaw.color);
+            console.log('[PrendaCardService.generar]   - referencia (directo):', prendaRaw.referencia);
+            console.log('[PrendaCardService.generar]   - telas:', prendaRaw.telas);
+            console.log('[PrendaCardService.generar]   - telasAgregadas:', prendaRaw.telasAgregadas);
+            console.log('[PrendaCardService.generar]   - imagenes:', prendaRaw.imagenes);
+            console.log('[PrendaCardService.generar]   - fotos:', prendaRaw.fotos);
 
             // 1. Transformar datos
             console.log('[PrendaCardService.generar] 🔍 Verificando PrendaDataTransformer:', !!PrendaDataTransformer);
             const prenda = PrendaDataTransformer.transformar(prendaRaw);
-            console.log('[PrendaCardService.generar]  DESPUÉS TRANSFORMAR - prenda:', prenda);
+            console.log('[PrendaCardService.generar] 🔄 DESPUÉS TRANSFORMAR - prenda:', prenda);
+            
             if (!prenda) {
-                console.log('[PrendaCardService.generar]  TRANSFORMACIÓN RETORNÓ NULL');
+                console.log('[PrendaCardService.generar] ❌ TRANSFORMACIÓN RETORNÓ NULL');
                 return '';
             }
 
             // 2. Obtener elementos visuales
+            console.log('[PrendaCardService.generar] 🖼️ OBTENIENDO ELEMENTOS VISUALES...');
             const fotoPrincipal = PrendaDataTransformer.obtenerFotoPrincipal(prenda);
             const fotoTela = PrendaDataTransformer.obtenerFotoTela(prenda);
-        const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
+            const infoTela = PrendaDataTransformer.obtenerInfoTela(prenda);
+            
+            console.log('[PrendaCardService.generar] 📸 Foto principal:', fotoPrincipal);
+            console.log('[PrendaCardService.generar] 🧵 Foto tela:', fotoTela);
+            console.log('[PrendaCardService.generar] 📋 Info tela:', infoTela);
 
-        // 3. Construir secciones expandibles
-        const variacionesHTML = VariacionesBuilder.construir(prenda, indice);
+            // 3. Construir secciones expandibles
+            console.log('[PrendaCardService.generar] 🏗️ CONSTRUYENDO SECCIONES...');
+            console.log('[PrendaCardService.generar] 🔍 Verificando builders:');
+            console.log('[PrendaCardService.generar]   - VariacionesBuilder:', !!VariacionesBuilder);
+            console.log('[PrendaCardService.generar]   - TallasBuilder:', !!TallasBuilder);
+            console.log('[PrendaCardService.generar]   - ProcesosBuilder:', !!ProcesosBuilder);
+            
+            const variacionesHTML = VariacionesBuilder.construir(prenda, indice);
             const tallasHTML = TallasBuilder.construir(prenda, indice);
             const procesosHTML = ProcesosBuilder.construir(prenda, indice);
+            
+            console.log('[PrendaCardService.generar] 📄 HTML de secciones:');
+            console.log('[PrendaCardService.generar]   - Variaciones HTML length:', variacionesHTML ? variacionesHTML.length : 0);
+            console.log('[PrendaCardService.generar]   - Tallas HTML length:', tallasHTML ? tallasHTML.length : 0);
+            console.log('[PrendaCardService.generar]   - Procesos HTML length:', procesosHTML ? procesosHTML.length : 0);
 
             // 4. Generar HTML completo
-            return this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
+            console.log('[PrendaCardService.generar] 🎨 GENERANDO HTML COMPLETO...');
+            const htmlCompleto = this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
+            console.log('[PrendaCardService.generar] ✅ HTML generado, length:', htmlCompleto ? htmlCompleto.length : 0);
+            
+            // 5. Inicializar event listeners después de un pequeño delay para asegurar que el HTML esté en el DOM
+            setTimeout(() => {
+                console.log('[PrendaCardService.generar] 🔧 INICIALIZANDO EVENT LISTENERS...');
+                if (typeof window.inicializarTarjetaReadOnly === 'function') {
+                    // Buscar la tarjeta recién creada
+                    const tarjetaElement = document.querySelector(`[data-prenda-index="${indice}"]`);
+                    if (tarjetaElement) {
+                        console.log('[PrendaCardService.generar] ✅ Tarjeta encontrada, inicializando handlers');
+                        window.inicializarTarjetaReadOnly(tarjetaElement, prenda, indice);
+                    } else {
+                        console.log('[PrendaCardService.generar] ⚠️ Tarjeta no encontrada para inicializar');
+                    }
+                } else {
+                    console.log('[PrendaCardService.generar] ⚠️ inicializarTarjetaReadOnly no disponible');
+                }
+            }, 100);
+            
+            return htmlCompleto;
         } catch (error) {
             console.error('[PrendaCardService.generar]  ERROR:', error);
             console.error('[PrendaCardService.generar] Stack:', error.stack);

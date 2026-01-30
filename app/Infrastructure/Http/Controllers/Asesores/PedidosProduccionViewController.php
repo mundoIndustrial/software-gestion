@@ -4,8 +4,11 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
+use App\Models\GeneroPrenda;
+use App\Models\PrendaTallaCot;
 
 /**
  * PedidosProduccionViewController
@@ -28,8 +31,41 @@ class PedidosProduccionViewController
     public function obtenerDatosCotizacion($cotizacionId)
     {
         try {
+            // Logging para diagnóstico
+            \Log::info('[obtenerDatosCotizacion] Iniciando carga', [
+                'cotizacion_id' => $cotizacionId,
+                'usuario_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+            
+            // Validar que el usuario tenga acceso a esta cotización
+            $cotizacion = Cotizacion::where('id', $cotizacionId)
+                ->where('asesor_id', Auth::id())
+                ->first();
+                
+            if (!$cotizacion) {
+                \Log::warning('[obtenerDatosCotizacion] Cotización no encontrada o sin permisos', [
+                    'cotizacion_id' => $cotizacionId,
+                    'usuario_id' => Auth::id(),
+                    'razon' => 'No existe o no pertenece al usuario'
+                ]);
+                
+                return response()->json([
+                    'error' => 'Cotización no encontrada o no tienes permisos para acceder a ella'
+                ], 404);
+            }
+            
+            \Log::info('[obtenerDatosCotizacion] Cotización encontrada', [
+                'cotizacion_id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente,
+                'estado' => $cotizacion->estado,
+                'prendas_count' => $cotizacion->prendas ? $cotizacion->prendas->count() : 0
+            ]);
+            
+            \Log::info('[obtenerDatosCotizacion] Iniciando carga con relaciones completas...');
+            
             // Obtener cotización con sus relaciones COMPLETAS
-            $cotizacion = Cotizacion::with([
+            $cotizacionConRelaciones = Cotizacion::with([
                 'tipoCotizacion:id,nombre',
                 'prendas' => function($query) {
                     $query->with([
@@ -38,23 +74,34 @@ class PedidosProduccionViewController
                         },
                         'fotos:id,prenda_cot_id,ruta_original,ruta_webp,ruta_miniatura',
                         'telaFotos:id,prenda_tela_cot_id,ruta_original,ruta_webp,ruta_miniatura',
-                        'variantes:id,prenda_cot_id,tipo_manga_id,tipo_broche_id,tiene_bolsillos,aplica_manga,aplica_broche,tiene_reflectivo,obs_manga,obs_bolsillos,obs_broche,obs_reflectivo',
+                        'tallas:id,prenda_cot_id,talla,cantidad',
+                        'variantes:id,prenda_cot_id,tipo_prenda,es_jean_pantalon,tipo_jean_pantalon,genero_id,color,tipo_manga_id,tipo_broche_id,obs_broche,tiene_bolsillos,obs_bolsillos,aplica_manga,tipo_manga,obs_manga,aplica_broche,tiene_reflectivo,obs_reflectivo,descripcion_adicional,telas_multiples',
                         'variantes.manga:id,nombre',
-                        'variantes.broche:id,nombre'
+                        'variantes.broche:id,nombre',
+                        'variantes.genero:id,nombre'
                     ]);
                 },
                 'reflectivo',
                 'logoCotizacion'
             ])->find($cotizacionId);
 
-            if (!$cotizacion) {
+            if (!$cotizacionConRelaciones) {
+                \Log::error('[obtenerDatosCotizacion] Error al cargar cotización con relaciones', [
+                    'cotizacion_id' => $cotizacionId
+                ]);
+                
                 return response()->json([
-                    'error' => 'Cotización no encontrada'
-                ], 404);
+                    'error' => 'Error al cargar datos completos de la cotización'
+                ], 500);
             }
+            
+            \Log::info('[obtenerDatosCotizacion] Relaciones cargadas exitosamente', [
+                'cotizacion_id' => $cotizacionId,
+                'prendas_count' => $cotizacionConRelaciones->prendas ? $cotizacionConRelaciones->prendas->count() : 0
+            ]);
 
             // Formatear datos COMPLETOS para el frontend
-            $prendas = $cotizacion->prendas->map(function($prenda) {
+            $prendas = $cotizacionConRelaciones->prendas->map(function($prenda) {
                 // Telas con fotos
                 $telas = [];
                 if ($prenda->telas) {
@@ -64,7 +111,15 @@ class PedidosProduccionViewController
                         if ($prenda->telaFotos) {
                             $fotosTela = $prenda->telaFotos
                                 ->where('prenda_tela_cot_id', $tela->id)
-                                ->pluck('ruta_webp')
+                                ->get()
+                                ->map(function($foto) {
+                                    $ruta = $foto->ruta_webp;
+                                    // Agregar prefijo /storage/ si no lo tiene
+                                    if ($ruta && !\Illuminate\Support\Str::startsWith($ruta, '/')) {
+                                        $ruta = '/storage/' . $ruta;
+                                    }
+                                    return $ruta;
+                                })
                                 ->toArray();
                         }
                         
@@ -87,7 +142,14 @@ class PedidosProduccionViewController
                 // Fotos de la prenda (principal)
                 $fotos = [];
                 if ($prenda->fotos) {
-                    $fotos = $prenda->fotos->pluck('ruta_webp')->toArray();
+                    $fotos = $prenda->fotos->map(function($foto) {
+                        $ruta = $foto->ruta_webp;
+                        // Agregar prefijo /storage/ si no lo tiene
+                        if ($ruta && !\Illuminate\Support\Str::startsWith($ruta, '/')) {
+                            $ruta = '/storage/' . $ruta;
+                        }
+                        return $ruta;
+                    })->toArray();
                 }
 
                 // Variantes (especificaciones)
@@ -109,6 +171,43 @@ class PedidosProduccionViewController
                     ];
                 })->toArray() : [];
 
+                // Formatear tallas
+                $tallasFormateadas = [];
+                \Log::info('[obtenerDatosCotizacion] Revisando tallas de la prenda', [
+                    'prenda_id' => $prenda->id,
+                    'tiene_tallas_relation' => isset($prenda->tallas),
+                    'tallas_count' => $prenda->tallas ? $prenda->tallas->count() : 0,
+                    'tallas_data' => $prenda->tallas ? $prenda->tallas->toArray() : null
+                ]);
+                
+                if ($prenda->tallas) {
+                    $tallasFormateadas = $prenda->tallas->map(function($talla) {
+                        \Log::info('[obtenerDatosCotizacion] Procesando talla', [
+                            'talla_id' => $talla->id,
+                            'talla_nombre' => $talla->talla,
+                            'talla_cantidad' => $talla->cantidad
+                        ]);
+                        
+                        return [
+                            'id' => $talla->id,
+                            'talla' => $talla->talla,
+                            'cantidad' => $talla->cantidad
+                        ];
+                    })->toArray();
+                }
+
+                // Obtener género desde la primera variante
+                $genero = null;
+                if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
+                    $primeraVariante = $prenda->variantes->first();
+                    if ($primeraVariante->genero) {
+                        $genero = [
+                            'id' => $primeraVariante->genero->id,
+                            'nombre' => $primeraVariante->genero->nombre
+                        ];
+                    }
+                }
+
                 return [
                     'id' => $prenda->id,
                     'nombre' => $prenda->nombre_producto ?? 'Prenda sin nombre',
@@ -120,25 +219,34 @@ class PedidosProduccionViewController
                     'telas' => $telas,
                     'fotos' => $fotos,
                     'variantes' => $variantes,
+                    'tallas' => $tallasFormateadas,
+                    'genero' => $genero,
                     'tipo' => 'prenda'
                 ];
+                
+                \Log::info('[obtenerDatosCotizacion] Datos de prenda formateados', [
+                    'prenda_id' => $prenda->id,
+                    'tallas_count' => count($tallasFormateadas),
+                    'tallas_data' => $tallasFormateadas,
+                    'genero' => $genero
+                ]);
             })->toArray();
 
             $reflectivo = null;
-            if ($cotizacion->reflectivo) {
+            if ($cotizacionConRelaciones->reflectivo) {
                 $reflectivo = [
-                    'id' => $cotizacion->reflectivo->id,
-                    'tipo_reflectivo' => $cotizacion->reflectivo->tipo_reflectivo ?? 'N/A',
-                    'cantidad' => $cotizacion->reflectivo->cantidad ?? 1,
+                    'id' => $cotizacionConRelaciones->reflectivo->id,
+                    'tipo_reflectivo' => $cotizacionConRelaciones->reflectivo->tipo_reflectivo ?? 'N/A',
+                    'cantidad' => $cotizacionConRelaciones->reflectivo->cantidad ?? 1,
                     'tipo' => 'reflectivo'
                 ];
             }
 
             $logo = null;
-            if ($cotizacion->logoCotizacion) {
+            if ($cotizacionConRelaciones->logoCotizacion) {
                 $logo = [
-                    'id' => $cotizacion->logoCotizacion->id,
-                    'tipo_logo' => $cotizacion->logoCotizacion->tipo_logo ?? 'N/A',
+                    'id' => $cotizacionConRelaciones->logoCotizacion->id,
+                    'tipo_logo' => $cotizacionConRelaciones->logoCotizacion->tipo_logo ?? 'N/A',
                     'tipo' => 'logo'
                 ];
             }
@@ -577,7 +685,7 @@ class PedidosProduccionViewController
                                     'genero:id,nombre'
                                 ]);
                             },
-                            'tallas:id,prenda_cot_id,talla',
+                            'tallas:id,prenda_cot_id,talla,cantidad',
                             'prendaCotReflectivo:id,prenda_cot_id,ubicaciones',
                             'logoCotizacionesTecnicas' => function($q) {
                                 $q->with([
@@ -664,9 +772,14 @@ class PedidosProduccionViewController
 
             // PROCESAR TALLAS
             $tallasDisponibles = [];
+            $tallasConCantidades = [];
             if ($prenda->tallas && count($prenda->tallas) > 0) {
                 foreach ($prenda->tallas as $tallaCot) {
                     $tallasDisponibles[] = $tallaCot->talla;
+                    $tallasConCantidades[] = [
+                        'talla' => $tallaCot->talla,
+                        'cantidad' => $tallaCot->cantidad
+                    ];
                 }
             }
 
@@ -881,6 +994,7 @@ class PedidosProduccionViewController
                     'cantidad' => $prenda->cantidad,
                     'prenda_bodega' => $prenda->prenda_bodega,
                     'tallas_disponibles' => $tallasDisponibles,
+                    'tallas' => $tallasConCantidades,
                     'telas' => $telasFormato,
                     'fotos' => $fotosFormato,
                     'variantes' => $variantes

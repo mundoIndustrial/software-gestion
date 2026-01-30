@@ -177,9 +177,37 @@ class PrendaFormCollector {
                         tela: tela.tela || '',
                         color: tela.color || '',
                         referencia: tela.referencia || '',
-                        tela_id: tela.tela_id || null,
-                        color_id: tela.color_id || null,
-                        // Imágenes de tela copiadas
+                        imagenes: imagenesCopia
+                    };
+                });
+            }
+            // ============================================
+            // 4.1. PROCESAR TELAS AGREGADAS (FLUJO COTIZACIÓN)
+            // ============================================
+            else if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
+                console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS DESDE COTIZACIÓN');
+                prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
+                    // Para cotización, las imágenes ya vienen procesadas desde BD
+                    const imagenesCopia = (tela.imagenes || []).map(img => {
+                        // Si es una URL de BD, mantenerla como string
+                        if (typeof img === 'string' && img.startsWith('/storage/')) {
+                            return img;
+                        }
+                        // Si es un objeto con ruta, usar la ruta
+                        if (img && img.ruta) {
+                            return img.ruta;
+                        }
+                        // Si es un File object, usarlo
+                        if (img instanceof File) {
+                            return img;
+                        }
+                        return img;
+                    }).filter(img => img !== null);
+                    
+                    return {
+                        tela: tela.tela || '',
+                        color: tela.color || '',
+                        referencia: tela.referencia || '',
                         imagenes: imagenesCopia
                     };
                 });

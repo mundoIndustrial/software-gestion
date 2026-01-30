@@ -14,7 +14,13 @@ class PrendaDataTransformer {
      * @returns {Object} Prenda transformada
      */
     static transformar(prendaRaw) {
-        if (!prendaRaw) return null;
+        console.log('[PrendaDataTransformer] 🔍 INICIANDO TRANSFORMACIÓN');
+        console.log('[PrendaDataTransformer] 📦 DATOS DE ENTRADA:', prendaRaw);
+        
+        if (!prendaRaw) {
+            console.log('[PrendaDataTransformer] ❌ prendaRaw es null/undefined');
+            return null;
+        }
 
         // Convertir estructura relacional (cantidad_talla) a generosConTallas
         let generosConTallas = prendaRaw.generosConTallas || {};
@@ -48,6 +54,21 @@ class PrendaDataTransformer {
             console.log('[PrendaDataTransformer]   - cantidadesPorTalla:', cantidadesPorTalla);
         }
 
+        // Extraer datos de cotización con logs
+        console.log('[PrendaDataTransformer] 🧵 EXTRAYENDO DATOS DE TELA:');
+        const telaExtraida = this._extraerTela(prendaRaw);
+        const colorExtraido = this._extraerColor(prendaRaw);
+        const referenciaExtraida = this._extraerReferencia(prendaRaw);
+        const telasAgregadasExtraidas = this._extraerTelasAgregadas(prendaRaw);
+        
+        console.log('[PrendaDataTransformer]   - Tela:', telaExtraida);
+        console.log('[PrendaDataTransformer]   - Color:', colorExtraido);
+        console.log('[PrendaDataTransformer]   - Referencia:', referenciaExtraida);
+        console.log('[PrendaDataTransformer]   - Telas Agregadas:', telasAgregadasExtraidas);
+        console.log('[PrendaDataTransformer]   - Imágenes:', prendaRaw.imagenes || prendaRaw.fotos || []);
+        console.log('[PrendaDataTransformer]   - Variantes:', prendaRaw.variantes || {});
+        console.log('[PrendaDataTransformer]   - Procesos:', prendaRaw.procesos || {});
+
         return {
             // Identidad
             id: prendaRaw.id || null,
@@ -59,11 +80,14 @@ class PrendaDataTransformer {
             imagenes: prendaRaw.imagenes || prendaRaw.fotos || [],
             imagenes_tela: prendaRaw.imagenes_tela || [],
 
-            // Tela
-            tela: prendaRaw.tela || '',
-            color: prendaRaw.color || '',
-            referencia: prendaRaw.ref || prendaRaw.referencia || '',
+            // Tela - Adaptar para estructura de cotización
+            tela: this._extraerTela(prendaRaw),
+            color: this._extraerColor(prendaRaw),
+            referencia: this._extraerReferencia(prendaRaw),
             imagen_tela: prendaRaw.imagen_tela || null,
+            
+            // Telas agregadas desde cotización
+            telasAgregadas: this._extraerTelasAgregadas(prendaRaw),
 
             // Tallas
             tallas: prendaRaw.tallas || prendaRaw.tallas_estructura || {},
@@ -72,7 +96,6 @@ class PrendaDataTransformer {
 
             // Variantes/Variaciones
             variantes: prendaRaw.variantes || {},
-            telasAgregadas: prendaRaw.telasAgregadas || [],
 
             // Procesos
             procesos: prendaRaw.procesos || {}
@@ -131,27 +154,42 @@ class PrendaDataTransformer {
      * @returns {Object} {tela, color, referencia}
      */
     static obtenerInfoTela(prenda) {
-        if (!prenda) return { tela: 'N/A', color: 'N/A', referencia: 'N/A' };
+        console.log('[PrendaDataTransformer.obtenerInfoTela] 🔍 INICIANDO OBTENCIÓN DE INFO TELA');
+        console.log('[PrendaDataTransformer.obtenerInfoTela] 📦 PRENDA RECIBIDA:', prenda);
+        
+        if (!prenda) {
+            console.log('[PrendaDataTransformer.obtenerInfoTela] ❌ prenda es null/undefined');
+            return { tela: 'N/A', color: 'N/A', referencia: 'N/A' };
+        }
 
         // Desde propiedades raíz (BD)
         if (prenda.tela || prenda.color) {
-            return {
+            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 USANDO PROPIEDADES RAÍZ');
+            const resultadoRaiz = {
                 tela: prenda.tela || 'N/A',
                 color: prenda.color || 'N/A',
                 referencia: prenda.referencia || 'N/A'
             };
+            console.log('[PrendaDataTransformer.obtenerInfoTela] ✅ RESULTADO RAÍZ:', resultadoRaiz);
+            return resultadoRaiz;
         }
 
         // Desde telasAgregadas (prendas nuevas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
+            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 USANDO TELAS AGREGADAS');
             const tela = prenda.telasAgregadas[0];
-            return {
+            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 PRIMERA TELA:', tela);
+            
+            const resultadoAgregadas = {
                 tela: tela.tela || 'N/A',
                 color: tela.color || 'N/A',
                 referencia: tela.referencia || 'N/A'
             };
+            console.log('[PrendaDataTransformer.obtenerInfoTela] ✅ RESULTADO AGREGADAS:', resultadoAgregadas);
+            return resultadoAgregadas;
         }
 
+        console.log('[PrendaDataTransformer.obtenerInfoTela] ⚠️ NO SE ENCONTRARON DATOS DE TELA');
         return { tela: 'N/A', color: 'N/A', referencia: 'N/A' };
     }
 
@@ -215,6 +253,113 @@ class PrendaDataTransformer {
         }
 
         return 0;
+    }
+
+    /**
+     * Extraer información de tela desde estructura de cotización
+     * @param {Object} prendaRaw - Datos crudos de prenda
+     * @returns {string}
+     */
+    static _extraerTela(prendaRaw) {
+        console.log('[PrendaDataTransformer._extraerTela] 🔍 Buscando tela...');
+        console.log('[PrendaDataTransformer._extraerTela] 📦 prendaRaw.telas:', prendaRaw.telas);
+        
+        // Desde telasAgregadas (estructura de cotización)
+        if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
+            const primeraTela = prendaRaw.telas[0];
+            console.log('[PrendaDataTransformer._extraerTela] 📋 Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerTela] 📋 primeraTela.tela:', primeraTela.tela);
+            
+            const nombreTela = primeraTela.tela ? primeraTela.tela.nombre : '';
+            console.log('[PrendaDataTransformer._extraerTela] ✅ Tela extraída:', nombreTela);
+            return nombreTela;
+        }
+        
+        console.log('[PrendaDataTransformer._extraerTela] ⚠️ No hay telas, usando propiedad directa');
+        // Desde propiedad directa
+        const telaDirecta = prendaRaw.tela || '';
+        console.log('[PrendaDataTransformer._extraerTela] ✅ Tela directa:', telaDirecta);
+        return telaDirecta;
+    }
+
+    /**
+     * Extraer color desde estructura de cotización
+     * @param {Object} prendaRaw - Datos crudos de prenda
+     * @returns {string}
+     */
+    static _extraerColor(prendaRaw) {
+        console.log('[PrendaDataTransformer._extraerColor] 🔍 Buscando color...');
+        console.log('[PrendaDataTransformer._extraerColor] 📦 prendaRaw.telas:', prendaRaw.telas);
+        
+        // Desde telasAgregadas (estructura de cotización)
+        if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
+            const primeraTela = prendaRaw.telas[0];
+            console.log('[PrendaDataTransformer._extraerColor] 📋 Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerColor] 📋 primeraTela.color:', primeraTela.color);
+            
+            const nombreColor = primeraTela.color ? primeraTela.color.nombre : '';
+            console.log('[PrendaDataTransformer._extraerColor] ✅ Color extraído:', nombreColor);
+            return nombreColor;
+        }
+        
+        console.log('[PrendaDataTransformer._extraerColor] ⚠️ No hay telas, usando propiedad directa');
+        // Desde propiedad directa
+        const colorDirecto = prendaRaw.color || '';
+        console.log('[PrendaDataTransformer._extraerColor] ✅ Color directo:', colorDirecto);
+        return colorDirecto;
+    }
+
+    /**
+     * Extraer referencia desde estructura de cotización
+     * @param {Object} prendaRaw - Datos crudos de prenda
+     * @returns {string}
+     */
+    static _extraerReferencia(prendaRaw) {
+        console.log('[PrendaDataTransformer._extraerReferencia] 🔍 Buscando referencia...');
+        console.log('[PrendaDataTransformer._extraerReferencia] 📦 prendaRaw.telas:', prendaRaw.telas);
+        
+        // Desde telasAgregadas (estructura de cotización)
+        if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
+            const primeraTela = prendaRaw.telas[0];
+            console.log('[PrendaDataTransformer._extraerReferencia] 📋 Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerReferencia] 📋 primeraTela.referencia:', primeraTela.referencia);
+            
+            const referencia = primeraTela.referencia || '';
+            console.log('[PrendaDataTransformer._extraerReferencia] ✅ Referencia extraída:', referencia);
+            return referencia;
+        }
+        
+        console.log('[PrendaDataTransformer._extraerReferencia] ⚠️ No hay telas, usando propiedades directas');
+        // Desde propiedad directa
+        const referenciaDirecta = prendaRaw.ref || prendaRaw.referencia || '';
+        console.log('[PrendaDataTransformer._extraerReferencia] ✅ Referencia directa:', referenciaDirecta);
+        return referenciaDirecta;
+    }
+
+    /**
+     * Extraer telas agregadas desde estructura de cotización
+     * @param {Object} prendaRaw - Datos crudos de prenda
+     * @returns {Array}
+     */
+    static _extraerTelasAgregadas(prendaRaw) {
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas] 🔍 Buscando telas agregadas...');
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas] 📦 prendaRaw.telas:', prendaRaw.telas);
+        
+        if (prendaRaw.telas && Array.isArray(prendaRaw.telas)) {
+            const telasFormateadas = prendaRaw.telas.map(tela => ({
+                id: tela.id,
+                tela: tela.tela ? tela.tela.nombre : '',
+                color: tela.color ? tela.color.nombre : '',
+                referencia: tela.referencia || '',
+                fotos: tela.fotos || []
+            }));
+            
+            console.log('[PrendaDataTransformer._extraerTelasAgregadas] ✅ Telas formateadas:', telasFormateadas);
+            return telasFormateadas;
+        }
+        
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas] ⚠️ No hay telas para formatear');
+        return [];
     }
 }
 

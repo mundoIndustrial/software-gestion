@@ -46,7 +46,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // PEDIDOS - VISTAS Y CRUD
     // ========================================
     Route::get('/pedidos', [AsesoresController::class, 'index'])->name('pedidos.index');
-    Route::get('/pedidos/create', [AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/cotizaciones/create', [AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/next-pedido', [AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::get('/pedidos/{id}', [AsesoresController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
     Route::get('/pedidos/{id}/edit', [AsesoresController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');

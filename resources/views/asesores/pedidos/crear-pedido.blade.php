@@ -32,6 +32,9 @@
 @endsection
 
 @push('scripts')
+    <!-- CSS para tarjetas de prenda (debe cargarse antes que los scripts) -->
+    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+    
     <!-- IMPORTANTE: Cargar constantes PRIMERO -->
     <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}"></script>
     
@@ -70,9 +73,10 @@
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-pedido.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     

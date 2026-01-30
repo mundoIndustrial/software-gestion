@@ -22,11 +22,10 @@
         
         // Mostrar botones
         const btnSubmit = document.getElementById('btn-submit');
-        btnSubmit.textContent = '✓ Crear Pedido';
-        btnSubmit.style.display = 'block';
-        
-        const btnVistaPrevio = document.getElementById('btn-vista-previa');
-        btnVistaPrevio.style.display = 'block';
+        if (btnSubmit) {
+            btnSubmit.textContent = '✓ Crear Pedido';
+            btnSubmit.style.display = 'block';
+        }
 
         // ========== BUSCADOR DE COTIZACIONES ==========
         const searchInput = document.getElementById('cotizacion_search_editable');

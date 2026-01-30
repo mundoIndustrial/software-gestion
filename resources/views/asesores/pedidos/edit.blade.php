@@ -252,7 +252,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}"></script>
 
 <!--  ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
-<link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}">
+<link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
 
 <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->

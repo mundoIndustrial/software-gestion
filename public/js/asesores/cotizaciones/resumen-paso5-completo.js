@@ -130,6 +130,9 @@ function generarCardPrenda(prenda, index) {
     // TABLA DE REFLECTIVO (PASO 4) - SEPARADA Y CLARA
     html += generarTablaReflectivoPaso4(nombre);
     
+    // TABLA DE ESPECIFICACIONES (PASO 1)
+    html += generarTablaEspecificacionesPaso1();
+    
     // TALLAS SELECCIONADAS (PASO 2)
     html += generarTallasSeleccionadas(index, prenda);
     
@@ -414,6 +417,58 @@ function generarImagenesPrenda(prenda) {
     });
     
     html += `</div>`;
+    
+    return html;
+}
+
+/**
+ * GENERAR TABLA DE ESPECIFICACIONES (PASO 1)
+ */
+function generarTablaEspecificacionesPaso1() {
+    const especificaciones = window.especificacionesSeleccionadas || {};
+    const tieneEspecificaciones = Object.keys(especificaciones).length > 0;
+    
+    if (!tieneEspecificaciones) return '';
+    
+    let html = `<div class="seccion-titulo">ESPECIFICACIONES</div>
+        <table class="tabla-prenda">
+            <thead>
+                <tr>
+                    <th>Especificación</th>
+                    <th>Valor</th>
+                    <th>Observación</th>
+                </tr>
+            </thead>
+            <tbody>`;
+    
+    // Mapeo de nombres amigables
+    const nombresAmigables = {
+        'disponibilidad': 'Disponibilidad',
+        'forma_pago': 'Forma de Pago',
+        'regimen': 'Régimen',
+        'se_ha_vendido': 'Se ha vendido',
+        'ultima_venta': 'Última venta',
+        'flete': 'Flete'
+    };
+    
+    Object.entries(especificaciones).forEach(([categoria, datos]) => {
+        if (Array.isArray(datos)) {
+            datos.forEach(item => {
+                const nombreCategoria = nombresAmigables[categoria] || categoria;
+                const valor = item.valor || '-';
+                const observacion = item.observacion || '-';
+                
+                html += `<tr>
+                    <td>${nombreCategoria}</td>
+                    <td><strong>${valor}</strong></td>
+                    <td><span class="observacion-texto">${observacion}</span></td>
+                </tr>`;
+            });
+        }
+    });
+    
+    html += `</tbody>
+        </table>`;
     
     return html;
 }

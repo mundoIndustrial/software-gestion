@@ -328,7 +328,7 @@
 }
 
 .seccion-expandible-content {
-    display: none !important;
+    display: none;
     padding: 1rem;
     background: white;
     border-top: 1px solid #e5e7eb;
@@ -336,6 +336,50 @@
 
 .seccion-expandible-content.active {
     display: block !important;
+}
+
+/* Aumentar especificidad para asegurar que prevalezca */
+.prenda-card-readonly .seccion-expandible-content {
+    display: none;
+}
+
+.prenda-card-readonly .seccion-expandible-content.active {
+    display: block !important;
+    min-height: 200px !important;
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    width: 100% !important;
+}
+
+/* Máxima especificidad - selector completo */
+body .prenda-card-readonly .seccion-expandible-content.seccion-expandible-content.active {
+    display: block !important;
+    min-height: 200px !important;
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    width: 100% !important;
+}
+
+/* ESPECIFICIDAD ABSOLUTA - Forzar con ID si existe */
+body div.prenda-card-readonly div.seccion-expandible div.seccion-expandible-content.seccion-expandible-content.active {
+    display: block !important;
+    min-height: 200px !important;
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    width: 100% !important;
+}
+
+/* ULTIMA OPCIÓN - Universal con !important */
+.seccion-expandible-content.active {
+    display: block !important;
+    min-height: 200px !important;
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    width: 100% !important;
 }
 
 /* ============================================

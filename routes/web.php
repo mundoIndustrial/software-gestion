@@ -514,7 +514,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     
     // Pedidos - VISTAS (AsesoresController)
     Route::get('/pedidos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'index'])->name('pedidos.index');
-    Route::get('/pedidos/create', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/cotizaciones/create', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/next-pedido', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::get('/pedidos/{pedido}', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'edit'])->name('pedidos.edit');
@@ -821,6 +821,13 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/tipos-prenda', [App\Http\Controllers\Api_temp\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
     Route::post('/prenda/reconocer', [App\Http\Controllers\Api_temp\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
 });
+
+// Rutas para variaciones de prendas
+Route::middleware('auth')->get('/prenda-variaciones/{tipoPrendaId}', function($tipoPrendaId) {
+    // Por ahora retornar vacío ya que el sistema maneja las variaciones automáticamente
+    // El frontend espera null cuando no hay variaciones predefinidas
+    return response()->json(null);
+})->name('prenda-variaciones');
 
 // Rutas de Insumos
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {

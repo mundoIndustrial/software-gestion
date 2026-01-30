@@ -295,10 +295,39 @@ document.addEventListener('DOMContentLoaded', function() {
         if (seccionInfoPrenda) seccionInfoPrenda.style.display = 'block';
         if (seccionPrendas) seccionPrendas.style.display = 'block';
         
+        // Verificar si estamos en el flujo desde cotización (crear-desde-cotizacion)
+        // En este flujo, las prendas se agregan individualmente, no se cargan todas desde backend
+        if (window.location.pathname.includes('crear-desde-cotizacion')) {
+            console.log('[cargarPrendasDesdeCotizacion] 🔄 Flujo desde cotización detectado, omitiendo carga masiva');
+            console.log('[cargarPrendasDesdeCotizacion] ℹ️ Las prendas se agregan individualmente mediante el selector');
+            return;
+        }
+        
+        // Si no hay datos cargados, hacer la llamada al backend (flujo normal)
+        console.log('[cargarPrendasDesdeCotizacion] 📡 Cargando desde backend...');
         fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacionId}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('[cargarPrendasDesdeCotizacion] 📡 Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('[cargarPrendasDesdeCotizacion] 📦 Datos recibidos:', {
+                    error: data.error,
+                    prendas_count: data.prendas ? data.prendas.length : 0,
+                    has_reflectivo: !!data.reflectivo,
+                    has_logo: !!data.logo,
+                    data_preview: {
+                        prendas: data.prendas ? data.prendas.slice(0, 1) : null,
+                        reflectivo: data.reflectivo,
+                        logo: data.logo
+                    }
+                });
+                
                 if (data.error) {
+                    console.error('[cargarPrendasDesdeCotizacion] ❌ Error del servidor:', data.error);
                     prendasContainer.innerHTML = `<p style="color: #ef4444;">Error: ${data.error}</p>`;
                 } else {
                     window.prendasCargadas = data.prendas || [];
@@ -307,6 +336,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const esReflectivo = data.tipo_cotizacion === 'R' || data.tipo_cotizacion === 'REFLECTIVO';
                     const esLogo = data.logo && Object.keys(data.logo).length > 0;
                     const tipoCotizacion = data.tipo_cotizacion || 'P';
+                    
+                    // Siempre es PRENDA cuando viene de cotización
+                    const tipoPedido = 'PRENDA';
                     
                     // Asignar logoCotizacionId si existe
                     if (data.logo && data.logo.id) {
@@ -385,14 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if (tipoPedido === 'PRENDA') {
                             if (seccionPrendas) seccionPrendas.style.display = 'block';
                             tituloPrendasDinamico.textContent = 'Prendas';
-
-                        } else {
-                            if (seccionPrendas) seccionPrendas.style.display = 'block';
-                            tituloPrendasDinamico.textContent = 'Prendas Técnicas del Logo';
-
                         }
-                    } else {
-
                     }
                     
                     // Mostrar/ocultar botón "Agregar Prenda Técnica" solo cuando hay cotización seleccionada
@@ -419,8 +444,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-
+                console.error('[cargarPrendasDesdeCotizacion] ❌ Error en fetch:', error);
+                console.error('[cargarPrendasDesdeCotizacion] 📍 Stack trace:', error.stack);
+                
                 prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al cargar las prendas: ${error.message}</p>`;
+                
+                // Mostrar alerta más descriptiva
+                alert('❌ No se pudieron cargar las prendas de la cotización. Intenta recargar la página.\n\nError: ' + error.message);
             });
     }
 
@@ -448,8 +478,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     esLogo, 
                     tipoCotizacion
                 );
+            } else if (window.renderizarPrendasSinCotizacion) {
+                // Fallback: Usar el sistema específico para cotizaciones
+                console.log('[renderizarPrendasEditables] 🔄 Usando fallback específico para cotizaciones');
+                
+                // Usar el nuevo agregador independiente para cotizaciones
+                if (window.agregarPrendasDesdeCotizacion) {
+                    console.log('[renderizarPrendasEditables] 🚀 Usando agregador independiente para cotizaciones');
+                    const exito = window.agregarPrendasDesdeCotizacion(prendas);
+                    if (!exito) {
+                        const prendasContainer = document.getElementById('prendas-container-editable');
+                        if (prendasContainer) {
+                            prendasContainer.innerHTML = '<p style="color: #ef4444;">Error: Gestor de prendas no disponible</p>';
+                        }
+                    }
+                } else {
+                    // Fallback al sistema original si el nuevo agregador no está disponible
+                    console.log('[renderizarPrendasEditables] 🔄 Usando fallback original');
+                    
+                    // Limpiar container
+                    const prendasContainer = document.getElementById('prendas-container-editable');
+                    if (prendasContainer) {
+                        prendasContainer.innerHTML = '';
+                        
+                        // Agregar prendas al gestor
+                        if (window.gestorPedidoSinCotizacion) {
+                            // Limpiar gestor existente
+                            window.gestorPedidoSinCotizacion.limpiar();
+                            
+                            // Agregar cada prenda
+                            prendas.forEach((prenda, index) => {
+                                window.gestorPedidoSinCotizacion.setPrendaActual(prenda);
+                                window.gestorPedidoSinCotizacion.agregarPrenda();
+                            });
+                            
+                            // Renderizar
+                            window.renderizarPrendasSinCotizacion();
+                        } else {
+                            prendasContainer.innerHTML = '<p style="color: #ef4444;">Error: Gestor de prendas no disponible</p>';
+                        }
+                    }
+                }
             } else {
-
                 prendasContainer.innerHTML = '<p style="color: #ef4444;">Error: Componente de renderizado no disponible</p>';
             }
         } catch (error) {
@@ -498,5 +568,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 800); // Esperar 800ms para asegurar que todo esté cargado
     });
+
+    // Exportar funciones importantes a window para uso global
+    window.cargarPrendasDesdeCotizacion = cargarPrendasDesdeCotizacion;
+    window.renderizarPrendasEditables = renderizarPrendasEditables;
+    window.renderizarCamposLogo = renderizarCamposLogo;
 
 }); // Cierre del DOMContentLoaded

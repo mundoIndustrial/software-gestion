@@ -257,10 +257,11 @@
                                placeholder="Buscar por pedido o cliente..." 
                                value="{{ request('busqueda') }}"
                                style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
-                        @if(request('busqueda'))
-                            <a href="{{ route('supervisor-pedidos.index', request()->only(['aprobacion', 'estado', 'asesora', 'forma_pago', 'fecha_desde', 'fecha_hasta'])) }}" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center;">
-                                <span class="material-symbols-rounded">close</span>
-                            </a>
+                        @if(request()->hasAny(['busqueda', 'numero', 'cliente', 'asesora', 'forma_pago', 'estado', 'fecha_desde', 'fecha_hasta']))
+                            <button type="button" onclick="limpiarTodosLosFiltros()" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center; background: #ef4444; color: white; border: none; cursor: pointer; font-size: 0.8rem; transition: all 0.3s ease;" title="Limpiar todos los filtros" onmouseover="this.style.background='#dc2626'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#ef4444'; this.style.transform='scale(1)';">
+                                <span class="material-symbols-rounded" style="font-size: 1rem;">clear</span>
+                                <span style="margin-left: 0.25rem;">Limpiar</span>
+                            </button>
                         @endif
                     </div>
                 </form>
@@ -603,6 +604,25 @@
             const finalUrl = queryParams ? baseUrl + '?' + queryParams : baseUrl;
             
             console.log('[Search] URL final:', finalUrl);
+            window.location.href = finalUrl;
+        }
+
+        // ===== FUNCIÓN PARA LIMPIAR TODOS LOS FILTROS =====
+        function limpiarTodosLosFiltros() {
+            // Obtener la URL base sin parámetros
+            const baseUrl = '{{ route("supervisor-pedidos.index") }}';
+            
+            // Mantener solo el parámetro aprobacion si existe (para no cambiar el modo de vista)
+            const urlParams = new URLSearchParams(window.location.search);
+            const aprobacion = urlParams.get('aprobacion');
+            
+            // Construir URL limpia
+            let finalUrl = baseUrl;
+            if (aprobacion) {
+                finalUrl += '?aprobacion=' + aprobacion;
+            }
+            
+            console.log('[Limpiar] Redirigiendo a:', finalUrl);
             window.location.href = finalUrl;
         }
     </script>

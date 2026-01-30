@@ -38,6 +38,15 @@ class GestorPrendaSinCotizacion {
     }
 
     /**
+     * Establecer la prenda actual para ser agregada
+     * @param {Object} prenda - Datos de la prenda
+     */
+    setPrendaActual(prenda) {
+        this.prendaActual = prenda;
+        console.log('[GestorPrendaSinCotizacion] 📋 Prenda actual establecida:', prenda.nombre_prenda || prenda.nombre);
+    }
+
+    /**
      * Crear una prenda base de tipo PRENDA con estructura completa
      * @returns {Object} Prenda inicializada
      */
@@ -86,14 +95,19 @@ class GestorPrendaSinCotizacion {
      * @returns {number} Índice de la prenda agregada
      */
     agregarPrenda(datosOpcionales = {}) {
-
-
-
+        let nuevaPrenda;
         
-        const nuevaPrenda = { ...this.crearPrendaBase(), ...datosOpcionales };
-        
-
-
+        // Si hay una prenda actual establecida, usarla como base
+        if (this.prendaActual) {
+            console.log('[GestorPrendaSinCotizacion] 📦 Usando prenda actual como base:', this.prendaActual.nombre_prenda || this.prendaActual.nombre);
+            nuevaPrenda = { ...this.prendaActual, ...datosOpcionales };
+            // Limpiar prenda actual después de usarla
+            this.prendaActual = null;
+        } else {
+            // Si no, crear una nueva desde cero
+            console.log('[GestorPrendaSinCotizacion] 🆕 Creando prenda desde cero');
+            nuevaPrenda = { ...this.crearPrendaBase(), ...datosOpcionales };
+        }
         
         // Merge profundo de variantes si viene en datosOpcionales
         if (datosOpcionales.variantes && typeof datosOpcionales.variantes === 'object') {
@@ -484,6 +498,14 @@ class GestorPrendaSinCotizacion {
     }
 
     /**
+     * Obtener todas las prendas
+     * @returns {Array} Array de prendas
+     */
+    obtenerTodas() {
+        return this.prendas;
+    }
+
+    /**
      * Limpiar todos los datos
      */
     limpiar() {
@@ -494,6 +516,10 @@ class GestorPrendaSinCotizacion {
 
     }
 }
+
+// Exportar a window para uso global
+window.GestorPrendaSinCotizacion = GestorPrendaSinCotizacion;
+console.log('[gestor-prenda-sin-cotizacion.js] ✅ Clase exportada a window.GestorPrendaSinCotizacion');
 
 // Instancia global
 window.gestorPrendaSinCotizacion = null;

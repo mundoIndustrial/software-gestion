@@ -106,7 +106,7 @@
             <span class="menu-section-title">Producción</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*', 'asesores.pedidos-editable.*') ? 'active' : '' }}"
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*', 'asesores.pedidos-editable.*') && !request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
                             aria-label="Gestionar pedidos de producción">
                         <span class="material-symbols-rounded">factory</span>
                         <span class="menu-label">Pedidos</span>

@@ -221,6 +221,17 @@
     <!-- Paginación Personalizada -->
     @if($ordenes->lastPage() > 1 || $ordenes->count() > 0)
         <div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Botón Primera Página (<<) -->
+            @if($ordenes->onFirstPage())
+                <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
+                    &laquo;&laquo;
+                </button>
+            @else
+                <a href="{{ $ordenes->url(1) }}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
+                    &laquo;&laquo;
+                </a>
+            @endif
+
             <!-- Botón Anterior -->
             @if($ordenes->onFirstPage())
                 <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
@@ -256,6 +267,17 @@
                 <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
                     Siguiente →
                 </button>
+            @endif
+
+            <!-- Botón Última Página (>>) -->
+            @if($ordenes->currentPage() == $ordenes->lastPage())
+                <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
+                    &raquo;&raquo;
+                </button>
+            @else
+                <a href="{{ $ordenes->url($ordenes->lastPage()) }}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
+                    &raquo;&raquo;
+                </a>
             @endif
 
             <!-- Info de Página -->
@@ -450,6 +472,10 @@
                 titulo = 'Filtrar por ID Orden';
                 campoNombre = 'numero';
                 break;
+            case 'numero':
+                titulo = 'Filtrar por Número';
+                campoNombre = 'numero';
+                break;
             case 'cliente':
                 titulo = 'Filtrar por Cliente';
                 campoNombre = 'cliente';
@@ -501,6 +527,10 @@
                 campoNombre = 'asesora';
                 break;
             case 'forma-pago':
+                titulo = 'Filtrar por Forma de Pago';
+                campoNombre = 'forma_pago';
+                break;
+            case 'forma_pago':
                 titulo = 'Filtrar por Forma de Pago';
                 campoNombre = 'forma_pago';
                 break;
@@ -575,6 +605,9 @@
         if (filtroActual === 'id-orden') {
             url.searchParams.delete('numero');
             if (valoresSeleccionados.length > 0) url.searchParams.set('numero', valoresSeleccionados.join(','));
+        } else if (filtroActual === 'numero') {
+            url.searchParams.delete('numero');
+            if (valoresSeleccionados.length > 0) url.searchParams.set('numero', valoresSeleccionados.join(','));
         } else if (filtroActual === 'cliente') {
             url.searchParams.delete('cliente');
             if (valoresSeleccionados.length > 0) url.searchParams.set('cliente', valoresSeleccionados.join(','));
@@ -592,6 +625,9 @@
             url.searchParams.delete('asesora');
             if (valoresSeleccionados.length > 0) url.searchParams.set('asesora', valoresSeleccionados.join(','));
         } else if (filtroActual === 'forma-pago') {
+            url.searchParams.delete('forma_pago');
+            if (valoresSeleccionados.length > 0) url.searchParams.set('forma_pago', valoresSeleccionados.join(','));
+        } else if (filtroActual === 'forma_pago') {
             url.searchParams.delete('forma_pago');
             if (valoresSeleccionados.length > 0) url.searchParams.set('forma_pago', valoresSeleccionados.join(','));
         }
@@ -1351,6 +1387,38 @@
                         console.error('[Novedades] Error:', err);
                         console.log('[Novedades] Novedades:', novedades);
                     }
+                });
+            });
+
+            // Event listener para botones de filtro
+            document.querySelectorAll('.btn-filter-column').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Determinar qué columna se está filtrando según el título
+                    const title = this.getAttribute('title');
+                    let columna = '';
+                    
+                    switch(title) {
+                        case 'Filtrar Número':
+                            columna = 'numero';
+                            break;
+                        case 'Filtrar Cliente':
+                            columna = 'cliente';
+                            break;
+                        case 'Filtrar Asesora':
+                            columna = 'asesora';
+                            break;
+                        case 'Filtrar Forma Pago':
+                            columna = 'forma_pago';
+                            break;
+                        default:
+                            columna = 'cliente';
+                    }
+                    
+                    console.log('[Filtro] Abriendo filtro para columna:', columna);
+                    abrirModalFiltro(columna);
                 });
             });
         });

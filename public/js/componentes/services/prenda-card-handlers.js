@@ -13,14 +13,231 @@ window.PrendaCardHandlers = {
         // Expandir/contraer secciones
         document.addEventListener('click', (e) => {
             if (e.target.closest('.seccion-expandible-header')) {
-
+                e.stopPropagation(); // Evitar que otros listeners se ejecuten
+                // e.preventDefault();  // Removido para permitir comportamiento del botón
+                
+                // Prevenir doble click rápido
                 const header = e.target.closest('.seccion-expandible-header');
+                if (header.dataset.toggleDisabled === 'true') {
+                    console.log('[PrendaCardHandlers] 🚫 Toggle deshabilitado temporalmente');
+                    return;
+                }
+                
+                // Deshabilitar temporalmente para prevenir doble click
+                header.dataset.toggleDisabled = 'true';
+                setTimeout(() => {
+                    header.dataset.toggleDisabled = 'false';
+                }, 300); // 300ms de protección
+                
+                console.log('[PrendaCardHandlers] 🖱️ CLICK detectado en sección expandible');
+                console.log('[PrendaCardHandlers] 📦 Target:', e.target);
+                console.log('[PrendaCardHandlers] 📦 Closest header:', header);
+
                 const content = header.nextElementSibling;
                 
+                console.log('[PrendaCardHandlers] 📄 Content element:', content);
+                console.log('[PrendaCardHandlers] 📄 Content classes:', content ? content.className : 'No encontrado');
+                
                 if (content && content.classList.contains('seccion-expandible-content')) {
+                    console.log('[PrendaCardHandlers] ✅ Content válido, toggling classes');
+                    
+                    const wasActive = content.classList.contains('active');
                     content.classList.toggle('active');
                     header.classList.toggle('active');
-
+                    
+                    const isActive = content.classList.contains('active');
+                    console.log('[PrendaCardHandlers] 🔄 Toggle completado:', { wasActive, isActive });
+                    console.log('[PrendaCardHandlers] 📄 Nuevas clases content:', content.className);
+                    console.log('[PrendaCardHandlers] 📄 Nuevas clases header:', header.className);
+                    
+                    // Usar clases CSS en lugar de estilos inline para evitar conflictos con !important
+                    if (isActive) {
+                        // LIMPIAR COMPLETAMENTE todos los estilos inline
+                        content.style.cssText = '';
+                        
+                        // Forzar display:block inmediatamente si las clases CSS no funcionan
+                        setTimeout(() => {
+                            const computedDisplay = window.getComputedStyle(content).display;
+                            if (computedDisplay === 'none') {
+                                console.log('[PrendaCardHandlers] ⚠️ CSS no funcionó, forzando display:block con JavaScript');
+                                content.style.setProperty('display', 'block', 'important');
+                                
+                                // Verificar después de forzar
+                                setTimeout(() => {
+                                    const newDisplay = window.getComputedStyle(content).display;
+                                    console.log('[PrendaCardHandlers] ✅ Después de forzar - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
+                                }, 50);
+                            } else {
+                                console.log('[PrendaCardHandlers] ✅ CSS funcionó - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
+                            }
+                        }, 50);
+                        
+                        console.log('[PrendaCardHandlers] 🎨 Estilos inline limpiados completamente, usando clases CSS');
+                    } else {
+                        // LIMPIAR COMPLETAMENTE todos los estilos inline
+                        content.style.cssText = '';
+                        
+                        // Forzar display:none inmediatamente si las clases CSS no funcionan
+                        setTimeout(() => {
+                            const computedDisplay = window.getComputedStyle(content).display;
+                            if (computedDisplay !== 'none') {
+                                console.log('[PrendaCardHandlers] ⚠️ CSS no funcionó, forzando display:none con JavaScript');
+                                content.style.setProperty('display', 'none', 'important');
+                                
+                                // Verificar después de forzar
+                                setTimeout(() => {
+                                    const newDisplay = window.getComputedStyle(content).display;
+                                    console.log('[PrendaCardHandlers] ✅ Después de forzar cierre - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
+                                }, 50);
+                            } else {
+                                console.log('[PrendaCardHandlers] ✅ CSS funcionó para cierre - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
+                            }
+                        }, 50);
+                        
+                        console.log('[PrendaCardHandlers] 🎨 Estilos inline limpiados completamente, dejando CSS controlar el display');
+                    }
+                    
+                    // Verificar estilos computados con más tiempo para asegurar que se aplique
+                    setTimeout(() => {
+                        const computedStyle = window.getComputedStyle(content);
+                        const displayStyle = computedStyle.getPropertyValue('display');
+                        const inlineStyle = content.getAttribute('style');
+                        console.log('[PrendaCardHandlers] 🎨 Computed style display:', displayStyle);
+                        console.log('[PrendaCardHandlers] 🎨 Inline style actual:', inlineStyle);
+                        console.log('[PrendaCardHandlers] 🎨 Computed style visibility:', computedStyle.getPropertyValue('visibility'));
+                        console.log('[PrendaCardHandlers] 🎨 Computed style height:', computedStyle.getPropertyValue('height'));
+                        
+                        // Medición inicial
+                        console.log('[PrendaCardHandlers] 📏 Medición inicial - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                        
+                        // Si scrollHeight es 0, hacer una segunda medición después de más tiempo
+                        if (content.scrollHeight === 0 && isActive) {
+                            console.log('[PrendaCardHandlers] ⚠️ scrollHeight es 0, haciendo segunda medición...');
+                            setTimeout(() => {
+                                console.log('[PrendaCardHandlers] 📏 Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                
+                                // Forzar un reflow si es necesario
+                                if (content.scrollHeight === 0) {
+                                    console.log('[PrendaCardHandlers] 🔧 Forzando reflow...');
+                                    content.style.display = 'none';
+                                    content.offsetHeight; // Forzar reflow
+                                    content.style.display = '';
+                                    content.offsetHeight; // Forzar reflow again
+                                    
+                                    setTimeout(() => {
+                                        console.log('[PrendaCardHandlers] 📏 Medición después de reflow - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
+                                    }, 50);
+                                }
+                            }, 200);
+                        }
+                        
+                        // Verificar si hay otros estilos aplicados
+                        const allStyles = window.getComputedStyle(content, null);
+                        console.log('[PrendaCardHandlers] 🎨 Todos los estilos aplicados:', {
+                            display: allStyles.display,
+                            visibility: allStyles.visibility,
+                            height: allStyles.height,
+                            maxHeight: allStyles.maxHeight,
+                            overflow: allStyles.overflow,
+                            opacity: allStyles.opacity,
+                            position: allStyles.position,
+                            top: allStyles.top,
+                            left: allStyles.left,
+                            transform: allStyles.transform,
+                            clip: allStyles.clip,
+                            clipPath: allStyles.clipPath
+                        });
+                        
+                        // Verificar contenido de la sección
+                        console.log('[PrendaCardHandlers] 📦 Contenido HTML de la sección:', content.innerHTML.substring(0, 200) + '...');
+                        console.log('[PrendaCardHandlers] 📦 Contenido HTML completo:', content.innerHTML);
+                        console.log('[PrendaCardHandlers] 📦 Número de elementos hijos:', content.children.length);
+                        console.log('[PrendaCardHandlers] 📦 Altura scrollHeight:', content.scrollHeight);
+                        console.log('[PrendaCardHandlers] 📦 Altura clientHeight:', content.clientHeight);
+                        console.log('[PrendaCardHandlers] 📦 OffsetHeight:', content.offsetHeight);
+                        
+                        // Verificar si hay elementos específicos según el tipo de sección
+                        const section = header.getAttribute('data-section');
+                        console.log('[PrendaCardHandlers] 🏷️ Tipo de sección:', section);
+                        
+                        if (section === 'variaciones') {
+                            const variantes = content.querySelectorAll('.variacion-item');
+                            console.log('[PrendaCardHandlers] 👗 Variaciones encontradas:', variantes.length);
+                            
+                            // Verificar filas de la tabla
+                            const tableRows = content.querySelectorAll('table tr');
+                            console.log('[PrendaCardHandlers] 📊 Filas de tabla encontradas:', tableRows.length);
+                            console.log('[PrendaCardHandlers] 📊 Filas de tabla:', tableRows);
+                            
+                            // Verificar si hay tbody con datos
+                            const tbody = content.querySelector('table tbody');
+                            if (tbody) {
+                                console.log('[PrendaCardHandlers] 📊 TBODY encontrado:', tbody.innerHTML);
+                                const dataRows = tbody.querySelectorAll('tr');
+                                console.log('[PrendaCardHandlers] 📊 Filas de datos en TBODY:', dataRows.length);
+                            } else {
+                                console.log('[PrendaCardHandlers] 📊 No se encontró TBODY en la tabla');
+                            }
+                        } else if (section === 'tallas-y-cantidades') {
+                            const tallas = content.querySelectorAll('.talla-item, .talla-row');
+                            console.log('[PrendaCardHandlers] 📏 Tallas encontradas:', tallas.length);
+                        } else if (section === 'procesos') {
+                            const procesos = content.querySelectorAll('.proceso-item');
+                            console.log('[PrendaCardHandlers] ⚙️ Procesos encontrados:', procesos.length);
+                        }
+                        
+                        // 🔍 DIAGNÓSTICO AVANZADO - Verificar elementos padres
+                        console.log('[PrendaCardHandlers] 🔍 DIAGNÓSTICO DE PADRES:');
+                        let parent = content.parentElement;
+                        let level = 0;
+                        while (parent && level < 8) { // Aumenté a 8 niveles
+                            const parentStyle = window.getComputedStyle(parent);
+                            const parentRect = parent.getBoundingClientRect();
+                            console.log(`[PrendaCardHandlers] 📁 Padre Nivel ${level}:`, {
+                                tagName: parent.tagName,
+                                className: parent.className,
+                                display: parentStyle.display,
+                                visibility: parentStyle.visibility,
+                                height: parentStyle.height,
+                                maxHeight: parentStyle.maxHeight,
+                                overflow: parentStyle.overflow,
+                                position: parentStyle.position,
+                                opacity: parentStyle.opacity,
+                                rect: {
+                                    width: parentRect.width,
+                                    height: parentRect.height,
+                                    top: parentRect.top,
+                                    left: parentRect.left
+                                }
+                            });
+                            
+                            // Verificar si este padre está oculto
+                            if (parentStyle.display === 'none' || 
+                                parentStyle.visibility === 'hidden' || 
+                                parentStyle.opacity === '0' ||
+                                parentRect.height === 0) {
+                                console.error(`[PrendaCardHandlers] ❌ PADRE OCULTO EN NIVEL ${level}:`, parent);
+                                console.error(`[PrendaCardHandlers] ❌ Razón: display=${parentStyle.display}, visibility=${parentStyle.visibility}, opacity=${parentStyle.opacity}, height=${parentRect.height}`);
+                            }
+                            
+                            parent = parent.parentElement;
+                            level++;
+                        }
+                        
+                        // Verificar si el elemento está fuera del viewport
+                        const rect = content.getBoundingClientRect();
+                        console.log('[PrendaCardHandlers] 📍 Posición en viewport:', {
+                            top: rect.top,
+                            left: rect.left,
+                            bottom: rect.bottom,
+                            right: rect.right,
+                            width: rect.width,
+                            height: rect.height,
+                            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth
+                        });
+                    }, 50);
+                } else {
+                    console.log('[PrendaCardHandlers] ❌ Content no válido o no tiene clase seccion-expandible-content');
                 }
             }
 

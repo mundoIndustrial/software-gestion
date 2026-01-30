@@ -168,6 +168,24 @@ class SupervisorPedidosController extends Controller
             });
         }
 
+        // Filtro por número de pedido (para filtros de columna)
+        if ($request->filled('numero')) {
+            $numeros = explode(',', $request->numero);
+            $query->whereIn('numero_pedido', $numeros);
+        }
+
+        // Filtro por cliente (para filtros de columna)
+        if ($request->filled('cliente')) {
+            $clientes = explode(',', $request->cliente);
+            $query->whereIn('cliente', $clientes);
+        }
+
+        // Filtro por forma de pago (para filtros de columna)
+        if ($request->filled('forma_pago')) {
+            $formasPago = explode(',', $request->forma_pago);
+            $query->whereIn('forma_de_pago', $formasPago);
+        }
+
         // Filtro por estado (mantener para filtros avanzados por columnas)
         if ($request->filled('estado')) {
             $estado = $request->estado;
@@ -181,8 +199,9 @@ class SupervisorPedidosController extends Controller
 
         // Filtro por asesora (por nombre)
         if ($request->filled('asesora')) {
-            $query->whereHas('asesora', function($q) {
-                $q->where('name', 'like', '%' . request()->asesora . '%');
+            $asesoras = explode(',', $request->asesora);
+            $query->whereHas('asesora', function($q) use ($asesoras) {
+                $q->whereIn('name', $asesoras);
             });
         }
 

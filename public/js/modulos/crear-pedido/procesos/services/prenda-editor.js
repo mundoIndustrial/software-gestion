@@ -65,6 +65,14 @@ class PrendaEditor {
             countProcesos: prenda.procesos?.length || 0
         });
         
+        // Guardar referencia global para detectar si es cotización
+        window.prendaActual = prenda;
+        console.log('[cargarTallasYCantidades] 📋 window.prendaActual asignado:', {
+            cotizacion_id: prenda.cotizacion_id,
+            tipo: prenda.tipo,
+            nombre: prenda.nombre_prenda
+        });
+        
         if (!prenda) {
             this.mostrarNotificacion('Prenda no válida', 'error');
             return;
@@ -561,17 +569,37 @@ class PrendaEditor {
                     window.tallasRelacionales[generoUpper] = { ...tallasObj };
                 }
             });
-        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde array:', prenda.tallas);
+        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0 && prenda.cotizacion_id) {
+            // SOLO para cotizaciones: Pre-seleccionar tallas que vienen de la base de datos
+            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde cotización:', prenda.tallas);
+            console.log('[cargarTallasYCantizacion] 📋 Género de la prenda:', prenda.genero);
+            console.log('[cargarTallasYCantidades] 🏷️ ID Cotización:', prenda.cotizacion_id);
             
-            // Convertir array de tallas a objeto por género
+            // Convertir array de tallas a objeto por género usando el género de la prenda
+            // Manejar ambos casos: genero como objeto con nombre o como string directo
+            let generoPrenda = 'DAMA'; // valor por defecto
+            if (prenda.genero) {
+                if (typeof prenda.genero === 'string') {
+                    generoPrenda = prenda.genero.toUpperCase();
+                } else if (prenda.genero.nombre) {
+                    generoPrenda = prenda.genero.nombre.toUpperCase();
+                }
+            }
+            console.log(`[cargarTallasYCantidades] 👤 Usando género de la prenda: ${generoPrenda}`);
+            
+            // Guardar tallas de la cotización para pre-selección (solo para cotizaciones)
+            window.tallasDesdeCotizacion = window.tallasDesdeCotizacion || {};
+            window.tallasDesdeCotizacion[generoPrenda] = new Set();
+            
             prenda.tallas.forEach(tallaObj => {
-                const genero = (tallaObj.genero || 'DAMA').toUpperCase();  // ✅ Normalizar a mayúsculas
                 const talla = tallaObj.talla;
                 const cantidad = tallaObj.cantidad || 0;
-                console.log(`[cargarTallasYCantidades] Agregando ${genero} - ${talla}: ${cantidad}`);
-                window.tallasRelacionales[genero][talla] = cantidad;
+                console.log(`[cargarTallasYCantidades] 📏 Agregando ${generoPrenda} - ${talla}: ${cantidad}`);
+                window.tallasRelacionales[generoPrenda][talla] = cantidad;
+                window.tallasDesdeCotizacion[generoPrenda].add(talla);
             });
+            
+            console.log('[cargarTallasYCantidades] 📋 Tallas de cotización para pre-selección:', window.tallasDesdeCotizacion);
         } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas disponibles:', prenda.tallas_disponibles);
             
@@ -607,11 +635,39 @@ class PrendaEditor {
                         console.log(`[cargarTallasYCantidades] ✓ Tarjeta creada para género: ${generoLower}`);
                     }
                     
-                    // NO pre-llenar cantidades - dejar inputs vacíos
-                    // El usuario digitará las cantidades manualmente
-                    setTimeout(() => {
-                        console.log('[cargarTallasYCantidades] 📋 Tallas mostradas sin cantidades pre-cargadas');
-                    }, 200);
+                    // PRE-CARGAR CANTIDADES Y PRE-SELECCIONAR TALLAS (SOLO para cotizaciones)
+                    const tieneCantidades = Object.values(tallasObj).some(cantidad => cantidad > 0);
+                    const esDesdeCotizacion = window.tallasDesdeCotizacion && window.tallasDesdeCotizacion[genero.toUpperCase()];
+                    
+                    if (esDesdeCotizacion) {
+                        console.log('[cargarTallasYCantidades] 📋 Pre-cargando cantidades y pre-seleccionando tallas desde cotización');
+                        
+                        // Esperar a que se renderice la tarjeta y luego llenar cantidades y seleccionar checkboxes
+                        setTimeout(() => {
+                            Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                                // Pre-cargar cantidad
+                                const input = document.querySelector(`input[data-talla="${talla}"][data-genero="${generoLower}"]`);
+                                if (input) {
+                                    if (cantidad > 0) {
+                                        input.value = cantidad;
+                                        console.log(`[cargarTallasYCantidades] ✏️ Pre-cargada ${generoLower} - ${talla}: ${cantidad}`);
+                                    }
+                                    
+                                    // Pre-seleccionar checkbox si viene de cotización
+                                    if (esDesdeCotizacion && window.tallasDesdeCotizacion[genero.toUpperCase()].has(talla)) {
+                                        const checkbox = document.querySelector(`input[type="checkbox"][value="${talla}"][data-genero="${generoLower}"]`);
+                                        if (checkbox && !checkbox.checked) {
+                                            checkbox.checked = true;
+                                            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                            console.log(`[cargarTallasYCantidades] ☑️ Pre-seleccionado ${generoLower} - ${talla}`);
+                                        }
+                                    }
+                                }
+                            });
+                        }, 300);
+                    } else {
+                        console.log('[cargarTallasYCantidades] 📋 Tallas mostradas sin pre-carga (no es cotización)');
+                    }
                 }, 150);
             }
         });
@@ -945,8 +1001,17 @@ class PrendaEditor {
     cambiarBotonAGuardarCambios() {
         const btnGuardar = document.getElementById('btn-guardar-prenda');
         if (btnGuardar) {
-            btnGuardar.innerHTML = '<span class="material-symbols-rounded">save</span>Guardar Cambios';
-            btnGuardar.setAttribute('data-editing', 'true');
+            // Si viene de una cotización, mantener "Agregar Prenda"
+            if (window.prendaActual && window.prendaActual.cotizacion_id) {
+                console.log('[cargarTallasYCantidades] 🏷️ Viene de cotización, manteniendo "Agregar Prenda"');
+                // No cambiar el texto, mantener "Agregar Prenda"
+                btnGuardar.setAttribute('data-editing', 'false');
+            } else {
+                // Si es edición normal, cambiar a "Guardar Cambios"
+                console.log('[cargarTallasYCantidades] 📝 Es edición normal, cambiando a "Guardar Cambios"');
+                btnGuardar.innerHTML = '<span class="material-symbols-rounded">save</span>Guardar Cambios';
+                btnGuardar.setAttribute('data-editing', 'true');
+            }
         }
     }
 

@@ -196,6 +196,30 @@ function buscarEnArray(array, propiedad, valor) {
     return array.find(item => item[propiedad] === valor) || null;
 }
 
+/**
+ * Filtrar cotizaciones por texto de búsqueda
+ * @param {Array} cotizaciones - Array de cotizaciones
+ * @param {string} filtro - Texto a filtrar
+ * @returns {Array} Cotizaciones filtradas
+ */
+function filtrarCotizaciones(cotizaciones, filtro = '') {
+    if (!filtro || filtro.trim() === '') {
+        return cotizaciones;
+    }
+    
+    const filtroLower = filtro.toLowerCase().trim();
+    
+    return cotizaciones.filter(cot => {
+        return (
+            cot.numero_cotizacion.toLowerCase().includes(filtroLower) ||
+            cot.cliente.toLowerCase().includes(filtroLower) ||
+            (cot.asesora && cot.asesora.toLowerCase().includes(filtroLower)) ||
+            (cot.forma_pago && Array.isArray(cot.forma_pago) && 
+             cot.forma_pago.some(fp => fp.toLowerCase().includes(filtroLower)))
+        );
+    });
+}
+
 // ============================================================
 // HELPERS PARA VALIDACIÓN
 // ============================================================

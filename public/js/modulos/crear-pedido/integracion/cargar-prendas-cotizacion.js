@@ -139,6 +139,13 @@ class CargadorPrendasCotizacion {
         }
         
         console.log('[transformarDatos] TALLAS DISPONIBLES:', tallasDisponibles);
+        
+        // IMPORTANTE: Incluir tallas con cantidades para cotizaciones
+        let tallasConCantidades = [];
+        if (prenda.tallas && Array.isArray(prenda.tallas)) {
+            tallasConCantidades = prenda.tallas;
+            console.log('[transformarDatos] 📏 TALLAS CON CANTIDADES para cotización:', tallasConCantidades);
+        }
 
         // Estructura COMPLETA de prenda para el editor modal
         const prendaCompleta = {
@@ -161,6 +168,9 @@ class CargadorPrendasCotizacion {
             // Frontend debe mostrar checkboxes/inputs SIN valores pre-llenados
             tallas_disponibles: tallasDisponibles,
             cantidad_talla: {},  // Vacío - usuario digitará las cantidades
+            
+            // TALLAS CON CANTIDADES - Para cotizaciones (pre-selección)
+            tallas: tallasConCantidades,
             
             // VARIACIONES/ESPECIFICACIONES - COMPLETAS desde prenda_variantes_cot
             variantes: prenda.variantes || {
@@ -207,7 +217,7 @@ class CargadorPrendasCotizacion {
             // Metadata
             tipo: 'cotizacion',
             cotizacion_id: data.cotizacion_id || cotizacionId,
-            prenda_id: prenda.id,
+            prenda_id: prenda.id,  // ID de la prenda
             numero_cotizacion: data.numero_cotizacion
         };
 
