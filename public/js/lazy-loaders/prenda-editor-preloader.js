@@ -123,11 +123,17 @@ window.PrendaEditorPreloader = (function() {
                 config.isPreloading = false;
                 config.preloadError = error;
                 
-                console.error('[PrendaEditorPreloader] ❌ Error en precarguía:', error.message);
+                // Si es un error de red, no mostrar como error crítico
+                if (error.message && error.message.includes('Failed to load')) {
+                    console.warn('[PrendaEditorPreloader] ⚠️ Error de red en precarguía (se reintentará al usar):', error.message);
+                    console.info('[PrendaEditorPreloader] 💡 La precarga falló pero los módulos se cargarán bajo demanda');
+                } else {
+                    console.error('[PrendaEditorPreloader] ❌ Error en precarguía:', error.message);
+                }
                 
-                // Disparar evento de error
+                // Disparar evento de error (para debugging)
                 window.dispatchEvent(new CustomEvent('prendaEditorPreloadError', {
-                    detail: { error: error.message }
+                    detail: { error: error.message, isNetworkError: error.message.includes('Failed to load') }
                 }));
             });
     }

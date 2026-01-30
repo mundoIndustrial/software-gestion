@@ -276,10 +276,10 @@
 {{-- Toast Container --}}
 <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
 
-{{-- Loading Overlay - DESHABILITADO TEMPORALMENTE --}}
-{{-- <div id="loadingOverlay" class="loading-overlay">
+{{-- Loading Overlay --}}
+<div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner"></div>
-</div> --}}
+</div>
 
 <div style="min-height: 100vh; background: #f9fafb; margin: 0; padding: 1.5rem; box-sizing: border-box;">
     {{-- Header Principal Blanco --}}
@@ -373,16 +373,6 @@
                                     </button>
                                 </div>
                             </th>
-                            <th class="text-left py-4 px-6 font-bold">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span>Descripción</span>
-                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="descripcion" title="Filtrar por Descripción">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </th>
                             <th class="text-center py-4 px-6 font-bold">
                                 <div class="flex items-center justify-center gap-2">
                                     <span>Estado</span>
@@ -420,12 +410,12 @@
                             <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->numero_pedido }}">
                                 <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
                                     <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
-                                        {{-- Botón Ver (disponible para todos) --}}
-                                        <button 
-                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                                            onclick="verFactura('{{ $orden->numero_pedido }}')"
-                                            data-tooltip="Ver orden"
-                                        >
+                                        {{-- Botón Ver (con dropdown) --}}
+                                        @php
+                                            $numeroPedido = $orden->numero_pedido;
+                                            $pedidoId = $orden->id;
+                                        @endphp
+                                        <button class="btn-ver-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" title="Ver Opciones">
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
 
@@ -436,10 +426,11 @@
                                             $isPatronista = $roleName === 'patronista';
                                         @endphp
                                         @if(!$isPatronista)
+                                            {{-- Botón Materiales --}}
                                             <button 
-                                                class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
+                                                class="btn-tooltip p-2 text-green-600 hover:bg-green-50 rounded transition"
                                                 onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
-                                                data-tooltip="Ver insumos"
+                                                data-tooltip="Gestionar materiales"
                                             >
                                                 <i class="fas fa-box text-lg"></i>
                                             </button>
@@ -451,12 +442,12 @@
                                             >
                                                 <i class="fas fa-ruler text-lg"></i>
                                             </button>
-                                            {{-- Botón enviar a producción: solo visible para estado Pendiente --}}
-                                            @if($orden->estado === 'Pendiente')
+                                            {{-- Botón enviar a producción: solo visible para estado Pendiente o PENDIENTE_INSUMOS --}}
+                                            @if($orden->estado === 'Pendiente' || $orden->estado === 'PENDIENTE_INSUMOS')
                                                 <button 
                                                     class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                                     onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
-                                                    data-tooltip="Enviar a producción"
+                                                    data-tooltip="Aprobar pedido"
                                                 >
                                                     <i class="fas fa-paper-plane text-lg"></i>
                                                 </button>
@@ -470,11 +461,6 @@
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
-                                <td class="py-4 px-6">
-                                    <span class="text-gray-600 text-sm cursor-pointer hover:text-blue-600 transition" onclick="abrirModalDescripcion('{{ $orden->numero_pedido }}', {{ json_encode($orden->descripcion_prendas ?? '') }})">
-                                        {{ Str::limit($orden->descripcion_prendas ?? '', 50) }}
-                                    </span>
-                                </td>
                                 <td class="py-4 px-6 text-center">
                                     @php
                                         $estadoClass = '';
@@ -485,10 +471,12 @@
                                             $estadoClass = 'bg-blue-100 text-blue-800';
                                         } elseif ($orden->estado === 'Anulada') {
                                             $estadoClass = 'bg-amber-100 text-amber-800';
+                                        } elseif ($orden->estado === 'PENDIENTE_INSUMOS') {
+                                            $estadoClass = 'bg-green-500 text-white';
                                         }
                                     @endphp
                                     <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $estadoClass }}">
-                                        {{ $orden->estado ?? 'N/A' }}
+                                        {{ $orden->estado === 'PENDIENTE_INSUMOS' ? 'Pendiente Insumos' : ($orden->estado ?? 'N/A') }}
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">
@@ -1086,33 +1074,6 @@
     </div>
 </div>
 
-{{-- Modal para ver descripción completa --}}
-<div id="descripcionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001;">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4" style="z-index: 10002;">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
-            <h2 class="text-2xl font-bold">Descripción Completa</h2>
-            <button onclick="cerrarModalDescripcion()" class="text-white hover:text-gray-200 transition">
-                <i class="fas fa-times text-2xl"></i>
-            </button>
-        </div>
-        <div class="p-6">
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Pedido:</label>
-                <p id="descripcionPedido" class="text-gray-600 font-medium"></p>
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Descripción:</label>
-                <div id="descripcionTexto" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm overflow-auto max-h-96" style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"></div>
-            </div>
-            <div class="flex gap-3 justify-end">
-                <button onclick="cerrarModalDescripcion()" class="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- Modal para ver/editar observaciones --}}
 <div id="observacionesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001;">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4" style="z-index: 10002;">
@@ -1175,6 +1136,16 @@
         </div>
         <div class="p-6 space-y-6">
             <div>
+                <label class="block text-base font-bold text-gray-800 mb-2">Prenda:</label>
+                <select 
+                    id="prendaSelect" 
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    onchange="onPrendaSeleccionada()"
+                >
+                    <option value="">Seleccione una prenda...</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-base font-bold text-gray-800 mb-2">Ancho (m):</label>
                 <input 
                     type="number" 
@@ -1215,12 +1186,15 @@
     </div>
 </div>
 
+<!-- Contenedor para dropdowns dinámicos -->
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+
 {{-- Modal de Confirmación para Enviar a Producción --}}
 <div id="modalConfirmarProduccion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001; top: 0; left: 0; right: 0; bottom: 0;">
     <div class="bg-white rounded-lg shadow-2xl" style="width: 380px; z-index: 10002;">
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex items-center gap-3">
             <i class="fas fa-industry text-2xl"></i>
-            <h2 class="text-base font-bold">Enviar a Producción</h2>
+            <h2 class="text-base font-bold">Aprobar Pedido</h2>
         </div>
 
         <div class="p-5">
@@ -1228,7 +1202,7 @@
             <p class="text-2xl font-bold text-blue-600 mb-4" id="numeroPedidoConfirm"></p>
             
             <p class="text-gray-600 text-sm leading-relaxed mb-6">
-                ¿Enviar a producción? Esta acción es definitiva.
+                ¿Aprobar este pedido para enviar a producción? Esta acción es definitiva.
             </p>
             
             <div class="flex gap-3 justify-end">
@@ -1240,9 +1214,9 @@
                 </button>
                 <button 
                     onclick="confirmarEnvioProduccion()"
-                    class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2"
+                    class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm"
                 >
-                    <i class="fas fa-paper-plane"></i> Enviar
+                    Aprobar
                 </button>
             </div>
         </div>
@@ -1264,29 +1238,127 @@
         // Establecer el pedido
         document.getElementById('anchoMetrajePedido').textContent = pedido;
         
-        // Limpiar los inputs
-        document.getElementById('anchoInput').value = '';
-        document.getElementById('metrajeInput').value = '';
-        
         // Guardar el pedido en el modal para usarlo después
         modal.dataset.pedido = pedido;
 
-        // Cargar los datos guardados si existen
-        fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje`)
+        // Cargar las prendas del pedido
+        cargarPrendasDelPedido(pedido);
+
+        // Detectar automáticamente la prenda seleccionada actualmente
+        let prendaIdSeleccionada = null;
+        
+        // 1. Verificar si hay un ReceiptManager con prenda seleccionada
+        if (window.receiptManager && window.receiptManager.prendasIndex !== null) {
+            const prendasIndex = window.receiptManager.prendasIndex;
+            const datosFactura = window.receiptManager.datosFactura;
+            
+            if (datosFactura && datosFactura.prendas && datosFactura.prendas[prendasIndex]) {
+                const prendaSeleccionada = datosFactura.prendas[prendasIndex];
+                prendaIdSeleccionada = prendaSeleccionada.id;
+                
+                console.log('[abrirModalAnchoMetraje] Prenda detectada desde ReceiptManager:', {
+                    prendasIndex: prendasIndex,
+                    prendaNombre: prendaSeleccionada.nombre,
+                    prendaId: prendaIdSeleccionada
+                });
+            }
+        }
+        
+        // 2. Esperar a que se carguen las prendas y luego seleccionar la prenda detectada
+        setTimeout(() => {
+            if (prendaIdSeleccionada) {
+                const select = document.getElementById('prendaSelect');
+                if (select.querySelector(`option[value="${prendaIdSeleccionada}"]`)) {
+                    select.value = prendaIdSeleccionada;
+                    console.log('[abrirModalAnchoMetraje] Prenda seleccionada automáticamente:', prendaIdSeleccionada);
+                    
+                    // Cargar los datos de esta prenda automáticamente
+                    onPrendaSeleccionada();
+                } else {
+                    console.warn('[abrirModalAnchoMetraje] No se encontró la prenda con ID:', prendaIdSeleccionada);
+                    // Limpiar inputs si no se encuentra la prenda
+                    document.getElementById('anchoInput').value = '';
+                    document.getElementById('metrajeInput').value = '';
+                }
+            } else {
+                // Si no hay prenda seleccionada, limpiar inputs
+                document.getElementById('anchoInput').value = '';
+                document.getElementById('metrajeInput').value = '';
+                console.log('[abrirModalAnchoMetraje] No hay prenda seleccionada, mostrando modal vacío');
+            }
+        }, 500); // Esperar a que se cargue el selector de prendas
+    }
+
+    /**
+     * Carga las prendas del pedido en el selector
+     */
+    function cargarPrendasDelPedido(pedido) {
+        fetch(`/insumos/materiales/${pedido}/obtener-prendas`)
             .then(response => response.json())
             .then(data => {
-                if (data.success && data.data) {
-                    if (data.data.ancho) {
-                        document.getElementById('anchoInput').value = data.data.ancho;
-                    }
-                    if (data.data.metraje) {
-                        document.getElementById('metrajeInput').value = data.data.metraje;
-                    }
+                if (data.success && data.prendas) {
+                    const select = document.getElementById('prendaSelect');
+                    select.innerHTML = '<option value="">Seleccione una prenda...</option>';
+                    
+                    data.prendas.forEach(prenda => {
+                        const option = document.createElement('option');
+                        option.value = prenda.id;
+                        option.textContent = `${prenda.nombre_prenda} - ${prenda.descripcion || ''}`;
+                        select.appendChild(option);
+                    });
                 }
             })
             .catch(error => {
-                console.error('Error al cargar ancho y metraje:', error);
+                console.error('Error al cargar prendas del pedido:', error);
             });
+    }
+
+    /**
+     * Se ejecuta cuando se selecciona una prenda
+     */
+    function onPrendaSeleccionada() {
+        const prendaId = document.getElementById('prendaSelect').value;
+        
+        // Primero limpiar siempre los campos para evitar mostrar datos de la prenda anterior
+        document.getElementById('anchoInput').value = '';
+        document.getElementById('metrajeInput').value = '';
+        
+        if (prendaId) {
+            // Cargar datos de ancho/metraje para esta prenda específica
+            const pedido = document.getElementById('modalAnchoMetraje').dataset.pedido;
+            console.log(`[onPrendaSeleccionada] Cargando datos para prenda ${prendaId} del pedido ${pedido}`);
+            
+            fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje-prenda/${prendaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`[onPrendaSeleccionada] Respuesta recibida:`, data);
+                    
+                    if (data.success && data.data) {
+                        // Solo establecer valores si existen datos guardados
+                        if (data.data.ancho) {
+                            document.getElementById('anchoInput').value = data.data.ancho;
+                            console.log(`[onPrendaSeleccionada] Ancho cargado: ${data.data.ancho}`);
+                        }
+                        if (data.data.metraje) {
+                            document.getElementById('metrajeInput').value = data.data.metraje;
+                            console.log(`[onPrendaSeleccionada] Metraje cargado: ${data.data.metraje}`);
+                        }
+                        
+                        if (!data.data.ancho && !data.data.metraje) {
+                            console.log(`[onPrendaSeleccionada] La prenda ${prendaId} no tiene datos guardados, campos permanecen vacíos`);
+                        }
+                    } else {
+                        console.log(`[onPrendaSeleccionada] La prenda ${prendaId} no tiene datos guardados o ocurrió un error`);
+                        // Los campos ya están limpios, no hacer nada más
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos de ancho/metraje de la prenda:', error);
+                    // Los campos ya están limpios, no hacer nada más
+                });
+        } else {
+            console.log('[onPrendaSeleccionada] No hay prenda seleccionada, campos limpiados');
+        }
     }
 
     /**
@@ -1307,6 +1379,7 @@
     function guardarAnchoMetraje() {
         const ancho = parseFloat(document.getElementById('anchoInput').value);
         const metraje = parseFloat(document.getElementById('metrajeInput').value);
+        const prendaId = document.getElementById('prendaSelect').value;
         const pedido = document.getElementById('anchoMetrajePedido').textContent;
         
         // Validar que los campos estén completos
@@ -1320,31 +1393,106 @@
             return;
         }
         
-        // Enviar los datos al servidor
-        fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje`, {
+        if (!prendaId) {
+            showToast('Por favor selecciona una prenda', 'warning');
+            return;
+        }
+        
+        // Guardar los datos globalmente usando la función universal
+        window.actualizarAnchoMetrajeUniversal(ancho, metraje, pedido);
+        
+        console.log('[guardarAnchoMetraje] Datos guardados usando función universal');
+        
+        // Enviar los datos al servidor con la relación de prenda
+        fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
+                pedido: pedido,
+                prenda_id: prendaId,
                 ancho: ancho,
                 metraje: metraje
-            }),
+            })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showToast('Ancho y metraje guardados correctamente', 'success');
-                cerrarModalAnchoMetraje();
+                
+                // Si hay un recibo abierto, actualizarlo dinámicamente
+                if (window.receiptManager && window.receiptManager.datosFactura) {
+                    console.log('[guardarAnchoMetraje] Actualizando recibo abierto...');
+                    actualizarReciboConAnchoMetraje();
+                }
+                
+                // Limpiar los inputs
+                document.getElementById('anchoInput').value = '';
+                document.getElementById('metrajeInput').value = '';
+                document.getElementById('prendaSelect').value = '';
+                
+                // Cerrar el modal
+                setTimeout(() => {
+                    cerrarModalAnchoMetraje();
+                }, 1000);
             } else {
-                showToast('Error al guardar: ' + (data.message || ''), 'error');
+                showToast('Error al guardar los datos', 'error');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            showToast('Error al guardar ancho y metraje', 'error');
+            console.error('Error al guardar ancho y metraje:', error);
+            showToast('Error al guardar los datos', 'error');
         });
+    }
+    
+    /**
+     * Actualiza el recibo abierto con los datos de ancho y metraje
+     */
+    function actualizarReciboConAnchoMetraje() {
+        if (!window.datosAnchoMetraje || !window.receiptManager) {
+            console.log('[actualizarReciboConAnchoMetraje] No hay datos de ancho/metraje o ReceiptManager');
+            return;
+        }
+        
+        const { ancho, metraje } = window.datosAnchoMetraje;
+        
+        // Buscar o crear el elemento para mostrar ancho y metraje
+        let anchoMetrajeElement = document.getElementById('ancho-metraje-disponible');
+        
+        if (!anchoMetrajeElement) {
+            // Crear el elemento si no existe
+            anchoMetrajeElement = document.createElement('div');
+            anchoMetrajeElement.id = 'ancho-metraje-disponible';
+            anchoMetrajeElement.style.cssText = `
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 0.75rem;
+                font-weight: bold;
+                text-align: right;
+                z-index: 10;
+            `;
+            
+            // Insertar después del título del recibo
+            const receiptTitle = document.getElementById('receipt-title');
+            if (receiptTitle) {
+                receiptTitle.parentNode.insertBefore(anchoMetrajeElement, receiptTitle.nextSibling);
+            }
+        }
+        
+        // Actualizar el contenido
+        anchoMetrajeElement.innerHTML = `
+            ANCHO DISPONIBLE: ${ancho.toFixed(2)} m<br>
+            METRAJE DISPONIBLE: ${metraje.toFixed(2)} m
+        `;
+        
+        console.log('[actualizarReciboConAnchoMetraje] Recibo actualizado con ancho y metraje');
     }
 
     /**
@@ -2135,7 +2283,6 @@
         const columnNames = {
             'pedido': 'Pedido',
             'cliente': 'Cliente',
-            'descripcion': 'Descripción',
             'estado': 'Estado',
             'area': 'Área',
             'fecha': 'Fecha',
@@ -2145,7 +2292,7 @@
         // Valores predefinidos para ciertos filtros
         const predefinedValues = {
             'area': ['Corte', 'Creación de Orden'],
-            'estado': ['En Ejecución', 'No iniciado', 'Entregado', 'Anulada']
+            'estado': ['En Ejecución', 'No iniciado', 'Entregado', 'Anulada', 'Pendiente Insumos']
         };
 
         // Usar valores predefinidos si existen, sino usar los de la tabla
@@ -2366,49 +2513,11 @@
     });
     
     /**
-     * Abre el modal de descripción completa
-     */
-    function abrirModalDescripcion(pedido, descripcion) {
-        document.getElementById('descripcionPedido').textContent = pedido;
-        
-        // Procesar la descripción para convertir *** a negrita
-        let textoFormateado = descripcion;
-        
-        // Reemplazar *** PALABRA *** por <strong>PALABRA</strong>
-        textoFormateado = textoFormateado.replace(/\*\*\*\s*([^*]+?)\s*:\s*\*\*\*/g, '<strong>$1:</strong>');
-        
-        // Reemplazar *** PALABRA *** sin dos puntos
-        textoFormateado = textoFormateado.replace(/\*\*\*\s*([^*]+?)\s*\*\*\*/g, '<strong>$1</strong>');
-        
-        // Dividir por líneas y procesar
-        const lineas = textoFormateado.split('\n');
-        let htmlFormateado = '';
-        
-        lineas.forEach(linea => {
-            if (linea.trim()) {
-                htmlFormateado += '<div>' + linea + '</div>';
-            } else {
-                htmlFormateado += '<div style="height: 0.5em;"></div>'; // Espacio entre párrafos
-            }
-        });
-        
-        document.getElementById('descripcionTexto').innerHTML = htmlFormateado;
-        document.getElementById('descripcionModal').style.display = 'flex';
-    }
-    
-    /**
-     * Cierra el modal de descripción
-     */
-    function cerrarModalDescripcion() {
-        document.getElementById('descripcionModal').style.display = 'none';
-    }
-
-    /**
      * Envía el pedido a producción
      */
     function cambiarEstadoPedido(numeroPedido, estadoActual) {
-        // Si el estado es "Pendiente", enviar a producción (No iniciado)
-        if (estadoActual.toLowerCase() === 'pendiente') {
+        // Si el estado es "Pendiente" o "PENDIENTE_INSUMOS", enviar a producción (No iniciado)
+        if (estadoActual.toLowerCase() === 'pendiente' || estadoActual === 'PENDIENTE_INSUMOS') {
             // Guardar el número de pedido en una variable global
             window.pedidoParaProduccion = numeroPedido;
             
@@ -2435,7 +2544,10 @@
         const numeroPedido = window.pedidoParaProduccion;
         if (!numeroPedido) return;
         
-        const proximoEstado = 'No iniciado';
+        const proximoEstado = 'En Ejecución';
+        
+        // Mostrar loading overlay
+        document.getElementById('loadingOverlay').classList.add('active');
         
         // Enviar petición al servidor
         fetch(`/insumos/materiales/${numeroPedido}/cambiar-estado`, {
@@ -2450,9 +2562,12 @@
         })
         .then(response => response.json())
         .then(data => {
+            // Ocultar loading overlay
+            document.getElementById('loadingOverlay').classList.remove('active');
+            
             if (data.success) {
                 cerrarModalConfirmarProduccion();
-                showToast(`Pedido enviado a producción correctamente`, 'success');
+                showToast(`Pedido aprobado correctamente. Estado: En Ejecución, Área: Corte`, 'success');
                 // Recargar la página después de 1 segundo
                 setTimeout(() => {
                     window.location.reload();
@@ -2462,6 +2577,8 @@
             }
         })
         .catch(error => {
+            // Ocultar loading overlay
+            document.getElementById('loadingOverlay').classList.remove('active');
             showToast('Error al cambiar el estado', 'error');
         });
     }
@@ -2485,5 +2602,320 @@
 <!-- Image Gallery para mostrar fotos en el modal -->
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <script src="{{ asset('js/insumos/pagination.js') }}"></script>
+
+<!-- Scripts para Dropdown de Ver Pedido -->
+<script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+<script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
+<script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
+<script src="{{ asset('js/insumos/insumos-galeria.js') }}"></script>
+
+<!-- Scripts para Recibos/Procesos -->
+<script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+
+<!-- Script para activar dropdowns en insumos -->
+<script>
+    let dropdownAbierto = {};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Insumos Dropdowns] DOMContentLoaded iniciado');
+        console.log('[Insumos Dropdowns] Buscando botones btn-ver-dropdown...');
+        
+        const botones = document.querySelectorAll('.btn-ver-dropdown');
+        console.log(`[Insumos Dropdowns] Encontrados ${botones.length} botones`);
+        
+        // Esperar un momento para asegurar que todo esté cargado
+        setTimeout(() => {
+            // Cuando se haga clic en cualquier botón btn-ver-dropdown, abrir el dropdown
+            document.addEventListener('click', function(e) {
+                const btnVerDropdown = e.target.closest('.btn-ver-dropdown');
+                if (btnVerDropdown) {
+                    console.log('[Insumos Dropdowns] Clic en botón Ver');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const menuId = btnVerDropdown.getAttribute('data-menu-id');
+                    console.log(`[Insumos Dropdowns] menuId: ${menuId}`);
+                    
+                    // Crear el dropdown si no existe
+                    let dropdown = document.getElementById(menuId);
+                    console.log(`[Insumos Dropdowns] Dropdown existe: ${dropdown !== null}`);
+                    
+                    if (!dropdown) {
+                        console.log(`[Insumos Dropdowns] Creando dropdown ${menuId}...`);
+                        // Usar la función crearDropdownVer del script pedidos-dropdown-simple.js
+                        if (typeof crearDropdownVer === 'function') {
+                            console.log('[Insumos Dropdowns] Función crearDropdownVer disponible');
+                            // Llamar a la función interna
+                            dropdown = crearDropdownVer(btnVerDropdown);
+                            console.log(`[Insumos Dropdowns] Dropdown creado: ${dropdown !== null}`);
+                            dropdownAbierto[menuId] = false; // Inicializar estado
+                        } else {
+                            console.error('[Insumos Dropdowns] Función crearDropdownVer NO disponible');
+                        }
+                    }
+                    
+                    if (dropdown) {
+                        console.log(`[Insumos Dropdowns] Estado actual: ${dropdownAbierto[menuId] ? 'ABIERTO' : 'CERRADO'}`);
+                        
+                        // Toggle del dropdown actual
+                        if (!dropdownAbierto[menuId]) {
+                            // Posicionar el dropdown cerca del botón
+                            const rect = btnVerDropdown.getBoundingClientRect();
+                            dropdown.style.top = (rect.bottom + 5) + 'px';
+                            dropdown.style.left = (rect.left) + 'px';
+                            dropdown.style.display = 'block';
+                            dropdown.style.pointerEvents = 'auto';
+                            dropdownAbierto[menuId] = true;
+                            console.log('[Insumos Dropdowns] Dropdown abierto');
+                        } else {
+                            dropdown.style.display = 'none';
+                            dropdown.style.pointerEvents = 'none';
+                            dropdownAbierto[menuId] = false;
+                            console.log('[Insumos Dropdowns] Dropdown cerrado');
+                        }
+                    }
+                }
+            });
+            
+            // Cerrar dropdown al hacer clic afuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.btn-ver-dropdown') && !e.target.closest('.dropdown-menu')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        const id = menu.id;
+                        if (dropdownAbierto[id]) {
+                            menu.style.display = 'none';
+                            menu.style.pointerEvents = 'none';
+                            dropdownAbierto[id] = false;
+                        }
+                    });
+                }
+            });
+        }, 100); // Pequeño retraso para asegurar que el DOM esté completamente cargado
+    });
+    
+    /**
+     * Función para abrir selector de recibos
+     * Primero muestra la lista de prendas
+     */
+    function abrirSelectorRecibos(pedidoId) {
+        console.log('[abrirSelectorRecibos] Cargando lista de prendas con pedidoId:', pedidoId);
+        
+        // Cargar datos del pedido
+        fetch(`/pedidos-public/${pedidoId}/recibos-datos`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(datos => {
+            console.log('[abrirSelectorRecibos] Datos recibidos:', datos);
+            
+            // Determinar dónde están los datos reales
+            const datosReales = datos.data || datos;
+            
+            if (datosReales.prendas && datosReales.prendas.length > 0) {
+                // Mostrar selector de prendas
+                mostrarSelectorDePrendas(datosReales, pedidoId);
+            } else {
+                console.error('[abrirSelectorRecibos] No se encontraron prendas');
+            }
+        })
+        .catch(error => {
+            console.error('[abrirRecibos] Error al cargar datos:', error);
+        });
+    }
+    
+    /**
+     * Muestra el modal con la lista de prendas para seleccionar
+     */
+    function mostrarSelectorDePrendas(datos, pedidoId) {
+        console.log('[mostrarSelectorDePrendas] Mostrando lista de prendas');
+        
+        // Crear un modal completamente separado
+        const modal = document.createElement('div');
+        modal.id = 'selector-prendas-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 1rem;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        `;
+        
+        modalContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.5rem; font-weight: bold; color: #1f2937;">
+                    Seleccionar Prenda - Pedido ${datos.numero_pedido}
+                </h2>
+                <button onclick="cerrarSelectorPrendas()" style="
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: #6b7280;
+                    padding: 0.5rem;
+                    border-radius: 0.375rem;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+                    ×
+                </button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem; color: #6b7280;">
+                Cliente: ${datos.cliente || 'N/A'} | Asesor: ${datos.asesor || datos.asesora || 'N/A'}
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                ${datos.prendas.map((prenda, index) => `
+                    <button onclick="seleccionarPrendaRecibo('${pedidoId}', ${index})" style="
+                        background: white;
+                        border: 2px solid #e5e7eb;
+                        border-radius: 8px;
+                        padding: 1.5rem;
+                        text-align: left;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    " onmouseover="this.style.background='#f9fafb'; this.style.borderColor='#3b82f6'" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb'">
+                        <div>
+                            <div style="font-weight: 700; color: #1f2937; margin-bottom: 0.5rem; font-size: 1.125rem;">
+                                ${prenda.nombre || 'Prenda sin nombre'}
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                ${prenda.descripcion || 'Sin descripción'}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #9ca3af;">
+                                Cantidad: ${prenda.cantidad || 'N/A'}
+                            </div>
+                        </div>
+                        <div style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700;">
+                            Ver Recibo
+                        </div>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Cerrar al hacer clic fuera
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                cerrarSelectorPrendas();
+            }
+        });
+        
+        // Guardar datos para usarlos después
+        window.datosSelectorPrendas = datos;
+        window.pedidoIdSelector = pedidoId;
+    }
+    
+    /**
+     * Actualiza los datos básicos del modal
+     */
+    function actualizarDatosBasicosModal(modalContainer, datos) {
+        // Asesor
+        const asesoraElement = modalContainer.querySelector('#asesora-value');
+        if (asesoraElement) {
+            asesoraElement.textContent = datos.asesor || datos.asesora || 'N/A';
+        }
+        
+        // Forma de pago
+        const formaPagoElement = modalContainer.querySelector('#forma-pago-value');
+        if (formaPagoElement) {
+            formaPagoElement.textContent = datos.forma_de_pago || 'N/A';
+        }
+        
+        // Cliente
+        const clienteElement = modalContainer.querySelector('#cliente-value');
+        if (clienteElement) {
+            clienteElement.textContent = datos.cliente || 'N/A';
+        }
+        
+        // Pedido
+        const pedidoElement = modalContainer.querySelector('.pedido-number');
+        if (pedidoElement) {
+            pedidoElement.textContent = datos.numero_pedido;
+        }
+        
+        // Fecha actual
+        const now = new Date();
+        const dayElement = modalContainer.querySelector('.day-box');
+        const monthElement = modalContainer.querySelector('.month-box');
+        const yearElement = modalContainer.querySelector('.year-box');
+        
+        if (dayElement) dayElement.textContent = now.getDate().toString().padStart(2, '0');
+        if (monthElement) monthElement.textContent = (now.getMonth() + 1).toString().padStart(2, '0');
+        if (yearElement) yearElement.textContent = now.getFullYear().toString();
+    }
+    
+    /**
+     * Selecciona una prenda y abre su recibo
+     * Usa el sistema de recibos que ya funciona
+     */
+    function seleccionarPrendaRecibo(pedidoId, prendaIndex) {
+        console.log('[seleccionarPrendaRecibo] Seleccionada prenda:', prendaIndex);
+        
+        // Cerrar selector
+        cerrarSelectorPrendas();
+        
+        // Usar el sistema de recibos que ya funciona
+        if (typeof verRecibosDelPedido === 'function') {
+            verRecibosDelPedido(null, pedidoId, prendaIndex);
+        } else {
+            console.error('[seleccionarPrendaRecibo] verRecibosDelPedido no está disponible');
+        }
+    }
+    
+    /**
+     * Carga el módulo PedidosRecibosModule usando el loader existente
+     */
+    function cargarPedidosRecibosModule(callback) {
+        const script = document.createElement('script');
+        script.src = '/js/modulos/pedidos-recibos/loader.js';
+        script.onload = callback;
+        script.onerror = () => {
+            console.error('[cargarPedidosRecibosModule] Error al cargar el loader');
+        };
+        document.head.appendChild(script);
+    }
+    
+    /**
+     * Cierra el selector de prendas
+     */
+    function cerrarSelectorPrendas() {
+        const modal = document.getElementById('selector-prendas-modal');
+        if (modal) {
+            modal.remove();
+        }
+        
+        // Limpiar datos
+        window.datosSelectorPrendas = null;
+        window.pedidoIdSelector = null;
+    }
+</script>
 @endsection
 

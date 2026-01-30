@@ -151,7 +151,7 @@ class CopiarImagenesCotizacionAPedidoService
             // Obtener prendas del pedido en el mismo orden de creación
             // Obtener el numero_pedido desde el pedido_produccion_id
             $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
-            $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
+            $prendasPedido = PrendaPedido::where('pedido_produccion_id', $pedido->id)
                 ->orderBy('id')
                 ->get();
 

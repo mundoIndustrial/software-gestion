@@ -135,13 +135,13 @@ class EloquentOrdenRepository implements OrdenRepositoryInterface
         }
 
         // Cargar prendas
-        $prendas = PrendaPedido::where('numero_pedido', $modelo->pedido)->get();
+        $prendas = PrendaPedido::where('pedido_produccion_id', $modelo->id)->get();
 
         foreach ($prendas as $prendaModelo) {
             $prenda = Prenda::crear(
                 $prendaModelo->nombre_prenda,
-                $prendaModelo->cantidad ?? 0,
-                $prendaModelo->cantidad_talla ?? []
+                0, // cantidad total se calcula desde tallas
+                []
             );
 
             if ($prendaModelo->descripcion) {

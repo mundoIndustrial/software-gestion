@@ -16,10 +16,10 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         // Mostrar spinner de carga
         mostrarCargando('Cargando factura...');
         
-        console.log('[ANTES-FETCH] Llamando a endpoint', { url: `/asesores/pedidos/${pedidoId}/factura-datos` });
+        console.log('[ANTES-FETCH] Llamando a endpoint', { url: `/pedidos-public/${pedidoId}/factura-datos` });
         
         // Obtener datos del pedido desde el servidor
-        const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
+        const response = await fetch(`/pedidos-public/${pedidoId}/factura-datos`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -292,36 +292,6 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     const botonesAccion = document.createElement('div');
     botonesAccion.style.cssText = 'display: flex; gap: 8px; align-items: center;';
     
-    // Botón Imprimir (solo icono)
-    const btnImprimir = document.createElement('button');
-    btnImprimir.innerHTML = '<i class="fas fa-print"></i>';
-    btnImprimir.title = 'Imprimir';
-    btnImprimir.style.cssText = `
-        background: #10b981;
-        color: white;
-        border: none;
-        padding: 8px 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-    `;
-    btnImprimir.onmouseover = () => {
-        btnImprimir.style.background = '#059669';
-        btnImprimir.style.transform = 'scale(1.1)';
-    };
-    btnImprimir.onmouseout = () => {
-        btnImprimir.style.background = '#10b981';
-        btnImprimir.style.transform = 'scale(1)';
-    };
-    btnImprimir.onclick = () => window.print();
-    botonesAccion.appendChild(btnImprimir);
-    
     // Botón Cerrar
     const btnCerrar = document.createElement('button');
     btnCerrar.id = 'close-receipt-btn';
@@ -543,11 +513,8 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
 
     
     try {
-        // Mostrar spinner de carga
-        mostrarCargando('Cargando recibos...');
-        
         // Obtener datos de recibos del servidor
-        const response = await fetch(`/asesores/pedidos/${pedidoId}/recibos-datos`, {
+        const response = await fetch(`/pedidos-public/${pedidoId}/recibos-datos`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -556,7 +523,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         });
         
         console.log('════════════════════════════════════════════════════════════');
-        console.log('[cargarRecibosDesdeLista] FETCH A /asesores/pedidos/' + pedidoId + '/recibos-datos');
+        console.log('[cargarRecibosDesdeLista] FETCH A /pedidos-public/' + pedidoId + '/recibos-datos');
         console.log('════════════════════════════════════════════════════════════');
         console.log('Response status:', response.status);
         console.log('Response ok:', response.ok);
@@ -584,8 +551,6 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         crearModalRecibosDesdeListaPedidos(datos, prendasIndex);
         
     } catch (error) {
-
-        ocultarCargando();
         
         mostrarErrorNotificacion(
             'Error',
@@ -628,63 +593,132 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
     }
     console.groupEnd();
     // ===== FIN DEBUG =====
-    // Crear overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'modal-recibos-overlay';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 999998;
-        padding: 1rem;
-    `;
     
-    // Contenedor del modal - SIN FONDO
-    const modal = document.createElement('div');
-    modal.id = 'receipt-modal-content';
-    modal.style.cssText = `
-        background: transparent;
-        border-radius: 0;
-        max-width: 95vw;
-        width: auto;
-        max-height: 90vh;
-        overflow: visible;
-        box-shadow: none;
-        position: relative;
-        padding: 0;
-    `;
+    // Usar el modal de supervisor existente
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const overlay = document.getElementById('modal-overlay');
     
-    // Placeholder para cargar el componente
-    const componentContainer = document.createElement('div');
-    componentContainer.id = 'order-detail-modal-container';
-    componentContainer.style.cssText = 'padding: 0; position: relative; width: 100%; height: 100%;';
-    modal.appendChild(componentContainer);
+    if (!modalWrapper || !overlay) {
+        console.error('[crearModalRecibosDesdeListaPedidos] No se encontró el modal de supervisor');
+        return;
+    }
     
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    
-    // Cerrar cuando se hace clic fuera
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.remove();
-        }
+    // Mostrar el modal de supervisor
+    console.log('[crearModalRecibosDesdeListaPedidos] Mostrando modal wrapper...');
+    console.log('[crearModalRecibosDesdeListaPedidos] Estado actual del overlay:', {
+        display: overlay.style.display,
+        zIndex: overlay.style.zIndex,
+        opacity: overlay.style.opacity,
+        visibility: overlay.style.visibility
     });
     
-    // Cerrar con ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && overlay.parentElement) {
-            overlay.remove();
-        }
+    overlay.style.display = 'block';
+    overlay.style.zIndex = '9997';
+    overlay.style.position = 'fixed';
+    overlay.style.opacity = '1';
+    overlay.style.visibility = 'visible';
+    
+    console.log('[crearModalRecibosDesdeListaPedidos] Estado actual del modal wrapper ANTES de mostrar:', {
+        display: modalWrapper.style.display,
+        zIndex: modalWrapper.style.zIndex,
+        opacity: modalWrapper.style.opacity,
+        visibility: modalWrapper.style.visibility,
+        pointerEvents: modalWrapper.style.pointerEvents,
+        innerHTML: modalWrapper.innerHTML.substring(0, 100) + '...'
     });
     
-    // Cargar el componente order-detail-modal
-    cargarComponenteOrderDetailModal(componentContainer, datos, prendasIndex);
+    modalWrapper.style.display = 'block';
+    modalWrapper.style.zIndex = '9998';
+    modalWrapper.style.position = 'fixed';
+    modalWrapper.style.top = '50%';
+    modalWrapper.style.left = '50%';
+    modalWrapper.style.transform = 'translate(-50%, -50%)';
+    modalWrapper.style.pointerEvents = 'auto';
+    modalWrapper.style.opacity = '1';
+    modalWrapper.style.visibility = 'visible';
+    
+    console.log('[crearModalRecibosDesdeListaPedidos] Estado del modal wrapper DESPUÉS de mostrar:', {
+        display: modalWrapper.style.display,
+        zIndex: modalWrapper.style.zIndex,
+        opacity: modalWrapper.style.opacity,
+        visibility: modalWrapper.style.visibility,
+        pointerEvents: modalWrapper.style.pointerEvents
+    });
+    
+    // Obtener el contenedor del modal
+    const modalContainer = modalWrapper.querySelector('.order-detail-modal-container');
+    console.log('[crearModalRecibosDesdeListaPedidos] Modal container encontrado:', !!modalContainer);
+    
+    if (modalContainer) {
+        console.log('[crearModalRecibosDesdeListaPedidos] Contenido del modal container:', modalContainer.innerHTML.substring(0, 200) + '...');
+        console.log('[crearModalRecibosDesdeListaPedidos] Hijos del modal container:', modalContainer.children.length);
+        
+        // Verificar si hay un card
+        const card = modalContainer.querySelector('.order-detail-card');
+        console.log('[crearModalRecibosDesdeListaPedidos] Card encontrado:', !!card);
+        
+        if (card) {
+            console.log('[crearModalRecibosDesdeListaPedidos] Estado del card:', {
+                display: card.style.display,
+                opacity: card.style.opacity,
+                visibility: card.style.visibility,
+                height: card.style.height
+            });
+        }
+    }
+    if (!modalContainer) {
+        console.error('[crearModalRecibosDesdeListaPedidos] No se encontró el contenedor del modal');
+        return;
+    }
+    
+    // Asegurar que el modal tenga los elementos necesarios para ReceiptManager
+    const receiptNumber = modalContainer.querySelector('#receipt-number');
+    const receiptTotal = modalContainer.querySelector('#receipt-total');
+    
+    if (!receiptNumber || !receiptTotal) {
+        console.error('[crearModalRecibosDesdeListaPedidos] No se encontraron elementos necesarios para ReceiptManager');
+        return;
+    }
+    
+    // Cargar ReceiptManager con los datos correctos
+    setTimeout(() => {
+        // ===== DEBUG: Verificar datos justo antes de ReceiptManager =====
+        console.group('[crearModalRecibosDesdeListaPedidos] ANTES DE CREAR ReceiptManager');
+        console.log('🔍 DATOS PARÁMETRO RECIBIDOS:');
+        console.log('  cliente:', datosReales.cliente);
+        console.log('  asesor:', datosReales.asesor);
+        console.log('  asesora:', datosReales.asesora);
+        console.log('  forma_de_pago:', datosReales.forma_de_pago);
+        console.log('  numero_pedido:', datosReales.numero_pedido);
+        console.log('  prendas.length:', datosReales.prendas ? datosReales.prendas.length : 'UNDEFINED');
+        console.groupEnd();
+        // ===== FIN DEBUG =====
+        
+        // Cargar ReceiptManager
+        if (typeof ReceiptManager === 'undefined') {
+            cargarReceiptManager(() => {
+                console.debug('[crearModalRecibosDesdeListaPedidos] Creando ReceiptManager con datos:', datosReales);
+                window.receiptManager = new ReceiptManager(datosReales, prendasIndex);
+                
+                // Inicializar botón X para insumos
+                if (typeof inicializarBotonCerrarInsumos === 'function') {
+                    setTimeout(() => {
+                        inicializarBotonCerrarInsumos();
+                    }, 200);
+                }
+            });
+        } else {
+            console.debug('[crearModalRecibosDesdeListaPedidos] ReceiptManager ya cargado, creando instancia');
+            window.receiptManager = new ReceiptManager(datosReales, prendasIndex);
+            
+            // Inicializar botón X para insumos
+            if (typeof inicializarBotonCerrarInsumos === 'function') {
+                setTimeout(() => {
+                    inicializarBotonCerrarInsumos();
+                }, 200);
+            }
+        }
+    }, 100);
 }
 
 /**

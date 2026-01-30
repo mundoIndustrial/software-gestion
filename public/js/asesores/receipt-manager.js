@@ -137,50 +137,14 @@ class ReceiptManager {
     inicializarEventos() {
         const btnAnterior = document.getElementById('prev-arrow');
         const btnSiguiente = document.getElementById('next-arrow');
-        const btnImprimir = document.getElementById('print-receipt-btn');
         const btnCerrar = document.getElementById('close-receipt-btn');
 
         if (btnAnterior) {
             btnAnterior.addEventListener('click', () => this.navegar('anterior'));
         }
+        
         if (btnSiguiente) {
             btnSiguiente.addEventListener('click', () => this.navegar('siguiente'));
-        }
-        
-        // Crear botón imprimir si no existe
-        if (!btnImprimir) {
-            const container = document.querySelector('.signature-section') || document.querySelector('.order-detail-card');
-            if (container) {
-                const divBotones = document.createElement('div');
-                divBotones.style.cssText = `
-                    display: flex;
-                    gap: 1rem;
-                    margin-top: 2rem;
-                    justify-content: flex-end;
-                `;
-                
-                const printBtn = document.createElement('button');
-                printBtn.id = 'print-receipt-btn';
-                printBtn.innerHTML = '<i class="fas fa-print"></i> Imprimir';
-                printBtn.style.cssText = `
-                    background: #10b981;
-                    color: white;
-                    padding: 0.75rem 1.5rem;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: all 0.2s ease;
-                `;
-                printBtn.addEventListener('mouseover', () => printBtn.style.background = '#059669');
-                printBtn.addEventListener('mouseout', () => printBtn.style.background = '#10b981');
-                printBtn.addEventListener('click', () => this.imprimir());
-                
-                divBotones.appendChild(printBtn);
-                container.appendChild(divBotones);
-            }
-        } else {
-            btnImprimir.addEventListener('click', () => this.imprimir());
         }
         
         // Botón cerrar (ya viene del close-receipt-btn agregado en invoice-from-list.js)
@@ -282,7 +246,7 @@ class ReceiptManager {
     }
 
     /**
-     * Renderizar recibo actual
+     * Renderizar recibo actual en el DOM
      */
     renderizar() {
         const recibo = this.recibos[this.indexActual];
@@ -301,12 +265,22 @@ class ReceiptManager {
         // Actualizar fecha
         this.actualizarFecha(this.datosFactura.fecha);
 
+        // Limpiar datos antiguos de ancho/metraje
+        this.limpiarDatosAntiguos();
+
         // Actualizar información básica
         console.log('─────────────────────────────────────────────────────────────');
         console.log('[ReceiptManager.renderizar] ACTUALIZANDO CAMPOS:');
         console.log('─────────────────────────────────────────────────────────────');
         console.log('1. ASESOR:');
         console.log('   - datosFactura.asesor:', this.datosFactura.asesor);
+        
+        // Actualizar ancho y metraje si hay datos disponibles
+        if (window.datosAnchoMetraje) {
+            console.log('[ReceiptManager] Actualizando ancho y metraje en el recibo...');
+            this.actualizarAnchoMetraje();
+        }
+        
         console.log('   - datosFactura.asesora:', this.datosFactura.asesora);
         const asesorElem = document.getElementById('asesora-value');
         console.log('   - Elemento #asesora-value existe?', !!asesorElem);
@@ -355,10 +329,79 @@ class ReceiptManager {
 
         // Generar contenido del recibo
         const contenido = this.generarContenido(recibo);
+        
+        // Establecer el contenido
         document.getElementById('descripcion-text').innerHTML = contenido;
+        
+        // Actualizar ancho y metraje específico para esta prenda
+        this.actualizarAnchoMetrajePorPrenda(recibo.prenda);
 
         // Actualizar estado de botones
         this.actualizarBotones();
+    }
+
+    /**
+     * Actualizar ancho y metraje específico para una prenda
+     */
+    actualizarAnchoMetrajePorPrenda(prenda) {
+        console.log('[ReceiptManager] Actualizando ancho/metraje para prenda específica:', {
+            nombre: prenda.nombre,
+            id: prenda.id,
+            prenda_pedido_id: prenda.prenda_pedido_id,
+            tiene_ancho_metraje: !!prenda.ancho_metraje,
+            ancho_metraje_valor: prenda.ancho_metraje
+        });
+        
+        // Buscar los elementos existentes en el recibo
+        const anchoSpan = document.getElementById('ancho-valor');
+        const metrajeSpan = document.getElementById('metraje-valor');
+        
+        if (anchoSpan && metrajeSpan) {
+            // Si la prenda tiene datos de ancho/metraje, usarlos
+            if (prenda.ancho_metraje && (prenda.ancho_metraje.ancho || prenda.ancho_metraje.metraje)) {
+                anchoSpan.textContent = prenda.ancho_metraje.ancho + ' m';
+                metrajeSpan.textContent = prenda.ancho_metraje.metraje + ' m';
+                
+                console.log('[ReceiptManager] Ancho/Metraje actualizado para prenda:', {
+                    prenda: prenda.nombre,
+                    ancho: prenda.ancho_metraje.ancho,
+                    metraje: prenda.ancho_metraje.metraje
+                });
+            } else {
+                // Si no hay datos para esta prenda, mostrar guiones
+                anchoSpan.textContent = '--';
+                metrajeSpan.textContent = '--';
+                
+                console.log('[ReceiptManager] Sin datos de ancho/metraje para prenda, mostrando guiones:', {
+                    prenda: prenda.nombre
+                });
+            }
+        } else {
+            console.log('[ReceiptManager] No se encontraron los elementos ancho-valor o metraje-valor en el DOM');
+        }
+    }
+
+    /**
+     * Generar contenido según tipo de recibo
+     */
+    generarContenido(recibo) {
+        if (recibo.procesoIndex === null) {
+            // Es recibo de COSTURA
+            return this.contenidoCostura(recibo.prenda);
+        } else {
+            // Es recibo de PROCESO
+            return this.contenidoProceso(recibo.proceso, recibo.prenda);
+        }
+    }
+
+    /**
+     * Generar contenido para recibo de COSTURA
+     * Aplica el nuevo formato enumerado con puntos
+     */
+    contenidoCostura(prenda) {
+        // Validar tipo de costura - siempre es costura si llegó aquí
+        // de_bodega solo indica si es de bodega o confección, pero ambas son COSTURA
+        return this.construirDescripcionCostura(prenda);
     }
 
     /**
@@ -372,20 +415,22 @@ class ReceiptManager {
             return;
         }
 
+        // Si la fecha es un string, intentar parsearla
         let fecha;
         if (typeof fechaStr === 'string') {
-            if (fechaStr.includes('/')) {
-                const [day, month, year] = fechaStr.split('/');
-                fecha = new Date(year, parseInt(month) - 1, day);
-            } else if (fechaStr.includes('-')) {
-                const fechaParte = fechaStr.split(' ')[0];
-                const [year, month, day] = fechaParte.split('-');
-                fecha = new Date(year, parseInt(month) - 1, parseInt(day));
+            // Formato esperado: DD/MM/YYYY o YYYY-MM-DD
+            const partes = fechaStr.split('/');
+            if (partes.length === 3) {
+                // Formato DD/MM/YYYY
+                fecha = new Date(partes[2], partes[1] - 1, partes[0]);
             } else {
+                // Intentar formato YYYY-MM-DD
                 fecha = new Date(fechaStr);
             }
+        } else if (fechaStr instanceof Date) {
+            fecha = fechaStr;
         } else {
-            fecha = new Date(fechaStr);
+            fecha = new Date();
         }
 
         if (!isNaN(fecha)) {
@@ -699,13 +744,6 @@ class ReceiptManager {
     }
 
     /**
-     * Imprimir recibo actual
-     */
-    imprimir() {
-        window.print();
-    }
-
-    /**
      * Cerrar vista de recibos
      */
     cerrar() {
@@ -714,9 +752,141 @@ class ReceiptManager {
             modal.remove();
         }
     }
+    
+    /**
+     * Actualiza el ancho y metraje en el recibo (sistema universal)
+     */
+    actualizarAnchoMetraje() {
+        // Verificar si hay datos de ancho/metraje disponibles globalmente
+        if (!window.datosAnchoMetraje) {
+            console.log('[ReceiptManager] No hay datos de ancho/metraje disponibles globalmente');
+            return;
+        }
+        
+        const { ancho, metraje, pedido, fecha } = window.datosAnchoMetraje;
+        
+        // Verificar si los datos son recientes (máximo 24 horas)
+        const fechaDatos = new Date(fecha);
+        const ahora = new Date();
+        const horasDiferencia = (ahora - fechaDatos) / (1000 * 60 * 60);
+        
+        if (horasDiferencia > 24) {
+            console.log('[ReceiptManager] Datos de ancho/metraje muy antiguos, ignorando');
+            return;
+        }
+        
+        // Actualizar el flotante (si existe)
+        let anchoMetrajeElement = document.getElementById('ancho-metraje-disponible');
+        
+        if (anchoMetrajeElement) {
+            anchoMetrajeElement.innerHTML = `
+                <div style="font-size: 0.65rem; opacity: 0.8; margin-bottom: 2px;">PEDIDO: ${pedido}</div>
+                ANCHO DISPONIBLE: ${ancho.toFixed(2)} m<br>
+                METRAJE DISPONIBLE: ${metraje.toFixed(2)} m
+            `;
+        }
+        
+        // Actualizar la línea del recibo HTML (si existe)
+        const anchoSpan = document.getElementById('ancho-valor');
+        const metrajeSpan = document.getElementById('metraje-valor');
+        
+        if (anchoSpan && metrajeSpan) {
+            anchoSpan.textContent = ancho.toFixed(2) + ' m';
+            metrajeSpan.textContent = metraje.toFixed(2) + ' m';
+            
+            console.log('[ReceiptManager] Valores actualizados en la línea del recibo HTML:', { ancho, metraje });
+        }
+        
+        console.log('[ReceiptManager] Ancho y metraje actualizados en el recibo (sistema universal)');
+    }
+    
+    /**
+     * Limpia los datos de ancho y metraje si son muy antiguos
+     */
+    limpiarDatosAntiguos() {
+        if (!window.datosAnchoMetraje) {
+            return;
+        }
+        
+        const fechaDatos = new Date(window.datosAnchoMetraje.fecha);
+        const ahora = new Date();
+        const horasDiferencia = (ahora - fechaDatos) / (1000 * 60 * 60);
+        
+        if (horasDiferencia > 24) {
+            console.log('[ReceiptManager] Limpiando datos de ancho/metraje antiguos');
+            delete window.datosAnchoMetraje;
+            
+            // Eliminar el elemento del DOM si existe
+            const anchoMetrajeElement = document.getElementById('ancho-metraje-disponible');
+            if (anchoMetrajeElement) {
+                anchoMetrajeElement.remove();
+            }
+        }
+    }
 }
 
 // Exportar para uso externo
 window.ReceiptManager = ReceiptManager;
+
+/**
+ * Función global universal para actualizar ancho y metraje
+ * Puede ser llamada desde cualquier módulo del sistema
+ */
+window.actualizarAnchoMetrajeUniversal = function(ancho, metraje, pedido = null) {
+    console.log('[actualizarAnchoMetrajeUniversal] Actualizando datos globalmente...');
+    console.log('  - Ancho:', ancho, 'm');
+    console.log('  - Metraje:', metraje, 'm');
+    console.log('  - Pedido:', pedido || 'No especificado');
+    
+    // Guardar los datos globalmente
+    window.datosAnchoMetraje = {
+        ancho: parseFloat(ancho),
+        metraje: parseFloat(metraje),
+        pedido: pedido || 'SIN PEDIDO',
+        fecha: new Date().toISOString(),
+        modulo: window.location.pathname // Para saber desde qué módulo se actualizó
+    };
+    
+    // Si hay un ReceiptManager activo, actualizarlo inmediatamente
+    if (window.receiptManager && typeof window.receiptManager.actualizarAnchoMetraje === 'function') {
+        console.log('[actualizarAnchoMetrajeUniversal] Actualizando recibo activo...');
+        window.receiptManager.actualizarAnchoMetraje();
+    }
+    
+    // Disparar evento para que otros módulos puedan reaccionar
+    const evento = new CustomEvent('anchoMetrajeActualizado', {
+        detail: window.datosAnchoMetraje
+    });
+    window.dispatchEvent(evento);
+    
+    console.log('[actualizarAnchoMetrajeUniversal] Datos actualizados y evento disparado');
+};
+
+/**
+ * Función global para obtener los datos actuales de ancho y metraje
+ */
+window.obtenerAnchoMetrajeActual = function() {
+    return window.datosAnchoMetraje || null;
+};
+
+/**
+ * Función global para limpiar los datos de ancho y metraje
+ */
+window.limpiarAnchoMetraje = function() {
+    console.log('[limpiarAnchoMetraje] Limpiando datos globales...');
+    delete window.datosAnchoMetraje;
+    
+    // Eliminar el elemento del DOM si existe
+    const anchoMetrajeElement = document.getElementById('ancho-metraje-disponible');
+    if (anchoMetrajeElement) {
+        anchoMetrajeElement.remove();
+    }
+    
+    // Disparar evento de limpieza
+    const evento = new CustomEvent('anchoMetrajeLimpiado');
+    window.dispatchEvent(evento);
+    
+    console.log('[limpiarAnchoMetraje] Datos limpiados y evento disparado');
+};
 
 

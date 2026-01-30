@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\MaterialesOrdenInsumos;
+use App\Models\PedidoAnchoMetraje;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -36,7 +37,7 @@ class InsumosController extends Controller
             $this->verificarRolInsumos($user);
             
             // Validar que la columna sea permitida
-            $columnasPermitidas = ['numero_pedido', 'cliente', 'descripcion_armada', 'estado', 'area', 'fecha_de_creacion_de_orden'];
+            $columnasPermitidas = ['numero_pedido', 'cliente', 'estado', 'area', 'fecha_de_creacion_de_orden'];
             if (!in_array($column, $columnasPermitidas)) {
                 \Log::warning('Columna no permitida en filtro: ' . $column);
                 return response()->json([
@@ -50,7 +51,7 @@ class InsumosController extends Controller
             // Usar la misma query base que en materiales() - Filtrar por Estados y Áreas permitidas
             $query = PedidoProduccion::where(function($q) {
                 // Estados permitidos
-                $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada']);
+                $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS']);
             })->where(function($q) {
                 // Áreas permitidas
                 $q->where('area', 'LIKE', '%Corte%')
@@ -59,46 +60,14 @@ class InsumosController extends Controller
             });
             
             // Obtener valores únicos
-            if ($column === 'descripcion_armada') {
-                // Para descripción armada, obtener valores únicos desde prendas_pedido.descripcion_armada
-                $allRecords = $query->with('prendas')->get();
-                $totalRegistros = $allRecords->count();
-                
-                \Log::info(' FILTRO DESCRIPCIÓN ARMADA - Registros totales encontrados:', [
-                    'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada) + Área (Corte, Creación de orden)'
-                ]);
-                
-                $valores = [];
-                foreach ($allRecords as $orden) {
-                    if ($orden->prendas && $orden->prendas->isNotEmpty()) {
-                        foreach ($orden->prendas as $prenda) {
-                            if ($prenda->descripcion_armada) {
-                                $valores[] = $prenda->descripcion_armada;
-                            }
-                        }
-                    }
-                }
-                
-                $valores = array_unique($valores);
-                $valores = array_values($valores);
-                
-                \Log::info(' Valores únicos encontrados: ' . count($valores));
-                
-                return response()->json([
-                    'success' => true,
-                    'column' => $column,
-                    'valores' => $valores,
-                    'total' => count($valores),
-                ]);
-            } elseif ($column === 'fecha_de_creacion_de_orden') {
+            if ($column === 'fecha_de_creacion_de_orden') {
                 // Para fechas, obtener primero y luego formatear
                 $allRecords = $query->get();
                 $totalRegistros = $allRecords->count();
                 
                 \Log::info('📅 FILTRO FECHA - Registros totales encontrados:', [
                     'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada)'
+                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada, PENDIENTE_INSUMOS)'
                 ]);
                 
                 $valores = $allRecords
@@ -144,6 +113,13 @@ class InsumosController extends Controller
                     ->pluck($column)
                     ->filter(function($value) {
                         return !empty($value);
+                    })
+                    ->map(function($value) {
+                        // Convertir PENDIENTE_INSUMOS a "Pendiente Insumos" para el filtro de estado
+                        if ($value === 'PENDIENTE_INSUMOS') {
+                            return 'Pendiente Insumos';
+                        }
+                        return $value;
                     })
                     ->values()
                     ->toArray();
@@ -222,11 +198,11 @@ class InsumosController extends Controller
         ]);
         
         // Construir query base - Filtrar por:
-        // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada"
+        // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada", "PENDIENTE_INSUMOS"
         // - Áreas: "Corte", "Creación de Orden"
         $baseQuery = PedidoProduccion::where(function($q) {
             // Estados permitidos
-            $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada']);
+            $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS']);
         })->where(function($q) {
             // Áreas permitidas
             $q->where('area', 'LIKE', '%Corte%')
@@ -247,8 +223,13 @@ class InsumosController extends Controller
                     $filterValue = $filterValuesArray[$idx];
                     \Log::info("📌 Aplicando filtro: {$column} = {$filterValue}");
                     
-                    // Para campos de texto (numero_pedido, cliente, descripcion_prendas), usar LIKE
-                    if (in_array($column, ['numero_pedido', 'cliente', 'descripcion_prendas'])) {
+                    // Convertir "Pendiente Insumos" a "PENDIENTE_INSUMOS" para el filtro de estado
+                    if ($column === 'estado' && $filterValue === 'Pendiente Insumos') {
+                        $filterValue = 'PENDIENTE_INSUMOS';
+                    }
+                    
+                    // Para campos de texto (numero_pedido, cliente), usar LIKE
+                    if (in_array($column, ['numero_pedido', 'cliente'])) {
                         $baseQuery->where($column, 'LIKE', "%{$filterValue}%");
                     } elseif ($column === 'fecha_de_creacion_de_orden') {
                         // Para fechas, convertir de d/m/Y a Y-m-d
@@ -268,6 +249,12 @@ class InsumosController extends Controller
         // Fallback para filtro antiguo (singular)
         elseif (!empty($filterColumn) && !empty($filterValues)) {
             $hasFilters = true;
+            // Convertir "Pendiente Insumos" a "PENDIENTE_INSUMOS" para el filtro de estado
+            if ($filterColumn === 'estado') {
+                $filterValues = array_map(function($value) {
+                    return $value === 'Pendiente Insumos' ? 'PENDIENTE_INSUMOS' : $value;
+                }, $filterValues);
+            }
             $baseQuery->whereIn($filterColumn, $filterValues);
         }
         
@@ -625,6 +612,61 @@ class InsumosController extends Controller
     }
 
     /**
+     */
+    public function cambiarEstado(Request $request, $numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Buscar el pedido por número
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Validar datos
+            $validated = $request->validate([
+                'estado' => 'required|string|in:No iniciado,En Ejecución',
+            ]);
+            
+            // Cambiar el estado y el área
+            $pedido->estado = $validated['estado'];
+            $pedido->area = 'Corte'; // Establecer el área a Corte
+            $pedido->save();
+            
+            \Log::info("🔄 Estado del pedido {$numeroPedido} cambiado a: {$validated['estado']} y área a: Corte", [
+                'usuario_id' => $user->id,
+                'usuario_nombre' => $user->name,
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido aprobado correctamente. Estado: ' . $validated['estado'] . ', Área: Corte',
+                'nuevo_estado' => $validated['estado'],
+                'nueva_area' => 'Corte'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado del pedido: ' . $e->getMessage(), [
+                'numero_pedido' => $numeroPedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Guardar ancho y metraje de un pedido
      */
     public function guardarAnchoMetraje(Request $request, $numeroPedido)
@@ -650,11 +692,8 @@ class InsumosController extends Controller
             $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
                 ->firstOrFail();
 
-            // Importar el modelo si no está importado
-            $modelClass = \App\Models\PedidoAnchoMetraje::class;
-
             // Buscar si ya existe un registro para este pedido
-            $anchoMetraje = $modelClass::firstOrNew(
+            $anchoMetraje = PedidoAnchoMetraje::firstOrNew(
                 ['pedido_produccion_id' => $pedido->id]
             );
 
@@ -708,6 +747,154 @@ class InsumosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar ancho y metraje: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener las prendas de un pedido para el selector
+     */
+    public function obtenerPrendas($numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Buscar el pedido por número para obtener el ID
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Obtener las prendas del pedido usando el ID
+            $prendas = $pedido->prendas()
+                ->select('id', 'nombre_prenda', 'descripcion')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'prendas' => $prendas
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener prendas: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener prendas'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener ancho y metraje de una prenda específica
+     */
+    public function obtenerAnchoMetrajePrenda($numeroPedido, $prendaId)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Buscar el pedido por número para obtener el ID
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Buscar si ya existe un registro para esta prenda
+            $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $prendaId)
+                ->first();
+            
+            if ($anchoMetraje) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'ancho' => $anchoMetraje->ancho,
+                        'metraje' => $anchoMetraje->metraje,
+                        'prenda_id' => $anchoMetraje->prenda_pedido_id
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'data' => null
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener ancho/metraje de prenda: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener ancho/metraje de prenda'
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar ancho y metraje con relación a una prenda específica
+     */
+    public function guardarAnchoMetrajePrenda(Request $request, $numeroPedido)
+    {
+        try {
+            $user = Auth::user();
+            $this->verificarRolInsumos($user);
+            
+            // Validar datos
+            $validated = $request->validate([
+                'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+                'ancho' => 'required|numeric|min:0',
+                'metraje' => 'required|numeric|min:0'
+            ]);
+            
+            // Buscar el pedido por número para obtener el ID
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Buscar si ya existe un registro para esta prenda
+            $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $validated['prenda_id'])
+                ->first();
+            
+            if ($anchoMetraje) {
+                // Actualizar registro existente
+                $anchoMetraje->update([
+                    'ancho' => $validated['ancho'],
+                    'metraje' => $validated['metraje'],
+                    'actualizado_por' => $user->id,
+                    'updated_at' => now()
+                ]);
+            } else {
+                // Crear nuevo registro
+                $anchoMetraje = \App\Models\PedidoAnchoMetraje::create([
+                    'pedido_produccion_id' => $pedido->id,
+                    'prenda_pedido_id' => $validated['prenda_id'],
+                    'ancho' => $validated['ancho'],
+                    'metraje' => $validated['metraje'],
+                    'creado_por' => $user->id,
+                    'actualizado_por' => $user->id,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+            
+            \Log::info("Ancho y metraje guardados para pedido {$numeroPedido}, prenda {$validated['prenda_id']}: {$validated['ancho']}m x {$validated['metraje']}m", [
+                'usuario_id' => $user->id,
+                'usuario_nombre' => $user->name
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Ancho y metraje guardados correctamente'
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar ancho y metraje de prenda: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar ancho y metraje de prenda'
             ], 500);
         }
     }

@@ -86,21 +86,12 @@ class LogoPedido extends Model
     }
 
     /**
-     * Genera el siguiente número de pedido en la secuencia (solo el número sin prefijo)
+     * @deprecated Método eliminado por problemas de concurrencia
+     * Usar tabla numero_secuencias con lockForUpdate() en su lugar
      */
     public static function generarNumeroPedido(): string
     {
-        $ultimoPedido = self::orderByRaw('CAST(numero_pedido AS UNSIGNED) DESC')
-                          ->first();
-
-        if (!$ultimoPedido) {
-            $numero = 1;
-        } else {
-            $numeroActual = (int) $ultimoPedido->numero_pedido;
-            $numero = $numeroActual + 1;
-        }
-
-        return str_pad($numero, 5, '0', STR_PAD_LEFT);
+        throw new \Exception('Método obsoleto. Usar CarteraPedidosController::generarSiguienteNumeroPedido()');
     }
 
     /**

@@ -271,7 +271,7 @@ class SupervisorPedidosController extends Controller
 
             // Actualizar estado
             $orden->update([
-                'estado' => 'No iniciado',
+                'estado' => 'PENDIENTE_INSUMOS',
                 'aprobado_por_supervisor_en' => now()
             ]);
 
@@ -293,7 +293,8 @@ class SupervisorPedidosController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido aprobado correctamente'
+                'message' => 'Pedido aprobado correctamente. Estado cambiado a PENDIENTE_INSUMOS y consecutivos generados.',
+                'estado' => 'PENDIENTE_INSUMOS'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al aprobar pedido: ' . $e->getMessage());
@@ -430,16 +431,16 @@ class SupervisorPedidosController extends Controller
                     'orden' => $orden->fresh(),
                 ]);
             } else {
-                // Para pedidos normales: estado "Pendiente"
+                // Para pedidos normales: estado "PENDIENTE_INSUMOS"
                 $orden->update([
                     'aprobado_por_supervisor_en' => now(),
-                    'estado' => 'Pendiente',
+                    'estado' => 'PENDIENTE_INSUMOS',
                 ]);
                 
                 \Log::info("Orden #{$orden->numero_pedido} aprobada por supervisor " . auth()->user()->name, [
                     'fecha_aprobacion' => now(),
                     'estado_anterior' => 'PENDIENTE_SUPERVISOR',
-                    'estado_nuevo' => 'Pendiente',
+                    'estado_nuevo' => 'PENDIENTE_INSUMOS',
                 ]);
 
                 return response()->json([

@@ -39,11 +39,7 @@ class RegistroOrdenExtendedQueryService
             ->where('estado', '!=', 'Pendiente')
             ->with([
                 'asesora:id,name',
-                'prendas:id,numero_pedido,nombre_prenda,cantidad,descripcion,descripcion_variaciones,color_id,tela_id,tipo_manga_id,tipo_broche_id',
-                'prendas.color:id,nombre',
-                'prendas.tela:id,nombre,referencia',
-                'prendas.tipoManga:id,nombre',
-                'prendas.tipoBroche:id,nombre',
+                'prendas:id,pedido_produccion_id,nombre_prenda,descripcion',
                 'prendas.tallas:prenda_pedido_id,genero,talla,cantidad'
             ])
             ->orderBy('created_at', 'asc');

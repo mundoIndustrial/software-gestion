@@ -55,26 +55,41 @@ class CarteraPedidosController extends Controller
     public function aprobarPedido($id, Request $request)
     {
         try {
-            $pedido = PedidoProduccion::find($id);
-            
-            if (!$pedido) {
+            return DB::transaction(function () use ($id, $request) {
+                $pedido = PedidoProduccion::find($id);
+                
+                if (!$pedido) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pedido no encontrado'
+                    ], 404);
+                }
+                
+                // Generar número de pedido correlativo solo al aprobar
+                $siguienteNumero = $this->generarSiguienteNumeroPedido();
+                
+                // Obtener ID de usuario autenticado o null para evitar foreign key issues
+                $usuarioId = auth()->check() ? auth()->user()->id : null;
+                
+                $pedido->update([
+                    'numero_pedido' => $siguienteNumero,
+                    'estado' => 'PENDIENTE_SUPERVISOR',
+                    'aprobado_por_usuario_cartera' => $usuarioId,
+                    'aprobado_por_cartera_en' => now(),
+                ]);
+                
+                \Log::info('[CARTERA] Pedido aprobado y número generado', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido_generado' => $siguienteNumero,
+                    'aprobado_por' => $usuarioId
+                ]);
+                
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado'
-                ], 404);
-            }
-            
-            $pedido->update([
-                'estado' => 'PENDIENTE_SUPERVISOR',
-                'aprobado_por_usuario_cartera' => auth()->user()->id,
-                'aprobado_por_cartera_en' => now(),
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Pedido aprobado correctamente',
-                'numero_pedido' => $pedido->numero_pedido
-            ]);
+                    'success' => true,
+                    'message' => 'Pedido aprobado correctamente',
+                    'numero_pedido' => $siguienteNumero
+                ]);
+            });
         } catch (\Exception $e) {
             \Log::error('Error en CarteraPedidosController::aprobarPedido: ' . $e->getMessage());
             return response()->json([
@@ -82,6 +97,52 @@ class CarteraPedidosController extends Controller
                 'message' => 'Error al aprobar: ' . $e->getMessage()
             ], 500);
         }
+    }
+    
+    /**
+     * Generar el siguiente número de pedido correlativo de forma segura
+     * Usa tabla de secuencias con control de concurrencia
+     */
+    private function generarSiguienteNumeroPedido(): int
+    {
+        return DB::transaction(function () {
+            // Obtener y bloquear la secuencia para evitar concurrencia
+            $secuencia = DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$secuencia) {
+                // Crear secuencia si no existe
+                $secuenciaId = DB::table('numero_secuencias')->insertGetId([
+                    'tipo' => 'pedido_produccion',
+                    'siguiente' => 2, // El siguiente será 2, este es 1
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                $numeroPedido = 1;
+            } else {
+                // Usar el siguiente número disponible
+                $numeroPedido = $secuencia->siguiente;
+                
+                // Incrementar para la próxima vez
+                DB::table('numero_secuencias')
+                    ->where('tipo', 'pedido_produccion')
+                    ->update([
+                        'siguiente' => $numeroPedido + 1,
+                        'updated_at' => now(),
+                    ]);
+            }
+            
+            \Log::info('[CARTERA] Número de pedido generado desde secuencia', [
+                'numero_pedido' => $numeroPedido,
+                'secuencia_id' => $secuencia->id ?? $secuenciaId,
+                'tipo_secuencia' => 'pedido_produccion',
+            ]);
+            
+            return $numeroPedido;
+        });
     }
     
     /**
@@ -104,7 +165,7 @@ class CarteraPedidosController extends Controller
             }
             
             // Obtener usuario y fecha/hora para la novedad
-            $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Usuario Cartera';
+            $usuario = auth()->check() ? (auth()->user()->name ?? auth()->user()->email ?? 'Usuario Cartera') : 'Usuario Cartera';
             $fechaHora = \Carbon\Carbon::now()->format('d-m-Y h:i:s A');
             
             // Crear novedad del rechazo
@@ -120,12 +181,23 @@ class CarteraPedidosController extends Controller
                 $novedadesNuevas = $novedadRechazo;
             }
             
+            // Obtener ID de usuario autenticado o null
+            $usuarioId = auth()->check() ? auth()->user()->id : null;
+            
             $pedido->update([
                 'estado' => 'RECHAZADO_CARTERA',
                 'motivo_rechazo_cartera' => $request->motivo,
-                'rechazado_por_usuario_cartera' => auth()->user()->id,
+                'rechazado_por_usuario_cartera' => $usuarioId,
                 'rechazado_por_cartera_en' => now(),
-                'novedades' => $novedadesNuevas
+                'novedades' => $novedadesNuevas,
+                // numero_pedido permanece null al rechazar
+            ]);
+            
+            \Log::info('[CARTERA] Pedido rechazado', [
+                'pedido_id' => $pedido->id,
+                'motivo' => $request->motivo,
+                'rechazado_por' => $usuarioId,
+                'numero_pedido' => $pedido->numero_pedido // debe ser null
             ]);
             
             return response()->json([

@@ -91,6 +91,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
+    // Ruta pública para factura-datos (acceso para cualquier usuario autenticado)
+    Route::get('/pedidos-public/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])
+        ->where('id', '[0-9]+')
+        ->name('pedidos.public.factura-datos');
+    
+    // Ruta pública para recibos-datos (acceso para cualquier usuario autenticado)
+    Route::get('/pedidos-public/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])
+        ->where('id', '[0-9]+')
+        ->name('pedidos.public.recibos-datos');
+    
     // ========================================
     // RUTA PARA REFRESCAR TOKEN CSRF (Prevenir error 419)
     // ========================================
@@ -820,9 +830,12 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
     Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetraje'])->name('materiales.guardar-ancho-metraje');
     Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetraje'])->name('materiales.obtener-ancho-metraje');
+    Route::get('/materiales/{numeroPedido}/obtener-prendas', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerPrendas'])->name('materiales.obtener-prendas');
+    Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje-prenda/{prendaId}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerAnchoMetrajePrenda'])->name('materiales.obtener-ancho-metraje-prenda');
+    Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje-prenda', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarAnchoMetrajePrenda'])->name('materiales.guardar-ancho-metraje-prenda');
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
-    Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
+    Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');

@@ -29,7 +29,7 @@ class DebugRegistrosController extends Controller
             // Ejecutar la misma lógica del index original pero con métricas
             $query = PedidoProduccion::query()
                 ->with(['asesora', 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_id', 'tiene_bolsillos', 'tiene_reflectivo', 'descripcion_variaciones')
+                    $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'descripcion')
                       ->with('tallas:prenda_pedido_id,genero,talla,cantidad');
                 }]);
 
@@ -115,7 +115,7 @@ class DebugRegistrosController extends Controller
         
         $query = PedidoProduccion::query()
             ->with(['asesora', 'prendas' => function($q) {
-                $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad');
+                $q->select('id', 'pedido_produccion_id', 'nombre_prenda');
             }])
             ->paginate(25);
 
@@ -214,10 +214,10 @@ class DebugRegistrosController extends Controller
             ],
             [
                 'table' => 'prendas_pedido',
-                'index_name' => 'idx_numero_pedido',
-                'columns' => ['numero_pedido'],
+                'index_name' => 'idx_pedido_produccion_id',
+                'columns' => ['pedido_produccion_id'],
                 'reason' => 'Se carga con relación with() - FK a pedidos_produccion',
-                'sql' => 'ALTER TABLE prendas_pedido ADD INDEX idx_numero_pedido (numero_pedido);'
+                'sql' => 'ALTER TABLE prendas_pedido ADD INDEX idx_pedido_produccion_id (pedido_produccion_id);'
             ],
         ];
 

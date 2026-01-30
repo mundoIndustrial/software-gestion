@@ -47,7 +47,7 @@
     <div class="quick-actions">
         <h2>Acciones Rápidas</h2>
         <div class="actions-grid">
-            <a href="{{ route('asesores.pedidos.create') }}" class="action-card">
+            <a href="/asesores/pedidos-editable/crear-nuevo" class="action-card">
                 <div class="action-icon">
                     <i class="fas fa-plus-circle"></i>
                 </div>
@@ -64,26 +64,6 @@
                 <div class="action-content">
                     <h4>Mis Pedidos</h4>
                     <p>Ver todos mis pedidos</p>
-                </div>
-            </a>
-
-            <a href="{{ route('asesores.pedidos.index') }}?estado=En Ejecución" class="action-card">
-                <div class="action-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <div class="action-content">
-                    <h4>En Proceso</h4>
-                    <p>Pedidos en ejecución</p>
-                </div>
-            </a>
-
-            <a href="{{ route('asesores.pedidos.index') }}?estado=Entregado" class="action-card">
-                <div class="action-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="action-content">
-                    <h4>Entregados</h4>
-                    <p>Pedidos completados</p>
                 </div>
             </a>
 

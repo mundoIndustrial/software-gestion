@@ -55,7 +55,7 @@ class EliminarPedidoService
             ]);
             
             // Obtener todas las prendas del pedido para eliminar sus fotos
-            $prendas = PrendaPedido::where('numero_pedido', $numeroPedidoGuardado)->get();
+            $prendas = PrendaPedido::where('pedido_produccion_id', $pedidoId)->get();
             
             // 1. Eliminar fotos de prendas (prenda_fotos_pedido)
             foreach ($prendas as $prenda) {
@@ -79,11 +79,11 @@ class EliminarPedidoService
                 'prendas_procesadas' => $prendas->count()
             ]);
             
-            // 4. Eliminar procesos de prenda (relacionados por numero_pedido)
-            ProcesoPrenda::where('numero_pedido', $numeroPedidoGuardado)->delete();
+            // 4. Eliminar procesos de prenda (relacionados por pedido_produccion_id)
+            ProcesoPrenda::where('pedido_produccion_id', $pedidoId)->delete();
             
-            // 5. Eliminar prendas (relacionadas por numero_pedido)
-            PrendaPedido::where('numero_pedido', $numeroPedidoGuardado)->delete();
+            // 5. Eliminar prendas (relacionadas por pedido_produccion_id)
+            PrendaPedido::where('pedido_produccion_id', $pedidoId)->delete();
             
             \Log::info('ðŸ—‘ï¸ Prendas eliminadas', [
                 'numero_pedido' => $numeroPedidoGuardado,

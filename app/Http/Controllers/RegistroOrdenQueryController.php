@@ -381,8 +381,8 @@ class RegistroOrdenQueryController extends Controller
 
         //  CARGAR prendas CON relaciones ANTES de toArray()
         // Hacemos un query directo para asegurar que las relaciones se cargan
-        $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
-            ->with(['color', 'tela', 'tipoManga', 'tipoBrocheBoton', 'fotos', 'fotosLogo', 'fotosTela', 'reflectivo', 'tallas'])
+        $prendasConRelaciones = \App\Models\PrendaPedido::where('pedido_produccion_id', $order->id)
+            ->with(['fotos', 'fotosTela', 'tallas'])
             ->orderBy('id', 'asc')
             ->get();
         
@@ -391,8 +391,8 @@ class RegistroOrdenQueryController extends Controller
             'total' => $prendasConRelaciones->count(),
             'primera_prenda' => $prendasConRelaciones->first() ? [
                 'nombre' => $prendasConRelaciones->first()->nombre_prenda,
-                'color_loaded' => $prendasConRelaciones->first()->relationLoaded('color'),
-                'color_nombre' => $prendasConRelaciones->first()->color ? $prendasConRelaciones->first()->color->nombre : 'NULL',
+                'fotos_loaded' => $prendasConRelaciones->first()->relationLoaded('fotos'),
+                'tallas_loaded' => $prendasConRelaciones->first()->relationLoaded('tallas'),
             ] : 'N/A',
         ]);
         
@@ -473,31 +473,18 @@ class RegistroOrdenQueryController extends Controller
                 // Formatear prendas con todos los datos necesarios
                 $prendasFormato = [];
                 foreach ($prendas as $index => $prenda) {
-                    // Obtener datos de relaciones de forma segura
-                    $colorNombre = null;
-                    $telaNombre = null;
-                    $telaReferencia = null;
-                    $tipoMangaNombre = null;
-                    $tipoBrocheNombre = null;
-                    
-                    //  Usar las relaciones ya cargadas
-                    if ($prenda->color) {
-                        $colorNombre = $prenda->color->nombre;
-                    }
-                    
-                    if ($prenda->tela) {
-                        $telaNombre = $prenda->tela->nombre;
-                        $telaReferencia = $prenda->tela->referencia;
-                    }
-                    
-                    if ($prenda->tipoManga) {
-                        $tipoMangaNombre = $prenda->tipoManga->nombre;
-                    }
-                    
-                    if ($prenda->tipoBrocheBoton) {
-                        $tipoBrocheNombre = $prenda->tipoBrocheBoton->nombre;
-                    }
-                    
+                    // Helper para normalizar rutas a URL públicas
+                    $normalize = function ($ruta) {
+                        if (empty($ruta)) return null;
+                        if (str_starts_with($ruta, 'http')) {
+                            return $ruta;
+                        }
+                        if (str_starts_with($ruta, '/storage/')) {
+                            return $ruta;
+                        }
+                        return '/storage/' . ltrim($ruta, '/');
+                    };
+
                     //  NUEVO: Normalizar fotos de prenda (WebP)
                     $fotosNormalizadas = [];
                     if ($prenda->fotos) {
@@ -520,39 +507,12 @@ class RegistroOrdenQueryController extends Controller
                         'numero' => $index + 1,
                         'nombre' => $prenda->nombre_prenda ?? '-',
                         'descripcion' => $prenda->descripcion ?? '-',
-                        'descripcion_variaciones' => $prenda->descripcion_variaciones ?? '',
                         'tallas' => $prenda->tallas ? $prenda->tallas->map(function($t) { 
                             return "{$t->talla}:{$t->cantidad}"; 
                         })->implode(', ') : '-',
-                        // Agregar datos de relaciones para generar descripción dinámica
-                        'color' => $colorNombre,
-                        'tela' => $telaNombre,
-                        'tela_referencia' => $telaReferencia,
-                        'tipo_manga' => $tipoMangaNombre,
-                        'tipo_broche' => $tipoBrocheNombre,
-                        'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
-                        'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
-                        //  NUEVO: Agregar fotos normalizadas
+                        // Los datos de color, tela, etc. ahora vienen de relaciones separadas
                         'fotos' => $fotosNormalizadas,
                         'tela_fotos' => $telaFotosNormalizadas,
-                        //  NUEVO: Agregar información de reflectivo si existe
-                        'reflectivo' => $prenda->reflectivo ? [
-                            'id' => $prenda->reflectivo->id,
-                            'nombre_producto' => $prenda->reflectivo->nombre_producto,
-                            'descripcion' => $prenda->reflectivo->descripcion,
-                            //  CORREGIDO: Forzar decodificación de JSON si están como strings
-                            'generos' => is_string($prenda->reflectivo->generos) 
-                                ? json_decode($prenda->reflectivo->generos, true) 
-                                : $prenda->reflectivo->generos,
-                            'cantidad_talla' => is_string($prenda->reflectivo->cantidad_talla) 
-                                ? json_decode($prenda->reflectivo->cantidad_talla, true) 
-                                : $prenda->reflectivo->cantidad_talla,
-                            'ubicaciones' => is_string($prenda->reflectivo->ubicaciones) 
-                                ? json_decode($prenda->reflectivo->ubicaciones, true) 
-                                : $prenda->reflectivo->ubicaciones,
-                            'observaciones_generales' => $prenda->reflectivo->observaciones_generales,
-                            'cantidad_total' => $prenda->reflectivo->cantidad_total,
-                        ] : null,
                     ];
                 }
                 

@@ -11,6 +11,7 @@ class PedidoAnchoMetraje extends Model
 
     protected $fillable = [
         'pedido_produccion_id',
+        'prenda_pedido_id',
         'ancho',
         'metraje',
         'creado_por',
@@ -30,6 +31,14 @@ class PedidoAnchoMetraje extends Model
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(PedidoProduccion::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Pertenece a una PrendaPedido
+     */
+    public function prenda(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\PrendaPedido::class, 'prenda_pedido_id');
     }
 
     /**

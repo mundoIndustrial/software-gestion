@@ -93,7 +93,7 @@ class PedidoService
         try {
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $cotizacion->id,
-                'numero_pedido' => $this->generarNumeroPedido(),
+                'numero_pedido' => null, // Ya no se genera al crear, solo Cartera lo genera
                 'cliente' => $cotizacion->cliente,
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
@@ -379,14 +379,9 @@ class PedidoService
     }
 
     /**
-     * Generar número único para pedido
-     * 
-     * @return int
+     * Método eliminado - ya no se genera numero_pedido al crear
+     * El numero_pedido ahora solo lo genera Cartera al aprobar
      */
-    private function generarNumeroPedido(): int
-    {
-        return (PedidoProduccion::max('numero_pedido') ?? 0) + 1;
-    }
 
     /**
      * Construir descripción formateada de prenda

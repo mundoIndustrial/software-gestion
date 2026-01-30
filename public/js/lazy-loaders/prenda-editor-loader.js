@@ -152,13 +152,47 @@ window.PrendaEditorLoader = (function() {
                     };
                 })(timeout, tiempoAntes, filename);
                 
-                script.onerror = (function(t) {
+                script.onerror = (function(t, retryCount) {
                     return function() {
                         clearTimeout(t);
-                        const error = `Failed to load: ${filename}`;
-                        reject(new Error(error));
+                        
+                        // Reintentar con exponential backoff
+                        if (retryCount < 3) {
+                            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                            console.warn(`[PrendaEditorLoader] 🔄 Error cargando ${filename}, reintentando en ${delay}ms (intento ${retryCount + 1}/3)`);
+                            
+                            setTimeout(() => {
+                                const retryScript = document.createElement('script');
+                                retryScript.src = src + '&retry=' + (retryCount + 1);
+                                retryScript.defer = true;
+                                retryScript.type = 'text/javascript';
+                                
+                                retryScript.onload = (function(rt, antes, nombre) {
+                                    return function() {
+                                        clearTimeout(rt);
+                                        const tiempoScript = performance.now() - antes;
+                                        tiemposScripts[nombre] = tiempoScript;
+                                        loaded++;
+                                        loadNext();
+                                    };
+                                })(timeout, tiempoAntes, filename);
+                                
+                                retryScript.onerror = (function(rt) {
+                                    return function() {
+                                        clearTimeout(rt);
+                                        const error = `Failed to load: ${filename} after ${retryCount + 1} retries`;
+                                        reject(new Error(error));
+                                    };
+                                })(timeout);
+                                
+                                document.head.appendChild(retryScript);
+                            }, delay);
+                        } else {
+                            const error = `Failed to load: ${filename} after 3 retries`;
+                            reject(new Error(error));
+                        }
                     };
-                })(timeout);
+                })(timeout, 0);
                 
                 document.head.appendChild(script);
             };

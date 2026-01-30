@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Events\PedidoActualizado;
 use App\Models\PedidoProduccion;
 use App\Models\User;
+use App\Services\ConsecutivosRecibosService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,11 +17,22 @@ class PedidoProduccionObserver
      */
     public function updated(PedidoProduccion $pedido): void
     {
+        Log::info('🔢 [PedidoProduccionObserver] UPDATED method called', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+            'estado_anterior' => $pedido->getOriginal('estado'),
+            'estado_nuevo' => $pedido->estado,
+            'changed_fields' => $pedido->getDirty()
+        ]);
+        
         // Lógica existente de notificaciones
         $this->handleFechaEstimadaNotification($pedido);
         
         // Nueva lógica de broadcasting para cambios importantes
         $this->handleBroadcastingChanges($pedido);
+        
+        // Generar consecutivos cuando el estado cambia a PENDIENTE_INSUMOS
+        $this->handleGeneracionConsecutivos($pedido);
     }
 
     /**
@@ -188,5 +200,48 @@ class PedidoProduccionObserver
         }
 
         return null;
+    }
+    
+    /**
+     * Manejar generación de consecutivos cuando el estado cambia a PENDIENTE_INSUMOS
+     */
+    private function handleGeneracionConsecutivos(PedidoProduccion $pedido): void
+    {
+        // Solo ejecutar si el campo 'estado' fue modificado
+        if (!$pedido->wasChanged('estado')) {
+            return;
+        }
+        
+        $estadoAnterior = $pedido->getOriginal('estado');
+        $estadoNuevo = $pedido->estado;
+        
+        Log::info('🔢 [PedidoProduccionObserver] Detectando cambio de estado para consecutivos', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo' => $estadoNuevo,
+        ]);
+        
+        try {
+            $consecutivosService = new ConsecutivosRecibosService();
+            $generado = $consecutivosService->generarConsecutivosSiAplica($pedido, $estadoAnterior, $estadoNuevo);
+            
+            if ($generado) {
+                Log::info('🔢 [PedidoProduccionObserver] Consecutivos generados exitosamente', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('🔢 [PedidoProduccionObserver] Error al generar consecutivos', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $estadoNuevo,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 }

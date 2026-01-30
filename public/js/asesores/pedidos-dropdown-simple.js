@@ -46,7 +46,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Construir el HTML del dropdown según el tipo de cotización
         let dropdownHTML = '';
         
-        if (tipoCotizacion === 'L') {
+        // Verificar si estamos en la ruta insumos/materiales
+        const esRutaInsumos = window.location.pathname.includes('insumos/materiales');
+        
+        if (esRutaInsumos) {
+            // Para insumos, mostrar "Ver Recibos" como en supervisor
+            dropdownHTML = `
+                <button onclick="abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Recibos
+                </button>
+            `;
+        } else if (tipoCotizacion === 'L') {
             // Solo Logo
             dropdownHTML = `
                 <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
@@ -158,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         dropdownHTML += `
             <div style="height: 1px; background: #e5e7eb;"></div>
-            <button onclick="abrirSeguimiento ? abrirSeguimiento(${pedidoId}) : verSeguimiento(${pedidoId}); closeDropdown()" style="
+            <button onclick="verSeguimiento(${pedidoId}); closeDropdown()" style="
                 width: 100%;
                 text-align: left;
                 padding: 0.875rem 1rem;

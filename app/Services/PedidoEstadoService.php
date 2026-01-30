@@ -214,35 +214,9 @@ class PedidoEstadoService extends BaseService
     }
 
     /**
-     * Asignar número de pedido
+     * Método eliminado - ya no se asigna numero_pedido desde Supervisor
+     * El numero_pedido ahora solo lo genera Cartera al aprobar
      */
-    public function asignarNumeroPedido(PedidoProduccion $pedido): void
-    {
-        if ($pedido->numero_pedido === null) {
-            $numero = $this->obtenerSiguienteNumeroPedido();
-            $pedido->update(['numero_pedido' => $numero]);
-
-            // Registrar en historial que se asignó el número
-            HistorialCambiosPedido::create([
-                'pedido_id' => $pedido->id,
-                'estado_anterior' => EstadoPedido::APROBADO_SUPERVISOR->value,
-                'estado_nuevo' => EstadoPedido::APROBADO_SUPERVISOR->value,
-                'usuario_id' => Auth::id() ?? null,
-                'usuario_nombre' => Auth::user()?->name ?? 'Sistema',
-                'rol_usuario' => Auth::user()?->roles_ids[0] ?? 'Sistema',
-                'razon_cambio' => "Se asignó número de pedido: {$numero}",
-                'ip_address' => Request::ip(),
-                'user_agent' => Request::userAgent(),
-                'datos_adicionales' => ['numero_asignado' => $numero],
-                'created_at' => now(),
-            ]);
-
-            \Log::info("Número de pedido asignado", [
-                'pedido_id' => $pedido->id,
-                'numero_pedido' => $numero
-            ]);
-        }
-    }
 
     /**
      * Crear el primer proceso (Corte) cuando se envía a producción

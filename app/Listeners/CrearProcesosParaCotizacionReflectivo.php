@@ -102,7 +102,7 @@ class CrearProcesosParaCotizacionReflectivo
         ]);
 
         // Obtener prendas del pedido
-        $prendas = PrendaPedido::where('numero_pedido', $numeroPedido)->get();
+        $prendas = PrendaPedido::where('pedido_produccion_id', $pedido->id)->get();
 
         Log::info(' [LISTENER] Prendas encontradas', [
             'numero_pedido' => $numeroPedido,

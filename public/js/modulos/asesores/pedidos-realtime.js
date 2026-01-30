@@ -135,7 +135,6 @@ class PedidosRealtimeRefresh {
 
             this.usingWebSockets = true;
             if (this.debug) console.log('✅ [PedidosRealtime] Conexión WebSocket establecida - SIN POLLING');
-            this.showConnectionIndicator('WebSocket', 'success');
 
         } catch (error) {
             console.error('❌ [PedidosRealtime] Error configurando WebSocket:', error);

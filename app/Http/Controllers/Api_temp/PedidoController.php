@@ -462,10 +462,86 @@ class PedidoController extends Controller
     {
         try {
             $response = $this->obtenerPedidoUseCase->ejecutar($id);
+            
+            // Convertir a array para modificar
+            $responseData = $response->toArray();
+            
+            // Agregar ancho y metraje a cada prenda individual
+            if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                \Log::info('[PedidoController] Agregando ancho/metraje a prendas', [
+                    'pedido_id' => $id,
+                    'total_prendas' => count($responseData['prendas'])
+                ]);
+                
+                foreach ($responseData['prendas'] as $index => &$prenda) {
+                    $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
+                    
+                    \Log::info('[PedidoController] Procesando prenda para ancho/metraje', [
+                        'index' => $index,
+                        'prenda_id' => $prendaId,
+                        'prenda_nombre' => $prenda['nombre'] ?? 'N/A'
+                    ]);
+                    
+                    if ($prendaId) {
+                        // Buscar ancho y metraje para esta prenda específica
+                        $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $id)
+                            ->where('prenda_pedido_id', $prendaId)
+                            ->first();
+                        
+                        if ($anchoMetrajePrenda) {
+                            $prenda['ancho_metraje'] = [
+                                'ancho' => $anchoMetrajePrenda->ancho,
+                                'metraje' => $anchoMetrajePrenda->metraje,
+                                'prenda_id' => $anchoMetrajePrenda->prenda_pedido_id
+                            ];
+                            
+                            \Log::info('[PedidoController] Ancho/Metraje encontrado para prenda', [
+                                'pedido_id' => $id,
+                                'prenda_id' => $prendaId,
+                                'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
+                                'ancho' => $anchoMetrajePrenda->ancho,
+                                'metraje' => $anchoMetrajePrenda->metraje
+                            ]);
+                        } else {
+                            $prenda['ancho_metraje'] = null;
+                            
+                            \Log::info('[PedidoController] No hay ancho/metraje para prenda', [
+                                'pedido_id' => $id,
+                                'prenda_id' => $prendaId,
+                                'prenda_nombre' => $prenda['nombre'] ?? 'N/A'
+                            ]);
+                        }
+                    } else {
+                        $prenda['ancho_metraje'] = null;
+                        \Log::warning('[PedidoController] Prenda sin ID válido', [
+                            'index' => $index,
+                            'prenda' => $prenda
+                        ]);
+                    }
+                }
+            }
+            
+            // Mantener el ancho/metraje general por compatibilidad (opcional)
+            $anchoMetrajeGeneral = null;
+            try {
+                $pedido = \App\Models\PedidoProduccion::find($id);
+                if ($pedido) {
+                    $anchoMetrajeGeneral = [
+                        'ancho' => $pedido->ancho ?? null,
+                        'metraje' => $pedido->metraje ?? null,
+                        'fecha_actualizacion' => $pedido->updated_at ?? null
+                    ];
+                }
+            } catch (\Exception $e) {
+                \Log::debug('[PedidoController] Error obteniendo ancho/metraje general', ['error' => $e->getMessage()]);
+                $anchoMetrajeGeneral = null;
+            }
+            
+            $responseData['ancho_metraje'] = $anchoMetrajeGeneral;
 
             return response()->json([
                 'success' => true,
-                'data' => $response->toArray()
+                'data' => $responseData
             ], 200);
 
         } catch (\DomainException $e) {

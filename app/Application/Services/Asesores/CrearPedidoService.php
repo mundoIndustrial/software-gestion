@@ -34,52 +34,84 @@ class CrearPedidoService
 
     /**
      * Crear pedido (identificar tipo y delegar)
+     * 
+     * Mejoras para concurrencia:
+     * - Transacción única con timeout reducido
+     * - Sin bloqueos innecesarios
+     * - Orden consistente de operaciones
      */
     public function crear(array $datos, $tipoCotizacion = null): PedidoProduccion|int
     {
+        // Usar transacción con timeout reducido para evitar deadlocks
         DB::beginTransaction();
+        DB::statement('SET SESSION innodb_lock_wait_timeout = 5');
+        
         try {
             $esPedidoLogo = $this->esPedidoLogo($tipoCotizacion, $datos['cotizacion_id'] ?? null);
 
             if ($esPedidoLogo) {
-                return $this->crearPedidoLogo($datos);
+                $resultado = $this->crearPedidoLogo($datos);
+            } else {
+                $resultado = $this->crearPedidos($datos);
             }
-
-            $resultado = $this->crearPedidos($datos);
             
             DB::commit();
+            
+            \Log::info('[CrearPedidoService] Pedido creado exitosamente', [
+                'tipo' => $esPedidoLogo ? 'logo' : 'prendas',
+                'resultado_id' => is_object($resultado) ? $resultado->id : $resultado,
+                'asesor_id' => Auth::id()
+            ]);
+            
             return $resultado;
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error creando pedido:', [
+            
+            \Log::error('[CrearPedidoService] Error creando pedido:', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'asesor_id' => Auth::id(),
+                'datos_cliente' => $datos['cliente'] ?? 'unknown'
             ]);
+            
             throw $e;
+        } finally {
+            // Restaurar timeout por defecto
+            DB::statement('SET SESSION innodb_lock_wait_timeout = DEFAULT');
         }
     }
 
     /**
      * Crear pedido de prendas (Pedidos)
+     * 
+     * Optimizado para concurrencia:
+     * - ID generado por AUTO_INCREMENT (seguro)
+     * - numero_pedido se genera después (por Cartera)
+     * - Operaciones en orden consistente
      */
     protected function crearPedidos(array $datos): PedidoProduccion
     {
-        // Crear pedido base PRIMERO para obtener ID
+        // 1. Crear pedido base - ID generado por AUTO_INCREMENT (seguro para concurrencia)
         $pedido = PedidoProduccion::create([
-            'numero_pedido' => null,
+            'numero_pedido' => null, // Se asignará después por Cartera
             'cliente' => $datos['cliente'],
             'asesor_id' => Auth::id(),
             'forma_de_pago' => $datos['forma_de_pago'] ?? null,
-            'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
+            'estado' => 'pendiente_cartera',
+            'fecha_de_creacion_de_orden' => now(),
         ]);
 
-        \Log::info('Pedido creado en Pedidos', ['pedido_id' => $pedido->id]);
+        \Log::info('[CrearPedidoService] Pedido base creado', [
+            'pedido_id' => $pedido->id,
+            'asesor_id' => Auth::id(),
+            'cliente' => $datos['cliente']
+        ]);
 
-        //  CREAR ESTRUCTURA DE CARPETAS PARA IMÁGENES
+        // 2. Crear estructura de carpetas (operación de filesystem, no afecta BD)
         $this->crearEstructuraCarpetas($pedido->id);
 
-        // Procesar imágenes de telas CON el ID del pedido
+        // 3. Procesar imágenes (operación de filesystem)
         $productosKey = isset($datos['productos']) ? 'productos' : 'productos_friendly';
         $productosConTelasProcessadas = $this->procesarFotosTelas(
             $datos[$productosKey] ?? [],
@@ -87,10 +119,10 @@ class CrearPedidoService
             $pedido->id
         );
 
-        // Guardar prendas
+        // 4. Guardar prendas (operaciones en BD con el ID ya disponible)
         $this->pedidoPrendaService->guardarPrendasEnPedido($pedido, $productosConTelasProcessadas);
 
-        // Guardar logo si existe
+        // 5. Guardar logo si existe (operación opcional)
         $tieneDataLogo = !empty($datos['logo']['descripcion'])
             || !empty($datos['logo']['imagenes'])
             || !empty($datos['logo']['tecnicas'])

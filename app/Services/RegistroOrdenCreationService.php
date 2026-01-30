@@ -44,18 +44,18 @@ class RegistroOrdenCreationService
             $area = $data['area'] ?? 'creacion de pedido';
             
             \Log::info('[REGISTRO-ORDEN] Creando pedido con valores por defecto', [
-                'numero_pedido' => $data['pedido'],
+                'numero_pedido' => null, // Ahora es NULL hasta que Cartera apruebe
                 'estado_guardado' => $estado,
                 'area_guardada' => $area,
             ]);
             
             $pedido = PedidoProduccion::create([
-                'numero_pedido' => $data['pedido'],
+                'numero_pedido' => null, // Ya no se genera al crear, solo Cartera lo genera
                 'cliente' => $data['cliente'],
                 'estado' => $estado,
                 'area' => $area,
                 'forma_de_pago' => $data['forma_pago'] ?? null,
-                'fecha_de_creacion_de_orden' => $data['fecha_creacion'],
+                'fecha_de_creacion_de_orden' => now(), // Fecha y hora exacta de creación
                 'novedades' => null,
             ]);
 
@@ -67,7 +67,7 @@ class RegistroOrdenCreationService
             ]);
 
             // Crear prendas en PrendaPedido
-            $this->createPrendas($pedido->numero_pedido, $data['prendas']);
+            $this->createPrendas($pedido->id, $data['prendas']);
 
             // Crear el proceso inicial "Creación de Orden" para el pedido
             $this->createInitialProcesso($pedido, $data);
@@ -88,17 +88,17 @@ class RegistroOrdenCreationService
     /**
      * Crear prendas para una orden
      */
-    private function createPrendas(int $numeroPedido, array $prendas): void
+    private function createPrendas(int $pedidoId, array $prendas): void
     {
         foreach ($prendas as $prendaData) {
-            $this->createSinglePrenda($numeroPedido, $prendaData);
+            $this->createSinglePrenda($pedidoId, $prendaData);
         }
     }
 
     /**
      * Crear una prenda individual
      */
-    private function createSinglePrenda(int $numeroPedido, array $prendaData): void
+    private function createSinglePrenda(int $pedidoId, array $prendaData): void
     {
         // Calcular cantidad total de la prenda
         $cantidadPrenda = 0;
@@ -110,13 +110,21 @@ class RegistroOrdenCreationService
         }
 
         // Crear prenda
-        PrendaPedido::create([
-            'numero_pedido' => $numeroPedido,
+        $prenda = PrendaPedido::create([
+            'pedido_produccion_id' => $pedidoId,
             'nombre_prenda' => $prendaData['prenda'],
-            'cantidad' => $cantidadPrenda,
             'descripcion' => $prendaData['descripcion'] ?? '',
-            'cantidad_talla' => json_encode($cantidadesPorTalla),
         ]);
+        
+        // Crear tallas para la prenda
+        foreach ($prendaData['tallas'] as $talla) {
+            \App\Models\PrendaPedidoTalla::create([
+                'prenda_pedido_id' => $prenda->id,
+                'genero' => $talla['genero'] ?? 'UNISEX',
+                'talla' => $talla['talla'],
+                'cantidad' => $talla['cantidad'],
+            ]);
+        }
     }
 
     /**
