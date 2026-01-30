@@ -198,9 +198,9 @@ export class PedidosRecibosModule {
         if (mostroGaleria) {
             GalleryManager.actualizarBotonesEstilo(true);
         } else {
-            // Usar galería original si existe
-            if (window.toggleGaleria) {
-                window.toggleGaleria();
+            // Usar galería original solo si existe y evitando recursión
+            if (window.toggleGaleria && window.originalToggleGaleria) {
+                return window.originalToggleGaleria.call(this);
             }
         }
     }
@@ -247,16 +247,30 @@ window.cerrarModalRecibos = function() {
 
 // Interceptar toggleGaleria original
 const originalToggleGaleria = window.toggleGaleria;
+window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para evitar recursión
+
 window.toggleGaleria = async function() {
-    // Si hay estado de recibos dinámicos, usar la nueva galería
-    const estado = window.pedidosRecibosModule.getEstado();
-    if (estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId)) {
-        return window.pedidosRecibosModule.abrirGaleria();
+    // Evitar recursión infinita
+    if (window.toggleGaleria._calling) {
+        console.warn('[toggleGaleria] ⚠️ Evitando recursión infinita');
+        return;
     }
     
-    // Si no, usar la galería original
-    if (originalToggleGaleria) {
-        return originalToggleGaleria.call(this);
+    window.toggleGaleria._calling = true;
+    
+    try {
+        // Si hay estado de recibos dinámicos, usar la nueva galería
+        const estado = window.pedidosRecibosModule.getEstado();
+        if (estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId)) {
+            return window.pedidosRecibosModule.abrirGaleria();
+        }
+        
+        // Si no, usar la galería original
+        if (originalToggleGaleria) {
+            return originalToggleGaleria.call(this);
+        }
+    } finally {
+        window.toggleGaleria._calling = false;
     }
 };
 

@@ -61,14 +61,30 @@ class CrearPedidoEditableController extends Controller
      */
     public function crearDesdeCotizacion(Request $request): View
     {
+        $inicioTotal = microtime(true);
+        Log::info('[CREAR-DESDE-COTIZACION] ⏱️ INICIANDO CARGA DE PÁGINA', [
+            'usuario_id' => Auth::id(),
+            'timestamp' => now(),
+        ]);
+        
         $user = Auth::user();
+        Log::info('[CREAR-DESDE-COTIZACION] ✅ Usuario obtenido', [
+            'usuario_id' => $user->id,
+            'usuario_nombre' => $user->name,
+        ]);
         
         // ========================================
         // DATOS COMPARTIDOS (SIEMPRE)
         // ========================================
         
         // Obtener las tallas disponibles
+        $inicioTallas = microtime(true);
         $tallas = Talla::all();
+        $tiempoTallas = round((microtime(true) - $inicioTallas) * 1000, 2);
+        Log::info('[CREAR-DESDE-COTIZACION] 📏 Tallas cargadas', [
+            'cantidad' => $tallas->count(),
+            'tiempo_ms' => $tiempoTallas,
+        ]);
         
         // Formas de pago disponibles (ValueObject)
         $formasPago = [
@@ -79,6 +95,7 @@ class CrearPedidoEditableController extends Controller
             'Transferencia',
             'Cheque'
         ];
+        Log::debug('[CREAR-DESDE-COTIZACION] 💳 Formas de pago configuradas', ['cantidad' => count($formasPago)]);
         
         // Técnicas disponibles (se definen en JavaScript frontend, pasamos array simple)
         $tecnicas = [
@@ -89,12 +106,14 @@ class CrearPedidoEditableController extends Controller
             'Tejido',
             'Serigrafía'
         ];
+        Log::debug('[CREAR-DESDE-COTIZACION] 🎨 Técnicas configuradas', ['cantidad' => count($tecnicas)]);
         
         // ========================================
         // DATO CRÍTICO: COTIZACIONES DEL USUARIO (IMPORTANTE AQUÍ)
         // ========================================
         
         // Cargar cotizaciones aprobadas para crear pedidos
+        $inicioCotizaciones = microtime(true);
         $cotizaciones = Cotizacion::with([
             'cliente',
             'prendas' => function($query) {
@@ -107,29 +126,49 @@ class CrearPedidoEditableController extends Controller
             ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
             ->orderBy('created_at', 'desc')
             ->get();
+        $tiempoCotizaciones = round((microtime(true) - $inicioCotizaciones) * 1000, 2);
+        Log::info('[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)', [
+            'cantidad' => $cotizaciones->count(),
+            'tiempo_ms' => $tiempoCotizaciones,
+            'nota' => 'Este es el tiempo MÁS CRÍTICO - incluye carga de prendas, fotos, tallas, variantes',
+        ]);
         
         // ========================================
         // DATO CRÍTICO: PEDIDOS EXISTENTES
         // ========================================
         
         // Obtener pedidos disponibles para edición
+        $inicioPedidos = microtime(true);
         $pedidos = PedidoProduccion::where('asesor_id', $user->id)
             ->where('estado', '!=', 'completado')
             ->orderBy('created_at', 'desc')
             ->get();
+        $tiempoPedidos = round((microtime(true) - $inicioPedidos) * 1000, 2);
+        Log::info('[CREAR-DESDE-COTIZACION] 📦 Pedidos existentes cargados', [
+            'cantidad' => $pedidos->count(),
+            'tiempo_ms' => $tiempoPedidos,
+            'usuario_id' => $user->id,
+        ]);
         
         // ========================================
         // DATO CRÍTICO: CLIENTES
         // ========================================
         
         // Obtener clientes para dropdown manual si se crea sin cotización
+        $inicioClientes = microtime(true);
         $clientes = Cliente::orderBy('nombre', 'asc')->get();
+        $tiempoClientes = round((microtime(true) - $inicioClientes) * 1000, 2);
+        Log::info('[CREAR-DESDE-COTIZACION] 👥 Clientes cargados', [
+            'cantidad' => $clientes->count(),
+            'tiempo_ms' => $tiempoClientes,
+        ]);
         
         // ========================================
         // RETORNAR VIEW CON TODOS LOS DATOS
         // ========================================
         
-        return view('asesores.pedidos.crear-pedido-desde-cotizacion', [
+        $inicioView = microtime(true);
+        $view = view('asesores.pedidos.crear-pedido-desde-cotizacion', [
             'cotizacionesData' => $cotizaciones,
             'pedidos' => $pedidos,
             'clientes' => $clientes,
@@ -138,6 +177,20 @@ class CrearPedidoEditableController extends Controller
             'formasPago' => $formasPago,
             'modoEdicion' => false
         ]);
+        $tiempoView = round((microtime(true) - $inicioView) * 1000, 2);
+        
+        $tiempoTotalMs = round((microtime(true) - $inicioTotal) * 1000, 2);
+        Log::info('[CREAR-DESDE-COTIZACION] ✨ PÁGINA COMPLETADA', [
+            'tiempo_total_ms' => $tiempoTotalMs,
+            'tiempo_tallas_ms' => $tiempoTallas,
+            'tiempo_cotizaciones_ms' => $tiempoCotizaciones,
+            'tiempo_pedidos_ms' => $tiempoPedidos,
+            'tiempo_clientes_ms' => $tiempoClientes,
+            'tiempo_view_ms' => $tiempoView,
+            'resumen' => "Tallas: {$tiempoTallas}ms | Cotizaciones: {$tiempoCotizaciones}ms | Pedidos: {$tiempoPedidos}ms | Clientes: {$tiempoClientes}ms | View: {$tiempoView}ms | TOTAL: {$tiempoTotalMs}ms",
+        ]);
+        
+        return $view;
     }
 
     /**
@@ -151,14 +204,30 @@ class CrearPedidoEditableController extends Controller
      */
     public function crearNuevo(Request $request): View
     {
+        $inicioTotal = microtime(true);
+        Log::info('[CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA', [
+            'usuario_id' => Auth::id(),
+            'timestamp' => now(),
+        ]);
+        
         $user = Auth::user();
+        Log::info('[CREAR-PEDIDO-NUEVO] ✅ Usuario obtenido', [
+            'usuario_id' => $user->id,
+            'usuario_nombre' => $user->name,
+        ]);
         
         // ========================================
         // DATOS COMPARTIDOS (SIEMPRE)
         // ========================================
         
         // Obtener las tallas disponibles
+        $inicioTallas = microtime(true);
         $tallas = Talla::all();
+        $tiempoTallas = round((microtime(true) - $inicioTallas) * 1000, 2);
+        Log::info('[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas', [
+            'cantidad' => $tallas->count(),
+            'tiempo_ms' => $tiempoTallas,
+        ]);
         
         // Formas de pago disponibles (ValueObject)
         $formasPago = [
@@ -169,6 +238,7 @@ class CrearPedidoEditableController extends Controller
             'Transferencia',
             'Cheque'
         ];
+        Log::debug('[CREAR-PEDIDO-NUEVO] 💳 Formas de pago configuradas', ['cantidad' => count($formasPago)]);
         
         // Técnicas disponibles (se definen en JavaScript frontend, pasamos array simple)
         $tecnicas = [
@@ -179,35 +249,51 @@ class CrearPedidoEditableController extends Controller
             'Tejido',
             'Serigrafía'
         ];
+        Log::debug('[CREAR-PEDIDO-NUEVO] 🎨 Técnicas configuradas', ['cantidad' => count($tecnicas)]);
         
         // ========================================
         // COTIZACIONES: Vacía para crear nuevo
         // ========================================
         // NO cargamos cotizaciones, el usuario crea pedido desde cero con cliente manual
         $cotizaciones = collect([]);
+        Log::debug('[CREAR-PEDIDO-NUEVO] 📋 Cotizaciones (vacías para modo nuevo)', ['cantidad' => 0]);
         
         // ========================================
         // DATO CRÍTICO: PEDIDOS EXISTENTES
         // ========================================
         
         // Obtener pedidos disponibles para edición
+        $inicioPedidos = microtime(true);
         $pedidos = PedidoProduccion::where('asesor_id', $user->id)
             ->where('estado', '!=', 'completado')
             ->orderBy('created_at', 'desc')
             ->get();
+        $tiempoPedidos = round((microtime(true) - $inicioPedidos) * 1000, 2);
+        Log::info('[CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados', [
+            'cantidad' => $pedidos->count(),
+            'tiempo_ms' => $tiempoPedidos,
+            'usuario_id' => $user->id,
+        ]);
         
         // ========================================
         // DATO CRÍTICO: CLIENTES (IMPORTANTE AQUÍ)
         // ========================================
         
         // Obtener todos los clientes para dropdown manual (ESENCIAL para "Pedido Nuevo")
+        $inicioClientes = microtime(true);
         $clientes = Cliente::orderBy('nombre', 'asc')->get();
+        $tiempoClientes = round((microtime(true) - $inicioClientes) * 1000, 2);
+        Log::info('[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados', [
+            'cantidad' => $clientes->count(),
+            'tiempo_ms' => $tiempoClientes,
+        ]);
         
         // ========================================
         // RETORNAR VIEW CON TODOS LOS DATOS
         // ========================================
         
-        return view('asesores.pedidos.crear-pedido-nuevo', [
+        $inicioView = microtime(true);
+        $view = view('asesores.pedidos.crear-pedido-nuevo', [
             'cotizaciones' => $cotizaciones,
             'pedidos' => $pedidos,
             'clientes' => $clientes,
@@ -216,6 +302,19 @@ class CrearPedidoEditableController extends Controller
             'formasPago' => $formasPago,
             'modoEdicion' => false
         ]);
+        $tiempoView = round((microtime(true) - $inicioView) * 1000, 2);
+        
+        $tiempoTotalMs = round((microtime(true) - $inicioTotal) * 1000, 2);
+        Log::info('[CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA', [
+            'tiempo_total_ms' => $tiempoTotalMs,
+            'tiempo_tallas_ms' => $tiempoTallas,
+            'tiempo_pedidos_ms' => $tiempoPedidos,
+            'tiempo_clientes_ms' => $tiempoClientes,
+            'tiempo_view_ms' => $tiempoView,
+            'resumen' => "Tallas: {$tiempoTallas}ms | Pedidos: {$tiempoPedidos}ms | Clientes: {$tiempoClientes}ms | View: {$tiempoView}ms | TOTAL: {$tiempoTotalMs}ms",
+        ]);
+        
+        return $view;
     }
 
     /**
@@ -459,11 +558,13 @@ class CrearPedidoEditableController extends Controller
     public function crearPedido(Request $request): JsonResponse
     {
         $pedidoId = null;
+        $inicioTotal = microtime(true);
 
         try {
-            Log::info('[CrearPedidoEditableController] 🚀 Iniciando creación transaccional', [
+            Log::info('[CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL', [
                 'has_pedido_json' => !!$request->input('pedido'),
                 'archivos_count' => count($request->allFiles()),
+                'timestamp' => now(),
             ]);
             
             // DEBUG: Mostrar qué archivos se recibieron en FormData
@@ -474,13 +575,14 @@ class CrearPedidoEditableController extends Controller
             // Buscar archivos en TODOS los inputs (esto incluye archivos anidados como prendas[0][imagenes][0])
             $this->buscarArchivosAnidados($allInputs, '', $archivosRecibidos);
             
-            Log::debug('[CrearPedidoEditableController] 📤 Archivos en FormData', [
+            Log::debug('[CREAR-PEDIDO] 📤 Archivos en FormData', [
                 'total_archivos' => count($archivosRecibidos),
                 'archivos' => $archivosRecibidos,
                 'nota' => 'Si archivos está vacío aquí, el problema está en el frontend (FormData no se construyó correctamente)'
             ]);
 
             // ====== PASO 1: Decodificar JSON del frontend ======
+            $inicioPaso1 = microtime(true);
             $pedidoJSON = $request->input('pedido');
             if (!$pedidoJSON) {
                 throw new \Exception('Campo "pedido" JSON requerido');
@@ -493,32 +595,42 @@ class CrearPedidoEditableController extends Controller
             
             // DEBUG: Validar que no hay File objects en el JSON
             $this->validarJsonSinFiles($datosFrontend);
+            $tiempoPaso1 = round((microtime(true) - $inicioPaso1) * 1000, 2);
+            Log::info('[CREAR-PEDIDO] ✅ PASO 1: JSON decodificado', ['tiempo_ms' => $tiempoPaso1]);
 
             // ====== PASO 2: Obtener/crear cliente ======
+            $inicioPaso2 = microtime(true);
             $clienteNombre = trim($datosFrontend['cliente'] ?? '');
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
+            $tiempoPaso2 = round((microtime(true) - $inicioPaso2) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] Cliente obtenido/creado', [
+            Log::info('[CREAR-PEDIDO] ✅ PASO 2: Cliente obtenido/creado', [
                 'cliente_id' => $cliente->id,
-                'nombre' => $cliente->nombre
+                'nombre' => $cliente->nombre,
+                'tiempo_ms' => $tiempoPaso2,
             ]);
 
             // ====== PASO 3: Normalizar usando DTO ======
+            $inicioPaso3 = microtime(true);
             $dtoPedido = PedidoNormalizadorDTO::fromFrontendJSON(
                 $datosFrontend,
                 $cliente->id
             );
+            $tiempoPaso3 = round((microtime(true) - $inicioPaso3) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] Pedido normalizado', [
+            Log::info('[CREAR-PEDIDO] ✅ PASO 3: Pedido normalizado (DTO)', [
                 'cliente_id' => $dtoPedido->cliente_id,
                 'prendas' => count($dtoPedido->prendas),
                 'epps' => count($dtoPedido->epps),
+                'tiempo_ms' => $tiempoPaso3,
             ]);
 
             // ====== PASO 4: Iniciar transacción ======
             DB::beginTransaction();
+            Log::debug('[CREAR-PEDIDO] 🔄 Transacción DB iniciada');
 
             // ====== PASO 5: Crear pedido base ======
+            $inicioPaso5 = microtime(true);
             // Convertir DTO a array para compatibilidad con PedidoWebService
             $datosParaServicio = [
                 'cliente' => $dtoPedido->cliente,
@@ -535,55 +647,83 @@ class CrearPedidoEditableController extends Controller
             );
 
             $pedidoId = $pedido->id;
+            $tiempoPaso5 = round((microtime(true) - $inicioPaso5) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] Pedido base creado', [
+            Log::info('[CREAR-PEDIDO] ✅ PASO 5: Pedido base creado', [
                 'pedido_id' => $pedidoId,
-                'numero_pedido' => $pedido->numero_pedido
+                'numero_pedido' => $pedido->numero_pedido,
+                'tiempo_ms' => $tiempoPaso5,
             ]);
 
             // ====== PASO 6: Crear carpetas ======
+            $inicioPaso6 = microtime(true);
             $this->crearCarpetasPedido($pedidoId);
+            $tiempoPaso6 = round((microtime(true) - $inicioPaso6) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] Carpetas creadas', [
+            Log::info('[CREAR-PEDIDO] ✅ PASO 6: Carpetas creadas', [
                 'pedido_id' => $pedidoId,
+                'tiempo_ms' => $tiempoPaso6,
             ]);
 
             // ====== PASO 7: CRÍTICO - Mapear y procesar imágenes ======
+            $inicioPaso7 = microtime(true);
             $this->mapeoImagenes->mapearYCrearFotos(
                 $dtoPedido,      // DTO con prendas normalizadas
                 $pedidoId,       // ID del pedido
                 $request         // Request con archivos
             );
+            $tiempoPaso7 = round((microtime(true) - $inicioPaso7) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] Imágenes mapeadas', [
+            Log::info('[CREAR-PEDIDO] ✅ PASO 7: Imágenes mapeadas y creadas', [
                 'pedido_id' => $pedidoId,
-                'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta)
+                'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta),
+                'tiempo_ms' => $tiempoPaso7,
             ]);
 
             // ====== PASO 7B: CRÍTICO - Procesar imágenes de EPPs ======
+            $tiempoPaso7B = 0;
             if (!empty($dtoPedido->epps)) {
+                $inicioPaso7B = microtime(true);
                 $this->procesarYAsignarEpps($request, $pedidoId, $dtoPedido->epps);
+                $tiempoPaso7B = round((microtime(true) - $inicioPaso7B) * 1000, 2);
                 
-                Log::info('[CrearPedidoEditableController] Imágenes de EPPs procesadas', [
+                Log::info('[CREAR-PEDIDO] ✅ PASO 7B: Imágenes de EPPs procesadas', [
                     'pedido_id' => $pedidoId,
-                    'epps_count' => count($dtoPedido->epps)
+                    'epps_count' => count($dtoPedido->epps),
+                    'tiempo_ms' => $tiempoPaso7B,
                 ]);
             }
 
             // ====== PASO 8: Calcular cantidades y commit ======
+            $inicioPaso8 = microtime(true);
             $cantidadTotalPrendas = $this->calcularCantidadTotalPrendas($pedidoId);
             $cantidadTotalEpps = $this->calcularCantidadTotalEpps($pedidoId);
             $cantidadTotal = $cantidadTotalPrendas + $cantidadTotalEpps;
             $pedido->update(['cantidad_total' => $cantidadTotal]);
 
             DB::commit();
+            $tiempoPaso8 = round((microtime(true) - $inicioPaso8) * 1000, 2);
 
-            Log::info('[CrearPedidoEditableController] TRANSACCIÓN EXITOSA', [
+            $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
+            
+            Log::info('[CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cantidad_total_prendas' => $cantidadTotalPrendas,
                 'cantidad_total_epps' => $cantidadTotalEpps,
-                'cantidad_total' => $cantidadTotal
+                'cantidad_total' => $cantidadTotal,
+                'tiempo_total_ms' => $tiempoTotal,
+                'desglose_pasos' => [
+                    'paso_1_json_ms' => $tiempoPaso1,
+                    'paso_2_cliente_ms' => $tiempoPaso2,
+                    'paso_3_dto_ms' => $tiempoPaso3,
+                    'paso_5_pedido_base_ms' => $tiempoPaso5,
+                    'paso_6_carpetas_ms' => $tiempoPaso6,
+                    'paso_7_imagenes_ms' => $tiempoPaso7,
+                    'paso_7b_epps_ms' => $tiempoPaso7B,
+                    'paso_8_calculo_ms' => $tiempoPaso8,
+                ],
+                'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
             ]);
 
             return response()->json([

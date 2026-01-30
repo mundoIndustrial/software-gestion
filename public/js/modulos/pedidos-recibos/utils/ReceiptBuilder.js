@@ -34,6 +34,29 @@ export class ReceiptBuilder {
             }
         }
         
+        // Obtener procesos para usarlos tanto en el recibo base como en los recibos de proceso
+        const procesos = prenda.procesos || [];
+        
+        // Preparar imágenes para el recibo base
+        let imagenesBase = [];
+        
+        // Agregar imágenes de la prenda
+        if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+            imagenesBase = [...imagenesBase, ...prenda.imagenes];
+        }
+        
+        // Agregar imágenes de tela
+        if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+            imagenesBase = [...imagenesBase, ...prenda.imagenes_tela];
+        }
+        
+        // Agregar imágenes de todos los procesos
+        procesos.forEach((proc) => {
+            if (proc.imagenes && Array.isArray(proc.imagenes)) {
+                imagenesBase = [...imagenesBase, ...proc.imagenes];
+            }
+        });
+        
         recibos.push({
             tipo: tipoBase,
             tipo_proceso: tipoBase,
@@ -42,14 +65,33 @@ export class ReceiptBuilder {
             es_base: true,
             ubicaciones: [],
             observaciones: '',
-            imagenes: [],
+            imagenes: imagenesBase,
             tallas: tallasObj
         });
         // PASO 2: AGREGAR PROCESOS ADICIONALES
-        const procesos = prenda.procesos || [];
         procesos.forEach((proc) => {
             const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
             if (tipoProceso) {
+                // Preparar imágenes para este proceso (prenda + tela + imágenes del proceso)
+                let imagenesProceso = [];
+                
+                // Agregar imágenes de la prenda
+                if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                    imagenesProceso = [...imagenesProceso, ...prenda.imagenes];
+                }
+                
+                // Agregar imágenes de tela
+                if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+                    imagenesProceso = [...imagenesProceso, ...prenda.imagenes_tela];
+                }
+                
+                // Agregar imágenes específicas del proceso
+                if (proc.imagenes && Array.isArray(proc.imagenes)) {
+                    imagenesProceso = [...imagenesProceso, ...proc.imagenes];
+                }
+                
+                // Asegurarse de que el proceso tenga el array de imágenes completo
+                proc.imagenes = imagenesProceso;
                 recibos.push(proc);
             }
         });

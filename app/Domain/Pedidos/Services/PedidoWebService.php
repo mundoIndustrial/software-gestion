@@ -17,6 +17,7 @@ use App\Models\PedidoEppImagen;
 use App\Models\TipoPrenda;
 use App\Application\Services\ImageUploadService;
 use App\Domain\Pedidos\Services\ProcesoImagenService;
+use App\Domain\Pedidos\Services\PedidoSequenceService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -37,17 +38,20 @@ class PedidoWebService
     private TelaImagenService $telaImagenService;
     private ProcesoImagenService $procesoImagenService;
     private ImageUploadService $imageUploadService;
+    private PedidoSequenceService $pedidoSequenceService;
 
     public function __construct(
         PrendaImagenService $prendaImagenService = null,
         TelaImagenService $telaImagenService = null,
         ProcesoImagenService $procesoImagenService = null,
-        ImageUploadService $imageUploadService = null
+        ImageUploadService $imageUploadService = null,
+        PedidoSequenceService $pedidoSequenceService = null
     ) {
         $this->prendaImagenService = $prendaImagenService ?? app(PrendaImagenService::class);
         $this->telaImagenService = $telaImagenService ?? app(TelaImagenService::class);
         $this->procesoImagenService = $procesoImagenService ?? app(ProcesoImagenService::class);
         $this->imageUploadService = $imageUploadService ?? app(ImageUploadService::class);
+        $this->pedidoSequenceService = $pedidoSequenceService ?? app(PedidoSequenceService::class);
     }
 
     /**
@@ -55,15 +59,20 @@ class PedidoWebService
      */
     public function crearPedidoCompleto(array $datosValidados, int $asesorId): PedidoProduccion
     {
-        return DB::transaction(function () use ($datosValidados, $asesorId) {
+        $tiempoInicio = microtime(true);
+        
+        return DB::transaction(function () use ($datosValidados, $asesorId, &$tiempoInicio) {
             // 1. Crear pedido base
+            $tiempoInicioBase = microtime(true);
             $pedido = $this->crearPedidoBase($datosValidados, $asesorId);
-
+            $tiempoBase = (microtime(true) - $tiempoInicioBase) * 1000;
+            
             Log::info('[PedidoWebService] Pedido base creado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'area_guardada' => $pedido->area,
                 'estado' => $pedido->estado,
+                'tiempo_base_ms' => round($tiempoBase, 2),
             ]);
 
             // 2. Crear prendas con todas sus relaciones
@@ -77,6 +86,7 @@ class PedidoWebService
                 'pedido_id' => $pedido->id,
                 'cantidad_prendas' => $pedido->prendas()->count(),
                 'area_final' => $pedido->area,
+                'tiempo_total_ms' => round((microtime(true) - $tiempoInicio) * 1000, 2),
             ]);
 
             return $pedido;
@@ -88,7 +98,9 @@ class PedidoWebService
      */
     private function crearPedidoBase(array $datos, int $asesorId): PedidoProduccion
     {
-        $numeroPedido = $this->generarNumeroPedido();
+        $tiempoInicioSecuencia = microtime(true);
+        $numeroPedido = $this->pedidoSequenceService->generarNumeroPedido();
+        $tiempoSecuencia = (microtime(true) - $tiempoInicioSecuencia) * 1000;
 
         //  EXTRAER ÁREA CON DEFAULT
         $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';
@@ -98,6 +110,11 @@ class PedidoWebService
         } else {
             $area = 'creacion de pedido';
         }
+
+        Log::info('[PedidoWebService] Generando número de pedido', [
+            'tiempo_secuencia_ms' => round($tiempoSecuencia, 2),
+            'numero_pedido' => $numeroPedido,
+        ]);
 
         return PedidoProduccion::create([
             'numero_pedido' => $numeroPedido,
@@ -851,14 +868,5 @@ class PedidoWebService
             // Si hay error, no fallar el flujo, solo loguear
             return null;
         }
-    }
-
-    /**
-     * Generar número de pedido único
-     */
-    private function generarNumeroPedido(): int
-    {
-        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 100000;
-        return $ultimoPedido + 1;
     }
 }

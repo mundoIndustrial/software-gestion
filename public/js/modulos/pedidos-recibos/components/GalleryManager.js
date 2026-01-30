@@ -4,72 +4,43 @@
  */
 
 export class GalleryManager {
+    static _isOpening = false;
+    
     /**
      * Abre la galería con imágenes del recibo o de la prenda
      */
     static async abrirGaleria(modalManager) {
-        const state = modalManager.getState();
-        const { imagenesActuales, prendaPedidoId, prendaData } = state;
+        // Evitar múltiples aperturas simultáneas
+        if (GalleryManager._isOpening) {
+            console.warn('[GalleryManager] ⚠️ Galería ya se está abriendo, evitando duplicado');
+            return false;
+        }
         
-        console.log('[GalleryManager.abrirGaleria] 🖼️ ABRIENDO GALERÍA');
-        console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
-        console.log('  Mostrar todas las imágenes?', prendaData?.de_bodega === false);
+        // Cerrar galería existente si hay una
+        const galeriaExistente = document.getElementById('galeria-modal-costura');
+        if (galeriaExistente) {
+            console.log('[GalleryManager] 🗑️ Eliminando galería existente');
+            galeriaExistente.remove();
+        }
+        
+        GalleryManager._isOpening = true;
+        
+        try {
+            const state = modalManager.getState();
+            const { imagenesActuales, prendaPedidoId, prendaData } = state;
+            
+            console.log('[GalleryManager.abrirGaleria] 🖼️ ABRIENDO GALERÍA');
+            console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
 
-        
-        // Combinar imágenes de tela + imágenes del recibo/prenda
-        let fotosParaMostrar = [];
-        
-        // LÓGICA: Si de_bodega es FALSE, mostrar TODAS las imágenes (prendas, tela, procesos)
-        // Si de_bodega es TRUE, no mostrar galería (solo recibos)
-        
-        if (prendaData?.de_bodega === false) {
-            console.log('✅ [GalleryManager] de_bodega=FALSE: Mostrando todas las imágenes');
             
-            // 1. Agregar imágenes de prenda
-            if (prendaData && prendaData.imagenes && Array.isArray(prendaData.imagenes)) {
-                const imagenesPrendaLimpias = prendaData.imagenes
-                    .map(img => {
-                        let url = '';
-                        if (typeof img === 'string') {
-                            url = img;
-                        } else if (typeof img === 'object' && img !== null) {
-                            url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
-                        }
-                        if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
-                            return url.replace('/storage/storage/', '/storage/');
-                        }
-                        return url;
-                    })
-                    .filter(url => url);
-                
-                console.log('  ✓ Imágenes de prenda:', imagenesPrendaLimpias.length);
-                fotosParaMostrar = [...imagenesPrendaLimpias];
-            }
+            // Combinar imágenes de tela + imágenes del recibo/prenda
+            let fotosParaMostrar = [];
             
-            // 2. Agregar imágenes de tela
-            if (prendaData && prendaData.imagenes_tela && Array.isArray(prendaData.imagenes_tela)) {
-                const imagenesTelaLimpias = prendaData.imagenes_tela
-                    .map(img => {
-                        let url = '';
-                        if (typeof img === 'string') {
-                            url = img;
-                        } else if (typeof img === 'object' && img !== null) {
-                            url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
-                        }
-                        if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
-                            return url.replace('/storage/storage/', '/storage/');
-                        }
-                        return url;
-                    })
-                    .filter(url => url);
-                
-                console.log('  ✓ Imágenes de tela:', imagenesTelaLimpias.length);
-                fotosParaMostrar = [...fotosParaMostrar, ...imagenesTelaLimpias];
-            }
+            // LÓGICA SIMPLIFICADA: Usar solo las imágenes del recibo (que ya incluyen prenda + tela + proceso)
             
-            // 3. Agregar imágenes del recibo/proceso
+            // El recibo ya contiene todas las imágenes necesarias (prenda + tela + proceso)
             if (imagenesActuales && Array.isArray(imagenesActuales) && imagenesActuales.length > 0) {
-                const imagenesRecibosLimpias = imagenesActuales
+                const imagenesLimpias = imagenesActuales
                     .map(img => {
                         let url = '';
                         if (typeof img === 'string') {
@@ -84,126 +55,91 @@ export class GalleryManager {
                     })
                     .filter(url => url);
                 
-                console.log('  ✓ Imágenes del proceso:', imagenesRecibosLimpias.length);
-                fotosParaMostrar = [...fotosParaMostrar, ...imagenesRecibosLimpias];
+                console.log('  ✓ Imágenes del recibo (todas):', imagenesLimpias.length);
+                fotosParaMostrar = [...imagenesLimpias];
             }
-        } else {
-            console.log('⚠️ [GalleryManager] de_bodega=TRUE: Prendas de bodega - galería deshabilitada');
-        }
-        
-        console.log('📊 Total imágenes a mostrar:', fotosParaMostrar.length);
-        
-        // Si de_bodega es TRUE, no mostrar galería
-        if (prendaData?.de_bodega === true) {
-            console.log('⛔ [GalleryManager] Prenda de bodega - galería DESHABILITADA');
-            return false;
-        }
-        
-        // 4. Si aún no hay imágenes, intentar obtener desde el endpoint (SOLO SI de_bodega=FALSE)
-        if (fotosParaMostrar.length === 0 && prendaPedidoId) {
-            try {
-                console.log('  ℹ️ No hay imágenes locales, intentando obtener del endpoint...');
-                const response = await fetch(`/asesores/prendas-pedido/${prendaPedidoId}/fotos`);
-                const data = await response.json();
-                if (data.success && data.fotos) {
-                    const fotosLimpias = data.fotos
-                        .map(f => {
-                            if (f.url && f.url.includes('/storage/storage/')) {
-                                return f.url.replace('/storage/storage/', '/storage/');
-                            }
-                            return f.url;
-                        })
-                        .filter(f => f);
+            
+            console.log('📊 Total imágenes a mostrar:', fotosParaMostrar.length);
+            
+            // La galería siempre se abre, incluso sin imágenes
+            const modalWrapper = modalManager.getModalWrapper();
+            if (!modalWrapper) {
+                return false;
+            }
+
+            const card = modalWrapper.querySelector('.order-detail-card');
+            if (card) card.style.display = 'none';
+
+            let galeria = document.getElementById('galeria-modal-costura');
+            const container = modalManager.getModalContainer();
+
+            if (!galeria && container) {
+                galeria = document.createElement('div');
+                galeria.id = 'galeria-modal-costura';
+                galeria.style.cssText = `
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 400px;
+                    max-height: 600px;
+                    overflow-y: auto;
+                    background: #ffffff;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                `;
+                container.appendChild(galeria);
+            }
+
+            if (galeria) {
+                galeria.style.display = 'flex';
+                
+                // Ocultar botón X de cierre de factura
+                let btnCerrarFactura = document.getElementById('close-receipt-btn');
+                
+                // Si no existe por ID, buscar por el texto "✕" dentro del modal overlay o el más reciente
+                if (!btnCerrarFactura) {
+                    // Primero buscar dentro del modal-factura-overlay
+                    const overlay = document.getElementById('modal-factura-overlay');
+                    if (overlay) {
+                        const buttonsInOverlay = overlay.querySelectorAll('button');
+                        btnCerrarFactura = Array.from(buttonsInOverlay).find(btn => btn.textContent.includes('✕'));
+                        console.log('[GalleryManager.abrirGaleria] 🔍 Botón encontrado en overlay:', { btnCerrarFactura, encontrado: !!btnCerrarFactura });
+                    }
                     
-                    console.log('  ✓ Imágenes obtenidas del endpoint:', fotosLimpias.length);
-                    fotosParaMostrar = [...fotosParaMostrar, ...fotosLimpias];
-
-                }
-            } catch (error) {
-                console.warn('  ⚠️ Error al obtener imágenes del endpoint:', error.message);
-            }
-        }
-        
-        if (fotosParaMostrar.length === 0) {
-            console.log('⚠️ [GalleryManager] Sin imágenes para mostrar');
-            return false; // Usar galería original
-        }
-
-        const modalWrapper = modalManager.getModalWrapper();
-        if (!modalWrapper) {
-
-            return false;
-        }
-
-        const card = modalWrapper.querySelector('.order-detail-card');
-        if (card) card.style.display = 'none';
-
-        let galeria = document.getElementById('galeria-modal-costura');
-        const container = modalManager.getModalContainer();
-
-        if (!galeria && container) {
-            galeria = document.createElement('div');
-            galeria.id = 'galeria-modal-costura';
-            galeria.style.cssText = `
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-                min-height: 400px;
-                max-height: 600px;
-                overflow-y: auto;
-                background: #ffffff;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            `;
-            container.appendChild(galeria);
-        }
-
-        if (galeria) {
-            galeria.style.display = 'flex';
-            
-            // Ocultar botón X de cierre de factura
-            let btnCerrarFactura = document.getElementById('close-receipt-btn');
-            
-            // Si no existe por ID, buscar por el texto "✕" dentro del modal overlay o el más reciente
-            if (!btnCerrarFactura) {
-                // Primero buscar dentro del modal-factura-overlay
-                const overlay = document.getElementById('modal-factura-overlay');
-                if (overlay) {
-                    const buttonsInOverlay = overlay.querySelectorAll('button');
-                    btnCerrarFactura = Array.from(buttonsInOverlay).find(btn => btn.textContent.includes('✕'));
-                    console.log('[GalleryManager.abrirGaleria] 🔍 Botón encontrado en overlay:', { btnCerrarFactura, encontrado: !!btnCerrarFactura });
+                    // Si aún no lo encuentra, buscar todos los botones "✕" y tomar el último (más reciente)
+                    if (!btnCerrarFactura) {
+                        const allXButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.includes('✕'));
+                        console.log('[GalleryManager.abrirGaleria] 🔍 Total botones "✕" encontrados:', allXButtons.length);
+                        if (allXButtons.length > 0) {
+                            btnCerrarFactura = allXButtons[allXButtons.length - 1]; // Último (más reciente)
+                            console.log('[GalleryManager.abrirGaleria] 🔍 Usando botón más reciente');
+                        }
+                    }
+                } else {
+                    console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado por ID');
                 }
                 
-                // Si aún no lo encuentra, buscar todos los botones "✕" y tomar el último (más reciente)
-                if (!btnCerrarFactura) {
-                    const allXButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.includes('✕'));
-                    console.log('[GalleryManager.abrirGaleria] 🔍 Total botones "✕" encontrados:', allXButtons.length);
-                    if (allXButtons.length > 0) {
-                        btnCerrarFactura = allXButtons[allXButtons.length - 1]; // Último (más reciente)
-                        console.log('[GalleryManager.abrirGaleria] 🔍 Usando botón más reciente');
-                    }
+                if (btnCerrarFactura) {
+                    console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado, ocultando...');
+                    btnCerrarFactura.style.display = 'none';
+                    // Guardar referencia global para poder mostrarla después
+                    window.btnFacturaGlobal = btnCerrarFactura;
+                    console.log('[GalleryManager.abrirGaleria] ✅ Botón oculto. Display:', btnCerrarFactura.style.display);
+                } else {
+                    console.warn('[GalleryManager.abrirGaleria] ⚠️ Botón NO encontrado');
                 }
-            } else {
-                console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado por ID');
+                
+                // Renderizar galería
+                this._renderizarGaleria(galeria, fotosParaMostrar);
             }
-            
-            if (btnCerrarFactura) {
-                console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado, ocultando...');
-                btnCerrarFactura.style.display = 'none';
-                // Guardar referencia global para poder mostrarla después
-                window.btnFacturaGlobal = btnCerrarFactura;
-                console.log('[GalleryManager.abrirGaleria] ✅ Botón oculto. Display:', btnCerrarFactura.style.display);
-            } else {
-                console.warn('[GalleryManager.abrirGaleria] ⚠️ Botón NO encontrado');
-            }
-            
-            // Renderizar galería
-            this._renderizarGaleria(galeria, fotosParaMostrar);
-        }
 
-        return true; // Se mostró la galería custom
+            return true; // Se mostró la galería custom
+            
+        } finally {
+            GalleryManager._isOpening = false;
+        }
     }
 
     /**
@@ -257,7 +193,8 @@ export class GalleryManager {
                     onmouseover="this.style.borderColor='#2563eb'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.2)';"
                     onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
                     onclick="abrirModalImagenProcesoGrande(${idx}, ${fotosJSON})">
-                    <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" 
+                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'>⚠️ Error al cargar imagen</div>';">
                 </div>
             `;
         });

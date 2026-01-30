@@ -28,7 +28,13 @@ class PedidoProduccionObserver
      */
     public function created(PedidoProduccion $pedido): void
     {
-        $this->broadcastPedidoChange($pedido, 'created');
+        // TEMPORALMENTE DESHABILITADO PARA EVITAR TIMEOUT DE WEBSOCKET
+        // $this->broadcastPedidoChange($pedido, 'created');
+        
+        Log::warning('[PedidoProduccionObserver] Broadcasting deshabilitado temporalmente para evitar timeout', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+        ]);
     }
 
     /**

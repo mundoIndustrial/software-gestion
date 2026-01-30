@@ -1206,15 +1206,31 @@
         };
         
         // Función para abrir imagen en grande desde la galería
-        window.abrirModalImagenProcesoGrande = function(indice, fotosJSON) {
-            // Importar GalleryManager y llamar su método estático
-            import('./js/modulos/pedidos-recibos/components/GalleryManager.js').then(module => {
-                const { GalleryManager } = module;
-                if (GalleryManager) {
-                    GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
+        window.abrirModalImagenProcesoGrande = (function() {
+            let galleryManagerLoaded = false;
+            let GalleryManager = null;
+            
+            return async function(indice, fotosJSON) {
+                // Si ya está cargado, usar directamente
+                if (galleryManagerLoaded && GalleryManager) {
+                    return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
                 }
-            }).catch(err => console.error('Error cargando GalleryManager:', err));
-        };
+                
+                try {
+                    // Cargar GalleryManager solo una vez
+                    const module = await import('./js/modulos/pedidos-recibos/components/GalleryManager.js');
+                    GalleryManager = module.GalleryManager;
+                    galleryManagerLoaded = true;
+                    
+                    if (GalleryManager) {
+                        return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
+                    }
+                } catch (err) {
+                    console.error('Error cargando GalleryManager:', err);
+                    galleryManagerLoaded = false;
+                }
+            };
+        })();
 
         // ===== FUNCIONES PARA MODAL DE NOVEDADES =====
         window.abrirNovedades = function(ordenId, novedades) {

@@ -43,23 +43,27 @@ class ResolutorImagenesService
         array $datosPrendas,
         callable $registrarUID
     ): array {
+        $inicioTotal = microtime(true);
         $mapeoUidARuta = [];
 
         // CLAVE: Buscar archivos anidados en todos los inputs (no solo allFiles())
+        $inicioExtraccion = microtime(true);
         $todosLosArchivos = $this->buscarArchivosAnidados($request->all());
         $archivosTotal = count($todosLosArchivos);
+        $tiempoExtraccion = round((microtime(true) - $inicioExtraccion) * 1000, 2);
         
-        Log::info('[ResolutorImagenesService] Iniciando extracción de imágenes', [
+        Log::info('[RESOLVER-IMAGENES] 📸 INICIANDO EXTRACCIÓN DE IMÁGENES', [
             'pedido_id' => $pedidoId,
             'prendas_count' => count($datosPrendas),
             'archivos_en_request' => $archivosTotal,
-            'keys_request' => array_keys($todosLosArchivos),
+            'tiempo_extraccion_ms' => $tiempoExtraccion,
+            'timestamp' => now(),
         ]);
 
         // Validación: Verificar que hay archivos en la request si hay imágenes en el DTO
         $totalImagenesEnDTO = $this->contarImagenesEnDTO($datosPrendas);
         if ($totalImagenesEnDTO > 0 && $archivosTotal === 0) {
-            Log::error('[ResolutorImagenesService] ❌ ERROR CRÍTICO: Se esperan imágenes pero FormData vacío', [
+            Log::error('[RESOLVER-IMAGENES] ❌ ERROR CRÍTICO: Se esperan imágenes pero FormData vacío', [
                 'imagenes_en_dto' => $totalImagenesEnDTO,
                 'archivos_en_request' => $archivosTotal,
                 'esto_explicaría_por_qué_no_se_guardan_imágenes' => 'Los archivos no llegaron en FormData'
@@ -69,11 +73,12 @@ class ResolutorImagenesService
         // ========================================
         // PROCESAR IMÁGENES DE PRENDAS
         // ========================================
+        $inicioProceso = microtime(true);
         foreach ($datosPrendas as $prendaIdx => $prenda) {
             $prendaUID = $prenda['uid'] ?? null;
             
             if (!$prendaUID) {
-                Log::warning('[ResolutorImagenesService] Prenda sin UID', ['idx' => $prendaIdx]);
+                Log::warning('[RESOLVER-IMAGENES] Prenda sin UID', ['idx' => $prendaIdx]);
                 continue;
             }
 
@@ -98,7 +103,7 @@ class ResolutorImagenesService
                     $telaUID = $tela['uid'] ?? null;
                     
                     if (!$telaUID) {
-                        Log::warning('[ResolutorImagenesService] Tela sin UID', [
+                        Log::warning('[RESOLVER-IMAGENES] Tela sin UID', [
                             'prenda_idx' => $prendaIdx,
                             'tela_idx' => $telaIdx
                         ]);
@@ -128,7 +133,7 @@ class ResolutorImagenesService
                     $procesoUID = $proceso['uid'] ?? null;
                     
                     if (!$procesoUID) {
-                        Log::warning('[ResolutorImagenesService] Proceso sin UID', [
+                        Log::warning('[RESOLVER-IMAGENES] Proceso sin UID', [
                             'prenda_idx' => $prendaIdx,
                             'proceso_idx' => $procesoIdx
                         ]);
@@ -155,12 +160,18 @@ class ResolutorImagenesService
                 }
             }
         }
+        
+        $tiempoProceso = round((microtime(true) - $inicioProceso) * 1000, 2);
+        $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-        Log::info('[ResolutorImagenesService] ✅ Extracción completada', [
+        Log::info('[RESOLVER-IMAGENES] ✅ Extracción completada', [
             'pedido_id' => $pedidoId,
             'imagenes_procesadas' => count($mapeoUidARuta),
             'imagenes_esperadas' => $totalImagenesEnDTO,
             'diferencia' => $totalImagenesEnDTO - count($mapeoUidARuta),
+            'tiempo_total_ms' => $tiempoTotal,
+            'tiempo_proceso_ms' => $tiempoProceso,
+            'resumen' => "Extracción archivos: {$tiempoExtraccion}ms | Procesamiento: {$tiempoProceso}ms | TOTAL: {$tiempoTotal}ms",
         ]);
 
         return $mapeoUidARuta;
@@ -190,6 +201,8 @@ class ResolutorImagenesService
         callable $registrarUID
     ): void {
         $imagenIdx = 0;
+        $inicioGrupo = microtime(true);
+        $imagenesGrupoProcesadas = 0;
 
         foreach ($imagenesMetadata as $imagenMetadata) {
             $imagenUID = $imagenMetadata['uid'] ?? null;
@@ -197,7 +210,7 @@ class ResolutorImagenesService
             $formDataKey = $imagenMetadata['formdata_key'] ?? null;
 
             if (!$imagenUID || !$nombreArchivo) {
-                Log::warning('[ResolutorImagenesService] Imagen sin UID o nombre', [
+                Log::warning('[RESOLVER-IMAGENES] Imagen sin UID o nombre', [
                     'form_prefix' => $formPrefix,
                     'imagen_idx' => $imagenIdx,
                     'parent_uid' => $parentUID
@@ -222,6 +235,7 @@ class ResolutorImagenesService
 
             if ($archivo && $archivo instanceof UploadedFile) {
                 try {
+                    $inicioGuardado = microtime(true);
                     // Procesar y guardar imagen
                     $resultado = $this->imageUploadService->guardarImagenDirecta(
                         $archivo,
@@ -230,6 +244,7 @@ class ResolutorImagenesService
                         null,
                         null
                     );
+                    $tiempoGuardado = round((microtime(true) - $inicioGuardado) * 1000, 2);
 
                     // Mapear UID → ruta final
                     $rutaFinal = $resultado['webp'];
@@ -238,27 +253,40 @@ class ResolutorImagenesService
                     // Notificar al callback (para actualizar DTO u otros)
                     $registrarUID($imagenUID, $rutaFinal);
 
-                    Log::debug('[ResolutorImagenesService] Imagen procesada', [
+                    Log::debug('[RESOLVER-IMAGENES] ✅ Imagen procesada', [
                         'imagen_uid' => $imagenUID,
                         'ruta' => $rutaFinal,
                         'parent_uid' => $parentUID,
+                        'tiempo_guardado_ms' => $tiempoGuardado,
                     ]);
+                    
+                    $imagenesGrupoProcesadas++;
 
                 } catch (\Exception $e) {
-                    Log::error('[ResolutorImagenesService] Error procesando imagen', [
+                    Log::error('[RESOLVER-IMAGENES] ❌ Error procesando imagen', [
                         'imagen_uid' => $imagenUID,
                         'error' => $e->getMessage(),
-                        'form_key' => $formKey,
+                        'form_key' => $formKey ?? 'N/A',
                     ]);
                 }
             } else {
-                Log::warning('[ResolutorImagenesService] Archivo no encontrado en Request', [
-                    'form_key' => $formKey,
+                Log::warning('[RESOLVER-IMAGENES] ⚠️ Archivo no encontrado en Request', [
+                    'form_key' => $formKey ?? 'N/A',
                     'imagen_uid' => $imagenUID,
+                    'nombre_archivo' => $nombreArchivo,
                 ]);
             }
 
             $imagenIdx++;
+        }
+        
+        $tiempoGrupo = round((microtime(true) - $inicioGrupo) * 1000, 2);
+        if ($imagenesGrupoProcesadas > 0) {
+            Log::debug('[RESOLVER-IMAGENES] 📦 Grupo completado', [
+                'form_prefix' => $formPrefix,
+                'imagenes_procesadas' => $imagenesGrupoProcesadas,
+                'tiempo_grupo_ms' => $tiempoGrupo,
+            ]);
         }
     }
 

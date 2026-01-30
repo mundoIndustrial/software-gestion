@@ -48,13 +48,24 @@ class ItemFormCollector {
                 tipo: item.tipo,
                 nombre_prenda: item.nombre_prenda || item.nombre_producto || item.prenda?.nombre || item.nombre || '',
                 descripcion: item.descripcion || '',
-                origen: item.origen || 'bodega',
+                origen: item.origen || 'bodega',  // Keep this as fallback for items without origen
+                de_bodega: item.de_bodega,  // Preserve de_bodega from PrendaFormCollector
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
                 cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
+            
+            // DEBUG: Log para verificar valores de origen y de_bodega
+            console.log('[ItemFormCollector] 📦 Item procesado:', {
+                itemIndex,
+                nombre_prenda: baseItem.nombre_prenda,
+                origen_orig: item.origen,
+                origen_final: baseItem.origen,
+                de_bodega_orig: item.de_bodega,
+                de_bodega_final: baseItem.de_bodega
+            });
             
             if (item.pedido_produccion_id) {
                 baseItem.pedido_produccion_id = item.pedido_produccion_id;

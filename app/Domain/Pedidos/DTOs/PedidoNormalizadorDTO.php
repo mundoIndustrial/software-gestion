@@ -2,6 +2,8 @@
 
 namespace App\Domain\Pedidos\DTOs;
 
+use App\Domain\Pedidos\Services\ItemTransformerService;
+
 /**
  * PedidoNormalizadorDTO
  * 
@@ -87,12 +89,14 @@ class PedidoNormalizadorDTO
      */
     private static function normalizarPrendas(array $prendas): array
     {
-        return array_map(function ($prenda) {
+        $itemTransformer = app(ItemTransformerService::class);
+        
+        return array_map(function ($prenda) use ($itemTransformer) {
             return [
                 'uid' => $prenda['uid'] ?? null,
                 'nombre_prenda' => trim($prenda['nombre_prenda'] ?? ''),
                 'descripcion' => trim($prenda['descripcion'] ?? ''),
-                'de_bodega' => isset($prenda['de_bodega']) ? (int)$prenda['de_bodega'] : 1,  // Default: 1 (bodega)
+                'de_bodega' => $itemTransformer->determinardeBodega($prenda),  // Use ItemTransformerService to correctly determine de_bodega from origen
                 'cantidad_talla' => $prenda['cantidad_talla'] ?? [],
                 'variaciones' => $prenda['variaciones'] ?? [],
                 'telas' => self::normalizarTelas($prenda['telas'] ?? []),

@@ -50,8 +50,12 @@ class ImageUploadService
         ?string $subcarpeta = null,
         ?string $customFilename = null
     ): array {
+        $inicioTotal = microtime(true);
+        
         // Validar imagen
+        $inicioValidacion = microtime(true);
         $this->validateImage($file);
+        $tiempoValidacion = round((microtime(true) - $inicioValidacion) * 1000, 2);
 
         // NORMALIZAR $tipo: Quitar barras finales y espacios
         $tipo = trim($tipo, "/ \t\n\r\0\x0B");
@@ -67,21 +71,42 @@ class ImageUploadService
             $basePath .= "/{$subcarpeta}";
         }
 
+        Log::debug('[IMAGE-UPLOAD] 📤 Iniciando guardado de imagen', [
+            'pedido_id' => $pedidoId,
+            'tipo' => $tipo,
+            'tipo_singular' => $tipoSingular,
+            'subcarpeta' => $subcarpeta,
+            'filename_original' => $file->getClientOriginalName(),
+            'file_size_kb' => round($file->getSize() / 1024, 2),
+        ]);
+
         // Crear ImageManager con driver GD (Intervention Image v3)
+        $inicioImagen = microtime(true);
         $manager = new ImageManager(new Driver());
         $image = $manager->read($file->getRealPath());
+        $tiempoImagen = round((microtime(true) - $inicioImagen) * 1000, 2);
 
         // Guardar SOLO versión WebP optimizada
+        $inicioWebp = microtime(true);
         $webpFilename = "{$filename}.webp";
         $webpPath = "{$basePath}/{$webpFilename}";
         $encoded = $image->toWebp(self::WEBP_QUALITY);
         Storage::disk('public')->put($webpPath, (string) $encoded);
+        $tiempoWebp = round((microtime(true) - $inicioWebp) * 1000, 2);
+        
+        $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-        Log::info('[ImageUploadService] Imagen guardada directamente', [
+        Log::info('[IMAGE-UPLOAD] ✅ Imagen guardada directamente', [
             'pedido_id' => $pedidoId,
             'tipo' => $tipo,
-            'subcarpeta' => $subcarpeta,
             'ruta_webp' => $webpPath,
+            'tiempo_total_ms' => $tiempoTotal,
+            'desglose' => [
+                'validacion_ms' => $tiempoValidacion,
+                'carga_imagen_ms' => $tiempoImagen,
+                'guardado_webp_ms' => $tiempoWebp,
+            ],
+            'resumen' => "Validación: {$tiempoValidacion}ms | Carga: {$tiempoImagen}ms | WebP: {$tiempoWebp}ms | TOTAL: {$tiempoTotal}ms",
         ]);
 
         return [

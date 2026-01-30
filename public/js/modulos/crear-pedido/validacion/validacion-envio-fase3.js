@@ -124,6 +124,7 @@
                     tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
                     nombre_producto: prenda.nombre_producto || '',
                     descripcion: prenda.descripcion || '',
+                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  // ✅ AGREGADO: origen (bodega=1, confección=0)
                     genero: prenda.genero || '',
                     cantidades: prenda.cantidadesPorTalla || {},
                     // ✅ AGREGADO: recolectar imágenes desde gestor
@@ -160,6 +161,7 @@
                     tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
                     nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
                     descripcion: card.querySelector('.prenda-descripcion')?.value || '',
+                    de_bodega: card.querySelector(`input[name="de_bodega[${index}]"]`)?.checked ? 1 : 0,  // ✅ AGREGADO: origen
                     genero: card.querySelector(`select[name="genero[${index}]"]`)?.value || '',
                     cantidades: {},
                     // ✅ AGREGADO: recolectar imágenes de prenda - extrayendo File objects del input

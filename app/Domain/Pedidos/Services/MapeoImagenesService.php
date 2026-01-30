@@ -86,12 +86,15 @@ class MapeoImagenesService
         int $pedidoId,
         $request
     ): void {
-        Log::info('[MapeoImagenesService] Iniciando mapeo de imágenes', [
+        $inicioTotal = microtime(true);
+        Log::info('[MAPEO-IMAGENES] 📸 INICIANDO MAPEO DE IMÁGENES', [
             'pedido_id' => $pedidoId,
             'prendas' => count($dto->prendas),
+            'timestamp' => now(),
         ]);
 
         // Resolver todas las imágenes (extraer, procesar, mapear)
+        $inicioResolver = microtime(true);
         $mapeoUidARuta = $this->resolutorImagenes->extraerYProcesarImagenes(
             $request,
             $pedidoId,
@@ -100,13 +103,25 @@ class MapeoImagenesService
                 $dto->registrarImagenUID($uid, $ruta);
             }
         );
+        $tiempoResolver = round((microtime(true) - $inicioResolver) * 1000, 2);
 
-        Log::info('[MapeoImagenesService] Mapeo UID→Ruta completado', [
+        Log::info('[MAPEO-IMAGENES] ✅ Mapeo UID→Ruta completado', [
             'imagenes_mapeadas' => count($mapeoUidARuta),
+            'tiempo_resolver_ms' => $tiempoResolver,
         ]);
 
         // Ahora crear registros en BD usando los IDs obtenidos
+        $inicioRegistros = microtime(true);
         $this->crearRegistrosPrendas($dto, $pedidoId, $mapeoUidARuta);
+        $tiempoRegistros = round((microtime(true) - $inicioRegistros) * 1000, 2);
+        
+        $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
+        Log::info('[MAPEO-IMAGENES] ✨ MAPEO COMPLETADO', [
+            'tiempo_total_ms' => $tiempoTotal,
+            'tiempo_resolver_ms' => $tiempoResolver,
+            'tiempo_crear_registros_ms' => $tiempoRegistros,
+            'resumen' => "Resolver: {$tiempoResolver}ms | Registros BD: {$tiempoRegistros}ms | TOTAL: {$tiempoTotal}ms",
+        ]);
     }
 
     /**

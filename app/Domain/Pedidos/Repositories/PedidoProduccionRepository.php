@@ -461,8 +461,10 @@ class PedidoProduccionRepository
                                     'proceso_id' => $proc->id,
                                 ]);
                                 try {
-                                    $imagenesDirectas = \DB::table('pedidos_procesos_imagenes')
-                                        ->where('proceso_prenda_detalle_id', $proc->id)
+                                    $imagenesDirectas = \DB::table('prenda_fotos_pedido')
+                                        ->where('prenda_pedido_id', $proc->prenda_pedido_id ?? $prenda->id)
+                                        ->where('deleted_at', null)
+                                        ->orderBy('orden', 'asc')
                                         ->get();
                                     
                                     if ($imagenesDirectas->count() > 0) {

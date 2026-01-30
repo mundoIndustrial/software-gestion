@@ -22,6 +22,14 @@ class ImagenService
      */
     public function guardarImagenComoWebp(UploadedFile $file, $numeroPedido, string $tipo): string
     {
+        $startTime = microtime(true);
+        \Log::info('[ImagenService] 🔄 Iniciando guardado de imagen', [
+            'tipo' => $tipo,
+            'numero_pedido' => $numeroPedido,
+            'archivo_size' => $file->getSize(),
+            'archivo_nombre' => $file->getClientOriginalName()
+        ]);
+
         try {
             // Generar nombre Ãºnico
             $timestamp = now()->format('YmdHis');
@@ -39,23 +47,54 @@ class ImagenService
             $rutaCompleta = storage_path("app/public/{$carpeta}");
 
             // Crear directorio si no existe
+            $dirStartTime = microtime(true);
             if (!file_exists($rutaCompleta)) {
+                \Log::info('[ImagenService] 📁 Creando directorio', ['ruta' => $rutaCompleta]);
                 mkdir($rutaCompleta, 0755, true);
             }
+            $dirTime = (microtime(true) - $dirStartTime) * 1000;
+            \Log::info('[ImagenService] ✅ Directorio listo', ['tiempo_ms' => round($dirTime, 2)]);
 
             // Procesar y guardar imagen como WebP
+            $processStartTime = microtime(true);
+            \Log::info('[ImagenService] 🖼️ Iniciando procesamiento de imagen');
+            
             $imagen = Image::make($file->getRealPath());
+            $makeTime = (microtime(true) - $processStartTime) * 1000;
+            \Log::info('[ImagenService] ✅ Image::make() completado', ['tiempo_ms' => round($makeTime, 2)]);
+            
+            $encodeStartTime = microtime(true);
             $imagen->encode('webp', 85); // Calidad 85%
+            $encodeTime = (microtime(true) - $encodeStartTime) * 1000;
+            \Log::info('[ImagenService] ✅ Encode WebP completado', ['tiempo_ms' => round($encodeTime, 2)]);
+            
+            $saveStartTime = microtime(true);
             $imagen->save("{$rutaCompleta}/{$nombreArchivo}");
+            $saveTime = (microtime(true) - $saveStartTime) * 1000;
+            \Log::info('[ImagenService] ✅ Save completado', ['tiempo_ms' => round($saveTime, 2)]);
+
+            $totalTime = (microtime(true) - $startTime) * 1000;
+            \Log::info('[ImagenService] ✅ Imagen guardada exitosamente', [
+                'ruta' => "{$carpeta}/{$nombreArchivo}",
+                'tiempo_total_ms' => round($totalTime, 2),
+                'desglose' => [
+                    'directorio_ms' => round($dirTime, 2),
+                    'make_ms' => round($makeTime, 2),
+                    'encode_ms' => round($encodeTime, 2),
+                    'save_ms' => round($saveTime, 2)
+                ]
+            ]);
 
             // Retornar ruta relativa
             return "{$carpeta}/{$nombreArchivo}";
 
         } catch (\Exception $e) {
-            \Log::error('Error guardando imagen como WebP', [
+            $totalTime = (microtime(true) - $startTime) * 1000;
+            \Log::error('[ImagenService] ❌ Error guardando imagen como WebP', [
                 'error' => $e->getMessage(),
                 'tipo' => $tipo,
-                'numero_pedido' => $numeroPedido
+                'numero_pedido' => $numeroPedido,
+                'tiempo_transcurrido_ms' => round($totalTime, 2)
             ]);
             throw new \RuntimeException('No se pudo guardar la imagen');
         }

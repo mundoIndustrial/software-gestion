@@ -119,6 +119,7 @@ class PrendaFormCollector {
                 tipo: 'prenda_nueva',
                 nombre_prenda: nombre,
                 descripcion: descripcion || '',
+                origen: origenSelect,  // Add the origen field
                 de_bodega: de_bodega,  // 1 para bodega, 0 para confección
                 // Imágenes de prenda copiadas del storage
                 imagenes: imagenesCopia,
@@ -134,6 +135,8 @@ class PrendaFormCollector {
             // DEBUG: Log para ver qué se capturó
             console.log('[prenda-form-collector] 📦 Datos capturados en prendaData:');
             console.log('[prenda-form-collector]   - nombre_prenda:', prendaData.nombre_prenda);
+            console.log('[prenda-form-collector]   - origen:', prendaData.origen);
+            console.log('[prenda-form-collector]   - de_bodega:', prendaData.de_bodega);
             console.log('[prenda-form-collector]   - cantidad_talla:', prendaData.cantidad_talla);
             console.log('[prenda-form-collector]   - procesos:', prendaData.procesos);
             console.log('[prenda-form-collector]   - DESGLOSE cantidad_talla:');
