@@ -8,7 +8,9 @@ use App\Models\PrendaPedido;
 use App\Models\MaterialesOrdenInsumos;
 use App\Models\PedidoAnchoMetraje;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InsumosController extends Controller
 {
@@ -305,24 +307,58 @@ class InsumosController extends Controller
 
     /**
      * Verificar que el usuario tenga rol insumos, admin, supervisor_planta o patronista
+     * Mejorado con validación más robusta
      */
     private function verificarRolInsumos($user)
     {
-        // Permitir admin, supervisor_planta y patronista
-        if ($user->role && is_object($user->role)) {
-            $roleName = $user->role->name;
-            if (in_array($roleName, ['admin', 'supervisor_planta', 'patronista'])) {
-                return;
+        if (!$user) {
+            abort(401, 'Usuario no autenticado');
+        }
+        
+        // Lista de roles permitidos para este módulo
+        $rolesPermitidos = ['admin', 'supervisor_planta', 'patronista', 'insumos'];
+        
+        // Verificar usando el método del framework si está disponible
+        if (method_exists($user, 'hasAnyRole')) {
+            if (!$user->hasAnyRole($rolesPermitidos)) {
+                Log::warning('Acceso denegado - rol no permitido', [
+                    'user_id' => $user->id,
+                    'user_roles' => $user->roles()->pluck('name')->toArray(),
+                    'roles_permitidos' => $rolesPermitidos
+                ]);
+                abort(403, 'No autorizado para acceder a este módulo.');
+            }
+            return;
+        }
+        
+        // Fallback: Verificación manual para compatibilidad
+        $userRole = null;
+        
+        // Intentar obtener el rol del usuario de diferentes formas
+        if (isset($user->role)) {
+            if (is_string($user->role)) {
+                $userRole = $user->role;
+            } elseif (is_object($user->role) && isset($user->role->name)) {
+                $userRole = $user->role->name;
             }
         }
-
-        // Verificar rol insumos o patronista
-        $isInsumos = $user->role === 'insumos' || 
-                    (is_object($user->role) && $user->role->name === 'insumos');
-        $isPatronista = $user->role === 'patronista' || 
-                       (is_object($user->role) && $user->role->name === 'patronista');
         
-        if (!$isInsumos && !$isPatronista) {
+        // Si no se encuentra el rol, denegar acceso
+        if (!$userRole) {
+            Log::warning('Acceso denegado - no se pudo determinar el rol', [
+                'user_id' => $user->id,
+                'user_data' => $user->toArray()
+            ]);
+            abort(403, 'No autorizado para acceder a este módulo.');
+        }
+        
+        // Verificar si el rol está en la lista de permitidos
+        if (!in_array($userRole, $rolesPermitidos)) {
+            Log::warning('Acceso denegado - rol no permitido', [
+                'user_id' => $user->id,
+                'user_role' => $userRole,
+                'roles_permitidos' => $rolesPermitidos
+            ]);
             abort(403, 'No autorizado para acceder a este módulo.');
         }
     }
@@ -619,30 +655,71 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
             
-            // Buscar el pedido por número
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            // Buscar el pedido por número con bloqueo para evitar concurrencia
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)
+                ->lockForUpdate()
+                ->firstOrFail();
             
-            // Validar datos
+            // Validar datos con todos los estados permitidos
             $validated = $request->validate([
-                'estado' => 'required|string|in:No iniciado,En Ejecución',
+                'estado' => [
+                    'required',
+                    'string',
+                    Rule::in(['No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS'])
+                ],
             ]);
             
-            // Cambiar el estado y el área
-            $pedido->estado = $validated['estado'];
-            $pedido->area = 'Corte'; // Establecer el área a Corte
+            // Validar transición de estado
+            $estadoActual = $pedido->estado;
+            $nuevoEstado = $validated['estado'];
+            
+            // No permitir cambiar al mismo estado
+            if ($estadoActual === $nuevoEstado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pedido ya se encuentra en el estado "' . $nuevoEstado . '"'
+                ], 422);
+            }
+            
+            // Validar transiciones permitidas
+            if (!$this->esTransicionPermitida($estadoActual, $nuevoEstado, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transición de estado no permitida: de "' . $estadoActual . '" a "' . $nuevoEstado . '"'
+                ], 422);
+            }
+            
+            // Determinar el área según el nuevo estado
+            $nuevaArea = $this->determinarAreaPorEstado($nuevoEstado);
+            
+            // Guardar estado anterior para logging
+            $estadoAnterior = $pedido->estado;
+            
+            // Actualizar estado y área
+            $pedido->estado = $nuevoEstado;
+            $pedido->area = $nuevaArea;
             $pedido->save();
             
-            \Log::info("🔄 Estado del pedido {$numeroPedido} cambiado a: {$validated['estado']} y área a: Corte", [
+            // Logging sin emojis para mejor compatibilidad
+            Log::info('Estado del pedido cambiado', [
+                'numero_pedido' => $numeroPedido,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $nuevoEstado,
+                'area_anterior' => $pedido->getOriginal('area'),
+                'area_nueva' => $nuevaArea,
                 'usuario_id' => $user->id,
                 'usuario_nombre' => $user->name,
+                'timestamp' => now()->toISOString()
             ]);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido aprobado correctamente. Estado: ' . $validated['estado'] . ', Área: Corte',
-                'nuevo_estado' => $validated['estado'],
-                'nueva_area' => 'Corte'
+                'message' => 'Estado actualizado correctamente',
+                'estado_anterior' => $estadoAnterior,
+                'nuevo_estado' => $nuevoEstado,
+                'nueva_area' => $nuevaArea
             ]);
+            
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -655,14 +732,60 @@ class InsumosController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error al cambiar estado del pedido: ' . $e->getMessage(), [
+            Log::error('Error al cambiar estado del pedido', [
                 'numero_pedido' => $numeroPedido,
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+                'message' => 'Error al cambiar el estado'
             ], 500);
+        }
+    }
+    
+    /**
+     * Validar si la transición de estado es permitida
+     */
+    private function esTransicionPermitida($estadoActual, $nuevoEstado, $user)
+    {
+        // Reglas de transición por rol y estado actual
+        
+        // Desde PENDIENTE_INSUMOS: Solo puede ir a "No iniciado" o "En Ejecución"
+        if ($estadoActual === 'PENDIENTE_INSUMOS') {
+            return in_array($nuevoEstado, ['No iniciado', 'En Ejecución']);
+        }
+        
+        // Desde "No iniciado": Puede ir a "En Ejecución"
+        if ($estadoActual === 'No iniciado') {
+            return $nuevoEstado === 'En Ejecución';
+        }
+        
+        // Desde "En Ejecución": No permite cambios hacia atrás (solo casos especiales)
+        if ($estadoActual === 'En Ejecución') {
+            // Solo admin o supervisor_planta pueden revertir estados
+            return $user->hasAnyRole(['admin', 'supervisor_planta']) && 
+                   in_array($nuevoEstado, ['No iniciado', 'PENDIENTE_INSUMOS']);
+        }
+        
+        // Otros estados: no permiten cambios
+        return false;
+    }
+    
+    /**
+     * Determinar el área según el estado
+     */
+    private function determinarAreaPorEstado($estado)
+    {
+        switch ($estado) {
+            case 'No iniciado':
+                return 'Corte';
+            case 'En Ejecución':
+                return 'Corte';
+            case 'PENDIENTE_INSUMOS':
+                return 'Insumos';
+            default:
+                return 'Corte';
         }
     }
 
