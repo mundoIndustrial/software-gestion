@@ -1027,6 +1027,12 @@ function limpiarFormularioPrendaNueva() {
     const form = document.getElementById('form-prenda-nueva');
     if (form) {
         form.reset();
+        
+        // Establecer selector de origen a 'confeccion' por defecto
+        const origenSelect = document.getElementById('nueva-prenda-origen-select');
+        if (origenSelect) {
+            origenSelect.value = 'confeccion';
+        }
     }
     
     // Limpiar previsualizaciones de fotos

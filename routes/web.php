@@ -539,7 +539,6 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     Route::get('/pedidos/{id}/factura-datos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerDatosFactura'])
         ->where('id', '[0-9]+')
         ->name('pedidos.factura-datos');
-    Route::get('/pedidos/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])->where('id', '[0-9]+')->name('pedidos.api.recibos-datos');
     Route::get('/prendas-pedido/{prendaPedidoId}/fotos', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'obtenerFotosPrendaPedido'])->where('prendaPedidoId', '[0-9]+')->name('prendas-pedido.fotos');
     
     // API para listado de pedidos en tiempo real

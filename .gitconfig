@@ -1,0 +1,6 @@
+[core]
+    autocrlf = true
+[pull]
+    rebase = true
+[branch]
+    autosetuprebase = always

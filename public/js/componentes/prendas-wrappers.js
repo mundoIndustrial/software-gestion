@@ -518,6 +518,12 @@ function limpiarFormulario() {
 if (!window.mostrarGaleriaImagenesPrenda) {
     window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indiceInicial = 0) {
         console.log('🖼️ [mostrarGaleriaImagenesPrenda] Abriendo galería con', imagenes?.length || 0, 'imágenes');
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Dimensiones de pantalla:', {
+            vw: window.innerWidth,
+            vh: window.innerHeight,
+            '90vw': window.innerWidth * 0.9,
+            '90vh': window.innerHeight * 0.9
+        });
         
         if (!imagenes || imagenes.length === 0) {
             console.warn('⚠️ No hay imágenes para mostrar');
@@ -529,6 +535,9 @@ if (!window.mostrarGaleriaImagenesPrenda) {
             src: img.previewUrl || img.url || img.ruta || img.blobUrl || '',
             ...img
         })).filter(img => img.src);
+        
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Imágenes válidas:', imagenesValidas.length);
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Primera imagen src:', imagenesValidas[0]?.src);
         
         if (imagenesValidas.length === 0) {
             console.warn('⚠️ No hay imágenes con URLs válidas');
@@ -547,9 +556,36 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         const imgElement = document.createElement('img');
         imgElement.src = imagenesValidas[indiceActual].src;
         imgElement.style.cssText = `
-            max-width: 90vw; max-height: 80vh; object-fit: contain; 
+            min-width: 80vw; min-height: 60vh; max-width: 95vw; max-height: 90vh; 
+            width: 90vw; height: 70vh; object-fit: cover; 
             border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
         `;
+        
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] CSS aplicado a imgElement:', imgElement.style.cssText);
+        console.log('🖼️ [mostrarGaleriaImagenesPrenda] Tamaño calculado:', {
+            'min-width': '80vw = ' + (window.innerWidth * 0.80) + 'px',
+            'min-height': '60vh = ' + (window.innerHeight * 0.60) + 'px',
+            'width': '90vw = ' + (window.innerWidth * 0.90) + 'px',
+            'height': '70vh = ' + (window.innerHeight * 0.70) + 'px',
+            'max-width': '95vw = ' + (window.innerWidth * 0.95) + 'px',
+            'max-height': '90vh = ' + (window.innerHeight * 0.90) + 'px'
+        });
+        
+        // Agregar evento load para verificar dimensiones reales
+        imgElement.onload = function() {
+            console.log('🖼️ [mostrarGaleriaImagenesPrenda] Imagen cargada - Dimensiones reales:', {
+                naturalWidth: this.naturalWidth,
+                naturalHeight: this.naturalHeight,
+                displayWidth: this.offsetWidth,
+                displayHeight: this.offsetHeight,
+                computedStyle: window.getComputedStyle(this).width,
+                computedHeight: window.getComputedStyle(this).height
+            });
+        };
+        
+        imgElement.onerror = function() {
+            console.error('🖼️ [mostrarGaleriaImagenesPrenda] Error al cargar imagen:', this.src);
+        };
         
         // Toolbar
         const toolbar = document.createElement('div');

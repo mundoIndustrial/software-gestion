@@ -196,7 +196,7 @@ function openFilterModal(columnName) {
             
             // Cargar datos de todos los pedidos
             Promise.all(pedidoIds.map(id => 
-                fetch(`/asesores/pedidos/${id}/recibos-datos`)
+                fetch(`/pedidos-public/${id}/recibos-datos`)
                     .then(r => r.json())
                     .catch(e => {
 

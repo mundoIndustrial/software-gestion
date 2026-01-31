@@ -16,6 +16,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     console.log('   - imagenes recibidas:', imagenes?.length || 0);
     console.log('   - prendaIndex:', prendaIndex);
     console.log('   - indiceInicial:', indiceInicial);
+    console.log('🖼️ [galeria-imagenes-prenda] Dimensiones de pantalla:', {
+        vw: window.innerWidth,
+        vh: window.innerHeight,
+        '98vw': window.innerWidth * 0.98,
+        '90vh': window.innerHeight * 0.90
+    });
     
     //  Detectar si estamos creando o editando
     const estamosCriando = window.gestionItemsUI?.prendaEditIndex === null;
@@ -169,9 +175,34 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     
     const imgModal = document.createElement('img');
     imgModal.src = imagenesConBlobUrl[indiceActual].blobUrl;
-    imgModal.style.cssText = 'width: 95vw; height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
+    imgModal.style.cssText = 'width: 98vw; height: 90vh; max-width: 98vw; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.7);';
+    
+    console.log('🖼️ [galeria-imagenes-prenda] CSS aplicado a imgModal:', imgModal.style.cssText);
+    console.log('🖼️ [galeria-imagenes-prenda] Tamaño calculado:', {
+        'width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
+        'height': '90vh = ' + (window.innerHeight * 0.90) + 'px',
+        'max-width': '98vw = ' + (window.innerWidth * 0.98) + 'px',
+        'max-height': '90vh = ' + (window.innerHeight * 0.90) + 'px'
+    });
+    console.log('🖼️ [galeria-imagenes-prenda] Image src:', imgModal.src);
     
     imgContainer.appendChild(imgModal);
+    
+    // Agregar evento load para verificar dimensiones reales
+    imgModal.onload = function() {
+        console.log('🖼️ [galeria-imagenes-prenda] Imagen cargada - Dimensiones reales:', {
+            naturalWidth: this.naturalWidth,
+            naturalHeight: this.naturalHeight,
+            displayWidth: this.offsetWidth,
+            displayHeight: this.offsetHeight,
+            computedStyle: window.getComputedStyle(this).width,
+            computedHeight: window.getComputedStyle(this).height
+        });
+    };
+    
+    imgModal.onerror = function() {
+        console.error('🖼️ [galeria-imagenes-prenda] Error al cargar imagen:', this.src);
+    };
     
     //  Crear contador ANTES de la función actualizarImagen
     const contador = document.createElement('span');
