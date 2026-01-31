@@ -38,9 +38,24 @@ class CargadorPrendasCotizacion {
                 fotos_count: data.prenda?.fotos?.length || 0
             });
             
-            // DEBUG: Ver procesos completos
+            // DEBUG: Ver procesos completos - DIAGNÓSTICO DETALLADO
             console.log('[CargadorPrendasCotizacion] 🔍 PROCESOS COMPLETOS DEL BACKEND:');
             console.log(data.procesos);
+            
+            // Análisis detallado de procesos
+            console.log('[CargadorPrendasCotizacion] 📊 ANÁLISIS DE PROCESOS:');
+            console.log('  - Tipo de data.procesos:', typeof data.procesos);
+            console.log('  - ¿Es array?', Array.isArray(data.procesos));
+            console.log('  - ¿Es objeto?', data.procesos && typeof data.procesos === 'object');
+            console.log('  - Claves:', Object.keys(data.procesos || {}));
+            console.log('  - Contenido completo JSON:', JSON.stringify(data.procesos, null, 2));
+            
+            // Ver estructura completa de data
+            console.log('[CargadorPrendasCotizacion] 🔍 ESTRUCTURA COMPLETA DE DATA:');
+            console.log('  - Keys principales:', Object.keys(data));
+            console.log('  - ¿Tiene procesos?', 'procesos' in data);
+            console.log('  - ¿Tiene prenda?', 'prenda' in data);
+            console.log('  - ¿Tiene cotizacion_id?', 'cotizacion_id' in data);
             
             console.log('[CargadorPrendasCotizacion] 🔍 TELAS RECIBIDAS DEL BACKEND:', data.prenda?.telas);
 

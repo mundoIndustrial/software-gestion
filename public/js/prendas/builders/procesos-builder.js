@@ -115,6 +115,7 @@ class ProcesosBuilder {
 
     /**
      * Construir sección de ubicaciones
+     * Maneja tanto strings como objetos {ubicacion: "texto", descripcion: "texto"}
      * @private
      */
     static _construirUbicaciones(datos) {
@@ -123,13 +124,29 @@ class ProcesosBuilder {
         }
 
         const ubicacionesHTML = datos.ubicaciones
-            .map(ub => `<span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 16px; font-size: 0.85rem; font-weight: 600;">${ub}</span>`)
+            .map(ub => {
+                // Extraer texto según el tipo de dato
+                const texto = typeof ub === 'object' && ub !== null && ub.ubicacion 
+                    ? ub.ubicacion 
+                    : (typeof ub === 'string' ? ub : '');
+                
+                // Si no hay texto válido, no renderizar
+                if (!texto) return '';
+                
+                return `<span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 16px; font-size: 0.85rem; font-weight: 600;">${texto}</span>`;
+            })
+            .filter(html => html) // Eliminar spans vacíos
             .join('');
+
+        // Si no hay ubicaciones válidas después del filtrado, retornar vacío
+        if (!ubicacionesHTML) {
+            return '';
+        }
 
         return `
             <div style="margin-bottom: 0.75rem;">
                 <strong style="color: #374151; display: block; margin-bottom: 0.5rem;">
-                    <i class="fas fa-location-arrow" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Ubicaciones:
+                    <i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Ubicaciones:
                 </strong>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                     ${ubicacionesHTML}

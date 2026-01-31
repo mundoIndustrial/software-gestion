@@ -411,11 +411,22 @@ window.PrendaCardService = {
             
             let ubicacionesHTML = '';
             if (datos.ubicaciones && datos.ubicaciones.length > 0) {
-                ubicacionesHTML = datos.ubicaciones.map(ubi => 
-                    `<span style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">
-                        <i class="fas fa-map-marker-alt" style="margin-right: 0.25rem;"></i>${ubi}
-                    </span>`
-                ).join('');
+                ubicacionesHTML = datos.ubicaciones
+                    .map(ubi => {
+                        // Extraer texto según el tipo de dato
+                        const texto = typeof ubi === 'object' && ubi !== null && ubi.ubicacion 
+                            ? ubi.ubicacion 
+                            : (typeof ubi === 'string' ? ubi : '');
+                        
+                        // Si no hay texto válido, no renderizar
+                        if (!texto) return '';
+                        
+                        return `<span style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">
+                            <i class="fas fa-map-marker-alt" style="margin-right: 0.25rem;"></i>${texto}
+                        </span>`;
+                    })
+                    .filter(html => html) // Eliminar spans vacíos
+                    .join('');
             }
             
             let tallasHTML = '';

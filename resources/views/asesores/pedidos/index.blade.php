@@ -110,6 +110,9 @@
 
 @push('scripts')
 
+<!-- ✅ STORAGE WRAPPER: Protege acceso a localStorage/sessionStorage evitando errores de contexto -->
+<script src="{{ asset('js/storage-wrapper.js') }}"></script>
+
 <!-- ✅ PRELOADER: Precarga en background para evitar delays en primera apertura -->
 <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
 

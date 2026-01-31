@@ -8,6 +8,7 @@ class PrendaEditor {
         this.notificationService = options.notificationService;
         this.modalId = options.modalId || 'modal-agregar-prenda-nueva';
         this.prendaEditIndex = null;
+        this.esNuevaPrendaDesdeCotizacion = false; // 🔴 NUEVO: Detectar si es nueva prenda desde cotización
     }
 
     /**
@@ -62,15 +63,28 @@ class PrendaEditor {
             prendaIndex,
             nombre: prenda.nombre_prenda,
             tieneProcesos: !!prenda.procesos,
-            countProcesos: prenda.procesos?.length || 0
+            countProcesos: prenda.procesos?.length || 0,
+            esNuevaDesdeCotz: prendaIndex === null  // 🔴 NUEVO: Detectar
         });
+        
+        // 🧹 LIMPIAR ESTADO DE TELAS DE LA PRENDA ANTERIOR
+        console.log('🧹 [CARGAR-PRENDA] Limpiando estado de telas anterior...');
+        window.telasAgregadas = [];
+        window.telasFotosCargadas = {};
+        window.telasParaGuardar = [];
+        console.log('🧹 [CARGAR-PRENDA] Estado de telas limpiado: telasAgregadas=[], telasFotosCargadas={}');
+        
+        // 🔴 NUEVO: Detectar si es nueva prenda desde cotización (prendaIndex === null)
+        this.esNuevaPrendaDesdeCotizacion = prendaIndex === null;
+        console.log('[CARGAR-PRENDA] 🔴 esNuevaPrendaDesdeCotizacion:', this.esNuevaPrendaDesdeCotizacion);
         
         // Guardar referencia global para detectar si es cotización
         window.prendaActual = prenda;
         console.log('[cargarTallasYCantidades] 📋 window.prendaActual asignado:', {
             cotizacion_id: prenda.cotizacion_id,
             tipo: prenda.tipo,
-            nombre: prenda.nombre_prenda
+            nombre: prenda.nombre_prenda,
+            esNuevaDesdeCotz: this.esNuevaPrendaDesdeCotizacion
         });
         
         if (!prenda) {
@@ -80,7 +94,7 @@ class PrendaEditor {
 
         try {
             this.prendaEditIndex = prendaIndex;
-            this.abrirModal(true, prendaIndex);
+            this.abrirModal(prendaIndex !== null, prendaIndex); // 🔴 MODIFICADO: Pasar prendaIndex !== null como esEdicion
             this.llenarCamposBasicos(prenda);
             this.cargarImagenes(prenda);
             this.cargarTelas(prenda);
@@ -563,6 +577,10 @@ class PrendaEditor {
     cargarTelas(prenda) {
         console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
         
+        // 🧹 LIMPIAR COMPLETAMENTE telasAgregadas ANTES DE PROCESAR
+        prenda.telasAgregadas = prenda.telasAgregadas || [];
+        console.log('[cargarTelas] 🧹 telasAgregadas de prenda ANTES de procesar:', prenda.telasAgregadas);
+        
         // ===== DEBUG: Ver estructura completa de prenda =====
         console.group('[cargarTelas] 🔍 ESTRUCTURA COMPLETA DE PRENDA');
         console.log('prenda.telasAgregadas:', prenda.telasAgregadas);
@@ -1030,10 +1048,34 @@ class PrendaEditor {
             // El storage debe estar limpio para AGREGAR TELAS NUEVAS
             // Esto evita que aparezcan precargadas en el input de agregar
             
-            // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
-            window.telasAgregadas = [...prenda.telasAgregadas];
-            console.log('[cargarTelas] ✅ window.telasAgregadas asignadas:', window.telasAgregadas);
+            // 🧹 Actualizar tabla de telas - ASIGNAR LIMPIAMENTE SIN REUTILIZAR TELAS ANTERIORES
+            window.telasAgregadas = [];  // ← RESETEAR PRIMERO
+            if (Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
+                // Crear copias profundas de las telas para evitar referencias compartidas
+                window.telasAgregadas = prenda.telasAgregadas.map(tela => ({
+                    id: tela.id,
+                    nombre_tela: tela.nombre_tela,
+                    color: tela.color,
+                    referencia: tela.referencia,
+                    descripcion: tela.descripcion || '',
+                    grosor: tela.grosor || '',
+                    composicion: tela.composicion || '',
+                    imagenes: Array.isArray(tela.imagenes) ? [...tela.imagenes] : [],
+                    origen: tela.origen || '',
+                    variante_index: tela.variante_index,
+                    tela_index: tela.tela_index
+                }));
+                console.log('[cargarTelas] ✅ window.telasAgregadas ASIGNADAS (COPIA LIMPIA):', window.telasAgregadas);
+            } else {
+                console.log('[cargarTelas] ⚠️ Sin telas para asignar, window.telasAgregadas está vacío');
+            }
 
+            // 🧹 LIMPIAR TABLA DOM ANTES DE ACTUALIZAR
+            const tbody = document.querySelector('#tabla-telas tbody');
+            if (tbody) {
+                console.log('[cargarTelas] 🧹 Limpiando tabla de telas del DOM');
+                tbody.innerHTML = '';
+            }
             
             // Actualizar tabla de telas
             if (window.actualizarTablaTelas) {

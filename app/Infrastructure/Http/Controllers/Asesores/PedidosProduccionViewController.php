@@ -708,8 +708,25 @@ class PedidosProduccionViewController
             $prenda = $cotizacion->prendas[0];
             $procesosFormato = [];
 
+            // 🔴 DEBUG: Ver estructura de prenda antes de procesar telas
+            \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PRENDA CARGADA:', [
+                'prenda_id' => $prenda->id,
+                'tiene_telas_relation' => !!$prenda->telas,
+                'telas_count' => count($prenda->telas ?? []),
+                'telas_data' => json_encode($prenda->telas),
+                'tiene_telaFotos' => !!$prenda->telaFotos,
+                'telaFotos_count' => count($prenda->telaFotos ?? [])
+            ]);
+
             // PROCESAR TELAS
             $telasFormato = [];
+            \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PROCESANDO TELAS:', [
+                'prenda_id' => $prenda->id,
+                'tiene_telas' => !!$prenda->telas,
+                'telas_count' => count($prenda->telas ?? []),
+                'telas_content' => $prenda->telas ? json_encode($prenda->telas->toArray()) : 'NULL'
+            ]);
+            
             if ($prenda->telas && count($prenda->telas) > 0) {
                 foreach ($prenda->telas as $tela) {
                     $tela_data = [

@@ -494,6 +494,92 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
     }
 };
 
+/**
+ * NUEVA FUNCIÓN: abrirModalDetallePedido
+ * Abre el modal de detalle del pedido con los datos recibidos
+ */
+window.abrirModalDetallePedido = function(datos) {
+    console.log('✅ [abrirModalDetallePedido] Abriendo modal con datos:', datos);
+    
+    // Crear o reutilizar modal
+    let modal = document.getElementById('modalDetallePedidoInfo');
+    if (!modal) {
+        // Crear modal si no existe
+        modal = document.createElement('div');
+        modal.id = 'modalDetallePedidoInfo';
+        modal.className = 'modal-pedido-detalle';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Construir contenido del modal
+    const contenido = `
+        <div style="background: white; border-radius: 8px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #333;">Detalle del Pedido ${datos.numero || datos.id}</h2>
+                <button onclick="document.getElementById('modalDetallePedidoInfo').style.display='none'" 
+                        style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <strong>ID Pedido:</strong> ${datos.id || '-'}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Número Pedido:</strong> ${datos.numero || datos.numero_pedido || '-'}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Cliente:</strong> ${datos.cliente || '-'}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Cliente ID:</strong> ${datos.cliente_id || '-'}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Estado:</strong> <span style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${datos.estado || '-'}</span>
+                </div>
+                ${datos.fecha_creacion ? `
+                <div style="margin-bottom: 15px;">
+                    <strong>Fecha Creación:</strong> ${datos.fecha_creacion}
+                </div>
+                ` : ''}
+                ${datos.cantidad_total ? `
+                <div style="margin-bottom: 15px;">
+                    <strong>Cantidad Total:</strong> ${datos.cantidad_total}
+                </div>
+                ` : ''}
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="document.getElementById('modalDetallePedidoInfo').style.display='none'" 
+                        style="padding: 10px 20px; background: #f0f0f0; border: none; border-radius: 4px; cursor: pointer;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.innerHTML = contenido;
+    modal.style.display = 'flex';
+    
+    // Cerrar al hacer clic fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+};
+
 // Cerrar dropdown y modales al hacer clic fuera
 document.addEventListener('click', function(e) {
     // Cerrar dropdowns

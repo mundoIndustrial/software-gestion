@@ -123,8 +123,14 @@
                                 Agregar EPP
                             </button>
                         </div>
-                        <div id="cotizacion_selected_editable" style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0066cc; border-radius: 4px; display: none;">
-                            <div style="font-size: 0.875rem; color: #1e40af;"><strong>Seleccionada:</strong> <span id="cotizacion_selected_text_editable"></span></div>
+                        <div id="cotizacion_selected_editable" style="margin-top: 0.75rem; padding: 1rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0066cc; border-radius: 4px; display: none; box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);">
+                            <div style="font-size: 0.875rem; color: #1e40af;">
+                                <strong>✓ Cotización Seleccionada:</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #1e40af; margin-top: 0.25rem;" id="cotizacion_selected_text_editable"></div>
+                            <div style="font-size: 0.875rem; color: #0d47a1; margin-top: 0.5rem;">
+                                <strong>Tipo:</strong> <span id="cotizacion_tipo_text_editable" style="background: #dbeafe; padding: 2px 6px; border-radius: 3px; font-weight: 600;"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

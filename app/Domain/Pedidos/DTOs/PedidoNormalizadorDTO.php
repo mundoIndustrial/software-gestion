@@ -192,7 +192,15 @@ class PedidoNormalizadorDTO
         }
         
         return array_filter(
-            array_map(fn($u) => trim((string)$u), $ubicaciones),
+            array_map(function ($u) {
+                // Si es un array con 'ubicacion', extraer ese valor
+                if (is_array($u)) {
+                    $ubicacion_text = $u['ubicacion'] ?? ($u['descripcion'] ?? '');
+                    return trim((string)$ubicacion_text);
+                }
+                // Si es un string, trimear directamente
+                return trim((string)$u);
+            }, $ubicaciones),
             fn($u) => $u !== ''
         );
     }

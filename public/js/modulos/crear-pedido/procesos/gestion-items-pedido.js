@@ -198,14 +198,72 @@ class GestionItemsUI {
 
                 return;
             }
-            const resultado = await this.apiService.eliminarItem(index);
-            if (resultado.success) {
-                this.items = resultado.items;
-                // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
-                const itemsOrdenados = this.obtenerItemsOrdenados();
-                await this.renderer.actualizar(itemsOrdenados);
-                this.notificationService.exito('Ítem eliminado');
+            
+            // 🔍 Buscar qué tipo de item es (prenda o epp)
+            const itemAEliminar = this.ordenItems.find((item, posicion) => {
+                if (item.tipo === 'prenda') {
+                    return this.prendas[item.index] && this.prendas[item.index]._id === undefined && posicion === index;
+                } else if (item.tipo === 'epp') {
+                    return this.epps[item.index] && this.epps[item.index]._id === undefined && posicion === index;
+                }
+                return false;
+            });
+            
+            // 🔍 ALTERNATIVA: buscar por posición en itemsOrdenados
+            const itemsOrdenados = this.obtenerItemsOrdenados();
+            if (index >= 0 && index < itemsOrdenados.length) {
+                const itemEnPosicion = itemsOrdenados[index];
+                
+                // Encontrar qué array y qué índice tiene este item
+                let tipoBuscado, indiceBuscado;
+                
+                if (itemEnPosicion.nombre_prenda) {
+                    // Es una prenda - buscar en this.prendas
+                    tipoBuscado = 'prenda';
+                    indiceBuscado = this.prendas.findIndex(p => p === itemEnPosicion);
+                } else if (itemEnPosicion.nombre_completo || itemEnPosicion.nombre) {
+                    // Es un EPP - buscar en this.epps
+                    tipoBuscado = 'epp';
+                    indiceBuscado = this.epps.findIndex(e => e === itemEnPosicion);
+                }
+                
+                console.log(`[eliminarItem] 🔍 Eliminando item en posición ${index}:`, {
+                    tipo: tipoBuscado,
+                    indiceEnArray: indiceBuscado,
+                    item: itemEnPosicion
+                });
+                
+                // Eliminar de los arrays correspondientes
+                if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
+                    this.prendas.splice(indiceBuscado, 1);
+                    console.log(`[eliminarItem] ✅ Prenda eliminada del array. Quedan: ${this.prendas.length}`);
+                } else if (tipoBuscado === 'epp' && indiceBuscado >= 0) {
+                    this.epps.splice(indiceBuscado, 1);
+                    console.log(`[eliminarItem] ✅ EPP eliminado del array. Quedan: ${this.epps.length}`);
+                }
+                
+                // Eliminar de ordenItems por posición
+                this.ordenItems.splice(index, 1);
+                
+                // Reconstruir índices en ordenItems después de la eliminación
+                let prendaIdx = 0, eppIdx = 0;
+                this.ordenItems.forEach(item => {
+                    if (item.tipo === 'prenda') {
+                        item.index = prendaIdx;
+                        prendaIdx++;
+                    } else if (item.tipo === 'epp') {
+                        item.index = eppIdx;
+                        eppIdx++;
+                    }
+                });
+                
+                console.log(`[eliminarItem] ✅ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
             }
+            
+            // Renderizar items actualizados
+            const itemsActualizados = this.obtenerItemsOrdenados();
+            await this.renderer.actualizar(itemsActualizados);
+            this.notificationService.exito('Ítem eliminado');
         } catch (error) {
             if (this.notificationService) {
                 this.notificationService.error('Error: ' + error.message);
@@ -229,6 +287,14 @@ class GestionItemsUI {
      */
     cerrarModalAgregarPrendaNueva() {
         try {
+            // 🔴 NUEVO: Resetear la bandera de nueva prenda desde cotización
+            if (this.prendaEditor) {
+                this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
+            }
+            
+            // Resetear índice
+            this.prendaEditIndex = null;
+            
             // Intentar cerrar con window.cerrarModalPrendaNueva
             if (typeof window.cerrarModalPrendaNueva === 'function') {
                 window.cerrarModalPrendaNueva();
@@ -363,7 +429,22 @@ class GestionItemsUI {
             }
 
             // Si es edición (prendaEditIndex !== null), actualizar; si no, agregar nueva
-            if (this.prendaEditIndex !== null && this.prendaEditIndex !== undefined) {
+            // 🔴 NUEVO: Detectar si es nueva prenda desde cotización
+            const esNuevaDesdeCotz = this.prendaEditor?.esNuevaPrendaDesdeCotizacion === true;
+            const esEdicionReal = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+            
+            console.log('[guardarPrenda] 🔴 DETECCIÓN CRÍTICA:', {
+                esNuevaDesdeCotz: esNuevaDesdeCotz,
+                esEdicionReal: esEdicionReal,
+                prendaEditIndex: this.prendaEditIndex,
+                esNuevaPrendaDesdeCotizacion: this.prendaEditor?.esNuevaPrendaDesdeCotizacion
+            });
+            
+            // Determinar si vamos a editar o crear nueva
+            const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
+            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? '✏️ EDITAR' : '✅ AGREGAR NUEVA');
+            
+            if (vamosAEditar) {
 
                 
                 // SI ESTAMOS EDITANDO EN UN PEDIDO EXISTENTE, MOSTRAR MODAL DE NOVEDADES

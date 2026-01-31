@@ -21,34 +21,57 @@
             return;
         }
 
+        // ✅ LIMPIAR COMPLETAMENTE el container ANTES de agregar nuevos elementos
+        console.log('[renderizador-cotizaciones] 🧹 Limpiando container...');
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        container.innerHTML = ''; // Asegurar limpieza total
+
         if (!prendas || prendas.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas desde la cotización.</p>
-                </div>
-            `;
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = 'text-align: center; padding: 2rem;';
+            const emptyP = document.createElement('p');
+            emptyP.style.cssText = 'color: #6b7280; margin-bottom: 1rem;';
+            emptyP.textContent = 'No hay prendas agregadas desde la cotización.';
+            emptyDiv.appendChild(emptyP);
+            container.appendChild(emptyDiv);
             return;
         }
 
+        // Crear fragmento para agregar elementos de una sola vez (mejor performance)
+        const fragment = document.createDocumentFragment();
+
         // Usar el mismo sistema que el sistema normal: generarTarjetaPrendaReadOnly
-        let html = '';
         prendas.forEach((prenda, index) => {
             if (typeof window.generarTarjetaPrendaReadOnly === 'function') {
                 console.log('[renderizador-cotizaciones]  Usando generarTarjetaPrendaReadOnly para prenda:', index);
                 const tarjetaHtml = window.generarTarjetaPrendaReadOnly(prenda, index);
                 if (tarjetaHtml) {
-                    html += tarjetaHtml;
+                    // Crear elemento temporal para parsear HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = tarjetaHtml;
+                    // Agregar cada elemento al fragmento
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
                 }
             } else {
                 console.warn('[renderizador-cotizaciones] ⚠️ generarTarjetaPrendaReadOnly no disponible, usando fallback simple');
                 // Fallback simple si el sistema normal no está disponible
-                html += generarTarjetaSimple(prenda, index);
+                const tarjetaHtml = generarTarjetaSimple(prenda, index);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = tarjetaHtml;
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
             }
         });
 
-        container.innerHTML = html;
+        // ✅ Agregar el fragmento completo de una sola vez
+        container.appendChild(fragment);
         
-        console.log('[renderizador-cotizaciones] ✅ Renderizado completado');
+        console.log('[renderizador-cotizaciones] ✅ Renderizado completado - ' + prendas.length + ' prendas renderizadas');
     };
 
     /**
