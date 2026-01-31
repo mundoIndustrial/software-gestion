@@ -780,20 +780,9 @@
                         const accordionId = idMatch[1];
                         console.log(`[GLOBAL-CLICK] ID del accordion: ${accordionId}`);
                         
-                        // Prevenir el onclick original para evitar doble toggle
-                        if (event) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        
-                        // Llamar directamente a la función
-                        try {
-                            console.log(`[GLOBAL-CLICK] Llamando togglePrendaAccordion con ID: ${accordionId}`);
-                            window.togglePrendaAccordion(header, accordionId);
-                            console.log(`[GLOBAL-CLICK] ✅ togglePrendaAccordion ejecutada sin errores`);
-                        } catch (funcError) {
-                            console.error(`[GLOBAL-CLICK] ❌ Error llamando togglePrendaAccordion:`, funcError);
-                        }
+                        // SOLO prevenir el onclick original si queremos controlar completamente el toggle
+                        // Por ahora, dejamos que el onclick original maneje el toggle
+                        console.log(`[GLOBAL-CLICK] 📋 Dejando que el onclick original maneje el toggle`);
                         return;
                     } else {
                         console.error(`[GLOBAL-CLICK] No se pudo extraer el ID del accordion - Regex falló`);

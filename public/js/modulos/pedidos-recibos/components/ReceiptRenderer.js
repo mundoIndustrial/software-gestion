@@ -17,7 +17,7 @@ export class ReceiptRenderer {
         }
 
         // Actualizar título
-        this._actualizarTitulo(tipoProceso, recibo);
+        this._actualizarTitulo(tipoProceso, recibo, prendaData);
 
         // Llenar información básica
         this._llenarInformacionBasica(datosPedido);
@@ -38,11 +38,101 @@ export class ReceiptRenderer {
     /**
      * Actualiza el título del modal
      */
-    static _actualizarTitulo(tipoProceso, recibo) {
+    static _actualizarTitulo(tipoProceso, recibo, prendaData) {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
             const nombreRecibo = String(tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo').toUpperCase();
+            
+            // Debug: Verificar qué datos llegan
+            console.log('🔍 [ReceiptRenderer] Datos recibidos:', {
+                tipoProceso,
+                prendaData: prendaData,
+                recibos: prendaData?.recibos,
+                prendaId: prendaData?.id || prendaData?.prenda_pedido_id
+            });
+            
+            // Actualizar solo el título (sin consecutivo)
             titleElement.textContent = 'RECIBO DE ' + nombreRecibo;
+            
+            // Obtener el consecutivo para este tipo de recibo
+            let consecutivo = '';
+            let tipoReciboKey = '';
+            
+            // Definir mapa de tipos de recibo
+            const tipoReciboMap = {
+                'costura': 'COSTURA',
+                'costura-bodega': 'COSTURA',
+                'bordado': 'BORDADO',
+                'estampado': 'ESTAMPADO',
+                'reflectivo': 'REFLECTIVO',
+                'sublimado': 'ESTAMPADO',
+                'bordado-punto': 'BORDADO',
+                'bordado-plano': 'BORDADO'
+            };
+            
+            if (prendaData && prendaData.recibos && Object.keys(prendaData.recibos).length > 0) {
+                tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
+                consecutivo = prendaData.recibos[tipoReciboKey];
+                
+                console.log('🔢 [ReceiptRenderer] Buscando consecutivo:', {
+                    tipoProceso,
+                    tipoReciboKey,
+                    consecutivo,
+                    recibos: prendaData.recibos
+                });
+            } else {
+                tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
+                console.log('🔢 [ReceiptRenderer] No hay datos de recibos o está vacío:', {
+                    tieneRecibos: !!(prendaData && prendaData.recibos),
+                    recibosKeys: prendaData?.recibos ? Object.keys(prendaData.recibos) : [],
+                    recibosLength: prendaData?.recibos ? Object.keys(prendaData.recibos).length : 0
+                });
+            }
+            
+            // Si no hay consecutivo, dejar vacío (no usar consecutivos de prueba)
+            if (!consecutivo) {
+                console.log('🔢 [ReceiptRenderer] No hay consecutivo, dejando vacío:', {
+                    tipoProceso,
+                    tipoReciboKey
+                });
+                consecutivo = '';
+            }
+            
+            // Actualizar el número de pedido/consecutivo (elemento order-pedido)
+            const pedidoNumberElement = document.querySelector('#order-pedido');
+            console.log('🔍 [ReceiptRenderer] Buscando elemento #order-pedido:', {
+                encontrado: !!pedidoNumberElement,
+                elemento: pedidoNumberElement,
+                todosLosPedidoNumber: document.querySelectorAll('.pedido-number'),
+                todosLosOrderPedido: document.querySelectorAll('#order-pedido')
+            });
+            
+            if (pedidoNumberElement) {
+                if (consecutivo) {
+                    pedidoNumberElement.textContent = '#' + consecutivo;
+                    console.log('✅ [ReceiptRenderer] Número de pedido actualizado con consecutivo:', '#' + consecutivo);
+                } else {
+                    // Mantener el número de pedido original si no hay consecutivo
+                    pedidoNumberElement.textContent = '#' + (prendaData?.numero_pedido || prendaData?.numero || '-');
+                    console.log('✅ [ReceiptRenderer] Número de pedido mantenido sin consecutivo');
+                }
+            } else {
+                console.warn('⚠️ [ReceiptRenderer] Elemento #order-pedido no encontrado');
+                
+                // Intentar con .pedido-number como fallback
+                const fallbackElement = document.querySelector('.pedido-number');
+                if (fallbackElement) {
+                    console.log('🔄 [ReceiptRenderer] Usando fallback .pedido-number');
+                    if (consecutivo) {
+                        fallbackElement.textContent = '#' + consecutivo;
+                        console.log('✅ [ReceiptRenderer] Número actualizado con fallback:', '#' + consecutivo);
+                    }
+                } else {
+                    console.error('❌ [ReceiptRenderer] Ni #order-pedido ni .pedido-number encontrados');
+                }
+            }
+            
+            console.log('✅ [ReceiptRenderer] Título actualizado:', 'RECIBO DE ' + nombreRecibo);
         }
     }
 
@@ -97,12 +187,21 @@ export class ReceiptRenderer {
         // Número de pedido
         const pedidoNumber = document.querySelector('.pedido-number');
         if (pedidoNumber) {
-            // En supervisor-pedidos, mostrar vacío hasta que se apruebe
-            let numero = '';
-            if (!window.location.href.includes('supervisor-pedidos')) {
-                numero = datosPedido.numero_pedido || datosPedido.numero || '';
+            // Verificar si ya tiene un consecutivo (no sobreescribir)
+            const contenidoActual = pedidoNumber.textContent.trim();
+            const yaTieneConsecutivo = contenidoActual.match(/^#\d+$/);
+            
+            if (!yaTieneConsecutivo) {
+                // En supervisor-pedidos, mostrar vacío hasta que se apruebe
+                let numero = '';
+                if (!window.location.href.includes('supervisor-pedidos')) {
+                    numero = datosPedido.numero_pedido || datosPedido.numero || '';
+                }
+                pedidoNumber.textContent = '#' + numero;
+                console.log('✅ [ReceiptRenderer] Número de pedido actualizado (sin consecutivo):', '#' + numero);
+            } else {
+                console.log('✅ [ReceiptRenderer] Número de pedido mantenido (ya tiene consecutivo):', contenidoActual);
             }
-            pedidoNumber.textContent = '#' + numero;
         }
 
         // Encargado
@@ -119,22 +218,7 @@ export class ReceiptRenderer {
      */
     static _llenarDescripcion(prendaData, recibo, tipoProceso) {
         const descripcionText = document.getElementById('descripcion-text');
-        if (!descripcionText) {
-            console.warn('⚠️ [ReceiptRenderer] Elemento #descripcion-text NO encontrado');
-            return;
-        }
-
-        console.log('🔍 [ReceiptRenderer._llenarDescripcion] prendaData completo:', {
-            nombre: prendaData.nombre,
-            numero: prendaData.numero,
-            tela: prendaData.tela,
-            color: prendaData.color,
-            ref: prendaData.ref,
-            variantes: prendaData.variantes,
-            descripcion: prendaData.descripcion,
-            tallas: prendaData.tallas,
-            genero: prendaData.genero
-        });
+        if (!descripcionText) return;
 
         let html = '';
         const tipoProcesoBajo = String(tipoProceso || '').toLowerCase();
@@ -143,15 +227,12 @@ export class ReceiptRenderer {
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
             // Usar formateador directamente
             html = Formatters.construirDescripcionCostura(prendaData);
-            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
         } else {
             // Para otros procesos
             html = Formatters.construirDescripcionProceso(prendaData, recibo);
-            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de proceso generado:', html);
         }
 
         descripcionText.innerHTML = html;
-        console.log('✅ [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
     }
 }
 
