@@ -131,9 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `;
         } else {
-            // Prenda o Reflectivo (solo costura)
+            // Prenda o Reflectivo (solo costura) - MODIFICADO: Usar modal de prendas como en registros
             dropdownHTML = `
-                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="abrirModalDetallePedidoDesdeAsesores('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     gap: 0.75rem;
                     font-weight: 500;
                 " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Pedido
+                    <i class="fas fa-list" style="color: #3b82f6;"></i> Ver Pedido
                 </button>
             `;
         }
@@ -433,6 +433,66 @@ window.closeDropdown = function() {
         menu.style.display = 'none';
     });
 }
+
+// Función para abrir modal de detalles desde asesores (similar a registros)
+window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
+    console.log('🔥 [abrirModalDetallePedidoDesdeAsesores] Iniciando para pedido:', pedido);
+    
+    try {
+        // Mostrar loading
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                html: `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="width: 60px; height: 60px; border: 4px solid #e5e7eb; border-top-color: #1e40af; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+                        <p style="color: #6b7280; font-size: 14px; font-weight: 500; margin: 0;">Cargando detalles del pedido...</p>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                `,
+                width: '300px',
+                padding: '0',
+                background: 'white',
+                showConfirmButton: false,
+                allowOutsideClick: false
+            });
+        }
+        
+        // Obtener datos del pedido
+        const response = await fetch(`/api/pedidos/${pedidoId}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const result = await response.json();
+        const datos = result.data || result;
+        
+        // Cerrar loading
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        
+        console.log('📊 [abrirModalDetallePedidoDesdeAsesores] Datos recibidos:', datos);
+        
+        // Usar la misma función que en registros
+        if (typeof window.abrirModalDetallePedido === 'function') {
+            window.abrirModalDetallePedido(datos);
+        } else {
+            console.error('❌ [abrirModalDetallePedidoDesdeAsesores] abrirModalDetallePedido no disponible');
+            alert('Error: Sistema de modales no disponible');
+        }
+        
+    } catch (error) {
+        console.error('❌ [abrirModalDetallePedidoDesdeAsesores] Error:', error);
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        
+        alert('Error al cargar los detalles del pedido: ' + error.message);
+    }
+};
 
 // Cerrar dropdown y modales al hacer clic fuera
 document.addEventListener('click', function(e) {

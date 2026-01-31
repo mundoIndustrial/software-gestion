@@ -165,10 +165,19 @@ class PedidoProduccion extends Model
 
     /**
      * Relación: Un pedido tiene muchos materiales de insumos
+     * Usa numero_pedido como foreign key (según tabla materiales_orden_insumos)
      */
     public function materiales(): HasMany
     {
-        return $this->hasMany(MaterialesOrdenInsumos::class, 'pedido_produccion_id');
+        return $this->hasMany(MaterialesOrdenInsumos::class, 'numero_pedido', 'numero_pedido');
+    }
+
+    /**
+     * Alias para la relación de materiales (para consistencia)
+     */
+    public function materialesOrdenInsumos(): HasMany
+    {
+        return $this->materiales();
     }
 
     /**

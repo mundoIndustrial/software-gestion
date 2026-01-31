@@ -269,23 +269,21 @@ class InsumosController extends Controller
             });
         }
         
-        // Siempre paginar, con o sin filtros - con relaciones
-        $ordenes = $baseQuery->with('prendas')->orderBy('numero_pedido', 'asc')->paginate(10);
+        // Siempre paginar, con o sin filtros - con relaciones optimizadas
+        // Cargar relaciones necesarias para evitar N+1 queries
+        $ordenes = $baseQuery->with([
+            'prendas',
+            'materiales' => function($query) {
+                $query->select('id', 'numero_pedido', 'nombre_material', 'recibido', 'fecha_orden', 'fecha_pedido', 'fecha_pago', 'fecha_llegada', 'fecha_despacho', 'observaciones');
+            }
+        ])->orderBy('numero_pedido', 'asc')->paginate(10);
         
         // Preservar parámetros de búsqueda y filtro en links de paginación
         $ordenes->appends($request->query());
         
-        // Cargar materiales guardados para cada orden y armar descripción desde prendas
-        $ordenes->getCollection()->transform(function($orden) {
-            $materialesGuardados = MaterialesOrdenInsumos::where('numero_pedido', $orden->numero_pedido)->get();
-            $orden->materiales_guardados = $materialesGuardados;
-            
-            // Usar el mismo método que en Registros: getDescripcionPrendasAttribute()
-            // Esto garantiza que la descripción sea idéntica en ambos módulos
-            // (No recrear la descripción manualmente aquí)
-            
-            return $orden;
-        });
+        // Optimizado: Los materiales ya están cargados via relación eager loading
+        // No se necesita transformación adicional ya que la relación está cargada
+        // El acceso a $orden->materiales será eficiente sin queries adicionales
         
         $queryTime = microtime(true) - $queryStart;
         \Log::info("⏱️ Consulta BD: {$queryTime}s, Total: " . $ordenes->total() . ", Búsqueda: '{$search}'");
