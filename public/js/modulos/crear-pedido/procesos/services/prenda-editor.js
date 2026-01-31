@@ -647,8 +647,9 @@ class PrendaEditor {
                     const mapaTelasExistentes = new Map();
                     prenda.telasAgregadas.forEach((tela, index) => {
                         const clave = `${tela.nombre_tela}|${tela.color}`;
-                        mapaTelasExistentes.set(clave, { index, tela });
-                        console.log(`[cargarTelas] 📍 Tela existente registrada: ${clave} (índice ${index})`);
+                        const claveNormalizada = clave.toLowerCase().trim();
+                        mapaTelasExistentes.set(claveNormalizada, { index, tela, claveOriginal: clave });
+                        console.log(`[cargarTelas] 📍 Tela existente registrada: "${clave}" -> normalizada: "${claveNormalizada}" (índice ${index})`);
                     });
                     
                     // Recorrer variantes para buscar referencias faltantes
@@ -666,12 +667,14 @@ class PrendaEditor {
                                     nombre_tela,
                                     color,
                                     referencia: `"${referencia}"`,
-                                    clave
+                                    clave,
+                                    claveNormalizada: clave.toLowerCase().trim()
                                 });
                                 
                                 // Buscar si existe una tela con esta combinación y sin referencia
-                                if (mapaTelasExistentes.has(clave)) {
-                                    const telaExistente = mapaTelasExistentes.get(clave);
+                                const claveNormalizada = clave.toLowerCase().trim();
+                                if (mapaTelasExistentes.has(claveNormalizada)) {
+                                    const telaExistente = mapaTelasExistentes.get(claveNormalizada);
                                     
                                     if (!telaExistente.tela.referencia || telaExistente.tela.referencia === '') {
                                         if (referencia && referencia !== '') {
