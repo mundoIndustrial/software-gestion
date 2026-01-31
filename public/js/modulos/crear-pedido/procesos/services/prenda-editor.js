@@ -131,18 +131,26 @@ class PrendaEditor {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Determinar origen: prioridad: origen > de_bodega
-            let origen = prenda.origen;
+            // Determinar origen: prioridad: de_bodega > origen
+            let origen = null;
             
-            // Si NO viene origen del servidor, convertir de_bodega (boolean/integer) a origen (string)
-            if (!origen) {
+            // PRIMERO: verificar de_bodega (campo de la BD)
+            if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
                 if (prenda.de_bodega === true || prenda.de_bodega === 1 || prenda.de_bodega === '1') {
                     origen = 'bodega';
                 } else if (prenda.de_bodega === false || prenda.de_bodega === 0 || prenda.de_bodega === '0') {
                     origen = 'confeccion';
-                } else {
-                    origen = 'bodega';  // default
                 }
+            }
+            
+            // SI NO hay de_bodega, usar origen del servidor
+            if (!origen && prenda.origen) {
+                origen = prenda.origen;
+            }
+            
+            // SI NO hay ninguno, usar default
+            if (!origen) {
+                origen = 'confeccion';
             }
             
             console.log('[llenarCamposBasicos] Origen determinado:', {
@@ -313,7 +321,19 @@ class PrendaEditor {
                     img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
                     preview.appendChild(img);
                     
-                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM');
+                    // Agregar evento click para abrir galería
+                    preview.onclick = (e) => {
+                        e.stopPropagation();
+                        if (window.mostrarGaleriaImagenesPrenda) {
+                            const imagenes = window.imagenesPrendaStorage.images.map(img => ({
+                                ...img,
+                                url: img.previewUrl || img.url || img.ruta
+                            }));
+                            window.mostrarGaleriaImagenesPrenda(imagenes, 0, 0);
+                        }
+                    };
+                    
+                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM con evento click');
                 } else {
                     console.warn('[cargarImagenes] ⚠️ Preview no encontrado o sin imágenes');
                 }

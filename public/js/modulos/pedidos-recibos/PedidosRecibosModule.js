@@ -79,8 +79,17 @@ export class PedidosRecibosModule {
             // Mostrar modal
             this.modalManager.abrirModal();
 
-            // Siempre usar la ruta de asesores (compatible con ambos contextos)
-            const endpoint = `/asesores/pedidos/${pedidoId}/recibos-datos`;
+            // Determinar el endpoint según el contexto
+            let endpoint;
+            if (window.location.pathname.includes('/registros')) {
+                // Contexto de registros
+                endpoint = `/registros/${pedidoId}/recibos-datos`;
+            } else {
+                // Contexto público (accesible para cualquier usuario autenticado)
+                endpoint = `/pedidos-public/${pedidoId}/recibos-datos`;
+            }
+
+            console.log('🔍 [PedidosRecibosModule] Endpoint seleccionado:', endpoint);
 
             // Obtener datos del servidor
             const response = await fetch(endpoint);
@@ -111,6 +120,14 @@ export class PedidosRecibosModule {
             // Encontrar la prenda
             const prendaData = datos.prendas.find(p => p.id == prendaId);
             if (!prendaData) throw new Error(`Prenda ${prendaId} no encontrada`);
+
+            // Debug: Verificar si los recibos están llegando desde el backend
+            console.log('🔍 [PedidosRecibosModule] Prenda encontrada:', {
+                prendaId,
+                prendaData: prendaData,
+                recibos: prendaData.recibos,
+                tieneRecibos: !!prendaData.recibos
+            });
 
 
 
