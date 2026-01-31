@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Prenda o Reflectivo (solo costura) - MODIFICADO: Usar modal de prendas como en registros
             dropdownHTML = `
-                <button onclick="abrirModalDetallePedidoDesdeAsesores('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
