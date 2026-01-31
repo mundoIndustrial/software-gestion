@@ -44,37 +44,77 @@ window.manejarCheckVariacion = function(checkbox) {
     });
 };
 
+// Cache para tipos de manga
+let tiposMangaCache = null;
+let tiposMangaPromise = null;
+
 /**
  * Cargar tipos de manga disponibles desde la BD
+ * Con sistema de caché para evitar múltiples llamadas
  */
 async function cargarTiposMangaDisponibles() {
-    try {
-        const response = await fetch('/asesores/api/tipos-manga');
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            tiposMangaDisponibles = result.data;
-            
-            // Actualizar datalist
-            const datalist = document.getElementById('opciones-manga');
-            if (datalist) {
-                datalist.innerHTML = '';
-                result.data.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo.nombre;
-                    option.dataset.id = tipo.id;
-                    datalist.appendChild(option);
-                });
-            }
-        }
-    } catch (error) {
-        console.warn('[Manga] Error cargando tipos de manga:', error);
+    // Si ya tenemos datos en caché, retornar inmediatamente
+    if (tiposMangaCache) {
+        console.log('[Manga] Usando cache de tipos de manga');
+        return tiposMangaCache;
     }
+    
+    // Si hay una petición en curso, esperar a que termine
+    if (tiposMangaPromise) {
+        console.log('[Manga] Esperando petición existente...');
+        return await tiposMangaPromise;
+    }
+    
+    // Crear nueva petición
+    console.log('[Manga] Cargando tipos de manga desde BD...');
+    tiposMangaPromise = (async () => {
+        try {
+            const response = await fetch('/asesores/api/tipos-manga');
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                tiposMangaCache = result.data;
+                
+                // Actualizar datalist
+                const datalist = document.getElementById('opciones-manga');
+                if (datalist) {
+                    datalist.innerHTML = '';
+                    result.data.forEach(tipo => {
+                        const option = document.createElement('option');
+                        option.value = tipo.nombre;
+                        option.dataset.id = tipo.id;
+                        datalist.appendChild(option);
+                    });
+                }
+                
+                console.log('[Manga] Tipos cargados y cacheados:', result.data.length);
+                return result.data;
+            }
+        } catch (error) {
+            console.warn('[Manga] Error cargando tipos de manga:', error);
+            return [];
+        } finally {
+            // Limpiar la promesa cuando termine
+            tiposMangaPromise = null;
+        }
+    })();
+    
+    return await tiposMangaPromise;
 }
 
-// Exportar como función global para uso en otros módulos
+/**
+ * Limpiar caché de tipos de manga (útil después de crear/editar)
+ */
+function limpiarCacheTiposManga() {
+    tiposMangaCache = null;
+    tiposMangaPromise = null;
+    console.log('[Manga] Caché limpiado');
+}
+
+// Exportar como funciones globales para uso en otros módulos
 window.cargarTiposMangaDisponibles = cargarTiposMangaDisponibles;
 window.procesarMangaInput = procesarMangaInput;
+window.limpiarCacheTiposManga = limpiarCacheTiposManga;
 
 /**
  * Procesar input de manga cuando pierde el foco
@@ -85,20 +125,17 @@ async function procesarMangaInput(input) {
     if (!valor) return;
     
     try {
-        // Verificar si ya existe en el datalist
-        const datalist = document.getElementById('opciones-manga');
-        let existe = false;
+        // Asegurarse que los tipos de manga estén cargados (usando caché)
+        const tiposManga = await cargarTiposMangaDisponibles();
         
-        if (datalist) {
-            for (let option of datalist.options) {
-                if (option.value.toLowerCase() === valor.toLowerCase()) {
-                    existe = true;
-                    break;
-                }
-            }
-        }
+        // Verificar si ya existe usando el caché
+        let existe = tiposManga.some(tipo => 
+            tipo.nombre.toLowerCase() === valor.toLowerCase()
+        );
         
         if (!existe) {
+            console.log('[Manga] Creando nuevo tipo de manga:', valor);
+            
             // Crear el nuevo tipo de manga
             const response = await fetch('/asesores/api/tipos-manga', {
                 method: 'POST',
@@ -111,23 +148,25 @@ async function procesarMangaInput(input) {
             
             const result = await response.json();
             if (result.success && result.data) {
-                // Agregar al datalist
-                const newOption = document.createElement('option');
-                newOption.value = result.data.nombre;
-                newOption.dataset.id = result.data.id;
+                // Invalidar caché para que se recargue la próxima vez
+                tiposMangaCache = null;
                 
+                // Agregar al datalist
+                const datalist = document.getElementById('opciones-manga');
                 if (datalist) {
+                    const newOption = document.createElement('option');
+                    newOption.value = result.data.nombre;
+                    newOption.dataset.id = result.data.id;
                     datalist.appendChild(newOption);
                 }
                 
-                // Actualizar array global
-                tiposMangaDisponibles.push(result.data);
-                
-                console.log(' Tipo de manga creado:', result.data);
+                console.log('[Manga] Tipo de manga creado:', result.data);
             }
+        } else {
+            console.log('[Manga] Tipo de manga ya existe:', valor);
         }
     } catch (error) {
-        console.error('[Manga] Error procesando manga:', error);
+        console.warn('[Manga] Error procesando input:', error);
     }
 }
 

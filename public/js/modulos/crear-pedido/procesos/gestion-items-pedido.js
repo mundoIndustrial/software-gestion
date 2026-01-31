@@ -373,10 +373,25 @@ class GestionItemsUI {
                     // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
                     const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
 
+                    // 🔍 DEBUG: Verificar qué contiene window.prendaEnEdicion
+                    console.log('[gestion-items-pedido] 🔍 DEBUG window.prendaEnEdicion:', {
+                        existe: !!window.prendaEnEdicion,
+                        prendaOriginal: window.prendaEnEdicion?.prendaOriginal,
+                        prendaOriginalId: window.prendaEnEdicion?.prendaOriginal?.prenda_pedido_id || window.prendaEnEdicion?.prendaOriginal?.id,
+                        pedidoId: window.prendaEnEdicion?.pedidoId,
+                        prendasIndex: window.prendaEnEdicion?.prendasIndex
+                    });
 
                     
                     // Agregar el ID de la prenda original a prendaData
                     prendaData.prenda_pedido_id = prendaOriginal?.prenda_pedido_id || prendaOriginal?.id;
+
+                    // 🔍 DEBUG: Verificar qué se asignó
+                    console.log('[gestion-items-pedido] 🔍 DEBUG asignación de ID:', {
+                        prendaOriginalId: prendaOriginal?.prenda_pedido_id || prendaOriginal?.id,
+                        prendaDataPrendaPedidoId: prendaData.prenda_pedido_id,
+                        prendaDataId: prendaData.id
+                    });
 
                     
                     await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
@@ -387,7 +402,26 @@ class GestionItemsUI {
                     // Solo en memoria - sin novedades
 
                     if (this.prendas[this.prendaEditIndex]) {
-                        this.prendas[this.prendaEditIndex] = prendaData;
+                        // 🔥 MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
+                        // Si estamos en modo CREATE (no edición desde backend) y se eliminaron todas las imágenes
+                        const esModoCreate = !window.datosEdicionPedido || (!window.datosEdicionPedido.id && !window.datosEdicionPedido.numero_pedido);
+                        const imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+                        const seEliminaronTodasLasImagenes = imagenesStorage.length === 0;
+                        
+                        if (esModoCreate && seEliminaronTodasLasImagenes) {
+                            console.log('🗑️ [GESTION-ITEMS] Modo CREATE: Todas las imágenes eliminadas, actualizando array a []');
+                            
+                            // Forzar que prendaData.imagenes sea array vacío
+                            prendaData.imagenes = [];
+                            
+                            // Actualizar directamente en memoria también
+                            this.prendas[this.prendaEditIndex].imagenes = [];
+                            
+                            console.log('✅ [GESTION-ITEMS] Array de imágenes actualizado a [] en memoria y en prendaData');
+                        }
+                        
+                        // Actualizar prenda con los datos modificados
+                        this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
                         
                         // ✅ CRÍTICO: Renderizar inmediatamente después de actualizar
                         console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');

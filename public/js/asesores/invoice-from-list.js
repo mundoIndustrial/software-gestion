@@ -185,14 +185,17 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     let htmlFactura;
     if (typeof generarHTMLFactura === 'function') {
         try {
+            // Extraer los datos del pedido desde respuesta.data
+            const datosPedido = datos.data || datos;
+            
             console.log('[GENERAR-FACTURA] Intentando generar HTML con datos:', {
-                prendas_existe: !!datos.prendas,
-                prendas_es_array: Array.isArray(datos.prendas),
-                prendas_count: datos.prendas?.length || 0,
-                datos_keys: Object.keys(datos)
+                prendas_existe: !!datosPedido.prendas,
+                prendas_es_array: Array.isArray(datosPedido.prendas),
+                prendas_count: datosPedido.prendas?.length || 0,
+                datos_keys: Object.keys(datosPedido)
             });
             
-            htmlFactura = generarHTMLFactura(datos);
+            htmlFactura = generarHTMLFactura(datosPedido);
 
             console.log('[GENERAR-FACTURA] ✅ HTML generado exitosamente', {
                 htmlFactura_length: htmlFactura?.length || 0,

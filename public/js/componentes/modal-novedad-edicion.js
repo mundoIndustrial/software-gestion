@@ -111,7 +111,16 @@ class ModalNovedadEdicion {
         this.prendaData = prendaData;
         this.prendaIndex = prendaIndex;
 
-        // 🔧 CRÍTICO: Inicializar window.imagenesPrendaStorage con las imágenes ACTUALES de la prenda
+        // � DEBUG: Verificar qué contiene prendaData al llegar
+        console.log('[modal-novedad-edicion] 🔍 DEBUG prendaData recibido:', {
+            prendaDataCompleto: prendaData,
+            prenda_pedido_id: prendaData?.prenda_pedido_id,
+            id: prendaData?.id,
+            tipo: prendaData?.tipo,
+            nombre_prenda: prendaData?.nombre_prenda
+        });
+
+        // � CRÍTICO: Inicializar window.imagenesPrendaStorage con las imágenes ACTUALES de la prenda
         // Esto asegura que cuando la galería se abre, tenga las imágenes correctas
         console.log('[modal-novedad-edicion] 🔍 DEBUG prendaData.imagenes:', {
             existe: !!prendaData.imagenes,
@@ -712,48 +721,46 @@ class ModalNovedadEdicion {
             
             // IMPORTANTE: Recargar datos completos del pedido para asegurar que telasAgregadas y datos relacionados se actualizan correctamente
             // NOTA: Se omite la recarga para supervisores de pedidos ya que no es necesaria en ese flujo
-            const usuarioActual = this.obtenerUsuarioActual();
-            const esSupervisor = usuarioActual.rol === 'supervisor_pedidos';
+            // TEMPORALMENTE DESHABILITADO: La ruta de recarga está dando 404, pero el guardado funciona correctamente
+            // const usuarioActual = this.obtenerUsuarioActual();
+            // const esSupervisor = usuarioActual.rol === 'supervisor_pedidos';
             
-            if (window.prendaEnEdicion && !esSupervisor) {
-                const pedidoId = window.prendaEnEdicion.pedidoId;
+            // if (window.prendaEnEdicion && !esSupervisor) {
+            //     const pedidoId = window.prendaEnEdicion.pedidoId;
 
-                
-                try {
-                    const respDataEdicion = await fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`);
+            //     
+            //     try {
+            //         const respDataEdicion = await fetch(`/asesores/pedidos-produccion/${pedidoId}/datos-edicion`);
                     
-                    // Verificar si la respuesta es exitosa (status 200-299)
-                    if (!respDataEdicion.ok) {
-                        console.warn('[modal-novedad-edicion] Recarga de datos fallida (status: ' + respDataEdicion.status + '), continuando sin actualización');
-                    } else {
-                        const resultadoDataEdicion = await respDataEdicion.json();
+            //         // Verificar si la respuesta es exitosa (status 200-299)
+            //         if (!respDataEdicion.ok) {
+            //             console.warn('[modal-novedad-edicion] Recarga de datos fallida (status: ' + respDataEdicion.status + '), continuando sin actualización');
+            //         } else {
+            //             const resultadoDataEdicion = await respDataEdicion.json();
                         
-                        if (resultadoDataEdicion.success && resultadoDataEdicion.datos) {
+            //             if (resultadoDataEdicion.success && resultadoDataEdicion.datos) {
 
-                            window.datosEdicionPedido = resultadoDataEdicion.datos;
+            //                 window.datosEdicionPedido = resultadoDataEdicion.datos;
                             
-                            // Actualizar en prendasEdicion también
-                            if (window.prendasEdicion) {
-                                window.prendasEdicion.prendas = resultadoDataEdicion.datos.prendas;
-                                window.prendasEdicion.pedidoId = resultadoDataEdicion.datos.id || resultadoDataEdicion.datos.numero_pedido;
-                            }
-                        }
-                    }
-                } catch (e) {
+            //                 // Actualizar en prendasEdicion también
+            //                 if (window.prendasEdicion) {
+            //                     window.prendasEdicion.prendas = resultadoDataEdicion.datos.prendas;
+            //                     window.prendasEdicion.pedidoId = resultadoDataEdicion.datos.id || resultadoDataEdicion.datos.numero_pedido;
+            //                 }
+            //             }
+            //         }
+            //     } catch (e) {
 
-                    // Si falla la recarga automática, al menos actualizar la prenda con los datos que vinieron
-                    console.warn('[modal-novedad-edicion] Error al recargar datos:', e.message);
-                    if (resultado.prenda && window.datosEdicionPedido && window.prendaEnEdicion) {
-                        const prendasIndex = window.prendaEnEdicion.prendasIndex;
-                        if (prendasIndex !== null && prendasIndex !== undefined) {
-                            window.datosEdicionPedido.prendas[prendasIndex] = resultado.prenda;
-                            if (window.prendasEdicion && window.prendasEdicion.prendas) {
-                                window.prendasEdicion.prendas[prendasIndex] = resultado.prenda;
-                            }
-                        }
-                    }
-                }
-            }
+            //         // Si falla la recarga automática, al menos actualizar la prenda con los datos que vinieron
+            //         console.warn('[modal-novedad-edicion] Error al recargar datos:', e.message);
+            //         if (resultado.prenda && window.datosEdicionPedido && window.prendaEnEdicion) {
+            //             const prendasIndex = window.prendaEnEdicion.prendasIndex;
+            //             if (prendasIndex !== null && prendasIndex !== undefined) {
+            //                 window.datosEdicionPedido.prendas[prendasIndex] = resultado.prenda;
+            //             }
+            //         }
+            //     }
+            // }
             
             this.mostrarExito();
         } catch (error) {

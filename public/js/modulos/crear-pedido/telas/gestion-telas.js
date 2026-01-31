@@ -320,6 +320,17 @@ window.actualizarTablaTelas = function() {
         const color = telaData.color || telaData.color_nombre || '(Sin color)';
         const referencia = telaData.referencia || telaData.tela_referencia || '';
         
+        // DEBUG: Log detallado para depurar referencias
+        console.log(`[actualizarTablaTelas] 📋 Procesando tela ${index} para mostrar:`, {
+            nombre_tela,
+            color,
+            referencia: `"${referencia}"`,
+            referencia_original: telaData.referencia,
+            referencia_alternativa: telaData.tela_referencia,
+            origen: telaData.origen || 'desconocido',
+            todos_los_campos: Object.keys(telaData)
+        });
+        
         // Crear celda de imágenes
         let imagenHTML = '';
         if (telaData.imagenes && telaData.imagenes.length > 0) {

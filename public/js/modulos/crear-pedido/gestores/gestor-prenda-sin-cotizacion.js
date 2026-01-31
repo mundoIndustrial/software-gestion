@@ -468,6 +468,33 @@ class GestorPrendaSinCotizacion {
     }
 
     /**
+     * Obtener imágenes finales para guardar (excluyendo eliminadas)
+     * @param {number} prendaIndex - Índice de la prenda
+     * @returns {Array} Imágenes finales para el pedido
+     */
+    obtenerImagenesFinales(prendaIndex) {
+        const prenda = this.obtenerPorIndice(prendaIndex);
+        if (!prenda || !prenda.imagenes) {
+            return [];
+        }
+
+        // Si hay imágenes marcadas para eliminación del pedido, filtrarlas
+        if (prenda.imagenesEliminadasDelPedido && prenda.imagenesEliminadasDelPedido.length > 0) {
+            const indicesEliminados = new Set(prenda.imagenesEliminadasDelPedido.map(img => img.indiceOriginal));
+            
+            console.log('[GestorPrenda] Filtrando imágenes eliminadas del pedido:', {
+                totalOriginal: prenda.imagenes.length,
+                eliminadas: indicesEliminados.size,
+                prendaIndex
+            });
+
+            return prenda.imagenes.filter((img, index) => !indicesEliminados.has(index));
+        }
+
+        return prenda.imagenes;
+    }
+
+    /**
      * Obtener datos para envío
      * @returns {Object} Datos formateados
      */
@@ -475,24 +502,32 @@ class GestorPrendaSinCotizacion {
 
         const prendas = this.obtenerActivas();
         
-
+        //  NUEVO: Incluir información de imágenes eliminadas de cotizaciones
+        const imagenesEliminadasInfo = {};
         prendas.forEach((prenda, idx) => {
-
-
-
-
-
+            if (prenda.imagenesEliminadasDelPedido && prenda.imagenesEliminadasDelPedido.length > 0) {
+                imagenesEliminadasInfo[idx] = {
+                    cotizacion_id: prenda.cotizacion_id,
+                    imagenesEliminadas: prenda.imagenesEliminadasDelPedido,
+                    esCotizacion: !!(prenda.cotizacion_id || prenda.tipo === 'cotizacion')
+                };
+            }
         });
-        
+
+        console.log('[GestorPrenda] 📊 Datos formateados con imágenes eliminadas:', {
+            totalPrendas: prendas.length,
+            conImagenesEliminadas: Object.keys(imagenesEliminadasInfo).length,
+            imagenesEliminadasInfo
+        });
+
         const datosFormato = {
             prendas: prendas,
             fotosNuevas: this.fotosNuevas,
             telasFotosNuevas: this.telasFotosNuevas,
-            prendasEliminadas: Array.from(this.prendasEliminadas)
+            prendasEliminadas: Array.from(this.prendasEliminadas),
+            //  NUEVO: Información de imágenes eliminadas de cotizaciones
+            imagenesEliminadasDeCotizaciones: imagenesEliminadasInfo
         };
-        
-
-
         
         return datosFormato;
     }

@@ -24,6 +24,18 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     console.log('   - estamosCriando:', estamosCriando);
     console.log('   - estamoEditando:', estamoEditando);
 
+    //  DETECTAR SI ES PRENDA DE COTIZACIÓN PARA PROTECCIÓN
+    let esPrendaDeCotizacion = false;
+    let cotizacionId = null;
+    
+    if (estamoEditando && prenda) {
+        esPrendaDeCotizacion = !!(prenda.cotizacion_id || prenda.tipo === 'cotizacion');
+        cotizacionId = prenda.cotizacion_id || null;
+    }
+    
+    console.log('   - esPrendaDeCotizacion:', esPrendaDeCotizacion);
+    console.log('   - cotizacionId:', cotizacionId);
+
     
     let imagenesActuales = [];
     let prenda = null;
@@ -43,35 +55,19 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
 
     }
     
-    //  Si estamos EDITANDO, obtener imágenes guardadas
+    //  Si estamos EDITANDO, usar SOLAMENTE this.prendas[prendaIndex].imagenes
     if (estamoEditando && prenda) {
         imagenesActuales = prenda.imagenes || [];
-
+        console.log('   ✓ Modo edición: usando solo this.prendas[prendaIndex].imagenes');
     }
     
-    //  Siempre sincronizar con imágenes temporales del storage
-    if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
+    //  Si estamos CREANDO, sincronizar con imágenes temporales del storage
+    if (estamosCriando && window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
         const imagenesTemporales = window.imagenesPrendaStorage.obtenerImagenes();
-
         
         if (imagenesTemporales && imagenesTemporales.length > 0) {
-            // Crear lista combinada usando Map de objetos únicos (NO por nombre, por referencia del archivo)
-            const imagenesMap = new Map();
-            
-            // Agregar imágenes guardadas (usar índice único)
-            imagenesActuales.forEach((img, idx) => {
-                const key = `saved-${idx}`;
-                imagenesMap.set(key, img);
-            });
-            
-            // Agregar imágenes temporales (usar su índice único)
-            imagenesTemporales.forEach((img, idx) => {
-                const key = `temporal-${idx}`;
-                imagenesMap.set(key, img);
-            });
-            
-            imagenesActuales = Array.from(imagenesMap.values());
-
+            imagenesActuales = imagenesTemporales;
+            console.log('   ✓ Modo creación: usando imágenes temporales del storage');
         }
     }
     
@@ -101,7 +97,10 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     // Crear blob URLs válidos para las imágenes
     const imagenesConBlobUrl = imagenesActuales.map((img, idx) => {
         let blobUrl;
-        if (img.file instanceof File || img.file instanceof Blob) {
+        if (img instanceof File) {
+            // CASO 0: El elemento es directamente un File
+            blobUrl = URL.createObjectURL(img);
+        } else if (img.file instanceof File || img.file instanceof Blob) {
             // CASO 1: Imagen nueva (tiene File/Blob)
             blobUrl = URL.createObjectURL(img.file);
         } else if (img.blobUrl && img.blobUrl.startsWith('blob:')) {
@@ -224,6 +223,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
     btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
     
+    //  CAMBIAR COLOR Y AGREGAR ADVERTENCIA SI ES PRENDA DE COTIZACIÓN
+    if (esPrendaDeCotizacion) {
+        btnEliminar.style.background = '#f59e0b'; // Ámbar en lugar de rojo
+        btnEliminar.title = 'Esta prenda viene de una cotización. La eliminación solo afectará este pedido.';
+    }
+    
     let eliminarEnProceso = false;
     btnEliminar.onclick = () => {
         if (eliminarEnProceso) return;
@@ -234,23 +239,30 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         
         // Verificar si Swal está disponible
         if (!window.Swal) {
-
             eliminarEnProceso = false;
             
-            if (confirm('¿Eliminar esta imagen? Esta acción no se puede deshacer.')) {
+            //  MENSAJE PERSONALIZADO PARA COTIZACIÓN
+            const mensajeConfirmacion = esPrendaDeCotizacion 
+                ? '¿Eliminar esta imagen del pedido?\n\nEsta prenda viene de una cotización. La eliminación solo afectará este pedido, la cotización original permanecerá intacta.'
+                : '¿Eliminar esta imagen? Esta acción no se puede deshacer.';
+                
+            if (confirm(mensajeConfirmacion)) {
                 procederConEliminacion();
             }
             return;
         }
         
-        Swal.fire({
-            title: '¿Eliminar imagen?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
+        //  CONFIGURAR MENSAJE SWAL SEGÚN TIPO DE PRENDA
+        const swalConfig = {
+            title: esPrendaDeCotizacion ? '¿Eliminar imagen del pedido?' : '¿Eliminar imagen?',
+            html: esPrendaDeCotizacion 
+                ? 'Esta prenda viene de una cotización.<br><br><strong>La eliminación solo afectará este pedido.</strong><br>La cotización original permanecerá intacta.'
+                : 'Esta acción no se puede deshacer',
+            icon: esPrendaDeCotizacion ? 'warning' : 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
+            confirmButtonColor: esPrendaDeCotizacion ? '#f59e0b' : '#dc3545',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar',
+            confirmButtonText: esPrendaDeCotizacion ? 'Sí, eliminar del pedido' : 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -261,8 +273,9 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                     swalContainer.style.zIndex = '100002';
                 }
             }
-        }).then((result) => {
+        };
 
+        Swal.fire(swalConfig).then((result) => {
             eliminarEnProceso = false;
             
             if (result.isConfirmed) {
@@ -277,16 +290,55 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     //  Función extraída para manejar la eliminación
     const procederConEliminacion = () => {
 
+        console.log('🗑️ [galeria] Procediendo con eliminación - esPrendaDeCotizacion:', esPrendaDeCotizacion);
         
         // Determinar dónde está la imagen para eliminarla correctamente
         let imagenEliminada = false;
         
-        //  SI ESTAMOS EDITANDO: eliminar del modelo prenda
+        //  SI ESTAMOS EDITANDO: eliminar del modelo prenda Y del storage
         if (estamoEditando && prenda && prenda.imagenes) {
             if (indiceActual < prenda.imagenes.length) {
-                prenda.imagenes.splice(indiceActual, 1);
-
+                //  MARCAR LA IMAGEN COMO ELIMINADA SOLO EN EL PEDIDO (no en cotización)
+                const imagenEliminadaDatos = prenda.imagenes[indiceActual];
+                
+                //  SI ES PRENDA DE COTIZACIÓN: marcar para eliminación posterior al guardar
+                if (esPrendaDeCotizacion) {
+                    // Agregar a lista de imágenes a eliminar del pedido (no de la cotización)
+                    if (!prenda.imagenesEliminadasDelPedido) {
+                        prenda.imagenesEliminadasDelPedido = [];
+                    }
+                    prenda.imagenesEliminadasDelPedido.push({
+                        ...imagenEliminadaDatos,
+                        indiceOriginal: indiceActual,
+                        timestamp: Date.now()
+                    });
+                    
+                    console.log('🔒 [galeria] Imagen marcada para eliminación del pedido (cotización protegida):', imagenEliminadaDatos);
+                } else {
+                    // Prenda normal: eliminar directamente
+                    prenda.imagenes.splice(indiceActual, 1);
+                    console.log('✅ [galeria] Imagen eliminada directamente (prenda normal):', imagenEliminadaDatos);
+                }
+                
                 imagenEliminada = true;
+                
+                // 🔥 SINCRONIZAR CON STORAGE REAL también en edición
+                if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
+                    try {
+                        const imagenesTemporales = window.imagenesPrendaStorage.obtenerImagenes();
+                        if (imagenesTemporales && imagenesTemporales.length > 0 && indiceActual < imagenesTemporales.length) {
+                            //  SI ES COTIZACIÓN: no eliminar del storage temporal, solo marcar
+                            if (!esPrendaDeCotizacion) {
+                                window.imagenesPrendaStorage.eliminarImagen(indiceActual);
+                                console.log('✅ [galeria] Eliminada imagen del storage en modo edición');
+                            } else {
+                                console.log('🔒 [galeria] Protección: NO eliminada del storage (es cotización)');
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ [galeria] Error eliminando del storage en modo edición:', error);
+                    }
+                }
             }
         }
         
@@ -311,8 +363,17 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         }
         
         if (imagenEliminada) {
-            // Actualizar array local
-            imagenesConBlobUrl.splice(indiceActual, 1);
+            //  ACTUALIZAR ARRAY LOCAL SEGÚN TIPO DE PRENDA
+            if (esPrendaDeCotizacion) {
+                // Para cotizaciones: ocultar visualmente pero mantener en array hasta guardar
+                imagenesConBlobUrl[indiceActual].eliminadaVisualmente = true;
+                imagenesConBlobUrl[indiceActual].motivoEliminacion = 'Eliminada del pedido (cotización protegida)';
+                console.log('🔒 [galeria] Imagen oculta visualmente (cotización protegida)');
+            } else {
+                // Para prendas normales: eliminar del array local
+                imagenesConBlobUrl.splice(indiceActual, 1);
+                console.log('✅ [galeria] Imagen eliminada del array local');
+            }
 
         } else {
 
@@ -394,6 +455,32 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     // Ensamblar modal
     modal.appendChild(imgContainer);
     modal.appendChild(toolbar);
+    
+    //  AGREGAR INDICADOR DE PROTECCIÓN SI ES PRENDA DE COTIZACIÓN
+    if (esPrendaDeCotizacion) {
+        const indicadorProteccion = document.createElement('div');
+        indicadorProteccion.style.cssText = `
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        `;
+        indicadorProteccion.innerHTML = `
+            <span class="material-symbols-rounded" style="font-size: 1rem;">shield</span>
+            Prenda de Cotización Protegida
+        `;
+        modal.appendChild(indicadorProteccion);
+    }
+    
     document.body.appendChild(modal);
     
 

@@ -105,9 +105,10 @@ class CargadorPrendasCotizacion {
         console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
         console.log('[transformarDatos] 🧵 ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
         
-        const telasFormato = (prenda.telas || []).map((tela, idx) => {
+        // PROcesar telas desde el backend (prioridad 1)
+        let telasDesdeBackend = (prenda.telas || []).map((tela, idx) => {
             const teleImagen = tela.imagenes || [];
-            console.log(`[transformarDatos] 🧵 Procesando tela ${idx}:`, {
+            console.log(`[transformarDatos] 🧵 Procesando tela ${idx} desde backend:`, {
                 id: tela.id,
                 nombre_tela: tela.nombre_tela,
                 color: tela.color,
@@ -129,7 +130,133 @@ class CargadorPrendasCotizacion {
             };
         });
         
-        console.log('[transformarDatos] 📦 TELAS PROCESADAS:', telasFormato);
+        // PROcesar telas desde TODAS las variantes (solución directa y robusta)
+        let telasDesdeVariantes = [];
+        
+        // Inicializar telasAgregadas vacío para esta prenda
+        const telasAgregadasTemp = [];
+        
+        if (prenda.variantes && Array.isArray(prenda.variantes)) {
+            console.log('[transformarDatos] 🔄 Recorriendo TODAS las variantes para extraer telas');
+            console.log('[transformarDatos] � Total de variantes a procesar:', prenda.variantes.length);
+            
+            // Recorremos todas las variantes
+            prenda.variantes.forEach((variante, varianteIndex) => {
+                console.log(`[transformarDatos] 📦 [Variante ${varianteIndex}] Procesando variante:`, {
+                    tipo_manga: variante.tipo_manga,
+                    tiene_bolsillos: variante.tiene_bolsillos,
+                    tiene_telas_multiples: !!(variante.telas_multiples),
+                    telas_multiples_count: variante.telas_multiples?.length || 0
+                });
+                
+                // Verificar si esta variante tiene telas_multiples
+                if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
+                    console.log(`[transformarDatos] 🧵 [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
+                    
+                    // Recorrer todas las telas de esta variante
+                    variante.telas_multiples.forEach((tela, telaIndex) => {
+                        console.log(`[transformarDatos] 🎯 [Tela ${telaIndex}] Extrayendo:`, {
+                            tela: tela.tela,
+                            color: tela.color,
+                            referencia: tela.referencia,
+                            descripcion: tela.descripcion,
+                            imagenes_count: tela.imagenes?.length || 0,
+                            todos_los_campos: Object.keys(tela)
+                        });
+                        
+                        // Extraer y validar la referencia directamente
+                        const referenciaExtraida = (tela.referencia !== undefined && tela.referencia !== null && tela.referencia !== '') 
+                            ? String(tela.referencia).trim() 
+                            : '';
+                        
+                        // Crear objeto de tela con todas las propiedades
+                        const telaCompleta = {
+                            id: tela.id || null,
+                            nombre_tela: tela.tela || tela.nombre_tela || '',
+                            color: tela.color || '',
+                            referencia: referenciaExtraida, // <-- AQUÍ SE ASEGURA DE COPIAR LA REFERENCIA
+                            descripcion: tela.descripcion || '',
+                            grosor: tela.grosor || '',
+                            composicion: tela.composicion || '',
+                            imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : [],
+                            origen: 'variante_directa',
+                            variante_index: varianteIndex,
+                            tela_index: telaIndex
+                        };
+                        
+                        // Agregar al array de telas
+                        telasAgregadasTemp.push(telaCompleta);
+                        
+                        console.log(`[transformarDatos] ✅ [Tela ${telaIndex}] Agregada correctamente:`, {
+                            nombre: telaCompleta.nombre_tela,
+                            color: telaCompleta.color,
+                            referencia: `"${telaCompleta.referencia}"`,
+                            descripcion: telaCompleta.descripcion,
+                            imagenes: telaCompleta.imagenes.length
+                        });
+                    });
+                } else {
+                    console.log(`[transformarDatos] ⚠️ [Variante ${varianteIndex}] No tiene telas_multiples válido`);
+                }
+            });
+            
+            // Asignar el resultado final
+            telasDesdeVariantes = telasAgregadasTemp;
+            
+            console.log('[transformarDatos] 🎯 RESULTADO FINAL DE EXTRACIÓN DIRECTA:');
+            console.log(`[transformarDatos] 📊 Total de telas extraídas: ${telasDesdeVariantes.length}`);
+            
+            telasDesdeVariantes.forEach((tela, idx) => {
+                console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}"`);
+            });
+            
+        } else {
+            console.log('[transformarDatos] ⚠️ La prenda no tiene variantes array');
+        }
+        
+        // Combinar telas: prioridad a las del backend, pero enriquecer con datos de variantes
+        let telasFormato = [...telasDesdeBackend];
+        
+        // Agregar telas desde variantes que no existan ya (basado en nombre_tela + color)
+        telasDesdeVariantes.forEach(telaVariante => {
+            const existe = telasFormato.some(telaBackend => 
+                telaBackend.nombre_tela === telaVariante.nombre_tela && 
+                telaBackend.color === telaVariante.color
+            );
+            
+            if (!existe) {
+                // No existe: agregar como nueva tela
+                telasFormato.push(telaVariante);
+                console.log('[transformarDatos] ➕ Agregada tela desde variantes:', telaVariante);
+            } else {
+                // Existe: enriquecer con referencia si la tela de backend no tiene
+                const indiceExistente = telasFormato.findIndex(telaBackend => 
+                    telaBackend.nombre_tela === telaVariante.nombre_tela && 
+                    telaBackend.color === telaVariante.color
+                );
+                
+                if (indiceExistente !== -1) {
+                    const telaExistente = telasFormato[indiceExistente];
+                    
+                    // Si la tela de backend no tiene referencia pero la de variantes sí, usar la de variantes
+                    if ((!telaExistente.referencia || telaExistente.referencia === '') && 
+                        telaVariante.referencia && telaVariante.referencia !== '') {
+                        telasFormato[indiceExistente].referencia = telaVariante.referencia;
+                        telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
+                        console.log('[transformarDatos] 🔄 Tela enriquecida con referencia de variantes:', {
+                            nombre: telaExistente.nombre_tela,
+                            color: telaExistente.color,
+                            referencia_anterior: `"${telaExistente.referencia}"`,
+                            referencia_nueva: `"${telaVariante.referencia}"`
+                        });
+                    } else {
+                        console.log('[transformarDatos] ℹ️ Tela ya existe con referencia, sin cambios:', telaVariante);
+                    }
+                }
+            }
+        });
+        
+        console.log('[transformarDatos] 📦 TELAS FINALES PROCESADAS:', telasFormato);
 
         // Estructura de tallas - SOLO OBTENER TALLAS DISPONIBLES (sin cantidades)
         // El usuario digitará las cantidades manualmente
@@ -506,6 +633,20 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
             try {
                 // Cerrar modal de selección
                 modal.remove();
+
+                // 💾 GUARDAR PRENDA ORIGINAL PARA REFERENCIAS
+                // Guardar la prenda original del selector para poder acceder a telas_multiples más tarde
+                window.prendaOriginalDesdeSelector = {
+                    variantes: prenda.variantes,
+                    id: prenda.id,
+                    nombre_producto: prenda.nombre_producto,
+                    cotizacion_id: cotizacion.id
+                };
+                console.log('[abrirSelectorPrendasCotizacion] 💾 Prenda original guardada para referencia:', {
+                    tiene_variantes: !!prenda.variantes,
+                    variantes_es_array: Array.isArray(prenda.variantes),
+                    variantes_length: prenda.variantes?.length || 0
+                });
 
                 const prendaCompleta = await window.cargadorPrendasCotizacion.cargarPrendaCompletaDesdeCotizacion(
                     cotizacion.id,

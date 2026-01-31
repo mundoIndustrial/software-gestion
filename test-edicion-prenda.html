@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Edición Prenda - Bidireccional Completo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+    <script>
+        // Simular los datos que vienen del servidor
+        const respuestaServidor = {
+            "success": true,
+            "data": {
+                "id": 2,
+                "numero_pedido": 45806,
+                "prendas": [
+                    {
+                        "id": 2,
+                        "prenda_pedido_id": 2,
+                        "nombre": "CAMISA DRILL",  // Campo del servidor
+                        "nombre_prenda": undefined,  // No existe en servidor
+                        "nombre_producto": undefined,  // No existe en servidor
+                        "descripcion": "DSFSDFS"
+                    }
+                ]
+            }
+        };
+        
+        // CASOS DE PRUEBA - Diferentes estructuras locales
+        const casosDePrueba = [
+            {
+                nombre: "Caso 1: Local con nombre_prenda vs Servidor con nombre",
+                prendaLocal: {
+                    "id": 2,
+                    "prenda_pedido_id": 2,
+                    "nombre_prenda": "CAMISA DRILL",  // Campo local
+                    "nombre": undefined,  // No existe localmente
+                    "nombre_producto": undefined
+                }
+            },
+            {
+                nombre: "Caso 2: Local con nombre vs Servidor con nombre",
+                prendaLocal: {
+                    "id": 2,
+                    "prenda_pedido_id": 2,
+                    "nombre": "CAMISA DRILL",  // Campo local
+                    "nombre_prenda": undefined,
+                    "nombre_producto": undefined
+                }
+            },
+            {
+                nombre: "Caso 3: Local con nombre_producto vs Servidor con nombre",
+                prendaLocal: {
+                    "id": 2,
+                    "prenda_pedido_id": 2,
+                    "nombre_producto": "CAMISA DRILL",  // Campo local
+                    "nombre": undefined,
+                    "nombre_prenda": undefined
+                }
+            },
+            {
+                nombre: "Caso 4: Local con múltiples campos vs Servidor con nombre",
+                prendaLocal: {
+                    "id": 2,
+                    "prenda_pedido_id": 2,
+                    "nombre": "CAMISA DRILL",
+                    "nombre_prenda": "CAMISA DRILL",
+                    "nombre_producto": "CAMISA DRILL"
+                }
+            }
+        ];
+        
+        // Probar la lógica de búsqueda para cada caso
+        function probarBusqueda(caso, index) {
+            console.log(`\n🔍 ===== ${caso.nombre} =====`);
+            const prendaLocal = caso.prendaLocal;
+            
+            console.log('🔍 Datos del servidor:', respuestaServidor.data.prendas[0]);
+            console.log('🔍 Datos locales:', prendaLocal);
+            
+            // Lógica de búsqueda corregida (BIDIRECCIONAL COMPLETA)
+            const prendaCompleta = respuestaServidor.data.prendas?.find(p => {
+                // Coincidencia por ID (prioridad más alta)
+                const coincideId = (p.id === prendaLocal.id || p.prenda_pedido_id === prendaLocal.id);
+                
+                // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES)
+                const coincideNombre = (
+                    // Caso 1: nombre_prenda local == nombre_prenda servidor
+                    p.nombre_prenda === prendaLocal.nombre_prenda ||
+                    // Caso 2: nombre local == nombre servidor  
+                    p.nombre === prendaLocal.nombre ||
+                    // Caso 3: nombre_prenda local == nombre servidor (cruzado)
+                    p.nombre === prendaLocal.nombre_prenda ||
+                    // Caso 4: nombre local == nombre_prenda servidor (cruzado)
+                    p.nombre_prenda === prendaLocal.nombre ||
+                    // Caso 5: nombre_producto local == nombre servidor
+                    p.nombre === prendaLocal.nombre_producto ||
+                    // Caso 6: nombre_producto local == nombre_prenda servidor
+                    p.nombre_prenda === prendaLocal.nombre_producto ||
+                    // Caso 7: nombre local == nombre_producto servidor
+                    p.nombre_producto === prendaLocal.nombre ||
+                    // Caso 8: nombre_prenda local == nombre_producto servidor
+                    p.nombre_producto === prendaLocal.nombre_prenda
+                );
+                
+                console.log('🔍 Verificando prenda:', {
+                    servidor_id: p.id,
+                    servidor_nombre: p.nombre,
+                    servidor_nombre_prenda: p.nombre_prenda,
+                    servidor_nombre_producto: p.nombre_producto,
+                    local_id: prendaLocal.id,
+                    local_nombre: prendaLocal.nombre,
+                    local_nombre_prenda: prendaLocal.nombre_prenda,
+                    local_nombre_producto: prendaLocal.nombre_producto,
+                    coincideId,
+                    coincideNombre
+                });
+                
+                // Si coincide por ID, es suficiente (prioridad más alta)
+                if (coincideId) {
+                    console.log('✅ Coincidencia por ID encontrada');
+                    return true;
+                }
+                
+                // Si no coincide por ID, requerir coincidencia por nombre
+                if (coincideNombre) {
+                    console.log('✅ Coincidencia por nombre encontrada');
+                    return true;
+                }
+                
+                return false;
+            });
+            
+            const resultadoDiv = document.getElementById(`resultado-${index}`);
+            if (prendaCompleta) {
+                console.log('✅ ÉXITO: Prenda encontrada:', prendaCompleta);
+                resultadoDiv.className = 'test-case success';
+                resultadoDiv.innerHTML = `
+                    <h3>✅ ${caso.nombre}</h3>
+                    <p><strong>Resultado:</strong> PRENDA ENCONTRADA</p>
+                    <pre>${JSON.stringify(prendaCompleta, null, 2)}</pre>
+                `;
+            } else {
+                console.error('❌ ERROR: Prenda no encontrada');
+                resultadoDiv.className = 'test-case error';
+                resultadoDiv.innerHTML = `
+                    <h3>❌ ${caso.nombre}</h3>
+                    <p><strong>Resultado:</strong> PRENDA NO ENCONTRADA</p>
+                    <p>Revisa la consola para más detalles</p>
+                `;
+            }
+        }
+        
+        // Ejecutar todas las pruebas al cargar
+        window.onload = function() {
+            console.log('🚀 Iniciando pruebas bidireccionales completas...');
+            
+            casosDePrueba.forEach((caso, index) => {
+                probarBusqueda(caso, index);
+            });
+            
+            console.log('\n🏁 Pruebas completadas');
+        };
+    </script>
+</head>
+<body>
+    <h1>🧪 Test Búsqueda Bidireccional de Prenda</h1>
+    <p>Este test verifica todos los casos posibles de combinación entre campos locales y del servidor.</p>
+    <p><strong>Revisa la consola para ver los detalles de cada prueba.</strong></p>
+    
+    <div id="resultados">
+        <!-- Los resultados se insertarán aquí dinámicamente -->
+    </div>
+    
+    <!-- Generar dinámicamente los contenedores de resultados -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultadosDiv = document.getElementById('resultados');
+            casosDePrueba.forEach((caso, index) => {
+                resultadosDiv.innerHTML += `<div id="resultado-${index}" class="test-case">Cargando...</div>`;
+            });
+        });
+    </script>
+</body>
+</html>

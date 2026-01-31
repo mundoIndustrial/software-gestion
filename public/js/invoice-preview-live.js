@@ -812,6 +812,16 @@ function registrarFontSizesFactura() {
  */
 function generarHTMLFactura(datos) {
     try {
+        // 🔍 DEBUG: Verificar qué datos están llegando
+        console.log('🔍 [generarHTMLFactura] Datos recibidos:', {
+            datos_existe: !!datos,
+            datos_keys: datos ? Object.keys(datos) : 'null',
+            prendas_existe: !!(datos && datos.prendas),
+            prendas_es_array: !!(datos && datos.prendas && Array.isArray(datos.prendas)),
+            prendas_length: datos && datos.prendas ? datos.prendas.length : 'N/A',
+            datos_completos: datos
+        });
+        
         // Validar que datos y prendas existan
         if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
 

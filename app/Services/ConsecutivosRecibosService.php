@@ -30,19 +30,21 @@ class ConsecutivosRecibosService
             return false;
         }
 
-        // Verificar que el pedido no tenga ya consecutivos generados
-        if ($this->yaTieneConsecutivos($pedido->id)) {
-            Log::info('🔢 Consecutivos: Ya existen para el pedido', [
+        // Verificar que el usuario tenga rol SUPERVISOR_PEDIDOS o supervisor_pedidos
+        if (!auth()->user()->hasRole('SUPERVISOR_PEDIDOS') && !auth()->user()->hasRole('supervisor_pedidos')) {
+            Log::info('🔢 Consecutivos: Usuario no autorizado', [
                 'pedido_id' => $pedido->id,
-                'numero_pedido' => $pedido->numero_pedido
+                'numero_pedido' => $pedido->numero_pedido,
+                'usuario' => auth()->user()->name ?? 'sistema',
+                'motivo' => 'Usuario no tiene rol SUPERVISOR_PEDIDOS ni supervisor_pedidos'
             ]);
             return false;
         }
 
-        // Determinar qué tipos de recibo aplican por prenda
-        $tiposPorPrenda = $this->determinarTiposReciboPorPrenda($pedido);
+        // Determinar qué tipos de recibo aplican
+        $tiposRecibo = $this->determinarTiposRecibo($pedido);
         
-        if (empty($tiposPorPrenda)) {
+        if (empty($tiposRecibo)) {
             Log::info('🔢 Consecutivos: No hay tipos de recibo aplicables', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido
@@ -51,40 +53,58 @@ class ConsecutivosRecibosService
         }
 
         // Generar consecutivos en transacción
-        return DB::transaction(function () use ($pedido, $tiposPorPrenda) {
+        return DB::transaction(function () use ($pedido, $tiposRecibo) {
             try {
                 $consecutivosGenerados = [];
 
-                foreach ($tiposPorPrenda as $prendaId => $tiposRecibo) {
-                    foreach ($tiposRecibo as $tipoRecibo) {
-                        // Obtener el último consecutivo para este tipo de recibo
-                        $ultimoConsecutivo = DB::table('consecutivos_recibos_pedidos')
-                            ->where('tipo_recibo', $tipoRecibo)
-                            ->where('activo', 1)
-                            ->orderBy('consecutivo_actual', 'desc')
-                            ->lockForUpdate()
-                            ->first();
-
-                        $nuevoConsecutivo = $ultimoConsecutivo ? $ultimoConsecutivo->consecutivo_actual + 1 : 1;
-
-                        // Insertar registro para el pedido y tipo específico
-                        DB::table('consecutivos_recibos_pedidos')->insert([
-                            'pedido_produccion_id' => $pedido->id,
+                foreach ($tiposRecibo as $tipoRecibo => $config) {
+                    // Validar que no existan duplicados
+                    $existe = $this->existeConsecutivo($pedido->id, $tipoRecibo, $config['prenda_pedido_id'] ?? null);
+                    if ($existe) {
+                        Log::warning('🔢 Consecutivo ya existe, omitiendo', [
+                            'pedido_id' => $pedido->id,
                             'tipo_recibo' => $tipoRecibo,
-                            'consecutivo_inicial' => $nuevoConsecutivo,
-                            'consecutivo_actual' => $nuevoConsecutivo,
-                            'activo' => 1,
-                            'notas' => "Generado automáticamente para pedido #{$pedido->numero_pedido} - prenda #{$prendaId}",
-                            'created_at' => now(),
-                            'updated_at' => now()
+                            'prenda_pedido_id' => $config['prenda_pedido_id'] ?? null
                         ]);
-
-                        $consecutivosGenerados[] = [
-                            'prenda_id' => $prendaId,
-                            'tipo' => $tipoRecibo,
-                            'consecutivo' => $nuevoConsecutivo
-                        ];
+                        continue;
                     }
+
+                    // Obtener el último consecutivo para este tipo de recibo
+                    $ultimoConsecutivo = DB::table('consecutivos_recibos_pedidos')
+                        ->where('tipo_recibo', $tipoRecibo)
+                        ->where('activo', 1)
+                        ->orderBy('consecutivo_actual', 'desc')
+                        ->lockForUpdate()
+                        ->first();
+
+                    $nuevoConsecutivo = $ultimoConsecutivo ? $ultimoConsecutivo->consecutivo_actual + 1 : 1;
+
+                    // Insertar registro con la estructura correcta
+                    $insertData = [
+                        'pedido_produccion_id' => $pedido->id,
+                        'tipo_recibo' => $config['tipo_recibo'],
+                        'consecutivo_inicial' => $nuevoConsecutivo,
+                        'consecutivo_actual' => $nuevoConsecutivo,
+                        'activo' => 1,
+                        'notas' => "Generado automáticamente para pedido #{$pedido->numero_pedido}" . (
+                            $config['prenda_pedido_id'] ? " - prenda #{$config['prenda_pedido_id']}" : ""
+                        ),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+
+                    // Agregar prenda_id solo si aplica
+                    if (isset($config['prenda_pedido_id'])) {
+                        $insertData['prenda_id'] = $config['prenda_pedido_id'];
+                    }
+
+                    DB::table('consecutivos_recibos_pedidos')->insert($insertData);
+
+                    $consecutivosGenerados[] = [
+                        'tipo' => $tipoRecibo,
+                        'consecutivo' => $nuevoConsecutivo,
+                        'prenda_pedido_id' => $config['prenda_pedido_id'] ?? null
+                    ];
                 }
 
                 Log::info('🔢 Consecutivos generados exitosamente', [
@@ -111,42 +131,53 @@ class ConsecutivosRecibosService
     }
 
     /**
-     * Verifica si un pedido ya tiene consecutivos generados
+     * Verifica si ya existe un consecutivo para evitar duplicados
      */
-    private function yaTieneConsecutivos(int $pedidoId): bool
+    private function existeConsecutivo(int $pedidoId, string $tipoRecibo, ?int $prendaPedidoId): bool
     {
-        return DB::table('consecutivos_recibos_pedidos')
+        $query = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
-            ->exists();
+            ->where('tipo_recibo', $tipoRecibo);
+            
+        if ($prendaPedidoId) {
+            $query->where('prenda_id', $prendaPedidoId);
+        } else {
+            $query->whereNull('prenda_id');
+        }
+        
+        return $query->exists();
     }
 
     /**
-     * Determina qué tipos de recibo aplican por cada prenda
-     * Basado en la lógica: COSTURA por prenda (si no es de bodega) + procesos por prenda
+     * Determina qué tipos de recibo aplican para un pedido
+     * Regla: COSTURA por cada prenda (si no es de bodega), otros procesos por pedido
      */
-    public function determinarTiposReciboPorPrenda(PedidoProduccion $pedido): array
+    public function determinarTiposRecibo(PedidoProduccion $pedido): array
     {
-        $tiposPorPrenda = [];
+        $tiposRecibo = [];
         
         // Cargar el pedido con sus prendas y procesos
         $pedidoCompleto = PedidoProduccion::with(['prendas.procesos.tipoProceso'])
             ->find($pedido->id);
 
         if (!$pedidoCompleto) {
-            return $tiposPorPrenda;
+            return $tiposRecibo;
         }
 
-        // Analizar cada prenda individualmente
+        // Procesar cada prenda para COSTURA
         foreach ($pedidoCompleto->prendas as $prenda) {
-            $tiposPrenda = [];
-            
             // COSTURA: Solo si la prenda NO es de bodega
             if (!$prenda->de_bodega) {
-                $tiposPrenda[] = 'COSTURA';
+                $tiposRecibo['COSTURA_' . $prenda->id] = [
+                    'tipo_recibo' => 'COSTURA',
+                    'prenda_pedido_id' => $prenda->id
+                ];
             }
+        }
 
-            // Para ESTAMPADO, BORDADO, REFLECTIVO: se generan por proceso 
-            // independientemente de si la prenda es de bodega o no
+        // Para ESTAMPADO, BORDADO, REFLECTIVO: se generan solo una vez por pedido
+        $procesosPorPedido = [];
+        foreach ($pedidoCompleto->prendas as $prenda) {
             foreach ($prenda->procesos as $proceso) {
                 // Obtener el nombre del tipo de proceso desde la relación
                 $nombreTipoProceso = strtoupper(trim($proceso->tipoProceso->nombre ?? ''));
@@ -159,61 +190,87 @@ class ConsecutivosRecibosService
                     $nombreTipoProceso = strtoupper(trim($tipoDirecto->nombre ?? ''));
                 }
                 
-                // Mapear tipos de proceso a tipos de recibo
+                // Mapear tipos de proceso a tipos de recibo (solo una vez por pedido)
                 switch ($nombreTipoProceso) {
                     case 'BORDADO':
-                        if (!in_array('BORDADO', $tiposPrenda)) {
-                            $tiposPrenda[] = 'BORDADO';
+                        if (!isset($procesosPorPedido['BORDADO'])) {
+                            $procesosPorPedido['BORDADO'] = true;
+                            $tiposRecibo['BORDADO'] = [
+                                'tipo_recibo' => 'BORDADO',
+                                'prenda_pedido_id' => null
+                            ];
                         }
                         break;
                     case 'ESTAMPADO':
-                        if (!in_array('ESTAMPADO', $tiposPrenda)) {
-                            $tiposPrenda[] = 'ESTAMPADO';
+                        if (!isset($procesosPorPedido['ESTAMPADO'])) {
+                            $procesosPorPedido['ESTAMPADO'] = true;
+                            $tiposRecibo['ESTAMPADO'] = [
+                                'tipo_recibo' => 'ESTAMPADO',
+                                'prenda_pedido_id' => null
+                            ];
                         }
                         break;
                     case 'REFLECTIVO':
-                        if (!in_array('REFLECTIVO', $tiposPrenda)) {
-                            $tiposPrenda[] = 'REFLECTIVO';
+                        if (!isset($procesosPorPedido['REFLECTIVO'])) {
+                            $procesosPorPedido['REFLECTIVO'] = true;
+                            $tiposRecibo['REFLECTIVO'] = [
+                                'tipo_recibo' => 'REFLECTIVO',
+                                'prenda_pedido_id' => null
+                            ];
                         }
                         break;
                 }
             }
-
-            // Si la prenda tiene tipos de recibo aplicables, agregarlos
-            if (!empty($tiposPrenda)) {
-                $tiposPorPrenda[$prenda->id] = $tiposPrenda;
-            }
         }
 
-        Log::info('🔢 Tipos de recibo determinados por prenda', [
+        Log::info('🔢 Tipos de recibo determinados', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
-            'tipos_por_prenda' => $tiposPorPrenda,
+            'tipos_recibo' => $tiposRecibo,
             'total_prendas' => $pedidoCompleto->prendas->count(),
-            'prendas_con_consecutivo' => count($tiposPorPrenda),
-            'total_consecutivos_a_generar' => array_sum(array_map('count', $tiposPorPrenda))
+            'prendas_no_bodega' => $pedidoCompleto->prendas->where('de_bodega', 0)->count(),
+            'total_consecutivos_a_generar' => count($tiposRecibo)
         ]);
 
-        return $tiposPorPrenda;
+        return $tiposRecibo;
     }
 
     /**
-     * Obtiene los consecutivos asignados a un pedido
+     * Obtiene los consecutivos asignados a un pedido en el formato esperado por el frontend
      */
     public function obtenerConsecutivosPedido(int $pedidoId): array
     {
-        return DB::table('consecutivos_recibos_pedidos')
+        $consecutivos = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('activo', 1)
-            ->get()
-            ->map(function ($registro) {
-                return [
-                    'tipo_recibo' => $registro->tipo_recibo,
-                    'consecutivo' => $registro->consecutivo_actual,
-                    'formato' => $this->formatearConsecutivo($registro->tipo_recibo, $registro->consecutivo_actual)
-                ];
-            })
-            ->toArray();
+            ->get();
+
+        $resultado = [];
+        
+        foreach ($consecutivos as $registro) {
+            $tipoRecibo = $registro->tipo_recibo;
+            $consecutivo = $registro->consecutivo_actual;
+            $prendaId = $registro->prenda_id;
+            
+            if ($prendaId) {
+                // Para COSTURA: estructura anidada por prenda
+                if (!isset($resultado[$tipoRecibo])) {
+                    $resultado[$tipoRecibo] = [];
+                }
+                $resultado[$tipoRecibo][(string)$prendaId] = $consecutivo;
+            } else {
+                // Para otros procesos: valor directo
+                $resultado[$tipoRecibo] = $consecutivo;
+            }
+        }
+        
+        Log::info('🔢 Consecutivos obtenidos para pedido', [
+            'pedido_id' => $pedidoId,
+            'resultado' => $resultado,
+            'total_registros' => $consecutivos->count()
+        ]);
+        
+        return $resultado;
     }
 
     /**

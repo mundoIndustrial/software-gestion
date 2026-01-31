@@ -644,7 +644,23 @@ final class ActualizarPrendaCompletaUseCase
         // Agregar novedad a las novedades existentes (para mantener historial)
         // Usar "\n\n" como separador de bloques (igual que operario)
         $novedadesActuales = $pedido->novedades ?? '';
-        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . trim($dto->novedad);
+        
+        // Obtener información del usuario autenticado
+        $usuarioAutenticado = \Auth::user();
+        $nombreAsesor = $usuarioAutenticado ? $usuarioAutenticado->name : 'Sistema';
+        
+        // Obtener el primer rol del usuario (usando Spatie Laravel-permission)
+        if ($usuarioAutenticado && method_exists($usuarioAutenticado, 'roles')) {
+            $rolAsesor = $usuarioAutenticado->roles()->first()?->name ?? 'Sistema';
+        } else {
+            $rolAsesor = 'Sistema';
+        }
+        
+        // Formatear la novedad con información del asesor
+        $nuevaNovedad = trim($dto->novedad);
+        $novedadConInfo = "[{$rolAsesor} - {$nombreAsesor} - " . now()->format('d/m/Y H:i') . "]\n{$nuevaNovedad}";
+        
+        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadConInfo;
 
         // Actualizar en pedidos_produccion
         $pedido->update([
@@ -655,6 +671,8 @@ final class ActualizarPrendaCompletaUseCase
             'prenda_id' => $prenda->id,
             'pedido_id' => $pedido->id,
             'novedad' => $dto->novedad,
+            'nombre_asesor' => $nombreAsesor,
+            'rol_asesor' => $rolAsesor,
         ]);
     }
 }

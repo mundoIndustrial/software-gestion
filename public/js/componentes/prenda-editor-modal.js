@@ -115,14 +115,18 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
     
     console.log('✅ [EDITAR-PRENDA] Prenda encontrada:', {
         nombre: prenda.nombre_prenda,
+        nombre_alt: prenda.nombre,
         id: prenda.id,
-        pedidoId: pedidoId
+        prenda_pedido_id: prenda.prenda_pedido_id,
+        pedidoId: pedidoId,
+        todosLosCampos: Object.keys(prenda),
+        estructura_completa: prenda
     });
     
     try {
         // OBTENER DATOS FRESCOS DE LA BD
         console.log('📡 [EDITAR-PRENDA] Obteniendo datos frescos del servidor...');
-        const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`);
+        const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`);
         
         if (!response.ok) {
             throw new Error(`Error ${response.status}: No se pudieron obtener los datos`);
@@ -130,15 +134,121 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         const resultado = await response.json();
         
-        if (!resultado.success || !resultado.prenda) {
+        if (!resultado.success || !resultado.data) {
             throw new Error('No se recibieron datos válidos del servidor');
         }
         
-        const prendaCompleta = resultado.prenda;
+        // 🔍 DEBUG: Mostrar todas las prendas disponibles para comparación
+        console.log('🔍 [EDITAR-PRENDA] Prendas disponibles en respuesta:', resultado.data.prendas?.length || 0);
+        if (resultado.data.prendas && resultado.data.prendas.length > 0) {
+            resultado.data.prendas.forEach((p, idx) => {
+                console.log(`🔍 [EDITAR-PRENDA] Prenda[${idx}]:`, {
+                    id: p.id,
+                    prenda_pedido_id: p.prenda_pedido_id,
+                    nombre: p.nombre,
+                    nombre_prenda: p.nombre_prenda,
+                    match_id: (p.id === prenda.id || p.prenda_pedido_id === prenda.id),
+                    match_nombre_directo: (p.nombre === prenda.nombre),
+                    match_nombre_cruzado_1: (p.nombre === prenda.nombre_prenda),
+                    match_nombre_cruzado_2: (p.nombre_prenda === prenda.nombre),
+                    match_nombre_prenda_directo: (p.nombre_prenda === prenda.nombre_prenda)
+                });
+            });
+        }
+        
+        // 🔍 DEBUG: Mostrar qué estamos buscando
+        console.log('🔍 [EDITAR-PRENDA] Buscando prenda con:', {
+            buscar_id: prenda.id,
+            buscar_prenda_pedido_id: prenda.id,
+            buscar_nombre: prenda.nombre,
+            buscar_nombre_prenda: prenda.nombre_prenda,
+            buscar_nombre_producto: prenda.nombre_producto
+        });
+        
+        // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL COMPLETA
+        const prendaCompleta = resultado.data.prendas?.find(p => {
+            // Coincidencia por ID (prioridad más alta)
+            const coincideId = (p.id === prenda.id || p.prenda_pedido_id === prenda.id);
+            
+            // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES)
+            const coincideNombre = (
+                // Caso 1: nombre_prenda local == nombre_prenda servidor
+                p.nombre_prenda === prenda.nombre_prenda ||
+                // Caso 2: nombre local == nombre servidor  
+                p.nombre === prenda.nombre ||
+                // Caso 3: nombre_prenda local == nombre servidor (cruzado)
+                p.nombre === prenda.nombre_prenda ||
+                // Caso 4: nombre local == nombre_prenda servidor (cruzado)
+                p.nombre_prenda === prenda.nombre ||
+                // Caso 5: nombre_producto local == nombre servidor
+                p.nombre === prenda.nombre_producto ||
+                // Caso 6: nombre_producto local == nombre_prenda servidor
+                p.nombre_prenda === prenda.nombre_producto ||
+                // Caso 7: nombre local == nombre_producto servidor
+                p.nombre_producto === prenda.nombre ||
+                // Caso 8: nombre_prenda local == nombre_producto servidor
+                p.nombre_producto === prenda.nombre_prenda
+            );
+            
+            // Si coincide por ID, es suficiente (prioridad más alta)
+            if (coincideId) {
+                console.log('✅ [EDITAR-PRENDA] Coincidencia por ID encontrada:', {
+                    encontrado_id: p.id,
+                    encontrado_prenda_pedido_id: p.prenda_pedido_id,
+                    buscado_id: prenda.id,
+                    encontrado_nombre: p.nombre || p.nombre_prenda,
+                    buscado_nombre: prenda.nombre || prenda.nombre_prenda
+                });
+                return true;
+            }
+            
+            // Si no coincide por ID, requerir coincidencia por nombre
+            if (coincideNombre) {
+                console.log('✅ [EDITAR-PRENDA] Coincidencia por nombre encontrada:', {
+                    encontrado_nombre: p.nombre || p.nombre_prenda || p.nombre_producto,
+                    encontrado_nombre_prenda: p.nombre_prenda,
+                    encontrado_nombre_producto: p.nombre_producto,
+                    buscado_nombre: prenda.nombre || prenda.nombre_prenda || prenda.nombre_producto,
+                    buscado_nombre_prenda: prenda.nombre_prenda,
+                    buscado_nombre_producto: prenda.nombre_producto,
+                    tipo_coincidencia: 'nombre'
+                });
+                return true;
+            }
+            
+            return false;
+        });
+        
+        if (!prendaCompleta) {
+            console.error('❌ [EDITAR-PRENDA] No se encontró la prenda. Datos de búsqueda:', {
+                buscar: {
+                    id: prenda.id,
+                    nombre_prenda: prenda.nombre_prenda,
+                    nombre: prenda.nombre
+                },
+                disponibles: resultado.data.prendas?.map(p => ({
+                    id: p.id,
+                    prenda_pedido_id: p.prenda_pedido_id,
+                    nombre: p.nombre,
+                    nombre_prenda: p.nombre_prenda
+                }))
+            });
+            throw new Error('Prenda no encontrada en los datos del pedido');
+        }
+        
+        // 🔍 DEBUG: Verificar IDs de prendaCompleta
+        console.log('🔍 [EDITAR-PRENDA] IDs en prendaCompleta:', {
+            id: prendaCompleta.id,
+            prenda_pedido_id: prendaCompleta.prenda_pedido_id,
+            nombre_prenda: prendaCompleta.nombre_prenda,
+            todosLosCampos: Object.keys(prendaCompleta)
+        });
+        
         console.log('✅ [EDITAR-PRENDA] Datos del servidor recibidos:', {
             tallas_dama: prendaCompleta.tallas_dama?.length || 0,
             tallas_caballero: prendaCompleta.tallas_caballero?.length || 0,
             colores_telas: prendaCompleta.colores_telas?.length || 0,
+            telas_array: prendaCompleta.telas_array?.length || 0,
             variantes: prendaCompleta.variantes?.length || 0,
             procesos: prendaCompleta.procesos?.length || 0
         });
@@ -146,65 +256,259 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // TRANSFORMAR DATOS PARA EL MODAL
         console.log('🔄 [EDITAR-PRENDA] Transformando datos para el modal...');
         
-        // Función auxiliar para agregar /storage/ a URLs
+        // Función auxiliar para manejar URLs de imágenes (robusta para ambos casos)
         const agregarStorage = (url) => {
             if (!url) return '';
-            if (url.startsWith('/')) return url;
-            if (url.startsWith('http')) return url;
+            
+            // Caso 1: URL ya es absoluta (empieza con /)
+            if (url.startsWith('/')) {
+                // Si ya tiene /storage/, la dejamos intacta
+                if (url.includes('/storage/')) {
+                    return url; // Ya está correcta
+                }
+                // Si empieza con / pero no tiene /storage/, se la agregamos
+                return '/storage' + url;
+            }
+            
+            // Caso 2: URL es relativa (no empieza con /)
+            if (url.startsWith('http')) {
+                return url; // URLs completas se dejan intactas
+            }
+            
+            // Caso 3: URL relativa con 'storage/' al inicio
+            if (url.startsWith('storage/')) {
+                return '/storage/' + url.replace('storage/', '');
+            }
+            
+            // Caso 4: URL relativa sin prefijo (ej: "pedidos/1/prenda/imagen.webp")
             return '/storage/' + url;
         };
 
-        // Transformar colores/telas a telasAgregadas
-        const telasAgregadas = [];
-        if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas)) {
-            prendaCompleta.colores_telas.forEach((ct) => {
-                console.log('🔍 [TRANSFORMAR-COLORES-TELAS] Color-tela objeto:', ct);
-                telasAgregadas.push({
-                    id: ct.id,  // ID de la relación prenda_pedido_colores_telas
-                    color_id: ct.color_id,
-                    color: ct.color?.nombre || ct.color_nombre || '',
-                    codigo_color: ct.color?.codigo || ct.color_codigo || '',
-                    tela_id: ct.tela_id,
-                    tela: ct.tela?.nombre || ct.tela_nombre || '',
-                    nombre_tela: ct.tela?.nombre || ct.tela_nombre || '',
-                    referencia: ct.referencia || ct.tela?.referencia || ct.tela_referencia || '',
-                    imagenes_count: (ct.imagenes_tela || ct.fotos_tela || []).length,
-                    imagenes: (ct.imagenes_tela || ct.fotos_tela || []).map(f => {
-                        const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original);
-                        return {
-                            id: f.id,  // ID de la foto
-                            url: urlConStorage,
-                            ruta: urlConStorage,
-                            urlDesdeDB: true,
-                            ruta_original: f.ruta_original,
-                            ruta_webp: f.ruta_webp
-                        };
-                    })
-                });
-                console.log('✅ [TRANSFORMAR-COLORES-TELAS] Tela transformada:', telasAgregadas[telasAgregadas.length - 1]);
-            });
+        // SISTEMA DE DETECCIÓN AUTOMÁTICA DE FORMATO - Sin dañar lógica existente
+        const formatoDetectado = {
+            tallas: 'desconocido',
+            telas: 'desconocido', 
+            variantes: 'desconocido'
+        };
+        
+        // DETECTAR FORMATO DE TALLAS
+        if (prendaCompleta.tallas && typeof prendaCompleta.tallas === 'object' && 
+            Object.keys(prendaCompleta.tallas).some(g => ['DAMA', 'CABALLERO', 'UNISEX'].includes(g.toUpperCase()))) {
+            formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}}
+            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: NUEVO (objeto por género)');
+        } else if ((prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) || 
+                   (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero))) {
+            formatoDetectado.tallas = 'antiguo'; // {tallas_dama: [{talla: "L", cantidad: 20}]}
+            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: ANTIGUO (arrays por género)');
+        } else {
+            console.warn('⚠️ [DETECCIÓN] Formato de tallas no reconocido, usando defaults');
         }
         
-        console.log('✅ [EDITAR-PRENDA] telasAgregadas:', telasAgregadas.length, 'items');
+        // DETECTAR FORMATO DE TELAS
+        if (prendaCompleta.telas_array && Array.isArray(prendaCompleta.telas_array) && 
+            prendaCompleta.telas_array.length > 0) {
+            formatoDetectado.telas = 'nuevo'; // {telas_array: [{id: 1, tela_id: 19, color_id: 61}]}
+            console.log('🔍 [DETECCIÓN] Formato de telas detectado: NUEVO (telas_array)');
+        } else if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas) && 
+                   prendaCompleta.colores_telas.length > 0) {
+            formatoDetectado.telas = 'antiguo'; // {colores_telas: [{id: 1, color_id: 61}]}
+            console.log('🔍 [DETECCIÓN] Formato de telas detectado: ANTIGUO (colores_telas)');
+        } else {
+            console.warn('⚠️ [DETECCIÓN] Formato de telas no reconocido, usando defaults');
+        }
         
-        // Transformar tallas
+        // DETECTAR FORMATO DE VARIANTES
+        if (prendaCompleta.variantes && Array.isArray(prendaCompleta.variantes) && 
+            prendaCompleta.variantes.length > 0) {
+            const v = prendaCompleta.variantes[0];
+            if (v.manga || v.broche || v.bolsillos) {
+                formatoDetectado.variantes = 'nuevo'; // {manga: "Larga", broche: "Botón"}
+                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: NUEVO (campos directos)');
+            } else if (v.tipo_manga || v.tipo_broche_boton || v.tiene_bolsillos !== undefined) {
+                formatoDetectado.variantes = 'antiguo'; // {tipo_manga: "Larga", tipo_broche_boton: "Botón"}
+                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: ANTIGUO (campos prefijados)');
+            } else {
+                formatoDetectado.variantes = 'mixto'; // Mezcla de formatos
+                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: MIXTO');
+            }
+        } else {
+            console.warn('⚠️ [DETECCIÓN] Formato de variantes no reconocido, usando defaults');
+        }
+        
+        console.log('📊 [DETECCIÓN] Formatos detectados:', formatoDetectado);
+
+        // TRANSFORMAR TELAS - Basado en detección automática
+        const telasAgregadas = [];
+        
+        if (formatoDetectado.telas === 'nuevo') {
+            // Formato nuevo: {telas_array: [{id: 1, tela_id: 19, color_id: 61, nombre: "ALFONSO"}]}
+            console.log('🔄 [TELAS] Procesando formato NUEVO (telas_array):', prendaCompleta.telas_array);
+            
+            prendaCompleta.telas_array.forEach((ct) => {
+                if (ct && typeof ct === 'object' && ct.id && ct.tela_id && ct.color_id) {
+                    // Validación segura de objetos anidados para evitar null reference
+                    const color = ct.color || {};
+                    const tela = ct.tela || {};
+                    
+                    telasAgregadas.push({
+                        id: ct.id,
+                        color_id: ct.color_id,
+                        color: color.nombre || ct.color_nombre || ct.color || '',
+                        codigo_color: color.codigo || ct.color_codigo || ct.codigo_color || '',
+                        tela_id: ct.tela_id,
+                        tela: tela.nombre || ct.tela_nombre || ct.nombre || '',
+                        nombre_tela: tela.nombre || ct.tela_nombre || ct.nombre || '',
+                        referencia: ct.referencia || tela.referencia || ct.tela_referencia || ct.ref || '',
+                        imagenes_count: (ct.imagenes_tela || ct.fotos_tela || ct.imagenes || ct.fotos || []).length,
+                        imagenes: (ct.imagenes_tela || ct.fotos_tela || ct.imagenes || ct.fotos || []).map(f => {
+                            const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original || f.url || f.ruta || '');
+                            return {
+                                id: f.id,
+                                url: urlConStorage,
+                                ruta: urlConStorage,
+                                urlDesdeDB: true,
+                                ruta_original: f.ruta_original,
+                                ruta_webp: f.ruta_webp
+                            };
+                        })
+                    });
+                    console.log('✅ [TELAS] Tela transformada (formato nuevo):', telasAgregadas[telasAgregadas.length - 1]);
+                } else {
+                    console.warn('⚠️ [TELAS] Estructura inválida en formato nuevo, omitiendo:', ct);
+                }
+            });
+        } else if (formatoDetectado.telas === 'antiguo') {
+            // Formato antiguo: {colores_telas: [{id: 1, color_id: 61, tela_id: 19}]}
+            console.log('🔄 [TELAS] Procesando formato ANTIGUO (colores_telas):', prendaCompleta.colores_telas);
+            
+            prendaCompleta.colores_telas.forEach((ct) => {
+                if (ct && typeof ct === 'object' && ct.id && ct.color_id && ct.tela_id) {
+                    // Validación segura de objetos anidados para evitar null reference
+                    const color = ct.color || {};
+                    const tela = ct.tela || {};
+                    
+                    telasAgregadas.push({
+                        id: ct.id,
+                        color_id: ct.color_id,
+                        color: color.nombre || ct.color_nombre || '',
+                        codigo_color: color.codigo || ct.color_codigo || '',
+                        tela_id: ct.tela_id,
+                        tela: tela.nombre || ct.tela_nombre || '',
+                        nombre_tela: tela.nombre || ct.tela_nombre || '',
+                        referencia: ct.referencia || tela.referencia || ct.tela_referencia || '',
+                        imagenes_count: (ct.imagenes_tela || ct.fotos_tela || []).length,
+                        imagenes: (ct.imagenes_tela || ct.fotos_tela || []).map(f => {
+                            const urlConStorage = agregarStorage(f.ruta_webp || f.ruta_original);
+                            return {
+                                id: f.id,
+                                url: urlConStorage,
+                                ruta: urlConStorage,
+                                urlDesdeDB: true,
+                                ruta_original: f.ruta_original,
+                                ruta_webp: f.ruta_webp
+                            };
+                        })
+                    });
+                    console.log('✅ [TELAS] Tela transformada (formato antiguo):', telasAgregadas[telasAgregadas.length - 1]);
+                } else {
+                    console.warn('⚠️ [TELAS] Estructura inválida en formato antiguo, omitiendo:', ct);
+                }
+            });
+        } else {
+            // Sin datos - array vacío para no romper el flujo
+            console.log('🔄 [TELAS] Sin datos, usando array vacío');
+        }
+        
+        // TRANSFORMAR VARIANTES - Basado en detección automática
+        let variantes = {};
+        
+        if (formatoDetectado.variantes !== 'desconocido' && prendaCompleta.variantes && 
+            Array.isArray(prendaCompleta.variantes) && prendaCompleta.variantes.length > 0) {
+            
+            const v = prendaCompleta.variantes[0];
+            console.log('🔄 [VARIANTES] Procesando formato detectado:', formatoDetectado.variantes, v);
+            
+            // Mapeo universal que funciona con ambos formatos
+            variantes = {
+                // Campos nuevos (prioridad)
+                tipo_manga: v.tipo_manga || v.manga || '',
+                tipo_manga_id: v.tipo_manga_id || v.manga_id,
+                obs_manga: v.manga_obs || v.obs_manga || '',
+                tiene_bolsillos: v.tiene_bolsillos !== undefined ? v.tiene_bolsillos : (v.bolsillos || false),
+                obs_bolsillos: v.bolsillos_obs || v.obs_bolsillos || '',
+                tipo_broche: v.tipo_broche_boton || v.broche || v.tipo_broche || '',
+                tipo_broche_id: v.tipo_broche_boton_id || v.broche_id || v.tipo_broche_id,
+                obs_broche: v.broche_boton_obs || v.broche_obs || v.obs_broche || '',
+                // Campos adicionales
+                talla: v.talla || '',
+                cantidad: v.cantidad || 0
+            };
+            
+            console.log('✅ [VARIANTES] Variantes procesadas (formato ' + formatoDetectado.variantes + '):', variantes);
+            
+        } else {
+            // Sin datos - defaults seguros para no romper el flujo
+            console.log('🔄 [VARIANTES] Sin datos válidos, usando defaults seguros');
+            variantes = {
+                tipo_manga: '',
+                tipo_manga_id: undefined,
+                obs_manga: '',
+                tiene_bolsillos: false,
+                obs_bolsillos: '',
+                tipo_broche: '',
+                tipo_broche_id: undefined,
+                obs_broche: '',
+                talla: '',
+                cantidad: 0
+            };
+        }
+        
+        // TRANSFORMAR TALLAS - Basado en detección automática
         const tallasPorGenero = {};
         
-        if (prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) {
+        if (formatoDetectado.tallas === 'nuevo') {
+            // Formato nuevo: {DAMA: {L: 20, M: 10}}
+            console.log('🔄 [TALLAS] Procesando formato NUEVO:', prendaCompleta.tallas);
+            
+            Object.entries(prendaCompleta.tallas).forEach(([genero, tallasGenero]) => {
+                const generoNormalizado = genero.toUpperCase();
+                if (['DAMA', 'CABALLERO', 'UNISEX'].includes(generoNormalizado) && 
+                    typeof tallasGenero === 'object' && tallasGenero !== null) {
+                    tallasPorGenero[generoNormalizado] = {};
+                    Object.entries(tallasGenero).forEach(([talla, cantidad]) => {
+                        const cantidadValida = (typeof cantidad === 'number' && cantidad >= 0) ? cantidad : 0;
+                        tallasPorGenero[generoNormalizado][talla] = cantidadValida;
+                    });
+                }
+            });
+        } else if (formatoDetectado.tallas === 'antiguo') {
+            // Formato antiguo: {tallas_dama: [{talla: "L", cantidad: 20}]}
+            console.log('🔄 [TALLAS] Procesando formato ANTIGUO');
+            
+            if (prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) {
+                tallasPorGenero.DAMA = {};
+                prendaCompleta.tallas_dama.forEach(t => {
+                    if (t && typeof t === 'object' && t.talla && typeof t.cantidad === 'number') {
+                        tallasPorGenero.DAMA[t.talla] = Math.max(0, t.cantidad);
+                    }
+                });
+            }
+            
+            if (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero)) {
+                tallasPorGenero.CABALLERO = {};
+                prendaCompleta.tallas_caballero.forEach(t => {
+                    if (t && typeof t === 'object' && t.talla && typeof t.cantidad === 'number') {
+                        tallasPorGenero.CABALLERO[t.talla] = Math.max(0, t.cantidad);
+                    }
+                });
+            }
+        } else {
+            // Sin datos - estructura vacía para no romper el flujo
+            console.log('🔄 [TALLAS] Sin datos, usando estructura vacía');
             tallasPorGenero.DAMA = {};
-            prendaCompleta.tallas_dama.forEach(t => {
-                tallasPorGenero.DAMA[t.talla] = t.cantidad || 0;
-            });
-        }
-        
-        if (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero)) {
             tallasPorGenero.CABALLERO = {};
-            prendaCompleta.tallas_caballero.forEach(t => {
-                tallasPorGenero.CABALLERO[t.talla] = t.cantidad || 0;
-            });
+            tallasPorGenero.UNISEX = {};
         }
-        
-        console.log('✅ [EDITAR-PRENDA] Tallas por género:', tallasPorGenero);
         
         // Transformar tallas a array para compatibilidad con el modal
         const tallasArray = [];
@@ -220,34 +524,44 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         });
         
-        // Transformar a estructura con cantidades para generosConTallas
+        // Transformar a estructura con cantidades para generosConTallas - Manejo robusto
         const generosConTallasEstructura = {};
+        
         Object.entries(tallasPorGenero).forEach(([genero, tallas]) => {
-            const tieneTallas = Object.values(tallas).some(cant => cant > 0);
-            if (tieneTallas) {
-                generosConTallasEstructura[genero.toLowerCase()] = {
-                    cantidades: tallas
-                };
+            // Validar que el género sea válido y tenga datos
+            if (genero && typeof genero === 'string' && tallas && typeof tallas === 'object') {
+                const tieneTallas = Object.values(tallas).some(cant => typeof cant === 'number' && cant > 0);
+                if (tieneTallas) {
+                    // Validar que todas las cantidades sean números válidos
+                    const cantidadesValidadas = {};
+                    Object.entries(tallas).forEach(([talla, cantidad]) => {
+                        cantidadesValidadas[talla] = (typeof cantidad === 'number' && cantidad >= 0) ? cantidad : 0;
+                    });
+                    
+                    // Usar mayúsculas para consistencia con el procesamiento en prenda-editor.js
+                    generosConTallasEstructura[genero] = {
+                        cantidades: cantidadesValidadas
+                    };
+                    
+                    console.log(`✅ [EDITAR-PRENDA] Género ${genero} procesado:`, cantidadesValidadas);
+                } else {
+                    console.log(`ℹ️ [EDITAR-PRENDA] Género ${genero} sin tallas con cantidad > 0, omitiendo`);
+                }
+            } else {
+                console.warn(`⚠️ [EDITAR-PRENDA] Estructura inválida para género:`, { genero, tallas });
             }
         });
         
-        console.log('✅ [EDITAR-PRENDA] Tallas como array:', tallasArray);
-        let variantes = {};
-        if (prendaCompleta.variantes && Array.isArray(prendaCompleta.variantes) && prendaCompleta.variantes.length > 0) {
-            const v = prendaCompleta.variantes[0]; // Primera variante (si hay múltiples)
-            variantes = {
-                tipo_manga: v.tipo_manga || '',
-                tipo_manga_id: v.tipo_manga_id,
-                obs_manga: v.manga_obs || '',
-                tiene_bolsillos: v.tiene_bolsillos || false,
-                obs_bolsillos: v.bolsillos_obs || '',
-                tipo_broche: v.tipo_broche_boton || '',
-                tipo_broche_id: v.tipo_broche_boton_id,
-                obs_broche: v.broche_boton_obs || ''
-            };
+        // Validación final de la estructura
+        if (Object.keys(generosConTallasEstructura).length === 0) {
+            console.warn('⚠️ [EDITAR-PRENDA] No se encontraron tallas válidas en generosConTallasEstructura');
+        } else {
+            console.log('✅ [EDITAR-PRENDA] generosConTallasEstructura final:', generosConTallasEstructura);
         }
         
-        console.log('✅ [EDITAR-PRENDA] Variantes transformadas:', variantes);
+        console.log('✅ [EDITAR-PRENDA] Tallas como array:', tallasArray);
+        console.log('🔍 [EDITAR-PRENDA] generosConTallasEstructura:', generosConTallasEstructura);
+        console.log('🔍 [EDITAR-PRENDA] tallasPorGenero (crudo):', tallasPorGenero);
         
         // Preparar datos para el modal
         // Transformar imágenes de la prenda
@@ -273,11 +587,16 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 imageId: img.id
             });
             return {
+                id: img.id || idx,
                 url: urlFinal,
                 ruta: urlFinal,
-                urlDesdeDB: true,
-                id: img.id
+                ruta_original: img.ruta_original || '',
+                ruta_webp: img.ruta_webp || '',
+                urlDesdeDB: true
             };
+        }).filter(img => {
+            // Filtrar imágenes con URLs inválidas
+            return img.url && img.url.trim() !== '';
         });
         
         console.log('✅ [EDITAR-PRENDA-IMAGENES-MAPEADAS] Después del mapeo:', {
@@ -285,9 +604,22 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             datos: prendaImagenesMapeadas
         });
         
+        // Extraer nombre de prenda - Manejo robusto de múltiples formatos
+        const nombrePrenda = prendaCompleta.nombre || 
+                           prendaCompleta.nombre_prenda || 
+                           prendaCompleta.nombre_producto || 
+                           '';
+        
+        console.log('🔍 [EDITAR-PRENDA] Extracción de nombre:', {
+            nombre: prendaCompleta.nombre,
+            nombre_prenda: prendaCompleta.nombre_prenda,
+            nombre_producto: prendaCompleta.nombre_producto,
+            nombre_final: nombrePrenda
+        });
+
         const prendaParaEditar = {
-            nombre_prenda: prendaCompleta.nombre_prenda || '',
-            nombre_producto: prendaCompleta.nombre_prenda || '',
+            nombre_prenda: nombrePrenda,
+            nombre_producto: nombrePrenda,
             descripcion: prendaCompleta.descripcion || '',
             origen: prendaCompleta.origen || prenda.origen || 'bodega',
             de_bodega: prendaCompleta.de_bodega !== undefined ? prendaCompleta.de_bodega : prenda.de_bodega,
@@ -352,11 +684,33 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         console.log('✅ [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
         console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
         console.log('🖼️ [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
+        console.log('📊 [EDITAR-PRENDA] Datos de prendaCompleta:', {
+            nombre: prendaCompleta.nombre,
+            nombre_prenda: prendaCompleta.nombre_prenda,
+            descripcion: prendaCompleta.descripcion,
+            de_bodega: prendaCompleta.de_bodega,
+            origen: prendaCompleta.origen
+        });
+        console.log('📊 [EDITAR-PRENDA] Datos finales en prendaParaEditar:', {
+            nombre_prenda: prendaParaEditar.nombre_prenda,
+            nombre_producto: prendaParaEditar.nombre_producto,
+            descripcion: prendaParaEditar.descripcion,
+            origen: prendaParaEditar.origen,
+            de_bodega: prendaParaEditar.de_bodega
+        });
         console.log('📊 [EDITAR-PRENDA] Respuesta completa del servidor:', resultado.prenda);
         console.log('🏢 [EDITAR-PRENDA] de_bodega del servidor:', resultado.prenda?.de_bodega, '(1=bodega, 0=confeccion)');
         
         // Cerrar el modal de seleccionar prenda
         Swal.close();
+        
+        // 🔍 DEBUG: Verificar qué se va a guardar en window.prendaEnEdicion
+        console.log('🔍 [EDITAR-PRENDA] Guardando en window.prendaEnEdicion:', {
+            prendaCompletaId: prenda.id,
+            prendaCompletaPrendaPedidoId: prenda.prenda_pedido_id,
+            prendaCompletaNombre: prenda.nombre_prenda,
+            todosLosCampos: Object.keys(prenda)
+        });
         
         // Guardar en global
         window.prendaEnEdicion = {

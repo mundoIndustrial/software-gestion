@@ -209,9 +209,9 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     
     if (pedidoId && prenda.id) {
         try {
-            const url = `/asesores/pedidos-produccion/${pedidoId}/prenda/${prenda.id}/datos`;
+            const url = `/asesores/pedidos/${pedidoId}/factura-datos`;
             console.log('🔥 [FETCH] Llamando a URL:', url);
-            console.log('📊 [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId, 'prenda.id:', prenda.id);
+            console.log('📊 [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
 
             const response = await fetch(url);
             console.log('✅ [FETCH-RESPONSE] Status:', response.status, 'OK:', response.ok);
@@ -220,63 +220,76 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                 const resultado = await response.json();
                 console.log('✅ [FETCH-JSON] Respuesta completa:', {
                     success: resultado.success,
-                    tiene_prenda: !!resultado.prenda,
-                    tiene_pedido: !!resultado.pedido,
-                    prenda_keys: resultado.prenda ? Object.keys(resultado.prenda) : 'sin prenda'
+                    tiene_data: !!resultado.data,
+                    tiene_prendas: !!(resultado.data?.prendas),
+                    prendas_count: resultado.data?.prendas?.length ?? 0
                 });
                 
-                console.log('📦 [DATOS-RECIBIDOS]', {
-                    procesos: resultado.prenda?.procesos?.length ?? 0,
-                    tallas_dama: resultado.prenda?.tallas_dama?.length ?? 0,
-                    tallas_caballero: resultado.prenda?.tallas_caballero?.length ?? 0,
-                    variantes: resultado.prenda?.variantes?.length ?? 0,
-                    colores_telas: resultado.prenda?.colores_telas?.length ?? 0,
-                    imagenes: resultado.prenda?.imagenes?.length ?? 0
-                });
-                
-                if (resultado.success) {
-                    if (resultado.prenda) {
-                        console.log('✅ [PRENDA-ACTUALIZADA] Procesos:', resultado.prenda.procesos?.length ?? 0);
-                        console.log('✅ [TALLAS-DAMA]:', resultado.prenda.tallas_dama);
-                        console.log('✅ [TALLAS-CABALLERO]:', resultado.prenda.tallas_caballero);
-                        console.log('✅ [VARIANTES]:', resultado.prenda.variantes);
-                        console.log('✅ [COLORES-TELAS]:', resultado.prenda.colores_telas);
-                        prendaEditable = resultado.prenda;
+                // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL COMPLETA
+                const prendaDelPedido = resultado.data?.prendas?.find(p => {
+                    // Coincidencia por ID (prioridad más alta)
+                    const coincideId = (p.id === prenda.id || p.prenda_pedido_id === prenda.id);
+                    
+                    // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES)
+                    const coincideNombre = (
+                        // Caso 1: nombre_prenda local == nombre_prenda servidor
+                        p.nombre_prenda === prenda.nombre_prenda ||
+                        // Caso 2: nombre local == nombre servidor  
+                        p.nombre === prenda.nombre ||
+                        // Caso 3: nombre_prenda local == nombre servidor (cruzado)
+                        p.nombre === prenda.nombre_prenda ||
+                        // Caso 4: nombre local == nombre_prenda servidor (cruzado)
+                        p.nombre_prenda === prenda.nombre ||
+                        // Caso 5: nombre_producto local == nombre servidor
+                        p.nombre === prenda.nombre_producto ||
+                        // Caso 6: nombre_producto local == nombre_prenda servidor
+                        p.nombre_prenda === prenda.nombre_producto ||
+                        // Caso 7: nombre local == nombre_producto servidor
+                        p.nombre_producto === prenda.nombre ||
+                        // Caso 8: nombre_prenda local == nombre_producto servidor
+                        p.nombre_producto === prenda.nombre_prenda
+                    );
+                    
+                    // Si coincide por ID, es suficiente (prioridad más alta)
+                    if (coincideId) {
+                        return true;
                     }
                     
-                    if (resultado.pedido) {
-                        const ped = resultado.pedido;
-                        console.log(' [PEDIDO-ENCONTRADO] Datos:', {
-                            numero_pedido: ped.numero_pedido,
-                            cliente: ped.cliente,
-                            asesor_nombre: ped.asesor_nombre,
-                            estado: ped.estado,
-                            fecha_creacion: ped.fecha_creacion
-                        });
-                        
-                        // Construir datosParaFactura con datos del pedido
-                        datosParaFactura = {
-                            numero_pedido: ped.numero_pedido || ped.numero || ped.id || pedidoId,
-                            numero: ped.numero || ped.numero_pedido || pedidoId,
-                            cliente: ped.cliente || ped.cliente_nombre || 'Cliente sin especificar',
-                            asesor: ped.asesor_nombre || ped.asesor || 'Asesor sin especificar',
-                            estado: ped.estado || 'Pendiente',
-                            fecha_creacion: ped.fecha_creacion || ped.created_at || new Date().toLocaleDateString(),
-                            prendas: [prendaEditable]
-                        };
-                        console.log('✅ [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
-                    } else {
-                        console.warn(' [PEDIDO-VACIO] Sin datos del pedido en respuesta');
-                        datosParaFactura.prendas = [prendaEditable];
-                    }
+                    // Si no coincide por ID, requerir coincidencia por nombre
+                    return coincideNombre;
+                });
+                
+                if (prendaDelPedido) {
+                    console.log('✅ [PRENDA-ENCONTRADA] Prenda encontrada en datos del pedido:', prendaDelPedido.nombre_prenda);
+                    console.log('📦 [DATOS-RECIBIDOS]', {
+                        procesos: prendaDelPedido.procesos?.length ?? 0,
+                        tallas: Object.keys(prendaDelPedido.tallas || {}).length,
+                        variantes: prendaDelPedido.variantes?.length ?? 0,
+                        colores_telas: prendaDelPedido.colores_telas?.length ?? 0,
+                        imagenes: prendaDelPedido.imagenes?.length ?? 0
+                    });
+                    
+                    // Actualizar la prenda editable con los datos frescos
+                    prendaEditable = prendaDelPedido;
+                    
+                    // Construir datosParaFactura con datos del pedido
+                    const pedidoData = resultado.data;
+                    datosParaFactura = {
+                        numero_pedido: pedidoData.numero_pedido || pedidoData.numero || pedidoData.id || pedidoId,
+                        numero: pedidoData.numero || pedidoData.numero_pedido || pedidoId,
+                        cliente: pedidoData.cliente || 'Cliente sin especificar',
+                        asesor: pedidoData.asesor || 'Asesor sin especificar',
+                        estado: pedidoData.estado || 'Pendiente',
+                        fecha_creacion: pedidoData.fecha_creacion || new Date().toLocaleDateString(),
+                        prendas: [prendaEditable]
+                    };
+                    console.log('✅ [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
                 } else {
-                    console.warn(' [ERROR-SUCCESS] Respuesta sin success:', resultado);
+                    console.warn(' [PRENDA-NO-ENCONTRADA] Prenda no encontrada en datos del pedido');
                     datosParaFactura.prendas = [prendaEditable];
                 }
             } else {
-                console.error(' [ERROR-FETCH] Status no OK:', response.status);
-                const texto = await response.text();
-                console.error('Respuesta:', texto);
+                console.warn(' [ERROR-SUCCESS] Respuesta sin success:', resultado);
                 datosParaFactura.prendas = [prendaEditable];
             }
         } catch (error) {

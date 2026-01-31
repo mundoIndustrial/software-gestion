@@ -539,6 +539,12 @@ function mostrarModalAdvertenciaTallas() {
     
     modal.style.display = 'flex';
     
+    // Forzar z-index máximo para asegurar que esté encima de todo
+    setTimeout(() => {
+        modal.style.setProperty('z-index', '9999999999', 'important');
+        console.log('[🔝 MODAL-PROCESO] Z-index forzado en apertura:', window.getComputedStyle(modal).zIndex);
+    }, 10);
+    
     console.log('[🔍 MODAL-PROCESO-GENERICO] ✅ Modal visible, display=flex')
 }
 
@@ -787,6 +793,7 @@ function calcularCantidadAsignadaOtrosProcesos(talla, generoKey, procesoActualEx
 /*
 function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, cantidadDisponible, cantidadIntentada, procesosDetalle) {
     const modal = document.createElement('div');
+    modal.id = 'modal-proceso-generico';  // ID específico para evitar conflicto con .modal-overlay CSS
     modal.style.cssText = `
         position: fixed;
         top: 0;
@@ -797,7 +804,7 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 9999999;  // ⚡ CRÍTICO: Mayor que Swal2 (9999998)
+        z-index: 9999999999 !important;  // ⚡ CRÍTICO: Máximo z-index forzado con !important
     `;
     
     const contenido = document.createElement('div');
@@ -881,10 +888,16 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
     modal.appendChild(contenido);
     
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] 📍 Antes de appendChild');
-    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index CSS:', '9999999');
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index CSS:', '9999999999');
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] Swal2 visible?:', !!document.querySelector('.swal2-container'));
     
     document.body.appendChild(modal);
+    
+    // Forzar z-index dinámicamente para asegurar que se aplique
+    setTimeout(() => {
+        modal.style.setProperty('z-index', '9999999999', 'important');
+        console.log('[🔝 MODAL-PROCESO] Z-index forzado dinámicamente:', window.getComputedStyle(modal).zIndex);
+    }, 10);
     
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] ✅ appendChild ejecutado');
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index computed:', window.getComputedStyle(modal).zIndex);

@@ -468,7 +468,7 @@ class PedidoController extends Controller
             
             // Agregar ancho y metraje a cada prenda individual
             if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
-                \Log::info('[PedidoController] Agregando ancho/metraje a prendas', [
+                \Log::info('[PedidoController] Agregando ancho/metraje y consecutivos a prendas', [
                     'pedido_id' => $id,
                     'total_prendas' => count($responseData['prendas'])
                 ]);
@@ -476,7 +476,7 @@ class PedidoController extends Controller
                 foreach ($responseData['prendas'] as $index => &$prenda) {
                     $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
                     
-                    \Log::info('[PedidoController] Procesando prenda para ancho/metraje', [
+                    \Log::info('[PedidoController] Procesando prenda para datos adicionales', [
                         'index' => $index,
                         'prenda_id' => $prendaId,
                         'prenda_nombre' => $prenda['nombre'] ?? 'N/A'
@@ -511,8 +511,21 @@ class PedidoController extends Controller
                                 'prenda_nombre' => $prenda['nombre'] ?? 'N/A'
                             ]);
                         }
+                        
+                        // Agregar consecutivos para esta prenda
+                        $consecutivos = $this->obtenerConsecutivosPrenda($id, $prendaId);
+                        $prenda['recibos'] = $consecutivos;
+                        
+                        \Log::info('[PedidoController] Consecutivos agregados a prenda', [
+                            'pedido_id' => $id,
+                            'prenda_id' => $prendaId,
+                            'consecutivos_devueltos' => $consecutivos,
+                            'consecutivos_es_null' => is_null($consecutivos)
+                        ]);
+                        
                     } else {
                         $prenda['ancho_metraje'] = null;
+                        $prenda['recibos'] = null;
                         \Log::warning('[PedidoController] Prenda sin ID válido', [
                             'index' => $index,
                             'prenda' => $prenda
@@ -555,6 +568,79 @@ class PedidoController extends Controller
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Obtener consecutivos de una prenda específica
+     * 
+     * @param int $pedidoId
+     * @param int $prendaId
+     * @return array|null
+     */
+    private function obtenerConsecutivosPrenda(int $pedidoId, int $prendaId): ?array
+    {
+        try {
+            \Log::info('[PedidoController] Buscando consecutivos para prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId
+            ]);
+
+            // Obtener consecutivos para este pedido (incluyendo generales y específicos de prenda)
+            $consecutivos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('activo', 1)
+                ->where(function($query) use ($prendaId) {
+                    $query->where('prenda_id', $prendaId)  // Específicos de esta prenda
+                          ->orWhereNull('prenda_id');       // Generales del pedido
+                })
+                ->get();
+
+            \Log::info('[PedidoController] Consecutivos encontrados en BD', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'total_encontrados' => $consecutivos->count(),
+                'datos_crudos' => $consecutivos->toArray()
+            ]);
+
+            if ($consecutivos->isEmpty()) {
+                \Log::info('[PedidoController] No hay consecutivos para prenda', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId
+                ]);
+                return null;
+            }
+
+            // Estructurar los consecutivos por tipo
+            $recibos = [
+                'COSTURA' => null,
+                'ESTAMPADO' => null,
+                'BORDADO' => null,
+                'REFLECTIVO' => null
+            ];
+
+            foreach ($consecutivos as $consecutivo) {
+                $tipo = $consecutivo->tipo_recibo;
+                if (array_key_exists($tipo, $recibos)) {  // Cambiado de isset() a array_key_exists()
+                    $recibos[$tipo] = $consecutivo->consecutivo_actual;
+                }
+            }
+
+            \Log::info('[PedidoController] Consecutivos estructurados para prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'recibos' => $recibos
+            ]);
+
+            return $recibos;
+
+        } catch (\Exception $e) {
+            \Log::error('[PedidoController] Error obteniendo consecutivos de prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
         }
     }
 

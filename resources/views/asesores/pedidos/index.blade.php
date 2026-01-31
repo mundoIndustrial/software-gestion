@@ -189,7 +189,7 @@
                 UI.cargando('Cargando información...', 'Por favor espera');
             });
             
-            const response = await fetch(`/api/pedidos/${pedidoId}`);
+            const response = await fetch(`/pedidos/${pedidoId}/factura-datos`);
             const result = await response.json();
             const data = result.data || result;
             
@@ -435,7 +435,7 @@
             // 🔥 PASO 3: Fetch de datos mientras el modal ya está visible
             console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
 
-            const response = await fetch(`/api/pedidos/${pedidoId}`, {
+            const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -455,12 +455,25 @@
             }
 
             const datos = respuesta.data || respuesta.datos;
+            
+            // 🔍 DEBUG: Verificar qué datos están llegando
+            console.log('🔍 [editarPedido] Datos recibidos del servidor:', {
+                datos_keys: Object.keys(datos),
+                tiene_id: !!datos.id,
+                id_valor: datos.id,
+                tiene_numero_pedido: !!datos.numero_pedido,
+                numero_pedido_valor: datos.numero_pedido,
+                tiene_numero: !!datos.numero,
+                numero_valor: datos.numero,
+                datos_completos: datos
+            });
+            
             etapas.fetchCompleto = performance.now();
             console.log(`[editarPedido] ✅ Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
             
             // Transformar datos al formato que espera abrirModalEditarPedido
             const datosTransformados = {
-                id: datos.id || datos.numero_pedido,
+                id: datos.id, // Siempre usar el ID real de la BD
                 numero_pedido: datos.numero_pedido || datos.numero,
                 numero: datos.numero || datos.numero_pedido,
                 cliente: datos.cliente || 'Cliente sin especificar',
@@ -1321,6 +1334,12 @@
         console.log('[PedidosInit] 🎉 Inicialización completada - Lista para ediciones bajo demanda');
     });
 </script>
+
+<!-- Servicio de imágenes - Para edición de prendas -->
+<script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+
+<!-- Inicializador de servicios de imágenes - Para edición de prendas -->
+<script src="{{ asset('js/modulos/crear-pedido/inicializadores/init-storage-servicios.js') }}"></script>
 
 @endpush
 

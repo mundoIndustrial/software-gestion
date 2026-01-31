@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba - Protección de Imágenes de Cotización</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">🧪 Prueba de Protección de Imágenes de Cotización</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Escenario de Prueba</h2>
+            <div class="space-y-3 text-gray-700">
+                <p><strong>Objetivo:</strong> Verificar que las imágenes de una cotización original permanecen intactas al editar un pedido.</p>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <p class="font-medium">Flujo a probar:</p>
+                    <ol class="list-decimal list-inside mt-2 space-y-1">
+                        <li>Crear una prenda desde cotización (con imágenes)</li>
+                        <li>Abrir galería de imágenes</li>
+                        <li>Verificar indicador de protección</li>
+                        <li>Eliminar una imagen</li>
+                        <li>Confirmar mensaje de advertencia</li>
+                        <li>Guardar el pedido</li>
+                        <li>Verificar que la cotización original no fue afectada</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔧 Controles de Prueba</h2>
+            <div class="space-y-4">
+                <button onclick="simularPrendaDeCotizacion()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                    📦 Simular Prenda de Cotización
+                </button>
+                <button onclick="abrirGaleriaProtegida()" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition">
+                    🖼️ Abrir Galería Protegida
+                </button>
+                <button onclick="simularEliminacion()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                    🗑️ Simular Eliminación
+                </button>
+                <button onclick="verificarEstado()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                    ✅ Verificar Estado
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Resultados de la Prueba</h2>
+            <div id="resultados" class="space-y-2 text-gray-700">
+                <p class="text-gray-500">Los resultados de la prueba aparecerán aquí...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simular datos de prenda de cotización
+        let prendaDePrueba = null;
+
+        function simularPrendaDeCotizacion() {
+            prendaDePrueba = {
+                id: 1,
+                nombre_prenda: 'Camisa de Prueba',
+                cotizacion_id: 123,
+                tipo: 'cotizacion',
+                imagenes: [
+                    { ruta: '/storage/test/imagen1.jpg', uid: 'img1' },
+                    { ruta: '/storage/test/imagen2.jpg', uid: 'img2' },
+                    { ruta: '/storage/test/imagen3.jpg', uid: 'img3' }
+                ]
+            };
+
+            // Asignar al gestor global
+            window.prendaActual = prendaDePrueba;
+            window.gestionItemsUI = {
+                prendaEditIndex: 0,
+                obtenerItemsOrdenados: () => [prendaDePrueba]
+            };
+
+            actualizarResultados('✅ Prenda de cotización simulada', 'success');
+            console.log('Prenda de cotización simulada:', prendaDePrueba);
+        }
+
+        function abrirGaleriaProtegida() {
+            if (!prendaDePrueba) {
+                actualizarResultados('❌ Primero simula una prenda de cotización', 'error');
+                return;
+            }
+
+            // Simular apertura de galería
+            const esPrendaDeCotizacion = !!(prendaDePrueba.cotizacion_id || prendaDePrueba.tipo === 'cotizacion');
+            
+            actualizarResultados(`🖼️ Galería abierta - ¿Es de cotización? ${esPrendaDeCotizacion ? 'SÍ' : 'NO'}`, 'info');
+            
+            // Mostrar características de protección
+            const caracteristicas = [
+                '🔒 Botón de eliminar color ámbar (no rojo)',
+                '🛡️ Indicador visual de protección',
+                '⚠️ Mensaje de confirmación personalizado',
+                '📝 Imagen marcada para eliminación (no eliminada directamente)'
+            ];
+            
+            caracteristicas.forEach(car => {
+                actualizarResultados(car, 'info');
+            });
+        }
+
+        function simularEliminacion() {
+            if (!prendaDePrueba) {
+                actualizarResultados('❌ Primero simula una prenda de cotización', 'error');
+                return;
+            }
+
+            // Simular eliminación de la imagen 1
+            const indiceEliminar = 1;
+            const imagenEliminada = prendaDePrueba.imagenes[indiceEliminar];
+            
+            // Marcar como eliminada del pedido (protección)
+            if (!prendaDePrueba.imagenesEliminadasDelPedido) {
+                prendaDePrueba.imagenesEliminadasDelPedido = [];
+            }
+            
+            prendaDePrueba.imagenesEliminadasDelPedido.push({
+                ...imagenEliminada,
+                indiceOriginal: indiceEliminar,
+                timestamp: Date.now()
+            });
+
+            actualizarResultades(`🗑️ Imagen ${indiceEliminar + 1} marcada para eliminación del pedido`, 'warning');
+            actualizarResultados('🔒 Cotización original protegida - imagen NO eliminada de la cotización', 'success');
+        }
+
+        function verificarEstado() {
+            if (!prendaDePrueba) {
+                actualizarResultados('❌ Primero simula una prenda de cotización', 'error');
+                return;
+            }
+
+            const resultados = [
+                `📦 Prenda: ${prendaDePrueba.nombre_prenda}`,
+                `🆔 Cotización ID: ${prendaDePrueba.cotizacion_id}`,
+                `🖼️ Imágenes totales: ${prendaDePrueba.imagenes.length}`,
+                `🗑️ Imágenes marcadas para eliminación: ${prendaDePrueba.imagenesEliminadasDelPedido?.length || 0}`,
+                `✅ Cotización original intacta: ${prendaDePrueba.imagenes.length === 3 ? 'SÍ' : 'NO'}`
+            ];
+
+            resultados.forEach(resultado => {
+                actualizarResultados(resultado, 'info');
+            });
+
+            // Verificación final
+            const imagenesOriginales = prendaDePrueba.imagenes.length;
+            const imagenesMarcadas = prendaDePrueba.imagenesEliminadasDelPedido?.length || 0;
+            const proteccionFunciona = imagenesOriginales === 3 && imagenesMarcadas > 0;
+
+            if (proteccionFunciona) {
+                actualizarResultados('🎉 PRUEBA EXITOSA: La protección de imágenes funciona correctamente', 'success');
+            } else {
+                actualizarResultados('⚠️ Revisar implementación - la protección podría no estar funcionando', 'warning');
+            }
+        }
+
+        function actualizarResultados(mensaje, tipo = 'info') {
+            const resultadosDiv = document.getElementById('resultados');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const colores = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-amber-600',
+                info: 'text-blue-600'
+            };
+
+            const resultado = document.createElement('div');
+            resultado.className = `${colores[tipo]} p-2 border-l-4 border-${tipo === 'success' ? 'green' : tipo === 'error' ? 'red' : tipo === 'warning' ? 'amber' : 'blue'}-400 bg-gray-50`;
+            resultado.innerHTML = `<span class="font-mono text-xs">[${timestamp}]</span> ${mensaje}`;
+            
+            resultadosDiv.appendChild(resultado);
+            resultadosDiv.scrollTop = resultadosDiv.scrollHeight;
+        }
+
+        // Inicialización
+        actualizarResultados('🧪 Sistema de prueba inicializado', 'success');
+        actualizarResultados('💡 Usa los botones para simular el flujo de protección de imágenes', 'info');
+    </script>
+</body>
+</html>

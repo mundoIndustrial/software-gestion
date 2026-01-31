@@ -351,15 +351,15 @@
                     return;
                 }
                 
-                console.log('✅ [btn-agregar-prenda] Cotización seleccionada, cargando prendas desde cotización');
-                if (typeof window.cargarPrendasDesdeCotizacion === 'function') {
-                    // Obtener el ID de la cotización seleccionada (usar la variable correcta)
+                console.log('✅ [btn-agregar-prenda] Cotización seleccionada, abriendo selector de prendas');
+                if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
+                    // Obtener la cotización seleccionada (usar la variable correcta)
                     const cotizacionSeleccionada = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
                     console.log('🔍 [btn-agregar-prenda] Variable cotizacionSeleccionada:', cotizacionSeleccionada);
                     
                     if (cotizacionSeleccionada && cotizacionSeleccionada.id) {
                         console.log('✅ [btn-agregar-prenda] ID de cotización encontrado:', cotizacionSeleccionada.id);
-                        window.cargarPrendasDesdeCotizacion(cotizacionSeleccionada.id);
+                        window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
                     } else {
                         console.error('❌ [btn-agregar-prenda] No hay cotización seleccionada o no tiene ID');
                         Swal.fire({
@@ -371,11 +371,11 @@
                         });
                     }
                 } else {
-                    console.error('❌ [btn-agregar-prenda] La función cargarPrendasDesdeCotizacion no está disponible');
+                    console.error('❌ [btn-agregar-prenda] La función abrirSelectorPrendasCotizacion no está disponible');
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'No se pudieron cargar las prendas de la cotización. Intenta recargar la página.',
+                        text: 'No se pudo abrir el selector de prendas. Intenta recargar la página.',
                         confirmButtonText: 'Aceptar',
                         confirmButtonColor: '#ef4444'
                     });

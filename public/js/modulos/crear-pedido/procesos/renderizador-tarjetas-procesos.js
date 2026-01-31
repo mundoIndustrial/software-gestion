@@ -341,6 +341,13 @@ window.editarProcesoDesdeModal = function(tipo) {
         setTimeout(() => {
             const modalProceso = document.getElementById('modal-proceso-generico');
             const swal = document.querySelector('.swal2-container');
+            
+            // Forzar z-index máximo para asegurar que esté encima de todo
+            if (modalProceso) {
+                modalProceso.style.setProperty('z-index', '9999999999', 'important');
+                console.log('🔝 [EDITAR-PROCESO-MODAL] Z-index forzado dinámicamente:', window.getComputedStyle(modalProceso).zIndex);
+            }
+            
             console.log('🪟 [EDITAR-PROCESO-MODAL] DESPUÉS de abrirModalProcesoGenerico:');
             console.log('   - Modal proceso existe?:', !!modalProceso);
             if (modalProceso) {

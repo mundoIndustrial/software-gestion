@@ -26,7 +26,6 @@ window.PrendaEditorLoader = (function() {
     const scriptsParallel = [
         '/js/configuraciones/debug-logger.js',  // No es crítico
         '/js/configuraciones/constantes-tallas.js',  // Solo define constantes
-        '/js/modulos/crear-pedido/fotos/image-storage-service.js',  // Independiente
         '/js/componentes/prenda-card-editar-simple.js',  // Componente UI
         '/js/componentes/prendas-wrappers.js',  // Componente UI
         '/js/componentes/modal-prenda-dinamico-constantes.js',  // Solo constantes

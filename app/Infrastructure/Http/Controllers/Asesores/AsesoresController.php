@@ -811,7 +811,10 @@ class AsesoresController extends Controller
                 'prendas_es_array' => is_array($datos['prendas'] ?? false),
             ]);
             
-            return response()->json($datos);
+            return response()->json([
+                'success' => true,
+                'data' => $datos
+            ]);
         } catch (\Exception $e) {
             $usuarioAutenticado = \Auth::user();
             \Log::error('❌ [CONTROLLER-FACTURA] ERROR obteniendo datos de factura', [

@@ -11,22 +11,92 @@
 (function() {
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar storages de imágenes
-        window.imagenesPrendaStorage = new ImageStorageService(3);
-        window.imagenesTelaStorage = new ImageStorageService(3);
-        window.imagenesReflectivoStorage = new ImageStorageService(3);
+    // Control para evitar múltiples inicializaciones
+    let inicializado = false;
+    let esperandoServicio = false;
+    let timeoutServicio = null;
+
+    // Función para inicializar los servicios
+    function inicializarServicios() {
+        if (inicializado) {
+            console.log('🔧 [INIT-STORAGE] Servicios ya inicializados, omitiendo...');
+            return;
+        }
         
-        // Configurar asesora
-        document.getElementById('asesora_editable').value = window.asesorActualNombre || '';
+        if (esperandoServicio) {
+            console.log('⏳ [INIT-STORAGE] Ya esperando al servicio, omitiendo...');
+            return;
+        }
         
-        // Mostrar botones
+        console.log('🔧 [INIT-STORAGE] Inicializando servicios de imágenes...');
+        
+        // Esperar a que ImageStorageService esté disponible (puede venir del lazy loader)
+        function verificarServicio() {
+            if (typeof ImageStorageService !== 'undefined') {
+                // Limpiar timeout si existe
+                if (timeoutServicio) {
+                    clearTimeout(timeoutServicio);
+                    timeoutServicio = null;
+                }
+                
+                window.imagenesPrendaStorage = new ImageStorageService(3);
+                window.imagenesTelaStorage = new ImageStorageService(3);
+                window.imagenesReflectivoStorage = new ImageStorageService(3);
+                inicializado = true;
+                esperandoServicio = false;
+                console.log('✅ [INIT-STORAGE] Servicios de imágenes inicializados correctamente');
+            } else {
+                esperandoServicio = true;
+                console.log('⏳ [INIT-STORAGE] Esperando a ImageStorageService...');
+                
+                // Timeout para evitar bucles infinitos (máximo 5 segundos)
+                timeoutServicio = setTimeout(() => {
+                    if (esperandoServicio) {
+                        console.warn('⚠️ [INIT-STORAGE] Timeout esperando ImageStorageService, deteniendo espera');
+                        esperandoServicio = false;
+                        timeoutServicio = null;
+                    }
+                }, 5000);
+                
+                // Reintentar en 100ms
+                setTimeout(verificarServicio, 100);
+            }
+        }
+        
+        verificarServicio();
+        
+        // Configurar asesora si existe el elemento
+        const asesoraField = document.getElementById('asesora_editable');
+        if (asesoraField) {
+            asesoraField.value = window.asesorActualNombre || '';
+        }
+        
+        // Mostrar botones si existe
         const btnSubmit = document.getElementById('btn-submit');
         if (btnSubmit) {
             btnSubmit.textContent = '✓ Crear Pedido';
             btnSubmit.style.display = 'block';
         }
+    }
 
+    // Verificar si el DOM ya está cargado
+    if (document.readyState === 'loading') {
+        // El DOM todavía está cargando, esperar al evento
+        document.addEventListener('DOMContentLoaded', inicializarServicios);
+    } else {
+        // El DOM ya está cargado, ejecutar inmediatamente
+        inicializarServicios();
+    }
+
+    function inicializarBuscador() {
+        // Solo inicializar el buscador si hay datos de cotizaciones disponibles
+        if (!window.cotizacionesData || !Array.isArray(window.cotizacionesData) || window.cotizacionesData.length === 0) {
+            console.log('ℹ️ [INIT-BUSCADOR] No hay datos de cotizaciones disponibles, omitiendo inicialización del buscador');
+            return;
+        }
+        
+        console.log('🔍 [INIT-BUSCADOR] Inicializando buscador de cotizaciones...');
+        
         // ========== BUSCADOR DE COTIZACIONES ==========
         const searchInput = document.getElementById('cotizacion_search_editable');
         const dropdown = document.getElementById('cotizacion_dropdown_editable');
@@ -34,10 +104,17 @@
         const selectedText = document.getElementById('cotizacion_selected_text_editable');
         const hiddenInput = document.getElementById('cotizacion_id_editable');
         
-        if (!searchInput || !window.cotizacionesData) {
-            console.warn('⚠️ Buscador de cotizaciones: Datos no disponibles');
+        if (!searchInput) {
+            console.log('ℹ️ [INIT-BUSCADOR] Elemento de búsqueda no encontrado, omitiendo');
             return;
         }
+        
+        if (!dropdown) {
+            console.log('ℹ️ [INIT-BUSCADOR] Dropdown no encontrado, omitiendo');
+            return;
+        }
+        
+        console.log('📋 [INIT-BUSCADOR] Datos de cotizaciones encontrados:', window.cotizacionesData.length);
 
         // Transformar datos de cotizaciones del servidor
         const cotizacionesFormateadas = window.cotizacionesData.map(cot => ({
@@ -83,55 +160,47 @@
         
         // Función para renderizar el dropdown
         function renderizarDropdown(cotizaciones) {
+            dropdown.innerHTML = '';
+            dropdown.style.display = 'block';
+            
             if (cotizaciones.length === 0) {
-                dropdown.innerHTML = '<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron cotizaciones</div>';
-                dropdown.style.display = 'block';
+                const noResultsItem = document.createElement('div');
+                noResultsItem.className = 'dropdown-item';
+                noResultsItem.textContent = 'No se encontraron cotizaciones';
+                noResultsItem.style.padding = '8px 12px';
+                noResultsItem.style.color = '#6b7280';
+                dropdown.appendChild(noResultsItem);
                 return;
             }
             
-            dropdown.innerHTML = cotizaciones.map(cot => `
-                <div class="cotizacion-item" data-id="${cot.id}" style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='#f0f9ff'; this.style.borderLeft='3px solid #0066cc'" onmouseout="this.style.background='white'; this.style.borderLeft='none'">
-                    <div>
-                        <div style="font-weight: 700; color: #0066cc; font-size: 1rem; font-family: 'Courier New', monospace;">${cot.numero_cotizacion}</div>
-                        <div style="font-size: 0.875rem; color: #374151; margin-top: 0.25rem;">
-                            ${cot.cliente}
-                        </div>
-                    </div>
-                    <div style="text-align: right; font-size: 0.75rem; color: #9ca3af;">
-                        <div>${cot.estado}</div>
-                    </div>
-                </div>
-            `).join('');
-            
-            dropdown.style.display = 'block';
-            
-            // Agregar event listeners a los items
-            dropdown.querySelectorAll('.cotizacion-item').forEach(item => {
+            cotizacionesFormateadas.forEach(cot => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora})`;
+                item.style.padding = '8px 12px';
+                item.style.cursor = 'pointer';
+                item.style.borderBottom = '1px solid #e5e7eb';
+                
                 item.addEventListener('click', function() {
-                    const cotId = parseInt(this.dataset.id);
-                    const cotizacion = cotizacionesFormateadas.find(c => c.id === cotId);
-                    if (cotizacion) {
-                        seleccionarCotizacion(cotizacion);
-                    }
+                    selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente}`;
+                    selectedText.textContent = cot.numero_cotizacion;
+                    hiddenInput.value = cot.id;
+                    dropdown.style.display = 'none';
+                    cotizacionSeleccionada = cot;
+                    
+                    // Actualizar el input del buscador con la cotización seleccionada
+                    searchInput.value = `${cot.numero_cotizacion} - ${cot.cliente}`;
+                    
+                    console.log('✓ Cotización seleccionada:', cot);
+                    
+                    // Guardar para usar en agregar prendas
+                    window.cotizacionSeleccionadaActual = cot;
+                    
+                    console.log('📦 Prendas disponibles:', cot.original?.prendas || []);
                 });
+                
+                dropdown.appendChild(item);
             });
-        }
-        
-        // Función para seleccionar cotización
-        function seleccionarCotizacion(cotizacion) {
-            cotizacionSeleccionada = cotizacion;
-            hiddenInput.value = cotizacion.id;
-            searchInput.value = cotizacion.numero_cotizacion;
-            selectedText.textContent = `${cotizacion.numero_cotizacion} - ${cotizacion.cliente}`;
-            selectedDiv.style.display = 'block';
-            dropdown.style.display = 'none';
-            
-            console.log('✓ Cotización seleccionada:', cotizacion);
-            
-            // Guardar para usar en agregar prendas
-            window.cotizacionSeleccionadaActual = cotizacion;
-            
-            console.log('📦 Prendas disponibles:', cotizacion.original?.prendas || []);
         }
         
         // Cerrar dropdown al hacer click fuera
@@ -140,40 +209,20 @@
                 dropdown.style.display = 'none';
             }
         });
+        
+        console.log('✅ [INIT-BUSCADOR] Buscador de cotizaciones inicializado correctamente');
+    }
 
-        // ========== GESTIÓN DE ÍTEMS ==========
-        const seccionItems = document.getElementById('seccion-items-pedido');
-        if (seccionItems) {
-            seccionItems.style.display = 'block';
-        }
-
-        // ========== BOTÓN AGREGAR PRENDA ==========
-        const btnAgregarPrenda = document.getElementById('btn-agregar-prenda');
-        if (btnAgregarPrenda) {
-            btnAgregarPrenda.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Verificar que hay cotización seleccionada
-                if (!cotizacionSeleccionada) {
-                    alert('⚠️ Por favor selecciona una cotización primero');
-                    return;
-                }
-                
-                console.log('📦 Abriendo selector de prendas de cotización:', cotizacionSeleccionada.numero_cotizacion);
-                
-                // Guardar para usar en el modal
-                window.cotizacionSeleccionadaActual = cotizacionSeleccionada;
-                
-                // NUEVO: Usar el nuevo sistema de cargar prendas completas
-                if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
-                    window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
-                } else {
-                    console.warn('⚠️ Función abrirSelectorPrendasCotizacion no disponible');
-                }
-            });
-        }
-
-        console.log('✅ [Buscador de Cotización] Inicializado correctamente');
-    });
-
+    // Verificar si el DOM ya está cargado
+    if (document.readyState === 'loading') {
+        // El DOM todavía está cargando, esperar al evento
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarServicios();
+            inicializarBuscador();
+        });
+    } else {
+        // El DOM ya está cargado, ejecutar inmediatamente
+        inicializarServicios();
+        inicializarBuscador();
+    }
 })();

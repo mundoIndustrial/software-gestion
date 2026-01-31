@@ -1,5 +1,5 @@
 <!-- MODAL: Agregar Proceso Genérico (Reflectivo, Estampado, Bordado, DTF, Sublimado) -->
-<div id="modal-proceso-generico" class="modal-overlay" style="z-index: 999999999;">
+<div id="modal-proceso-generico" class="modal-overlay" style="z-index: 9999999999 !important;">
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">

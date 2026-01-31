@@ -132,6 +132,7 @@ class PedidoProduccionRepository
 
             // Construir datos base
             $datos = [
+                'id' => $pedido->id, // Agregar el ID del pedido
                 'numero_pedido' => $pedido->numero_pedido ?? 'N/A',
                 'numero_pedido_temporal' => $pedido->numero_pedido ?? 0,
                 'cliente' => $pedido->cliente ?? 'Cliente Desconocido',
@@ -506,6 +507,8 @@ class PedidoProduccionRepository
                 
                 // Construir prenda formateada CON TODAS LAS ESPECIFICACIONES
                 $prendasFormato = [
+                    'id' => $prenda->id, // ✅ AGREGAR ID de la prenda
+                    'prenda_pedido_id' => $prenda->id, // ✅ AGREGAR prenda_pedido_id (alias del id)
                     'nombre' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
                     'imagen' => $foto ? ($foto->url ?? $foto->ruta_webp) : null,

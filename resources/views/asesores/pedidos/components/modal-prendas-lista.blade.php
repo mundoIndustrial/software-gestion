@@ -9,7 +9,7 @@
             const prendas = datos.prendas || [];
             // Siempre mostrar lista, aunque esté vacía
             window.prendasEdicion = {
-                pedidoId: datos.numero_pedido || datos.id,
+                pedidoId: datos.id, // Siempre usar el ID real de la BD
                 prendas: prendas
             };
             
@@ -30,6 +30,15 @@
                 `;
             } else {
                 prendas.forEach((item, idx) => {
+                    console.log('🔍 [PRENDA-DEBUG] Estructura de la prenda:', {
+                        idx: idx,
+                        item_keys: Object.keys(item),
+                        id: item.id,
+                        prenda_pedido_id: item.prenda_pedido_id,
+                        nombre_prenda: item.nombre_prenda,
+                        item_completo: item
+                    });
+                    
                     const nombre = item.nombre_prenda || 'Prenda sin nombre';
                     const cantidad = item.cantidad || 0;
                     htmlListaPrendas += `
@@ -39,7 +48,7 @@
                             console.log('🔥 [ONCLICK-DATOS] idx:', idx);
                             console.log('🔥 [ONCLICK-DATOS] datosEdicionPedido:', window.datosEdicionPedido);
                             
-                            const pedidoId = window.datosEdicionPedido?.id || window.datosEdicionPedido?.numero_pedido;
+                            const pedidoId = window.datosEdicionPedido?.id;
                             console.log('🔥 [ONCLICK-PEDIDO-ID] Usando pedidoId:', pedidoId);
                             
                             Swal.close();
