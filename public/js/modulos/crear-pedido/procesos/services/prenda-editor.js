@@ -208,6 +208,51 @@ class PrendaEditor {
             countFotos: prenda.fotos?.length || 0
         });
 
+        // 🔧 VERIFICAR/CREAR SERVICIO SI NO EXISTE (para supervisor de pedidos)
+        if (!window.imagenesPrendaStorage) {
+            console.log('🔧 [CARGAR-IMAGENES] Creando imagenesPrendaStorage para supervisor de pedidos...');
+            try {
+                // Verificar si ImageStorageService está disponible
+                if (typeof ImageStorageService !== 'undefined') {
+                    window.imagenesPrendaStorage = new ImageStorageService(3);
+                    console.log('✅ [CARGAR-IMAGENES] imagenesPrendaStorage creado exitosamente');
+                } else {
+                    console.warn('⚠️ [CARGAR-IMAGENES] ImageStorageService no disponible, creando fallback manual');
+                    // Crear fallback manual básico
+                    window.imagenesPrendaStorage = {
+                        images: [],
+                        limpiar: function() {
+                            this.images = [];
+                            console.log('🧹 [CARGAR-IMAGENES] Storage limpiado (fallback)');
+                        },
+                        agregarImagen: function(file) {
+                            if (file instanceof File) {
+                                this.images.push({
+                                    previewUrl: URL.createObjectURL(file),
+                                    nombre: file.name,
+                                    tamaño: file.size,
+                                    file: file
+                                });
+                            }
+                        },
+                        agregarUrl: function(url, nombre = 'imagen') {
+                            this.images.push({
+                                previewUrl: url,
+                                nombre: nombre,
+                                tamaño: 0,
+                                file: null,
+                                urlDesdeDB: true
+                            });
+                        }
+                    };
+                    console.log('✅ [CARGAR-IMAGENES] Fallback manual creado');
+                }
+            } catch (error) {
+                console.error('❌ [CARGAR-IMAGENES] Error creando storage:', error);
+                return;
+            }
+        }
+
         // PRIORIDAD 0: imagenes (formulario con archivos)
         let imagenesACargar = null;
         let origen = 'desconocido';
@@ -276,7 +321,7 @@ class PrendaEditor {
             
             console.log(`✅ [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
         } else {
-            console.warn(' [CARGAR-IMAGENES] imagenesPrendaStorage no disponible');
+            console.error(' [CARGAR-IMAGENES] Aún no hay imagenesPrendaStorage disponible después del intento de creación');
         }
     }
 
@@ -304,30 +349,44 @@ class PrendaEditor {
         else if (img.url || img.ruta || img.ruta_webp || img.ruta_original) {
             const urlImagen = img.url || img.ruta || img.ruta_webp || img.ruta_original;
             console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: URL de BD:`, urlImagen);
-            if (!window.imagenesPrendaStorage.images) {
-                window.imagenesPrendaStorage.images = [];
+            
+            // Usar el método agregarUrl si existe (fallback manual) o agregar directamente
+            if (window.imagenesPrendaStorage.agregarUrl) {
+                window.imagenesPrendaStorage.agregarUrl(urlImagen, `imagen_${idx}.webp`);
+            } else {
+                // Método original para ImageStorageService
+                if (!window.imagenesPrendaStorage.images) {
+                    window.imagenesPrendaStorage.images = [];
+                }
+                window.imagenesPrendaStorage.images.push({
+                    previewUrl: urlImagen,
+                    nombre: `imagen_${idx}.webp`,
+                    tamaño: 0,
+                    file: null,
+                    urlDesdeDB: true
+                });
             }
-            window.imagenesPrendaStorage.images.push({
-                previewUrl: urlImagen,
-                nombre: `imagen_${idx}.webp`,
-                tamaño: 0,
-                file: null,
-                urlDesdeDB: true
-            });
         }
         // CASO 4: img es string URL (BD alternativo)
         else if (typeof img === 'string') {
             console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: String URL:`, img);
-            if (!window.imagenesPrendaStorage.images) {
-                window.imagenesPrendaStorage.images = [];
+            
+            // Usar el método agregarUrl si existe (fallback manual) o agregar directamente
+            if (window.imagenesPrendaStorage.agregarUrl) {
+                window.imagenesPrendaStorage.agregarUrl(img, `imagen_${idx}.webp`);
+            } else {
+                // Método original para ImageStorageService
+                if (!window.imagenesPrendaStorage.images) {
+                    window.imagenesPrendaStorage.images = [];
+                }
+                window.imagenesPrendaStorage.images.push({
+                    previewUrl: img,
+                    nombre: `imagen_${idx}.webp`,
+                    tamaño: 0,
+                    file: null,
+                    urlDesdeDB: true
+                });
             }
-            window.imagenesPrendaStorage.images.push({
-                previewUrl: img,
-                nombre: `imagen_${idx}.webp`,
-                tamaño: 0,
-                file: null,
-                urlDesdeDB: true
-            });
         }
         // CASO 5: Blob (también formulario)
         else if (img instanceof Blob) {
@@ -431,14 +490,92 @@ class PrendaEditor {
                     console.log(`[cargarTelas] Tela ${idx} transformada:`, {
                         nombre: transformed.nombre_tela,
                         color: transformed.color,
+                        referencia: transformed.referencia,
                         fotosCount: transformed.imagenes.length,
                         fotos: transformed.imagenes
                     });
                     return transformed;
                 });
                 console.log('[cargarTelas] ✅ Transformación completada:', prenda.telasAgregadas);
+            } else if (prenda.variantes && Array.isArray(prenda.variantes)) {
+                // ===== EXTRAER TELAS DESDE TODAS LAS VARIANTES (solución directa) =====
+                console.log('[cargarTelas] 🔄 Extrayendo telas desde TODAS las variantes');
+                console.log('[cargarTelas] 📊 Total de variantes a procesar:', prenda.variantes.length);
+                
+                // Inicializar array para telas
+                const telasAgregadasTemp = [];
+                
+                // Recorremos todas las variantes
+                prenda.variantes.forEach((variante, varianteIndex) => {
+                    console.log(`[cargarTelas] 📦 [Variante ${varianteIndex}] Procesando variante:`, {
+                        tipo_manga: variante.tipo_manga,
+                        tiene_bolsillos: variante.tiene_bolsillos,
+                        tiene_telas_multiples: !!(variante.telas_multiples),
+                        telas_multiples_count: variante.telas_multiples?.length || 0
+                    });
+                    
+                    // Verificar si esta variante tiene telas_multiples
+                    if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
+                        console.log(`[cargarTelas] 🧵 [Variante ${varianteIndex}] Encontradas ${variante.telas_multiples.length} telas`);
+                        
+                        // Recorrer todas las telas de esta variante
+                        variante.telas_multiples.forEach((tela, telaIndex) => {
+                            console.log(`[cargarTelas] 🎯 [Tela ${telaIndex}] Extrayendo:`, {
+                                tela: tela.tela,
+                                color: tela.color,
+                                referencia: tela.referencia,
+                                descripcion: tela.descripcion,
+                                imagenes_count: tela.imagenes?.length || 0
+                            });
+                            
+                            // Extraer y validar la referencia directamente
+                            const referenciaExtraida = (tela.referencia !== undefined && tela.referencia !== null && tela.referencia !== '') 
+                                ? String(tela.referencia).trim() 
+                                : '';
+                            
+                            // Crear objeto de tela con todas las propiedades
+                            const telaCompleta = {
+                                id: tela.id || null,
+                                nombre_tela: tela.tela || tela.nombre_tela || '',
+                                color: tela.color || '',
+                                referencia: referenciaExtraida, // <-- AQUÍ SE ASEGURA DE COPIAR LA REFERENCIA
+                                descripcion: tela.descripcion || '',
+                                grosor: tela.grosor || '',
+                                composicion: tela.composicion || '',
+                                imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : [],
+                                origen: 'variante_directa_modal',
+                                variante_index: varianteIndex,
+                                tela_index: telaIndex
+                            };
+                            
+                            // Agregar al array de telas
+                            telasAgregadasTemp.push(telaCompleta);
+                            
+                            console.log(`[cargarTelas] ✅ [Tela ${telaIndex}] Agregada correctamente:`, {
+                                nombre: telaCompleta.nombre_tela,
+                                color: telaCompleta.color,
+                                referencia: `"${telaCompleta.referencia}"`,
+                                descripcion: telaCompleta.descripcion
+                            });
+                        });
+                    } else {
+                        console.log(`[cargarTelas] ⚠️ [Variante ${varianteIndex}] No tiene telas_multiples válido`);
+                    }
+                });
+                
+                // Asignar el resultado final
+                prenda.telasAgregadas = telasAgregadasTemp;
+                
+                console.log('[cargarTelas] 🎯 RESULTADO FINAL DE EXTRACCIÓN DIRECTA:');
+                console.log(`[cargarTelas] 📊 Total de telas extraídas: ${prenda.telasAgregadas.length}`);
+                
+                // LOG FINAL: Verificar referencias extraídas
+                console.log('[cargarTelas] � RESUMEN DE REFERENCIAS EXTRAÍDAS:');
+                prenda.telasAgregadas.forEach((tela, idx) => {
+                    console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}"`);
+                });
             } else {
-                console.warn('[cargarTelas] ⚠️ No hay colores_telas para transformar');
+                console.warn('[cargarTelas] ⚠️ No hay colores_telas ni telas_multiples para procesar');
                 prenda.telasAgregadas = [];
             }
         } else {
@@ -448,6 +585,294 @@ class PrendaEditor {
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
             console.log('[cargarTelas] ✓ Telas disponibles:', prenda.telasAgregadas.length);
+            
+            // 🔍 NUEVA LÓGICA: Verificar si las referencias están vacías y buscar en variantes
+            const referenciasVacias = prenda.telasAgregadas.some(tela => !tela.referencia || tela.referencia === '');
+            
+            if (referenciasVacias) {
+                console.log('[cargarTelas] 🔄 Referencias vacías detectadas, buscando en variantes para enriquecer');
+                console.log('[cargarTelas] 🔍 ESTRUCTURA DE VARIANTES:', {
+                    tiene_variantes: !!prenda.variantes,
+                    variantes_es_array: Array.isArray(prenda.variantes),
+                    variantes_tiene_telas_multiples: !!(prenda.variantes?.telas_multiples),
+                    variantes_tipo: typeof prenda.variantes,
+                    variantes_keys: prenda.variantes ? Object.keys(prenda.variantes) : [],
+                    variantes_completo: prenda.variantes
+                });
+                
+                // DEBUG: Mostrar estructura completa de variantes
+                if (prenda.variantes) {
+                    console.log('[cargarTelas] 🔍 ESTRUCTURA COMPLETA DE VARIANTES:');
+                    console.log(JSON.stringify(prenda.variantes, null, 2));
+                }
+                
+                let variantesParaProcesar = [];
+                
+                // CASO 1: variantes es un array de objetos
+                if (Array.isArray(prenda.variantes)) {
+                    variantesParaProcesar = prenda.variantes;
+                    console.log('[cargarTelas] 📦 Usando variantes como array');
+                }
+                // CASO 2: variantes es un objeto con telas_multiples
+                else if (prenda.variantes && typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
+                    // Verificar si tiene telas_multiples directamente o si es un array de variantes
+                    if (prenda.variantes.telas_multiples && Array.isArray(prenda.variantes.telas_multiples)) {
+                        variantesParaProcesar = [prenda.variantes]; // Envolver en array para procesamiento uniforme
+                        console.log('[cargarTelas] 📦 Usando variantes como objeto con telas_multiples');
+                    } else if (Array.isArray(prenda.variantes)) {
+                        variantesParaProcesar = prenda.variantes;
+                        console.log('[cargarTelas] 📦 Usando variantes como array (corrección)');
+                    } else {
+                        console.log('[cargarTelas] ⚠️ Estructura de variantes no reconocida, mostrando todas las propiedades:');
+                        console.log('[cargarTelas] 🔍 Propiedades de variantes:', Object.keys(prenda.variantes));
+                        
+                        // Buscar telas_multiples en cualquier propiedad
+                        for (const [key, value] of Object.entries(prenda.variantes)) {
+                            if (key.includes('tela') || key.includes('multiple')) {
+                                console.log(`[cargarTelas] 🔍 Propiedad candidata:`, { key, value, isArray: Array.isArray(value) });
+                            }
+                        }
+                    }
+                }
+                // CASO 3: prenda tiene telas_multiples directamente
+                else if (prenda.telas_multiples && Array.isArray(prenda.telas_multiples)) {
+                    variantesParaProcesar = [{ telas_multiples: prenda.telas_multiples }]; // Crear estructura artificial
+                    console.log('[cargarTelas] 📦 Usando telas_multiples directamente en prenda');
+                }
+                
+                if (variantesParaProcesar.length > 0) {
+                    console.log(`[cargarTelas] 🎯 Procesando ${variantesParaProcesar.length} estructuras de variantes`);
+                    
+                    // Crear mapa de telas existentes para enriquecer
+                    const mapaTelasExistentes = new Map();
+                    prenda.telasAgregadas.forEach((tela, index) => {
+                        const clave = `${tela.nombre_tela}|${tela.color}`;
+                        const claveNormalizada = clave.toLowerCase().trim();
+                        mapaTelasExistentes.set(claveNormalizada, { index, tela, claveOriginal: clave });
+                        console.log(`[cargarTelas] 📍 Tela existente registrada: "${clave}" -> normalizada: "${claveNormalizada}" (índice ${index})`);
+                    });
+                    
+                    // Recorrer variantes para buscar referencias faltantes
+                    variantesParaProcesar.forEach((variante, varianteIndex) => {
+                        console.log(`[cargarTelas] 🔍 [Estructura ${varianteIndex}] Buscando referencias faltantes`);
+                        
+                        if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
+                            variante.telas_multiples.forEach((tela, telaIndex) => {
+                                const nombre_tela = tela.tela || tela.nombre_tela || '';
+                                const color = tela.color || '';
+                                const referencia = tela.referencia || '';
+                                const clave = `${nombre_tela}|${color}`;
+                                
+                                console.log(`[cargarTelas] 🎯 Analizando tela:`, {
+                                    nombre_tela,
+                                    color,
+                                    referencia: `"${referencia}"`,
+                                    clave,
+                                    claveNormalizada: clave.toLowerCase().trim()
+                                });
+                                
+                                // Buscar si existe una tela con esta combinación y sin referencia
+                                const claveNormalizada = clave.toLowerCase().trim();
+                                if (mapaTelasExistentes.has(claveNormalizada)) {
+                                    const telaExistente = mapaTelasExistentes.get(claveNormalizada);
+                                    
+                                    if (!telaExistente.tela.referencia || telaExistente.tela.referencia === '') {
+                                        if (referencia && referencia !== '') {
+                                            // Enriquecer la tela existente con la referencia
+                                            const indiceOriginal = telaExistente.index;
+                                            prenda.telasAgregadas[indiceOriginal].referencia = String(referencia).trim();
+                                            prenda.telasAgregadas[indiceOriginal].origen = 'enriquecido_desde_variantes';
+                                            
+                                            console.log(`[cargarTelas] ✅ Tela enriquecida:`, {
+                                                nombre: nombre_tela,
+                                                color: color,
+                                                referencia_anterior: '""',
+                                                referencia_nueva: `"${referencia}"`,
+                                                variante_index: varianteIndex,
+                                                tela_index: telaIndex
+                                            });
+                                        } else {
+                                            console.log(`[cargarTelas] ⚠️ Referencia vacía en variante también para:`, {
+                                                nombre: nombre_tela,
+                                                color: color,
+                                                referencia_en_variante: `"${referencia}"`
+                                            });
+                                        }
+                                    } else {
+                                        console.log(`[cargarTelas] ℹ️ Tela ya tiene referencia:`, {
+                                            nombre: nombre_tela,
+                                            color: color,
+                                            referencia_existente: `"${telaExistente.tela.referencia}"`
+                                        });
+                                    }
+                                } else {
+                                    console.log(`[cargarTelas] ℹ️ Tela no encontrada en existentes: ${clave}`);
+                                }
+                            });
+                        } else {
+                            console.log(`[cargarTelas] ⚠️ [Estructura ${varianteIndex}] No tiene telas_multiples válido`);
+                        }
+                    });
+                    
+                    // LOG FINAL de enriquecimiento
+                    console.log('[cargarTelas] 🎯 RESULTADO DESPUÉS DE ENRIQUECIMIENTO:');
+                    prenda.telasAgregadas.forEach((tela, idx) => {
+                        console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" (origen: ${tela.origen || 'backend'})`);
+                    });
+                } else {
+                    console.log('[cargarTelas] ⚠️ No se encontró estructura de variantes válida para procesar');
+                    
+                    // 🚨 SOLUCIÓN DE RESPALDO: Buscar directamente en la estructura del selector
+                    console.log('[cargarTelas] 🔄 Intentando solución de respaldo directa...');
+                    
+                    // Buscar en la estructura original que viene del selector
+                    // El selector tiene la estructura correcta con telas_multiples
+                    if (window.prendaOriginalDesdeSelector) {
+                        console.log('[cargarTelas] 🔍 Usando prenda original desde selector');
+                        console.log('[cargarTelas] 🔍 Estructura original:', window.prendaOriginalDesdeSelector);
+                        
+                        const prendaOriginal = window.prendaOriginalDesdeSelector;
+                        
+                        // Buscar en variantes array del selector
+                        if (prendaOriginal.variantes && Array.isArray(prendaOriginal.variantes)) {
+                            prendaOriginal.variantes.forEach((variante, idx) => {
+                                if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
+                                    console.log(`[cargarTelas] 🎯 [Original] Encontradas ${variante.telas_multiples.length} telas en variante ${idx}`);
+                                    
+                                    variante.telas_multiples.forEach((tela, telaIdx) => {
+                                        const nombre_tela = tela.tela || tela.nombre_tela || '';
+                                        const color = tela.color || '';
+                                        const referencia = tela.referencia || '';
+                                        const clave = `${nombre_tela}|${color}`;
+                                        
+                                        console.log(`[cargarTelas] 🎯 [Original] Analizando tela ${telaIdx}:`, {
+                                            nombre_tela,
+                                            color,
+                                            referencia: `"${referencia}"`,
+                                            clave
+                                        });
+                                        
+                                        // Buscar y enriquecer telas existentes
+                                        const mapaTelasExistentes = new Map();
+                                        prenda.telasAgregadas.forEach((telaExistente, index) => {
+                                            const claveExistente = `${telaExistente.nombre_tela}|${telaExistente.color}`;
+                                            // Normalizar clave para comparación (ignorar mayúsculas/minúsculas y espacios)
+                                            const claveNormalizada = claveExistente.toLowerCase().trim();
+                                            mapaTelasExistentes.set(claveNormalizada, { index, tela: telaExistente, claveOriginal: claveExistente });
+                                            console.log(`[cargarTelas] 📍 Tela existente registrada: "${claveExistente}" -> normalizada: "${claveNormalizada}" -> índice ${index}, referencia: "${telaExistente.referencia}"`);
+                                        });
+                                        
+                                        // Normalizar clave de búsqueda también
+                                        const claveNormalizada = clave.toLowerCase().trim();
+                                        
+                                        console.log(`[cargarTelas] 🔍 Buscando clave "${clave}" -> normalizada: "${claveNormalizada}" en mapa de telas existentes:`, {
+                                            existe: mapaTelasExistentes.has(claveNormalizada),
+                                            totalTelas: mapaTelasExistentes.size,
+                                            clavesDisponibles: Array.from(mapaTelasExistentes.keys()),
+                                            claveBuscada: `"${clave}"`,
+                                            claveNormalizadaBuscada: `"${claveNormalizada}"`,
+                                            referenciaBuscada: `"${referencia}"`
+                                        });
+                                        
+                                        if (mapaTelasExistentes.has(claveNormalizada)) {
+                                            const telaExistente = mapaTelasExistentes.get(claveNormalizada);
+                                            console.log(`[cargarTelas] 🎯 Tela coincidente encontrada:`, {
+                                                indice: telaExistente.index,
+                                                clave_original: telaExistente.claveOriginal,
+                                                referencia_actual: `"${telaExistente.tela.referencia}"`,
+                                                referencia_vacia: !telaExistente.tela.referencia || telaExistente.tela.referencia === '',
+                                                referencia_a_enriquecer: `"${referencia}"`
+                                            });
+                                            
+                                            if (!telaExistente.tela.referencia || telaExistente.tela.referencia === '') {
+                                                if (referencia && referencia !== '') {
+                                                    const indiceOriginal = telaExistente.index;
+                                                    const referenciaAnterior = prenda.telasAgregadas[indiceOriginal].referencia;
+                                                    
+                                                    prenda.telasAgregadas[indiceOriginal].referencia = String(referencia).trim();
+                                                    prenda.telasAgregadas[indiceOriginal].origen = 'enriquecido_desde_selector';
+                                                    
+                                                    console.log(`[cargarTelas] ✅ [Original] Tela enriquecida:`, {
+                                                        nombre: nombre_tela,
+                                                        color: color,
+                                                        referencia_anterior: `"${referenciaAnterior}"`,
+                                                        referencia_nueva: `"${referencia}"`,
+                                                        indice: indiceOriginal
+                                                    });
+                                                    
+                                                    // Verificar que se guardó correctamente
+                                                    const referenciaVerificada = prenda.telasAgregadas[indiceOriginal].referencia;
+                                                    console.log(`[cargarTelas] 🔍 Verificación post-enriquecimiento:`, {
+                                                        indice: indiceOriginal,
+                                                        referencia_guardada: `"${referenciaVerificada}"`,
+                                                        exito: referenciaVerificada === String(referencia).trim()
+                                                    });
+                                                } else {
+                                                    console.log(`[cargarTelas] ⚠️ Referencia a enriquecer está vacía: "${referencia}"`);
+                                                }
+                                            } else {
+                                                console.log(`[cargarTelas] ℹ️ Tela ya tiene referencia, no se enriquece: "${telaExistente.tela.referencia}"`);
+                                            }
+                                        } else {
+                                            console.log(`[cargarTelas] ⚠️ No se encontró tela coincidente para clave: "${clave}"`);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } else {
+                        console.log('[cargarTelas] ⚠️ No hay prenda original desde selector disponible');
+                        
+                        // ÚLTIMO RESPALDO: Buscar en cualquier propiedad que contenga "tela" o "multiple"
+                        if (prenda.variantes && typeof prenda.variantes === 'object') {
+                            console.log('[cargarTelas] 🔍 Búsqueda de última opción en todas las propiedades...');
+                            
+                            // Buscar telas_multiples en cualquier propiedad
+                            for (const [key, value] of Object.entries(prenda.variantes)) {
+                                if (key.includes('tela') || key.includes('multiple')) {
+                                    console.log(`[cargarTelas] 🔍 Propiedad candidata:`, { key, value, isArray: Array.isArray(value) });
+                                    
+                                    if (Array.isArray(value) && value.length > 0) {
+                                        value.forEach((tela, idx) => {
+                                            if (tela.referencia) {
+                                                console.log(`[cargarTelas] 🎯 [Último] Referencia encontrada en ${key}[${idx}]:`, tela.referencia);
+                                                
+                                                // Intentar enriquecer con esta referencia
+                                                const nombre_tela = tela.tela || tela.nombre_tela || '';
+                                                const color = tela.color || '';
+                                                const clave = `${nombre_tela}|${color}`;
+                                                
+                                                prenda.telasAgregadas.forEach((telaExistente, index) => {
+                                                    const claveExistente = `${telaExistente.nombre_tela}|${telaExistente.color}`;
+                                                    if (claveExistente === clave && (!telaExistente.referencia || telaExistente.referencia === '')) {
+                                                        prenda.telasAgregadas[index].referencia = String(tela.referencia).trim();
+                                                        prenda.telasAgregadas[index].origen = 'enriquecido_ultimo_respaldo';
+                                                        
+                                                        console.log(`[cargarTelas] ✅ [Último] Tela enriquecida:`, {
+                                                            nombre: nombre_tela,
+                                                            color: color,
+                                                            referencia_anterior: '""',
+                                                            referencia_nueva: `"${tela.referencia}"`
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                console.log('[cargarTelas] ℹ️ Todas las telas ya tienen referencias o no hay variantes para enriquecer');
+            }
+                
+            // LOG FINAL: Mostrar estado final de telasAgregadas
+            console.log('[cargarTelas] 🎯 ESTADO FINAL DE telasAgregadas:');
+            prenda.telasAgregadas.forEach((tela, idx) => {
+                console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" (origen: ${tela.origen || 'backend'})`);
+            });          
             
             // Verificar estructura de cada tela
             prenda.telasAgregadas.forEach((tela, idx) => {
