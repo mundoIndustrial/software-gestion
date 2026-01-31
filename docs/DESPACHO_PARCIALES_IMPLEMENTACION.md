@@ -8,7 +8,7 @@ La funcionalidad de guardado de despachos parciales por talla está **completame
 
 ## 📋 Especificación Técnica Implementada
 
-### 🎯 Objetivo
+###  Objetivo
 Guardar despachos parciales de prendas y EPP en múltiples entregas, sin validaciones matemáticas automáticas. Cada fila (prenda/EPP + talla) genera un registro independiente en `despacho_parciales`.
 
 ### 🔒 Campos NO Editables (Solo Lectura)

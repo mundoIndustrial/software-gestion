@@ -1,6 +1,6 @@
 # 📊 LOGS DE DIAGNÓSTICO - CREACIÓN DE PEDIDOS
 
-## 🎯 Objetivo
+##  Objetivo
 Identificar cuellos de botella y latencias en la creación de pedidos en:
 - `http://localhost:8000/asesores/pedidos-editable/crear-nuevo`
 - `http://localhost:8000/asesores/pedidos-editable/crear-desde-cotizacion`
@@ -283,7 +283,7 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 🎯 Próximos Pasos
+##  Próximos Pasos
 
 1. **Reproducir el problema** con datos reales
 2. **Revisar los logs** buscando los prefijos `[CREAR-PEDIDO]`

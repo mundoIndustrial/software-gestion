@@ -69,11 +69,11 @@ class GestionItemsUI {
         this.prendas.push(prenda);
         this.ordenItems.push({ tipo: 'prenda', index });
         
-        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
-        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
-        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
-        console.log('[gestionItemsUI] 🎯 agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
+        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - PRENDA agregada:', prenda.nombre_prenda);
+        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Nuevo index PRENDA:', index);
+        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Total PRENDAS:', this.prendas.length);
+        console.log('[gestionItemsUI]  agregarPrendaAlOrden() - Total EPPs:', this.epps.length);
     }
 
     /**
@@ -84,10 +84,10 @@ class GestionItemsUI {
         this.epps.push(epp);
         this.ordenItems.push({ tipo: 'epp', index });
         
-        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - EPP agregado:', epp.nombre_completo || epp.nombre);
-        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - Nuevo index EPP:', index);
-        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI] 🎯 agregarEPPAlOrden() - Total EPPs:', this.epps.length);
+        console.log('[gestionItemsUI]  agregarEPPAlOrden() - EPP agregado:', epp.nombre_completo || epp.nombre);
+        console.log('[gestionItemsUI]  agregarEPPAlOrden() - Nuevo index EPP:', index);
+        console.log('[gestionItemsUI]  agregarEPPAlOrden() - this.ordenItems ahora:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI]  agregarEPPAlOrden() - Total EPPs:', this.epps.length);
 
         return index;
     }

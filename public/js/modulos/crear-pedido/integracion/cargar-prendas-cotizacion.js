@@ -170,7 +170,7 @@ class CargadorPrendasCotizacion {
                     
                     // Recorrer todas las telas de esta variante
                     variante.telas_multiples.forEach((tela, telaIndex) => {
-                        console.log(`[transformarDatos] 🎯 [Tela ${telaIndex}] Extrayendo:`, {
+                        console.log(`[transformarDatos]  [Tela ${telaIndex}] Extrayendo:`, {
                             tela: tela.tela,
                             color: tela.color,
                             referencia: tela.referencia,
@@ -218,7 +218,7 @@ class CargadorPrendasCotizacion {
             // Asignar el resultado final
             telasDesdeVariantes = telasAgregadasTemp;
             
-            console.log('[transformarDatos] 🎯 RESULTADO FINAL DE EXTRACIÓN DIRECTA:');
+            console.log('[transformarDatos]  RESULTADO FINAL DE EXTRACIÓN DIRECTA:');
             console.log(`[transformarDatos] 📊 Total de telas extraídas: ${telasDesdeVariantes.length}`);
             
             telasDesdeVariantes.forEach((tela, idx) => {

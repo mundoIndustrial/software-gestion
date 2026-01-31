@@ -17,7 +17,7 @@ window.verificarEstadoRealtime = function() {
     console.log('🔄 Estado:', estado.isRunning ? 'Activo' : 'Inactivo');
     console.log('🌐 WebSockets:', estado.usingWebSockets ? '✅ Activo' : '❌ Inactivo');
     console.log('👁️ Página Visible:', estado.isVisible ? '✅' : '❌');
-    console.log('🎯 Foco:', estado.hasFocus ? '✅' : '❌');
+    console.log(' Foco:', estado.hasFocus ? '✅' : '❌');
     console.log('📈 Pedidos Monitoreados:', estado.pedidosCount);
     console.log('⏱️ Intervalo:', estado.checkInterval + 'ms');
     console.log('🕐 Último Cambio:', estado.lastChangeTime);

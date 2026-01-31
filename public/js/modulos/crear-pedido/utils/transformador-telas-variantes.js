@@ -123,7 +123,7 @@ function transformarVariantesATelasAgregadas(prenda) {
     });
 
     // LOG FINAL CON REFERENCIAS
-    console.log('🎯 [transformarVariantesATelasAgregadas] TRANSFORMACIÓN COMPLETADA');
+    console.log(' [transformarVariantesATelasAgregadas] TRANSFORMACIÓN COMPLETADA');
     console.log(`📊 Total de telas agregadas: ${telasAgregadas.length}`);
     console.log('📋 ARRAY FINAL telasAgregadas con referencias:');
     

@@ -32,7 +32,7 @@ class TestConcurrenciaPedidos extends Command
             $startTimeTotal = microtime(true);
             
             for ($ronda = 1; $ronda <= $numeroRondas; $ronda++) {
-                $this->line("\n🎯 Ronda {$ronda}/{$numeroRondas}");
+                $this->line("\n Ronda {$ronda}/{$numeroRondas}");
                 
                 $resultados = $this->ejecutarRonda($numeroUsuarios, $ronda);
                 

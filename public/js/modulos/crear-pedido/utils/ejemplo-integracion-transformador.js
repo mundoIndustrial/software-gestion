@@ -181,7 +181,7 @@ function ejemploUsoStandalone() {
     // Usar el flujo completo
     const prendaProcesada = window.procesarTelasDesdeVariantes(prendaEjemplo);
     
-    console.log('🎯 [Ejemplo] Resultado final:');
+    console.log(' [Ejemplo] Resultado final:');
     console.log('Prenda procesada:', prendaProcesada);
     console.log('window.telasAgregadas:', window.telasAgregadas);
     

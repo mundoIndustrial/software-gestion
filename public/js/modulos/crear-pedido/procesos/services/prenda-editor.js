@@ -520,7 +520,7 @@ class PrendaEditor {
                         
                         // Recorrer todas las telas de esta variante
                         variante.telas_multiples.forEach((tela, telaIndex) => {
-                            console.log(`[cargarTelas] 🎯 [Tela ${telaIndex}] Extrayendo:`, {
+                            console.log(`[cargarTelas]  [Tela ${telaIndex}] Extrayendo:`, {
                                 tela: tela.tela,
                                 color: tela.color,
                                 referencia: tela.referencia,
@@ -566,7 +566,7 @@ class PrendaEditor {
                 // Asignar el resultado final
                 prenda.telasAgregadas = telasAgregadasTemp;
                 
-                console.log('[cargarTelas] 🎯 RESULTADO FINAL DE EXTRACCIÓN DIRECTA:');
+                console.log('[cargarTelas]  RESULTADO FINAL DE EXTRACCIÓN DIRECTA:');
                 console.log(`[cargarTelas] 📊 Total de telas extraídas: ${prenda.telasAgregadas.length}`);
                 
                 // LOG FINAL: Verificar referencias extraídas
@@ -641,7 +641,7 @@ class PrendaEditor {
                 }
                 
                 if (variantesParaProcesar.length > 0) {
-                    console.log(`[cargarTelas] 🎯 Procesando ${variantesParaProcesar.length} estructuras de variantes`);
+                    console.log(`[cargarTelas]  Procesando ${variantesParaProcesar.length} estructuras de variantes`);
                     
                     // Crear mapa de telas existentes para enriquecer
                     const mapaTelasExistentes = new Map();
@@ -663,7 +663,7 @@ class PrendaEditor {
                                 const referencia = tela.referencia || '';
                                 const clave = `${nombre_tela}|${color}`;
                                 
-                                console.log(`[cargarTelas] 🎯 Analizando tela:`, {
+                                console.log(`[cargarTelas]  Analizando tela:`, {
                                     nombre_tela,
                                     color,
                                     referencia: `"${referencia}"`,
@@ -715,7 +715,7 @@ class PrendaEditor {
                     });
                     
                     // LOG FINAL de enriquecimiento
-                    console.log('[cargarTelas] 🎯 RESULTADO DESPUÉS DE ENRIQUECIMIENTO:');
+                    console.log('[cargarTelas]  RESULTADO DESPUÉS DE ENRIQUECIMIENTO:');
                     prenda.telasAgregadas.forEach((tela, idx) => {
                         console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" (origen: ${tela.origen || 'backend'})`);
                     });
@@ -737,7 +737,7 @@ class PrendaEditor {
                         if (prendaOriginal.variantes && Array.isArray(prendaOriginal.variantes)) {
                             prendaOriginal.variantes.forEach((variante, idx) => {
                                 if (variante.telas_multiples && Array.isArray(variante.telas_multiples)) {
-                                    console.log(`[cargarTelas] 🎯 [Original] Encontradas ${variante.telas_multiples.length} telas en variante ${idx}`);
+                                    console.log(`[cargarTelas]  [Original] Encontradas ${variante.telas_multiples.length} telas en variante ${idx}`);
                                     
                                     variante.telas_multiples.forEach((tela, telaIdx) => {
                                         const nombre_tela = tela.tela || tela.nombre_tela || '';
@@ -745,7 +745,7 @@ class PrendaEditor {
                                         const referencia = tela.referencia || '';
                                         const clave = `${nombre_tela}|${color}`;
                                         
-                                        console.log(`[cargarTelas] 🎯 [Original] Analizando tela ${telaIdx}:`, {
+                                        console.log(`[cargarTelas]  [Original] Analizando tela ${telaIdx}:`, {
                                             nombre_tela,
                                             color,
                                             referencia: `"${referencia}"`,
@@ -776,7 +776,7 @@ class PrendaEditor {
                                         
                                         if (mapaTelasExistentes.has(claveNormalizada)) {
                                             const telaExistente = mapaTelasExistentes.get(claveNormalizada);
-                                            console.log(`[cargarTelas] 🎯 Tela coincidente encontrada:`, {
+                                            console.log(`[cargarTelas]  Tela coincidente encontrada:`, {
                                                 indice: telaExistente.index,
                                                 clave_original: telaExistente.claveOriginal,
                                                 referencia_actual: `"${telaExistente.tela.referencia}"`,
@@ -835,7 +835,7 @@ class PrendaEditor {
                                     if (Array.isArray(value) && value.length > 0) {
                                         value.forEach((tela, idx) => {
                                             if (tela.referencia) {
-                                                console.log(`[cargarTelas] 🎯 [Último] Referencia encontrada en ${key}[${idx}]:`, tela.referencia);
+                                                console.log(`[cargarTelas]  [Último] Referencia encontrada en ${key}[${idx}]:`, tela.referencia);
                                                 
                                                 // Intentar enriquecer con esta referencia
                                                 const nombre_tela = tela.tela || tela.nombre_tela || '';
@@ -869,7 +869,7 @@ class PrendaEditor {
             }
                 
             // LOG FINAL: Mostrar estado final de telasAgregadas
-            console.log('[cargarTelas] 🎯 ESTADO FINAL DE telasAgregadas:');
+            console.log('[cargarTelas]  ESTADO FINAL DE telasAgregadas:');
             prenda.telasAgregadas.forEach((tela, idx) => {
                 console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" (origen: ${tela.origen || 'backend'})`);
             });          

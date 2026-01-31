@@ -4,7 +4,7 @@
 
 Este documento describe la lógica de negocio implementada para la generación automática de consecutivos de recibos cuando un pedido cambia a estado `PENDIENTE_INSUMOS`.
 
-## 🎯 Momento de Ejecución
+##  Momento de Ejecución
 
 ### Disparador
 - **Evento**: Cambio de estado del pedido
@@ -196,7 +196,7 @@ Total: 3 consecutivos
 - Niveles: INFO (proceso), ERROR (fallos)
 - Contexto: pedido_id, numero_pedido, usuario
 
-## 🎯 Reglas de Negocio Resumidas
+##  Reglas de Negocio Resumidas
 
 1. **Disparador Único**: Solo por cambio a `PENDIENTE_INSUMOS`
 2. **Por Prenda**: Cada prenda genera sus propios consecutivos

@@ -69,7 +69,7 @@ Select-String "IMAGE-UPLOAD|RESOLVER-IMAGENES|MAPEO-IMAGENES" storage/logs/larav
 
 → En este ejemplo, **Clientes es el cuello de botella (850ms)**
 
-## 🎯 Qué Buscar
+##  Qué Buscar
 
 ### Carga de Página Lenta?
 ```

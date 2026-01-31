@@ -8,7 +8,7 @@ Se han agregado **logs detallados con microtiming** en toda la cadena de creaci�
 
 ---
 
-## 🎯 Qué Se Instrumentó
+##  Qué Se Instrumentó
 
 ### 1. **Controlador Principal**
 **Archivo:** `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`
@@ -215,7 +215,7 @@ Buscar en logs: `[RESOLVER-IMAGENES] ✅ Extracción completada`
 
 ---
 
-## 🎯 Formato de Logs
+##  Formato de Logs
 
 Todos los logs siguen este patrón:
 - **Prefijo:** `[MODULO]` para fácil filtrado

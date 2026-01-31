@@ -1,6 +1,6 @@
 # 📊 LOGS DE DIAGNÓSTICO - Creación de Pedidos
 
-## 🎯 ¿Qué Se Hizo?
+##  ¿Qué Se Hizo?
 
 Se agregaron **logs detallados con medición de tiempo** en toda la cadena de creación de pedidos para identificar rápidamente **dónde está el cuello de botella** que causa lentitud.
 
@@ -115,7 +115,7 @@ Si ves en el resumen:
 
 Proporciona:
 - 📈 Estadísticas de tiempos
-- 🎯 Identificación de cuellos de botella
+-  Identificación de cuellos de botella
 - 🚨 Alertas de problemas críticos
 
 ---
@@ -167,7 +167,7 @@ Si ves "diferencia > 0" → Problema en FormData del frontend
 
 ---
 
-## 🎯 Soluciones Comunes
+##  Soluciones Comunes
 
 ### Si Clientes es lento (> 1000ms)
 ```sql

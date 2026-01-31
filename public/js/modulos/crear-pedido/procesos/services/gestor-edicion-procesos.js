@@ -22,7 +22,7 @@ class GestorEditacionProcesos {
      * @param {boolean} esNuevo - true si es nuevo, false si es edición
      */
     iniciarEdicion(tipo, esNuevo = false) {
-        console.log('🎯 [GESTOR-EDICION] Iniciando edición de proceso:', {
+        console.log(' [GESTOR-EDICION] Iniciando edición de proceso:', {
             tipo,
             esNuevo,
             hayProcesoEnEdicion: !!this.procesoEnEdicionActual

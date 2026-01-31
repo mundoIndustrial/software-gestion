@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 Requisitos Implementados
+##  Requisitos Implementados
 
 ### 1. ✅ Guardado de Despachos Parciales sin Validaciones Matemáticas
 - Los datos se guardan exactamente como el usuario los digita
@@ -439,7 +439,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 
 | Característica | Descripción |
 |---|---|
-| **🎯 Precisión** | Cada valor se guarda exactamente como se digita |
+| ** Precisión** | Cada valor se guarda exactamente como se digita |
 | **⚡ Velocidad** | Actualización en tiempo real sin recarga |
 | **🔒 Seguridad** | Transacciones DB, auditoría de usuario |
 | **📊 Escalabilidad** | Fácil agregar más parciales si es necesario |

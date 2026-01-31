@@ -89,7 +89,7 @@ class TestConsecutivosCommand extends Command
                 // Preguntar si desea actualizar el estado realmente
                 if ($this->confirm('¿Desea actualizar el estado del pedido a PENDIENTE_INSUMOS?')) {
                     $pedido->update(['estado' => $estadoNuevo]);
-                    $this->info("🎯 Estado del pedido actualizado a: {$estadoNuevo}");
+                    $this->info(" Estado del pedido actualizado a: {$estadoNuevo}");
                 }
                 
             } else {

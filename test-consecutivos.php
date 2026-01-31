@@ -82,7 +82,7 @@ try {
         
         // Actualizar realmente el estado del pedido
         $pedido->update(['estado' => $estadoNuevo]);
-        echo "🎯 Estado del pedido actualizado a: {$estadoNuevo}\n";
+        echo " Estado del pedido actualizado a: {$estadoNuevo}\n";
         
     } else {
         echo "ℹ️  No se generaron consecutivos (revisar logs para más detalles)\n";

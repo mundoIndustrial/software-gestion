@@ -44,7 +44,7 @@
                     @endphp
                     
                     @foreach($columns as $column)
-                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" data-column="{{ $column['key'] }}">
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
                             <div class="th-wrapper">
                                 <span class="header-text">{{ $column['label'] }}</span>
                                 @if($column['key'] !== 'acciones')
@@ -236,35 +236,10 @@
                                     </div>
                                 </div>
                                 
-                                @php
-                                    // Preparar datos completos de prendas para el modal formateado
-                                    $prendasParaModal = [];
-                                    if ($orden->prendas && $orden->prendas->count() > 0) {
-                                        foreach ($orden->prendas as $prenda) {
-                                            $prendasParaModal[] = [
-                                                'id' => $prenda->id,
-                                                'nombre' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
-                                                'nombre_prenda' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
-                                                'numero' => $prenda->numero_prenda ?? $prenda->numero ?? null,
-                                                'tela' => $prenda->tela ?? '',
-                                                'color' => $prenda->color ?? '',
-                                                'manga' => $prenda->manga ?? '',
-                                                'ref' => $prenda->referencia ?? $prenda->ref ?? '',
-                                                'broche' => $prenda->broche ?? '',
-                                                'genero' => $prenda->genero ?? 'DAMA',
-                                                'descripcion' => $prenda->descripcion ?? '',
-                                                'tallas' => $prenda->tallas ? $prenda->tallas->toArray() : [],
-                                                'procesos' => $prenda->procesos ? $prenda->procesos->toArray() : [],
-                                                'variantes' => $prenda->variantes ? $prenda->variantes->toArray() : [],
-                                            ];
-                                        }
-                                    }
-                                @endphp
-
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
-                                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
-                                        <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
+                                    <div class="cell-content" style="justify-content: flex-start;">
+                                        <span style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
                                             @php
                                                 if ($orden->prendas && $orden->prendas->count() > 0) {
                                                     $prendasInfo = $orden->prendas->map(function($prenda) {
@@ -490,404 +465,11 @@
         });
 
         // ==================== MODAL DE CELDA ====================
-        /**
-         * Abre modal con descripción formateada como recibo de costura
-         * @param {string} titulo - Título del modal
-         * @param {Array} prendas - Array de objetos prenda con todos los datos
-         */
-        function abrirModalCeldaConFormato(titulo, prendas) {
-            console.log('[abrirModalCeldaConFormato] 📋 INICIO - Datos recibidos:');
-            console.log('[abrirModalCeldaConFormato] Título:', titulo);
-            console.log('[abrirModalCeldaConFormato] Prendas tipo:', typeof prendas);
-            console.log('[abrirModalCeldaConFormato] Prendas es array:', Array.isArray(prendas));
-            console.log('[abrirModalCeldaConFormato] Prendas cantidad:', prendas ? prendas.length : 0);
-            console.log('[abrirModalCeldaConFormato] Prendas RAW:', prendas);
-            
-            let htmlContenido = '';
-            
-            if (!prendas || prendas.length === 0) {
-                htmlContenido = '<div style="text-align: center; color: #9ca3af;">No hay prendas disponibles</div>';
-            } else {
-                prendas.forEach((prenda, idx) => {
-                    console.log(`[abrirModalCeldaConFormato] ⚡ Procesando prenda ${idx}:`, prenda);
-                    
-                    // Convertir objeto Eloquent a objeto simple si es necesario
-                    let prendaData = prenda.toJSON ? prenda.toJSON() : prenda;
-                    console.log(`[abrirModalCeldaConFormato] ✅ Después toJSON:`, prendaData);
-                    
-                    // NORMALIZAR datos: convertir objetos a strings
-                    prendaData = normalizarPrendaData(prendaData);
-                    console.log(`[abrirModalCeldaConFormato] ✅ Después normalizar:`, prendaData);
-                    console.log(`[abrirModalCeldaConFormato] Campos principales: nombre="${prendaData.nombre_prenda}", tela="${prendaData.tela}", color="${prendaData.color}", manga="${prendaData.manga}"`);
-                    
-                    // Generar HTML formateado como en el recibo
-                    let prendaHtml = '';
-                    try {
-                        // Intentar usar Formatters si está disponible
-                        if (window.Formatters && typeof window.Formatters.construirDescripcionCostura === 'function') {
-                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando window.Formatters.construirDescripcionCostura`);
-                            prendaHtml = window.Formatters.construirDescripcionCostura(prendaData);
-                        } else if (typeof Formatters !== 'undefined' && typeof Formatters.construirDescripcionCostura === 'function') {
-                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando Formatters.construirDescripcionCostura (module)`);
-                            prendaHtml = Formatters.construirDescripcionCostura(prendaData);
-                        } else {
-                            // Fallback si Formatters no disponible - generar HTML simple
-                            console.log(`[abrirModalCeldaConFormato] ⚠️ Formatters no disponible, usando fallback`);
-                            prendaHtml = generarDescripcionSimple(prendaData);
-                        }
-                    } catch (e) {
-                        console.error('[abrirModalCeldaConFormato] ❌ Error al formatear prenda:', e);
-                        console.error('[abrirModalCeldaConFormato] Stack:', e.stack);
-                        prendaHtml = generarDescripcionSimple(prendaData);
-                    }
-                    
-                    console.log(`[abrirModalCeldaConFormato] 📄 HTML generado:`, prendaHtml);
-                    
-                    htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                        ${prendaHtml}
-                    </div>`;
-                });
-            }
-            
-            console.log('[abrirModalCeldaConFormato] ✅ HTML FINAL A MOSTRAR:', htmlContenido);
-            mostrarModalCeldaFormateado(titulo, htmlContenido);
-        }
-        
-        /**
-         * Genera descripción formateada sin Formatters (fallback)
-         */
-        function generarDescripcionSimple(prenda) {
-            console.log('[generarDescripcionSimple] 🎨 INPUT:', prenda);
-            let html = '';
-            
-            // Título
-            if (prenda.nombre_prenda) {
-                html += `<strong style="font-size: 13.4px;">PRENDA: ${prenda.nombre_prenda.toUpperCase()}</strong><br>`;
-                console.log('[generarDescripcionSimple] ✅ Nombre agregado');
-            }
-            
-            // Atributos básicos
-            if (prenda.tela || prenda.color || prenda.manga) {
-                let attrs = [];
-                if (prenda.tela) {
-                    attrs.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Tela:', prenda.tela);
-                }
-                if (prenda.color) {
-                    attrs.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Color:', prenda.color);
-                }
-                if (prenda.manga) {
-                    attrs.push(`<strong>MANGA:</strong> ${prenda.manga.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Manga:', prenda.manga);
-                }
-                html += attrs.join(' | ') + '<br>';
-            }
-            
-            // Broche si existe
-            if (prenda.broche) {
-                html += `<strong>BROCHE:</strong> ${prenda.broche}<br>`;
-                console.log('[generarDescripcionSimple] ✅ Broche:', prenda.broche);
-            }
-            
-            // Descripción - Limpiar basura del inicio
-            if (prenda.descripcion) {
-                console.log('[generarDescripcionSimple] 📝 Descripción RAW:', prenda.descripcion);
-                let desc = String(prenda.descripcion);
-                // Limpiar líneas de basura del inicio (DSFSDFS, etc)
-                desc = desc.split('\n').filter(linea => {
-                    const trimmed = linea.trim();
-                    // Saltar líneas basura
-                    if (!trimmed) return false;
-                    if (trimmed.match(/^[A-Z]{5,}[A-Z\s]{0,10}$/i) && 
-                        !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE)/i)) {
-                        console.log('[generarDescripcionSimple] 🚫 Línea basura filtrada:', trimmed);
-                        return false;
-                    }
-                    return true;
-                }).join('\n');
-                
-                if (desc.trim()) {
-                    html += desc + '<br>';
-                    console.log('[generarDescripcionSimple] ✅ Descripción agregada (después de limpiar)');
-                }
-            }
-            
-            // Tallas
-            if (prenda.tallas && prenda.tallas.length > 0) {
-                console.log('[generarDescripcionSimple] 📊 Tallas encontradas:', prenda.tallas);
-                html += `<strong>TALLAS</strong><br>`;
-                const tallasPorGenero = {};
-                prenda.tallas.forEach(t => {
-                    const genero = String(t.genero || 'DAMA').toUpperCase();
-                    if (!tallasPorGenero[genero]) {
-                        tallasPorGenero[genero] = [];
-                    }
-                    tallasPorGenero[genero].push(`${t.talla}: <span style="color: red;"><strong>${t.cantidad}</strong></span>`);
-                });
-                
-                for (let genero in tallasPorGenero) {
-                    html += `${genero}: ${tallasPorGenero[genero].join(', ')}<br>`;
-                    console.log('[generarDescripcionSimple] ✅ Tallas por género - ' + genero);
-                }
-            } else {
-                console.log('[generarDescripcionSimple] ⚠️ No hay tallas');
-            }
-            
-            console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
-            return html;
-        }
-        
-        /**
-         * Normaliza los datos de la prenda para asegurar que sean valores primitivos
-         * Convierte objetos en strings
-         */
-        function normalizarPrendaData(prenda) {
-            if (!prenda) return prenda;
-            
-            console.log('[normalizarPrendaData] INPUT - Prenda original:', prenda);
-            
-            const normalizado = { ...prenda };
-            
-            // Lista ampliada de campos que deben ser strings
-            const stringsFields = [
-                'nombre', 'nombre_prenda', 'tela', 'color', 'manga', 'ref', 'referencia',
-                'descripcion', 'genero', 'broche', 'numero', 'numero_prenda'
-            ];
-            
-            for (let field of stringsFields) {
-                if (normalizado[field]) {
-                    console.log(`[normalizarPrendaData] Campo "${field}": tipo=${typeof normalizado[field]}, valor=`, normalizado[field]);
-                    // Si es un objeto con propiedad 'nombre', extraer el valor
-                    if (typeof normalizado[field] === 'object' && normalizado[field] !== null) {
-                        normalizado[field] = normalizado[field].nombre || normalizado[field].name || String(normalizado[field]);
-                        console.log(`[normalizarPrendaData]   → Convertido a: "${normalizado[field]}"`);
-                    } else if (normalizado[field] !== null && normalizado[field] !== undefined) {
-                        normalizado[field] = String(normalizado[field]).trim();
-                    }
-                }
-            }
-            
-            // Asegurar que genero tenga un valor por defecto
-            if (!normalizado.genero || normalizado.genero === '') {
-                normalizado.genero = 'DAMA';
-            }
-            
-            // Normalizar tallas (puede ser array de objetos o array de strings)
-            if (normalizado.tallas && Array.isArray(normalizado.tallas)) {
-                console.log('[normalizarPrendaData] Tallas detectadas:', normalizado.tallas.length);
-                normalizado.tallas = normalizado.tallas.map(t => {
-                    if (typeof t === 'object' && t !== null) {
-                        return {
-                            genero: String(t.genero || '').toUpperCase(),
-                            talla: String(t.talla || ''),
-                            cantidad: parseInt(t.cantidad) || 0
-                        };
-                    }
-                    return t;
-                });
-            } else {
-                normalizado.tallas = [];
-            }
-            
-            // Normalizar procesos si existen
-            if (normalizado.procesos && Array.isArray(normalizado.procesos)) {
-                console.log('[normalizarPrendaData] Procesos detectados:', normalizado.procesos.length);
-                normalizado.procesos = normalizado.procesos.map(p => {
-                    if (typeof p === 'object' && p !== null) {
-                        return {
-                            tipo_proceso: String(p.tipo_proceso || p.nombre_proceso || ''),
-                            nombre_proceso: String(p.nombre_proceso || p.tipo_proceso || ''),
-                            descripcion: p.descripcion ? String(p.descripcion) : '',
-                            ...p
-                        };
-                    }
-                    return p;
-                });
-            } else {
-                normalizado.procesos = [];
-            }
-            
-            // Normalizar variantes si existen
-            if (normalizado.variantes && Array.isArray(normalizado.variantes)) {
-                console.log('[normalizarPrendaData] Variantes detectadas:', normalizado.variantes.length);
-                normalizado.variantes = normalizado.variantes.map(v => {
-                    if (typeof v === 'object' && v !== null) {
-                        return {
-                            nombre: String(v.nombre || v.nombre_variante || ''),
-                            descripcion: v.descripcion ? String(v.descripcion) : '',
-                            ...v
-                        };
-                    }
-                    return v;
-                });
-            } else {
-                normalizado.variantes = [];
-            }
-            
-            console.log('[normalizarPrendaData] OUTPUT - Prenda normalizada:', normalizado);
-            return normalizado;
-        }
-        
-        
-        /**
-         * Muestra el modal con HTML formateado
-         */
-        function mostrarModalCeldaFormateado(titulo, htmlContenido) {
-            console.log('[mostrarModalCeldaFormateado] 🔓 Abriendo modal');
-            console.log('[mostrarModalCeldaFormateado] Título:', titulo);
-            console.log('[mostrarModalCeldaFormateado] HTML contenido (primeros 500 chars):', htmlContenido.substring(0, 500));
-            
-            const modalHTML = `
-                <div id="celdaModal" style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
-                    animation: fadeIn 0.3s ease;
-                " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
-                    <div style="
-                        background: white;
-                        border-radius: 12px;
-                        padding: 2rem;
-                        max-width: 600px;
-                        width: 90%;
-                        max-height: 80vh;
-                        overflow-y: auto;
-                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                        animation: slideIn 0.3s ease;
-                    " onclick="event.stopPropagation()">
-                        <div style="
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            margin-bottom: 1.5rem;
-                            border-bottom: 2px solid #e5e7eb;
-                            padding-bottom: 1rem;
-                        ">
-                            <h2 style="
-                                margin: 0;
-                                font-size: 1.25rem;
-                                font-weight: 700;
-                                color: #1f2937;
-                            ">${titulo}</h2>
-                            <button onclick="cerrarModalCelda()" style="
-                                background: none;
-                                border: none;
-                                font-size: 1.5rem;
-                                cursor: pointer;
-                                color: #6b7280;
-                                padding: 0;
-                                width: 32px;
-                                height: 32px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                border-radius: 6px;
-                                transition: all 0.2s ease;
-                            " onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
-                                ✕
-                            </button>
-                        </div>
-                        <div style="
-                            color: #374151;
-                            font-size: 0.95rem;
-                            line-height: 1.8;
-                        ">
-                            ${htmlContenido}
-                        </div>
-                        <div style="
-                            margin-top: 1.5rem;
-                            display: flex;
-                            justify-content: flex-end;
-                            gap: 0.75rem;
-                        ">
-                            <button onclick="cerrarModalCelda()" style="
-                                background: white;
-                                border: 2px solid #d1d5db;
-                                color: #374151;
-                                padding: 0.625rem 1.25rem;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                                font-size: 0.875rem;
-                                transition: all 0.2s ease;
-                            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            document.addEventListener('keydown', function cerrarConEsc(event) {
-                if (event.key === 'Escape') {
-                    cerrarModalCelda();
-                    document.removeEventListener('keydown', cerrarConEsc);
-                }
-            });
-        }
-        
         function abrirModalCelda(titulo, contenido) {
             let contenidoLimpio = contenido || '-';
             
-            // Limpiar caracteres especiales
             contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
             contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
-            
-            // PASO 1: Dividir por líneas y filtrar basura
-            let lineasOriginales = contenidoLimpio.split('\n');
-            let lineasLimpias = [];
-            let lineasTallasVistas = {};
-            
-            for (let linea of lineasOriginales) {
-                const trimmed = linea.trim();
-                
-                // Saltar líneas vacías
-                if (!trimmed) {
-                    lineasLimpias.push(''); // Mantener saltos para estructura
-                    continue;
-                }
-                
-                // DETECTAR Y ELIMINAR TEXTO BASURA
-                // Patrones de basura: palabras sin estructura, sin espacios útiles
-                if (trimmed.match(/^[A-Z]{4,}[A-Z\s]{0,10}$/i) && 
-                    !trimmed.match(/^(PRENDA|TALLA|TELAS?|COLORES?|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE|NIÑO|REF|CANTIDAD|DEMAS|LARGA|CORTA|MEDIA|SESGO|BLANCO|NEGRO|ROJO|AZUL)/i)) {
-                    continue; // Saltar basura
-                }
-                
-                // Eliminar líneas que contienen solo caracteres extraños sin sentido
-                if (trimmed.match(/^[A-Z\s]{3,}[A-Z0-9\s]*$/i) && trimmed.length < 20 && 
-                    !trimmed.match(/:\s/) && // No tiene dos puntos (estructura)
-                    !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|•|-)/i)) {
-                    // Verificar si es realmente basura (sin vocales válidas)
-                    const vocales = (trimmed.match(/[AEIOU]/gi) || []).length;
-                    if (vocales < 2) {
-                        continue; // Probablemente basura
-                    }
-                }
-                
-                // ELIMINAR DUPLICIDAD DE TALLAS
-                if (trimmed.match(/^Talla[s]?:/i)) {
-                    const normalizado = trimmed.toLowerCase().replace(/talla[s]?:\s*/i, '').trim();
-                    if (lineasTallasVistas[normalizado]) {
-                        continue; // Duplicado
-                    }
-                    lineasTallasVistas[normalizado] = true;
-                }
-                
-                lineasLimpias.push(linea);
-            }
-            
-            contenidoLimpio = lineasLimpias.join('\n');
             
             let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
             
@@ -914,7 +496,7 @@
                     else if (linea.startsWith('•') || linea.startsWith('-')) {
                         htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
                     }
-                    else if (linea.match(/^Talla[s]?:/i)) {
+                    else if (linea.match(/^Tallas:/i)) {
                         htmlContenido += `<div style="margin-top: 0.5rem; margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
                     }
                     else if (linea) {
@@ -1032,6 +614,55 @@
         }
     </script>
 
+    <!-- Modal de Detalles de Pedido (Lista de Prendas) -->
+    <style>
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            display: none !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            overflow-y: auto !important;
+            z-index: 99999 !important;
+        }
+        
+        .modal-overlay[style*="display: flex"] {
+            display: flex !important;
+        }
+        
+        .modal-content {
+            position: relative !important;
+            background: white !important;
+            border-radius: 8px !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            max-height: 95vh !important;
+            overflow-y: auto !important;
+        }
+    </style>
+    
+    <div id="modal-detalle-pedido" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1.5rem; border-radius: 8px 8px 0 0; position: relative;">
+                <h3 style="margin: 0; font-size: 1.5rem; font-weight: 700;">
+                    Detalles del Pedido #<span id="detalle-pedido-numero"></span>
+                </h3>
+                <button onclick="cerrarModalDetallePedido()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; position: absolute; right: 1rem; top: 1rem;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
+                <div id="detalle-contenido">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -1073,6 +704,234 @@
     
     <!-- ACTION MENU HANDLER -->
     <script src="{{ asset('js/orders js/action-menu.js') }}?v={{ time() }}"></script>
+    
+    <!-- SISTEMA DE RECIBOS DE SUPERVISOR-PEDIDOS -->
+    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
+    
+    <!-- FUNCIONES DE COMPATIBILIDAD PARA REGISTROS -->
+    <script>
+        // Estado del toggle para registros
+        let registrosToggleState = {
+            enGaleria: false,
+            modalActual: null,
+            contenidoActual: null
+        };
+        
+        // Contador de clics para debugging
+        let toggleClickCount = 0;
+        let lastClickTime = 0;
+        
+        // Sistema de detección de clics global
+        let globalClickCount = 0;
+        let lastGlobalClickTime = 0;
+        
+        // Detectar todos los clics en la página
+        document.addEventListener('click', function(event) {
+            globalClickCount++;
+            const currentTime = Date.now();
+            const timeSinceLastClick = lastGlobalClickTime ? currentTime - lastGlobalClickTime : 0;
+            lastGlobalClickTime = currentTime;
+            
+            const target = event.target;
+            const targetInfo = {
+                tagName: target.tagName,
+                className: target.className,
+                id: target.id,
+                textContent: target.textContent ? target.textContent.substring(0, 50) : '',
+                onclick: target.onclick ? 'has-onclick' : 'no-onclick',
+                parentInfo: target.parentElement ? {
+                    tagName: target.parentElement.tagName,
+                    className: target.parentElement.className,
+                    id: target.parentElement.id
+                } : null
+            };
+            
+            console.log(`[GLOBAL-CLICK] Click #${globalClickCount} - Tiempo: ${timeSinceLastClick}ms`);
+            console.log(`[GLOBAL-CLICK] Target:`, targetInfo);
+            
+            // Detectar si es un botón de toggle
+            if (target.textContent && target.textContent.includes('📄')) {
+                console.log(`[GLOBAL-CLICK]  BOTÓN DE FACTURA DETECTADO`);
+            }
+            if (target.textContent && target.textContent.includes('🖼️')) {
+                console.log(`[GLOBAL-CLICK]  BOTÓN DE GALERÍA DETECTADO`);
+            }
+            
+            // Detectar si es un botón de prenda
+            if (target.closest('.prenda-header')) {
+                console.log(`[GLOBAL-CLICK]  CABECERA DE PRENDA DETECTADA`);
+                
+                // Verificar si la función togglePrendaAccordion existe
+                if (typeof window.togglePrendaAccordion === 'function') {
+                    console.log(`[GLOBAL-CLICK] ✅ togglePrendaAccordion está disponible`);
+                } else {
+                    console.error(`[GLOBAL-CLICK] ❌ togglePrendaAccordion NO está disponible`);
+                }
+                
+                // Intentar obtener el ID del accordion
+                const header = target.closest('.prenda-header');
+                if (header) {
+                    const onclickAttr = header.getAttribute('onclick');
+                    console.log(`[GLOBAL-CLICK] onclick attribute: ${onclickAttr}`);
+                    
+                    // Extraer el ID del onclick
+                    const idMatch = onclickAttr.match(/togglePrendaAccordion\([^,]+,\s*['"]([^'"]+)['"]\)/);
+                    if (idMatch) {
+                        const accordionId = idMatch[1];
+                        console.log(`[GLOBAL-CLICK] ID del accordion: ${accordionId}`);
+                        
+                        // Prevenir el onclick original para evitar doble toggle
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        
+                        // Llamar directamente a la función
+                        try {
+                            console.log(`[GLOBAL-CLICK] Llamando togglePrendaAccordion con ID: ${accordionId}`);
+                            window.togglePrendaAccordion(header, accordionId);
+                            console.log(`[GLOBAL-CLICK] ✅ togglePrendaAccordion ejecutada sin errores`);
+                        } catch (funcError) {
+                            console.error(`[GLOBAL-CLICK] ❌ Error llamando togglePrendaAccordion:`, funcError);
+                        }
+                        return;
+                    } else {
+                        console.error(`[GLOBAL-CLICK] No se pudo extraer el ID del accordion - Regex falló`);
+                        console.log(`[GLOBAL-CLICK] onclick completo: "${onclickAttr}"`);
+                    }
+                }
+            }
+            
+            // Detectar si es un proceso
+            if (target.closest('.proceso-item')) {
+                const procesoItem = target.closest('.proceso-item');
+                const procesoText = procesoItem.textContent ? procesoItem.textContent.substring(0, 30) : '';
+                console.log('[GLOBAL-CLICK]  PROCESO DETECTADO: ' + procesoText);
+            }
+        });
+        
+        // Función toggleFactura para registros
+        window.toggleFactura = function() {
+            // Incrementar contador de clics
+            toggleClickCount++;
+            const currentTime = Date.now();
+            const timeSinceLastClick = lastClickTime ? currentTime - lastClickTime : 0;
+            lastClickTime = currentTime;
+            
+            console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Tiempo desde último: ${timeSinceLastClick}ms`);
+            
+            // Buscar el modal de recibo actual (usar el selector correcto)
+            const modalRecibo = document.getElementById('order-detail-modal-wrapper');
+            if (!modalRecibo) {
+                console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Modal no encontrado`);
+                return;
+            }
+            
+            // Buscar la galería
+            const galeria = document.getElementById('galeria-modal-costura');
+            
+            // Estado actual del modal
+            const card = modalRecibo.querySelector('.order-detail-card');
+            const modalState = {
+                modalDisplay: modalRecibo.style.display,
+                cardDisplay: card?.style.display || 'no-card',
+                galeriaDisplay: galeria?.style.display || 'no-galeria',
+                enGaleria: registrosToggleState.enGaleria
+            };
+            
+            // CORRECCIÓN: Sincronizar estado con el DOM real
+            const galeriaEstaVisible = galeria && galeria.style.display === 'flex';
+            const reciboEstaVisible = card && card.style.display === 'block';
+            
+            // Si el estado no coincide con el DOM, actualizarlo
+            if (galeriaEstaVisible && !registrosToggleState.enGaleria) {
+                registrosToggleState.enGaleria = true;
+                console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - CORRECCIÓN: Estado sincronizado a galería`);
+            } else if (reciboEstaVisible && registrosToggleState.enGaleria) {
+                registrosToggleState.enGaleria = false;
+                console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - CORRECCIÓN: Estado sincronizado a recibo`);
+            }
+            
+            console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Estado actual:`, modalState);
+            console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Estado sincronizado: enGaleria=${registrosToggleState.enGaleria}`);
+            
+            if (registrosToggleState.enGaleria) {
+                // Estamos en galería, volver al recibo
+                console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Volviendo al recibo`);
+                
+                // Ocultar galería
+                if (galeria) {
+                    galeria.style.display = 'none';
+                }
+                
+                // Mostrar recibo (mostrar la card del modal)
+                const card = modalRecibo.querySelector('.order-detail-card');
+                if (card) {
+                    card.style.display = 'block';
+                }
+                
+                // Restaurar tamaño del modal
+                modalRecibo.style.maxWidth = '672px';
+                modalRecibo.style.width = '90%';
+                
+                // Esperar un momento para asegurar que los cambios se apliquen
+                setTimeout(() => {
+                    // Verificación final
+                    const modalVisible = (
+                        modalRecibo.offsetParent !== null && 
+                        modalRecibo.style.display === 'flex' &&
+                        card && card.style.display === 'block'
+                    );
+                    
+                    registrosToggleState.enGaleria = false;
+                    
+                    console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Verificación final: Modal visible=${modalVisible}`);
+                    
+                    // Si no está visible, usar método alternativo
+                    if (!modalVisible) {
+                        modalRecibo.style.visibility = 'visible';
+                        modalRecibo.style.opacity = '1';
+                        modalRecibo.style.pointerEvents = 'auto';
+                        console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Aplicado método alternativo`);
+                    }
+                }, 50);
+            } else {
+                // Estamos en recibo, mostrar galería
+                console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Mostrando galería`);
+                
+                // Ocultar recibo (ocultar la card del modal)
+                const card = modalRecibo.querySelector('.order-detail-card');
+                if (card) {
+                    card.style.display = 'none';
+                }
+                
+                // Mostrar galería
+                if (galeria) {
+                    galeria.style.display = 'flex';
+                }
+                
+                // Agrandar modal para galería
+                modalRecibo.style.maxWidth = '95%';
+                modalRecibo.style.width = '95%';
+                
+                // Esperar un momento para asegurar que los cambios se apliquen
+                setTimeout(() => {
+                    registrosToggleState.enGaleria = true;
+                    console.log(`[TOGGLE-DEBUG] Click #${toggleClickCount} - Estado cambiado a galería`);
+                }, 50);
+            }
+        };
+        
+        // Función toggleGaleria para registros (alias de toggleFactura)
+        window.toggleGaleria = function() {
+            window.toggleFactura();
+        };
+    </script>
+    
+    <!-- MODALES DE RECIBOS (de supervisor-pedidos) -->
+    @include('components.modals.recibos-process-selector')
+    @include('components.modals.recibos-intermediate-modal')
+    @include('components.modals.recibo-dinamico-modal')
 
     <!-- FILTER SYSTEM -->
     <script src="{{ asset('js/orders js/filter-system.js') }}?v={{ time() }}"></script>

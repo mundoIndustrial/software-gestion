@@ -268,7 +268,7 @@ function generarTablaLogoPaso3(nombrePrenda) {
         });
     }
     
-    console.log('🎯 tecnicasUbicaciones finales:', tecnicasUbicaciones);
+    console.log(' tecnicasUbicaciones finales:', tecnicasUbicaciones);
     
     // Si no hay técnicas ni ubicaciones, no renderizar
     if (Object.keys(tecnicasUbicaciones).length === 0) {
@@ -335,7 +335,7 @@ function generarTablaReflectivoPaso4(nombrePrenda) {
         });
     }
     
-    console.log('🎯 reflectivoDatos finales:', reflectivoDatos);
+    console.log(' reflectivoDatos finales:', reflectivoDatos);
     
     // Si no hay datos, no renderizar
     if (reflectivoDatos.length === 0) {

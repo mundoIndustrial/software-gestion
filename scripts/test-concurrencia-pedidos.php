@@ -46,7 +46,7 @@ class ConcurrenciaTest
         
         try {
             for ($ronda = 1; $ronda <= $this->numeroRondas; $ronda++) {
-                echo "🎯 Ronda {$ronda}/{$this->numeroRondas}\n";
+                echo " Ronda {$ronda}/{$this->numeroRondas}\n";
                 $this->ejecutarRonda($ronda);
                 
                 // Pequeña pausa entre rondas

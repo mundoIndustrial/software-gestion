@@ -271,14 +271,14 @@ function mostrarProductoEPP(producto) {
     
     // Mostrar tarjeta
     const tarjeta = document.getElementById('productoCardEPP');
-    console.log('🎯 [mostrarProductoEPP] Elemento tarjeta encontrado:', !!tarjeta);
+    console.log(' [mostrarProductoEPP] Elemento tarjeta encontrado:', !!tarjeta);
     if (tarjeta) {
         tarjeta.style.display = 'block';
         console.log('✅ [mostrarProductoEPP] Tarjeta visible - display:', tarjeta.style.display);
     }
     
     const nombreElement = document.getElementById('nombreProductoEPP');
-    console.log('🎯 [mostrarProductoEPP] Elemento nombre encontrado:', !!nombreElement);
+    console.log(' [mostrarProductoEPP] Elemento nombre encontrado:', !!nombreElement);
     if (nombreElement) {
         nombreElement.value = producto.nombre_completo || producto.nombre;
         console.log('✅ [mostrarProductoEPP] Nombre actualizado:', nombreElement.value);
@@ -286,21 +286,21 @@ function mostrarProductoEPP(producto) {
 
     // Mostrar formulario
     const formulario = document.getElementById('formularioAgregarEPP');
-    console.log('🎯 [mostrarProductoEPP] Elemento formulario encontrado:', !!formulario);
+    console.log(' [mostrarProductoEPP] Elemento formulario encontrado:', !!formulario);
     if (formulario) {
         formulario.style.display = 'grid';
         console.log('✅ [mostrarProductoEPP] Formulario visible - display:', formulario.style.display);
     }
     
     const obsContainer = document.getElementById('observacionesContainer');
-    console.log('🎯 [mostrarProductoEPP] Elemento observaciones container encontrado:', !!obsContainer);
+    console.log(' [mostrarProductoEPP] Elemento observaciones container encontrado:', !!obsContainer);
     if (obsContainer) {
         obsContainer.style.display = 'block';
         console.log('✅ [mostrarProductoEPP] Observaciones container visible - display:', obsContainer.style.display);
     }
     
     const btnAgregar = document.getElementById('btnAgregarALista');
-    console.log('🎯 [mostrarProductoEPP] Botón agregar encontrado:', !!btnAgregar);
+    console.log(' [mostrarProductoEPP] Botón agregar encontrado:', !!btnAgregar);
     if (btnAgregar) {
         btnAgregar.style.display = 'flex';
         console.log('✅ [mostrarProductoEPP] Botón agregar visible - display:', btnAgregar.style.display);
@@ -309,7 +309,7 @@ function mostrarProductoEPP(producto) {
     // Habilitar campos
     const cantidadInput = document.getElementById('cantidadEPP');
     const obsInput = document.getElementById('observacionesEPP');
-    console.log('🎯 [mostrarProductoEPP] Cantidad input encontrado:', !!cantidadInput, 'Obs input encontrado:', !!obsInput);
+    console.log(' [mostrarProductoEPP] Cantidad input encontrado:', !!cantidadInput, 'Obs input encontrado:', !!obsInput);
     
     if (cantidadInput) {
         cantidadInput.disabled = false;
@@ -828,7 +828,7 @@ function finalizarAgregarEPP() {
         return;
     }
 
-    console.log('🎯 [finalizarAgregarEPP] Finalizando con EPP:', eppAgregadosList);
+    console.log(' [finalizarAgregarEPP] Finalizando con EPP:', eppAgregadosList);
     
     // Inicializar window.itemsPedido si no existe
     if (!window.itemsPedido) {

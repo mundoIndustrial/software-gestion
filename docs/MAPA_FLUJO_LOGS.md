@@ -185,7 +185,7 @@ NAVEGADOR (FormData)
 
 ---
 
-## 🎯 Cómo Usar Este Mapa
+##  Cómo Usar Este Mapa
 
 ### "Mi página tarda en cargar"
 → Revisar el FLUJO de `GET /crear-nuevo`

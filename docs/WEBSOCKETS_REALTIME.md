@@ -4,7 +4,7 @@
 
 Sistema completo de actualización en tiempo real para tabla de pedidos que utiliza WebSockets como método principal y fallback inteligente a polling cuando la conexión WebSocket falla.
 
-## 🎯 Objetivos Cumplidos
+##  Objetivos Cumplidos
 
 - ✅ **Eliminar polling constante** - Solo se actualiza cuando hay cambios reales
 - ✅ **WebSockets prioritarios** - Conexión instantánea cuando está disponible

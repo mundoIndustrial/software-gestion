@@ -39,7 +39,7 @@ class TestSecuenciaCartera extends Command
             }
             
             // Aprobar pedidos concurrentemente
-            $this->line("\n🎯 Aprobando {$numeroPedidos} pedidos concurrentemente...");
+            $this->line("\n Aprobando {$numeroPedidos} pedidos concurrentemente...");
             $numerosGenerados = [];
             $startTime = microtime(true);
             
