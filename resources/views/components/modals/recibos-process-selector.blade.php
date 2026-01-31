@@ -265,7 +265,7 @@
             const reciboBase = {
                 tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
                 nombre: prenda.de_bodega == 1 ? "Costura - Bodega" : "Costura",
-                estado: "Pendiente",
+                estado: "",
                 es_base: true
             };
             recibos.push(reciboBase);
@@ -279,7 +279,7 @@
                 recibos.push({
                     tipo: tipoProceso,
                     nombre: `${tipoProceso}`,
-                    estado: proc.estado || "Pendiente",
+                    estado: proc.estado || "",
                     es_base: false
                 });
             });
@@ -303,8 +303,8 @@
                 html += '<div style="padding: 16px; color: #9ca3af; text-align: center;">Sin recibos</div>';
             } else {
                 recibos.forEach((recibo, reciboIdx) => {
-                    const estadoClass = recibo.estado ? recibo.estado.toLowerCase().replace(' ', '-') : 'pendiente';
-                    const estadoLabel = recibo.estado || 'Pendiente';
+                    const estadoClass = recibo.estado ? recibo.estado.toLowerCase().replace(' ', '-') : '';
+                    const estadoLabel = recibo.estado || '';
                     
                     //  CRÍTICO: Pasar tipo como STRING puro
                     const tipoString = String(recibo.tipo);
@@ -313,7 +313,7 @@
                         <div class="proceso-item" onclick="seleccionarProceso(${prenda.id}, '${tipoString}')">
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
-                                <span class="proceso-estado ${estadoClass}">${estadoLabel}</span>
+                                ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoLabel}</span>` : ''}
                             </div>
                             <span class="proceso-arrow">→</span>
                         </div>
