@@ -124,7 +124,6 @@
             asesora: cot.asesor?.name || window.asesorActualNombre || 'N/A',
             forma_pago: cot.especificaciones?.forma_pago || cot.forma_de_pago || 'N/A',
             estado: cot.estado || 'APROBADO_PARA_PEDIDO',
-            tipo_cotizacion: cot.tipo_cotizacion?.nombre || 'Sin especificar',
             // Mantener datos originales para cargar después
             original: cot
         }));
@@ -177,30 +176,20 @@
             cotizacionesFormateadas.forEach(cot => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.tipo_cotizacion})`;
+                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora})`;
                 item.style.padding = '8px 12px';
                 item.style.cursor = 'pointer';
                 item.style.borderBottom = '1px solid #e5e7eb';
                 
                 item.addEventListener('click', function() {
-                    // Actualizar el área de cotización seleccionada
-                    selectedText.innerHTML = `<div style="margin-top: 0.25rem;">${cot.numero_cotizacion} - ${cot.cliente}</div>`;
-                    
-                    // Mostrar el tipo de cotización
-                    const tipoCotizacionElement = document.getElementById('cotizacion_tipo_text_editable');
-                    if (tipoCotizacionElement) {
-                        tipoCotizacionElement.textContent = cot.tipo_cotizacion;
-                    }
-                    
-                    // Mostrar el div de cotización seleccionada
-                    selectedDiv.style.display = 'block';
-                    
+                    selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente}`;
+                    selectedText.textContent = cot.numero_cotizacion;
                     hiddenInput.value = cot.id;
                     dropdown.style.display = 'none';
                     cotizacionSeleccionada = cot;
                     
                     // Actualizar el input del buscador con la cotización seleccionada
-                    searchInput.value = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.tipo_cotizacion})`;
+                    searchInput.value = `${cot.numero_cotizacion} - ${cot.cliente}`;
                     
                     console.log('✓ Cotización seleccionada:', cot);
                     

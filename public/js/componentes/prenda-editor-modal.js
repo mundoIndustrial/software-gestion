@@ -621,15 +621,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             nombre_prenda: nombrePrenda,
             nombre_producto: nombrePrenda,
             descripcion: prendaCompleta.descripcion || '',
-            // 🔴 LÓGICA CORRECTA DE ORIGEN:
-            // Prioridad 1: prendaCompleta.origen (si viene establecido)
-            // Prioridad 2: prenda.origen (origen anterior)
-            // Prioridad 3: Convertir de_bodega a origen
-            // Prioridad 4: Default 'bodega'
-            origen: prendaCompleta.origen || prenda.origen || 
-                    (prendaCompleta.de_bodega === false ? 'confeccion' : 
-                     prendaCompleta.de_bodega === true || prendaCompleta.de_bodega === 1 ? 'bodega' : 
-                     'bodega'),
+            origen: prendaCompleta.origen || prenda.origen || 'bodega',
             de_bodega: prendaCompleta.de_bodega !== undefined ? prendaCompleta.de_bodega : prenda.de_bodega,
             imagenes: prendaImagenesMapeadas,
             telasAgregadas: telasAgregadas,
@@ -699,16 +691,6 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             de_bodega: prendaCompleta.de_bodega,
             origen: prendaCompleta.origen
         });
-        
-        console.log('🔴🔴🔴 [EDITAR-PRENDA] LÓGICA DE ORIGEN APLICADA 🔴🔴🔴', {
-            'prendaCompleta.origen': prendaCompleta.origen,
-            'prenda.origen': prenda.origen,
-            'prendaCompleta.de_bodega': prendaCompleta.de_bodega,
-            'prenda.de_bodega': prenda.de_bodega,
-            'origen_calculado': prendaParaEditar.origen,
-            'de_bodega_final': prendaParaEditar.de_bodega
-        });
-        
         console.log('📊 [EDITAR-PRENDA] Datos finales en prendaParaEditar:', {
             nombre_prenda: prendaParaEditar.nombre_prenda,
             nombre_producto: prendaParaEditar.nombre_producto,
@@ -1045,12 +1027,6 @@ function limpiarFormularioPrendaNueva() {
     const form = document.getElementById('form-prenda-nueva');
     if (form) {
         form.reset();
-        
-        // Establecer selector de origen a 'confeccion' por defecto
-        const origenSelect = document.getElementById('nueva-prenda-origen-select');
-        if (origenSelect) {
-            origenSelect.value = 'confeccion';
-        }
     }
     
     // Limpiar previsualizaciones de fotos

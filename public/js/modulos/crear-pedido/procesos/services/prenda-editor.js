@@ -8,7 +8,6 @@ class PrendaEditor {
         this.notificationService = options.notificationService;
         this.modalId = options.modalId || 'modal-agregar-prenda-nueva';
         this.prendaEditIndex = null;
-        this.esNuevaPrendaDesdeCotizacion = false; // 🔴 NUEVO: Detectar si es nueva prenda desde cotización
     }
 
     /**
@@ -63,28 +62,15 @@ class PrendaEditor {
             prendaIndex,
             nombre: prenda.nombre_prenda,
             tieneProcesos: !!prenda.procesos,
-            countProcesos: prenda.procesos?.length || 0,
-            esNuevaDesdeCotz: prendaIndex === null  // 🔴 NUEVO: Detectar
+            countProcesos: prenda.procesos?.length || 0
         });
-        
-        // 🧹 LIMPIAR ESTADO DE TELAS DE LA PRENDA ANTERIOR
-        console.log('🧹 [CARGAR-PRENDA] Limpiando estado de telas anterior...');
-        window.telasAgregadas = [];
-        window.telasFotosCargadas = {};
-        window.telasParaGuardar = [];
-        console.log('🧹 [CARGAR-PRENDA] Estado de telas limpiado: telasAgregadas=[], telasFotosCargadas={}');
-        
-        // 🔴 NUEVO: Detectar si es nueva prenda desde cotización (prendaIndex === null)
-        this.esNuevaPrendaDesdeCotizacion = prendaIndex === null;
-        console.log('[CARGAR-PRENDA] 🔴 esNuevaPrendaDesdeCotizacion:', this.esNuevaPrendaDesdeCotizacion);
         
         // Guardar referencia global para detectar si es cotización
         window.prendaActual = prenda;
         console.log('[cargarTallasYCantidades] 📋 window.prendaActual asignado:', {
             cotizacion_id: prenda.cotizacion_id,
             tipo: prenda.tipo,
-            nombre: prenda.nombre_prenda,
-            esNuevaDesdeCotz: this.esNuevaPrendaDesdeCotizacion
+            nombre: prenda.nombre_prenda
         });
         
         if (!prenda) {
@@ -94,7 +80,7 @@ class PrendaEditor {
 
         try {
             this.prendaEditIndex = prendaIndex;
-            this.abrirModal(prendaIndex !== null, prendaIndex); // 🔴 MODIFICADO: Pasar prendaIndex !== null como esEdicion
+            this.abrirModal(true, prendaIndex);
             this.llenarCamposBasicos(prenda);
             this.cargarImagenes(prenda);
             this.cargarTelas(prenda);
@@ -118,13 +104,6 @@ class PrendaEditor {
      * @private
      */
     llenarCamposBasicos(prenda) {
-        console.log('🟦🟦🟦 [llenarCamposBasicos] INICIANDO CARGA DE CAMPOS BÁSICOS 🟦🟦🟦', {
-            nombre: prenda.nombre_prenda,
-            de_bodega: prenda.de_bodega,
-            origen: prenda.origen,
-            timestamp: new Date().toLocaleTimeString()
-        });
-        
         const nombreField = document.getElementById('nueva-prenda-nombre');
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
@@ -152,39 +131,23 @@ class PrendaEditor {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Determinar origen: PRIORIDAD CORRECTA
-            let origen = null;
+            // Determinar origen: prioridad: origen > de_bodega
+            let origen = prenda.origen;
             
-            // PRIMERO: usar prenda.origen (que ya puede haber sido forzado arriba)
-            if (prenda.origen) {
-                origen = prenda.origen;
-                console.log('[llenarCamposBasicos] Usando prenda.origen:', origen);
-            }
-            // SEGUNDO: verificar de_bodega (campo de la BD)
-            // ⚠️ IMPORTANTE: Usar == para comparación flexible (1 == true, 0 == false)
-            else if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
-                // Si de_bodega es 1, true o '1' → bodega
-                // Si de_bodega es 0, false o '0' → confeccion
-                if (prenda.de_bodega == 1 || prenda.de_bodega === true || prenda.de_bodega === '1') {
-                    origen = 'bodega';
-                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=true → origen: bodega');
-                } else {
-                    // Cualquier otro valor falsy (0, false, '0', null) → confeccion
-                    origen = 'confeccion';
-                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=false → origen: confeccion');
-                }
-            }
-            
-            // SI NO hay ninguno, usar default
+            // Si NO viene origen del servidor, convertir de_bodega (boolean/integer) a origen (string)
             if (!origen) {
-                origen = 'confeccion';
+                if (prenda.de_bodega === true || prenda.de_bodega === 1 || prenda.de_bodega === '1') {
+                    origen = 'bodega';
+                } else if (prenda.de_bodega === false || prenda.de_bodega === 0 || prenda.de_bodega === '0') {
+                    origen = 'confeccion';
+                } else {
+                    origen = 'bodega';  // default
+                }
             }
             
             console.log('[llenarCamposBasicos] Origen determinado:', {
                 origen: origen,
-                normalizado: normalizarTexto(origen),
-                de_bodega: prenda.de_bodega,
-                comparacion_numerica: (prenda.de_bodega == 1) ? 'bodega' : 'confeccion'
+                normalizado: normalizarTexto(origen)
             });
             
             const origenNormalizado = normalizarTexto(origen);
@@ -199,90 +162,32 @@ class PrendaEditor {
                 console.log(`  [${i}] value="${opt.value}" (${optValueNormalizado}) | text="${opt.textContent}" (${optTextNormalizado})`);
             }
             
-            // PASO 1: INTENTAR COINCIDIR por value exacto (sin normalización)
-            console.log('[llenarCamposBasicos] PASO 1: Buscando coincidencia exacta...');
             for (let opt of origenField.options) {
-                if (opt.value === origen) {
-                    console.log('[llenarCamposBasicos] ✅ PASO 1: Coincidencia exacta por VALUE:', {
+                const optTextNormalizado = normalizarTexto(opt.textContent);
+                const optValueNormalizado = normalizarTexto(opt.value);
+                
+                if (optValueNormalizado === origenNormalizado || optTextNormalizado === origenNormalizado) {
+                    console.log('[llenarCamposBasicos] ✅ Opción encontrada:', {
                         optValue: opt.value,
-                        origen: origen
+                        optText: opt.textContent,
+                        asignando: opt.value
                     });
                     origenField.value = opt.value;
-                    origenField.selectedIndex = Array.from(origenField.options).indexOf(opt);
                     encontrado = true;
                     break;
                 }
             }
             
-            // PASO 2: Si no encontró, intentar por value normalizado
             if (!encontrado) {
-                console.log('[llenarCamposBasicos] PASO 2: Buscando coincidencia normalizada...');
-                for (let opt of origenField.options) {
-                    const optValueNormalizado = normalizarTexto(opt.value);
-                    if (optValueNormalizado === origenNormalizado) {
-                        console.log('[llenarCamposBasicos] ✅ PASO 2: Coincidencia normalizada:', {
-                            optValue: opt.value,
-                            origenNormalizado: origenNormalizado,
-                            asignando: opt.value
-                        });
-                        origenField.value = opt.value;
-                        origenField.selectedIndex = Array.from(origenField.options).indexOf(opt);
-                        encontrado = true;
-                        break;
-                    }
-                }
-            }
-            
-            // PASO 3: Si aún no encontró, intentar asignación directa
-            if (!encontrado) {
-                console.log('[llenarCamposBasicos] PASO 3: Asignación directa del valor...');
+                console.log('[llenarCamposBasicos] ❌ Opción NO encontrada, asignando directo:', origen);
                 origenField.value = origen;
-                
-                // Forzar con setAttribute si value no funcionó
-                if (origenField.value !== origen) {
-                    console.log('[llenarCamposBasicos] ⚠️ value no funcionó, intentando setAttribute...');
-                    for (let i = 0; i < origenField.options.length; i++) {
-                        if (origenField.options[i].value === origen) {
-                            origenField.selectedIndex = i;
-                            console.log('[llenarCamposBasicos] ✅ PASO 3B: setAttribute funcionó, selectedIndex=', i);
-                            encontrado = true;
-                            break;
-                        }
-                    }
-                } else {
-                    console.log('[llenarCamposBasicos] ✅ PASO 3: Asignación directa exitosa');
-                    encontrado = true;
-                }
             }
             
-            // VERIFICACIÓN FINAL
-            const valorFinal = origenField.value;
-            const coincide = (valorFinal === origen) || (normalizarTexto(valorFinal) === origenNormalizado);
-            
-            console.log('[llenarCamposBasicos] ✅✅ VERIFICACIÓN FINAL:', {
-                origenEsperado: origen,
-                valorEnSelect: valorFinal,
-                coincide: coincide,
-                selectedIndex: origenField.selectedIndex,
-                selectedOption: origenField.options[origenField.selectedIndex]?.value,
-                encontradoCorrectamente: encontrado
+            console.log('[llenarCamposBasicos] SELECT después de asignación:', {
+                selectValue: origenField.value,
+                selectSelectedIndex: origenField.selectedIndex,
+                selectSelectedOption: origenField.options[origenField.selectedIndex]?.value
             });
-            
-            if (!coincide) {
-                console.error('[llenarCamposBasicos] ❌❌ FALLO: El select no tiene el valor correcto!', {
-                    origen,
-                    valorEnSelect: valorFinal,
-                    opcionesDisponibles: Array.from(origenField.options).map((opt, idx) => ({idx, value: opt.value, text: opt.textContent}))
-                });
-            } else {
-                console.log('🟢🟢🟢 [llenarCamposBasicos] ✅✅✅ ÉXITO: SELECT ORIGEN ESTABLECIDO CORRECTAMENTE 🟢🟢🟢', {
-                    origenEsperado: origen,
-                    valorEnSelect: valorFinal,
-                    selectedIndex: origenField.selectedIndex,
-                    selectedOptionText: origenField.options[origenField.selectedIndex]?.textContent,
-                    coincideConOrigen: coincide
-                });
-            }
             
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
@@ -338,35 +243,6 @@ class PrendaEditor {
                                 file: null,
                                 urlDesdeDB: true
                             });
-                        },
-                        establecerImagenes: function(nuevasImagenes) {
-                            if (!Array.isArray(nuevasImagenes)) {
-                                console.warn('⚠️ [ImageStorageService (fallback).establecerImagenes] No es un array válido');
-                                return;
-                            }
-                            
-                            // Limpiar URLs de imágenes que serán reemplazadas
-                            this.images.forEach(img => {
-                                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                                    URL.revokeObjectURL(img.previewUrl);
-                                }
-                            });
-                            
-                            // Normalizar nuevas imágenes: asegurar que tienen previewUrl
-                            const imagenesNormalizadas = nuevasImagenes.map(img => {
-                                // Si no tiene previewUrl, usar url, ruta, o ruta_webp
-                                if (!img.previewUrl && (img.url || img.ruta || img.ruta_webp)) {
-                                    return {
-                                        ...img,
-                                        previewUrl: img.url || img.ruta || img.ruta_webp
-                                    };
-                                }
-                                return img;
-                            });
-                            
-                            // Reemplazar el array
-                            this.images = imagenesNormalizadas || [];
-                            console.log('✅ [ImageStorageService (fallback).establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
                         }
                     };
                     console.log('✅ [CARGAR-IMAGENES] Fallback manual creado');
@@ -437,19 +313,7 @@ class PrendaEditor {
                     img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
                     preview.appendChild(img);
                     
-                    // Agregar evento click para abrir galería
-                    preview.onclick = (e) => {
-                        e.stopPropagation();
-                        if (window.mostrarGaleriaImagenesPrenda) {
-                            const imagenes = window.imagenesPrendaStorage.images.map(img => ({
-                                ...img,
-                                url: img.previewUrl || img.url || img.ruta
-                            }));
-                            window.mostrarGaleriaImagenesPrenda(imagenes, 0, 0);
-                        }
-                    };
-                    
-                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM con evento click');
+                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM');
                 } else {
                     console.warn('[cargarImagenes] ⚠️ Preview no encontrado o sin imágenes');
                 }
@@ -576,10 +440,6 @@ class PrendaEditor {
      */
     cargarTelas(prenda) {
         console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
-        
-        // 🧹 LIMPIAR COMPLETAMENTE telasAgregadas ANTES DE PROCESAR
-        prenda.telasAgregadas = prenda.telasAgregadas || [];
-        console.log('[cargarTelas] 🧹 telasAgregadas de prenda ANTES de procesar:', prenda.telasAgregadas);
         
         // ===== DEBUG: Ver estructura completa de prenda =====
         console.group('[cargarTelas] 🔍 ESTRUCTURA COMPLETA DE PRENDA');
@@ -1048,34 +908,10 @@ class PrendaEditor {
             // El storage debe estar limpio para AGREGAR TELAS NUEVAS
             // Esto evita que aparezcan precargadas en el input de agregar
             
-            // 🧹 Actualizar tabla de telas - ASIGNAR LIMPIAMENTE SIN REUTILIZAR TELAS ANTERIORES
-            window.telasAgregadas = [];  // ← RESETEAR PRIMERO
-            if (Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
-                // Crear copias profundas de las telas para evitar referencias compartidas
-                window.telasAgregadas = prenda.telasAgregadas.map(tela => ({
-                    id: tela.id,
-                    nombre_tela: tela.nombre_tela,
-                    color: tela.color,
-                    referencia: tela.referencia,
-                    descripcion: tela.descripcion || '',
-                    grosor: tela.grosor || '',
-                    composicion: tela.composicion || '',
-                    imagenes: Array.isArray(tela.imagenes) ? [...tela.imagenes] : [],
-                    origen: tela.origen || '',
-                    variante_index: tela.variante_index,
-                    tela_index: tela.tela_index
-                }));
-                console.log('[cargarTelas] ✅ window.telasAgregadas ASIGNADAS (COPIA LIMPIA):', window.telasAgregadas);
-            } else {
-                console.log('[cargarTelas] ⚠️ Sin telas para asignar, window.telasAgregadas está vacío');
-            }
+            // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
+            window.telasAgregadas = [...prenda.telasAgregadas];
+            console.log('[cargarTelas] ✅ window.telasAgregadas asignadas:', window.telasAgregadas);
 
-            // 🧹 LIMPIAR TABLA DOM ANTES DE ACTUALIZAR
-            const tbody = document.querySelector('#tabla-telas tbody');
-            if (tbody) {
-                console.log('[cargarTelas] 🧹 Limpiando tabla de telas del DOM');
-                tbody.innerHTML = '';
-            }
             
             // Actualizar tabla de telas
             if (window.actualizarTablaTelas) {
