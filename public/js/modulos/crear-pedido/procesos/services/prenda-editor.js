@@ -2,24 +2,39 @@
  * PrendaEditor - Gestor de Edición de Prendas
  * 
  * Responsabilidad única: Gestionar carga, edición y guardado de prendas en modal
+ * 
+ * Integración: Origen automático desde cotización (CotizacionPrendaHandler)
  */
 class PrendaEditor {
     constructor(options = {}) {
         this.notificationService = options.notificationService;
         this.modalId = options.modalId || 'modal-agregar-prenda-nueva';
         this.prendaEditIndex = null;
+        this.cotizacionActual = options.cotizacionActual || null;
+        
+        console.log('[PrendaEditor] Inicializado. CotizacionPrendaHandler disponible:', 
+            typeof CotizacionPrendaHandler !== 'undefined');
     }
 
     /**
      * Abrir modal para agregar o editar prenda
      */
-    abrirModal(esEdicion = false, prendaIndex = null) {
+    abrirModal(esEdicion = false, prendaIndex = null, cotizacionSeleccionada = null) {
 
         
         if (esEdicion && prendaIndex !== null && prendaIndex !== undefined) {
             this.prendaEditIndex = prendaIndex;
         } else {
             this.prendaEditIndex = null;
+        }
+
+        // Guardar cotización actual
+        if (cotizacionSeleccionada) {
+            this.cotizacionActual = cotizacionSeleccionada;
+            console.log('[PrendaEditor.abrirModal] Cotización asignada:', {
+                id: cotizacionSeleccionada.id,
+                tipo_id: cotizacionSeleccionada.tipo_cotizacion_id
+            });
         }
 
         // Preparar modal
@@ -55,8 +70,194 @@ class PrendaEditor {
     }
 
     /**
-     * Cargar prenda en el modal para edición
+     * Aplicar origen automático desde cotización
+     * FUERZA origen = 'bodega' si cotización es Reflectivo o Logo
+     * @private
      */
+    aplicarOrigenAutomaticoDesdeCotizacion(prenda) {
+        // Solo aplicar si hay cotización actual
+        if (!this.cotizacionActual) {
+            console.debug('[PrendaEditor] No hay cotización actual, omitiendo origen automático');
+            return prenda;
+        }
+
+        // LÓGICA DIRECTA: Verificar tipo de cotización
+        const cotizacion = this.cotizacionActual;
+        const tipoCotizacionId = cotizacion.tipo_cotizacion_id;
+        const tiposQueFuerzanBodega = ['Reflectivo', 'Logo'];
+        
+        // Obtener el nombre del tipo de cotización (puede estar en cotizacion.tipo_cotizacion.nombre o cotizacion.tipo_nombre)
+        let nombreTipo = null;
+        if (cotizacion.tipo_cotizacion && cotizacion.tipo_cotizacion.nombre) {
+            nombreTipo = cotizacion.tipo_cotizacion.nombre;
+        } else if (cotizacion.tipo_nombre) {
+            nombreTipo = cotizacion.tipo_nombre;
+        }
+
+        console.log('[PrendaEditor] Analizando origen automático:', {
+            tipoCotizacionId: tipoCotizacionId,
+            nombreTipo: nombreTipo,
+            esReflectivo: nombreTipo === 'Reflectivo' || tipoCotizacionId === 'Reflectivo',
+            esLogo: nombreTipo === 'Logo' || tipoCotizacionId === 'Logo'
+        });
+
+        // Si es Reflectivo o Logo → FORZAR bodega sin importar de_bodega
+        const esReflectivo = (nombreTipo && nombreTipo.toLowerCase() === 'reflectivo') || tipoCotizacionId === 'Reflectivo' || tipoCotizacionId === 2;
+        const esLogo = (nombreTipo && nombreTipo.toLowerCase() === 'logo') || tipoCotizacionId === 'Logo' || tipoCotizacionId === 3;
+
+        if (esReflectivo || esLogo) {
+            prenda.origen = 'bodega';
+            console.log('[PrendaEditor] ✅ FORZANDO origen = "bodega" (tipo:', nombreTipo || tipoCotizacionId, ')');
+        } else {
+            // Para otros tipos, mantener comportamiento normal
+            prenda.origen = prenda.origen || 'confeccion';
+            console.log('[PrendaEditor] Origen = "' + prenda.origen + '" (tipo:', nombreTipo || tipoCotizacionId, ')');
+        }
+
+        console.log('[PrendaEditor] Origen aplicado:', {
+            prenda: prenda.nombre_prenda || prenda.nombre,
+            origen: prenda.origen,
+            cotizacion: this.cotizacionActual.numero_cotizacion || this.cotizacionActual.id,
+            tipo: nombreTipo || tipoCotizacionId
+        });
+
+        return prenda;
+    }
+
+    /**
+     * Cargar telas desde prenda_telas_cot para cotizaciones REFLECTIVO/LOGO
+     * Extrae: tela, color, referencia y fotos
+     * @private
+     */
+    cargarTelasDesdeCtizacion(prenda) {
+        if (!prenda.prenda_id || !prenda.cotizacion_id) {
+            console.debug('[cargarTelasDesdeCtizacion] No hay prenda_id o cotizacion_id');
+            return;
+        }
+
+        console.log('[cargarTelasDesdeCtizacion] 🧵 Cargando telas de cotización:', {
+            prenda_cot_id: prenda.prenda_id,
+            cotizacion_id: prenda.cotizacion_id
+        });
+
+        // Fetch a API para obtener telas de prenda_telas_cot
+        fetch(`/api/cotizaciones/${prenda.cotizacion_id}/prendas/${prenda.prenda_id}/telas-cotizacion`)
+            .then(response => {
+                if (!response.ok) {
+                    console.warn('[cargarTelasDesdeCtizacion] ⚠️ Endpoint no disponible, intentando fallback');
+                    throw new Error('No endpoint');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const telas = data.telas || data.data || [];
+                console.log('[cargarTelasDesdeCtizacion] ✅ Telas de cotización cargadas:', telas);
+
+                if (telas.length > 0) {
+                    // Procesar telas y construir estructura
+                    const telasAgregadas = telas.map(tela => {
+                        // Extraer nombre de tela
+                        const nombreTela = tela.tela?.nombre || 
+                                         tela.nombre_tela || 
+                                         tela.tela_nombre || 
+                                         'N/A';
+
+                        // Extraer color
+                        const colorNombre = tela.color?.nombre || 
+                                          tela.color_nombre || 
+                                          'N/A';
+
+                        // Extraer referencia
+                        const referencia = tela.tela?.referencia || 
+                                         tela.referencia || 
+                                         'N/A';
+
+                        // Procesar fotos de tela
+                        const fotos = (tela.fotos || []).map(foto => ({
+                            ruta_original: foto.ruta_original || '',
+                            ruta_webp: foto.ruta_webp || '',
+                            ruta_miniatura: foto.ruta_miniatura || '',
+                            url: foto.ruta_webp || foto.ruta_original || ''
+                        }));
+
+                        return {
+                            id: tela.id,
+                            prenda_tela_cot_id: tela.id,
+                            nombre_tela: nombreTela,
+                            color: colorNombre,
+                            referencia: referencia,
+                            tela_id: tela.tela_id,
+                            color_id: tela.color_id,
+                            variante_prenda_cot_id: tela.variante_prenda_cot_id,
+                            fotos: fotos
+                        };
+                    });
+
+                    // Asignar telas a la prenda
+                    prenda.telasAgregadas = telasAgregadas;
+
+                    console.log('[cargarTelasDesdeCtizacion] ✅ Telas procesadas:', {
+                        cantidad: telasAgregadas.length,
+                        telas: telasAgregadas.map(t => `${t.nombre_tela} - ${t.color}`)
+                    });
+
+                    // Actualizar display si existe
+                    this.actualizarPreviewTelasCotizacion(telasAgregadas);
+                }
+            })
+            .catch(error => {
+                console.warn('[cargarTelasDesdeCtizacion] ⚠️ Error cargando telas:', error.message);
+                // Continuar sin telas - no bloquear flujo
+            });
+    }
+
+    /**
+     * Actualizar preview de telas desde cotización
+     * @private
+     */
+    actualizarPreviewTelasCotizacion(telas) {
+        const contenedorTelas = document.getElementById('contenedor-telas-cotizacion') || 
+                               document.querySelector('[data-role="telas-cotizacion"]');
+        
+        if (!contenedorTelas) {
+            console.debug('[actualizarPreviewTelasCotizacion] Contenedor de telas no encontrado');
+            return;
+        }
+
+        console.log('[actualizarPreviewTelasCotizacion] 🎨 Actualizando preview de telas:', telas.length);
+
+        // Limpiar contenedor
+        contenedorTelas.innerHTML = '';
+
+        // Agregar cada tela
+        telas.forEach((tela, idx) => {
+            const telaHTML = document.createElement('div');
+            telaHTML.className = 'tela-cotizacion-item';
+            telaHTML.innerHTML = `
+                <div class="tela-info">
+                    <span class="tela-nombre"><strong>${tela.nombre_tela}</strong></span>
+                    <span class="tela-color">${tela.color}</span>
+                    <span class="tela-referencia">Ref: ${tela.referencia}</span>
+                </div>
+                ${tela.fotos.length > 0 ? `
+                    <div class="tela-fotos">
+                        ${tela.fotos.map((foto, fidx) => `
+                            <img 
+                                src="${foto.url}" 
+                                alt="Foto tela ${idx + 1}" 
+                                title="${tela.nombre_tela}"
+                                style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;"
+                                onclick="console.log('Foto tela:', '${tela.nombre_tela}')"
+                            />
+                        `).join('')}
+                    </div>
+                ` : '<span class="sin-fotos">Sin fotos</span>'}
+            `;
+            contenedorTelas.appendChild(telaHTML);
+        });
+
+        console.log('[actualizarPreviewTelasCotizacion] ✅ Preview actualizado');
+    }
     cargarPrendaEnModal(prenda, prendaIndex) {
         console.log('🔄 [CARGAR-PRENDA] Iniciando carga de prenda en modal:', {
             prendaIndex,
@@ -79,16 +280,39 @@ class PrendaEditor {
         }
 
         try {
+            // 🔴 APLICAR ORIGEN AUTOMÁTICO DESDE COTIZACIÓN
+            const prendaProcesada = this.aplicarOrigenAutomaticoDesdeCotizacion(prenda);
+
             this.prendaEditIndex = prendaIndex;
             this.abrirModal(true, prendaIndex);
-            this.llenarCamposBasicos(prenda);
-            this.cargarImagenes(prenda);
-            this.cargarTelas(prenda);
-            this.cargarVariaciones(prenda);  // CARGAR PRIMERO para que genero_id esté seleccionado antes de las tallas
-            this.cargarTallasYCantidades(prenda);
+            this.llenarCamposBasicos(prendaProcesada);
+            this.cargarImagenes(prendaProcesada);
+            this.cargarTelas(prendaProcesada);
+            
+            // 🟠 CARGAR TELAS DESDE COTIZACIÓN (si es REFLECTIVO/LOGO)
+            // Detectar tipos con múltiples formas: por nombre o por ID
+            const esReflectivo = this.cotizacionActual && (
+                this.cotizacionActual.tipo_nombre === 'Reflectivo' ||
+                (this.cotizacionActual.tipo_cotizacion && this.cotizacionActual.tipo_cotizacion.nombre === 'Reflectivo') ||
+                this.cotizacionActual.tipo_cotizacion_id === 'Reflectivo' ||
+                this.cotizacionActual.tipo_cotizacion_id === 2
+            );
+            const esLogo = this.cotizacionActual && (
+                this.cotizacionActual.tipo_nombre === 'Logo' ||
+                (this.cotizacionActual.tipo_cotizacion && this.cotizacionActual.tipo_cotizacion.nombre === 'Logo') ||
+                this.cotizacionActual.tipo_cotizacion_id === 'Logo' ||
+                this.cotizacionActual.tipo_cotizacion_id === 3
+            );
+            
+            if (esReflectivo || esLogo) {
+                this.cargarTelasDesdeCtizacion(prendaProcesada);
+            }
+            
+            this.cargarVariaciones(prendaProcesada);  // CARGAR PRIMERO para que genero_id esté seleccionado antes de las tallas
+            this.cargarTallasYCantidades(prendaProcesada);
             
             console.log(' [CARGAR-PRENDA] Sobre de cargar procesos...');
-            this.cargarProcesos(prenda);
+            this.cargarProcesos(prendaProcesada);
             
             this.cambiarBotonAGuardarCambios();
             console.log('✅ [CARGAR-PRENDA] Prenda cargada completamente');
@@ -120,10 +344,43 @@ class PrendaEditor {
         if (descripcionField) descripcionField.value = prenda.descripcion || '';
         
         if (origenField) {
-            console.log('[llenarCamposBasicos] Datos de origen:', {
+            console.log('[llenarCamposBasicos] Datos de origen ANTES:', {
                 prendaOrigen: prenda.origen,
                 prendaDeBodega: prenda.de_bodega,
                 tipoDeBodega: typeof prenda.de_bodega
+            });
+            
+            // 🔴 APLICAR ORIGEN AUTOMÁTICO AQUÍ TAMBIÉN
+            // Si hay cotización, FUERZA el origen antes de llenar el campo
+            if (this.cotizacionActual) {
+                const tipoCotizacionId = this.cotizacionActual.tipo_cotizacion_id;
+                let nombreTipo = null;
+                if (this.cotizacionActual.tipo_cotizacion && this.cotizacionActual.tipo_cotizacion.nombre) {
+                    nombreTipo = this.cotizacionActual.tipo_cotizacion.nombre;
+                } else if (this.cotizacionActual.tipo_nombre) {
+                    nombreTipo = this.cotizacionActual.tipo_nombre;
+                }
+                
+                console.log('[llenarCamposBasicos] Detectada cotización:', {
+                    tipo: tipoCotizacionId,
+                    nombreTipo: nombreTipo,
+                    esReflectivo: nombreTipo === 'Reflectivo' || tipoCotizacionId === 2,
+                    esLogo: nombreTipo === 'Logo' || tipoCotizacionId === 3
+                });
+                
+                // Verificar si es Reflectivo o Logo por NOMBRE o por ID
+                const esReflectivo = nombreTipo === 'Reflectivo' || tipoCotizacionId === 'Reflectivo' || tipoCotizacionId === 2;
+                const esLogo = nombreTipo === 'Logo' || tipoCotizacionId === 'Logo' || tipoCotizacionId === 3;
+                
+                if (esReflectivo || esLogo) {
+                    prenda.origen = 'bodega';
+                    console.log('[llenarCamposBasicos] ✅ FORZANDO origen = "bodega" (cotización: ' + (nombreTipo || tipoCotizacionId) + ')');
+                }
+            }
+            
+            console.log('[llenarCamposBasicos] Datos de origen DESPUÉS:', {
+                prendaOrigen: prenda.origen,
+                prendaDeBodega: prenda.de_bodega
             });
             
             // Función para normalizar texto (remover acentos)
@@ -131,29 +388,31 @@ class PrendaEditor {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Determinar origen: prioridad: de_bodega > origen
+            // Determinar origen: ahora prioridad: prenda.origen > de_bodega
             let origen = null;
             
-            // PRIMERO: verificar de_bodega (campo de la BD)
-            if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
+            // PRIMERO: usar prenda.origen (que ya puede haber sido forzado arriba)
+            if (prenda.origen) {
+                origen = prenda.origen;
+                console.log('[llenarCamposBasicos] Usando prenda.origen:', origen);
+            }
+            // SEGUNDO: verificar de_bodega (campo de la BD)
+            else if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
                 if (prenda.de_bodega === true || prenda.de_bodega === 1 || prenda.de_bodega === '1') {
                     origen = 'bodega';
                 } else if (prenda.de_bodega === false || prenda.de_bodega === 0 || prenda.de_bodega === '0') {
                     origen = 'confeccion';
                 }
-            }
-            
-            // SI NO hay de_bodega, usar origen del servidor
-            if (!origen && prenda.origen) {
-                origen = prenda.origen;
+                console.log('[llenarCamposBasicos] Usando de_bodega:', origen);
             }
             
             // SI NO hay ninguno, usar default
             if (!origen) {
                 origen = 'confeccion';
+                console.log('[llenarCamposBasicos] Usando default: confeccion');
             }
             
-            console.log('[llenarCamposBasicos] Origen determinado:', {
+            console.log('[llenarCamposBasicos] Origen final determinado:', {
                 origen: origen,
                 normalizado: normalizarTexto(origen)
             });
@@ -1437,6 +1696,39 @@ class PrendaEditor {
         } else {
             console.error(' [CARGAR-PROCESOS] window.renderizarTarjetasProcesos no existe');
         }
+    }
+
+    /**
+     * Cargar múltiples prendas desde una cotización
+     * Aplica origen automático a cada prenda
+     * 
+     * @param {Array<Object>} prendas - Array de prendas desde cotización
+     * @param {Object} cotizacion - Datos de la cotización
+     * @returns {Array<Object>} - Prendas procesadas
+     */
+    cargarPrendasDesdeCotizacion(prendas, cotizacion) {
+        if (!Array.isArray(prendas) || !cotizacion) {
+            console.error('[PrendaEditor] Parámetros inválidos para cargar prendas desde cotización');
+            return [];
+        }
+
+        console.info('[PrendaEditor] Cargando prendas desde cotización:', {
+            cantidad: prendas.length,
+            cotizacion: cotizacion.numero_cotizacion || cotizacion.id
+        });
+
+        // Asignar cotización actual
+        this.cotizacionActual = cotizacion;
+
+        // Procesar cada prenda
+        const prendasProcesadas = prendas.map((prenda, index) => {
+            const procesada = this.aplicarOrigenAutomaticoDesdeCotizacion(prenda);
+            console.log(`  ✓ Prenda ${index + 1}: ${procesada.nombre_prenda} (origen: ${procesada.origen})`);
+            return procesada;
+        });
+
+        console.info('[PrendaEditor] Prendas procesadas:', prendasProcesadas.length);
+        return prendasProcesadas;
     }
 
     /**

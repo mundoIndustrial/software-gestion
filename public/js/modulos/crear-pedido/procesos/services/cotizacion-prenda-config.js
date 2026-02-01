@@ -84,13 +84,7 @@ class CotizacionPrendaConfig {
      */
     static inicializarDesdeStorage(storageKey = 'tipos-cotizacion-bodega') {
         try {
-            // Verificar si localStorage está disponible
-            if (typeof window.localStorage === 'undefined' || !window.localStorage) {
-                console.warn(`[CotizacionPrendaConfig] localStorage no disponible`);
-                return false;
-            }
-
-            const datos = window.localStorage.getItem(storageKey);
+            const datos = localStorage.getItem(storageKey);
             if (!datos) {
                 console.warn(`[CotizacionPrendaConfig] No hay datos en localStorage (${storageKey})`);
                 return false;
@@ -114,14 +108,8 @@ class CotizacionPrendaConfig {
      */
     static guardarEnStorage(storageKey = 'tipos-cotizacion-bodega') {
         try {
-            // Verificar si localStorage está disponible
-            if (typeof window.localStorage === 'undefined' || !window.localStorage) {
-                console.warn(`[CotizacionPrendaConfig] localStorage no disponible para guardar`);
-                return false;
-            }
-
             const tiposActuales = CotizacionPrendaHandler.obtenerTiposBodega();
-            window.localStorage.setItem(storageKey, JSON.stringify(tiposActuales));
+            localStorage.setItem(storageKey, JSON.stringify(tiposActuales));
             console.info(
                 `[CotizacionPrendaConfig] Tipos guardados en localStorage. ` +
                 `Clave: ${storageKey}, Cantidad: ${tiposActuales.length}`
