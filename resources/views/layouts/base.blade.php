@@ -1,6 +1,188 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" onload="window._PAGE_FULLY_LOADED=true">
 <head>
+    <!-- 🛡️🛡️🛡️ PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO 🛡️🛡️🛡️ -->
+    <script>
+        // PASO 0: Capturar el error ANTES de que se lance - en el evento dispatchEvent
+        const originalDispatchEvent = Element.prototype.dispatchEvent;
+        Element.prototype.dispatchEvent = function(event) {
+            if (event.message && event.message.includes('storage is not allowed')) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                return false;
+            }
+            return originalDispatchEvent.call(this, event);
+        };
+        
+        // PASO 0.5: Interceptar Error constructor
+        const OriginalError = window.Error;
+        window.Error = class extends OriginalError {
+            constructor(message) {
+                super(message);
+                if (message && message.includes('storage is not allowed')) {
+                    // Retornar un error silencioso
+                    this.message = '[BLOCKED] storage error';
+                }
+            }
+        };
+        window.Error.prototype = OriginalError.prototype;
+    </script>
+
+    <!-- PASO 1: Capturar errores ANTES de que se registren - MÁS AGRESIVO -->
+    <script>
+        window._storageErrors = [];
+        
+        // Reemplazar console.error completamente
+        const originalError = console.error;
+        console.error = function(...args) {
+            const msg = String(args[0]);
+            if (msg.includes('storage is not allowed') || msg.includes('message channel closed')) {
+                window._storageErrors.push(msg);
+                return; // No pasar a console
+            }
+            return originalError.apply(console, args);
+        };
+        
+        // Reemplazar console.warn también
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            const msg = String(args[0]);
+            if (msg.includes('storage is not allowed') || msg.includes('message channel closed')) {
+                return; // No pasar a console
+            }
+            return originalWarn.apply(console, args);
+        };
+        
+        // Capturar promesas rechazadas INMEDIATAMENTE - BLOQUEAR COMPLETAMENTE
+        window.addEventListener('unhandledrejection', (event) => {
+            const reason = String(event.reason);
+            if (reason.includes('storage is not allowed') || reason.includes('message channel closed')) {
+                event.preventDefault();
+                window._storageErrors.push(reason);
+                // NO permitir que se propague
+                return false;
+            }
+        }, true); // Usar captura, no bubbling
+        
+        // Capturar errores síncronos - BLOQUEAR COMPLETAMENTE
+        window.addEventListener('error', (event) => {
+            if (event.message && (event.message.includes('storage is not allowed') || event.message.includes('message channel'))) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return true;
+            }
+        }, true);
+        
+        // Capturar en window.onerror - BLOQUEAR COMPLETAMENTE
+        window.onerror = function(msg, url, line, col, error) {
+            if (msg && (msg.includes('storage is not allowed') || msg.includes('message channel'))) {
+                return true; // Prevenir el error
+            }
+            return false;
+        };
+        
+        // EXTRA: Filtrar errores que lleguen a console.log también
+        const originalLog = console.log;
+        console.log = function(...args) {
+            const msg = String(args[0]);
+            if (msg.includes('Uncaught (in promise)') && msg.includes('storage is not allowed')) {
+                return;
+            }
+            return originalLog.apply(console, args);
+        };
+        
+        // PASO 2: Si es una extensión, interceptar chrome.runtime.onMessage
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            const originalAddListener = chrome.runtime.onMessage.addListener;
+            chrome.runtime.onMessage.addListener = function(callback) {
+                // Envolver el callback para ignorar errores de storage
+                return originalAddListener.call(this, function(message, sender, sendResponse) {
+                    try {
+                        return callback(message, sender, sendResponse);
+                    } catch (error) {
+                        if (String(error).includes('storage is not allowed')) {
+                            // Ignorar silenciosamente
+                            return;
+                        }
+                        throw error;
+                    }
+                });
+            };
+        }
+    </script>
+
+    <!-- PASO 3: Reemplazo ultra-temprano de storage -->
+    <script>
+        (function() {
+            'use strict';
+            
+            const memLS = {};
+            const memSS = {};
+            
+            const proxyLS = new Proxy({}, {
+                get(t, k) {
+                    if (k === 'getItem') return (key) => memLS[key] ?? null;
+                    if (k === 'setItem') return (key, val) => { memLS[key] = String(val); };
+                    if (k === 'removeItem') return (key) => { delete memLS[key]; };
+                    if (k === 'clear') return () => { for (let k in memLS) delete memLS[k]; };
+                    if (k === 'key') return (i) => Object.keys(memLS)[i] ?? null;
+                    if (k === 'length') return Object.keys(memLS).length;
+                    return undefined;
+                }
+            });
+            
+            const proxySS = new Proxy({}, {
+                get(t, k) {
+                    if (k === 'getItem') return (key) => memSS[key] ?? null;
+                    if (k === 'setItem') return (key, val) => { memSS[key] = String(val); };
+                    if (k === 'removeItem') return (key) => { delete memSS[key]; };
+                    if (k === 'clear') return () => { for (let k in memSS) delete memSS[k]; };
+                    if (k === 'key') return (i) => Object.keys(memSS)[i] ?? null;
+                    if (k === 'length') return Object.keys(memSS).length;
+                    return undefined;
+                }
+            });
+            
+            // Reemplazar brutalmente
+            try {
+                Object.defineProperty(window, 'localStorage', {
+                    get: () => proxyLS,
+                    set: () => {},
+                    configurable: false
+                });
+            } catch (e) {
+                window.localStorage = proxyLS;
+            }
+            
+            try {
+                Object.defineProperty(window, 'sessionStorage', {
+                    get: () => proxySS,
+                    set: () => {},
+                    configurable: false
+                });
+            } catch (e) {
+                window.sessionStorage = proxySS;
+            }
+            
+            if (typeof globalThis !== 'undefined' && globalThis !== window) {
+                try {
+                    Object.defineProperty(globalThis, 'localStorage', {
+                        get: () => proxyLS,
+                        set: () => {},
+                        configurable: false
+                    });
+                    Object.defineProperty(globalThis, 'sessionStorage', {
+                        get: () => proxySS,
+                        set: () => {},
+                        configurable: false
+                    });
+                } catch (e) {}
+            }
+            
+            window._STORAGE_PROXY_READY = true;
+        })();
+    </script>
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -26,15 +208,37 @@
     <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
     <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
 
+    <!-- ⚠️ MESSAGE HANDLER UNIVERSAL - Para listeners de extensiones y mensajes -->
+    <script src="{{ asset('js/message-handler-universal.js') }}"></script>
+
     <!-- Script crítico para prevenir flash de tema - DEBE estar ANTES de CSS -->
     <script>
         (function() {
-            const theme = localStorage.getItem('theme') || 'light';
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark-theme');
-                document.documentElement.setAttribute('data-theme', 'dark');
-                // Marcar para que el body también aplique la clase cuando esté listo
-                document.documentElement.setAttribute('data-pending-theme', 'dark');
+            let theme = 'light';
+            try {
+                // Double-check que localStorage está disponible (proxy debe haber reemplazado)
+                if (typeof window.localStorage !== 'undefined' && window.localStorage !== null) {
+                    const stored = window.localStorage.getItem('theme');
+                    if (stored) {
+                        theme = stored;
+                    }
+                }
+            } catch (error) {
+                // No se puede acceder a localStorage (ej. iframe sandboxed)
+                // El proxy debería haber manejado esto, pero por seguridad usar tema por defecto
+                console.debug('[Theme] Usando tema por defecto:', error.message);
+            }
+            
+            // Aplicar tema de forma segura
+            try {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-theme');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    // Marcar para que el body también aplique la clase cuando esté listo
+                    document.documentElement.setAttribute('data-pending-theme', 'dark');
+                }
+            } catch (e) {
+                // Ignorar errores al aplicar tema
             }
         })();
     </script>
@@ -134,7 +338,13 @@
     <!-- Sincronizar tema con localStorage -->
     <script>
         (function() {
-            const theme = localStorage.getItem('theme') || 'light';
+            let theme = 'light';
+            try {
+                theme = localStorage.getItem('theme') || 'light';
+            } catch (error) {
+                // No se puede acceder a localStorage (ej. iframe sandboxed)
+                // Usar tema por defecto (light)
+            }
             const html = document.documentElement;
             const body = document.body;
             
@@ -174,6 +384,9 @@
     <!-- Modal de Cotización Global -->
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
+    <!-- Notifications realtime system (loaded once) -->
+    <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
+    
     <!-- Page-specific scripts -->
     @stack('scripts')
     

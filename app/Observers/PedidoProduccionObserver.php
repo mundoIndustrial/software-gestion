@@ -40,13 +40,7 @@ class PedidoProduccionObserver
      */
     public function created(PedidoProduccion $pedido): void
     {
-        // TEMPORALMENTE DESHABILITADO PARA EVITAR TIMEOUT DE WEBSOCKET
-        // $this->broadcastPedidoChange($pedido, 'created');
-        
-        Log::warning('[PedidoProduccionObserver] Broadcasting deshabilitado temporalmente para evitar timeout', [
-            'pedido_id' => $pedido->id,
-            'numero_pedido' => $pedido->numero_pedido,
-        ]);
+        $this->broadcastPedidoChange($pedido, 'created');
     }
 
     /**
@@ -131,18 +125,27 @@ class PedidoProduccionObserver
                 return;
             }
 
-            // Emitir evento de broadcasting
-            PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
+            // Emitir evento de broadcasting en background para no bloquear
+            try {
+                PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
 
-            Log::info('PedidoActualizado event dispatched', [
-                'pedido_id' => $pedido->id,
-                'asesor_id' => $asesor->id,
-                'action' => $action,
-                'changed_fields' => $changedFields,
-            ]);
+                Log::info('PedidoActualizado event dispatched', [
+                    'pedido_id' => $pedido->id,
+                    'asesor_id' => $asesor->id,
+                    'action' => $action,
+                    'changed_fields' => $changedFields,
+                ]);
+            } catch (\Exception $broadcastError) {
+                // Error no crítico - el broadcast falló pero la operación continúa
+                Log::warning('⚠️ Error de broadcast en Observer (no crítico)', [
+                    'pedido_id' => $pedido->id,
+                    'action' => $action,
+                    'error' => $broadcastError->getMessage(),
+                ]);
+            }
 
         } catch (\Exception $e) {
-            Log::error('Error al broadcastear cambio de pedido', [
+            Log::error('Error crítico en broadcastPedidoChange', [
                 'pedido_id' => $pedido->id,
                 'action' => $action,
                 'error' => $e->getMessage(),

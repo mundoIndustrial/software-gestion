@@ -397,11 +397,7 @@ class RegistroOrdenQueryController extends Controller
                 'fotos', 
                 'tallas', 
                 'procesos.tipoProceso', 
-                'procesos.imagenes',
-                'variantes.color',
-                'variantes.tela',
-                'variantes.tipoManga',
-                'variantes.tipoBrocheBoton'
+                'procesos.imagenes'
             ])
             ->orderBy('id', 'asc')
             ->get();
@@ -1481,314 +1477,54 @@ class RegistroOrdenQueryController extends Controller
      * GET /registros/{pedido}/recibos-datos
      * 
      * Obtener datos completos del pedido para el sistema de recibos
+     * Delega a PedidoController.obtenerDetalleCompleto() que ya funciona correctamente
      * Compatible con el módulo PedidosRecibosModule
      */
     public function getRecibosDatos($pedido)
     {
         try {
-            \Log::info(' [getRecibosDatos] Iniciando para pedido: ' . $pedido);
+            \Log::info(' [getRecibosDatos] Delegando a PedidoController.obtenerDetalleCompleto', [
+                'pedido_numero' => $pedido
+            ]);
             
-            // Usar el mismo método show() para obtener los datos base
-            $response = $this->show($pedido);
-            $datos = $response->getData(true);
+            // Convertir numero_pedido a ID si es necesario
+            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)
+                ->orWhere('id', $pedido)
+                ->first();
             
-            \Log::info(' [getRecibosDatos] Datos obtenidos de show():', [
-                'numero_pedido' => $datos['numero_pedido'] ?? 'N/A',
+            if (!$pedidoModel) {
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                    'pedido' => $pedido
+                ], 404);
+            }
+            
+            $pedidoId = $pedidoModel->id;
+            
+            \Log::info(' [getRecibosDatos] Pedido encontrado, usando ID', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $pedidoId
+            ]);
+            
+            // Resolver PedidoController correctamente desde el contenedor
+            $pedidoController = app()->make(\App\Http\Controllers\Api_temp\PedidoController::class);
+            
+            // ⚠️ CRÍTICO: Pasar true para filtrar procesos PENDIENTE en /registros
+            $response = $pedidoController->obtenerDetalleCompleto($pedidoId, true);
+            $responseData = $response->getData(true);
+            
+            // Extraer datos de la estructura de respuesta
+            $datos = $responseData['data'] ?? $responseData;
+            
+            \Log::info(' [getRecibosDatos] Datos obtenidos de PedidoController', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $pedidoId,
                 'cliente' => $datos['cliente'] ?? 'N/A',
                 'total_prendas' => isset($datos['prendas']) ? count($datos['prendas']) : 0
             ]);
             
-            // Enriquecer datos para el sistema de recibos
-            if (isset($datos['prendas']) && is_array($datos['prendas'])) {
-                foreach ($datos['prendas'] as $index => &$prenda) {
-                    $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
-                    
-                    // Agregar datos adicionales para recibos
-                    if ($prendaId) {
-                        // Buscar ancho y metraje
-                        $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $datos['id'])
-                            ->where('prenda_pedido_id', $prendaId)
-                            ->first();
-                        
-                        if ($anchoMetraje) {
-                            $prenda['ancho_metraje'] = [
-                                'ancho' => $anchoMetraje->ancho,
-                                'metraje' => $anchoMetraje->metraje
-                            ];
-                        }
-                        
-                        // ===== AGREGAR DATOS COMPLETOS (igual que en sistema de asesores) =====
-                        try {
-                            // Buscar la prenda en los datos ya cargados para evitar otra consulta
-                            $prendaModel = null;
-                            foreach ($datos['prendas'] as $prendaCargada) {
-                                if (($prendaCargada['id'] ?? $prendaCargada['prenda_pedido_id']) == $prendaId) {
-                                    $prendaModel = (object) $prendaCargada;
-                                    break;
-                                }
-                            }
-                            
-                            if ($prendaModel) {
-                                // ===== PROCESAR TELAS, COLORES Y REFERENCIAS (desde variantes cargadas) =====
-                                $telas = [];
-                                $colores = [];
-                                $referencias = [];
-                                $telasAgregadas = [];
-                                
-                                // Obtener telas desde variantes (si están cargadas)
-                                if (isset($prendaModel->variantes) && is_array($prendaModel->variantes)) {
-                                    foreach ($prendaModel->variantes as $variante) {
-                                        if (isset($variante['tela']['nombre']) && !in_array($variante['tela']['nombre'], $telas)) {
-                                            $telas[] = $variante['tela']['nombre'];
-                                        }
-                                        if (isset($variante['color']['nombre']) && !in_array($variante['color']['nombre'], $colores)) {
-                                            $colores[] = $variante['color']['nombre'];
-                                        }
-                                        if (isset($variante['referencia']) && !in_array($variante['referencia'], $referencias)) {
-                                            $referencias[] = $variante['referencia'];
-                                        }
-                                        
-                                        // Construir telas agregadas para frontend
-                                        if (isset($variante['tela']['nombre']) && isset($variante['color']['nombre'])) {
-                                            $telasAgregadas[] = [
-                                                'tela' => $variante['tela']['nombre'],
-                                                'color' => $variante['color']['nombre'],
-                                                'referencia' => $variante['referencia'] ?? '',
-                                                'imagenes' => [] // Se pueden agregar imágenes si es necesario
-                                            ];
-                                        }
-                                    }
-                                }
-                                
-                                // ===== PROCESAR ESPECIFICACIONES/VARIANTES =====
-                                $especificaciones = [];
-                                $obsVariaciones = [
-                                    'obs_manga' => '',
-                                    'obs_bolsillos' => '',
-                                    'obs_broche' => '',
-                                    'obs_reflectivo' => '',
-                                    'tipo_manga' => '',
-                                    'tipo_broche' => ''
-                                ];
-                                
-                                if (isset($prendaModel->variantes) && is_array($prendaModel->variantes)) {
-                                    foreach ($prendaModel->variantes as $variante) {
-                                        if (isset($variante['manga_obs'])) {
-                                            $obsVariaciones['obs_manga'] = $variante['manga_obs'];
-                                        }
-                                        if (isset($variante['bolsillos_obs'])) {
-                                            $obsVariaciones['obs_bolsillos'] = $variante['bolsillos_obs'];
-                                        }
-                                        if (isset($variante['broche_boton_obs'])) {
-                                            $obsVariaciones['obs_broche'] = $variante['broche_boton_obs'];
-                                        }
-                                        if (isset($variante['tipoManga']['nombre'])) {
-                                            $obsVariaciones['tipo_manga'] = $variante['tipoManga']['nombre'];
-                                        }
-                                        if (isset($variante['tipoBrocheBoton']['nombre'])) {
-                                            $obsVariaciones['tipo_broche'] = $variante['tipoBrocheBoton']['nombre'];
-                                        }
-                                    }
-                                }
-                                
-                                // ===== PROCESAR TALLAS (desde tallas cargadas) =====
-                                $tallas = [];
-                                $generosConTallas = [];
-                                
-                                // Obtener tallas desde la relación cargada
-                                if (isset($prendaModel->tallas) && is_array($prendaModel->tallas)) {
-                                    foreach ($prendaModel->tallas as $talla) {
-                                        $genero = strtolower($talla['genero'] ?? 'dama');
-                                        if (!isset($generosConTallas[$genero])) {
-                                            $generosConTallas[$genero] = [];
-                                        }
-                                        if (($talla['cantidad'] ?? 0) > 0) {
-                                            $generosConTallas[$genero][$talla['talla']] = $talla['cantidad'];
-                                            $tallas[] = $talla['talla'] . ':' . $talla['cantidad'];
-                                        }
-                                    }
-                                }
-                                
-                                // Formatear tallas como string para compatibilidad
-                                $tallasString = !empty($tallas) ? implode(', ', $tallas) : '';
-                                
-                                // ===== PROCESAR PROCESOS (desde procesos cargados) =====
-                                $procesos = [];
-                                if (isset($prendaModel->procesos) && is_array($prendaModel->procesos)) {
-                                    foreach ($prendaModel->procesos as $proc) {
-                                        // Cargar tallas desde tallas_dama y tallas_caballero
-                                        $procTallas = [
-                                            'dama' => [],
-                                            'caballero' => [],
-                                            'unisex' => []
-                                        ];
-                                        
-                                        // Procesar tallas DESDE LA TABLA RELACIONAL
-                                        if (isset($proc['id'])) {
-                                            $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
-                                                'proceso_prenda_detalle_id', 
-                                                $proc['id']
-                                            )->get();
-                                            
-                                            foreach ($tallasRelacionales as $tallaRecord) {
-                                                $genero = strtolower($tallaRecord->genero);
-                                                if ($tallaRecord->cantidad > 0) {
-                                                    $procTallas[$genero][$tallaRecord->talla] = $tallaRecord->cantidad;
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Ubicaciones
-                                        $ubicaciones = [];
-                                        if (isset($proc['ubicaciones'])) {
-                                            if (is_array($proc['ubicaciones'])) {
-                                                $ubicaciones = $proc['ubicaciones'];
-                                            } else if (is_string($proc['ubicaciones'])) {
-                                                $ubicaciones = json_decode($proc['ubicaciones'], true) ?? [];
-                                            }
-                                        }
-                                        
-                                        // Imágenes del proceso
-                                        $imagenesProceso = isset($proc['imagenes']) && is_array($proc['imagenes']) 
-                                            ? array_map(fn($img) => is_array($img) ? ($img['url'] ?? '') : $img, $proc['imagenes'])
-                                            : [];
-                                        
-                                        // Obtener nombre del tipo de proceso
-                                        $nombreProceso = $proc['nombre_proceso'] ?? $proc['tipo_proceso'] ?? 'Proceso';
-                                        
-                                        $proc_item = [
-                                            // Campos compatibles con frontend
-                                            'nombre' => $nombreProceso,
-                                            'tipo' => $nombreProceso,
-                                            'nombre_proceso' => $nombreProceso,
-                                            'tipo_proceso' => $nombreProceso,
-                                            'tallas' => $procTallas,
-                                            'observaciones' => $proc['observaciones'] ?? '',
-                                            'ubicaciones' => $ubicaciones,
-                                            'imagenes' => $imagenesProceso,
-                                            'estado' => $proc['estado'] ?? 'Pendiente',
-                                        ];
-                                        
-                                        $procesos[] = $proc_item;
-                                    }
-                                }
-                                
-                                // ===== ACTUALIZAR PRENDA CON TODOS LOS DATOS (igual que supervisor) =====
-                                $prenda['tela'] = !empty($telas) ? implode(', ', $telas) : null;
-                                $prenda['color'] = !empty($colores) ? implode(', ', $colores) : null;
-                                $prenda['ref'] = !empty($referencias) ? implode(', ', $referencias) : null;
-                                $prenda['tallas'] = $tallasString;
-                                $prenda['generosConTallas'] = $generosConTallas;
-                                $prenda['telasAgregadas'] = $telasAgregadas;
-                                $prenda['variantes'] = $especificaciones;
-                                $prenda['obs_manga'] = $obsVariaciones['obs_manga'];
-                                $prenda['obs_bolsillos'] = $obsVariaciones['obs_bolsillos'];
-                                $prenda['obs_broche'] = $obsVariaciones['obs_broche'];
-                                $prenda['obs_reflectivo'] = $obsVariaciones['obs_reflectivo'];
-                                $prenda['tipo_manga'] = $obsVariaciones['tipo_manga'];
-                                $prenda['tipo_broche'] = $obsVariaciones['tipo_broche'];
-                                $prenda['tiene_bolsillos'] = $prendaModel->tiene_bolsillos ?? false;
-                                $prenda['tiene_reflectivo'] = $prendaModel->tiene_reflectivo ?? false;
-                                $prenda['de_bodega'] = $prendaModel->de_bodega ?? 0;
-                                $prenda['procesos'] = $procesos;
-                                
-                                \Log::info(' [getRecibosDatos] Datos completos agregados para prenda', [
-                                    'prenda_id' => $prendaId,
-                                    'tela' => $prenda['tela'],
-                                    'color' => $prenda['color'],
-                                    'total_procesos' => count($procesos),
-                                    'total_telas' => count($telasAgregadas)
-                                ]);
-                            } else {
-                                \Log::warning(' [getRecibosDatos] Prenda no encontrada en datos cargados', [
-                                    'prenda_id' => $prendaId
-                                ]);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error(' [getRecibosDatos] Error cargando datos completos para prenda', [
-                                'prenda_id' => $prendaId,
-                                'error' => $e->getMessage()
-                            ]);
-                            // Valores por defecto en caso de error
-                            $prenda['tela'] = null;
-                            $prenda['color'] = null;
-                            $prenda['ref'] = null;
-                            $prenda['procesos'] = [];
-                            $prenda['telasAgregadas'] = [];
-                        }
-                        
-                        // ===== FIN DATOS COMPLETOS =====
-                        
-                        // Agregar consecutivos de recibos reales usando el mismo servicio que asesores
-                        try {
-                            $consecutivosService = new \App\Services\ConsecutivosRecibosService();
-                            $consecutivos = $consecutivosService->obtenerConsecutivosPedido($pedido);
-                            
-                            // Construir recibos para esta prenda específica
-                            $recibosPrenda = [];
-                            
-                            // Para cada tipo de recibo, buscar si hay consecutivo para esta prenda
-                            $tiposRecibo = ['COSTURA', 'ESTAMPADO', 'BORDADO', 'REFLECTIVO'];
-                            foreach ($tiposRecibo as $tipo) {
-                                if (isset($consecutivos[$tipo]) && is_array($consecutivos[$tipo])) {
-                                    // Si es un array (como COSTURA), buscar el consecutivo de esta prenda
-                                    $recibosPrenda[$tipo] = $consecutivos[$tipo][(string)$prendaId] ?? null;
-                                } elseif (isset($consecutivos[$tipo])) {
-                                    // Si es un valor directo (como ESTAMPADO, BORDADO)
-                                    $recibosPrenda[$tipo] = $consecutivos[$tipo];
-                                }
-                            }
-                            
-                            // Filtrar valores nulos y formatear
-                            $recibosFiltrados = array_filter($recibosPrenda, function($valor) {
-                                return $valor !== null && $valor !== '';
-                            });
-                            
-                            // Solo agregar recibos si hay consecutivos reales
-                            if (!empty($recibosFiltrados)) {
-                                $prenda['recibos'] = $recibosFiltrados;
-                                
-                                \Log::info(' [getRecibosDatos] Consecutivos reales agregados para prenda', [
-                                    'pedido' => $pedido,
-                                    'prenda_id' => $prendaId,
-                                    'consecutivos' => $prenda['recibos']
-                                ]);
-                            } else {
-                                \Log::info(' [getRecibosDatos] No hay consecutivos para esta prenda', [
-                                    'pedido' => $pedido,
-                                    'prenda_id' => $prendaId
-                                ]);
-                            }
-                            
-                        } catch (\Exception $e) {
-                            \Log::warning(' [getRecibosDatos] Error obteniendo consecutivos reales, dejando vacío', [
-                                'pedido' => $pedido,
-                                'prenda_id' => $prendaId,
-                                'error' => $e->getMessage()
-                            ]);
-                            
-                            // Si hay error, dejar recibos vacío (no usar consecutivos simulados)
-                            $prenda['recibos'] = [];
-                        }
-                    }
-                    
-                    // Normalizar nombres de campos para compatibilidad
-                    $prenda['nombre'] = $prenda['nombre'] ?? $prenda['nombre_prenda'] ?? 'Prenda sin nombre';
-                    $prenda['prenda_pedido_id'] = $prendaId;
-                }
-            }
-            
-            // Normalizar campos principales para compatibilidad con recibos
-            $datos['asesor'] = $datos['asesora'] ?? $datos['asesor'] ?? '-';
-            $datos['fecha'] = $datos['fecha_de_creacion_de_orden'] ?? $datos['fecha'] ?? now();
-            
-            \Log::info(' [getRecibosDatos] Datos enriquecidos listos para responder', [
-                'pedido' => $pedido,
-                'cliente' => $datos['cliente'],
-                'asesor' => $datos['asesor'],
-                'total_prendas_con_recibos' => isset($datos['prendas']) ? count($datos['prendas']) : 0
-            ]);
-            
+            // PedidoController ya enriquece los datos correctamente
+            // Solo retornar la respuesta
             return response()->json($datos);
             
         } catch (\Exception $e) {

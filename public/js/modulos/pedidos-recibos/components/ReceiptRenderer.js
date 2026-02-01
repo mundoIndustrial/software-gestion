@@ -218,7 +218,22 @@ export class ReceiptRenderer {
      */
     static _llenarDescripcion(prendaData, recibo, tipoProceso) {
         const descripcionText = document.getElementById('descripcion-text');
-        if (!descripcionText) return;
+        if (!descripcionText) {
+            console.warn('⚠️ [ReceiptRenderer] Elemento #descripcion-text NO encontrado');
+            return;
+        }
+
+        console.log('🔍 [ReceiptRenderer._llenarDescripcion] prendaData completo:', {
+            nombre: prendaData.nombre,
+            numero: prendaData.numero,
+            tela: prendaData.tela,
+            color: prendaData.color,
+            ref: prendaData.ref,
+            variantes: prendaData.variantes,
+            descripcion: prendaData.descripcion,
+            tallas: prendaData.tallas,
+            genero: prendaData.genero
+        });
 
         let html = '';
         const tipoProcesoBajo = String(tipoProceso || '').toLowerCase();
@@ -227,12 +242,15 @@ export class ReceiptRenderer {
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
             // Usar formateador directamente
             html = Formatters.construirDescripcionCostura(prendaData);
+            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
         } else {
             // Para otros procesos
             html = Formatters.construirDescripcionProceso(prendaData, recibo);
+            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de proceso generado:', html);
         }
 
         descripcionText.innerHTML = html;
+        console.log('✅ [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
     }
 }
 

@@ -42,6 +42,33 @@
 
 </div>
 
+<!-- Modal de Confirmación para Activar/Desactivar Recibo -->
+<div id="confirmar-recibo-modal" 
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99998;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 18px;">
+            <span id="confirmar-titulo">Confirmar Acción</span>
+        </h3>
+        <p style="margin: 0 0 24px 0; color: #6b7280; line-height: 1.5;">
+            <span id="confirmar-mensaje">¿Está seguro de realizar esta acción?</span>
+        </p>
+        <div id="confirmar-loading" style="display: none; text-align: center; margin: 20px 0;">
+            <div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">Procesando...</p>
+        </div>
+        <div id="confirmar-botones" style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="cerrarModalConfirmar()" 
+                    style="background: #e5e7eb; color: #374151; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                Cancelar
+            </button>
+            <button id="confirmar-boton" 
+                    style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -176,6 +203,87 @@
     .proceso-item:hover .proceso-arrow {
         transform: translateX(4px);
     }
+
+    .proceso-acciones {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-activar-recibo {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-activar-recibo:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+
+    .btn-desactivar-recibo {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-desactivar-recibo:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+    }
+
+    .recibo-activo {
+        background: #dcfce7;
+        border-left: 3px solid #10b981;
+    }
+
+    .numero-recibo {
+        font-size: 11px;
+        font-weight: 600;
+        color: #059669;
+        background: #dcfce7;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-left: 8px;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
 </style>
 
 <script>
@@ -185,8 +293,18 @@
     window.selectorRecibosState = {
         pedidoId: null,
         prendas: [],
-        isOpen: false
+        isOpen: false,
+        // Información del usuario actual
+        usuarioRoles: {!! json_encode(auth()->user()?->roles->pluck('name')->toArray() ?? []) !!},
+        esSupervisorPedidos: {{ auth()->user()?->hasRole('supervisor_pedidos') ? 'true' : 'false' }},
+        esSupervisor: {{ auth()->user()?->hasRole('supervisor') ? 'true' : 'false' }}
     };
+    
+    // Contadores de clics para debugging
+    let prendaAccordionClickCount = 0;
+    let procesoClickCount = 0;
+    let lastAccordionClickTime = 0;
+    let lastProcesoClickTime = 0;
 
     /**
      * Abre el modal selector de recibos
@@ -212,9 +330,22 @@
         error.style.display = 'none';
         document.getElementById('selector-prendas-list').innerHTML = '';
 
+        // Resetear contadores al abrir modal
+        prendaAccordionClickCount = 0;
+        procesoClickCount = 0;
+        console.log('[PRENDA-DEBUG] Modal abierto - Contadores reseteados');
+
         // Cargar datos de recibos
         try {
-            const response = await fetch(`/api/pedidos/${pedidoId}`);
+            // Determinar la ruta correcta según la página actual
+            let apiUrl;
+            if (window.location.pathname.includes('/registros')) {
+                apiUrl = `/registros/${pedidoId}/recibos-datos`;
+            } else {
+                apiUrl = `/api/pedidos/${pedidoId}`;
+            }
+            
+            const response = await fetch(apiUrl);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -268,6 +399,12 @@
                 estado: "",
                 es_base: true
             };
+            
+            // Ocultar Costura - Bodega para cualquier rol
+            if (prenda.de_bodega == 1) {
+                return; // Saltar esta prenda, no agregar ningún recibo
+            }
+            
             recibos.push(reciboBase);
 
             //  PROCESOS ADICIONALES
@@ -309,13 +446,43 @@
                     //  CRÍTICO: Pasar tipo como STRING puro
                     const tipoString = String(recibo.tipo);
                     
+                    // Determinar si el recibo está activo (solo para procesos reales)
+                    const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && recibo.numero_recibo;
+                    const puedeActivar = !recibo.es_base && recibo.estado === 'PENDIENTE';
+                    
+                    // ⚠️ CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
+                    const usuarioEsSupervisor = window.selectorRecibosState?.esSupervisorPedidos || window.selectorRecibosState?.esSupervisor;
+                    const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor;
+                    const puedeDesactivarRecibo = estaActivo && usuarioEsSupervisor;
+                    
+                    const reciboClass = estaActivo ? 'recibo-activo' : '';
+                    
                     html += `
-                        <div class="proceso-item" onclick="seleccionarProceso(${prenda.id}, '${tipoString}')">
+                        <div class="proceso-item ${reciboClass}" onclick="seleccionarProceso(${prenda.id}, '${tipoString}')">
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
                                 ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoLabel}</span>` : ''}
+                                ${recibo.numero_recibo ? `<span class="numero-recibo">${recibo.numero_recibo}</span>` : ''}
                             </div>
-                            <span class="proceso-arrow">→</span>
+                            <div class="proceso-acciones">
+                                ${puedeModificarRecibo ? `
+                                    <button class="btn-activar-recibo" 
+                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
+                                            title="Activar recibo">
+                                        <i class="fas fa-check"></i>
+                                        Activar
+                                    </button>
+                                ` : ''}
+                                ${puedeDesactivarRecibo ? `
+                                    <button class="btn-desactivar-recibo" 
+                                            onclick="event.stopPropagation(); toggleActivarRecibo(${prenda.id}, '${tipoString}', ${!estaActivo})"
+                                            title="Desactivar recibo">
+                                        <i class="fas fa-times"></i>
+                                        Desactivar
+                                    </button>
+                                ` : ''}
+                                <span class="proceso-arrow">→</span>
+                            </div>
                         </div>
                     `;
                 });
@@ -336,14 +503,64 @@
      * @param {string} id - ID del acordeón
      */
     window.togglePrendaAccordion = function(header, id) {
+        console.log(`[PRENDA-DEBUG] togglePrendaAccordion llamado con ID: ${id}`);
+        
+        // Incrementar contador de clics
+        prendaAccordionClickCount++;
+        const currentTime = Date.now();
+        const timeSinceLastClick = lastAccordionClickTime ? currentTime - lastAccordionClickTime : 0;
+        lastAccordionClickTime = currentTime;
+        
+        console.log(`[PRENDA-DEBUG] Accordion Click #${prendaAccordionClickCount} - ID: ${id} - Tiempo desde último: ${timeSinceLastClick}ms`);
+        
         const processes = document.getElementById(id);
         const chevron = header.querySelector('.prenda-chevron');
         
-        if (!processes) return;
+        console.log(`[PRENDA-DEBUG] Elemento processes:`, processes);
+        console.log(`[PRENDA-DEBUG] Elemento chevron:`, chevron);
+        
+        if (!processes) {
+            console.log(`[PRENDA-DEBUG] Accordion Click #${prendaAccordionClickCount} - Procesos no encontrados para ID: ${id}`);
+            return;
+        }
 
-        processes.classList.toggle('visible');
-        header.classList.toggle('expanded');
-        chevron.classList.toggle('expanded');
+        // Estado actual antes del toggle
+        const estadoAnterior = {
+            processesVisible: processes.classList.contains('visible'),
+            headerExpanded: header.classList.contains('expanded'),
+            chevronExpanded: chevron.classList.contains('expanded'),
+            processesDisplay: processes.style.display
+        };
+        
+        console.log(`[PRENDA-DEBUG] Accordion Click #${prendaAccordionClickCount} - Estado antes:`, estadoAnterior);
+
+        // Realizar toggle usando display en lugar de clases
+        const isVisible = processes.style.display === 'block';
+        
+        if (isVisible) {
+            // Contraer
+            processes.style.display = 'none';
+            header.classList.remove('expanded');
+            chevron.classList.remove('expanded');
+        } else {
+            // Expandir
+            processes.style.display = 'block';
+            header.classList.add('expanded');
+            chevron.classList.add('expanded');
+        }
+        
+        // Estado después del toggle
+        const estadoDespues = {
+            processesVisible: processes.classList.contains('visible'),
+            headerExpanded: header.classList.contains('expanded'),
+            chevronExpanded: chevron.classList.contains('expanded')
+        };
+        
+        console.log(`[PRENDA-DEBUG] Accordion Click #${prendaAccordionClickCount} - Estado después:`, estadoDespues);
+        
+        // Contar procesos disponibles
+        const procesoItems = processes.querySelectorAll('.proceso-item');
+        console.log(`[PRENDA-DEBUG] Accordion Click #${prendaAccordionClickCount} - Procesos disponibles: ${procesoItems.length}`);
     };
 
     /**
@@ -353,19 +570,31 @@
      * @param {string} tipoProceso - Tipo/nombre del proceso (DEBE ser STRING)
      */
     window.seleccionarProceso = function(prendaId, tipoProceso) {
+        // Incrementar contador de clics
+        procesoClickCount++;
+        const currentTime = Date.now();
+        const timeSinceLastClick = lastProcesoClickTime ? currentTime - lastProcesoClickTime : 0;
+        lastProcesoClickTime = currentTime;
+        
+        console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - PrendaID: ${prendaId} - Proceso: ${tipoProceso} - Tiempo desde último: ${timeSinceLastClick}ms`);
+        
         //  CRÍTICO: Validación defensiva
         if (typeof tipoProceso !== 'string') {
+            console.error(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Error: tipoProceso no es string (${typeof tipoProceso})`);
             alert('Error: tipo de recibo debe ser texto (STRING)');
             return;
         }
         
         if (typeof prendaId !== 'number') {
+            console.error(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Error: prendaId no es número (${typeof prendaId})`);
             alert('Error: ID de prenda debe ser número');
             return;
         }
         
         const tipoString = String(tipoProceso);
         const pedidoId = window.selectorRecibosState.pedidoId;
+        
+        console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Datos válidos - PedidoID: ${pedidoId}, TipoString: ${tipoString}`);
 
         // Cerrar selector
         cerrarSelectorRecibos();
@@ -373,6 +602,8 @@
         // Abrir modal de recibo con el proceso específico
         //  Pasar como STRING puro
         window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipoString);
+        
+        console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Modal de recibo solicitado`);
     };
 
     /**
@@ -399,6 +630,265 @@
             cerrarSelectorRecibos();
         }
     }
+
+    /**
+     * Activa o desactiva un recibo de proceso
+     * @param {number} prendaId - ID de la prenda
+     * @param {string} tipoProceso - Tipo de proceso
+     * @param {boolean} activar - true para activar, false para desactivar
+     */
+    window.toggleActivarRecibo = async function(prendaId, tipoProceso, activar) {
+        try {
+            // Mostrar modal de confirmación
+            const accion = activar ? 'activar' : 'desactivar';
+            const titulo = activar ? 'Activar Recibo' : 'Desactivar Recibo';
+            const mensaje = `¿Está seguro de que desea ${accion} el recibo de ${tipoProceso}?`;
+            const colorBoton = activar ? '#10b981' : '#ef4444';
+            
+            mostrarModalConfirmar(titulo, mensaje, colorBoton, async () => {
+                await ejecutarActivarRecibo(prendaId, tipoProceso, activar);
+            });
+
+        } catch (error) {
+            console.error('Error al actualizar recibo:', error);
+            alert('Error al actualizar el recibo: ' + error.message);
+        }
+    };
+
+    /**
+     * Ejecuta la activación/desactivación del recibo
+     */
+    async function ejecutarActivarRecibo(prendaId, tipoProceso, activar) {
+        try {
+            // Buscar el proceso ID en los datos cargados
+            let procesoId = null;
+            const prenda = window.selectorRecibosState.prendas.find(p => p.id == prendaId);
+            
+            if (prenda && prenda.procesos) {
+                const proceso = prenda.procesos.find(p => 
+                    String(p.tipo_proceso || p.nombre_proceso || '') === tipoProceso
+                );
+                if (proceso) {
+                    procesoId = proceso.id;
+                }
+            }
+
+            if (!procesoId) {
+                alert('Error: No se encontró el proceso para actualizar');
+                return;
+            }
+
+            // Llamar a la API
+            console.log('[DEBUG] Enviando petición:', {
+                url: `/procesos/${procesoId}/activar-recibo`,
+                procesoId: procesoId,
+                activar: activar,
+                csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            });
+
+            const response = await fetch(`/procesos/${procesoId}/activar-recibo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({
+                    activar: activar
+                })
+            });
+
+            console.log('[DEBUG] Respuesta recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+
+            // Verificar si la respuesta es JSON antes de parsear
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await response.text();
+                console.error('[DEBUG] Respuesta no es JSON:', textResponse.substring(0, 200));
+                throw new Error('El servidor devolvió HTML en lugar de JSON. Posible problema de autenticación.');
+            }
+
+            const result = await response.json();
+            console.log('[DEBUG] Respuesta JSON:', result);
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Error al actualizar el recibo');
+            }
+
+            // Mostrar mensaje de éxito
+            mostrarMensajeExito(result.message);
+
+            // Recargar los datos para actualizar la vista
+            const pedidoId = window.selectorRecibosState.pedidoId;
+            try {
+                await cargarDatosRecibos(pedidoId);
+            } catch (recargaError) {
+                console.warn('Error al recargar datos (pero la operación principal tuvo éxito):', recargaError);
+                // No mostrar alert de error porque la operación principal funcionó
+                mostrarMensajeExito('Recibo actualizado correctamente (la vista se actualizará en la próxima recarga)');
+            }
+
+        } catch (error) {
+            console.error('Error al actualizar recibo:', error);
+            console.error('Detalles del error:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            
+            // Solo mostrar alert si es un error real de la API, no de recarga
+            if (error.message && !error.message.includes('Error al recargar datos')) {
+                alert('Error al actualizar el recibo: ' + error.message);
+            } else {
+                mostrarMensajeExito('Recibo actualizado correctamente');
+            }
+        }
+    }
+
+    /**
+     * Muestra el modal de confirmación
+     */
+    function mostrarModalConfirmar(titulo, mensaje, colorBoton, onConfirm) {
+        const modal = document.getElementById('confirmar-recibo-modal');
+        const tituloEl = document.getElementById('confirmar-titulo');
+        const mensajeEl = document.getElementById('confirmar-mensaje');
+        const boton = document.getElementById('confirmar-boton');
+        const loading = document.getElementById('confirmar-loading');
+        const botones = document.getElementById('confirmar-botones');
+        
+        tituloEl.textContent = titulo;
+        mensajeEl.textContent = mensaje;
+        boton.style.background = colorBoton;
+        
+        // Resetear estado
+        loading.style.display = 'none';
+        botones.style.display = 'flex';
+        
+        // Remover listeners anteriores
+        const nuevoBoton = boton.cloneNode(true);
+        boton.parentNode.replaceChild(nuevoBoton, boton);
+        
+        // Agregar nuevo listener
+        nuevoBoton.addEventListener('click', async () => {
+            // Mostrar carga
+            loading.style.display = 'block';
+            botones.style.display = 'none';
+            
+            try {
+                await onConfirm();
+                cerrarModalConfirmar();
+            } catch (error) {
+                // Si hay error, volver a mostrar botones
+                loading.style.display = 'none';
+                botones.style.display = 'flex';
+                throw error;
+            }
+        });
+        
+        modal.style.display = 'block';
+    }
+
+    /**
+     * Cierra el modal de confirmación
+     */
+    window.cerrarModalConfirmar = function() {
+        document.getElementById('confirmar-recibo-modal').style.display = 'none';
+    }
+
+    /**
+     * Muestra un mensaje de éxito temporal
+     */
+    function mostrarMensajeExito(mensaje) {
+        // Crear elemento temporal
+        const mensajeEl = document.createElement('div');
+        mensajeEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 99999;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        `;
+        mensajeEl.textContent = mensaje;
+        
+        document.body.appendChild(mensajeEl);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            mensajeEl.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                document.body.removeChild(mensajeEl);
+            }, 300);
+        }, 3000);
+    }
+
+    /**
+     * Carga los datos de recibos y actualiza la vista
+     * @param {number} pedidoId - ID del pedido
+     */
+    async function cargarDatosRecibos(pedidoId) {
+        try {
+            let apiUrl;
+            if (window.location.pathname.includes('/registros')) {
+                apiUrl = `/registros/${pedidoId}`;
+            } else {
+                apiUrl = `/api/pedidos/${pedidoId}`;
+            }
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            const datos = result.data || result;
+            window.selectorRecibosState.prendas = datos.prendas || [];
+
+            // Actualizar número de pedido
+            document.getElementById('selector-pedido-numero').textContent = `#${datos.numero_pedido}`;
+
+            // Renderizar prendas con los datos actualizados
+            renderizarPrendasEnSelector(datos.prendas);
+
+        } catch (err) {
+            console.error('Error al recargar datos:', err);
+            alert('Error al recargar los datos: ' + err.message);
+        }
+    }
+
+    /**
+     * Event listener para clicks en elementos .proceso-name
+     * Permite que al hacer click en la descripción del proceso se abra el recibo
+     * Sin necesidad de hacer click en toda la fila
+     */
+    document.addEventListener('click', function(e) {
+        // Detectar si se hizo click en un elemento .proceso-name o sus hijos
+        const procesoName = e.target.closest('.proceso-name');
+        if (procesoName) {
+            console.log('[PROCESO-NAME-CLICK] Click detectado en .proceso-name');
+            
+            // Encontrar el elemento padre .proceso-item
+            const procesoItem = procesoName.closest('.proceso-item');
+            if (procesoItem) {
+                console.log('[PROCESO-NAME-CLICK] .proceso-item encontrado, propagando click');
+                
+                // Simular el click en el padre para ejecutar su onclick
+                procesoItem.click();
+            } else {
+                console.warn('[PROCESO-NAME-CLICK] .proceso-item no encontrado como padre');
+            }
+        }
+    }, true); // Usar capture phase para mayor prioridad
 
 </script>
 
