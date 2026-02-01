@@ -13,6 +13,41 @@
 
 @section('content')
 
+<!-- Loading Spinner -->
+<div id="loading-overlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+">
+    <div style="text-align: center;">
+        <div style="
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        "></div>
+        <h2 style="color: #374151; font-size: 1.125rem; margin: 10px 0; font-weight: 600;">Cargando...</h2>
+        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Preparando el formulario de pedido</p>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
 <!-- Header Full Width -->
 <div class="page-header">
     <h1> Crear Pedido de Producción desde Cotización</h1>
@@ -421,5 +456,49 @@
 
 <!-- Script para modal de prendas y autocomplete -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
+
+<!-- Script para ocultar loading cuando todo está listo -->
+<script>
+    // Esperar a que DOM esté completamente listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            ocultarLoadingConDelay();
+        });
+    } else {
+        ocultarLoadingConDelay();
+    }
+
+    function ocultarLoadingConDelay() {
+        // Dar un pequeño delay para asegurar que todos los scripts se han cargado
+        setTimeout(() => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.transition = 'opacity 0.5s ease-out';
+                loadingOverlay.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
+                    }
+                }, 500);
+                
+                console.log('✅ [LOADING] Loading overlay ocultado');
+            }
+        }, 300);
+    }
+
+    // Usar window.addEventListener('load') como fallback
+    window.addEventListener('load', function() {
+        console.log('📦 [LOADING] Evento load disparado');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+            setTimeout(() => {
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+            }, 100);
+        }
+    });
+</script>
 @endpush
 @endsection

@@ -458,12 +458,27 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
     console.log('[abrirSelectorPrendasCotizacion] 📦 Abriendo selector de prendas');
     console.log('  Cotización:', cotizacion);
 
-    if (!cotizacion || !cotizacion.original || !cotizacion.original.prendas) {
+    // Manejar ambos casos:
+    // 1. Objeto formateado: cotizacion.original.prendas
+    // 2. Objeto original directo: cotizacion.prendas
+    let prendas = [];
+    
+    if (cotizacion.original && cotizacion.original.prendas) {
+        // Caso 1: Objeto formateado (tiene propiedad 'original')
+        prendas = cotizacion.original.prendas;
+    } else if (cotizacion.prendas) {
+        // Caso 2: Objeto original directo (prendas está en el nivel superior)
+        prendas = cotizacion.prendas;
+    } else {
         alert('❌ Error: No hay prendas disponibles en esta cotización');
         return;
     }
 
-    const prendas = cotizacion.original.prendas;
+    if (!prendas || !Array.isArray(prendas) || prendas.length === 0) {
+        alert('❌ Error: No hay prendas disponibles en esta cotización');
+        return;
+    }
+
     console.log(`  Prendas disponibles: ${prendas.length}`);
 
     // Crear modal dinámico para seleccionar prenda
@@ -659,6 +674,19 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 // Abrir el modal modal-agregar-prenda-nueva con la prenda PRECARGADA
                 // Esto permite al usuario ver todos los campos llenos desde la cotización
                 if (window.gestionItemsUI && window.gestionItemsUI.prendaEditor) {
+                    // 🔴 ASIGNAR COTIZACIÓN AL PRENDAEDITOR (para origen automático)
+                    // Usar el objeto original si existe, para tener acceso a tipo_cotizacion_id y tipo_cotizacion
+                    const cotizacionParaPrendaEditor = cotizacion.original || cotizacion;
+                    
+                    window.gestionItemsUI.prendaEditor.cotizacionActual = cotizacionParaPrendaEditor;
+                    
+                    console.log('[abrirSelectorPrendasCotizacion] 🔗 Cotización asignada al PrendaEditor:', {
+                        id: cotizacionParaPrendaEditor.id,
+                        tipo_cotizacion_id: cotizacionParaPrendaEditor.tipo_cotizacion_id,
+                        tipo_cotizacion_nombre: cotizacionParaPrendaEditor.tipo_cotizacion?.nombre,
+                        numero: cotizacionParaPrendaEditor.numero_cotizacion || cotizacion.numero_cotizacion
+                    });
+                    
                     // Cargar la prenda en el modal (NO como edición de existente, sino como NUEVA)
                     // Pero con todos los datos precargados
                     window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);

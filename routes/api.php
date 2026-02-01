@@ -102,6 +102,11 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
+    
+    // Rutas adicionales para cotizaciones
+    Route::get('cotizaciones/{cotizacion_id}/prendas/{prenda_id}/telas-cotizacion', 
+        [CotizacionPrendaController::class, 'obtenerTelasCotizacion'])
+        ->name('cotizaciones.prendas.telas-cotizacion');
 });
 
 // Rutas de procesos (DDD)

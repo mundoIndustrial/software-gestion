@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrendaTelaCot extends Model
 {
@@ -46,5 +47,13 @@ class PrendaTelaCot extends Model
     public function tela(): BelongsTo
     {
         return $this->belongsTo(TelaPrenda::class, 'tela_id');
+    }
+
+    /**
+     * Relación: Una prenda-tela tiene muchas fotos
+     */
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(PrendaTelaFotoCot::class, 'prenda_tela_cot_id');
     }
 }
