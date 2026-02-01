@@ -541,6 +541,81 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN DE COLOR, TELA Y REFERENCIA (Tabla con imagen) -->
+            <div class="producto-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div class="section-title"><i class="fas fa-palette"></i> COLOR, TELA Y REFERENCIA</div>
+                    <button type="button" class="btn-agregar-tela-reflectivo" onclick="agregarFilaTelaReflectivo(this)" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus"></i> Agregar Tela
+                    </button>
+                </div>
+                <div class="form-row" style="overflow-x: auto;">
+                    <div class="form-col full" style="min-width: 0;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; min-width: 800px;">
+                            <thead>
+                                <tr style="background-color: #f0f0f0; border-bottom: 2px solid #0066cc;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 150px; white-space: nowrap;">
+                                        <i class="fas fa-palette"></i> Color
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 150px; white-space: nowrap;">
+                                        <i class="fas fa-cloth"></i> Tela
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 120px; white-space: nowrap;">
+                                        <i class="fas fa-barcode"></i> Referencia
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 200px; white-space: nowrap;">
+                                        <i class="fas fa-image"></i> Imagen Tela
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; width: 50px; white-space: nowrap;">
+                                        <i class="fas fa-trash"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="telas-tbody-reflectivo">
+                                <tr style="border-bottom: 1px solid #ddd;" class="fila-tela-reflectivo" data-tela-index="0">
+                                    <td style="padding: 14px; border-right: 1px solid #ddd;">
+                                        <div style="position: relative;">
+                                            <label for="color-input-reflectivo" class="sr-only">Color</label>
+                                            <input type="text" id="color-input-reflectivo" class="color-input-reflectivo" placeholder="Color..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarColorReflectivo(this)" onkeypress="if(event.key==='Enter') crearColorDesdeInputReflectivo(this)" aria-label="Selecciona o escribe un color">
+                                            <input type="hidden" name="productos_reflectivo[][telas][0][color_id]" class="color-id-input-reflectivo" value="">
+                                            <div class="color-suggestions-reflectivo" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 14px; border-right: 1px solid #ddd;">
+                                        <div style="position: relative;">
+                                            <label for="tela-input-reflectivo" class="sr-only">Tela</label>
+                                            <input type="text" id="tela-input-reflectivo" class="tela-input-reflectivo" placeholder="Tela..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarTelaReflectivo(this)" onkeypress="if(event.key==='Enter') crearTelaDesdeInputReflectivo(this)" aria-label="Selecciona o escribe el tipo de tela">
+                                            <input type="hidden" name="productos_reflectivo[][telas][0][tela_id]" class="tela-id-input-reflectivo" value="">
+                                            <div class="tela-suggestions-reflectivo" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 14px; border-right: 1px solid #ddd;">
+                                        <label for="referencia-input-reflectivo" class="sr-only">Referencia</label>
+                                        <input type="text" id="referencia-input-reflectivo" name="productos_reflectivo[][telas][0][referencia]" class="referencia-input-reflectivo" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
+                                    </td>
+                                    <td style="padding: 14px; text-align: center; border-right: 1px solid #ddd;">
+                                        <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDropReflectivo(event, this)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
+                                            <input type="file" name="productos_reflectivo[][telas][0][fotos][]" class="input-file-tela-reflectivo" accept="image/*" multiple onchange="agregarFotoTelaReflectivo(this)" style="display: none;">
+                                            <div class="drop-zone-content" style="font-size: 0.8rem;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: #0066cc; margin-bottom: 4px;"></i>
+                                                <p style="margin: 4px 0; color: #0066cc; font-weight: 600; font-size: 0.8rem;">CLIC</p>
+                                                <small style="color: #666; font-size: 0.75rem;">(Máx. 3)</small>
+                                            </div>
+                                        </label>
+                                        <div class="foto-tela-preview-reflectivo" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;"></div>
+                                    </td>
+                                    <td style="padding: 14px; text-align: center;">
+                                        <button type="button" class="btn-eliminar-tela-reflectivo" onclick="eliminarFilaTelaReflectivo(this)" style="padding: 10px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: none; min-width: 44px; min-height: 44px;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- UBICACIÓN -->
             <div class="producto-section">
                 <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSeccionReflectivo(this)">

@@ -14,11 +14,13 @@ class PrendaCotReflectivo extends Model
         'variaciones',
         'ubicaciones',
         'descripcion',
+        'color_tela_ref',
     ];
 
     protected $casts = [
         'variaciones' => 'array',
         'ubicaciones' => 'array',
+        'color_tela_ref' => 'array',
     ];
 
     /**

@@ -657,6 +657,34 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             }
         }
 
+        //  RECOPILAR COLOR, TELA, REFERENCIA E IMÁGENES DE TELA DE ESTA PRENDA
+        let colorTelaRefDePrenda = [];
+        const tbody = prenda.querySelector('.telas-tbody-reflectivo');
+        if (tbody) {
+            tbody.querySelectorAll('tr.fila-tela-reflectivo').forEach((fila, telaIndex) => {
+                const color = fila.querySelector('.color-input-reflectivo')?.value || '';
+                const tela = fila.querySelector('.tela-input-reflectivo')?.value || '';
+                const referencia = fila.querySelector('.referencia-input-reflectivo')?.value || '';
+                const colorId = fila.querySelector('.color-id-input-reflectivo')?.value || null;
+                const telaId = fila.querySelector('.tela-id-input-reflectivo')?.value || null;
+                
+                // Solo agregar si hay al menos un campo con valor
+                if (color || tela || referencia) {
+                    const telaObj = {
+                        indice: telaIndex,
+                        color: color,
+                        color_id: colorId,
+                        tela: tela,
+                        tela_id: telaId,
+                        referencia: referencia,
+                        fotos: []  // Se agregarán luego
+                    };
+                    
+                    colorTelaRefDePrenda.push(telaObj);
+                }
+            });
+        }
+
         if (tipo.trim()) {
             prendas.push({
                 tipo: tipo,
@@ -665,13 +693,15 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 genero: genero,  //  AGREGAR GÉNERO
                 cantidades: cantidades,  //  AGREGAR CANTIDADES POR TALLA
                 ubicaciones: ubicacionesDePrenda,  //  Ubicaciones específicas de esta prenda
-                variaciones: variacionesDePrenda  //  Variaciones específicas de esta prenda
+                variaciones: variacionesDePrenda,  //  Variaciones específicas de esta prenda
+                color_tela_ref: colorTelaRefDePrenda  //  Color, Tela, Referencia e imágenes de tela
             });
             
             console.log(` Prenda ${index + 1}: ${tipo}`);
             console.log(`    Ubicaciones: ${ubicacionesDePrenda.length}`);
             console.log(`   Variaciones: ${variacionesDePrenda.length}`);
             console.log(`   Variaciones Detalles:`, variacionesDePrenda);
+            console.log(`   Color/Tela/Ref: ${colorTelaRefDePrenda.length}`);
             console.log(`   Género: ${genero || 'No especificado'}`);
             console.log(`    Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
         }
@@ -718,6 +748,24 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             variaciones: p.variaciones,
             tallas: p.tallas
         });
+    });
+
+    //  AGREGAR IMÁGENES DE TELA POR PRENDA Y POR TELA CON SUS ÍNDICES
+    document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
+        const tbody = prenda.querySelector('.telas-tbody-reflectivo');
+        if (tbody) {
+            tbody.querySelectorAll('tr.fila-tela-reflectivo').forEach((fila, telaIndex) => {
+                const inputFile = fila.querySelector('.input-file-tela-reflectivo');
+                if (inputFile && inputFile.files.length > 0) {
+                    Array.from(inputFile.files).forEach((file, fileIdx) => {
+                        // Enviar imagen con estructura: prendas[prendaIndex][telas][telaIndex][fotos][]
+                        const campoNombre = `prendas[${prendaIndex}][telas][${telaIndex}][fotos][]`;
+                        formData.append(campoNombre, file);
+                        console.log(`  📸 Imagen tela - Prenda ${prendaIndex}, Tela ${telaIndex}: "${file.name}" → "${campoNombre}"`);
+                    });
+                }
+            });
+        }
     });
 
     //  AGREGAR IMÁGENES POR PRENDA CON SU ÍNDICE
@@ -794,7 +842,21 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             }
         });
 
+        console.log('📤 SOLICITUD ENVIADA:', {
+            url: url,
+            metodo: metodo,
+            formDataKeys: bodyData instanceof FormData ? Array.from(bodyData.keys()) : 'No es FormData',
+        });
+
         const result = await response.json();
+
+        console.log('🔵 RESPUESTA DEL SERVIDOR:', {
+            status: response.status,
+            success: result.success,
+            message: result.message,
+            errors: result.errors,
+            errores: result.errores,
+        });
 
         if (result.success) {
             // Mostrar modal de éxito
@@ -809,23 +871,28 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             let mensajeError = result.message || 'Error al guardar';
             
             if (result.errors) {
-                console.log(' Campos con error (errors):');
+                console.log('❌ ERRORES DE VALIDACIÓN (errors):');
+                console.table(result.errors);
                 const errores = [];
                 for (const [campo, msgs] of Object.entries(result.errors)) {
                     const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
                     errores.push(`${campo}: ${mensaje}`);
+                    console.log(`  ❌ ${campo}: ${mensaje}`);
                 }
                 mensajeError = 'Errores de validación:\n' + errores.join('\n');
             } else if (result.errores) {
-                console.log(' Campos con error (errores):');
+                console.log('❌ ERRORES (errores):');
+                console.table(result.errores);
                 const errores = [];
                 for (const [campo, msgs] of Object.entries(result.errores)) {
                     const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
                     errores.push(`${campo}: ${mensaje}`);
+                    console.log(`  ❌ ${campo}: ${mensaje}`);
                 }
                 mensajeError = 'Errores:\n' + errores.join('\n');
             }
             // Mostrar error de forma más legible
+            console.error('🔴 ERROR FINAL:', mensajeError);
             alert(` ${mensajeError}`);
         }
     } catch (error) {
@@ -1732,3 +1799,356 @@ document.addEventListener('DOMContentLoaded', function() {
             actualizarVariacionesJSON(seccion);
         }
     };});
+
+/**
+ * ============================================================
+ * FUNCIONES PARA TABLA COLOR, TELA Y REFERENCIA - REFLECTIVO
+ * ============================================================
+ */
+
+// Datos de colores y telas disponibles (similar al archivo color-tela-referencia.js)
+const coloresDisponiblesReflectivo = [
+    { id: 1, nombre: 'Azul' },
+    { id: 2, nombre: 'Negro' },
+    { id: 3, nombre: 'Gris' },
+    { id: 4, nombre: 'Blanco' },
+    { id: 5, nombre: 'Naranja' },
+    { id: 6, nombre: 'Rojo' },
+    { id: 7, nombre: 'Verde' },
+    { id: 8, nombre: 'Amarillo' }
+];
+
+const telasDisponiblesReflectivo = [
+    { id: 1, nombre: 'NAPOLES', referencia: 'REF-NAP-001' },
+    { id: 2, nombre: 'DRILL BORNEO', referencia: 'REF-DB-001' },
+    { id: 3, nombre: 'OXFORD', referencia: 'REF-OX-001' },
+    { id: 4, nombre: 'JERSEY', referencia: 'REF-JER-001' },
+    { id: 5, nombre: 'LINO', referencia: 'REF-LIN-001' }
+];
+
+let proximoColorIdReflectivo = 9;
+let proximoTelaIdReflectivo = 6;
+
+/**
+ * AGREGAR FILA DE TELA
+ */
+function agregarFilaTelaReflectivo(btn) {
+    const seccion = btn.closest('.producto-section');
+    const tbody = seccion.querySelector('.telas-tbody-reflectivo');
+    const telaCount = tbody.querySelectorAll('tr').length;
+    
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #ddd';
+    tr.className = 'fila-tela-reflectivo';
+    tr.setAttribute('data-tela-index', telaCount);
+    
+    tr.innerHTML = `
+        <td style="padding: 14px; border-right: 1px solid #ddd;">
+            <div style="position: relative;">
+                <label class="sr-only">Color</label>
+                <input type="text" class="color-input-reflectivo" placeholder="Color..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarColorReflectivo(this)" onkeypress="if(event.key==='Enter') crearColorDesdeInputReflectivo(this)" aria-label="Selecciona o escribe un color">
+                <input type="hidden" name="productos_reflectivo[][telas][${telaCount}][color_id]" class="color-id-input-reflectivo" value="">
+                <div class="color-suggestions-reflectivo" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
+            </div>
+        </td>
+        <td style="padding: 14px; border-right: 1px solid #ddd;">
+            <div style="position: relative;">
+                <label class="sr-only">Tela</label>
+                <input type="text" class="tela-input-reflectivo" placeholder="Tela..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarTelaReflectivo(this)" onkeypress="if(event.key==='Enter') crearTelaDesdeInputReflectivo(this)" aria-label="Selecciona o escribe el tipo de tela">
+                <input type="hidden" name="productos_reflectivo[][telas][${telaCount}][tela_id]" class="tela-id-input-reflectivo" value="">
+                <div class="tela-suggestions-reflectivo" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
+            </div>
+        </td>
+        <td style="padding: 14px; border-right: 1px solid #ddd;">
+            <label class="sr-only">Referencia</label>
+            <input type="text" name="productos_reflectivo[][telas][${telaCount}][referencia]" class="referencia-input-reflectivo" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
+        </td>
+        <td style="padding: 14px; text-align: center; border-right: 1px solid #ddd;">
+            <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDropReflectivo(event, this)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
+                <input type="file" name="productos_reflectivo[][telas][${telaCount}][fotos][]" class="input-file-tela-reflectivo" accept="image/*" multiple onchange="agregarFotoTelaReflectivo(this)" style="display: none;">
+                <div class="drop-zone-content" style="font-size: 0.8rem;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: #0066cc; margin-bottom: 4px;"></i>
+                    <p style="margin: 4px 0; color: #0066cc; font-weight: 600; font-size: 0.8rem;">CLIC</p>
+                    <small style="color: #666; font-size: 0.75rem;">(Máx. 3)</small>
+                </div>
+            </label>
+            <div class="foto-tela-preview-reflectivo" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;"></div>
+        </td>
+        <td style="padding: 14px; text-align: center;">
+            <button type="button" class="btn-eliminar-tela-reflectivo" onclick="eliminarFilaTelaReflectivo(this)" style="padding: 10px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: none; min-width: 44px; min-height: 44px;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(tr);
+    
+    // Mostrar botones de eliminar si hay más de una fila
+    actualizarBotonesEliminarTelaReflectivo();
+}
+
+/**
+ * ELIMINAR FILA DE TELA
+ */
+function eliminarFilaTelaReflectivo(btn) {
+    const fila = btn.closest('tr');
+    fila.remove();
+    actualizarBotonesEliminarTelaReflectivo();
+}
+
+/**
+ * ACTUALIZAR VISIBILIDAD DE BOTONES ELIMINAR
+ */
+function actualizarBotonesEliminarTelaReflectivo() {
+    const seccion = document.querySelector('.producto-section:has(.telas-tbody-reflectivo)');
+    if (!seccion) return;
+    
+    const tbody = seccion.querySelector('.telas-tbody-reflectivo');
+    const filas = tbody.querySelectorAll('tr');
+    const botonesEliminar = tbody.querySelectorAll('.btn-eliminar-tela-reflectivo');
+    
+    // Mostrar botón eliminar solo si hay más de una fila
+    botonesEliminar.forEach((btn, index) => {
+        btn.style.display = filas.length > 1 ? 'block' : 'none';
+    });
+}
+
+/**
+ * BÚSQUEDA DE COLORES
+ */
+function buscarColorReflectivo(input) {
+    const valor = input.value.toLowerCase().trim();
+    const suggestionsDiv = input.closest('td').querySelector('.color-suggestions-reflectivo');
+    
+    if (!valor) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    const coincidencias = coloresDisponiblesReflectivo.filter(c => 
+        c.nombre.toLowerCase().includes(valor)
+    );
+    
+    let html = '';
+    
+    if (coincidencias.length > 0) {
+        html += coincidencias.map(c => `
+            <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                 onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                 onmouseout="this.style.backgroundColor='white'"
+                 onclick="seleccionarColorReflectivo('${c.id}', '${c.nombre}', this)">
+                <strong>${c.nombre}</strong>
+            </div>
+        `).join('');
+    }
+    
+    if (html) {
+        html += `
+            <div style="padding: 8px 12px; border-top: 1px solid #eee; background: #f9f9f9; cursor: pointer; color: #0066cc; font-weight: 600;" 
+                 onmouseover="this.style.backgroundColor='#eef5ff'" 
+                 onmouseout="this.style.backgroundColor='#f9f9f9'"
+                 onclick="crearColorDesdeInputReflectivo(this.closest('td').querySelector('.color-input-reflectivo'))">
+                + Crear nuevo color
+            </div>
+        `;
+    }
+    
+    suggestionsDiv.innerHTML = html;
+    suggestionsDiv.style.display = html ? 'block' : 'none';
+}
+
+/**
+ * SELECCIONAR COLOR
+ */
+function seleccionarColorReflectivo(id, nombre, element) {
+    const td = element.closest('td');
+    const input = td.querySelector('.color-input-reflectivo');
+    const idInput = td.querySelector('.color-id-input-reflectivo');
+    
+    input.value = nombre;
+    idInput.value = id;
+    td.querySelector('.color-suggestions-reflectivo').style.display = 'none';
+}
+
+/**
+ * CREAR COLOR DESDE INPUT
+ */
+function crearColorDesdeInputReflectivo(input) {
+    const valor = input.value.trim();
+    
+    if (!valor) {
+        alert('Por favor escribe un color');
+        return;
+    }
+    
+    const existe = coloresDisponiblesReflectivo.find(c => 
+        c.nombre.toLowerCase() === valor.toLowerCase()
+    );
+    
+    if (existe) {
+        seleccionarColorReflectivo(existe.id, existe.nombre, input);
+    } else {
+        const nuevoId = proximoColorIdReflectivo++;
+        const nuevoColor = { id: nuevoId, nombre: valor };
+        coloresDisponiblesReflectivo.push(nuevoColor);
+        
+        const td = input.closest('td');
+        const idInput = td.querySelector('.color-id-input-reflectivo');
+        input.value = valor;
+        idInput.value = nuevoId;
+        td.querySelector('.color-suggestions-reflectivo').style.display = 'none';
+    }
+}
+
+/**
+ * BÚSQUEDA DE TELAS
+ */
+function buscarTelaReflectivo(input) {
+    const valor = input.value.toLowerCase().trim();
+    const suggestionsDiv = input.closest('td').querySelector('.tela-suggestions-reflectivo');
+    
+    if (!valor) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    const coincidencias = telasDisponiblesReflectivo.filter(t => 
+        t.nombre.toLowerCase().includes(valor) || 
+        t.referencia.toLowerCase().includes(valor)
+    );
+    
+    let html = '';
+    
+    if (coincidencias.length > 0) {
+        html += coincidencias.map(t => `
+            <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                 onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                 onmouseout="this.style.backgroundColor='white'"
+                 onclick="seleccionarTelaReflectivo('${t.id}', '${t.nombre}', this)">
+                <strong>${t.nombre}</strong>
+                <small style="color: #999; display: block;">${t.referencia}</small>
+            </div>
+        `).join('');
+    }
+    
+    if (html) {
+        html += `
+            <div style="padding: 8px 12px; border-top: 1px solid #eee; background: #f9f9f9; cursor: pointer; color: #0066cc; font-weight: 600;" 
+                 onmouseover="this.style.backgroundColor='#eef5ff'" 
+                 onmouseout="this.style.backgroundColor='#f9f9f9'"
+                 onclick="crearTelaDesdeInputReflectivo(this.closest('td').querySelector('.tela-input-reflectivo'))">
+                + Crear nueva tela
+            </div>
+        `;
+    }
+    
+    suggestionsDiv.innerHTML = html;
+    suggestionsDiv.style.display = html ? 'block' : 'none';
+}
+
+/**
+ * SELECCIONAR TELA
+ */
+function seleccionarTelaReflectivo(id, nombre, element) {
+    const td = element.closest('td');
+    const input = td.querySelector('.tela-input-reflectivo');
+    const idInput = td.querySelector('.tela-id-input-reflectivo');
+    
+    input.value = nombre;
+    idInput.value = id;
+    
+    td.querySelector('.tela-suggestions-reflectivo').style.display = 'none';
+}
+
+/**
+ * CREAR TELA DESDE INPUT
+ */
+function crearTelaDesdeInputReflectivo(input) {
+    const valor = input.value.trim();
+    
+    if (!valor) {
+        alert('Por favor escribe una tela');
+        return;
+    }
+    
+    const existe = telasDisponiblesReflectivo.find(t => 
+        t.nombre.toLowerCase() === valor.toLowerCase()
+    );
+    
+    if (existe) {
+        seleccionarTelaReflectivo(existe.id, existe.nombre, input);
+    } else {
+        const nuevoId = proximoTelaIdReflectivo++;
+        const nuevaTela = { 
+            id: nuevoId, 
+            nombre: valor,
+            referencia: ''
+        };
+        telasDisponiblesReflectivo.push(nuevaTela);
+        
+        const td = input.closest('td');
+        const idInput = td.querySelector('.tela-id-input-reflectivo');
+        input.value = valor;
+        idInput.value = nuevoId;
+        
+        // Limpiar referencia si se crea tela nueva
+        const trPadre = td.closest('tr');
+        const refInput = trPadre.querySelector('.referencia-input-reflectivo');
+        if (refInput) {
+            refInput.value = '';
+        }
+        
+        td.querySelector('.tela-suggestions-reflectivo').style.display = 'none';
+    }
+}
+
+/**
+ * AGREGAR FOTO DE TELA
+ */
+function agregarFotoTelaReflectivo(input) {
+    const archivos = input.files;
+    if (!archivos || archivos.length === 0) return;
+    
+    const td = input.closest('td');
+    const previewDiv = td.querySelector('.foto-tela-preview-reflectivo');
+    
+    // Limitar a 3 archivos
+    const archivosArray = Array.from(archivos).slice(0, 3);
+    previewDiv.innerHTML = '';
+    
+    archivosArray.forEach((archivo, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.style.cssText = 'position: relative; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+            
+            div.innerHTML = `
+                <img src="${e.target.result}" style="width: 100%; height: 80px; object-fit: cover; display: block;">
+                <button type="button" class="btn-eliminar-foto" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; padding: 0; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">×</button>
+            `;
+            
+            previewDiv.appendChild(div);
+        };
+        reader.readAsDataURL(archivo);
+    });
+}
+
+/**
+ * MANEJAR DROP DE ARCHIVOS
+ */
+function manejarDropReflectivo(event, element) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer.files;
+    const input = element.querySelector('.input-file-tela-reflectivo');
+    
+    if (input) {
+        input.files = files;
+        // Trigger change event
+        const changeEvent = new Event('change', { bubbles: true });
+        input.dispatchEvent(changeEvent);
+    }
+    
+    element.style.background = '#f0f7ff';
+}

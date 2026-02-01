@@ -2717,6 +2717,14 @@ final class CotizacionController extends Controller
                 'action' => $request->input('action'),
             ]);
 
+            // DEBUG: Log de todo lo que recibe
+            Log::info('🔍 DEBUG - Datos recibidos en storeReflectivo:', [
+                'all_inputs' => $request->all(),
+                'prendas_input' => $request->input('prendas'),
+                'prendas_type' => gettype($request->input('prendas')),
+                'prendas_strlen' => strlen($request->input('prendas') ?? ''),
+            ]);
+
             // Validar datos básicos
             $validated = $request->validate([
                 'cliente' => 'required|string|max:255',
@@ -2725,13 +2733,55 @@ final class CotizacionController extends Controller
                 'action' => 'required|in:borrador,enviar',
                 'tipo' => 'required|in:RF',
                 'tipo_venta_reflectivo' => 'nullable|in:M,D,X',
-                'prendas' => 'required|string', // Ahora acepta string JSON
+                'prendas' => 'nullable', // Cambiar de required|string a nullable para debug
                 'especificaciones' => 'nullable|string',
                 'descripcion_reflectivo' => 'required|string',
                 'ubicaciones_reflectivo' => 'nullable',
                 'observaciones_generales' => 'nullable',
                 'imagenes_reflectivo.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             ]);
+
+            // Verificar si prendas es string o array (debug)
+            $prendasInput = $request->input('prendas');
+            
+            // Convertir a string si viene como array (bug de FormData multipart)
+            if (is_array($prendasInput)) {
+                $prendasInput = json_encode($prendasInput);
+            }
+            
+            if (is_null($prendasInput)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas es null. Verificar envío de FormData.',
+                    'errors' => [
+                        'prendas' => ['Campo no recibido o null'],
+                        'debug_all_keys' => array_keys($request->all()),
+                    ]
+                ], 422);
+            }
+
+            if (!is_string($prendasInput)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas debe ser string JSON. Recibido: ' . gettype($prendasInput),
+                    'errors' => [
+                        'prendas' => ['Tipo incorrecto: ' . gettype($prendasInput) . ', esperado: string'],
+                    ]
+                ], 422);
+            }
+
+            if (strlen($prendasInput) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas está vacío.',
+                    'errors' => [
+                        'prendas' => ['String vacío'],
+                    ]
+                ], 422);
+            }
+            
+            // Usar el string convertido para el resto del método
+            $validated['prendas'] = $prendasInput;
 
             // Decodificar prendas del JSON string
             $prendas = json_decode($validated['prendas'], true);
@@ -2903,18 +2953,26 @@ final class CotizacionController extends Controller
                                 $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
                             }
 
-                            // Crear registro en prenda_cot_reflectivo con variaciones y ubicaciones
+                            // Procesar color, tela y referencia de esta prenda
+                            $colorTelaRef = $prenda['color_tela_ref'] ?? [];
+                            if (is_string($colorTelaRef)) {
+                                $colorTelaRef = json_decode($colorTelaRef, true) ?? [];
+                            }
+
+                            // Crear registro en prenda_cot_reflectivo con variaciones, ubicaciones y color_tela_ref
                             \App\Models\PrendaCotReflectivo::create([
                                 'cotizacion_id' => $cotizacion->id,
                                 'prenda_cot_id' => $prendaCot->id,
                                 'variaciones' => !empty($variacionesDePrenda) ? json_encode($variacionesDePrenda) : json_encode([]),
                                 'ubicaciones' => !empty($ubicacionesDePrenda) ? json_encode($ubicacionesDePrenda) : json_encode([]),
+                                'color_tela_ref' => !empty($colorTelaRef) ? json_encode($colorTelaRef) : json_encode([]),
                             ]);
 
-                            Log::info(' PrendaCotReflectivo creado con variaciones y ubicaciones', [
+                            Log::info(' PrendaCotReflectivo creado con variaciones, ubicaciones y color_tela_ref', [
                                 'prenda_cot_id' => $prendaCot->id,
                                 'variaciones_count' => count($variacionesDePrenda),
                                 'ubicaciones_count' => count($ubicacionesDePrenda),
+                                'color_tela_ref_count' => count($colorTelaRef),
                             ]);
 
                             // 3.  CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
@@ -3008,6 +3066,102 @@ final class CotizacionController extends Controller
                                     'prenda_index' => $prendaIndex,
                                     'todos_los_archivos' => json_encode(array_keys($request->allFiles())),
                                 ]);
+                            }
+
+                            // 5.  PROCESAR IMÁGENES DE TELA DE ESTA PRENDA ESPECÍFICA
+                            // Las imágenes de tela vienen en: prendas[prendaIndex][telas][telaIndex][fotos][]
+                            $allFiles = $request->allFiles();
+                            if (isset($allFiles['prendas']) && is_array($allFiles['prendas']) && isset($allFiles['prendas'][$prendaIndex])) {
+                                $prendaFiles = $allFiles['prendas'][$prendaIndex];
+                                
+                                if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
+                                    Log::info('  Procesando telas de prenda', [
+                                        'prenda_index' => $prendaIndex,
+                                        'telas_count' => count($prendaFiles['telas']),
+                                    ]);
+                                    
+                                    foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                                        // Obtener info de la tela desde color_tela_ref
+                                        $colorTelaRef = $prenda['color_tela_ref'] ?? [];
+                                        $telaInfo = [];
+                                        if (!empty($colorTelaRef)) {
+                                            foreach ($colorTelaRef as $ctRef) {
+                                                if (($ctRef['indice'] ?? null) === (int)$telaIndex) {
+                                                    $telaInfo = $ctRef;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Procesar fotos de tela
+                                        if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
+                                            Log::info('   Encontradas fotos de tela', [
+                                                'prenda_index' => $prendaIndex,
+                                                'tela_index' => $telaIndex,
+                                                'fotos_count' => count($telaData['fotos']),
+                                                'color' => $telaInfo['color'] ?? '',
+                                                'tela' => $telaInfo['tela'] ?? '',
+                                                'referencia' => $telaInfo['referencia'] ?? '',
+                                            ]);
+                                            
+                                            $ordenFoto = 1;
+                                            $numTelaGlobal = $telaIndex + 1; // Enumerar telas desde 1
+                                            
+                                            foreach ($telaData['fotos'] as $archivoFoto) {
+                                                if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
+                                                    try {
+                                                        // Obtener extensión del archivo
+                                                        $extension = $archivoFoto->getClientOriginalExtension();
+                                                        
+                                                        // Crear nombre enumerado: img_tela_1, img_tela_2, etc.
+                                                        $nombreArchivo = "img_tela_{$numTelaGlobal}.{$extension}";
+                                                        
+                                                        // Guardar en storage con nombre enumerado
+                                                        $rutaGuardada = $archivoFoto->storeAs(
+                                                            "cotizaciones/{$cotizacion->id}/telas",
+                                                            $nombreArchivo,
+                                                            'public'
+                                                        );
+                                                        $rutaUrl = \Storage::url($rutaGuardada);
+                                                        
+                                                        // Guardar en tabla prenda_tela_fotos_cot
+                                                        \DB::table('prenda_tela_fotos_cot')->insert([
+                                                            'prenda_cot_id' => $prendaCot->id,
+                                                            'prenda_tela_cot_id' => null,  // Sin relación específica en reflectivo
+                                                            'tela_index' => $telaIndex,
+                                                            'ruta_original' => $rutaUrl,
+                                                            'ruta_webp' => null,
+                                                            'ruta_miniatura' => null,
+                                                            'orden' => $ordenFoto,
+                                                            'ancho' => null,
+                                                            'alto' => null,
+                                                            'tamaño' => $archivoFoto->getSize(),
+                                                            'created_at' => now(),
+                                                            'updated_at' => now(),
+                                                        ]);
+                                                        
+                                                        Log::info('    Foto de tela guardada para reflectivo', [
+                                                            'prenda_id' => $prendaCot->id,
+                                                            'tela_index' => $telaIndex,
+                                                            'nombre_guardado' => $nombreArchivo,
+                                                            'ruta' => $rutaUrl,
+                                                            'referencia' => $telaInfo['referencia'] ?? '',
+                                                            'orden' => $ordenFoto,
+                                                        ]);
+                                                        
+                                                        $ordenFoto++;
+                                                        $numTelaGlobal++; // Incrementar para la siguiente foto
+                                                    } catch (\Exception $e) {
+                                                        Log::error('    Error guardando foto de tela para reflectivo', [
+                                                            'error' => $e->getMessage(),
+                                                            'archivo' => $archivoFoto->getClientOriginalName(),
+                                                        ]);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         } else {
                             Log::warning(' PRENDA NO ES ARRAY', [
