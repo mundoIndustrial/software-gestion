@@ -39,15 +39,18 @@ class VistasController extends Controller
             $title = 'Vista Costura - Pedidos';
             $icon = 'fas fa-shopping-cart';
             
+            // Solo mostrar estos estados
+            $estadosPermitidos = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
+            
             $prendaQuery = \App\Models\PrendaPedido::with([
-                    'pedido',
-                    'color',
-                    'tela',
-                    'tipoManga',
-                    'tipoBrocheBoton'
-                ])
-                ->whereHas('pedido', function($q) {
-                    // Solo prendas de pedidos que existen
+                'pedido',
+                'tallas',
+                'variantes.tipoManga',
+                'variantes.tipoBroche'
+            ])
+                ->whereHas('pedido', function($q) use ($estadosPermitidos) {
+                    // Solo prendas de pedidos con estados permitidos
+                    $q->whereIn('estado', $estadosPermitidos);
                 });
             
             // Aplicar filtro de búsqueda si hay query
@@ -58,9 +61,18 @@ class VistasController extends Controller
                 });
             }
             
-            $registros = $prendaQuery->paginate(50)->appends(['search' => $query]);
+            // Obtener registros sin paginar primero para agrupar
+            $allPrendas = $prendaQuery->get();
             
-            return view('vistas.index', compact('registros', 'title', 'icon', 'tipo', 'query'));
+            // Agrupar por pedido-cliente en el controlador
+            $groupedRegistros = $allPrendas->groupBy(function($prenda) {
+                return ($prenda->pedido->numero_pedido ?? 'P-' . $prenda->pedido->id) . '-' . $prenda->pedido->cliente;
+            });
+            
+            // Crear un objeto collection que simule la paginación
+            $registros = collect();
+            
+            return view('vistas.index', compact('registros', 'groupedRegistros', 'title', 'icon', 'tipo', 'query'));
         }
 
         // Aplicar filtro de búsqueda si hay query (para bodega y corte)
@@ -100,13 +112,13 @@ class VistasController extends Controller
             }
         } else {
             // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos_produccion
-            $registrosQuery = \App\Models\PrendaPedido::with([
-                'pedido',
-                'color',
-                'tela',
-                'tipoManga',
-                'tipoBrocheBoton'
-            ]);
+            // Solo mostrar estos estados
+            $estadosPermitidos = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
+            
+            $registrosQuery = \App\Models\PrendaPedido::with('pedido', 'tallas')
+                ->whereHas('pedido', function($q) use ($estadosPermitidos) {
+                    $q->whereIn('estado', $estadosPermitidos);
+                });
         }
 
         // Aplicar filtro de búsqueda si hay query

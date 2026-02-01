@@ -213,6 +213,10 @@ class EntregaController extends Controller
 
             $entregas = $request->entregas; // array of deliveries
 
+            if (!is_array($entregas)) {
+                return response()->json(['success' => false, 'message' => 'entregas debe ser un array'], 422);
+            }
+
             if ($subtipo === 'costura') {
                 foreach ($entregas as $entrega) {
                     $request->merge($entrega);
@@ -322,6 +326,15 @@ class EntregaController extends Controller
                                 'fecha_completado' => ($cantidadOriginal - $entrega['cantidad_entregada']) == 0 ? now() : null,
                             ]);
                         } else {
+                            // Validar que no se exceda la cantidad original
+                            $totalNuevo = $entregaPrendaPedido->total_producido_por_talla + $entrega['cantidad_entregada'];
+                            if ($totalNuevo > $cantidadOriginal) {
+                                return response()->json([
+                                    'success' => false, 
+                                    'message' => "No se puede entregar más de {$cantidadOriginal} unidades. Ya se han entregado {$entregaPrendaPedido->total_producido_por_talla}. Intenta entregar máximo " . ($cantidadOriginal - $entregaPrendaPedido->total_producido_por_talla) . " unidades más."
+                                ], 422);
+                            }
+                            
                             // Actualizar registro existente en entrega_prenda_pedido
                             $entregaPrendaPedido->costurero = $entrega['costurero'];
                             $entregaPrendaPedido->total_producido_por_talla += $entrega['cantidad_entregada'];
@@ -330,17 +343,26 @@ class EntregaController extends Controller
                         }
 
                         // TAMBIÉN guardar en entrega_pedido_costura (tabla legacy)
-                        $entregaPedidoCostura = \App\Models\EntregaPedidoCostura::create([
-                            'pedido' => $entrega['pedido'],
-                            'cliente' => $entrega['cliente'],
-                            'prenda' => $entrega['prenda'],
-                            'descripcion' => $prendaPedido->descripcion ?? null,
-                            'talla' => $entrega['talla'],
-                            'cantidad_entregada' => $entrega['cantidad_entregada'],
-                            'fecha_entrega' => $entrega['fecha_entrega'],
-                            'costurero' => $entrega['costurero'],
-                            'mes_ano' => $entrega['mes_ano'] ?? null,
-                        ]);
+                        try {
+                            $entregaPedidoCostura = \App\Models\EntregaPedidoCostura::create([
+                                'pedido' => $entrega['pedido'],
+                                'cliente' => $entrega['cliente'],
+                                'prenda' => $entrega['prenda'],
+                                'descripcion' => $prendaPedido->descripcion ?? '',
+                                'talla' => $entrega['talla'] ?? '',
+                                'cantidad_entregada' => $entrega['cantidad_entregada'] ?? 0,
+                                'fecha_entrega' => $entrega['fecha_entrega'],
+                                'costurero' => $entrega['costurero'] ?? '',
+                                'mes_ano' => $entrega['mes_ano'] ?? null,
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Error al guardar en entregas_pedido_costura', [
+                                'error' => $e->getMessage(),
+                                'entrega' => $entrega,
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                            // No fallar la entrega por este error
+                        }
 
                         $nuevaEntrega = $entregaPrendaPedido;
                     } else {
@@ -351,8 +373,23 @@ class EntregaController extends Controller
                             ->where('prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->first();
-                        if ($registro) {
-                            $descripcion = $registro->descripcion ?? null;
+                        if (!$registro) {
+                            return response()->json([
+                                'success' => false, 
+                                'message' => "Registro de producción no encontrado para Pedido {$entrega['pedido']}, Prenda {$entrega['prenda']}, Talla {$entrega['talla']}"
+                            ], 404);
+                        }
+                        
+                        // Validar que no se exceda la cantidad pendiente
+                        if ($registro->total_pendiente_por_talla < $entrega['cantidad_entregada']) {
+                            return response()->json([
+                                'success' => false, 
+                                'message' => "No se puede entregar {$entrega['cantidad_entregada']} unidades. Solo hay {$registro->total_pendiente_por_talla} pendientes por entregar."
+                            ], 422);
+                        }
+                        
+                        if ($registro->descripcion) {
+                            $descripcion = $registro->descripcion;
                         }
                         if ($descripcion !== null) {
                             $entrega['descripcion'] = $descripcion;
@@ -378,8 +415,15 @@ class EntregaController extends Controller
                             ->update(['costurero' => $entrega['costurero']]);
                     }
 
-                    // Broadcast event
-                    broadcast(new EntregaRegistrada($tipo, 'costura', $nuevaEntrega, $entrega['fecha_entrega']));
+                    // Broadcast event (no fallar si hay error)
+                    try {
+                        broadcast(new EntregaRegistrada($tipo, 'costura', $nuevaEntrega, $entrega['fecha_entrega']));
+                    } catch (\Exception $broadcastError) {
+                        \Log::warning('Broadcast error (no crítico)', [
+                            'error' => $broadcastError->getMessage(),
+                            'entrega_id' => $nuevaEntrega->id
+                        ]);
+                    }
 
                     // Log news
                     News::create([
@@ -476,8 +520,15 @@ class EntregaController extends Controller
 
                     $nuevaEntrega = $config['corte']::create($entrega);
 
-                    // Broadcast event
-                    broadcast(new EntregaRegistrada($tipo, 'corte', $nuevaEntrega, $entrega['fecha_entrega']));
+                    // Broadcast event (no fallar si hay error)
+                    try {
+                        broadcast(new EntregaRegistrada($tipo, 'corte', $nuevaEntrega, $entrega['fecha_entrega']));
+                    } catch (\Exception $broadcastError) {
+                        \Log::warning('Broadcast error (no crítico)', [
+                            'error' => $broadcastError->getMessage(),
+                            'entrega_id' => $nuevaEntrega->id
+                        ]);
+                    }
 
                     // Log news
                     News::create([
@@ -492,7 +543,19 @@ class EntregaController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Entregas registradas exitosamente']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error en el servidor: ' . $e->getMessage()], 500);
+            \Log::error('EntregaController::store - Error al registrar entrega', [
+                'tipo' => $tipo ?? 'desconocido',
+                'subtipo' => $subtipo ?? 'desconocido',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error en el servidor: ' . $e->getMessage(),
+                'details' => env('APP_DEBUG') ? $e->getTraceAsString() : null
+            ], 500);
         }
     }
 
@@ -609,9 +672,9 @@ class EntregaController extends Controller
                     // Log news
                     News::create([
                         'event_type' => 'delivery_deleted',
-                        'description' => "Entrega de costura eliminada: Pedido {$entrega->prendaPedido->pedido->numero_pedido}, Prenda {$entrega->prendaPedido->nombre_prenda}, Cantidad {$entrega->total_producido_por_talla}",
+                        'description' => "Entrega de costura eliminada: Pedido {$entrega->prendaPedido->pedidoProduccion->numero_pedido}, Prenda {$entrega->prendaPedido->nombre_prenda}, Cantidad {$entrega->total_producido_por_talla}",
                         'user_id' => auth()->id(),
-                        'pedido' => $entrega->prendaPedido->pedido->numero_pedido,
+                        'pedido' => $entrega->prendaPedido->pedidoProduccion->numero_pedido,
                         'metadata' => ['tipo' => $tipo, 'subtipo' => 'costura', 'cantidad' => $entrega->total_producido_por_talla]
                     ]);
                 } else {

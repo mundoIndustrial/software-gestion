@@ -139,9 +139,17 @@ class RegistroOrdenController extends Controller
                 $changedFields[] = 'fecha_estimada_de_entrega';
             }
             
-            // 🆕 Broadcast eventos con la orden actualizada y los campos reales
-            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
-            \Log::info("Broadcast enviado para pedido {$ordenActualizada->numero_pedido} con campos:", $changedFields);
+            // 🆕 Broadcast eventos con la orden actualizada y los campos reales (con manejo de errores)
+            try {
+                broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
+                \Log::info("✅ Broadcast enviado exitosamente para pedido {$ordenActualizada->numero_pedido}", ['campos' => $changedFields]);
+            } catch (\Exception $e) {
+                \Log::warning("⚠️ Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualización fue exitosa", [
+                    'error' => $e->getMessage(),
+                    'codigo' => $e->getCode()
+                ]);
+                // No re-lanzamos la excepción para que la actualización sea exitosa incluso sin broadcast
+            }
 
             return response()->json($response);
         });
@@ -946,9 +954,17 @@ class RegistroOrdenController extends Controller
                 ]);
             }
 
-            // Broadcast actualización en tiempo real
-            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
-            \Log::info('📡 Evento de broadcast enviado para nueva novedad');
+            // Broadcast actualización en tiempo real (sin bloquear si falla)
+            try {
+                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
+                \Log::info('📡 Evento de broadcast enviado para nueva novedad');
+            } catch (\Exception $e) {
+                \Log::warning('⚠️ Error de broadcast (no crítico)', [
+                    'error' => $e->getMessage(),
+                    'pedido' => $numeroPedido
+                ]);
+                // Continuar de todas formas, no es un error crítico
+            }
 
             return response()->json([
                 'success' => true,

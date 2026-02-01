@@ -672,9 +672,9 @@ class PedidoProduccionRepository
      * Obtener datos para los recibos dinÃ¡micos
      * Formato especÃ­fico para ReceiptManager en receipt-dynamic.blade.php
      */
-    public function obtenerDatosRecibos(int $pedidoId): array
+    public function obtenerDatosRecibos(int $pedidoId, bool $filtrarProcesosPendientes = false): array
     {
-        \Log::info(' [RECIBOS-REPO] obtenerDatosRecibos() llamado con pedidoId: ' . $pedidoId);
+        \Log::info(' [RECIBOS-REPO] obtenerDatosRecibos() llamado con pedidoId: ' . $pedidoId . ', filtrar: ' . ($filtrarProcesosPendientes ? 'SI' : 'NO'));
         
         $pedido = $this->obtenerPorId($pedidoId);
         
@@ -853,8 +853,22 @@ class PedidoProduccionRepository
             \Log::info('[RECIBOS] Tallas cargadas para prenda ' . $prendaIndex, ['tallas' => $tallas]);
 
             // Procesar procesos
+            // ⚠️ CRÍTICO: Si el pedido está en estado PENDIENTE, NO incluir procesos
             $procesos = [];
+            
             foreach ($prenda->procesos as $proc) {
+                // ⚠️ CRÍTICO: Si está configurado para filtrar y el proceso está PENDIENTE, omitir
+                if ($filtrarProcesosPendientes && $proc->estado === 'PENDIENTE') {
+                    \Log::info('[PROCESOS-FILTRADO] Proceso en estado PENDIENTE - Omitiendo (modo: solo /registros)', [
+                        'proceso_id' => $proc->id,
+                        'prenda_id' => $prenda->id,
+                        'tipo_proceso' => $proc->tipoProceso?->nombre ?? 'N/A',
+                        'estado' => $proc->estado,
+                        'filtrar_pendientes' => $filtrarProcesosPendientes
+                    ]);
+                    continue; // Saltar este proceso
+                }
+                
                 // Cargar tallas desde tallas_dama y tallas_caballero
                 $procTallas = [
                     'dama' => [],

@@ -1178,3 +1178,55 @@ require __DIR__.'/auth.php';
 require __DIR__.'/despacho.php';
 
 // ========================================
+
+// ========================================
+// RUTAS WEB PARA ACTIVACIÓN DE RECIBOS (JSON)
+// ========================================
+use Illuminate\Http\Request;
+
+Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', function(Request $request, $procesoId) {
+    try {
+        // Cambiar estado directamente en la tabla
+        $proceso = \DB::table('pedidos_procesos_prenda_detalles')
+            ->where('id', $procesoId)
+            ->first();
+            
+        if (!$proceso) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proceso no encontrado'
+            ], 404);
+        }
+        
+        $activar = $request->input('activar');
+        
+        if ($activar) {
+            \DB::table('pedidos_procesos_prenda_detalles')
+                ->where('id', $procesoId)
+                ->update([
+                    'estado' => 'APROBADO',
+                    'fecha_aprobacion' => now(),
+                    'aprobado_por' => auth()->id()
+                ]);
+        } else {
+            \DB::table('pedidos_procesos_prenda_detalles')
+                ->where('id', $procesoId)
+                ->update([
+                    'estado' => 'PENDIENTE',
+                    'fecha_aprobacion' => null,
+                    'aprobado_por' => null
+                ]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => $activar ? 'Recibo activado correctamente' : 'Recibo desactivado correctamente'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al actualizar estado: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('procesos.activar-recibo-simple');

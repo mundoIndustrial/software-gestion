@@ -302,5 +302,29 @@
             cerrarModalRecibosIntermedio();
         }
     });
+
+    /**
+     * Event listener para clicks en elementos .proceso-nombre
+     * Permite que al hacer click en la descripción del proceso se abra el recibo
+     * Sin necesidad de hacer click en toda la fila
+     */
+    document.addEventListener('click', function(e) {
+        // Detectar si se hizo click en un elemento .proceso-nombre o sus hijos
+        const procesoNombre = e.target.closest('.proceso-nombre');
+        if (procesoNombre) {
+            console.log('[PROCESO-NOMBRE-CLICK-INTERMEDIO] Click detectado en .proceso-nombre');
+            
+            // Encontrar el elemento padre .proceso-item
+            const procesoItem = procesoNombre.closest('.proceso-item');
+            if (procesoItem) {
+                console.log('[PROCESO-NOMBRE-CLICK-INTERMEDIO] .proceso-item encontrado, propagando click');
+                
+                // Simular el click en el padre para ejecutar su onclick
+                procesoItem.click();
+            } else {
+                console.warn('[PROCESO-NOMBRE-CLICK-INTERMEDIO] .proceso-item no encontrado como padre');
+            }
+        }
+    }, true); // Usar capture phase para mayor prioridad
 </script>
 

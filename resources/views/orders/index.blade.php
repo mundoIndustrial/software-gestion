@@ -236,10 +236,35 @@
                                     </div>
                                 </div>
                                 
+                                @php
+                                    // Preparar datos completos de prendas para el modal formateado
+                                    $prendasParaModal = [];
+                                    if ($orden->prendas && $orden->prendas->count() > 0) {
+                                        foreach ($orden->prendas as $prenda) {
+                                            $prendasParaModal[] = [
+                                                'id' => $prenda->id,
+                                                'nombre' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
+                                                'nombre_prenda' => $prenda->nombre_prenda ?? $prenda->nombre ?? 'Prenda',
+                                                'numero' => $prenda->numero_prenda ?? $prenda->numero ?? null,
+                                                'tela' => $prenda->tela ?? '',
+                                                'color' => $prenda->color ?? '',
+                                                'manga' => $prenda->manga ?? '',
+                                                'ref' => $prenda->referencia ?? $prenda->ref ?? '',
+                                                'broche' => $prenda->broche ?? '',
+                                                'genero' => $prenda->genero ?? 'DAMA',
+                                                'descripcion' => $prenda->descripcion ?? '',
+                                                'tallas' => $prenda->tallas ? $prenda->tallas->toArray() : [],
+                                                'procesos' => $prenda->procesos ? $prenda->procesos->toArray() : [],
+                                                'variantes' => $prenda->variantes ? $prenda->variantes->toArray() : [],
+                                            ];
+                                        }
+                                    }
+                                @endphp
+
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
-                                    <div class="cell-content" style="justify-content: flex-start;">
-                                        <span style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
+                                    <div class="cell-content" style="justify-content: flex-start; cursor: pointer;" onclick="console.log('[ONCLICK TABLE CELL] 📌 Click en descripción'); abrirModalCeldaConFormato('Descripción', {{ json_encode($prendasParaModal) }})">
+                                        <span style="color: #6b7280; font-size: 0.875rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Click para ver completo">
                                             @php
                                                 if ($orden->prendas && $orden->prendas->count() > 0) {
                                                     $prendasInfo = $orden->prendas->map(function($prenda) {
@@ -465,11 +490,404 @@
         });
 
         // ==================== MODAL DE CELDA ====================
+        /**
+         * Abre modal con descripción formateada como recibo de costura
+         * @param {string} titulo - Título del modal
+         * @param {Array} prendas - Array de objetos prenda con todos los datos
+         */
+        function abrirModalCeldaConFormato(titulo, prendas) {
+            console.log('[abrirModalCeldaConFormato] 📋 INICIO - Datos recibidos:');
+            console.log('[abrirModalCeldaConFormato] Título:', titulo);
+            console.log('[abrirModalCeldaConFormato] Prendas tipo:', typeof prendas);
+            console.log('[abrirModalCeldaConFormato] Prendas es array:', Array.isArray(prendas));
+            console.log('[abrirModalCeldaConFormato] Prendas cantidad:', prendas ? prendas.length : 0);
+            console.log('[abrirModalCeldaConFormato] Prendas RAW:', prendas);
+            
+            let htmlContenido = '';
+            
+            if (!prendas || prendas.length === 0) {
+                htmlContenido = '<div style="text-align: center; color: #9ca3af;">No hay prendas disponibles</div>';
+            } else {
+                prendas.forEach((prenda, idx) => {
+                    console.log(`[abrirModalCeldaConFormato] ⚡ Procesando prenda ${idx}:`, prenda);
+                    
+                    // Convertir objeto Eloquent a objeto simple si es necesario
+                    let prendaData = prenda.toJSON ? prenda.toJSON() : prenda;
+                    console.log(`[abrirModalCeldaConFormato] ✅ Después toJSON:`, prendaData);
+                    
+                    // NORMALIZAR datos: convertir objetos a strings
+                    prendaData = normalizarPrendaData(prendaData);
+                    console.log(`[abrirModalCeldaConFormato] ✅ Después normalizar:`, prendaData);
+                    console.log(`[abrirModalCeldaConFormato] Campos principales: nombre="${prendaData.nombre_prenda}", tela="${prendaData.tela}", color="${prendaData.color}", manga="${prendaData.manga}"`);
+                    
+                    // Generar HTML formateado como en el recibo
+                    let prendaHtml = '';
+                    try {
+                        // Intentar usar Formatters si está disponible
+                        if (window.Formatters && typeof window.Formatters.construirDescripcionCostura === 'function') {
+                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando window.Formatters.construirDescripcionCostura`);
+                            prendaHtml = window.Formatters.construirDescripcionCostura(prendaData);
+                        } else if (typeof Formatters !== 'undefined' && typeof Formatters.construirDescripcionCostura === 'function') {
+                            console.log(`[abrirModalCeldaConFormato] 🎯 Usando Formatters.construirDescripcionCostura (module)`);
+                            prendaHtml = Formatters.construirDescripcionCostura(prendaData);
+                        } else {
+                            // Fallback si Formatters no disponible - generar HTML simple
+                            console.log(`[abrirModalCeldaConFormato] ⚠️ Formatters no disponible, usando fallback`);
+                            prendaHtml = generarDescripcionSimple(prendaData);
+                        }
+                    } catch (e) {
+                        console.error('[abrirModalCeldaConFormato] ❌ Error al formatear prenda:', e);
+                        console.error('[abrirModalCeldaConFormato] Stack:', e.stack);
+                        prendaHtml = generarDescripcionSimple(prendaData);
+                    }
+                    
+                    console.log(`[abrirModalCeldaConFormato] 📄 HTML generado:`, prendaHtml);
+                    
+                    htmlContenido += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        ${prendaHtml}
+                    </div>`;
+                });
+            }
+            
+            console.log('[abrirModalCeldaConFormato] ✅ HTML FINAL A MOSTRAR:', htmlContenido);
+            mostrarModalCeldaFormateado(titulo, htmlContenido);
+        }
+        
+        /**
+         * Genera descripción formateada sin Formatters (fallback)
+         */
+        function generarDescripcionSimple(prenda) {
+            console.log('[generarDescripcionSimple] 🎨 INPUT:', prenda);
+            let html = '';
+            
+            // Título
+            if (prenda.nombre_prenda) {
+                html += `<strong style="font-size: 13.4px;">PRENDA: ${prenda.nombre_prenda.toUpperCase()}</strong><br>`;
+                console.log('[generarDescripcionSimple] ✅ Nombre agregado');
+            }
+            
+            // Atributos básicos
+            if (prenda.tela || prenda.color || prenda.manga) {
+                let attrs = [];
+                if (prenda.tela) {
+                    attrs.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+                    console.log('[generarDescripcionSimple] ✅ Tela:', prenda.tela);
+                }
+                if (prenda.color) {
+                    attrs.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+                    console.log('[generarDescripcionSimple] ✅ Color:', prenda.color);
+                }
+                if (prenda.manga) {
+                    attrs.push(`<strong>MANGA:</strong> ${prenda.manga.toUpperCase()}`);
+                    console.log('[generarDescripcionSimple] ✅ Manga:', prenda.manga);
+                }
+                html += attrs.join(' | ') + '<br>';
+            }
+            
+            // Broche si existe
+            if (prenda.broche) {
+                html += `<strong>BROCHE:</strong> ${prenda.broche}<br>`;
+                console.log('[generarDescripcionSimple] ✅ Broche:', prenda.broche);
+            }
+            
+            // Descripción - Limpiar basura del inicio
+            if (prenda.descripcion) {
+                console.log('[generarDescripcionSimple] 📝 Descripción RAW:', prenda.descripcion);
+                let desc = String(prenda.descripcion);
+                // Limpiar líneas de basura del inicio (DSFSDFS, etc)
+                desc = desc.split('\n').filter(linea => {
+                    const trimmed = linea.trim();
+                    // Saltar líneas basura
+                    if (!trimmed) return false;
+                    if (trimmed.match(/^[A-Z]{5,}[A-Z\s]{0,10}$/i) && 
+                        !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE)/i)) {
+                        console.log('[generarDescripcionSimple] 🚫 Línea basura filtrada:', trimmed);
+                        return false;
+                    }
+                    return true;
+                }).join('\n');
+                
+                if (desc.trim()) {
+                    html += desc + '<br>';
+                    console.log('[generarDescripcionSimple] ✅ Descripción agregada (después de limpiar)');
+                }
+            }
+            
+            // Tallas
+            if (prenda.tallas && prenda.tallas.length > 0) {
+                console.log('[generarDescripcionSimple] 📊 Tallas encontradas:', prenda.tallas);
+                html += `<strong>TALLAS</strong><br>`;
+                const tallasPorGenero = {};
+                prenda.tallas.forEach(t => {
+                    const genero = String(t.genero || 'DAMA').toUpperCase();
+                    if (!tallasPorGenero[genero]) {
+                        tallasPorGenero[genero] = [];
+                    }
+                    tallasPorGenero[genero].push(`${t.talla}: <span style="color: red;"><strong>${t.cantidad}</strong></span>`);
+                });
+                
+                for (let genero in tallasPorGenero) {
+                    html += `${genero}: ${tallasPorGenero[genero].join(', ')}<br>`;
+                    console.log('[generarDescripcionSimple] ✅ Tallas por género - ' + genero);
+                }
+            } else {
+                console.log('[generarDescripcionSimple] ⚠️ No hay tallas');
+            }
+            
+            console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
+            return html;
+        }
+        
+        /**
+         * Normaliza los datos de la prenda para asegurar que sean valores primitivos
+         * Convierte objetos en strings
+         */
+        function normalizarPrendaData(prenda) {
+            if (!prenda) return prenda;
+            
+            console.log('[normalizarPrendaData] INPUT - Prenda original:', prenda);
+            
+            const normalizado = { ...prenda };
+            
+            // Lista ampliada de campos que deben ser strings
+            const stringsFields = [
+                'nombre', 'nombre_prenda', 'tela', 'color', 'manga', 'ref', 'referencia',
+                'descripcion', 'genero', 'broche', 'numero', 'numero_prenda'
+            ];
+            
+            for (let field of stringsFields) {
+                if (normalizado[field]) {
+                    console.log(`[normalizarPrendaData] Campo "${field}": tipo=${typeof normalizado[field]}, valor=`, normalizado[field]);
+                    // Si es un objeto con propiedad 'nombre', extraer el valor
+                    if (typeof normalizado[field] === 'object' && normalizado[field] !== null) {
+                        normalizado[field] = normalizado[field].nombre || normalizado[field].name || String(normalizado[field]);
+                        console.log(`[normalizarPrendaData]   → Convertido a: "${normalizado[field]}"`);
+                    } else if (normalizado[field] !== null && normalizado[field] !== undefined) {
+                        normalizado[field] = String(normalizado[field]).trim();
+                    }
+                }
+            }
+            
+            // Asegurar que genero tenga un valor por defecto
+            if (!normalizado.genero || normalizado.genero === '') {
+                normalizado.genero = 'DAMA';
+            }
+            
+            // Normalizar tallas (puede ser array de objetos o array de strings)
+            if (normalizado.tallas && Array.isArray(normalizado.tallas)) {
+                console.log('[normalizarPrendaData] Tallas detectadas:', normalizado.tallas.length);
+                normalizado.tallas = normalizado.tallas.map(t => {
+                    if (typeof t === 'object' && t !== null) {
+                        return {
+                            genero: String(t.genero || '').toUpperCase(),
+                            talla: String(t.talla || ''),
+                            cantidad: parseInt(t.cantidad) || 0
+                        };
+                    }
+                    return t;
+                });
+            } else {
+                normalizado.tallas = [];
+            }
+            
+            // Normalizar procesos si existen
+            if (normalizado.procesos && Array.isArray(normalizado.procesos)) {
+                console.log('[normalizarPrendaData] Procesos detectados:', normalizado.procesos.length);
+                normalizado.procesos = normalizado.procesos.map(p => {
+                    if (typeof p === 'object' && p !== null) {
+                        return {
+                            tipo_proceso: String(p.tipo_proceso || p.nombre_proceso || ''),
+                            nombre_proceso: String(p.nombre_proceso || p.tipo_proceso || ''),
+                            descripcion: p.descripcion ? String(p.descripcion) : '',
+                            ...p
+                        };
+                    }
+                    return p;
+                });
+            } else {
+                normalizado.procesos = [];
+            }
+            
+            // Normalizar variantes si existen
+            if (normalizado.variantes && Array.isArray(normalizado.variantes)) {
+                console.log('[normalizarPrendaData] Variantes detectadas:', normalizado.variantes.length);
+                normalizado.variantes = normalizado.variantes.map(v => {
+                    if (typeof v === 'object' && v !== null) {
+                        return {
+                            nombre: String(v.nombre || v.nombre_variante || ''),
+                            descripcion: v.descripcion ? String(v.descripcion) : '',
+                            ...v
+                        };
+                    }
+                    return v;
+                });
+            } else {
+                normalizado.variantes = [];
+            }
+            
+            console.log('[normalizarPrendaData] OUTPUT - Prenda normalizada:', normalizado);
+            return normalizado;
+        }
+        
+        
+        /**
+         * Muestra el modal con HTML formateado
+         */
+        function mostrarModalCeldaFormateado(titulo, htmlContenido) {
+            console.log('[mostrarModalCeldaFormateado] 🔓 Abriendo modal');
+            console.log('[mostrarModalCeldaFormateado] Título:', titulo);
+            console.log('[mostrarModalCeldaFormateado] HTML contenido (primeros 500 chars):', htmlContenido.substring(0, 500));
+            
+            const modalHTML = `
+                <div id="celdaModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    animation: fadeIn 0.3s ease;
+                " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
+                    <div style="
+                        background: white;
+                        border-radius: 12px;
+                        padding: 2rem;
+                        max-width: 600px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        animation: slideIn 0.3s ease;
+                    " onclick="event.stopPropagation()">
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 1.5rem;
+                            border-bottom: 2px solid #e5e7eb;
+                            padding-bottom: 1rem;
+                        ">
+                            <h2 style="
+                                margin: 0;
+                                font-size: 1.25rem;
+                                font-weight: 700;
+                                color: #1f2937;
+                            ">${titulo}</h2>
+                            <button onclick="cerrarModalCelda()" style="
+                                background: none;
+                                border: none;
+                                font-size: 1.5rem;
+                                cursor: pointer;
+                                color: #6b7280;
+                                padding: 0;
+                                width: 32px;
+                                height: 32px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border-radius: 6px;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
+                                ✕
+                            </button>
+                        </div>
+                        <div style="
+                            color: #374151;
+                            font-size: 0.95rem;
+                            line-height: 1.8;
+                        ">
+                            ${htmlContenido}
+                        </div>
+                        <div style="
+                            margin-top: 1.5rem;
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: 0.75rem;
+                        ">
+                            <button onclick="cerrarModalCelda()" style="
+                                background: white;
+                                border: 2px solid #d1d5db;
+                                color: #374151;
+                                padding: 0.625rem 1.25rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 0.875rem;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            document.addEventListener('keydown', function cerrarConEsc(event) {
+                if (event.key === 'Escape') {
+                    cerrarModalCelda();
+                    document.removeEventListener('keydown', cerrarConEsc);
+                }
+            });
+        }
+        
         function abrirModalCelda(titulo, contenido) {
             let contenidoLimpio = contenido || '-';
             
+            // Limpiar caracteres especiales
             contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
             contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
+            
+            // PASO 1: Dividir por líneas y filtrar basura
+            let lineasOriginales = contenidoLimpio.split('\n');
+            let lineasLimpias = [];
+            let lineasTallasVistas = {};
+            
+            for (let linea of lineasOriginales) {
+                const trimmed = linea.trim();
+                
+                // Saltar líneas vacías
+                if (!trimmed) {
+                    lineasLimpias.push(''); // Mantener saltos para estructura
+                    continue;
+                }
+                
+                // DETECTAR Y ELIMINAR TEXTO BASURA
+                // Patrones de basura: palabras sin estructura, sin espacios útiles
+                if (trimmed.match(/^[A-Z]{4,}[A-Z\s]{0,10}$/i) && 
+                    !trimmed.match(/^(PRENDA|TALLA|TELAS?|COLORES?|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|DAMA|HOMBRE|NIÑO|REF|CANTIDAD|DEMAS|LARGA|CORTA|MEDIA|SESGO|BLANCO|NEGRO|ROJO|AZUL)/i)) {
+                    continue; // Saltar basura
+                }
+                
+                // Eliminar líneas que contienen solo caracteres extraños sin sentido
+                if (trimmed.match(/^[A-Z\s]{3,}[A-Z0-9\s]*$/i) && trimmed.length < 20 && 
+                    !trimmed.match(/:\s/) && // No tiene dos puntos (estructura)
+                    !trimmed.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|CREMALLERA|DESCRIPCIÓN|•|-)/i)) {
+                    // Verificar si es realmente basura (sin vocales válidas)
+                    const vocales = (trimmed.match(/[AEIOU]/gi) || []).length;
+                    if (vocales < 2) {
+                        continue; // Probablemente basura
+                    }
+                }
+                
+                // ELIMINAR DUPLICIDAD DE TALLAS
+                if (trimmed.match(/^Talla[s]?:/i)) {
+                    const normalizado = trimmed.toLowerCase().replace(/talla[s]?:\s*/i, '').trim();
+                    if (lineasTallasVistas[normalizado]) {
+                        continue; // Duplicado
+                    }
+                    lineasTallasVistas[normalizado] = true;
+                }
+                
+                lineasLimpias.push(linea);
+            }
+            
+            contenidoLimpio = lineasLimpias.join('\n');
             
             let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
             
@@ -496,7 +914,7 @@
                     else if (linea.startsWith('•') || linea.startsWith('-')) {
                         htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
                     }
-                    else if (linea.match(/^Tallas:/i)) {
+                    else if (linea.match(/^Talla[s]?:/i)) {
                         htmlContenido += `<div style="margin-top: 0.5rem; margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
                     }
                     else if (linea) {

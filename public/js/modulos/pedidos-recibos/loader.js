@@ -8,6 +8,7 @@
  */
 
 import { PedidosRecibosModule } from './PedidosRecibosModule.js';
+import { Formatters } from './utils/Formatters.js';
 
 // Inicializar módulo
 const module = new PedidosRecibosModule();
@@ -15,6 +16,7 @@ const module = new PedidosRecibosModule();
 // Exponer en window para compatibilidad
 window.PedidosRecibosModule = PedidosRecibosModule;
 window.pedidosRecibosModule = module;
+window.Formatters = Formatters; // ← AGREGAR FORMATTERS AL WINDOW
 
 // Exponer API pública compatibilidad con código antiguo
 window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {

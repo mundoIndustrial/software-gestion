@@ -105,7 +105,7 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
 });
 
 // Rutas de procesos (DDD)
-Route::middleware('api')->prefix('procesos')->name('procesos.')->group(function () {
+Route::middleware('auth')->prefix('procesos')->name('procesos.')->group(function () {
     // Obtener tipos de procesos disponibles
     Route::get('tipos', [ProcesosController::class, 'tipos'])
             ->name('tipos');
@@ -134,6 +134,10 @@ Route::middleware('api')->prefix('procesos')->name('procesos.')->group(function 
             Route::post('rechazar', [ProcesosController::class, 'rechazar'])
                 ->name('rechazar');
 
+            // Activar/Desactivar recibo
+            Route::post('activar-recibo', [ProcesosController::class, 'activarRecibo'])
+                ->name('activar-recibo');
+
             // Gestión de imágenes
             Route::prefix('imagenes')->name('imagenes.')->group(function () {
                 Route::get('/', [ProcesosController::class, 'obtenerImagenes'])
@@ -149,6 +153,12 @@ Route::middleware('api')->prefix('procesos')->name('procesos.')->group(function 
                     ->name('eliminar');
             });
         });
+});
+
+// Ruta específica para activar recibos - con middleware api
+Route::middleware(['api'])->prefix('api/procesos')->group(function () {
+    Route::post('{procesoId}/activar-recibo', [ProcesosController::class, 'activarRecibo'])
+        ->name('procesos.activar-recibo');
 });
 
 // Gestión de imágenes de EPP

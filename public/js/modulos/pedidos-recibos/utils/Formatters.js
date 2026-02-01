@@ -9,6 +9,30 @@ export class Formatters {
      * Formato especializado para recibos de costura
      */
     static construirDescripcionCostura(prenda) {
+        console.log('[Formatters.construirDescripcionCostura] 🎯 INPUT recibido:', prenda);
+        console.log('[Formatters.construirDescripcionCostura] nombre:', prenda?.nombre);
+        console.log('[Formatters.construirDescripcionCostura] tela:', prenda?.tela);
+        console.log('[Formatters.construirDescripcionCostura] color:', prenda?.color);
+        console.log('[Formatters.construirDescripcionCostura] manga:', prenda?.manga);
+        console.log('[Formatters.construirDescripcionCostura] descripcion:', prenda?.descripcion);
+        console.log('[Formatters.construirDescripcionCostura] variantes:', prenda?.variantes);
+        console.log('[Formatters.construirDescripcionCostura] tallas:', prenda?.tallas);
+
+        // ⭐ DEBUG: Información detallada de variantes
+        if (prenda.variantes && Array.isArray(prenda.variantes)) {
+            console.log('[Formatters] 📦 Variantes cantidad:', prenda.variantes.length);
+            prenda.variantes.forEach((v, idx) => {
+                console.log(`[Formatters] 📦 Variante ${idx}:`, v);
+                console.log(`[Formatters] 📦 Variante ${idx} - manga:`, v.manga);
+                console.log(`[Formatters] 📦 Variante ${idx} - manga_obs:`, v.manga_obs);
+                console.log(`[Formatters] 📦 Variante ${idx} - bolsillos_obs:`, v.bolsillos_obs);
+                console.log(`[Formatters] 📦 Variante ${idx} - broche_obs:`, v.broche_obs);
+                console.log(`[Formatters] 📦 Variante ${idx} - broche:`, v.broche);
+                console.log(`[Formatters] 📦 Variante ${idx} - boton_obs:`, v.boton_obs);
+                // 🎯 DEBUG: Mostrar todos los campos disponibles
+                console.log(`[Formatters] 🔑 Todas las claves en Variante ${idx}:`, Object.keys(v));
+            });
+        }
 
         
         const lineas = [];
@@ -26,41 +50,86 @@ export class Formatters {
         if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
         
         // Manga desde variantes
+        console.log('[Formatters] 🔍 Buscando manga en variantes...');
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const primerVariante = prenda.variantes[0];
-            if (primerVariante.manga) {
-                let mangaTexto = primerVariante.manga.toUpperCase();
-                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
-                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
-                }
+            console.log('[Formatters] 🔍 Primer variante:', primerVariante);
+            console.log('[Formatters] 🔍 manga en variante:', primerVariante.manga);
+            console.log('[Formatters] 🔍 manga_obs en variante:', primerVariante.manga_obs);
+            
+            // Intentar primero manga, luego manga_obs
+            let mangaTexto = primerVariante.manga || primerVariante.manga_obs;
+            
+            if (mangaTexto) {
+                mangaTexto = mangaTexto.toUpperCase();
                 partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+                console.log('[Formatters] ✅ MANGA agregado:', mangaTexto);
+            } else {
+                console.log('[Formatters] ⚠️ No hay manga en variante');
             }
+        } else {
+            console.log('[Formatters] ⚠️ No hay variantes');
         }
         
         if (partes.length > 0) {
             lineas.push(partes.join(' | '));
         }
 
-        // 3. Descripción base
+        // 3. Descripción base - Limpiar basura
         if (prenda.descripcion && prenda.descripcion.trim()) {
-            lineas.push(prenda.descripcion.toUpperCase());
+            let desc = prenda.descripcion.toUpperCase().trim();
+            
+            // Filtrar líneas de basura: solo texto aleatorio de 5+ letras sin espacios
+            desc = desc.split('\n')
+                .map(linea => linea.trim())
+                .filter(linea => {
+                    if (!linea) return false;
+                    // Si es solo DSFSDFS o similar (5+ letras sin espacios, sin palabras conocidas)
+                    if (linea.match(/^[A-Z]{5,}$/) && !linea.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|BROCHE|CREMALLERA|DAMA|HOMBRE)/)) {
+                        console.log('[Formatters] 🚫 Filtrando línea basura:', linea);
+                        return false;
+                    }
+                    return true;
+                })
+                .join('\n');
+            
+            if (desc.trim()) {
+                lineas.push(desc);
+                console.log('[Formatters] ✅ Descripción agregada (después de limpiar)');
+            }
         }
 
         // 4. Detalles técnicos
         const detalles = [];
+        console.log('[Formatters] 🔍 Buscando detalles en variantes...');
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const primerVariante = prenda.variantes[0];
+            console.log('[Formatters] 🔍 Detalles disponibles en variante:', {
+                bolsillos_obs: primerVariante.bolsillos_obs,
+                broche_boton_obs: primerVariante.broche_boton_obs,
+                tipo_broche_boton_id: primerVariante.tipo_broche_boton_id
+            });
             
             if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
                 detalles.push(`• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
+                console.log('[Formatters] ✅ BOLSILLOS agregados');
             }
             
-            if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
+            // Buscar BROCHE/BOTÓN en broche_boton_obs
+            if (primerVariante.broche_boton_obs && primerVariante.broche_boton_obs.trim()) {
                 let etiqueta = 'BROCHE/BOTÓN';
-                if (primerVariante.broche) {
-                    etiqueta = primerVariante.broche.toUpperCase();
+                // Si hay tipo_broche_boton_id, podemos inferir mejor la etiqueta
+                // tipo_broche_boton_id = 1 suele ser broche, 2 botón, etc.
+                if (primerVariante.tipo_broche_boton_id === 1) {
+                    etiqueta = 'BROCHE';
+                } else if (primerVariante.tipo_broche_boton_id === 2) {
+                    etiqueta = 'BOTÓN';
                 }
-                detalles.push(`• <strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}`);
+                
+                detalles.push(`• <strong>${etiqueta}:</strong> ${primerVariante.broche_boton_obs.toUpperCase()}`);
+                console.log('[Formatters] ✅ BROCHE/BOTÓN agregado:', etiqueta);
+            } else {
+                console.log('[Formatters] ⚠️ No hay broche_boton_obs');
             }
         }
         
@@ -71,13 +140,37 @@ export class Formatters {
         }
 
         // 5. Tallas
-        if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
-            lineas.push('');
-            lineas.push('<strong>TALLAS</strong>');
-            this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);
+        console.log('[Formatters] 🔍 Procesando tallas...');
+        console.log('[Formatters] 🔍 Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
+        
+        if (prenda.tallas) {
+            let tienesTallas = false;
+            
+            // Si es array, contar elementos
+            if (Array.isArray(prenda.tallas)) {
+                tienesTallas = prenda.tallas.length > 0;
+                console.log('[Formatters] 📊 Tallas es ARRAY con', prenda.tallas.length, 'elementos');
+            } else {
+                tienesTallas = Object.keys(prenda.tallas).length > 0;
+                console.log('[Formatters] 📊 Tallas es OBJETO con', Object.keys(prenda.tallas).length, 'claves');
+            }
+            
+            if (tienesTallas) {
+                console.log('[Formatters] ✅ Tallas encontradas');
+                lineas.push('');
+                lineas.push('<strong>TALLAS</strong>');
+                this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);
+            } else {
+                console.log('[Formatters] ⚠️ No hay tallas (vacío)');
+            }
+        } else {
+            console.log('[Formatters] ⚠️ No hay tallas (undefined/null)');
         }
 
-        return lineas.join('<br>') || '<em>Sin información</em>';
+        const resultado = lineas.join('<br>') || '<em>Sin información</em>';
+        console.log('[Formatters.construirDescripcionCostura] 📄 OUTPUT completo:', resultado);
+        console.log('[Formatters.construirDescripcionCostura] 📄 Cantidad de líneas:', lineas.length);
+        return resultado;
     }
 
     /**
@@ -146,39 +239,69 @@ export class Formatters {
      * Agregar tallas al formato de forma reutilizable
      */
     static _agregarTallasFormato(lineas, tallas, generoDefault = 'dama') {
+        console.log('[Formatters._agregarTallasFormato] 🎯 INPUT:', { tallas, generoDefault });
+        console.log('[Formatters._agregarTallasFormato] 🎯 Tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
+        
         const tallasDama = {};
         const tallasCalballero = {};
         
-        // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
-        Object.entries(tallas).forEach(([key, value]) => {
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                const genero = key.toLowerCase();
-                Object.entries(value).forEach(([talla, cantidad]) => {
+        // Si es array, convertir a estructura procesable
+        if (Array.isArray(tallas)) {
+            console.log('[Formatters._agregarTallasFormato] 🔄 Convirtiendo array a objeto...');
+            tallas.forEach((item, idx) => {
+                console.log(`[Formatters._agregarTallasFormato] Array[${idx}]:`, item);
+                
+                if (typeof item === 'object' && item !== null) {
+                    const genero = String(item.genero || generoDefault).toLowerCase();
+                    const talla = item.talla || '';
+                    const cantidad = item.cantidad || 0;
+                    
+                    console.log(`[Formatters._agregarTallasFormato]   → genero=${genero}, talla=${talla}, cantidad=${cantidad}`);
+                    
                     if (genero === 'dama') {
                         tallasDama[talla] = cantidad;
                     } else if (genero === 'caballero') {
                         tallasCalballero[talla] = cantidad;
                     }
-                });
-            } 
-            else if (typeof value === 'number' || typeof value === 'string') {
-                if (key.includes('-')) {
-                    const [genero, talla] = key.split('-');
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[talla] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[talla] = value;
-                    }
-                } else {
-                    const genero = generoDefault || 'dama';
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[key] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[key] = value;
+                }
+            });
+        } else {
+            // Procesar como objeto normal
+            console.log('[Formatters._agregarTallasFormato] 🔄 Procesando como objeto...');
+            Object.entries(tallas).forEach(([key, value]) => {
+                console.log(`[Formatters._agregarTallasFormato] 🔍 Procesando: key=${key}, value=${value}, type=${typeof value}`);
+                
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    const genero = key.toLowerCase();
+                    Object.entries(value).forEach(([talla, cantidad]) => {
+                        if (genero === 'dama') {
+                            tallasDama[talla] = cantidad;
+                        } else if (genero === 'caballero') {
+                            tallasCalballero[talla] = cantidad;
+                        }
+                    });
+                } 
+                else if (typeof value === 'number' || typeof value === 'string') {
+                    if (key.includes('-')) {
+                        const [genero, talla] = key.split('-');
+                        if (genero.toLowerCase() === 'dama') {
+                            tallasDama[talla] = value;
+                        } else if (genero.toLowerCase() === 'caballero') {
+                            tallasCalballero[talla] = value;
+                        }
+                    } else {
+                        const genero = generoDefault || 'dama';
+                        if (genero.toLowerCase() === 'dama') {
+                            tallasDama[key] = value;
+                        } else if (genero.toLowerCase() === 'caballero') {
+                            tallasCalballero[key] = value;
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+        
+        console.log('[Formatters._agregarTallasFormato] 📊 Resultado final:', { tallasDama, tallasCalballero });
         
         // Renderizar DAMA
         if (Object.keys(tallasDama).length > 0) {
@@ -186,6 +309,7 @@ export class Formatters {
                 .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
                 .join(', ');
             lineas.push(`DAMA: ${tallasStr}`);
+            console.log('[Formatters._agregarTallasFormato] ✅ DAMA agregado');
         }
         
         // Renderizar CABALLERO
@@ -194,7 +318,10 @@ export class Formatters {
                 .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
                 .join(', ');
             lineas.push(`CABALLERO: ${tallasStr}`);
+            console.log('[Formatters._agregarTallasFormato] ✅ CABALLERO agregado');
         }
+        
+        console.log('[Formatters._agregarTallasFormato] 📄 Lineas después:', lineas);
     }
 
     /**

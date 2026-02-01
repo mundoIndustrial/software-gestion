@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
     <link rel="stylesheet" href="{{ asset('css/vista-costura.css') }}">
 
     <div class="costura-container">
@@ -34,7 +36,15 @@
         </div>
 
         <div id="results-container">
-        @if($registros->isEmpty())
+        @php
+            $isEmpty = false;
+            if ($tipo === 'pedidos') {
+                $isEmpty = $groupedRegistros->isEmpty();
+            } else {
+                $isEmpty = $registros->isEmpty();
+            }
+        @endphp
+        @if($isEmpty)
                 <div class="no-data">
                     <h3>No hay registros disponibles</h3>
                     <p>No se encontraron registros para mostrar.</p>
@@ -94,20 +104,6 @@
                     </div>
                 @else
                     <div class="cards-container">
-                        @php
-                            // Para Costura - Pedidos: agrupar prendas_pedido por pedido
-                            if ($tipo === 'pedidos') {
-                                $groupedRegistros = $registros->groupBy(function($prenda) {
-                                    return ($prenda->pedido->numero_pedido ?? 'P-' . $prenda->pedido->id) . '-' . $prenda->pedido->cliente;
-                                });
-                            } else {
-                                // Para Costura - Bodega: agrupar por pedido-cliente
-                                $groupedRegistros = $registros->groupBy(function($item) {
-                                    return $item->pedido . '-' . $item->cliente;
-                                });
-                            }
-                        @endphp
-
                         @foreach($groupedRegistros as $groupKey => $groupRegistros)
                             @php
                                 $pedidoCliente = explode('-', $groupKey);
@@ -162,6 +158,15 @@
                                                     @if($tallaRecords && count($tallaRecords) > 0)
                                                         @foreach($tallaRecords as $tallaRecord)
                                                             @php
+                                                                // Build cantidadTalla object for this prenda
+                                                                $cantidadTalla = [];
+                                                                foreach($tallaRecords as $t) {
+                                                                    $cantidadTalla[$t->talla] = $t->cantidad;
+                                                                }
+                                                                
+                                                                // Obtener primera variante
+                                                                $primerVariante = $registro->variantes && count($registro->variantes) > 0 ? $registro->variantes[0] : null;
+                                                                
                                                                 // Buscar entrega_prenda_pedido relacionada
                                                                 $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $registro->pedido->numero_pedido ?? 'P-' . $registro->pedido->id)
                                                                     ->where('nombre_prenda', $registro->nombre_prenda)
@@ -173,25 +178,27 @@
                                                                 $totalPendiente = $entrega ? $entrega->total_pendiente_por_talla : '-';
                                                                 $fechaCompletado = $entrega && $entrega->fecha_completado ? $entrega->fecha_completado->format('d/m/Y') : '-';
                                                             @endphp
-                                                            <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}" data-talla="{{ $talla }}">
+                                                            <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}" data-talla="{{ $tallaRecord->talla }}">
                                                                 <td class="prenda-cell cell-clickable" data-content="{{ $registro->nombre_prenda ?: '-' }}">{{ $registro->nombre_prenda ?: '-' }}</td>
                                                                 <td class="descripcion-cell cell-clickable descripcion-dinamica" 
+                                                                    data-nombre="{{ $registro->nombre_prenda ?: '' }}"
+                                                                    data-numero="1"
                                                                     data-descripcion="{{ $registro->descripcion ?: '' }}"
                                                                     data-color="{{ $registro->color?->nombre ?? '' }}"
                                                                     data-tela="{{ $registro->tela?->nombre ?? '' }}"
-                                                                    data-tipo-manga="{{ $registro->tipoManga?->nombre ?? '' }}"
-                                                                    data-obs-manga="{{ $registro->obs_manga ?? '' }}"
-                                                                    data-tiene-reflectivo="{{ $registro->tiene_reflectivo ? 'Sí' : '' }}"
-                                                                    data-obs-reflectivo="{{ $registro->obs_reflectivo ?? '' }}"
-                                                                    data-tiene-bolsillos="{{ $registro->tiene_bolsillos ? 'Sí' : '' }}"
-                                                                    data-obs-bolsillos="{{ $registro->obs_bolsillos ?? '' }}"
-                                                                    data-tipo-broche="{{ $registro->tipoBroche?->nombre ?? '' }}"
-                                                                    data-obs-broche="{{ $registro->obs_broche ?? '' }}"
+                                                                    data-ref="{{ $registro->ref ?? '' }}"
+                                                                    data-genero="{{ $registro->genero ?? 'dama' }}"
+                                                                    data-tipo-manga="{{ $primerVariante?->tipoManga?->nombre ?? '' }}"
+                                                                    data-obs-manga="{{ $primerVariante?->manga_obs ?? '' }}"
+                                                                    data-tipo-broche="{{ $primerVariante?->tipoBroche?->nombre ?? '' }}"
+                                                                    data-obs-broche="{{ $primerVariante?->broche_boton_obs ?? '' }}"
+                                                                    data-tiene-bolsillos="{{ $primerVariante?->tiene_bolsillos ? 'Sí' : '' }}"
+                                                                    data-obs-bolsillos="{{ $primerVariante?->bolsillos_obs ?? '' }}"
                                                                     data-cantidad-talla="{{ json_encode($cantidadTalla) }}">
                                                                     {{ $registro->descripcion ?: '-' }}
                                                                 </td>
-                                                                <td class="talla-cell">{{ $talla }}</td>
-                                                                <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $cantidad }}">{{ $cantidad }}</td>
+                                                                <td class="talla-cell">{{ $tallaRecord->talla }}</td>
+                                                                <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $tallaRecord->cantidad }}">{{ $tallaRecord->cantidad }}</td>
                                                                 <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $costurero }}" data-value="{{ $entrega ? ($entrega->costurero ?? '') : '' }}">{{ $costurero }}</td>
                                                                 <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="{{ $entrega ? $entrega->total_producido_por_talla : '' }}">{{ $totalProducido }}</td>
                                                                 <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="{{ $entrega ? $entrega->total_pendiente_por_talla : '' }}">{{ $totalPendiente }}</td>
@@ -213,6 +220,16 @@
                                                 @else
                                                     {{-- Para registros_por_orden (bodega): mostrar como antes --}}
                                                     <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}">
+                                                        <td style="text-align: center; padding: 0.5rem;">
+                                                            <button class="btn-ver-recibos" 
+                                                                data-pedido-id="{{ $registro->id }}"
+                                                                data-menu-id="menu-ver-{{ $registro->pedido }}"
+                                                                data-pedido="{{ $registro->pedido }}"
+                                                                title="Ver Recibos" 
+                                                                style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                                                                <i class="fas fa-receipt"></i>
+                                                            </button>
+                                                        </td>
                                                         <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
                                                         <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
                                                         <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
@@ -238,37 +255,10 @@
                     </div>
                 @endif
 
-                <div class="table-pagination" id="tablePagination">
+                <!-- Paginación deshabilitada para vista de pedidos agrupados -->
+                <div class="table-pagination" id="tablePagination" style="display: none;">
                     <div class="pagination-info">
-                        <span id="paginationInfo">Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros</span>
-                    </div>
-                    <div class="pagination-controls" id="paginationControls">
-                        @if($registros->hasPages())
-                            <button class="pagination-btn" data-page="1" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
-                                <i class="fas fa-angle-double-left"></i>
-                            </button>
-                            <button class="pagination-btn" data-page="{{ $registros->currentPage() - 1 }}" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
-                                <i class="fas fa-angle-left"></i>
-                            </button>
-                            
-                            @php
-                                $start = max(1, $registros->currentPage() - 2);
-                                $end = min($registros->lastPage(), $registros->currentPage() + 2);
-                            @endphp
-                            
-                            @for($i = $start; $i <= $end; $i++)
-                                <button class="pagination-btn page-number {{ $i == $registros->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
-                                    {{ $i }}
-                                </button>
-                            @endfor
-                            
-                            <button class="pagination-btn" data-page="{{ $registros->currentPage() + 1 }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
-                                <i class="fas fa-angle-right"></i>
-                            </button>
-                            <button class="pagination-btn" data-page="{{ $registros->lastPage() }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
-                                <i class="fas fa-angle-double-right"></i>
-                            </button>
-                        @endif
+                        <span id="paginationInfo">Registros cargados</span>
                     </div>
                 </div>
             @endif
@@ -632,96 +622,213 @@
         // ============================================================
         // CONSTRUIR DESCRIPCIONES DINÁMICAS
         // ============================================================
+        let isConstructingDescripcion = false;
+        
         function construirDescripcionDinamica() {
-            const celdas = document.querySelectorAll('.descripcion-dinamica');
-            celdas.forEach((cell, index) => {
-                const descripcion = cell.dataset.descripcion || '';
-                const color = cell.dataset.color || '';
-                const tela = cell.dataset.tela || '';
-                const tipoManga = cell.dataset.tipoManga || '';
-                const obsManga = cell.dataset.obsManga || '';
-                const tieneReflectivo = cell.dataset.tieneReflectivo || '';
-                const obsReflectivo = cell.dataset.obsReflectivo || '';
-                const tieneBolsillos = cell.dataset.tieneBolsillos || '';
-                const obsBolsillos = cell.dataset.obsBolsillos || '';
-                const tipoBroche = cell.dataset.tipoBroche || '';
-                const obsBroche = cell.dataset.obsBroche || '';
-                const cantidadTallaJSON = cell.dataset.cantidadTalla || '{}';
+            // Evitar llamadas recursivas causadas por MutationObserver
+            if (isConstructingDescripcion) {
+                return;
+            }
+            
+            isConstructingDescripcion = true;
+            
+            try {
+                const celdas = document.querySelectorAll('.descripcion-dinamica');
+                celdas.forEach((cell, idx) => {
+                    const prendaData = {
+                        nombre: cell.dataset.nombre || '',
+                        numero: cell.dataset.numero || 1,
+                        descripcion: cell.dataset.descripcion || '',
+                        color: cell.dataset.color || '',
+                        tela: cell.dataset.tela || '',
+                        ref: cell.dataset.ref || '',
+                        genero: cell.dataset.genero || 'dama'
+                    };
 
-                console.log(` [DESCRIPCION] Celda ${index + 1}:`, {
-                    descripcion,
-                    color,
-                    tela,
-                    tipoManga,
-                    tiene_datos: !!(color || tela || tipoManga)
-                });
-
-                // Si no hay datos de variantes, mostrar solo la descripción simple
-                if (!color && !tela && !tipoManga) {
-                    cell.innerHTML = descripcion || '-';
-                    return;
-                }
-                // Construir descripción dinámica
-                let html = '';
-
-                // Línea principal: Descripción | Color | Tela | Manga (observación)
-                const partesPrincipales = [];
-                if (descripcion) partesPrincipales.push(descripcion);
-                if (color) partesPrincipales.push(color);
-                if (tela) partesPrincipales.push(tela);
-                if (tipoManga) {
-                    const mangaTexto = obsManga ? `${tipoManga} (${obsManga})` : tipoManga;
-                    partesPrincipales.push(mangaTexto);
-                }
-
-                html += '<div style="font-size: 0.75rem; line-height: 1.4; color: #333;">';
-                html += partesPrincipales.join(' | ');
-
-                // DESCRIPCION (viñetas)
-                const viñetas = [];
-                if (tieneReflectivo) {
-                    viñetas.push(`<strong style="color: #000;">• Reflectivo:</strong> ${tieneReflectivo}${obsReflectivo ? ' (' + obsReflectivo + ')' : ''}`);
-                }
-                if (tieneBolsillos) {
-                    viñetas.push(`<strong style="color: #000;">• Bolsillos:</strong> ${tieneBolsillos}${obsBolsillos ? ' (' + obsBolsillos + ')' : ''}`);
-                }
-                if (tipoBroche) {
-                    viñetas.push(`<strong style="color: #000;">• ${tipoBroche}:</strong> Sí${obsBroche ? ' (' + obsBroche + ')' : ''}`);
-                }
-
-                if (viñetas.length > 0) {
-                    html += '<br>' + viñetas.join('<br>');
-                }
-
-                // Tallas en rojo
-                try {
-                    const cantidadTalla = JSON.parse(cantidadTallaJSON);
-                    if (cantidadTalla && Object.keys(cantidadTalla).length > 0) {
-                        const tallasTexto = Object.entries(cantidadTalla)
-                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                            .join(', ');
-                        html += `<br><strong style="color: #000;">Tallas:</strong> <span style="color: #dc2626;">${tallasTexto}</span>`;
+                    // Debug en consola (solo primera celda)
+                    if (idx === 0) {
+                        console.log('🔍 [DESCRIPCION] Datos de la celda:', {
+                            nombre: prendaData.nombre,
+                            color: prendaData.color,
+                            tela: prendaData.tela,
+                            tipoManga: cell.dataset.tipoManga,
+                            obsManga: cell.dataset.obsManga,
+                            tipoBroche: cell.dataset.tipoBroche,
+                            obsBroche: cell.dataset.obsBroche,
+                            tieneBolsillos: cell.dataset.tieneBolsillos,
+                            obsBolsillos: cell.dataset.obsBolsillos,
+                            cantidadTalla: cell.dataset.cantidadTalla
+                        });
                     }
-                } catch (e) {
-                    // Si falla el parse, no mostrar tallas
-                }
 
-                html += '</div>';
-                cell.innerHTML = html;
-            });
+                    // Construir variantes desde los datos disponibles
+                    const variantes = [];
+                    if (cell.dataset.tipoManga || cell.dataset.obsManga || cell.dataset.tieneBolsillos || cell.dataset.tipoBroche) {
+                        variantes.push({
+                            manga: cell.dataset.tipoManga || '',
+                            manga_obs: cell.dataset.obsManga || '',
+                            bolsillos_obs: cell.dataset.obsBolsillos || '',
+                            broche: cell.dataset.tipoBroche || '',
+                            broche_obs: cell.dataset.obsBroche || ''
+                        });
+                    }
+                    prendaData.variantes = variantes;
+
+                    // Parsear tallas
+                    try {
+                        const cantidadTallaJSON = cell.dataset.cantidadTalla || '{}';
+                        prendaData.tallas = JSON.parse(cantidadTallaJSON);
+                    } catch (e) {
+                        prendaData.tallas = {};
+                    }
+
+                    // Construir HTML igual a como lo hace el recibo
+                    const html = construirDescripcionFormato(prendaData);
+                    cell.innerHTML = html;
+                });
+            } finally {
+                isConstructingDescripcion = false;
+            }
+        }
+
+        // Función para construir descripción con el formato del recibo
+        function construirDescripcionFormato(prenda) {
+            const lineas = [];
+
+            // Línea técnica: TELA | COLOR | REF | MANGA
+            const partes = [];
+            if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+            if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+            if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+            
+            // Manga desde variantes
+            if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                const primerVariante = prenda.variantes[0];
+                if (primerVariante.manga) {
+                    let mangaTexto = primerVariante.manga.toUpperCase();
+                    if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
+                        mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
+                    }
+                    partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
+                }
+            }
+            
+            if (partes.length > 0) {
+                lineas.push(partes.join(' | '));
+            }
+
+            // Detalles técnicos: Bolsillos, Broche
+            const detalles = [];
+            if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                const primerVariante = prenda.variantes[0];
+                
+                if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
+                    detalles.push(`• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
+                }
+                
+                if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
+                    let etiqueta = 'BROCHE/BOTÓN';
+                    if (primerVariante.broche) {
+                        etiqueta = primerVariante.broche.toUpperCase();
+                    }
+                    detalles.push(`• <strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}`);
+                }
+            }
+            
+            if (detalles.length > 0) {
+                detalles.forEach((detalle) => {
+                    lineas.push(detalle);
+                });
+            }
+
+            return lineas.join('<br>') || '<em>Sin información</em>';
         }
 
         // Ejecutar al cargar la página
         document.addEventListener('DOMContentLoaded', construirDescripcionDinamica);
 
         // Ejecutar después de búsquedas AJAX (observar cambios en el DOM)
+        // Solo reconstruir si hay nuevos elementos con la clase 'descripcion-dinamica'
+        let lastObservedCount = 0;
         const observer = new MutationObserver(() => {
-            construirDescripcionDinamica();
+            const currentCount = document.querySelectorAll('.descripcion-dinamica').length;
+            // Solo llamar si el número de celdas cambió (nuevas celdas agregadas)
+            if (currentCount !== lastObservedCount) {
+                lastObservedCount = currentCount;
+                construirDescripcionDinamica();
+            }
         });
         observer.observe(document.getElementById('results-container'), {
             childList: true,
             subtree: true
         });
     </script>
+
+    <!-- Contenedor para dropdowns de recibos -->
+    <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
+
+    <!-- Modal Overlay para recibos -->
+    <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none;" onclick="closeModalOverlay()"></div>
+
+    <!-- Modal Selector de Recibos por Proceso -->
+    @include('components.modals.recibos-process-selector')
+
+    <!-- Script para módulo de recibos -->
+    <script type="module">
+        import { PedidosRecibosModule } from '/js/modulos/pedidos-recibos/index.js';
+        
+        // Exponer el módulo globalmente
+        window.pedidosRecibosModule = new PedidosRecibosModule();
+        
+        // Función global para abrir modal de imagen grande (igual que en supervisor)
+        window.abrirModalImagenProcesoGrande = (function() {
+            let galleryManagerLoaded = false;
+            let GalleryManager = null;
+            
+            return async function(indice, fotosJSON) {
+                // Si ya está cargado, usar directamente
+                if (galleryManagerLoaded && GalleryManager) {
+                    return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
+                }
+                
+                try {
+                    // Cargar GalleryManager solo una vez
+                    const module = await import('./js/modulos/pedidos-recibos/components/GalleryManager.js');
+                    GalleryManager = module.GalleryManager;
+                    galleryManagerLoaded = true;
+                    
+                    if (GalleryManager) {
+                        return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
+                    }
+                } catch (err) {
+                    console.error('Error cargando GalleryManager:', err);
+                    galleryManagerLoaded = false;
+                }
+            };
+        })();
+        
+        // Event listener para botones de recibos en registros
+        document.addEventListener('click', function(e) {
+            const btnRecibos = e.target.closest('.btn-ver-recibos');
+            if (btnRecibos) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const pedidoId = btnRecibos.dataset.pedidoId;
+                console.log('[Registros - Ver Recibos] Botón clickeado para pedido:', pedidoId);
+                
+                // Abrir selector de recibos
+                if (typeof abrirSelectorRecibos === 'function') {
+                    abrirSelectorRecibos(pedidoId);
+                } else {
+                    console.error('[Registros - Ver Recibos] Función abrirSelectorRecibos no disponible');
+                }
+            }
+        });
+    </script>
+
+    <!-- Script para dropdowns simple (compatibilidad) -->
+    <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 @endsection
+
 

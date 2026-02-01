@@ -458,10 +458,10 @@ class PedidoController extends Controller
      * Obtener datos completos del pedido (para recibos)
      * Método de compatibilidad con rutas de asesores
      */
-    public function obtenerDetalleCompleto(int $id): JsonResponse
+    public function obtenerDetalleCompleto(int $id, bool $filtrarProcesosPendientes = false): JsonResponse
     {
         try {
-            $response = $this->obtenerPedidoUseCase->ejecutar($id);
+            $response = $this->obtenerPedidoUseCase->ejecutar($id, $filtrarProcesosPendientes);
             
             // Convertir a array para modificar
             $responseData = $response->toArray();

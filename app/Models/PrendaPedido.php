@@ -49,6 +49,13 @@ class PrendaPedido extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'color',
+        'tela',
+        'tipo_manga',
+        'tipo_broche',
+    ];
+
     // ============================================================
     // RELACIONES
     // ============================================================
@@ -61,6 +68,15 @@ class PrendaPedido extends Model
     public function pedidoProduccion(): BelongsTo
     {
         return $this->belongsTo(PedidoProduccion::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Alias para pedidoProduccion()
+     * Para compatibilidad con código que usa ->pedido()
+     */
+    public function pedido(): BelongsTo
+    {
+        return $this->pedidoProduccion();
     }
 
     /**
@@ -148,6 +164,46 @@ class PrendaPedido extends Model
     public function prendaPedidoTallas(): HasMany
     {
         return $this->tallas();
+    }
+
+    /**
+     * Obtener el primer color de esta prenda (para compatibilidad con vistas antiguas)
+     * Retorna el color del primer registro en prenda_pedido_colores_telas
+     */
+    public function getColorAttribute()
+    {
+        $colorTela = $this->coloresTelas()->first();
+        return $colorTela ? $colorTela->color : null;
+    }
+
+    /**
+     * Obtener la primera tela de esta prenda (para compatibilidad con vistas antiguas)
+     * Retorna la tela del primer registro en prenda_pedido_colores_telas
+     */
+    public function getTelaAttribute()
+    {
+        $colorTela = $this->coloresTelas()->first();
+        return $colorTela ? $colorTela->tela : null;
+    }
+
+    /**
+     * Obtener el primer tipo de manga de esta prenda (para compatibilidad con vistas antiguas)
+     * Retorna el tipo_manga del primer registro en prenda_pedido_variantes
+     */
+    public function getTipoMangaAttribute()
+    {
+        $variante = $this->variantes()->first();
+        return $variante ? $variante->tipo_manga : null;
+    }
+
+    /**
+     * Obtener el primer tipo de broche de esta prenda (para compatibilidad con vistas antiguas)
+     * Retorna el tipo_broche_boton del primer registro en prenda_pedido_variantes
+     */
+    public function getTipoBrocheAttribute()
+    {
+        $variante = $this->variantes()->first();
+        return $variante ? $variante->tipo_broche_boton : null;
     }
 
     // ============================================================

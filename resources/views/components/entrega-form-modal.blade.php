@@ -28,6 +28,43 @@
                 </div>
             </template>
 
+            <!-- Modal de Error de Validación -->
+            <template x-if="showValidationErrorModal">
+                <div class="overlay-modal" x-show="showValidationErrorModal"
+                    @click.self="showValidationErrorModal = false"
+                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100">
+                    <div class="modal-validation-error"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                        <div class="modal-validation-header">
+                            <div class="modal-validation-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                            <h3 class="modal-validation-title" x-text="validationErrorTitle"></h3>
+                            <button type="button" @click="showValidationErrorModal = false" class="modal-validation-close">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="modal-validation-body">
+                            <p x-text="validationErrorMessage"></p>
+                        </div>
+                        <div class="modal-validation-footer">
+                            <button type="button" @click="showValidationErrorModal = false" class="btn btn-secondary">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
             <div class="form-content">
                 <!-- Información General -->
                 <div class="section-card">
@@ -681,6 +718,144 @@
             box-shadow: 0 2px 6px rgba(185, 28, 28, 0.3) !important;
         }
 
+        /* Estilos para Modal de Validación */
+        .overlay-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-validation-error {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.dark-theme .modal-validation-error {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        .modal-validation-header {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            position: relative;
+        }
+
+        body.dark-theme .modal-validation-header {
+            background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);
+        }
+
+        .modal-validation-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: #fca5a5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #991b1b;
+        }
+
+        body.dark-theme .modal-validation-icon {
+            background: #b91c1c;
+            color: #fecaca;
+        }
+
+        .modal-validation-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2.5;
+        }
+
+        .modal-validation-title {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 700;
+            color: #991b1b;
+            margin: 0;
+            padding-top: 2px;
+        }
+
+        body.dark-theme .modal-validation-title {
+            color: #fecaca;
+        }
+
+        .modal-validation-close {
+            background: none;
+            border: none;
+            color: #991b1b;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        body.dark-theme .modal-validation-close {
+            color: #fecaca;
+        }
+
+        .modal-validation-close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-validation-close svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.5;
+        }
+
+        .modal-validation-body {
+            padding: 24px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #475569;
+        }
+
+        body.dark-theme .modal-validation-body {
+            color: #cbd5e1;
+        }
+
+        .modal-validation-body p {
+            margin: 0;
+            word-break: break-word;
+        }
+
+        .modal-validation-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #f8fafc;
+        }
+
+        body.dark-theme .modal-validation-footer {
+            border-top: 1px solid #334155;
+            background: #0f172a;
+        }
+
         .cursor-pointer {
             cursor: pointer;
         }
@@ -720,6 +895,9 @@
                 successMessage: '',
                 showErrorMessage: false,
                 errorMessage: '',
+                showValidationErrorModal: false,
+                validationErrorTitle: 'Error de Validación',
+                validationErrorMessage: '',
                 showDropdown: true, // New state for dropdown visibility
 
                 init() {
@@ -1183,6 +1361,10 @@
                             setTimeout(() => {
                                 this.closeModal();
                             }, 2000);
+                        } else if (response.status === 422) {
+                            // Error de validación - Mostrar modal detallado
+                            this.validationErrorMessage = result.message;
+                            this.showValidationErrorModal = true;
                         } else {
                             this.showErrorMessage = true;
                             this.errorMessage = result.message || 'Error desconocido';

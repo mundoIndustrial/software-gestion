@@ -26,10 +26,20 @@ use Illuminate\Support\Facades\Log;
  */
 class ObtenerPedidoUseCase extends AbstractObtenerUseCase
 {
-    public function ejecutar(int $pedidoId): PedidoResponseDTO
+    /**
+     * @param int $pedidoId ID del pedido
+     * @param bool $filtrarProcesosPendientes Si true, oculta procesos con estado PENDIENTE (para vista /registros)
+     */
+    public function ejecutar(int $pedidoId, bool $filtrarProcesosPendientes = false): PedidoResponseDTO
     {
+        $this->filtrarProcesosPendientes = $filtrarProcesosPendientes;
         return $this->obtenerYEnriquecer($pedidoId);
     }
+
+    /**
+     * Flag para controlar si debe filtrar procesos pendientes
+     */
+    private bool $filtrarProcesosPendientes = false;
 
     /**
      * Personalización: Obtener todas las opciones de enriquecimiento
@@ -118,7 +128,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 );
             }
 
-            $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent);
+            $prendasCompletas = $this->obtenerPrendasCompletas($modeloEloquent, $modeloEloquent->estado);
             $eppsCompletos = $this->obtenerEppsCompletos($modeloEloquent);
 
             return new PedidoResponseDTO(
@@ -154,8 +164,11 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
      * - Fotos de prenda (ruta_webp, ruta_original, orden)
      * - Fotos de tela (ruta_webp, ruta_original, orden)
      * - Procesos con imágenes (ruta_webp, ruta_original, orden, es_principal)
+     * 
+     * @param $modeloEloquent El modelo del pedido
+     * @param string|null $estadoPedido Estado del pedido para filtrar procesos
      */
-    private function obtenerPrendasCompletas($modeloEloquent): array
+    private function obtenerPrendasCompletas($modeloEloquent, ?string $estadoPedido = null): array
     {
         try {
             if (!$modeloEloquent || !$modeloEloquent->prendas) {
@@ -187,7 +200,8 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 $coloresTelas = $this->obtenerColoresTelasCompletos($prenda);
                 
                 // OBTENER PROCESOS CON IMÁGENES ORDENADAS
-                $procesos = $this->obtenerProcesosDelaPrenda($prenda);
+                // Si el pedido está en estado PENDIENTE, NO mostrar procesos
+                $procesos = $this->obtenerProcesosDelaPrenda($prenda, $estadoPedido);
 
                 $prendasArray[] = [
                     'id' => $prenda->id,
@@ -585,13 +599,24 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
      * Cada imagen tiene ruta_webp, ruta_original, orden, es_principal
      * Retorna array vacío si no hay procesos (no null)
      */
-    private function obtenerProcesosDelaPrenda($prenda): array
+    private function obtenerProcesosDelaPrenda($prenda, ?string $estadoPedido = null): array
     {
         $procesos = [];
 
         try {
             if ($prenda->procesos && $prenda->procesos->count() > 0) {
                 foreach ($prenda->procesos as $proceso) {
+                    // ⚠️ CRÍTICO: Si está configurado para filtrar procesos PENDIENTE y el proceso está en ese estado, omitir
+                    if ($this->filtrarProcesosPendientes && $proceso->estado === 'PENDIENTE') {
+                        Log::info('[PROCESOS-FILTRADO] Proceso en estado PENDIENTE - Omitiendo (modo: solo /registros)', [
+                            'proceso_id' => $proceso->id,
+                            'prenda_id' => $prenda->id,
+                            'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'N/A',
+                            'estado' => $proceso->estado,
+                            'filtrar_pendientes' => $this->filtrarProcesosPendientes
+                        ]);
+                        continue; // Saltar este proceso
+                    }
                     $imagenes = [];
                     
                     // Obtener imágenes del proceso ordenadas
@@ -637,18 +662,21 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'tipo_proceso' => $proceso->tipoProceso?->nombre ?? null,
                         'tipo_proceso_id' => $proceso->tipo_proceso_id ?? null,
                         'descripcion' => $proceso->descripcion,
-                        'ubicaciones' => $proceso->ubicaciones ? json_decode($proceso->ubicaciones, true) : [],
+                        'ubicaciones' => $proceso->ubicaciones ?? [],
                         'observaciones' => $proceso->observaciones,
                         'tallas' => $tallasTransformadas,  // NUEVO: Agregar tallas transformadas
                         'imagenes' => $imagenes, // Array ordenado con estructura completa
                         'estado' => $proceso->estado ?? 'PENDIENTE',
+                        'numero_recibo' => $proceso->numero_recibo, // Agregar número de recibo
+                        'tipo_recibo' => $proceso->tipo_recibo, // Agregar tipo de recibo
                     ];
                 }
             }
 
             Log::info('Procesos obtenidos', [
                 'prenda_id' => $prenda->id,
-                'cantidad' => count($procesos)
+                'cantidad' => count($procesos),
+                'estado_pedido' => $estadoPedido
             ]);
 
         } catch (\Exception $e) {
