@@ -516,6 +516,9 @@ class CotizacionBordadoController extends Controller
                     ]);
                 }
 
+                // PROCESAR TELAS, COLORES Y REFERENCIAS
+                $this->procesarTelasDelFormulario($request, $logoCotizacion->id);
+
                 // Si se envía, aún encolamos el job pero el número YA EXISTE
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
@@ -994,6 +997,427 @@ class CotizacionBordadoController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
             ]);
+        }
+    }
+
+    /**
+     * Procesar y guardar Telas, Colores y Referencias del formulario
+     * 
+     * Los datos vienen en: telas_prendas_json (JSON array)
+     * Estructura:
+     * [
+     *   {
+     *     "prenda_cot_id": 1,
+     *     "color": "Rojo",
+     *     "tela": "Algodón 100%",
+     *     "ref": "REF-001",
+     *     "imagen": File (opcional)
+     *   }
+     * ]
+     */
+    private function procesarTelasDelFormulario(Request $request, int $logoCotizacionId)
+    {
+        try {
+            $procesados = 0;
+
+            // Obtener datos de telas desde el campo telas_prendas_json
+            $telasPrendasJson = $request->input('telas_prendas_json', '[]');
+            
+            Log::info('🔍 DEBUG: procesarTelasDelFormulario inicio', [
+                'telasPrendasJson_raw' => $telasPrendasJson,
+                'telasPrendasJson_type' => gettype($telasPrendasJson)
+            ]);
+            
+            if (is_string($telasPrendasJson)) {
+                $telasPrendas = json_decode($telasPrendasJson, true) ?? [];
+            } else {
+                $telasPrendas = $telasPrendasJson;
+            }
+
+            Log::info('🔍 DEBUG: telas decodificadas', [
+                'count' => count($telasPrendas),
+                'data' => $telasPrendas
+            ]);
+            
+            // Obtener todas las prendas TÉCNICAS de esta cotización Logo
+            // Estas son del modelo LogoCotizacionTecnicaPrenda (con prenda_cot_id real)
+            $prendasTecnicas = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacionId)->get();
+            
+            Log::info('📋 Prendas TÉCNICAS en cotización:', [
+                'count' => $prendasTecnicas->count(),
+                'prendas_cot_ids' => $prendasTecnicas->pluck('prenda_cot_id')->toArray()
+            ]);
+
+            // Procesar cada tela
+            foreach ($telasPrendas as $telaPrendaIdx => $telaPrenda) {
+                $nombrePrenda = $telaPrenda['nombre_prenda'] ?? null;
+                $tela = $telaPrenda['tela'] ?? null;
+                $color = $telaPrenda['color'] ?? null;
+                $ref = $telaPrenda['ref'] ?? null;
+
+                Log::info('🔍 DEBUG: procesando tela', [
+                    'index' => $telaPrendaIdx,
+                    'nombre_prenda' => $nombrePrenda,
+                    'tela' => $tela,
+                    'color' => $color,
+                    'ref' => $ref
+                ]);
+
+                // Buscar el prenda_cot_id usando el índice (orden en que fueron agregadas)
+                $prendaTecnica = $prendasTecnicas->skip($telaPrendaIdx)->first();
+                
+                if (!$prendaTecnica) {
+                    Log::warning('⚠️ No se encontró prenda técnica para índice', [
+                        'index' => $telaPrendaIdx,
+                        'total_prendas' => $prendasTecnicas->count()
+                    ]);
+                    continue;
+                }
+                
+                $prendaCotId = $prendaTecnica->prenda_cot_id;
+                
+                Log::info('✅ Prenda técnica asignada por índice', [
+                    'index' => $telaPrendaIdx,
+                    'prenda_cot_id' => $prendaCotId,
+                    'prenda_tecnica_id' => $prendaTecnica->id
+                ]);
+
+                // Si hay al menos un dato de tela, guardar el registro
+                if ($prendaCotId && ($tela || $color || $ref)) {
+                    // Procesar imagen si existe en FormData
+                    $rutaImagen = null;
+                    
+                    // Intentar encontrar la imagen de varias formas:
+                    // 1. Con el prenda_cot_id real
+                    // 2. Con el índice (si es que se envió así)
+                    // 3. Buscar la primera imagen que no haya sido usada
+                    
+                    $imagenFile = null;
+                    $imagenKey = null;
+                    
+                    // Intento 1: buscar con prenda_cot_id real
+                    $imagenKey1 = "img_tela_{$prendaCotId}";
+                    if ($request->hasFile($imagenKey1)) {
+                        $imagenFile = $request->file($imagenKey1);
+                        $imagenKey = $imagenKey1;
+                        Log::info('🖼️ Imagen encontrada con prenda_cot_id', ['key' => $imagenKey1]);
+                    }
+                    
+                    // Intento 2: buscar con índice
+                    if (!$imagenFile) {
+                        $imagenKey2 = "img_tela_" . ($telaPrendaIdx + 1);
+                        if ($request->hasFile($imagenKey2)) {
+                            $imagenFile = $request->file($imagenKey2);
+                            $imagenKey = $imagenKey2;
+                            Log::info('🖼️ Imagen encontrada con índice', ['key' => $imagenKey2]);
+                        }
+                    }
+                    
+                    if ($imagenFile && $imagenKey) {
+                        try {
+                            $directorioTelas = "cotizaciones/{$logoCotizacionId}/tela";
+                            $nombreImagen = 'tela_' . time() . '_' . uniqid() . '.' . $imagenFile->extension();
+                            
+                            $rutaGuardada = Storage::disk('public')->putFileAs(
+                                $directorioTelas,
+                                $imagenFile,
+                                $nombreImagen
+                            );
+                            
+                            // Construir ruta completa como mencionó el usuario
+                            $rutaImagen = 'storage/app/public/' . $rutaGuardada;
+                            
+                            Log::info('🖼️ Imagen de tela guardada exitosamente', [
+                                'imagenKey' => $imagenKey,
+                                'directorio' => $directorioTelas,
+                                'archivo' => $nombreImagen,
+                                'ruta_guardada' => $rutaGuardada,
+                                'ruta_completa' => $rutaImagen
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('❌ Error guardando imagen de tela', [
+                                'imagenKey' => $imagenKey,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    } else {
+                        Log::info('ℹ️ No hay imagen para esta tela', [
+                            'index' => $telaPrendaIdx,
+                            'prenda_cot_id' => $prendaCotId
+                        ]);
+                    }
+
+                    // Guardar en BD
+                    try {
+                        \App\Models\LogoCotizacionTelasPrenda::create([
+                            'logo_cotizacion_id' => $logoCotizacionId,
+                            'prenda_cot_id' => $prendaCotId,
+                            'tela' => $tela,
+                            'color' => $color,
+                            'ref' => $ref,
+                            'img' => $rutaImagen,
+                        ]);
+
+                        $procesados++;
+
+                        Log::info('✅ Tela de prenda guardada desde formulario', [
+                            'logo_cotizacion_id' => $logoCotizacionId,
+                            'prenda_cot_id' => $prendaCotId,
+                            'tela' => $tela,
+                            'color' => $color,
+                            'ref' => $ref,
+                            'tiene_imagen' => $rutaImagen ? 'SI' : 'NO',
+                            'imagen' => $rutaImagen
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('❌ Error guardando tela en BD', [
+                            'error' => $e->getMessage(),
+                            'prenda_cot_id' => $prendaCotId
+                        ]);
+                    }
+                } else {
+                    Log::warning('⚠️ Datos insuficientes para guardar tela', [
+                        'prendaCotId_found' => !!$prendaCotId,
+                        'tela' => $tela,
+                        'color' => $color,
+                        'ref' => $ref
+                    ]);
+                }
+            }
+
+            if ($procesados > 0) {
+                Log::info("🎨 Se procesaron {$procesados} telas de prendas desde el formulario");
+            } else {
+                Log::info("⚠️  No se procesaron telas (array vacío o sin datos)");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al procesar telas del formulario', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+        }
+    }
+
+    /**
+     * Guardar información de Tela, Color y Referencia de una Prenda en Cotización de Logo
+     * 
+     * Esperado: POST /cotizaciones/{cotizacion_id}/logo/telas-prenda
+     * Con: logo_cotizacion_id, prenda_cot_id, tela, color, ref, imagen (archivo)
+     */
+    public function guardarTelaPrenda(Request $request, $cotizacionId)
+    {
+        return DB::transaction(function () use ($request, $cotizacionId) {
+            try {
+                Log::info('🎨 Iniciando guardado de Tela, Color, Ref para prenda', [
+                    'cotizacion_id' => $cotizacionId,
+                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id'),
+                    'prenda_cot_id' => $request->input('prenda_cot_id'),
+                ]);
+
+                // Validar datos requeridos
+                $request->validate([
+                    'logo_cotizacion_id' => 'required|integer|exists:logo_cotizaciones,id',
+                    'prenda_cot_id' => 'required|integer|exists:prendas_cot,id',
+                    'tela' => 'nullable|string|max:255',
+                    'color' => 'nullable|string|max:255',
+                    'ref' => 'nullable|string|max:255',
+                    'imagen' => 'nullable|image|mimes:jpeg,png,webp,jpg|max:5120', // Max 5MB
+                ]);
+
+                $logoCotizacionId = $request->input('logo_cotizacion_id');
+                $prendaCotId = $request->input('prenda_cot_id');
+                $tela = $request->input('tela');
+                $color = $request->input('color');
+                $ref = $request->input('ref');
+
+                // Procesar imagen si existe
+                $rutaImagen = null;
+                if ($request->hasFile('imagen')) {
+                    $archivo = $request->file('imagen');
+                    
+                    // Crear directorio de almacenamiento: storage/app/public/cotizaciones/{logo_id}/telas/
+                    $directorioTelas = "cotizaciones/{$logoCotizacionId}/telas";
+                    
+                    // Generar nombre único para la imagen
+                    $nombreImagen = time() . '_' . uniqid() . '.' . $archivo->extension();
+                    
+                    // Almacenar imagen
+                    $rutaImagen = Storage::disk('public')->putFileAs(
+                        $directorioTelas,
+                        $archivo,
+                        $nombreImagen
+                    );
+
+                    Log::info('🖼️ Imagen de tela almacenada', [
+                        'ruta' => $rutaImagen,
+                        'tamaño' => $archivo->getSize(),
+                    ]);
+
+                    // Convertir la ruta para la BD: storage/app/public/cotizaciones/...
+                    $rutaImagen = 'storage/app/public/' . $rutaImagen;
+                }
+
+                // Guardar registro en la tabla
+                $telasPrenda = \App\Models\LogoCotizacionTelasPrenda::create([
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'prenda_cot_id' => $prendaCotId,
+                    'tela' => $tela,
+                    'color' => $color,
+                    'ref' => $ref,
+                    'img' => $rutaImagen,
+                ]);
+
+                Log::info('✅ Tela, Color y Ref guardados exitosamente', [
+                    'id' => $telasPrenda->id,
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'prenda_cot_id' => $prendaCotId,
+                    'tela' => $tela,
+                    'color' => $color,
+                    'ref' => $ref,
+                    'imagen' => $rutaImagen ? 'SI' : 'NO',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Información de tela, color y referencia guardada correctamente',
+                    'data' => [
+                        'id' => $telasPrenda->id,
+                        'logo_cotizacion_id' => $telasPrenda->logo_cotizacion_id,
+                        'prenda_cot_id' => $telasPrenda->prenda_cot_id,
+                        'tela' => $telasPrenda->tela,
+                        'color' => $telasPrenda->color,
+                        'ref' => $telasPrenda->ref,
+                        'img' => $telasPrenda->img,
+                        'url_imagen' => $telasPrenda->url_imagen, // Usar el accessor para la URL pública
+                        'created_at' => $telasPrenda->created_at,
+                    ]
+                ], 201);
+
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                Log::warning('❌ Validación fallida en guardarTelaPrenda', [
+                    'errores' => $e->errors()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Datos inválidos',
+                    'errors' => $e->errors()
+                ], 422);
+            } catch (\Exception $e) {
+                Log::error('❌ Error al guardar tela, color y referencia', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al guardar la información: ' . $e->getMessage()
+                ], 500);
+            }
+        });
+    }
+
+    /**
+     * Obtener telas de prendas de una cotización de logo
+     * 
+     * GET /cotizaciones/{cotizacion_id}/logo/telas-prenda
+     */
+    public function obtenerTelasPrenda($cotizacionId)
+    {
+        try {
+            // Obtener la cotización
+            $cotizacion = Cotizacion::findOrFail($cotizacionId);
+            
+            if (!$cotizacion->logoCotizacion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta cotización no tiene información de logo'
+                ], 404);
+            }
+
+            // Obtener todas las telas de las prendas
+            $telasPrendas = \App\Models\LogoCotizacionTelasPrenda::where(
+                'logo_cotizacion_id',
+                $cotizacion->logoCotizacion->id
+            )
+            ->with(['logoCotizacion', 'prenda'])
+            ->get()
+            ->map(function ($tela) {
+                return [
+                    'id' => $tela->id,
+                    'logo_cotizacion_id' => $tela->logo_cotizacion_id,
+                    'prenda_cot_id' => $tela->prenda_cot_id,
+                    'prenda_nombre' => $tela->prenda?->nombre_producto ?? 'Desconocida',
+                    'tela' => $tela->tela,
+                    'color' => $tela->color,
+                    'ref' => $tela->ref,
+                    'img' => $tela->img,
+                    'url_imagen' => $tela->url_imagen,
+                    'created_at' => $tela->created_at,
+                ];
+            });
+
+            Log::info('📋 Telas de prendas obtenidas', [
+                'cotizacion_id' => $cotizacionId,
+                'total' => $telasPrendas->count()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $telasPrendas,
+                'total' => $telasPrendas->count()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al obtener telas de prendas', [
+                'cotizacion_id' => $cotizacionId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las telas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar tela de prenda
+     * 
+     * DELETE /cotizaciones/{cotizacion_id}/logo/telas-prenda/{id}
+     */
+    public function eliminarTelaPrenda($cotizacionId, $telaId)
+    {
+        try {
+            $tela = \App\Models\LogoCotizacionTelasPrenda::findOrFail($telaId);
+
+            // Eliminar imagen si existe
+            if ($tela->img && Storage::disk('public')->exists($tela->img)) {
+                Storage::disk('public')->delete($tela->img);
+                Log::info('🗑️ Imagen de tela eliminada', ['ruta' => $tela->img]);
+            }
+
+            $tela->delete();
+
+            Log::info('✅ Tela eliminada correctamente', [
+                'id' => $telaId,
+                'cotizacion_id' => $cotizacionId
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tela eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al eliminar tela', [
+                'id' => $telaId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la tela: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

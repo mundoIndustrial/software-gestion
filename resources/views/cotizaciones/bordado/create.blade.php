@@ -479,6 +479,11 @@ OR
             <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_venta_bordado" name="tipo_venta_bordado" style="display: none;">
 
+            <!-- INFORMACIÓN DE TELAS, COLORES Y REFERENCIAS POR PRENDA -->
+            <div style="display: none;">
+                <input type="text" id="telas_prendas_json" name="telas_prendas_json" value="[]">
+            </div>
+
             <!-- TÉCNICAS -->
             <div class="form-section">
                 <div class="tecnicas-box">
@@ -858,6 +863,71 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     // Si no está disponible, usar array vacío
     const tecnicasAEnviar = typeof window.tecnicasAgregadas !== 'undefined' ? window.tecnicasAgregadas : [];
     
+    // OBTENER DATOS DE TELAS, COLORES Y REFERENCIAS
+    const telasPrendas = [];
+    
+    // Las telas están dentro de las prendas que ya fueron extraídas por el sistema
+    // Buscar todas las filas de tela en el modal (directamente por clases CSS)
+    const modal = document.getElementById('modalAgregarTecnica');
+    if (modal) {
+        // Buscar TODAS las filas de tela con clase .fila-tela-logo
+        const filasTelaLogo = modal.querySelectorAll('.fila-tela-logo');
+        
+        console.log('🔍 DEBUG: Buscando filas de tela. Encontradas:', filasTelaLogo.length);
+        
+        // Para cada fila de tela encontrada
+        let telaCounter = 0;
+        filasTelaLogo.forEach((filaTela, index) => {
+            // Buscar inputs por sus clases CSS
+            const colorInput = filaTela.querySelector('.input-color-logo');
+            const telaInput = filaTela.querySelector('.input-tela-logo');
+            const refInput = filaTela.querySelector('.input-referencia-logo');
+            const imagenInput = filaTela.querySelector('.input-file-tela-logo');
+            
+            const color = colorInput?.value?.trim() || null;
+            const tela = telaInput?.value?.trim() || null;
+            const ref = refInput?.value?.trim() || null;
+            const imagen = imagenInput?.files[0] || null;
+            
+            console.log(`    Fila ${index}: Color="${color}", Tela="${tela}", Ref="${ref}", Imagen=${!!imagen}`);
+            
+            // Si hay al menos un dato, agregar a la lista
+            if (color || tela || ref || imagen) {
+                // Obtener info del nombre de prenda (usando índice)
+                const prendaItem = filaTela.closest('.prenda-item');
+                const nombrePrenda = prendaItem?.querySelector('.nombre_prenda')?.value?.trim() || `Prenda ${index}`;
+                
+                // Usar un ID único secuencial
+                telaCounter++;
+                const prendaCotId = telaCounter;  // ID simple incremental
+                
+                telasPrendas.push({
+                    prenda_cot_id: prendaCotId,
+                    nombre_prenda: nombrePrenda,
+                    color: color,
+                    tela: tela,
+                    ref: ref,
+                    imagen: imagen
+                });
+                
+                console.log(`    ✅ Tela ${telaCounter} agregada:`, { nombre: nombrePrenda, color, tela, ref });
+            }
+        });
+        
+        console.log('📋 DEBUG: Total telas procesadas:', telasPrendas.length);
+        if (telasPrendas.length > 0) {
+            console.log('📋 DEBUG: Contenido telasPrendas:', JSON.stringify(
+                telasPrendas.map(t => ({ 
+                    prenda_cot_id: t.prenda_cot_id, 
+                    color: t.color, 
+                    tela: t.tela, 
+                    ref: t.ref,
+                    tieneImagen: !!t.imagen
+                }))
+            ));
+        }
+    }
+    
     const data = {
         _token: tokenInput?.value || '',
         cliente: cliente,
@@ -867,7 +937,8 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         observaciones_tecnicas: observacionesTecnicas,
         tecnicas: tecnicasAEnviar,
         observaciones_generales: observacionesDelDOM,
-        tipo_venta_bordado: headerTipoVentaElement?.value || ''
+        tipo_venta_bordado: headerTipoVentaElement?.value || '',
+        telas_prendas_json: JSON.stringify(telasPrendas)
     };
 
 
@@ -1000,6 +1071,13 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         imagenesSeleccionadas.forEach((img) => {
             if (!img.existing) {
                 formData.append('imagenes[]', img.file);
+            }
+        });
+
+        // AGREGAR IMÁGENES DE TELAS
+        telasPrendas.forEach((tela) => {
+            if (tela.imagen) {
+                formData.append(`img_tela_${tela.prenda_cot_id}`, tela.imagen);
             }
         });
         

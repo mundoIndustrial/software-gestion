@@ -20,6 +20,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\StorageController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalWebController;
+use App\Http\Controllers\TestTelasPrendaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -318,10 +319,22 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->group(funct
     Route::put('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
     Route::post('/cotizaciones-bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
     Route::delete('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+    
+    // RUTAS PARA TELAS DE PRENDAS EN COTIZACIÓN DE LOGO
+    Route::post('/cotizaciones/{cotizacion_id}/logo/telas-prenda', [CotizacionBordadoController::class, 'guardarTelaPrenda'])->name('cotizaciones-bordado.guardar-tela-prenda');
+    Route::get('/cotizaciones/{cotizacion_id}/logo/telas-prenda', [CotizacionBordadoController::class, 'obtenerTelasPrenda'])->name('cotizaciones-bordado.obtener-telas-prenda');
+    Route::delete('/cotizaciones/{cotizacion_id}/logo/telas-prenda/{tela_id}', [CotizacionBordadoController::class, 'eliminarTelaPrenda'])->name('cotizaciones-bordado.eliminar-tela-prenda');
 });
 
 // ========================================
-// RUTAS PARA SUPERVISOR-ADMIN (COTIZACIONES)
+// RUTAS PARA PRUEBAS - TELAS DE PRENDAS (TEMPORAL)
+// ========================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/test-tela-prenda/crear', [TestTelasPrendaController::class, 'crear'])->name('test-telas.crear');
+    Route::get('/test-tela-prenda/listar', [TestTelasPrendaController::class, 'listar'])->name('test-telas.listar');
+    Route::get('/test-tela-prenda/limpiar', [TestTelasPrendaController::class, 'limpiar'])->name('test-telas.limpiar');
+});
+
 // ========================================
 // NOTA: Funcionalidad migrada a CotizacionPrendaController y CotizacionBordadoController (DDD)
 // Las rutas anteriores de CotizacionesViewController han sido eliminadas

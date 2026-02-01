@@ -62,6 +62,14 @@ class LogoCotizacion extends Model
     }
 
     /**
+     * Relación: Información de Telas, Colores y Referencias de prendas
+     */
+    public function telasPrendas(): HasMany
+    {
+        return $this->hasMany(LogoCotizacionTelasPrenda::class, 'logo_cotizacion_id');
+    }
+
+    /**
      * Relación ANTIGUA: Un logo puede tener múltiples técnicas (bordado, estampado, etc)
      * NOTA: Esta tabla no existe en la versión nueva. Se mantiene para compatibilidad.
      */
