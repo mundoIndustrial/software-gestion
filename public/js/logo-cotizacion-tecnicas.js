@@ -199,7 +199,7 @@ function abrirModalDatosIguales(tecnicas) {
     // Modal MINIMALISTA tipo TNS
     Swal.fire({
         title: 'Técnicas Combinadas',
-        width: '600px',
+        width: '1000px',
         html: `
             <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 70vh; overflow-y: auto;">
                 
@@ -233,6 +233,26 @@ function abrirModalDatosIguales(tecnicas) {
                         <!-- Se agrega dinámicamente -->
                     </div>
                     <button type="button" id="dBtnAgregarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla general</button>
+                </div>
+                
+                <!-- TABLA COLOR, TELA Y REFERENCIA -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">🎨 Color, Tela y Referencia</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 10px;">
+                        <thead>
+                            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Color</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Tela</th>
+                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Referencia</th>
+                                <th style="padding: 8px; text-align: center; font-weight: 600; color: #333; width: 28%;">Imagen Tela</th>
+                                <th style="padding: 8px; text-align: center; font-weight: 600; color: #333; width: 18%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dTablaTelasMulti" style="background: white;">
+                            <!-- Filas de telas aquí -->
+                        </tbody>
+                    </table>
+                    <button type="button" id="dBtnAgregarTelaMulti" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar Tela</button>
                 </div>
                 
                 <!-- VARIACIONES DE PRENDA (Manga, Bolsillos, Broche) -->
@@ -614,6 +634,19 @@ function abrirModalDatosIguales(tecnicas) {
             }
             
             // ========================================
+            // LÓGICA DE TABLA TELAS (MÚLTIPLES TÉCNICAS)
+            // ========================================
+            const btnAgregarTelaMulti = document.getElementById('dBtnAgregarTelaMulti');
+            const tablaTelasMulti = document.getElementById('dTablaTelasMulti');
+            
+            if (btnAgregarTelaMulti) {
+                btnAgregarTelaMulti.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    agregarFilaTelaMultiTecnica(tablaTelasMulti);
+                });
+            }
+            
+            // ========================================
             // LÓGICA DE LOGO COMPARTIDO
             // ========================================
             const checkboxLogoCompartido = document.getElementById('dUsarLogoCompartido');
@@ -744,6 +777,42 @@ function abrirModalDatosIguales(tecnicas) {
                 };
             }
             
+            // Recopilar telas (COLOR, TELA, REFERENCIA E IMAGEN)
+            const telas = [];
+            const tbodyTelas = document.getElementById('dTablaTelasMulti');
+            console.log('🔍 DEBUG - Extrayendo telas de dTablaTelasMulti:', {
+                tbodyTelasEncontrado: !!tbodyTelas,
+                elementId: 'dTablaTelasMulti'
+            });
+            
+            if (tbodyTelas) {
+                const filasTelaMulti = tbodyTelas.querySelectorAll('.fila-tela-multi');
+                console.log(`🔍 DEBUG - Filas de telas encontradas: ${filasTelaMulti.length}`);
+                
+                filasTelaMulti.forEach((filaTela, telaIdx) => {
+                    const color = filaTela.querySelector('.input-color-multi')?.value?.trim();
+                    const tela = filaTela.querySelector('.input-tela-multi')?.value?.trim();
+                    const referencia = filaTela.querySelector('.input-referencia-multi')?.value?.trim();
+                    const inputFile = filaTela.querySelector('.input-file-tela-multi');
+                    
+                    // Guardar archivo directamente (no usar FileReader async)
+                    const archivo = (inputFile && inputFile.files.length > 0) 
+                        ? inputFile.files[0] 
+                        : null;
+                    
+                    if (color || tela || referencia) {
+                        telas.push({
+                            color: color || null,
+                            tela: tela || null,
+                            referencia: referencia || null,
+                            archivo: archivo
+                        });
+                    }
+                });
+            }
+            
+            console.log(`✅ DEBUG - Telas extraídas en preload:`, telas);
+            
             return {
                 nombre_prenda: nombrePrenda,
                 observaciones: document.getElementById('dObservaciones').value.trim(),
@@ -751,7 +820,8 @@ function abrirModalDatosIguales(tecnicas) {
                 tallasPorTecnica: tallasPorTecnica,
                 imagenesPorTecnica: imagenesPorTecnica,
                 logosCompartidos: window.logosCompartidosCotizacionIndividual || {},
-                variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null
+                variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,
+                telas: telas.length > 0 ? telas : null
             };
         }
     }).then((result) => {
@@ -1549,6 +1619,28 @@ function agregarFilaPrenda() {
                 <textarea class="observaciones" rows="2" placeholder="Detalles adicionales (opcional)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
             </div>
             
+            <!-- TABLA DE COLOR, TELA Y REFERENCIA -->
+            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; margin-top: 12px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.85rem;">🎨 Color, Tela y Referencia</label>
+                <table class="telas-tabla-logo" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 10px;">
+                    <thead>
+                        <tr style="background: #e8f1ff;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: 600; color: #333; width: 25%;">Imagen Tela</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: 600; color: #333; width: 15%;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="telas-tbody-logo" style="background: white;">
+                        <!-- Filas de telas aquí -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn-agregar-tela-logo" onclick="agregarFilaTelaLogo(this)" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">
+                    + Agregar Tela
+                </button>
+            </div>
+            
             <!-- TABLA DE VARIACIONES -->
             <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; margin-top: 12px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.85rem;"> Variaciones de Prenda</label>
@@ -1984,12 +2076,12 @@ function guardarTecnicaSimple() {
 function guardarTecnicaCombinada(datosForm) {
     const tecnicas = window.tecnicasCombinadas;
     
+    console.log('🔍 DEBUG - guardarTecnicaCombinada() llamado con datosForm:', !!datosForm);
 
     
     // Si no se pasa datosForm, construirlo desde el formulario actual
     if (!datosForm) {
-
-        
+        console.log('🔍 DEBUG - Construyendo datosForm desde formulario...');
         // Validar que haya nombre de prenda
         const nombrePrenda = document.querySelector('.nombre_prenda')?.value.trim();
         if (!nombrePrenda) {
@@ -2040,12 +2132,49 @@ function guardarTecnicaCombinada(datosForm) {
             });
         }
         
+        // Obtener telas (COLOR, TELA, REFERENCIA E IMAGEN)
+        const telas = [];
+        const tbodyTelas = document.getElementById('dTablaTelasMulti');
+        console.log('🔍 DEBUG - Buscando tabla de telas:', {
+            tbodyTelasEncontrado: !!tbodyTelas,
+            elementId: 'dTablaTelasMulti'
+        });
+        
+        if (tbodyTelas) {
+            const filasTelaMulti = tbodyTelas.querySelectorAll('.fila-tela-multi');
+            console.log(`🔍 DEBUG - Filas de telas encontradas: ${filasTelaMulti.length}`);
+            
+            filasTelaMulti.forEach((filaTela, telaIdx) => {
+                const color = filaTela.querySelector('.input-color-multi')?.value?.trim();
+                const tela = filaTela.querySelector('.input-tela-multi')?.value?.trim();
+                const referencia = filaTela.querySelector('.input-referencia-multi')?.value?.trim();
+                const inputFile = filaTela.querySelector('.input-file-tela-multi');
+                
+                // Guardar archivo directamente (no usar FileReader async)
+                const archivo = (inputFile && inputFile.files.length > 0) 
+                    ? inputFile.files[0] 
+                    : null;
+                
+                if (color || tela || referencia) {
+                    telas.push({
+                        color: color || null,
+                        tela: tela || null,
+                        referencia: referencia || null,
+                        archivo: archivo
+                    });
+                }
+            });
+        }
+        
+        console.log(`✅ DEBUG - Telas extraídas para datosForm:`, telas);
+        
         datosForm = {
             nombre_prenda: nombrePrenda,
             observaciones: document.getElementById('dObservaciones')?.value.trim() || '',
             ubicacionesPorTecnica: ubicacionesPorTecnica,
             tallasPorTecnica: tallasPorTecnica,
-            imagenesPorTecnica: imagenesPorTecnica
+            imagenesPorTecnica: imagenesPorTecnica,
+            telas: telas.length > 0 ? telas : null
         };
     }
     
@@ -2145,7 +2274,8 @@ function guardarTecnicaCombinada(datosForm) {
                         talla_cantidad: tallasTecnica,
                         variaciones_prenda: datosForm.variaciones_prenda || null,
                         imagenes_files: datosForm.imagenesPorTecnica[idx] || [],
-                        imagenes_data_urls: todasLasImagenes
+                        imagenes_data_urls: todasLasImagenes,
+                        telas: datosForm.telas || null
                     }],
                     es_combinada: true,
                     grupo_combinado: grupoId,
@@ -2346,6 +2476,31 @@ function extraerPrendasDelModal() {
             };
         }
         
+        // EXTRAER TELAS (COLOR, TELA, REFERENCIA E IMAGEN)
+        const telas = [];
+        const tbodyTelas = fila.querySelector('.telas-tbody-logo');
+        if (tbodyTelas) {
+            const filasTelaInput = tbodyTelas.querySelectorAll('.fila-tela-logo');
+            filasTelaInput.forEach((filaTela, telaIdx) => {
+                const color = filaTela.querySelector('.input-color-logo')?.value?.trim();
+                const tela = filaTela.querySelector('.input-tela-logo')?.value?.trim();
+                const referencia = filaTela.querySelector('.input-referencia-logo')?.value?.trim();
+                const inputFile = filaTela.querySelector('.input-file-tela-logo');
+                
+                // Guardar el File object directamente, no el data URL
+                const archivo = (inputFile && inputFile.files.length > 0) ? inputFile.files[0] : null;
+                
+                if (color || tela || referencia) {
+                    telas.push({
+                        color: color || null,
+                        tela: tela || null,
+                        referencia: referencia || null,
+                        archivo: archivo  // Guardar File object
+                    });
+                }
+            });
+        }
+        
 
         
         prendas.push({
@@ -2354,7 +2509,8 @@ function extraerPrendasDelModal() {
             ubicaciones: ubicacionesChecked,
             talla_cantidad: tallaCantidad,
             imagenes_files: imagenesArray,  // Array de File objects
-            variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null  // JSON con variaciones
+            variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,  // JSON con variaciones
+            telas: telas.length > 0 ? telas : null  // Array de telas con color, tela, referencia e imagen
         });
         
 
@@ -2945,6 +3101,84 @@ function renderizarTecnicasAgregadas() {
             }
         });
         
+        // TELAS (COLOR, TELA, REFERENCIA E IMAGEN)
+        let telasPrenda = [];
+        console.log(`🔍 DEBUG - Buscando telas para prenda "${nombrePrenda}" en ${datosPrenda.tecnicas.length} técnicas`);
+        console.log(`🔍 DEBUG - datosPrenda.tecnicas:`, datosPrenda.tecnicas);
+        
+        // Solo obtener telas de la PRIMERA técnica que tenga esta prenda (evitar duplicados)
+        for (let tecIdx = 0; tecIdx < datosPrenda.tecnicas.length; tecIdx++) {
+            const tecData = datosPrenda.tecnicas[tecIdx];
+            const tecnica = tecData.tecnica;
+            console.log(`🔍 DEBUG - Técnica ${tecIdx} (${tecnica?.tipo_logo?.nombre}):`, {
+                tienePrendas: !!tecnica.prendas,
+                cantidadPrendas: tecnica.prendas?.length || 0,
+                prendas: tecnica.prendas
+            });
+            
+            if (tecnica.prendas && tecnica.prendas.length > 0) {
+                for (let pIdx = 0; pIdx < tecnica.prendas.length; pIdx++) {
+                    const p = tecnica.prendas[pIdx];
+                    console.log(`   - Prenda en técnica: "${p.nombre_prenda}", ¿tiene telas?: ${!!p.telas}, cantidad: ${p.telas?.length || 0}`);
+                    
+                    if (p.nombre_prenda === nombrePrenda && p.telas && p.telas.length > 0) {
+                        console.log(`   ✅ ENCONTRADO: Telas para ${nombrePrenda}:`, p.telas);
+                        telasPrenda = p.telas; // Solo asignar, no agregar para evitar duplicados
+                        break; // Salir del loop de prendas
+                    }
+                }
+                // Si ya encontramos las telas, salir del loop de técnicas
+                if (telasPrenda.length > 0) break;
+            }
+        }
+        
+        console.log(`✅ Total telas para prenda "${nombrePrenda}":`, telasPrenda.length, telasPrenda);
+        
+        if (telasPrenda && telasPrenda.length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; padding: 0.8rem; background: #fafafa;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #333; display: block; margin-bottom: 0.6rem;">
+                        🎨 Color, Tela y Referencia:
+                    </span>
+                    <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
+                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
+                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
+                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
+                                <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 40%;">Imagen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${telasPrenda.map((tela, idx) => {
+                                // Renderizar imagen (puede ser File object o data URL)
+                                let imagenHTML = '<span style="color: #999;">Sin imagen</span>';
+                                if (tela.archivo && tela.archivo instanceof File) {
+                                    // Es un File object - necesita convertirse a data URL
+                                    // Por ahora mostrar placeholder - se actualizará asincronamente
+                                    imagenHTML = '<span style="color: #999; font-size: 0.7rem;">Cargando...</span>';
+                                } else if (tela.imagen) {
+                                    // Es un data URL
+                                    imagenHTML = `<img src="${tela.imagen}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
+                                }
+                                
+                                return `
+                                    <tr style="border-bottom: 1px solid #eee;" data-tela-idx="${idx}">
+                                        <td style="padding: 0.4rem; color: #475569;">${tela.color || '-'}</td>
+                                        <td style="padding: 0.4rem; color: #475569;">${tela.tela || '-'}</td>
+                                        <td style="padding: 0.4rem; color: #475569;">${tela.referencia || '-'}</td>
+                                        <td style="padding: 0.4rem; text-align: center; position: relative;">
+                                            ${imagenHTML}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
         if (variacionesPrenda && Object.keys(variacionesPrenda).length > 0) {
             bodyHTML += `
                 <div style="margin-bottom: 1rem; border: 1px solid #e0e7ff; border-radius: 6px; padding: 0.8rem; background: #f8f9ff;">
@@ -3012,6 +3246,38 @@ function renderizarTecnicasAgregadas() {
         
         tarjeta.innerHTML = headerHTML + bodyHTML;
         contenedor.appendChild(tarjeta);
+        
+        // PROCESAR ARCHIVOS DE TELAS (File objects -> data URLs)
+        if (datosPrenda.tecnicas && datosPrenda.tecnicas.length > 0) {
+            datosPrenda.tecnicas.forEach(tecData => {
+                const tecnica = tecData.tecnica;
+                if (tecnica.prendas && tecnica.prendas.length > 0) {
+                    tecnica.prendas.forEach(p => {
+                        if (p.nombre_prenda === nombrePrenda && p.telas && p.telas.length > 0) {
+                            p.telas.forEach((tela, telaIdx) => {
+                                if (tela.archivo && tela.archivo instanceof File) {
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        // Actualizar el data URL en la estructura
+                                        tela.imagen = e.target.result;
+                                        
+                                        // Actualizar la imagen en la tarjeta renderizada
+                                        const row = tarjeta.querySelector(`[data-tela-idx="${telaIdx}"]`);
+                                        if (row) {
+                                            const tdImagen = row.querySelector('td:last-child');
+                                            if (tdImagen) {
+                                                tdImagen.innerHTML = `<img src="${e.target.result}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
+                                            }
+                                        }
+                                    };
+                                    reader.readAsDataURL(tela.archivo);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
     });
     
     container.appendChild(contenedor);
@@ -3065,6 +3331,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     observaciones: prenda.observaciones,
                     talla_cantidad: prenda.talla_cantidad,
                     variaciones_prenda: prenda.variaciones_prenda || {}, // Incluir variaciones
+                    telas: prenda.telas || [], // Incluir telas
                     tecnicas: [],
                     tecnicasData: {} // Guardar datos por técnica
                 };
@@ -3270,6 +3537,50 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 ${ubicacionesHTML}
                 
                 ${variacionesHTML}
+                
+                ${(() => {
+                    // Construir HTML de telas
+                    if (prenda.telas && prenda.telas.length > 0) {
+                        let telasHTML = `
+                            <div style="margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; padding: 0.8rem; background: #fafafa;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.6rem; font-size: 0.85rem; color: #333;">🎨 Color, Tela y Referencia</label>
+                                <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
+                                            <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 40%;">Imagen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${prenda.telas.map((tela, idx) => {
+                                            let imagenHTML = '<span style="color: #999;">Sin imagen</span>';
+                                            if (tela.archivo && tela.archivo instanceof File) {
+                                                imagenHTML = '<span style="color: #999; font-size: 0.7rem;">Cargando...</span>';
+                                            } else if (tela.imagen) {
+                                                imagenHTML = `<img src="${tela.imagen}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
+                                            }
+                                            
+                                            return `
+                                                <tr style="border-bottom: 1px solid #eee;">
+                                                    <td style="padding: 0.4rem; color: #475569;">${tela.color || '-'}</td>
+                                                    <td style="padding: 0.4rem; color: #475569;">${tela.tela || '-'}</td>
+                                                    <td style="padding: 0.4rem; color: #475569;">${tela.referencia || '-'}</td>
+                                                    <td style="padding: 0.4rem; text-align: center;">
+                                                        ${imagenHTML}
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                        return telasHTML;
+                    }
+                    return '';
+                })()}
                 
                 ${imagenesHTML}
                 
@@ -3527,6 +3838,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     observaciones: observaciones,
                     talla_cantidad: nuevasTallas,
                     variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,
+                    telas: todasLasPrendas[prendaIdx].telas || null,
                     tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
                 };
                 
@@ -3560,6 +3872,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     prenda.observaciones = result.value[prendaIdx].observaciones;
                     prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
                     prenda.variaciones_prenda = result.value[prendaIdx].variaciones_prenda;
+                    prenda.telas = result.value[prendaIdx].telas;
                     prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
 
                 } else {
@@ -3577,6 +3890,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                         prenda.observaciones = prendaActualizado.observaciones;
                         prenda.talla_cantidad = prendaActualizado.talla_cantidad;
                         prenda.variaciones_prenda = prendaActualizado.variaciones_prenda;
+                        prenda.telas = prendaActualizado.telas; // Actualizar telas
                         
                         // Obtener datos específicos de esta técnica
                         if (prendaActualizado.tecnicasData && prendaActualizado.tecnicasData[tecnicaIdx]) {
@@ -3588,7 +3902,21 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 });
             });
             
-
+            // PROCESAR TELAS: Convertir File objects a data URLs
+            todasLasPrendas.forEach((prenda, prendaIdx) => {
+                if (prenda.telas && prenda.telas.length > 0) {
+                    prenda.telas.forEach((tela, telaIdx) => {
+                        if (tela.archivo && tela.archivo instanceof File && !tela.imagen) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                tela.imagen = e.target.result;
+                                console.log(`✅ Tela convertida a data URL para prenda ${prendaIdx}, tela ${telaIdx}`);
+                            };
+                            reader.readAsDataURL(tela.archivo);
+                        }
+                    });
+                }
+            });
 
             renderizarTecnicasAgregadas();
         } else {
@@ -3674,6 +4002,195 @@ async function eliminarTecnica(tecnicaIndex) {
 }
 
 // =========================================================
+// 7.5 FUNCIONES PARA TABLA COLOR, TELA Y REFERENCIA (LOGO)
+// =========================================================
+
+function agregarFilaTelaLogo(boton) {
+    const prendasItem = boton.closest('.prenda-item');
+    const tbody = prendasItem.querySelector('.telas-tbody-logo');
+    
+    if (!tbody) return;
+    
+    const numFila = tbody.querySelectorAll('tr').length + 1;
+    
+    const fila = document.createElement('tr');
+    fila.className = 'fila-tela-logo';
+    fila.style.cssText = 'background: white;';
+    fila.innerHTML = `
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-color-logo" placeholder="Ej: Azul, Rojo..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-tela-logo" placeholder="Ej: Algodón, Poliéster..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-referencia-logo" placeholder="Ej: REF-001..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            <div class="dropzone-tela-logo" style="border: 1px dashed #ddd; padding: 6px; border-radius: 3px; background: #fafafa; cursor: pointer; font-size: 0.75rem; color: #999; transition: all 0.2s;" title="Haz clic o arrastra una imagen">
+                📁 Imagen
+            </div>
+            <input type="file" class="input-file-tela-logo" accept="image/*" style="display: none;">
+            <div class="preview-tela-logo" style="margin-top: 4px; display: none; position: relative; width: 60px; height: 60px; border-radius: 3px; overflow: hidden; border: 1px solid #ddd;">
+                <img style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn-eliminar-tela-logo" onclick="this.closest('.fila-tela-logo').querySelector('.preview-tela-logo').style.display='none'; this.closest('.fila-tela-logo').querySelector('.input-file-tela-logo').value='';" style="position: absolute; top: -6px; right: -6px; background: rgba(0,0,0,0.6); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: none;">×</button>
+            </div>
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            <button type="button" onclick="this.closest('tr').remove();" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'" title="Eliminar">
+                ✕
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(fila);
+    
+    // Funcionalidad de imagen
+    const dropzone = fila.querySelector('.dropzone-tela-logo');
+    const input = fila.querySelector('.input-file-tela-logo');
+    const preview = fila.querySelector('.preview-tela-logo');
+    const previewImg = preview.querySelector('img');
+    const previewBtn = preview.querySelector('.btn-eliminar-tela-logo');
+    
+    // Click en dropzone
+    dropzone.addEventListener('click', () => input.click());
+    
+    // Drag over
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#e8f1ff';
+        dropzone.style.borderColor = '#1e40af';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+    });
+    
+    // Drop
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+        if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type.startsWith('image/')) {
+            input.files = e.dataTransfer.files;
+            manejarArchivoTelaLogo();
+        }
+    });
+    
+    // Cambio en input
+    input.addEventListener('change', manejarArchivoTelaLogo);
+    
+    function manejarArchivoTelaLogo() {
+        if (input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+                previewBtn.style.display = 'block';
+                dropzone.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+}
+
+function eliminarFilaTelaLogo(boton) {
+    boton.closest('.fila-tela-logo').remove();
+}
+
+// =========================================================
+// 7.6 FUNCIÓN AGREGAR FILA TELA PARA MÚLTIPLES TÉCNICAS
+// =========================================================
+
+function agregarFilaTelaMultiTecnica(tbody) {
+    if (!tbody) return;
+    
+    const numFila = tbody.querySelectorAll('tr').length + 1;
+    
+    const fila = document.createElement('tr');
+    fila.className = 'fila-tela-multi';
+    fila.style.cssText = 'border-bottom: 1px solid #eee;';
+    fila.innerHTML = `
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-color-multi" placeholder="Ej: Azul, Rojo..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-tela-multi" placeholder="Ej: Algodón, Poliéster..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <input type="text" class="input-referencia-multi" placeholder="Ej: REF-001..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            <div class="dropzone-tela-multi" style="border: 1px dashed #ddd; padding: 6px; border-radius: 3px; background: #fafafa; cursor: pointer; font-size: 0.75rem; color: #999; transition: all 0.2s;" title="Haz clic o arrastra una imagen">
+                📁 Imagen
+            </div>
+            <input type="file" class="input-file-tela-multi" accept="image/*" style="display: none;">
+            <div class="preview-tela-multi" style="margin-top: 4px; display: none; position: relative; width: 60px; height: 60px; border-radius: 3px; overflow: hidden; border: 1px solid #ddd;">
+                <img style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn-eliminar-tela-multi" onclick="this.closest('.fila-tela-multi').querySelector('.preview-tela-multi').style.display='none'; this.closest('.fila-tela-multi').querySelector('.input-file-tela-multi').value='';" style="position: absolute; top: -6px; right: -6px; background: rgba(0,0,0,0.6); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: none;">×</button>
+            </div>
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            <button type="button" onclick="this.closest('tr').remove();" style="background: none; color: #999; border: 1px solid #ddd; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'" title="Eliminar">
+                ✕
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(fila);
+    
+    // Funcionalidad de imagen
+    const dropzone = fila.querySelector('.dropzone-tela-multi');
+    const input = fila.querySelector('.input-file-tela-multi');
+    const preview = fila.querySelector('.preview-tela-multi');
+    const previewImg = preview.querySelector('img');
+    const previewBtn = preview.querySelector('.btn-eliminar-tela-multi');
+    
+    // Click en dropzone
+    dropzone.addEventListener('click', () => input.click());
+    
+    // Drag over
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#e8f1ff';
+        dropzone.style.borderColor = '#1e40af';
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+    });
+    
+    // Drop
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#fafafa';
+        dropzone.style.borderColor = '#ddd';
+        if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type.startsWith('image/')) {
+            input.files = e.dataTransfer.files;
+            manejarArchivoTelaMulti();
+        }
+    });
+    
+    // Cambio en input
+    input.addEventListener('change', manejarArchivoTelaMulti);
+    
+    function manejarArchivoTelaMulti() {
+        if (input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+                previewBtn.style.display = 'block';
+                dropzone.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+}
+
+// =========================================================
 // 8. CERRAR MODAL
 // =========================================================
 
@@ -3717,7 +4234,10 @@ window.LogoCotizacion = {
     eliminarTecnica,
     abrirModalValidacionTecnica,
     cerrarModalValidacionTecnica,
-    guardarTecnicasEnBD
+    guardarTecnicasEnBD,
+    agregarFilaTelaLogo,
+    eliminarFilaTelaLogo,
+    agregarFilaTelaMultiTecnica
 };
 
 // =========================================================

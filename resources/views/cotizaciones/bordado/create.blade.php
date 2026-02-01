@@ -1269,7 +1269,7 @@ function agregarObservacionDesdeBorrador(obs) {
 
 <!-- MODAL PARA AGREGAR PRENDAS CON TÉCNICA SELECCIONADA -->
 <div id="modalAgregarTecnica" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 650px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 1000px; width: 98%; max-height: 95vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         
         <!-- Header del Modal -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
