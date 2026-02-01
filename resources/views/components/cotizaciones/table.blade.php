@@ -185,13 +185,6 @@
                                                 <i class="fas fa-ban" style="font-size: 1rem;"></i>
                                             </a>
                                             @endif
-                                            <a href="#" onclick="eliminarCotizacion({{ $cot->id }}, '{{ $cot->numero_cotizacion }}'); return false;" 
-                                                title="Eliminar Cotización"
-                                                style="background: #e74c3c; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);"
-                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(231, 76, 60, 0.4)'" 
-                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(231, 76, 60, 0.3)'">
-                                                <i class="fas fa-trash-alt" style="font-size: 1rem;"></i>
-                                            </a>
                                         @endif
                                         </div>
                                     </td>
