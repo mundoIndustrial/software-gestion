@@ -44,7 +44,7 @@
                     @endphp
                     
                     @foreach($columns as $column)
-                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};" data-column="{{ $column['key'] }}">
                             <div class="th-wrapper">
                                 <span class="header-text">{{ $column['label'] }}</span>
                                 @if($column['key'] !== 'acciones')

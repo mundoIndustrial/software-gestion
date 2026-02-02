@@ -43,11 +43,47 @@ export class Formatters {
             lineas.push(`<strong style="font-size: 13.4px;">PRENDA ${numeroPrenda}: ${prenda.nombre.toUpperCase()}</strong>`);
         }
 
-        // 2. Línea técnica
+        // 2. Línea técnica - Manejo de múltiples telas
         const partes = [];
-        if (prenda.tela) partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        
+        // Verificar si hay múltiples telas
+        if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+            console.log('[Formatters] 🎨 Múltiples telas encontradas:', prenda.telas_array.length);
+            
+            // Construir string con todas las telas y colores
+            const telasInfo = prenda.telas_array
+                .filter(t => t.tela_nombre || t.color_nombre) // Filtrar telas válidas
+                .map(t => {
+                    const tela = t.tela_nombre || '';
+                    const color = t.color_nombre || '';
+                    const ref = t.referencia ? ` | REF: ${t.referencia}` : '';
+                    if (tela && color) {
+                        return `${tela} / ${color}${ref}`;
+                    } else if (tela) {
+                        return `${tela}${ref}`;
+                    } else if (color) {
+                        return `${color}${ref}`;
+                    }
+                    return '';
+                })
+                .filter(t => t) // Filtrar strings vacíos
+                .join(' | ');
+            
+            if (telasInfo) {
+                partes.push(`<strong>TELAS:</strong> ${telasInfo.toUpperCase()}`);
+                console.log('[Formatters] ✅ Telas múltiples agregadas:', telasInfo);
+            }
+        } else if (prenda.tela && prenda.color) {
+            // Fallback: si solo hay una tela
+            partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+            partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+            if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+            console.log('[Formatters] ℹ️ Usando tela única (fallback)');
+        } else if (prenda.tela) {
+            partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
+            if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
+            if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
+        }
         
         // Manga desde variantes
         console.log('[Formatters] 🔍 Buscando manga en variantes...');
@@ -115,21 +151,20 @@ export class Formatters {
                 console.log('[Formatters] ✅ BOLSILLOS agregados');
             }
             
-            // Buscar BROCHE/BOTÓN en broche_boton_obs
-            if (primerVariante.broche_boton_obs && primerVariante.broche_boton_obs.trim()) {
-                let etiqueta = 'BROCHE/BOTÓN';
-                // Si hay tipo_broche_boton_id, podemos inferir mejor la etiqueta
-                // tipo_broche_boton_id = 1 suele ser broche, 2 botón, etc.
-                if (primerVariante.tipo_broche_boton_id === 1) {
-                    etiqueta = 'BROCHE';
-                } else if (primerVariante.tipo_broche_boton_id === 2) {
+            // Buscar BROCHE/BOTÓN en broche_obs o broche_boton_obs
+            const brocheObs = primerVariante.broche_obs || primerVariante.broche_boton_obs;
+            if (brocheObs && brocheObs.trim()) {
+                let etiqueta = primerVariante.broche || 'BROCHE/BOTÓN';
+                if (etiqueta.toLowerCase().includes('botón')) {
                     etiqueta = 'BOTÓN';
+                } else if (etiqueta.toLowerCase().includes('broche')) {
+                    etiqueta = 'BROCHE';
                 }
                 
-                detalles.push(`• <strong>${etiqueta}:</strong> ${primerVariante.broche_boton_obs.toUpperCase()}`);
+                detalles.push(`• <strong>${etiqueta}:</strong> ${brocheObs.toUpperCase()}`);
                 console.log('[Formatters] ✅ BROCHE/BOTÓN agregado:', etiqueta);
             } else {
-                console.log('[Formatters] ⚠️ No hay broche_boton_obs');
+                console.log('[Formatters] ⚠️ No hay broche_obs o broche_boton_obs');
             }
         }
         

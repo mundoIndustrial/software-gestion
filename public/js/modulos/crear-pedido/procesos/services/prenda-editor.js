@@ -328,6 +328,13 @@ class PrendaEditor {
      * @private
      */
     llenarCamposBasicos(prenda) {
+        console.log('🟦🟦🟦 [llenarCamposBasicos] INICIANDO CARGA DE CAMPOS BÁSICOS 🟦🟦🟦', {
+            nombre: prenda.nombre_prenda,
+            de_bodega: prenda.de_bodega,
+            origen: prenda.origen,
+            timestamp: new Date().toLocaleTimeString()
+        });
+        
         const nombreField = document.getElementById('nueva-prenda-nombre');
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
@@ -388,7 +395,7 @@ class PrendaEditor {
                 return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             
-            // Determinar origen: ahora prioridad: prenda.origen > de_bodega
+            // Determinar origen: PRIORIDAD CORRECTA
             let origen = null;
             
             // PRIMERO: usar prenda.origen (que ya puede haber sido forzado arriba)
@@ -397,13 +404,18 @@ class PrendaEditor {
                 console.log('[llenarCamposBasicos] Usando prenda.origen:', origen);
             }
             // SEGUNDO: verificar de_bodega (campo de la BD)
+            // ⚠️ IMPORTANTE: Usar == para comparación flexible (1 == true, 0 == false)
             else if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
-                if (prenda.de_bodega === true || prenda.de_bodega === 1 || prenda.de_bodega === '1') {
+                // Si de_bodega es 1, true o '1' → bodega
+                // Si de_bodega es 0, false o '0' → confeccion
+                if (prenda.de_bodega == 1 || prenda.de_bodega === true || prenda.de_bodega === '1') {
                     origen = 'bodega';
-                } else if (prenda.de_bodega === false || prenda.de_bodega === 0 || prenda.de_bodega === '0') {
+                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=true → origen: bodega');
+                } else {
+                    // Cualquier otro valor falsy (0, false, '0', null) → confeccion
                     origen = 'confeccion';
+                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=false → origen: confeccion');
                 }
-                console.log('[llenarCamposBasicos] Usando de_bodega:', origen);
             }
             
             // SI NO hay ninguno, usar default
@@ -414,7 +426,9 @@ class PrendaEditor {
             
             console.log('[llenarCamposBasicos] Origen final determinado:', {
                 origen: origen,
-                normalizado: normalizarTexto(origen)
+                normalizado: normalizarTexto(origen),
+                de_bodega: prenda.de_bodega,
+                comparacion_numerica: (prenda.de_bodega == 1) ? 'bodega' : 'confeccion'
             });
             
             const origenNormalizado = normalizarTexto(origen);
@@ -429,32 +443,90 @@ class PrendaEditor {
                 console.log(`  [${i}] value="${opt.value}" (${optValueNormalizado}) | text="${opt.textContent}" (${optTextNormalizado})`);
             }
             
+            // PASO 1: INTENTAR COINCIDIR por value exacto (sin normalización)
+            console.log('[llenarCamposBasicos] PASO 1: Buscando coincidencia exacta...');
             for (let opt of origenField.options) {
-                const optTextNormalizado = normalizarTexto(opt.textContent);
-                const optValueNormalizado = normalizarTexto(opt.value);
-                
-                if (optValueNormalizado === origenNormalizado || optTextNormalizado === origenNormalizado) {
-                    console.log('[llenarCamposBasicos] ✅ Opción encontrada:', {
+                if (opt.value === origen) {
+                    console.log('[llenarCamposBasicos] ✅ PASO 1: Coincidencia exacta por VALUE:', {
                         optValue: opt.value,
-                        optText: opt.textContent,
-                        asignando: opt.value
+                        origen: origen
                     });
                     origenField.value = opt.value;
+                    origenField.selectedIndex = Array.from(origenField.options).indexOf(opt);
                     encontrado = true;
                     break;
                 }
             }
             
+            // PASO 2: Si no encontró, intentar por value normalizado
             if (!encontrado) {
-                console.log('[llenarCamposBasicos] ❌ Opción NO encontrada, asignando directo:', origen);
-                origenField.value = origen;
+                console.log('[llenarCamposBasicos] PASO 2: Buscando coincidencia normalizada...');
+                for (let opt of origenField.options) {
+                    const optValueNormalizado = normalizarTexto(opt.value);
+                    if (optValueNormalizado === origenNormalizado) {
+                        console.log('[llenarCamposBasicos] ✅ PASO 2: Coincidencia normalizada:', {
+                            optValue: opt.value,
+                            origenNormalizado: origenNormalizado,
+                            asignando: opt.value
+                        });
+                        origenField.value = opt.value;
+                        origenField.selectedIndex = Array.from(origenField.options).indexOf(opt);
+                        encontrado = true;
+                        break;
+                    }
+                }
             }
             
-            console.log('[llenarCamposBasicos] SELECT después de asignación:', {
-                selectValue: origenField.value,
-                selectSelectedIndex: origenField.selectedIndex,
-                selectSelectedOption: origenField.options[origenField.selectedIndex]?.value
+            // PASO 3: Si aún no encontró, intentar asignación directa
+            if (!encontrado) {
+                console.log('[llenarCamposBasicos] PASO 3: Asignación directa del valor...');
+                origenField.value = origen;
+                
+                // Forzar con setAttribute si value no funcionó
+                if (origenField.value !== origen) {
+                    console.log('[llenarCamposBasicos] ⚠️ value no funcionó, intentando setAttribute...');
+                    for (let i = 0; i < origenField.options.length; i++) {
+                        if (origenField.options[i].value === origen) {
+                            origenField.selectedIndex = i;
+                            console.log('[llenarCamposBasicos] ✅ PASO 3B: setAttribute funcionó, selectedIndex=', i);
+                            encontrado = true;
+                            break;
+                        }
+                    }
+                } else {
+                    console.log('[llenarCamposBasicos] ✅ PASO 3: Asignación directa exitosa');
+                    encontrado = true;
+                }
+            }
+            
+            // VERIFICACIÓN FINAL
+            const valorFinal = origenField.value;
+            const coincide = (valorFinal === origen) || (normalizarTexto(valorFinal) === origenNormalizado);
+            
+            console.log('[llenarCamposBasicos] ✅✅ VERIFICACIÓN FINAL:', {
+                origenEsperado: origen,
+                valorEnSelect: valorFinal,
+                coincide: coincide,
+                selectedIndex: origenField.selectedIndex,
+                selectedOption: origenField.options[origenField.selectedIndex]?.value,
+                encontradoCorrectamente: encontrado
             });
+            
+            if (!coincide) {
+                console.error('[llenarCamposBasicos] ❌❌ FALLO: El select no tiene el valor correcto!', {
+                    origen,
+                    valorEnSelect: valorFinal,
+                    opcionesDisponibles: Array.from(origenField.options).map((opt, idx) => ({idx, value: opt.value, text: opt.textContent}))
+                });
+            } else {
+                console.log('🟢🟢🟢 [llenarCamposBasicos] ✅✅✅ ÉXITO: SELECT ORIGEN ESTABLECIDO CORRECTAMENTE 🟢🟢🟢', {
+                    origenEsperado: origen,
+                    valorEnSelect: valorFinal,
+                    selectedIndex: origenField.selectedIndex,
+                    selectedOptionText: origenField.options[origenField.selectedIndex]?.textContent,
+                    coincideConOrigen: coincide
+                });
+            }
             
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
@@ -510,6 +582,35 @@ class PrendaEditor {
                                 file: null,
                                 urlDesdeDB: true
                             });
+                        },
+                        establecerImagenes: function(nuevasImagenes) {
+                            if (!Array.isArray(nuevasImagenes)) {
+                                console.warn('⚠️ [ImageStorageService (fallback).establecerImagenes] No es un array válido');
+                                return;
+                            }
+                            
+                            // Limpiar URLs de imágenes que serán reemplazadas
+                            this.images.forEach(img => {
+                                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                                    URL.revokeObjectURL(img.previewUrl);
+                                }
+                            });
+                            
+                            // Normalizar nuevas imágenes: asegurar que tienen previewUrl
+                            const imagenesNormalizadas = nuevasImagenes.map(img => {
+                                // Si no tiene previewUrl, usar url, ruta, o ruta_webp
+                                if (!img.previewUrl && (img.url || img.ruta || img.ruta_webp)) {
+                                    return {
+                                        ...img,
+                                        previewUrl: img.url || img.ruta || img.ruta_webp
+                                    };
+                                }
+                                return img;
+                            });
+                            
+                            // Reemplazar el array
+                            this.images = imagenesNormalizadas || [];
+                            console.log('✅ [ImageStorageService (fallback).establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
                         }
                     };
                     console.log('✅ [CARGAR-IMAGENES] Fallback manual creado');

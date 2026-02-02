@@ -124,7 +124,6 @@
             asesora: cot.asesor?.name || window.asesorActualNombre || 'N/A',
             forma_pago: cot.especificaciones?.forma_pago || cot.forma_de_pago || 'N/A',
             estado: cot.estado || 'APROBADO_PARA_PEDIDO',
-            tipo_cotizacion: cot.tipo_cotizacion?.nombre || cot.tipoCotizacion?.nombre || 'General',
             // Mantener datos originales para cargar después
             original: cot
         }));
@@ -177,26 +176,25 @@
             cotizacionesFormateadas.forEach(cot => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - ${cot.tipo_cotizacion}`;
+                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora})`;
                 item.style.padding = '8px 12px';
                 item.style.cursor = 'pointer';
                 item.style.borderBottom = '1px solid #e5e7eb';
                 
                 item.addEventListener('click', function() {
-                    selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente} - ${cot.tipo_cotizacion}`;
+                    selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente}`;
                     selectedText.textContent = cot.numero_cotizacion;
                     hiddenInput.value = cot.id;
                     dropdown.style.display = 'none';
                     cotizacionSeleccionada = cot;
                     
                     // Actualizar el input del buscador con la cotización seleccionada
-                    searchInput.value = `${cot.numero_cotizacion} - ${cot.cliente} - ${cot.tipo_cotizacion}`;
+                    searchInput.value = `${cot.numero_cotizacion} - ${cot.cliente}`;
                     
                     console.log('✓ Cotización seleccionada:', cot);
                     
-                    // 🔴 Guardar la cotización ORIGINAL (con todos los datos: tipo_cotizacion_id, tipo_cotizacion, etc.)
-                    // NO guardar el objeto formateado resumido
-                    window.cotizacionSeleccionadaActual = cot.original || cot;
+                    // Guardar para usar en agregar prendas
+                    window.cotizacionSeleccionadaActual = cot;
                     
                     console.log('📦 Prendas disponibles:', cot.original?.prendas || []);
                 });
