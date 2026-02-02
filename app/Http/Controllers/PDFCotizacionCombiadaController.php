@@ -50,6 +50,10 @@ class PDFCotizacionCombiadaController extends Controller
                     $query->with(['fotos', 'tecnicasPrendas' => function($q) {
                         $q->with(['prenda', 'tipoLogo', 'fotos']);
                     }]);
+                },
+                'reflectivoPrendas' => function($query) {
+                    $query->select('id', 'cotizacion_id', 'prenda_cot_id', 'descripcion')
+                        ->with('fotos:id,reflectivo_cotizacion_id,ruta_webp');
                 }
             ])->findOrFail($id);
 

@@ -526,17 +526,22 @@ CSS;
      */
     private function renderImagenes($prenda, $tecnicasPrendaArray): string
     {
-        $imagenes = [];
+        // Agrupar imágenes por tipo
+        $imagenesPorTipo = [
+            'Logo' => [],
+            'Tela' => [],
+            'Prenda' => [],
+            'Reflectivo' => []
+        ];
 
         // Logo de cada técnica
         foreach ($tecnicasPrendaArray as $tp) {
             if ($tp->fotos && count($tp->fotos) > 0) {
                 foreach ($tp->fotos as $foto) {
                     if ($foto->url) {
-                        $imagenes[] = [
-                            'grupo' => 'Logo - ' . ($tp->tipoLogo?->nombre ?? 'Logo'),
+                        $imagenesPorTipo['Logo'][] = [
                             'url' => $foto->url,
-                            'titulo' => 'Logo'
+                            'titulo' => 'Logo - ' . ($tp->tipoLogo?->nombre ?? 'Logo')
                         ];
                     }
                 }
@@ -546,8 +551,7 @@ CSS;
         // Tela
         if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
             foreach ($prenda->telaFotos as $idx => $foto) {
-                $imagenes[] = [
-                    'grupo' => 'Tela',
+                $imagenesPorTipo['Tela'][] = [
                     'url' => $foto->url ?? $foto->ruta_webp,
                     'titulo' => 'Tela'
                 ];
@@ -557,38 +561,84 @@ CSS;
         // Prenda
         if ($prenda->fotos && count($prenda->fotos) > 0) {
             foreach ($prenda->fotos as $idx => $foto) {
-                $imagenes[] = [
-                    'grupo' => 'Prenda',
+                $imagenesPorTipo['Prenda'][] = [
                     'url' => $foto->url,
                     'titulo' => 'Prenda'
                 ];
             }
         }
 
-        if (empty($imagenes)) {
+        // Imágenes del reflectivo paso 4
+        if ($this->cotizacion->reflectivoPrendas) {
+            foreach ($this->cotizacion->reflectivoPrendas as $refPrendaItem) {
+                if ($refPrendaItem->prenda_cot_id === $prenda->id && $refPrendaItem->fotos) {
+                    foreach ($refPrendaItem->fotos as $foto) {
+                        if ($foto->ruta_webp) {
+                            $imagenesPorTipo['Reflectivo'][] = [
+                                'url' => $foto->ruta_webp,
+                                'titulo' => 'Reflectivo'
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Verificar si hay al menos una imagen
+        $tieneImagenes = false;
+        foreach ($imagenesPorTipo as $tipoImagenes) {
+            if (!empty($tipoImagenes)) {
+                $tieneImagenes = true;
+                break;
+            }
+        }
+
+        if (!$tieneImagenes) {
             return '';
         }
 
-        $html = '<div class="imagenes-grupo">';
+        // Crear tabla horizontal con columnas por tipo
+        $html = '<table class="imagenes-table">';
+        $html .= '<thead>';
+        $html .= '<tr>';
+        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
+        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
+        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
+        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Reflectivo</th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+        $html .= '<tr>';
 
-        foreach ($imagenes as $img) {
-            $imagenUrl = $img['url'];
-            if (!str_starts_with($imagenUrl, 'http')) {
-                $ruta = str_starts_with($imagenUrl, '/storage/') ? $imagenUrl : '/storage/' . ltrim($imagenUrl, '/');
-                $imagenUrl = public_path(ltrim($ruta, '/'));
+        // Procesar cada tipo de imagen
+        foreach (['Logo', 'Tela', 'Prenda', 'Reflectivo'] as $tipo) {
+            $html .= '<td style="width: 25%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
+
+            if (!empty($imagenesPorTipo[$tipo])) {
+                // Mostrar solo la primera imagen de cada tipo
+                $img = $imagenesPorTipo[$tipo][0];
+                $imagenUrl = $img['url'];
+
+                if (!str_starts_with($imagenUrl, 'http')) {
+                    $ruta = str_starts_with($imagenUrl, '/storage/') ? $imagenUrl : '/storage/' . ltrim($imagenUrl, '/');
+                    $imagenUrl = public_path(ltrim($ruta, '/'));
+                }
+
+                if (file_exists($imagenUrl)) {
+                    $html .= '<img src="' . $imagenUrl . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
+                } else {
+                    $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Imagen no encontrada</div>';
+                }
+            } else {
+                $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin ' . strtolower($tipo) . '</div>';
             }
 
-            if (file_exists($imagenUrl)) {
-                $html .= '<div class="imagen-container">';
-                $html .= '<div class="imagen-box">';
-                $html .= '<img src="' . $imagenUrl . '" alt="' . htmlspecialchars($img['titulo']) . '">';
-                $html .= '</div>';
-                $html .= '<div class="imagen-label">' . htmlspecialchars($img['grupo']) . '</div>';
-                $html .= '</div>';
-            }
+            $html .= '</td>';
         }
 
-        $html .= '</div>';
+        $html .= '</tr>';
+        $html .= '</tbody>';
+        $html .= '</table>';
 
         return $html;
     }
