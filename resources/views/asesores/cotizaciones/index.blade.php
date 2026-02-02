@@ -325,6 +325,9 @@
         
         // Construir la URL según el tipo de PDF
         switch(tipoPDF) {
+            case 'combinada':
+                url = `/asesores/cotizacion/${cotizacionId}/pdf/combinada`;
+                break;
             case 'prenda':
                 url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
                 break;

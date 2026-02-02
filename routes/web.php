@@ -21,6 +21,9 @@ use App\Http\Controllers\StorageController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalWebController;
 use App\Http\Controllers\TestTelasPrendaController;
+use App\Http\Controllers\PDFPrendaController;
+use App\Http\Controllers\PDFReflectivoController;
+use App\Http\Controllers\PDFCotizacionCombiadaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -672,7 +675,15 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     Route::post('/cotizaciones', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'update'])->name('cotizaciones.update');
     
-    // Ruta para generar PDF de cotizaciones (prenda o logo)
+    // ========================================
+    // RUTAS PDF ESPECÍFICAS - DEBE ESTAR ANTES DE LA RUTA GENÉRICA
+    // ========================================
+    Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
+    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
+    Route::get('/cotizacion/{id}/pdf/reflectivo', [PDFReflectivoController::class, 'generate'])->name('cotizacion.pdf.reflectivo');
+    Route::get('/cotizacion/{id}/pdf/logo', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.logo');
+    
+    // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
     
     // Rutas para eliminar imágenes de borradores (ANTES de rutas dinámicas)

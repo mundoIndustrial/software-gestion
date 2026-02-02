@@ -109,47 +109,56 @@
                                             
                                             <!-- Botones PDF dinámicos según tipo y relaciones -->
                                             @php
-                                                $pdfButtons = [];
-                                                
-                                                // Verificar si tiene prendas
                                                 $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
-                                                if ($tienePrendas) {
-                                                    $pdfButtons[] = [
-                                                        'tipo' => 'prenda',
-                                                        'label' => 'PDF Prenda',
-                                                        'icon' => 'fa-file-pdf'
-                                                    ];
-                                                }
-                                                
-                                                // Verificar si tiene reflectivo
+                                                $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
                                                 $tieneReflectivo = false;
+                                                
                                                 if ($cot->tipo === 'RF') {
                                                     $tieneReflectivo = true;
                                                 } else {
-                                                    // Para cotizaciones combinadas, verificar si hay reflectivo_prendas
                                                     $tieneReflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cot->id)->whereNotNull('prenda_cot_id')->exists();
                                                 }
                                                 
-                                                if ($tieneReflectivo) {
-                                                    $pdfButtons[] = [
-                                                        'tipo' => 'reflectivo',
-                                                        'label' => 'PDF Reflectivo',
-                                                        'icon' => 'fa-file-pdf'
-                                                    ];
-                                                }
+                                                // Detectar si es COMBINADA (prendas + logo)
+                                                $esCombinad = $tienePrendas && $tieneLogo;
                                                 
-                                                // Verificar si tiene logo
-                                                $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
-                                                if ($tieneLogo) {
-                                                    $pdfButtons[] = [
-                                                        'tipo' => 'logo',
-                                                        'label' => 'PDF Logo',
-                                                        'icon' => 'fa-file-pdf'
-                                                    ];
+                                                // Construir array de botones SOLO si NO es combinada
+                                                $pdfButtons = [];
+                                                if (!$esCombinad) {
+                                                    if ($tienePrendas) {
+                                                        $pdfButtons[] = [
+                                                            'tipo' => 'prenda',
+                                                            'label' => 'PDF Prenda',
+                                                            'icon' => 'fa-file-pdf'
+                                                        ];
+                                                    }
+                                                    if ($tieneReflectivo) {
+                                                        $pdfButtons[] = [
+                                                            'tipo' => 'reflectivo',
+                                                            'label' => 'PDF Reflectivo',
+                                                            'icon' => 'fa-file-pdf'
+                                                        ];
+                                                    }
+                                                    if ($tieneLogo) {
+                                                        $pdfButtons[] = [
+                                                            'tipo' => 'logo',
+                                                            'label' => 'PDF Logo',
+                                                            'icon' => 'fa-file-pdf'
+                                                        ];
+                                                    }
                                                 }
                                             @endphp
                                             
-                                            @if(count($pdfButtons) > 0)
+                                            @if($esCombinad)
+                                                <!-- Cotización COMBINADA: Descargar directamente sin menú -->
+                                                <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'combinada')" 
+                                                    title="Descargar PDF Combinada"
+                                                    style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                    <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                                                </button>
+                                            @elseif(count($pdfButtons) > 0)
                                                 @if(count($pdfButtons) === 1)
                                                     <!-- Un solo botón PDF -->
                                                     @php $btn = $pdfButtons[0]; @endphp

@@ -21,6 +21,7 @@ use App\Infrastructure\Http\Controllers\Asesores\ReciboController;
 use App\Http\Controllers\PDFCotizacionController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFReflectivoController;
+use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Infrastructure\Http\Controllers\CotizacionController as CotizacionControllerAlias;
 use Illuminate\Support\Facades\Route;
 
@@ -126,9 +127,12 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ========================================
     // PDF GENERATION - NEW REFACTORED STRUCTURE
     // ========================================
+    // IMPORTANTE: Las rutas específicas deben ir ANTES que la genérica
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
+    Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
     Route::get('/cotizacion/{id}/pdf/reflectivo', [PDFReflectivoController::class, 'generate'])->name('cotizacion.pdf.reflectivo');
-    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf'); // Legacy route
+    Route::get('/cotizacion/{id}/pdf/logo', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.logo'); // Route for logo PDF
+    Route::get('/cotizacion/{id}/pdf', [PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf'); // Legacy route - DEBE SER ÚLTIMO
     
     Route::delete('/cotizaciones/imagenes/prenda/{id}', [ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');
     Route::delete('/cotizaciones/imagenes/tela/{id}', [ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
