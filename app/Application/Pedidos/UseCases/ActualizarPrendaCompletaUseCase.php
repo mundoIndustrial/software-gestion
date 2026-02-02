@@ -504,15 +504,23 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // PATTERN MERGE: No eliminar procesos automáticamente
-        // Los procesos se preservan hasta que el usuario los elimine explícitamente
+        // 🔧 FIX: Patrón MERGE actualizar procesos existentes
+        // - Si proceso tiene ID → UPDATE ubicaciones, observaciones
+        // - Si proceso NO tiene ID → CREATE nuevo proceso
+        // - Preservar procesos que no están en el payload (no eliminar)
         
         // Solo actualizar si se proporcionan procesos
         if (is_null($dto->procesos) || empty($dto->procesos)) {
             return;
         }
 
-        // Crear NUEVOS procesos si se envían (sin eliminar los existentes)
+        \Log::info('[ActualizarPrendaCompletaUseCase] Actualizando procesos', [
+            'prenda_id' => $prenda->id,
+            'cantidad_procesos' => count($dto->procesos),
+            'procesos_debug' => json_encode($dto->procesos)
+        ]);
+
+        // Procesar procesos: actualizar existentes o crear nuevos
         foreach ($dto->procesos as $proceso) {
             // Decodificar ubicaciones si vienen como JSON string
             $ubicaciones = $proceso['ubicaciones'] ?? null;
@@ -527,15 +535,80 @@ final class ActualizarPrendaCompletaUseCase
                 }
             }
 
-            $procesoCreado = $prenda->procesos()->create([
-                'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
-                'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
-                'observaciones' => $proceso['observaciones'] ?? null,
-                'estado' => $proceso['estado'] ?? 'PENDIENTE',
-            ]);
+            $procesoId = $proceso['id'] ?? null;
 
-            // Agregar imÃ¡genes del proceso si existen
-            $this->agregarImagenesProceso($procesoCreado, $proceso, $dto);
+            if ($procesoId && $procesoId > 0) {
+                // ✏️ ACTUALIZAR: Proceso existente
+                $procesoExistente = $prenda->procesos()->where('id', $procesoId)->first();
+                if ($procesoExistente) {
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Actualizando proceso existente', [
+                        'proceso_id' => $procesoId,
+                        'ubicaciones_anteriores' => json_encode(json_decode($procesoExistente->ubicaciones, true)),
+                        'ubicaciones_nuevas' => $ubicaciones
+                    ]);
+
+                    $procesoExistente->update([
+                        'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? $procesoExistente->tipo_proceso_id,
+                        'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : $procesoExistente->ubicaciones,
+                        'observaciones' => $proceso['observaciones'] ?? $procesoExistente->observaciones,
+                        'estado' => $proceso['estado'] ?? $procesoExistente->estado,
+                    ]);
+
+                    // 🔧 ACTUALIZAR TALLAS del proceso si se proporcionan
+                    if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                        // Eliminar tallas existentes del proceso
+                        $procesoExistente->tallas()->delete();
+
+                        // Crear nuevas tallas desde el payload
+                        foreach ($proceso['tallas'] as $genero => $tallas) {
+                            if (!is_array($tallas)) {
+                                continue;
+                            }
+
+                            foreach ($tallas as $talla => $cantidad) {
+                                if ($cantidad > 0) {
+                                    $procesoExistente->tallas()->create([
+                                        'genero' => strtoupper($genero),
+                                        'talla' => strtoupper($talla),
+                                        'cantidad' => (int)$cantidad,
+                                    ]);
+                                }
+                            }
+                        }
+
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Tallas del proceso actualizadas', [
+                            'proceso_id' => $procesoId,
+                            'tallas_nuevas' => $proceso['tallas']
+                        ]);
+                    }
+
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Proceso actualizado correctamente', [
+                        'proceso_id' => $procesoId,
+                        'ubicaciones_guardadas' => json_encode($ubicaciones)
+                    ]);
+                } else {
+                    \Log::warning('[ActualizarPrendaCompletaUseCase] No se encontró proceso con ID', [
+                        'proceso_id' => $procesoId,
+                        'prenda_id' => $prenda->id
+                    ]);
+                }
+            } else {
+                // ✅ CREAR: Nuevo proceso
+                \Log::info('[ActualizarPrendaCompletaUseCase] Creando nuevo proceso', [
+                    'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
+                    'ubicaciones' => $ubicaciones
+                ]);
+
+                $procesoCreado = $prenda->procesos()->create([
+                    'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
+                    'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
+                    'observaciones' => $proceso['observaciones'] ?? null,
+                    'estado' => $proceso['estado'] ?? 'PENDIENTE',
+                ]);
+
+                // Agregar imágenes del proceso si existen
+                $this->agregarImagenesProceso($procesoCreado, $proceso, $dto);
+            }
         }
     }
 
@@ -675,6 +748,51 @@ final class ActualizarPrendaCompletaUseCase
             'rol_asesor' => $rolAsesor,
         ]);
     }
-}
 
+    /**
+     * 🔧 ACTUALIZAR TALLAS de un proceso existente
+     * 
+     * Recibe tallas en formato:
+     * {
+     *   "dama": { "S": 2, "M": 5 },
+     *   "caballero": { "L": 3 }
+     * }
+     * 
+     * @param $procesoExistente Proceso a actualizar
+     * @param array $tallasNuevas Tallas nuevas por género
+     */
+    private function actualizarTallasDelProceso($procesoExistente, array $tallasNuevas): void
+    {
+        try {
+            // 1. ELIMINAR todas las tallas existentes del proceso
+            $procesoExistente->tallas()->delete();
 
+            // 2. CREAR nuevas tallas desde el payload
+            foreach ($tallasNuevas as $genero => $tallas) {
+                if (!is_array($tallas)) {
+                    continue;
+                }
+
+                foreach ($tallas as $talla => $cantidad) {
+                    if ($cantidad > 0) {
+                        $procesoExistente->tallas()->create([
+                            'genero' => strtoupper($genero),
+                            'talla' => strtoupper($talla),
+                            'cantidad' => (int)$cantidad,
+                        ]);
+                    }
+                }
+            }
+
+            \Log::info('[ActualizarPrendaCompletaUseCase] Tallas del proceso actualizadas', [
+                'proceso_id' => $procesoExistente->id,
+                'tallas_nuevas' => $tallasNuevas
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[ActualizarPrendaCompletaUseCase] Error actualizando tallas del proceso', [
+                'proceso_id' => $procesoExistente->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }}

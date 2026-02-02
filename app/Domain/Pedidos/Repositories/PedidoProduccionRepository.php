@@ -503,6 +503,7 @@ class PedidoProduccionRepository
                             }
                             
                             $procesos[] = [
+                                'id' => $proc->id,
                                 'nombre' => $nombreProceso,
                                 'tipo' => $nombreProceso,
                                 'nombre_proceso' => $nombreProceso,
@@ -524,6 +525,7 @@ class PedidoProduccionRepository
                     'prenda_pedido_id' => $prenda->id, // ✅ AGREGAR prenda_pedido_id (alias del id)
                     'nombre' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
+                    'de_bodega' => (bool)($prenda->de_bodega ?? false), // ✅ AGREGAR de_bodega para mostrar indicador
                     'imagen' => $foto ? ($foto->url ?? $foto->ruta_webp) : null,
                     'imagen_tela' => !empty($fotoTelas) ? $fotoTelas[0] : null,
                     'imagenes' => $fotosPrend,
@@ -1068,7 +1070,7 @@ class PedidoProduccionRepository
                 'generosConTallas' => $generosConTallas,
                 'telasAgregadas' => $telasAgregadas,
                 'variantes' => $especificaciones,
-                'de_bodega' => $prenda->de_bodega ?? 0,
+                'de_bodega' => (bool)($prenda->de_bodega ?? false),
                 'procesos' => $procesos,
                 'imagenes' => $imagenesPrenda,
                 'imagenes_tela' => $imagenesTela,

@@ -123,10 +123,14 @@ class CrearPedidoEditableController extends Controller
                     'telaFotos', 
                     'tallas', 
                     'variantes',
-                    'reflectivo.fotos'  // ✅ Agregar fotos de reflectivo para imágenes del proceso
+                    'reflectivo.fotos',  // ✅ Agregar fotos de reflectivo para imágenes del proceso
+                    'logoCotizacionTelasPrenda' => function($q) {  // ✅ Nueva carga para telas de logo
+                        // Cargar todas las telas/colores/referencias para esta prenda en cotización de logo
+                    }
                 ]);
             },
             'logoCotizacion.fotos',
+            'logoCotizacion.telasPrendas',  // ✅ Agregar telasPrendas de la cotización de logo
             'reflectivoCotizacion.fotos'
         ])
             ->where('asesor_id', $user->id)

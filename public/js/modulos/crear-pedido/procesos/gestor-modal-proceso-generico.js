@@ -249,15 +249,28 @@ window.eliminarImagenProceso = function(indice) {
     
     // ✅ NUEVO: Marcar como null en imagenesProcesoExistentes para que la imagen eliminada no se envíe
     // Esto preserva los índices y no daña otros flujos
+    let imagenesParaEnviar = [];
     if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
         window.imagenesProcesoExistentes[indice - 1] = null;
+        
+        // Limpiar nulls para enviar solo las imágenes que quedan
+        imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        
         console.log('[eliminarImagenProceso] 🗑️ Imagen existente marcada como eliminada en imagenesProcesoExistentes:', {
             indice: indice - 1,
-            imagenesExistentes: window.imagenesProcesoExistentes
+            imagenesOriginales: window.imagenesProcesoExistentes,
+            imagenesParaEnviar: imagenesParaEnviar
         });
     }
     
     console.log('[eliminarImagenProceso] ✅ Imagen eliminada del índice:', indice);
+    
+    // ✅ CRÍTICO: Registrar el cambio de imágenes en el editor de procesos
+    // Esto asegura que cuando guarde, se envíe el cambio al backend
+    if (window.procesosEditor) {
+        window.procesosEditor.registrarCambioImagenes(imagenesParaEnviar);
+        console.log('[eliminarImagenProceso] ✅ Cambio de imágenes registrado en editor:', imagenesParaEnviar);
+    }
     
     const input = document.getElementById(`proceso-foto-input-${indice}`);
     

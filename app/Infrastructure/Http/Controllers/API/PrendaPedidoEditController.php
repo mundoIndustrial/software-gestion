@@ -516,36 +516,83 @@ class PrendaPedidoEditController extends Controller
                 }
             }
 
-            // ============ NUEVO: AGREGAR IMÁGENES NUEVAS A LA LISTA DE IMÁGENES ============
-            if (!empty($imagenesNuevasRutas) || !empty($imagenesExistentes)) {
-                $imagenesDeJSON = [];
-                if (isset($data['imagenes']) && is_string($data['imagenes'])) {
+            // ============ NUEVO: CONSTRUIR LISTA FINAL DE IMÁGENES (SIN DUPLICADOS) ============
+            // LÓGICA CORRECTA:
+            // 1. Si vienen imagenes (JSON del cambio) → el usuario SÍ cambió imágenes, usar esa lista
+            // 2. Sino, Si vienen imagenes_existentes → el usuario NO cambió imágenes, mantener existentes
+            // 3. Siempre agregar imagenes_nuevas (files) si existen
+            
+            $debeActualizarImagenes = false;
+            $imagenesFinales = [];
+            $imagenesDeJSON = [];
+            
+            // CASO 1: Cliente envió "imagenes" (cambios explícitos)
+            // Esto significa: el usuario modificó la lista de imágenes en el cliente
+            if (isset($data['imagenes'])) {
+                if (is_string($data['imagenes'])) {
                     try {
                         $imagenesDeJSON = json_decode($data['imagenes'], true) ?? [];
                     } catch (\Exception $e) {
                         // Ignorar si no es JSON válido
                     }
+                } elseif (is_array($data['imagenes'])) {
+                    $imagenesDeJSON = $data['imagenes'];
                 }
                 
-                // Combinar: existentes + nuevas + JSON
-                $todasLasImagenes = array_merge(
-                    $imagenesExistentes,  // Primero las existentes
-                    $imagenesNuevasRutas, // Luego las nuevas del upload
-                    $imagenesDeJSON       // Y las del JSON (por si acaso)
-                );
+                // Usar las imágenes del cambio como base
+                $imagenesFinales = $imagenesDeJSON;
+                $debeActualizarImagenes = true;
                 
-                // Eliminar duplicados manteniendo orden
-                $todasLasImagenes = array_unique($todasLasImagenes);
-                
-                $data['imagenes'] = array_values($todasLasImagenes); // Reindexar array
-                
-                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes combinadas', [
-                    'existentes' => count($imagenesExistentes),
-                    'nuevas' => count($imagenesNuevasRutas),
-                    'json' => count($imagenesDeJSON),
-                    'total' => count($data['imagenes'])
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes desde CAMBIO del cliente', [
+                    'cantidad' => count($imagenesFinales),
+                    'imagenes' => $imagenesFinales,
+                    'debe_actualizar' => true
                 ]);
             }
+            // CASO 2: No hay "imagenes" en cambios, pero sí imagenes_existentes
+            // Esto significa: el usuario NO cambió imágenes, mantener las que ya están
+            elseif (!empty($imagenesExistentes)) {
+                $imagenesFinales = $imagenesExistentes;
+                $debeActualizarImagenes = false; // NO actualizar si no hubo cambios
+                
+                \Log::info('[PROCESOS-ACTUALIZAR] Imágenes desde EXISTENTES (no se modificaron)', [
+                    'cantidad' => count($imagenesFinales),
+                    'imagenes' => $imagenesFinales,
+                    'debe_actualizar' => false
+                ]);
+            }
+            
+            // CASO 3: Agregar imágenes nuevas del upload (siempre, si existen)
+            if (!empty($imagenesNuevasRutas)) {
+                $imagenesFinales = array_merge($imagenesFinales, $imagenesNuevasRutas);
+                $debeActualizarImagenes = true; // SÍ actualizar si hay imágenes nuevas
+                
+                \Log::info('[PROCESOS-ACTUALIZAR] Añadiendo imágenes nuevas del upload', [
+                    'nuevas' => count($imagenesNuevasRutas),
+                    'total_ahora' => count($imagenesFinales),
+                    'debe_actualizar' => true
+                ]);
+            }
+            
+            // Eliminar duplicados y reindexar
+            $imagenesFinales = array_values(array_unique($imagenesFinales));
+            
+            // IMPORTANTE: Solo actualizar $data['imagenes'] si DEBE actualizarse
+            // Si NO cambiaron las imágenes, NO incluir en validated para evitar procesarlas en BD
+            if ($debeActualizarImagenes) {
+                $data['imagenes'] = $imagenesFinales;
+            } else {
+                // Remover la clave 'imagenes' de $data para que NO se procese en el validador
+                unset($data['imagenes']);
+            }
+            
+            \Log::info('[PROCESOS-ACTUALIZAR] Lista final de imágenes determinada', [
+                'del_cambio' => count($imagenesDeJSON ?? []),
+                'existentes' => count($imagenesExistentes),
+                'nuevas_upload' => count($imagenesNuevasRutas),
+                'total_final' => count($imagenesFinales),
+                'debe_actualizar' => $debeActualizarImagenes
+            ]);
 
             // Limpiar imágenes: convertir a strings, eliminar nulls/vacíos
             if (isset($data['imagenes']) && is_array($data['imagenes'])) {

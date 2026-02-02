@@ -667,6 +667,7 @@ class PedidosProduccionViewController
         try {
             // Cargar cotización con todas las relaciones
             $cotizacion = Cotizacion::with([
+                'tipoCotizacion',  // ✅ Cargar el tipo de cotización para verificar si es Logo
                 'prendas' => function($query) use ($prendaId) {
                     $query->where('id', $prendaId)
                         ->with([
@@ -692,6 +693,9 @@ class PedidosProduccionViewController
                                     'tipoLogo:id,nombre',
                                     'fotos:id,logo_cotizacion_tecnica_prenda_id,ruta_original,ruta_webp,ruta_miniatura,orden'
                                 ]);
+                            },
+                            'logoCotizacionTelasPrenda' => function($q) {  // ✅ Nueva relación
+                                // Cargar todas las telas/colores/referencias para esta prenda en logo
                             }
                         ]);
                 }
@@ -720,48 +724,92 @@ class PedidosProduccionViewController
 
             // PROCESAR TELAS
             $telasFormato = [];
-            \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PROCESANDO TELAS:', [
-                'prenda_id' => $prenda->id,
-                'tiene_telas' => !!$prenda->telas,
-                'telas_count' => count($prenda->telas ?? []),
-                'telas_content' => $prenda->telas ? json_encode($prenda->telas->toArray()) : 'NULL'
-            ]);
             
-            if ($prenda->telas && count($prenda->telas) > 0) {
-                foreach ($prenda->telas as $tela) {
+            // ✅ LÓGICA NUEVA: Si es cotización de tipo Logo, usar telas desde logo_cotizacion_telas_prenda
+            $esLogoCotizacion = $cotizacion->tipoCotizacion && 
+                                 (strtolower($cotizacion->tipoCotizacion->nombre) === 'logo' || 
+                                  strtolower($cotizacion->tipoCotizacion->nombre) === 'bordado');
+            
+            if ($esLogoCotizacion && $prenda->logoCotizacionTelasPrenda && count($prenda->logoCotizacionTelasPrenda) > 0) {
+                \Log::info('[OBTENER-PRENDA-COMPLETA] 🎯 USANDO TELAS DE LOGO_COTIZACION_TELAS_PRENDA', [
+                    'prenda_id' => $prenda->id,
+                    'telas_logo_count' => count($prenda->logoCotizacionTelasPrenda)
+                ]);
+                
+                foreach ($prenda->logoCotizacionTelasPrenda as $telaLogo) {
                     $tela_data = [
-                        'id' => $tela->id,
-                        'nombre_tela' => isset($tela->tela) ? $tela->tela->nombre : 'SIN NOMBRE',
-                        'color' => isset($tela->color) ? $tela->color->nombre : '',
-                        'referencia' => $tela->referencia ?? '',
-                        'descripcion' => $tela->descripcion ?? '',
+                        'id' => $telaLogo->id,
+                        'nombre_tela' => $telaLogo->tela ?? 'SIN NOMBRE',
+                        'color' => $telaLogo->color ?? '',
+                        'referencia' => $telaLogo->ref ?? '',
+                        'descripcion' => '',
                         'imagenes' => []
                     ];
 
-                    // Agregar imágenes de tela
-                    if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
-                        foreach ($prenda->telaFotos as $foto) {
-                            if ($foto->prenda_tela_cot_id == $tela->id) {
-                                $ruta = $foto->ruta_original;
-                                $rutaWebp = $foto->ruta_webp;
-                                
-                                // Solo agregar /storage/ si no lo tiene ya
-                                if ($ruta && !str_starts_with($ruta, '/')) {
-                                    $ruta = '/storage/' . $ruta;
-                                }
-                                if ($rutaWebp && !str_starts_with($rutaWebp, '/')) {
-                                    $rutaWebp = '/storage/' . $rutaWebp;
-                                }
-                                
-                                $tela_data['imagenes'][] = [
-                                    'ruta' => $ruta,
-                                    'ruta_webp' => $rutaWebp
-                                ];
-                            }
-                        }
+                    // Si hay imagen en logo_cotizacion_telas_prenda, usarla
+                    if ($telaLogo->img) {
+                        $ruta = $telaLogo->img;
+                        // La ruta ya viene como /storage/... desde la base de datos
+                        // No hacer cambios adicionales
+                        $tela_data['imagenes'][] = [
+                            'ruta' => $ruta,
+                            'ruta_webp' => $ruta  // Usar la misma ruta si no hay WebP
+                        ];
                     }
 
                     $telasFormato[] = $tela_data;
+                }
+            } else {
+                // Usar lógica tradicional de telas de PrendaTelaCot
+                \Log::info('[OBTENER-PRENDA-COMPLETA] 📋 USANDO TELAS TRADICIONALES DE PRENDA_TELA_COT', [
+                    'prenda_id' => $prenda->id,
+                    'es_logo' => $esLogoCotizacion,
+                    'tiene_logo_telas' => !!($prenda->logoCotizacionTelasPrenda && count($prenda->logoCotizacionTelasPrenda) > 0)
+                ]);
+                
+                \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PROCESANDO TELAS:', [
+                    'prenda_id' => $prenda->id,
+                    'tiene_telas' => !!$prenda->telas,
+                    'telas_count' => count($prenda->telas ?? []),
+                    'telas_content' => $prenda->telas ? json_encode($prenda->telas->toArray()) : 'NULL'
+                ]);
+                
+                if ($prenda->telas && count($prenda->telas) > 0) {
+                    foreach ($prenda->telas as $tela) {
+                        $tela_data = [
+                            'id' => $tela->id,
+                            'nombre_tela' => isset($tela->tela) ? $tela->tela->nombre : 'SIN NOMBRE',
+                            'color' => isset($tela->color) ? $tela->color->nombre : '',
+                            'referencia' => $tela->referencia ?? '',
+                            'descripcion' => $tela->descripcion ?? '',
+                            'imagenes' => []
+                        ];
+
+                        // Agregar imágenes de tela
+                        if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
+                            foreach ($prenda->telaFotos as $foto) {
+                                if ($foto->prenda_tela_cot_id == $tela->id) {
+                                    $ruta = $foto->ruta_original;
+                                    $rutaWebp = $foto->ruta_webp;
+                                    
+                                    // Solo agregar /storage/ si no lo tiene ya
+                                    if ($ruta && !str_starts_with($ruta, '/')) {
+                                        $ruta = '/storage/' . $ruta;
+                                    }
+                                    if ($rutaWebp && !str_starts_with($rutaWebp, '/')) {
+                                        $rutaWebp = '/storage/' . $rutaWebp;
+                                    }
+                                    
+                                    $tela_data['imagenes'][] = [
+                                        'ruta' => $ruta,
+                                        'ruta_webp' => $rutaWebp
+                                    ];
+                                }
+                            }
+                        }
+
+                        $telasFormato[] = $tela_data;
+                    }
                 }
             }
 
@@ -1014,7 +1062,8 @@ class PedidosProduccionViewController
                     'tallas' => $tallasConCantidades,
                     'telas' => $telasFormato,
                     'fotos' => $fotosFormato,
-                    'variantes' => $variantes
+                    'variantes' => $variantes,
+                    'logoCotizacionTelasPrenda' => $prenda->logoCotizacionTelasPrenda ? $prenda->logoCotizacionTelasPrenda->toArray() : []
                 ],
                 'procesos' => $procesosFormato
             ]);

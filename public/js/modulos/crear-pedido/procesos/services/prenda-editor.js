@@ -135,12 +135,12 @@ class PrendaEditor {
             return;
         }
 
-        console.log('[cargarTelasDesdeCtizacion] 🧵 Cargando telas de cotización:', {
+        console.log('[cargarTelasDesdeCtizacion] 🧵 Cargando telas y variaciones de cotización:', {
             prenda_cot_id: prenda.prenda_id,
             cotizacion_id: prenda.cotizacion_id
         });
 
-        // Fetch a API para obtener telas de prenda_telas_cot
+        // Fetch a API para obtener telas, variaciones y ubicaciones
         fetch(`/api/cotizaciones/${prenda.cotizacion_id}/prendas/${prenda.prenda_id}/telas-cotizacion`)
             .then(response => {
                 if (!response.ok) {
@@ -150,26 +150,33 @@ class PrendaEditor {
                 return response.json();
             })
             .then(data => {
-                const telas = data.telas || data.data || [];
-                console.log('[cargarTelasDesdeCtizacion] ✅ Telas de cotización cargadas:', telas);
+                const telas = data.telas || data.data?.telas || [];
+                const variaciones = data.variaciones || data.data?.variaciones || [];
+                const ubicaciones = data.ubicaciones || data.data?.ubicaciones || [];
+                const descripcion = data.descripcion || data.data?.descripcion || '';
+                
+                console.log('[cargarTelasDesdeCtizacion] ✅ Datos de cotización cargados:', {
+                    telas_count: telas.length,
+                    variaciones_count: variaciones.length,
+                    ubicaciones_count: ubicaciones.length,
+                    tiene_descripcion: !!descripcion
+                });
 
                 if (telas.length > 0) {
                     // Procesar telas y construir estructura
                     const telasAgregadas = telas.map(tela => {
                         // Extraer nombre de tela
-                        const nombreTela = tela.tela?.nombre || 
-                                         tela.nombre_tela || 
+                        const nombreTela = tela.nombre_tela || 
+                                         tela.tela?.nombre || 
                                          tela.tela_nombre || 
                                          'N/A';
 
-                        // Extraer color
-                        const colorNombre = tela.color?.nombre || 
-                                          tela.color_nombre || 
-                                          'N/A';
+                        // Extraer color (ya viene como string directo del backend)
+                        const colorNombre = tela.color || 'N/A';
 
                         // Extraer referencia
-                        const referencia = tela.tela?.referencia || 
-                                         tela.referencia || 
+                        const referencia = tela.referencia || 
+                                         tela.tela?.referencia || 
                                          'N/A';
 
                         // Procesar fotos de tela
@@ -204,11 +211,176 @@ class PrendaEditor {
                     // Actualizar display si existe
                     this.actualizarPreviewTelasCotizacion(telasAgregadas);
                 }
+                
+                // Procesar variaciones desde la cotización
+                if (variaciones && Array.isArray(variaciones) && variaciones.length > 0) {
+                    console.log('[cargarTelasDesdeCtizacion] 🔄 Procesando variaciones:', {
+                        cantidad: variaciones.length,
+                        variaciones: variaciones
+                    });
+                    
+                    // Asignar variaciones a la prenda
+                    prenda.variacionesReflectivo = variaciones;
+                    
+                    // Aplicar variaciones al formulario
+                    this.aplicarVariacionesReflectivo(variaciones);
+                }
+                
+                // Procesar ubicaciones desde la cotización
+                if (ubicaciones && Array.isArray(ubicaciones) && ubicaciones.length > 0) {
+                    console.log('[cargarTelasDesdeCtizacion] 📍 Procesando ubicaciones:', {
+                        cantidad: ubicaciones.length,
+                        ubicaciones: ubicaciones
+                    });
+                    
+                    // Asignar ubicaciones a la prenda
+                    prenda.ubicacionesReflectivo = ubicaciones;
+                    
+                    // Aplicar ubicaciones al formulario
+                    this.aplicarUbicacionesReflectivo(ubicaciones);
+                }
+                
+                // Procesar descripción desde la cotización
+                if (descripcion) {
+                    console.log('[cargarTelasDesdeCtizacion] 📝 Descripción desde cotización:', descripcion);
+                    prenda.descripcionReflectivo = descripcion;
+                }
+                
+                // Re-cargar telas en el formulario después de procesar
+                if (telas.length > 0) {
+                    console.log('[cargarTelasDesdeCtizacion] 🔄 Re-cargando telas en el formulario');
+                    this.cargarTelas(prenda);
+                }
             })
             .catch(error => {
-                console.warn('[cargarTelasDesdeCtizacion] ⚠️ Error cargando telas:', error.message);
-                // Continuar sin telas - no bloquear flujo
+                console.warn('[cargarTelasDesdeCtizacion] ⚠️ Error cargando datos de cotización:', error.message);
+                // Continuar sin datos - no bloquear flujo
             });
+    }
+
+    /**
+     * Aplicar variaciones de reflectivo al formulario
+     * @private
+     */
+    aplicarVariacionesReflectivo(variaciones) {
+        if (!variaciones || variaciones.length === 0) return;
+        
+        console.log('[aplicarVariacionesReflectivo] 🎨 Aplicando variaciones al formulario');
+        
+        // Mapeo de variaciones con sus elementos del formulario
+        const mapeoVariaciones = {
+            'manga': {
+                checkbox: '#aplica-manga',
+                input: '#manga-input',
+                obs: '#manga-obs'
+            },
+            'bolsillos': {
+                checkbox: '#aplica-bolsillos',
+                input: null, // Bolsillos solo tiene observaciones
+                obs: '#bolsillos-obs'
+            },
+            'broche': {
+                checkbox: '#aplica-broche',
+                input: '#broche-input',
+                obs: '#broche-obs'
+            },
+            'broche/botón': {
+                checkbox: '#aplica-broche',
+                input: '#broche-input',
+                obs: '#broche-obs'
+            }
+        };
+        
+        // Para cada variación, buscar el checkbox correspondiente y marcar si está checked
+        variaciones.forEach((variacion) => {
+            const varKey = variacion.variacion?.toLowerCase().trim();
+            const config = mapeoVariaciones[varKey];
+            
+            if (!config) {
+                console.warn(`[aplicarVariacionesReflectivo] ⚠️ Variación desconocida: ${variacion.variacion}`);
+                return;
+            }
+            
+            // Marcar el checkbox si está checked
+            if (variacion.checked) {
+                const checkbox = document.querySelector(config.checkbox);
+                if (checkbox) {
+                    // Marcar el checkbox
+                    checkbox.checked = true;
+                    
+                    // IMPORTANTE: Disparar el evento 'change' para que se ejecute manejarCheckVariacion()
+                    // Esto es necesario para habilitar los campos de entrada
+                    const changeEvent = new Event('change', { bubbles: true });
+                    checkbox.dispatchEvent(changeEvent);
+                    
+                    // Pequeño delay para permitir que se ejecute manejarCheckVariacion()
+                    setTimeout(() => {
+                        // Habilitar y llenar los campos asociados
+                        if (config.input) {
+                            const inputField = document.querySelector(config.input);
+                            if (inputField) {
+                                inputField.disabled = false;
+                                inputField.style.opacity = '1';
+                                // Si hay un valor específico, llenarlo
+                                // Por ahora dejaremos vacío si no hay datos específicos
+                            }
+                        }
+                        
+                        if (config.obs) {
+                            const obsField = document.querySelector(config.obs);
+                            if (obsField) {
+                                obsField.disabled = false;
+                                obsField.style.opacity = '1';
+                                // Llenar la observación desde la BD
+                                if (variacion.observacion) {
+                                    obsField.value = variacion.observacion.toUpperCase();
+                                }
+                            }
+                        }
+                        
+                        console.log(`[aplicarVariacionesReflectivo] ✅ Variación "${variacion.variacion}" completamente configurada con observación: "${variacion.observacion}"`);
+                    }, 50);
+                    
+                } else {
+                    console.warn(`[aplicarVariacionesReflectivo] ⚠️ No se encontró checkbox para: ${config.checkbox}`);
+                }
+            }
+        });
+    }
+
+    /**
+     * Aplicar ubicaciones de reflectivo al formulario
+     * @private
+     */
+    aplicarUbicacionesReflectivo(ubicaciones) {
+        if (!ubicaciones || ubicaciones.length === 0) return;
+        
+        console.log('[aplicarUbicacionesReflectivo] 📍 Aplicando ubicaciones al formulario');
+        
+        // Buscar contenedor de ubicaciones
+        const contenedorUbicaciones = document.getElementById('ubicaciones-reflectivo') ||
+                                     document.querySelector('[data-role="ubicaciones-reflectivo"]');
+        
+        if (!contenedorUbicaciones) {
+            console.debug('[aplicarUbicacionesReflectivo] Contenedor de ubicaciones no encontrado');
+            return;
+        }
+        
+        // Limpiar y agregar ubicaciones
+        let html = '';
+        ubicaciones.forEach((ubi, idx) => {
+            html += `
+                <div class="ubicacion-item" style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 4px;">
+                    <div><strong>📍 ${ubi.ubicacion || 'Ubicación'}</strong></div>
+                    <div style="color: #666; font-size: 0.9rem;">${ubi.descripcion || ''}</div>
+                </div>
+            `;
+        });
+        
+        if (html) {
+            contenedorUbicaciones.innerHTML = html;
+            console.log(`[aplicarUbicacionesReflectivo] ✅ ${ubicaciones.length} ubicaciones agregadas`);
+        }
     }
 
     /**
@@ -291,17 +463,18 @@ class PrendaEditor {
             
             // 🟠 CARGAR TELAS DESDE COTIZACIÓN (si es REFLECTIVO/LOGO)
             // Detectar tipos con múltiples formas: por nombre o por ID
+            // tipo_cotizacion_id: 4 = Reflectivo, 3 = Logo, 2 = Bordado, 1 = Prenda
             const esReflectivo = this.cotizacionActual && (
                 this.cotizacionActual.tipo_nombre === 'Reflectivo' ||
                 (this.cotizacionActual.tipo_cotizacion && this.cotizacionActual.tipo_cotizacion.nombre === 'Reflectivo') ||
                 this.cotizacionActual.tipo_cotizacion_id === 'Reflectivo' ||
-                this.cotizacionActual.tipo_cotizacion_id === 2
+                this.cotizacionActual.tipo_cotizacion_id === 4  // ID correcto para Reflectivo
             );
             const esLogo = this.cotizacionActual && (
                 this.cotizacionActual.tipo_nombre === 'Logo' ||
                 (this.cotizacionActual.tipo_cotizacion && this.cotizacionActual.tipo_cotizacion.nombre === 'Logo') ||
                 this.cotizacionActual.tipo_cotizacion_id === 'Logo' ||
-                this.cotizacionActual.tipo_cotizacion_id === 3
+                this.cotizacionActual.tipo_cotizacion_id === 3  // ID para Logo
             );
             
             if (esReflectivo || esLogo) {
@@ -1635,7 +1808,18 @@ class PrendaEditor {
      * @private
      */
     cargarVariaciones(prenda) {
-        const variantes = prenda.variantes || {};
+        // Si viene de cotización Logo, buscar variaciones en los procesos
+        let variantes = prenda.variantes || {};
+        
+        // Si variantes está vacío pero hay procesos (Logo/Reflectivo), extraer de los procesos
+        if ((!variantes || Object.keys(variantes).length === 0) && prenda.procesos) {
+            const procesosArray = Array.isArray(prenda.procesos) ? prenda.procesos : Object.values(prenda.procesos);
+            if (procesosArray.length > 0 && procesosArray[0].variaciones_prenda) {
+                console.log('[cargarVariaciones] 🔍 Variaciones extraídas desde procesos Logo/Reflectivo');
+                variantes = procesosArray[0].variaciones_prenda;
+            }
+        }
+        
         const aplicaManga = document.getElementById('aplica-manga');
         const aplicaBolsillos = document.getElementById('aplica-bolsillos');
         const aplicaBroche = document.getElementById('aplica-broche');
@@ -1669,14 +1853,18 @@ class PrendaEditor {
         }
 
         // MANGA
-        if (aplicaManga && (variantes.tipo_manga || variantes.manga)) {
+        const mangaData = variantes.manga || variantes.tipo_manga || {};
+        const mangaOpcion = mangaData.opcion || mangaData.tipo_manga || mangaData.manga || '';
+        const mangaObs = mangaData.observacion || variantes.obs_manga || '';
+        
+        if (aplicaManga && mangaOpcion) {
             aplicaManga.checked = true;
             aplicaManga.dispatchEvent(new Event('change', { bubbles: true }));
             
             const mangaInput = document.getElementById('manga-input');
             if (mangaInput) {
                 // Normalizar el valor: convertir a minúscula y sin acentos
-                let valorManga = variantes.tipo_manga || variantes.manga || '';
+                let valorManga = mangaOpcion || '';
                 valorManga = valorManga.toLowerCase()
                     .replace(/á/g, 'a')
                     .replace(/é/g, 'e')
@@ -1688,40 +1876,47 @@ class PrendaEditor {
                 mangaInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
-            const mangaObs = document.getElementById('manga-obs');
-            if (mangaObs) {
-                mangaObs.value = variantes.obs_manga || '';
-                mangaObs.dispatchEvent(new Event('change', { bubbles: true }));
+            const mangaObsInput = document.getElementById('manga-obs');
+            if (mangaObsInput) {
+                mangaObsInput.value = mangaObs || '';
+                mangaObsInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
         // BOLSILLOS
-        if (aplicaBolsillos && (variantes.tiene_bolsillos === true || variantes.obs_bolsillos)) {
+        const bolsillosData = variantes.bolsillos || {};
+        const bolsillosOpcion = bolsillosData.opcion || '';
+        const bolsillosObs = bolsillosData.observacion || variantes.obs_bolsillos || '';
+        
+        if (aplicaBolsillos && (bolsillosOpcion || bolsillosObs)) {
             aplicaBolsillos.checked = true;
             aplicaBolsillos.dispatchEvent(new Event('change', { bubbles: true }));
             
-            const bolsillosObs = document.getElementById('bolsillos-obs');
-            if (bolsillosObs) {
-                bolsillosObs.value = variantes.obs_bolsillos || '';
-                bolsillosObs.dispatchEvent(new Event('change', { bubbles: true }));
+            const bolsillosObsInput = document.getElementById('bolsillos-obs');
+            if (bolsillosObsInput) {
+                bolsillosObsInput.value = bolsillosObs || '';
+                bolsillosObsInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
         // BROCHE/BOTÓN
-        if (aplicaBroche && (variantes.tipo_broche || variantes.broche || variantes.obs_broche)) {
+        const brocheData = variantes.broche_boton || variantes.broche || {};
+        const brocheOpcion = brocheData.opcion || brocheData.tipo_broche || brocheData.broche || '';
+        const brocheObs = brocheData.observacion || variantes.obs_broche || '';
+        
+        if (aplicaBroche && (brocheOpcion || brocheObs)) {
             aplicaBroche.checked = true;
             aplicaBroche.dispatchEvent(new Event('change', { bubbles: true }));
             
             console.log('[cargarVariaciones] 🔗 Broche/Botón encontrado:', {
-                tipo_broche: variantes.tipo_broche,
-                obs_broche: variantes.obs_broche,
-                tipo_broche_id: variantes.tipo_broche_id
+                opcion: brocheOpcion,
+                observacion: brocheObs
             });
             
             const brocheInput = document.getElementById('broche-input');
             if (brocheInput) {
                 // Normalizar el valor: convertir a minúscula y sin acentos
-                let valorBroche = variantes.tipo_broche || variantes.broche || '';
+                let valorBroche = brocheOpcion || '';
                 valorBroche = valorBroche.toLowerCase()
                     .replace(/á/g, 'a')
                     .replace(/é/g, 'e')
@@ -1734,16 +1929,12 @@ class PrendaEditor {
                 brocheInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
-            const brocheObs = document.getElementById('broche-obs');
-            if (brocheObs) {
-                brocheObs.value = variantes.obs_broche || '';
-                console.log('[cargarVariaciones] ✓ broche-obs asignado:', brocheObs.value);
-                brocheObs.dispatchEvent(new Event('change', { bubbles: true }));
-            } else {
-                console.warn('[cargarVariaciones] ⚠️ No encontré elemento #broche-obs');
+            const brocheObsInput = document.getElementById('broche-obs');
+            if (brocheObsInput) {
+                brocheObsInput.value = brocheObs || '';
+                console.log('[cargarVariaciones] ✓ broche-obs asignado:', brocheObsInput.value);
+                brocheObsInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
-        } else {
-            console.log('[cargarVariaciones] ⚠️ Broche/Botón no aplica o sin datos');
         }
 
         // REFLECTIVO

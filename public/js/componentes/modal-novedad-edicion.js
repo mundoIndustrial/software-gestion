@@ -138,6 +138,107 @@ class ModalNovedadEdicion {
             console.log('[modal-novedad-edicion] ✅ [INIT-SYNC] window.imagenesPrendaStorage inicializado con', prendaData.imagenes.length, 'imágenes');
         }
 
+        // 🔧 FIX CRÍTICO: Cargar procesos existentes en window.procesosSeleccionados
+        // Esto asegura que cuando el usuario edite procesos existentes, se puedan guardar las ubicaciones nuevas
+        if (prendaData && prendaData.procesos && typeof prendaData.procesos === 'object') {
+            console.log('[modal-novedad-edicion] 🔧 [CARGAR-PROCESOS] Cargando procesos existentes de la prenda:', {
+                prendaId: prendaData.prenda_pedido_id || prendaData.id,
+                tieneProcesosbool: !!prendaData.procesos,
+                esObjeto: typeof prendaData.procesos === 'object',
+                procesosKeys: Array.isArray(prendaData.procesos) ? prendaData.procesos.map(p => p.tipo) : Object.keys(prendaData.procesos)
+            });
+
+            // Inicializar window.procesosSeleccionados si no existe
+            if (!window.procesosSeleccionados || typeof window.procesosSeleccionados !== 'object') {
+                window.procesosSeleccionados = {};
+            }
+
+            // Cargar procesos existentes
+            if (Array.isArray(prendaData.procesos)) {
+                // Si viene como array, convertir a objeto indexado por tipo
+                prendaData.procesos.forEach(proc => {
+                    // Obtener el tipo del proceso - puede venir como 'tipo_proceso' o 'tipo'
+                    // 'tipo_proceso' es el nombre (ej: "Bordado"), necesitamos convertir a slug
+                    let tipoSlug = proc.tipo;
+                    if (!tipoSlug && proc.tipo_proceso) {
+                        // Convertir nombre a slug: "Bordado" -> "bordado"
+                        tipoSlug = proc.tipo_proceso.toLowerCase().replace(/\s+/g, '-');
+                    }
+                    
+                    if (proc && tipoSlug) {
+                        window.procesosSeleccionados[tipoSlug] = {
+                            id: proc.id,
+                            tipo: tipoSlug,
+                            tipo_proceso_id: proc.tipo_proceso_id,
+                            datos: {
+                                id: proc.id,
+                                tipo_proceso_id: proc.tipo_proceso_id,
+                                tipo: tipoSlug,
+                                nombre: proc.tipo_proceso,
+                                ubicaciones: proc.ubicaciones || [],
+                                observaciones: proc.observaciones || '',
+                                estado: proc.estado || 'PENDIENTE',
+                                tipo_proceso: proc.tipo_proceso,
+                                tallas: proc.tallas || {},
+                                imagenes: proc.imagenes || [],
+                                created_at: proc.created_at
+                            }
+                        };
+                        console.log('[modal-novedad-edicion] ✅ [CARGAR-PROCESOS] Proceso cargado:', {
+                            tipoSlug: tipoSlug,
+                            id: proc.id,
+                            tipo_proceso_id: proc.tipo_proceso_id,
+                            tipo_proceso: proc.tipo_proceso
+                        });
+                    }
+                });
+            } else {
+                // Si viene como objeto, copiar directamente
+                console.log('[modal-novedad-edicion] 🔍 [CARGAR-PROCESOS-OBJETO] Estructura recibida:', {
+                    procesosKeys: Object.keys(prendaData.procesos),
+                    primerProcesoKeys: prendaData.procesos[Object.keys(prendaData.procesos)[0]] ? Object.keys(prendaData.procesos[Object.keys(prendaData.procesos)[0]]) : 'N/A',
+                    primerProcesoStructure: prendaData.procesos[Object.keys(prendaData.procesos)[0]]
+                });
+                
+                Object.keys(prendaData.procesos).forEach(tipo => {
+                    const proc = prendaData.procesos[tipo];
+                    if (proc) {
+                        // Normalizar: puede venir como {datos: {...}} o como {...}
+                        const datosProc = proc.datos || proc;
+                        const procId = datosProc.id;
+                        const procTipoProceso = datosProc.tipo_proceso_id;
+                        
+                        // Asegurar que id y tipo_proceso_id están en datos
+                        const datosNormalizados = {
+                            ...datosProc,
+                            id: procId,
+                            tipo_proceso_id: procTipoProceso
+                        };
+                        
+                        window.procesosSeleccionados[tipo] = {
+                            id: procId,
+                            tipo: tipo,
+                            tipo_proceso_id: procTipoProceso,
+                            datos: datosNormalizados
+                        };
+                        
+                        console.log('[modal-novedad-edicion] ✅ [CARGAR-PROCESOS] Proceso objeto cargado:', {
+                            tipo: tipo,
+                            id: procId,
+                            tipo_proceso_id: procTipoProceso,
+                            tieneUbicaciones: !!datosNormalizados.ubicaciones,
+                            datosKeys: Object.keys(datosNormalizados)
+                        });
+                    }
+                });
+            }
+
+            console.log('[modal-novedad-edicion] ✅ [CARGAR-PROCESOS] Procesos cargados en window.procesosSeleccionados:', {
+                cantidad: Object.keys(window.procesosSeleccionados).length,
+                tipos: Object.keys(window.procesosSeleccionados)
+            });
+        }
+
         return new Promise((resolve) => {
             const html = `
                 <div style="text-align: left;">
@@ -659,9 +760,15 @@ class ModalNovedadEdicion {
                             console.log('[modal-novedad-edicion] Observaciones añadidas al PATCH:', observacionesAEnviar);
                         }
                         
-                        // Tallas: usar las del cambio si existen
-                        if (procesoEditado.cambios.tallas) {
-                            patchFormData.append('tallas', JSON.stringify(procesoEditado.cambios.tallas));
+                        // ✅ Tallas: SIEMPRE enviar tallas (cambios del editor OR actuales de window)
+                        // El usuario modificó tallas en el modal - SIEMPRE enviarlas
+                        let tallasAEnviar = procesoEditado.cambios.tallas || window.tallasCantidadesProceso || { dama: {}, caballero: {} };
+                        
+                        if (tallasAEnviar && (Object.keys(tallasAEnviar.dama || {}).length > 0 || Object.keys(tallasAEnviar.caballero || {}).length > 0)) {
+                            console.log('[modal-novedad-edicion] 📏 Tallas enviadas al PATCH:', tallasAEnviar);
+                            patchFormData.append('tallas', JSON.stringify(tallasAEnviar));
+                        } else {
+                            console.log('[modal-novedad-edicion] ⚠️ Sin tallas para enviar');
                         }
                         
                         // Imágenes: usar las del cambio si existen
@@ -734,6 +841,19 @@ class ModalNovedadEdicion {
                 // Limpiar gestor de edición después de aplicar
                 window.gestorEditacionProcesos?.limpiar();
                 console.log('[modal-novedad-edicion] 🧹 Gestor de edición limpiado');
+            }
+
+            // ==================== NUEVO: ELIMINAR PROCESOS MARCADOS ====================
+            // Eliminar los procesos que el usuario marcó para eliminar
+            if (typeof window.eliminarProcesossMarcadosDelBackend === 'function') {
+                try {
+                    console.log('[modal-novedad-edicion] 🗑️ Eliminando procesos marcados...');
+                    await window.eliminarProcesossMarcadosDelBackend();
+                    console.log('[modal-novedad-edicion] ✅ Procesos marcados eliminados');
+                } catch (error) {
+                    console.error('[modal-novedad-edicion] ❌ Error eliminando procesos marcados:', error);
+                    throw error;
+                }
             }
 
             const response = await fetch(`/asesores/pedidos/${this.pedidoId}/actualizar-prenda`, {
@@ -1016,6 +1136,13 @@ class ModalNovedadEdicion {
 
         return Object.entries(procesosObj).map(([tipoProceso, procInfo]) => {
             const datosProc = procInfo?.datos || procInfo || {};
+            
+            // 🔧 FIX: Permitir procesos que tengan AMBOS:
+            // - id (proceso existente en BD)
+            // - tipo_proceso_id (tipo del proceso)
+            // O procesos nuevos que tengan tipo_proceso_id asignado
+            // NO rechazar procesos válidos solo porque falte un campo
+            
             return {
                 id: datosProc.id || undefined,
                 tipo_proceso_id: datosProc.tipo_proceso_id || undefined,
@@ -1025,7 +1152,16 @@ class ModalNovedadEdicion {
                 observaciones: datosProc.observaciones || '',
                 estado: datosProc.estado || 'PENDIENTE'
             };
-        }).filter(proc => proc.tipo_proceso_id); // Solo retornar procesos con tipo_proceso_id válido
+        }).filter(proc => {
+            // 🔧 ARREGLO: Filtro más permisivo
+            // Aceptar procesos que tengan:
+            // 1. tipo_proceso_id válido (proceso nuevo con tipo asignado)
+            // 2. O id válido (proceso existente en BD, aunque sea sin tipo_proceso_id en temp)
+            const tieneId = proc.id && proc.id > 0;
+            const tieneTipoProceso = proc.tipo_proceso_id && proc.tipo_proceso_id > 0;
+            
+            return tieneId || tieneTipoProceso;
+        });
     }
 }
 

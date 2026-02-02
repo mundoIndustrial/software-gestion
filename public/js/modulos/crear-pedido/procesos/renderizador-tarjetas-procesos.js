@@ -832,7 +832,8 @@ window.eliminarTarjetaProceso = function(tipo) {
     Swal.fire({
         icon: 'warning',
         title: '¿Eliminar proceso?',
-        html: `<p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>`,
+        html: `<p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>
+               <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">⚠️ El cambio se aplicará cuando guardes los cambios de la prenda.</p>`,
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         confirmButtonColor: '#ef4444',
@@ -858,78 +859,227 @@ window.eliminarTarjetaProceso = function(tipo) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // Si el proceso tiene ID (ya fue guardado), eliminar de la DB
-            if (proceso.datos?.id) {
-                eliminarProcesoDelBackend(proceso.datos.id);
-            } else {
-                // Solo está en el estado local, eliminar localmente
-                eliminarProcesoLocalmente(tipo);
-            }
+            // ✅ NUEVO: Marcar proceso como "eliminado" en lugar de eliminarlo inmediatamente
+            // El backend solo se eliminará cuando el usuario guarde los cambios
+            marcarProcesoParaEliminar(tipo, proceso);
         }
     });
 };
 
-// Eliminar proceso del backend
-function eliminarProcesoDelBackend(procesoId) {
-    // Obtener el número de pedido del estado global o del DOM
-    const numeroPedido = window.numeroPedidoActual || 
-                         document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido');
+/**
+ * 🗑️ STORAGE GLOBAL para procesos a eliminar
+ * Se mantiene separado de window.procesosSeleccionados que se recarga
+ */
+window.procesosParaEliminarIds = new Set();
+
+/**
+ * ✅ NUEVO: Marcar un proceso como "eliminado" sin enviarlo al backend inmediatamente
+ * Se eliminará del backend cuando se guarden los cambios de la prenda
+ */
+function marcarProcesoParaEliminar(tipo, proceso) {
+    console.log('\n🗑️ ===== [MARCAR-ELIMINAR] INICIO =====');
+    console.log('🗑️ Tipo recibido:', tipo);
+    console.log('🗑️ Proceso recibido:', proceso);
     
-    if (!numeroPedido) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo identificar el pedido'
+    // ✅ NUEVO: Guardar en Set separado que NO se borra al recargar procesos
+    if (proceso.datos?.id) {
+        window.procesosParaEliminarIds.add(proceso.datos.id);
+        console.log('✅ ID agregado a window.procesosParaEliminarIds:', {
+            id: proceso.datos.id,
+            procesosActuales: Array.from(window.procesosParaEliminarIds)
         });
-        return;
     }
     
-    // Llamada al endpoint
-    fetch(`/api/procesos/${procesoId}/eliminar`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            numero_pedido: numeroPedido
-        })
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Error en la solicitud');
-        return response.json();
-    })
-    .then(data => {
-        if (data.success || data.message?.includes('éxito')) {
-            // Encontrar el tipo de proceso y eliminarlo localmente
-            const tipo = Object.keys(window.procesosSeleccionados).find(
-                t => window.procesosSeleccionados[t].datos?.id === procesoId
-            );
-            
-            if (tipo) {
-                eliminarProcesoLocalmente(tipo);
-            }
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Eliminado',
-                text: 'El proceso ha sido eliminado correctamente',
-                timer: 1500
-            });
+    // También marcar en el objeto local (para UI)
+    proceso.marcadoParaEliminar = true;
+    console.log('✅ Proceso marcado en estado local:', proceso.marcadoParaEliminar);
+    
+    // ===== BÚSQUEDA EN EL DOM =====
+    console.log('\n🔍 BUSCANDO TARJETA EN DOM:');
+    console.log(`   Buscando: [data-proceso-tipo="${tipo}"]`);
+    
+    // Listar TODAS las tarjetas del DOM PRIMERO
+    const allTarjetas = document.querySelectorAll('div[data-proceso-tipo]');
+    console.log(`\n📊 Tarjetas disponibles en el DOM: ${allTarjetas.length}`);
+    allTarjetas.forEach((t, idx) => {
+        const tipo_attr = t.getAttribute('data-proceso-tipo');
+        const classes = t.className;
+        const parent = t.parentElement?.tagName;
+        console.log(`   [${idx}] tipo="${tipo_attr}" | clases="${classes.substring(0, 50)}" | parent=${parent}`);
+    });
+    
+    // Intentar encontrar la tarjeta por varios selectores
+    let tarjeta = null;
+    let selectorUsado = '';
+    
+    console.log('\n🔎 Probando selectores:');
+    
+    // Selector 1
+    console.log('   1️⃣  Intentando: document.querySelector(`[data-proceso-tipo="${tipo}"]`)');
+    tarjeta = document.querySelector(`[data-proceso-tipo="${tipo}"]`);
+    if (tarjeta) {
+        selectorUsado = 'data-proceso-tipo';
+        console.log('   ✅ ENCONTRADA con selector 1');
+    }
+    
+    // Selector 2
+    if (!tarjeta) {
+        console.log('   2️⃣  Intentando: document.querySelector(`[data-tipo="${tipo}"]`)');
+        tarjeta = document.querySelector(`[data-tipo="${tipo}"]`);
+        if (tarjeta) {
+            selectorUsado = 'data-tipo';
+            console.log('   ✅ ENCONTRADA con selector 2');
         } else {
-            throw new Error(data.message || 'Error desconocido');
+            console.log('   ❌ No encontrada');
         }
-    })
-    .catch(error => {
-        console.error('Error al eliminar proceso:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo eliminar el proceso. ' + error.message
+    }
+    
+    // Selector 3
+    if (!tarjeta) {
+        console.log('   3️⃣  Intentando: document.querySelector(`[data-process-type="${tipo}"]`)');
+        tarjeta = document.querySelector(`[data-process-type="${tipo}"]`);
+        if (tarjeta) {
+            selectorUsado = 'data-process-type';
+            console.log('   ✅ ENCONTRADA con selector 3');
+        } else {
+            console.log('   ❌ No encontrada');
+        }
+    }
+    
+    // ===== MANIPULACIÓN DEL DOM =====
+    if (tarjeta) {
+        console.log('\n✅ TARJETA ENCONTRADA');
+        console.log('   Selector usado:', selectorUsado);
+        console.log('   Elemento:', tarjeta.tagName);
+        console.log('   ID:', tarjeta.id || 'sin ID');
+        console.log('   Clases:', tarjeta.className);
+        console.log('   Atributos:', {
+            'data-proceso-tipo': tarjeta.getAttribute('data-proceso-tipo'),
+            'data-tipo': tarjeta.getAttribute('data-tipo'),
+            'data-process-type': tarjeta.getAttribute('data-process-type')
         });
+        
+        console.log('\n🗑️  INICIANDO REMOCIÓN DEL DOM:');
+        console.log('   Aplicando: display = none');
+        tarjeta.style.display = 'none';
+        
+        console.log('   Esperando 200ms...');
+        setTimeout(() => {
+            console.log('   Ejecutando: remove()');
+            try {
+                tarjeta.remove();
+                console.log('   ✅ remove() ejecutado exitosamente');
+                
+                // Verificar que fue removida
+                const verificacion = document.querySelector(`[data-proceso-tipo="${tipo}"]`);
+                if (!verificacion) {
+                    console.log('   ✅ VERIFICACIÓN: Elemento removido del DOM correctamente');
+                } else {
+                    console.warn('   ⚠️  VERIFICACIÓN: Elemento AÚN existe en el DOM!');
+                    console.log('   Elemento restante:', verificacion);
+                }
+            } catch (error) {
+                console.error('   ❌ ERROR en remove():', error);
+            }
+        }, 200);
+        
+    } else {
+        console.error('\n❌ TARJETA NO ENCONTRADA');
+        console.error('   Ningún selector funcionó para tipo:', tipo);
+        console.error('   window.procesosSeleccionados:', window.procesosSeleccionados);
+        console.error('   Claves disponibles:', Object.keys(window.procesosSeleccionados || {}));
+    }
+    
+    console.log('🗑️ ===== [MARCAR-ELIMINAR] FIN =====\n');
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Marcado para eliminar',
+        html: `<p>El proceso <strong>${nombresProcesos[tipo] || tipo}</strong> será eliminado cuando guardes los cambios.</p>`,
+        timer: 1500
     });
 }
+
+
+/**
+ * ✅ NUEVO: Eliminar procesos marcados para eliminación del backend
+ * Se ejecuta cuando el usuario guarda los cambios de la prenda
+ */
+window.eliminarProcesossMarcadosDelBackend = async function() {
+    console.log('🗑️ [ELIMINAR-BACKEND] ========== INICIANDO ELIMINACIÓN DE PROCESOS ==========');
+    
+    console.log('🗑️ [ELIMINAR-BACKEND] Procesos marcados para eliminar (Set):', Array.from(window.procesosParaEliminarIds || new Set()));
+    
+    // ✅ NUEVO: Usar el Set que se mantiene separado y no se recarga
+    const idsParaEliminar = Array.from(window.procesosParaEliminarIds || new Set());
+    
+    if (idsParaEliminar.length === 0) {
+        console.log('✅ [ELIMINAR-BACKEND] No hay procesos marcados para eliminar');
+        return true; // Sin errores
+    }
+    
+    console.log(`🗑️ [ELIMINAR-BACKEND] Total de procesos a eliminar: ${idsParaEliminar.length}`);
+    console.log('🗑️ [ELIMINAR-BACKEND] IDs a eliminar:', idsParaEliminar);
+    
+    // ✅ Obtener el número de pedido de forma más confiable
+    const numeroPedido = window.prendaEnEdicion?.pedidoId ||
+                         window.numeroPedidoActual || 
+                         document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido') ||
+                         document.querySelector('[data-pedido-id]')?.getAttribute('data-pedido-id');
+    
+    console.log('🗑️ [ELIMINAR-BACKEND] Número/ID de pedido:', {
+        numeroPedido,
+        prendaEnEdicion: window.prendaEnEdicion?.pedidoId,
+        numeroPedidoActual: window.numeroPedidoActual
+    });
+    
+    try {
+        // Eliminar cada proceso del backend
+        for (const id of idsParaEliminar) {
+            const nombreProceso = Object.entries(window.procesosSeleccionados || {})
+                .find(([tipo, proc]) => proc.datos?.id === id)?.[0] || `Proceso ${id}`;
+            
+            console.log(`🗑️ [ELIMINAR-BACKEND] Enviando DELETE para: ${nombreProceso} (ID: ${id})`);
+            
+            const response = await fetch(`/api/procesos/${id}/eliminar`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    numero_pedido: numeroPedido
+                })
+            });
+            
+            console.log(`🗑️ [ELIMINAR-BACKEND] Response status: ${response.status}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`❌ [ELIMINAR-BACKEND] Error en response:`, errorData);
+                console.error(`❌ [ELIMINAR-BACKEND] Errores de validación:`, errorData.errors);
+                throw new Error(`Error eliminando ${nombreProceso}: ${errorData.message || 'Error desconocido'}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ [ELIMINAR-BACKEND] ${nombreProceso} eliminado exitosamente`);
+            console.log(`✅ [ELIMINAR-BACKEND] Response data:`, data);
+        }
+        
+        // Limpiar el Set después de eliminar exitosamente
+        console.log('🗑️ [ELIMINAR-BACKEND] Limpiando Set de procesos para eliminar');
+        window.procesosParaEliminarIds.clear();
+        console.log('✅ [ELIMINAR-BACKEND] Set limpiado');
+        
+        console.log('✅ [ELIMINAR-BACKEND] ========== TODOS LOS PROCESOS ELIMINADOS CORRECTAMENTE ==========');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ [ELIMINAR-BACKEND] Error completo:', error);
+        throw error;
+    }
+};
 
 // Eliminar proceso localmente (UI)
 function eliminarProcesoLocalmente(tipo) {

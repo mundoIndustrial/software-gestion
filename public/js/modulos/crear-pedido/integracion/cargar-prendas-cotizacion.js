@@ -120,6 +120,43 @@ class CargadorPrendasCotizacion {
         console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
         console.log('[transformarDatos] 🧵 ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
         
+        // ✅ LÓGICA NUEVA: Verificar si hay telas desde logoCotizacionTelasPrenda
+        // Estas vienen de la tabla logo_cotizacion_telas_prenda cuando la cotización es de tipo Logo
+        let telasDesdeLogo = [];
+        if (data.prenda?.logoCotizacionTelasPrenda && Array.isArray(data.prenda.logoCotizacionTelasPrenda)) {
+            console.log('[transformarDatos] 🎯 TELAS DESDE LOGO_COTIZACION_TELAS_PRENDA DETECTADAS:', {
+                cantidad: data.prenda.logoCotizacionTelasPrenda.length,
+                telas: data.prenda.logoCotizacionTelasPrenda
+            });
+            
+            telasDesdeLogo = data.prenda.logoCotizacionTelasPrenda.map((telaLogo, idx) => {
+                console.log(`[transformarDatos] 🎨 [Tela Logo ${idx}]`, {
+                    id: telaLogo.id,
+                    tela: telaLogo.tela,
+                    color: telaLogo.color,
+                    ref: telaLogo.ref,
+                    img: telaLogo.img
+                });
+                
+                return {
+                    id: telaLogo.id,
+                    nombre_tela: telaLogo.tela || 'SIN NOMBRE',
+                    color: telaLogo.color || '',
+                    grosor: '',
+                    referencia: telaLogo.ref || '',  // ✅ Las referencias vienen en campo "ref"
+                    composicion: '',
+                    imagenes: telaLogo.img ? [{
+                        ruta: telaLogo.img,  // Ya viene como /storage/... desde el backend
+                        ruta_webp: telaLogo.img,  // Usar la misma ruta si no hay WebP
+                        uid: `existing-logo-tela-${telaLogo.id}`
+                    }] : [],
+                    origen: 'logo_cotizacion'
+                };
+            });
+            
+            console.log('[transformarDatos] ✅ Telas desde Logo procesadas:', telasDesdeLogo);
+        }
+        
         // PROcesar telas desde el backend (prioridad 1)
         let telasDesdeBackend = (prenda.telas || []).map((tela, idx) => {
             const teleImagen = tela.imagenes || [];
@@ -229,47 +266,50 @@ class CargadorPrendasCotizacion {
             console.log('[transformarDatos] ⚠️ La prenda no tiene variantes array');
         }
         
-        // Combinar telas: prioridad a las del backend, pero enriquecer con datos de variantes
-        let telasFormato = [...telasDesdeBackend];
+        // ✅ COMBINACIÓN INTELIGENTE DE TELAS: Priorizar Logo > Backend > Variantes
+        let telasFormato = [];
         
-        // Agregar telas desde variantes que no existan ya (basado en nombre_tela + color)
-        telasDesdeVariantes.forEach(telaVariante => {
-            const existe = telasFormato.some(telaBackend => 
-                telaBackend.nombre_tela === telaVariante.nombre_tela && 
-                telaBackend.color === telaVariante.color
-            );
+        // Si hay telas desde Logo, usarlas DIRECTAMENTE (máxima prioridad)
+        if (telasDesdeLogo && telasDesdeLogo.length > 0) {
+            console.log('[transformarDatos] 🎯 USANDO TELAS DESDE LOGO (máxima prioridad):', telasDesdeLogo.length);
+            telasFormato = [...telasDesdeLogo];
+        } else if (telasDesdeBackend && telasDesdeBackend.length > 0) {
+            // Si no hay telas de Logo, usar las del backend
+            console.log('[transformarDatos] 📋 USANDO TELAS DESDE BACKEND:', telasDesdeBackend.length);
+            telasFormato = [...telasDesdeBackend];
             
-            if (!existe) {
-                // No existe: agregar como nueva tela
-                telasFormato.push(telaVariante);
-                console.log('[transformarDatos] ➕ Agregada tela desde variantes:', telaVariante);
-            } else {
-                // Existe: enriquecer con referencia si la tela de backend no tiene
-                const indiceExistente = telasFormato.findIndex(telaBackend => 
+            // Enriquecer con datos de variantes si es necesario
+            telasDesdeVariantes.forEach(telaVariante => {
+                const existe = telasFormato.some(telaBackend => 
                     telaBackend.nombre_tela === telaVariante.nombre_tela && 
                     telaBackend.color === telaVariante.color
                 );
                 
-                if (indiceExistente !== -1) {
-                    const telaExistente = telasFormato[indiceExistente];
+                if (!existe) {
+                    telasFormato.push(telaVariante);
+                    console.log('[transformarDatos] ➕ Agregada tela desde variantes:', telaVariante);
+                } else {
+                    // Enriquecer con referencia si no la tiene
+                    const indiceExistente = telasFormato.findIndex(telaBackend => 
+                        telaBackend.nombre_tela === telaVariante.nombre_tela && 
+                        telaBackend.color === telaVariante.color
+                    );
                     
-                    // Si la tela de backend no tiene referencia pero la de variantes sí, usar la de variantes
-                    if ((!telaExistente.referencia || telaExistente.referencia === '') && 
-                        telaVariante.referencia && telaVariante.referencia !== '') {
-                        telasFormato[indiceExistente].referencia = telaVariante.referencia;
-                        telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
-                        console.log('[transformarDatos] 🔄 Tela enriquecida con referencia de variantes:', {
-                            nombre: telaExistente.nombre_tela,
-                            color: telaExistente.color,
-                            referencia_anterior: `"${telaExistente.referencia}"`,
-                            referencia_nueva: `"${telaVariante.referencia}"`
-                        });
-                    } else {
-                        console.log('[transformarDatos] ℹ️ Tela ya existe con referencia, sin cambios:', telaVariante);
+                    if (indiceExistente !== -1) {
+                        const telaExistente = telasFormato[indiceExistente];
+                        if ((!telaExistente.referencia || telaExistente.referencia === '') && 
+                            telaVariante.referencia && telaVariante.referencia !== '') {
+                            telasFormato[indiceExistente].referencia = telaVariante.referencia;
+                            telasFormato[indiceExistente].origen = 'backend_enriquecido_variantes';
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else if (telasDesdeVariantes && telasDesdeVariantes.length > 0) {
+            // Última opción: usar telas desde variantes
+            console.log('[transformarDatos] 🔄 USANDO TELAS DESDE VARIANTES (fallback):', telasDesdeVariantes.length);
+            telasFormato = [...telasDesdeVariantes];
+        }
         
         console.log('[transformarDatos] 📦 TELAS FINALES PROCESADAS:', telasFormato);
 

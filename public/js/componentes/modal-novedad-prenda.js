@@ -364,6 +364,12 @@ class ModalNovedadPrenda {
 
         return Object.entries(procesosObj).map(([tipoProceso, procInfo]) => {
             const datosProc = procInfo?.datos || procInfo || {};
+            
+            // 🔧 FIX: Permitir procesos que tengan AMBOS:
+            // - id (proceso existente en BD)
+            // - tipo_proceso_id (tipo del proceso)
+            // O procesos nuevos que tengan tipo_proceso_id asignado
+            
             return {
                 id: datosProc.id || undefined,
                 tipo_proceso_id: datosProc.tipo_proceso_id || undefined,
@@ -373,7 +379,16 @@ class ModalNovedadPrenda {
                 observaciones: datosProc.observaciones || '',
                 estado: datosProc.estado || 'PENDIENTE'
             };
-        }).filter(proc => proc.tipo_proceso_id); // Solo retornar procesos con tipo_proceso_id válido
+        }).filter(proc => {
+            // 🔧 ARREGLO: Filtro más permisivo
+            // Aceptar procesos que tengan:
+            // 1. tipo_proceso_id válido (proceso nuevo con tipo asignado)
+            // 2. O id válido (proceso existente en BD, aunque sea sin tipo_proceso_id en temp)
+            const tieneId = proc.id && proc.id > 0;
+            const tieneTipoProceso = proc.tipo_proceso_id && proc.tipo_proceso_id > 0;
+            
+            return tieneId || tieneTipoProceso;
+        });
     }
 }
 

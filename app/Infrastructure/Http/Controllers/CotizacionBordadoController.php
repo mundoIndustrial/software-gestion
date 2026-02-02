@@ -1152,7 +1152,7 @@ class CotizacionBordadoController extends Controller
                                         $nombreImagen
                                     );
                                     
-                                    $rutaImagen = 'storage/app/public/' . $rutaGuardada;
+                                    $rutaImagen = Storage::url($rutaGuardada);
                                     
                                     Log::info('        ✅ Imagen guardada', [
                                         'fieldName' => $fieldName,
@@ -1258,13 +1258,13 @@ class CotizacionBordadoController extends Controller
                         $nombreImagen
                     );
 
+                    // Convertir a URL completa para usarla en el frontend
+                    $rutaImagen = Storage::url($rutaImagen);
+
                     Log::info('🖼️ Imagen de tela almacenada', [
                         'ruta' => $rutaImagen,
                         'tamaño' => $archivo->getSize(),
                     ]);
-
-                    // Convertir la ruta para la BD: storage/app/public/cotizaciones/...
-                    $rutaImagen = 'storage/app/public/' . $rutaImagen;
                 }
 
                 // Guardar registro en la tabla
