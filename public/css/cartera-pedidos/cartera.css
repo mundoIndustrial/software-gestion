@@ -55,15 +55,16 @@
 
 /* ESTILOS DE ENCABEZADOS CON COLOR BLANCO */
 .table-head {
-    background-color: transparent !important;
+    background: #3b82f6 !important;
+    border-bottom: 2px solid #1e40af !important;
     min-width: auto !important;
     width: 100% !important;
+    display: flex !important;
 }
 
 .table-head .table-header-cell,
 .table-head th {
     color: #ffffff !important;
-    background-color: transparent !important;
     font-weight: 600 !important;
 }
 

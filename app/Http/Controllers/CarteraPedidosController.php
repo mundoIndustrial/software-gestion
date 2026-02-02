@@ -11,11 +11,26 @@ use Illuminate\Support\Facades\DB;
 class CarteraPedidosController extends Controller
 {
     /**
-     * Obtener pedidos pendientes de cartera
+     * Obtener pedidos pendientes de cartera con paginación y filtros
      */
     public function obtenerPedidos(Request $request)
     {
         try {
+            // Parámetros de paginación
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 15);
+            $search = $request->get('search', '');
+            $cliente = $request->get('cliente', '');
+            $fechaDesde = $request->get('fecha_desde', '');
+            $fechaHasta = $request->get('fecha_hasta', '');
+            $sortBy = $request->get('sort_by', 'fecha');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            // Validar valores
+            $page = max(1, $page);
+            $perPage = max(1, min($perPage, 100));
+            $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
+            
             // Estados que deben estar listos para cartera
             $estadosPendientes = ['pendiente_cartera'];
             
@@ -24,10 +39,45 @@ class CarteraPedidosController extends Controller
                 $estadosPendientes = [$request->estado];
             }
             
-            // Usar PedidoProduccion modelo con la tabla correcta
-            $pedidos = PedidoProduccion::whereIn('estado', $estadosPendientes)
-                ->orderBy('fecha_de_creacion_de_orden', 'desc')
-                ->get();
+            // Construir query
+            $query = PedidoProduccion::whereIn('estado', $estadosPendientes);
+            
+            // Aplicar búsqueda general
+            if (!empty($search)) {
+                $search = '%' . $search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('cliente', 'like', $search)
+                      ->orWhere('numero_pedido', 'like', $search)
+                      ->orWhere('id', 'like', $search);
+                });
+            }
+            
+            // Aplicar filtro de cliente
+            if (!empty($cliente)) {
+                $clientePattern = '%' . $cliente . '%';
+                $query->where('cliente', 'like', $clientePattern);
+            }
+            
+            // Aplicar filtro de fechas
+            if (!empty($fechaDesde)) {
+                $query->whereDate('fecha_de_creacion_de_orden', '>=', $fechaDesde);
+            }
+            if (!empty($fechaHasta)) {
+                $query->whereDate('fecha_de_creacion_de_orden', '<=', $fechaHasta);
+            }
+            
+            // Aplicar ordenamiento
+            if ($sortBy === 'cliente') {
+                $query->orderBy('cliente', $sortOrder);
+            } else {
+                $query->orderBy('fecha_de_creacion_de_orden', $sortOrder);
+            }
+            
+            // Obtener total
+            $total = $query->count();
+            
+            // Aplicar paginación
+            $pedidos = $query->forPage($page, $perPage)->get();
             
             // Mapear respuesta
             $data = $pedidos->map(function($pedido) {
@@ -44,7 +94,15 @@ class CarteraPedidosController extends Controller
             
             return response()->json([
                 'success' => true,
-                'data' => $data
+                'data' => $data,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                    'from' => ($page - 1) * $perPage + 1,
+                    'to' => min($page * $perPage, $total)
+                ]
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en CarteraPedidosController::obtenerPedidos: ' . $e->getMessage());

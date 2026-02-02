@@ -2,13 +2,23 @@
  * =========================================
  * CARTERA PEDIDOS - APP JS
  * Lógica limpia sin dependencias
+ * Con Paginación y Filtros
  * =========================================
  */
 
-    // ===== VARIABLES GLOBALES =====
+// ===== VARIABLES GLOBALES =====
 let pedidosData = [];
 let pedidoSeleccionado = null;
 const API_BASE = '/api/cartera/pedidos';
+let currentPage = 1;
+let totalPages = 1;
+let perPage = 15;
+let currentSearch = '';
+let currentSort = 'fecha';
+let currentSortOrder = 'desc';
+let filtroCliente = '';
+let filtroFechaDesde = '';
+let filtroFechaHasta = '';
 
 // ===== HELPER: Obtener elemento =====
 function el(selector) {
@@ -41,18 +51,149 @@ function ocultarCargando() {
     }
 }
 
+// ===== FUNCIONES DE FILTROS MODALES =====
+function abrirModalFiltro(tipo, event) {
+    event.stopPropagation();
+    const modal = elById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    if (modal) {
+        modal.classList.add('open');
+    }
+}
+
+function cerrarModalFiltro(tipo) {
+    const modal = elById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    if (modal) {
+        modal.classList.remove('open');
+    }
+}
+
+function aplicarFiltroCliente() {
+    const input = elById('filtroClienteInput');
+    if (input) {
+        filtroCliente = input.value.trim();
+        currentPage = 1;
+        cargarPedidos();
+        cerrarModalFiltro('cliente');
+        mostrarNotificacion(`Filtro de cliente aplicado: "${filtroCliente || 'todos'}"`, 'info');
+    }
+}
+
+function aplicarFiltroFecha() {
+    const desde = elById('filtroFechaDesde');
+    const hasta = elById('filtroFechaHasta');
+    
+    if (desde && hasta) {
+        filtroFechaDesde = desde.value;
+        filtroFechaHasta = hasta.value;
+        
+        if (filtroFechaDesde && filtroFechaHasta && new Date(filtroFechaDesde) > new Date(filtroFechaHasta)) {
+            mostrarNotificacion('La fecha "desde" no puede ser mayor que la fecha "hasta"', 'warning');
+            return;
+        }
+        
+        currentPage = 1;
+        cargarPedidos();
+        cerrarModalFiltro('fecha');
+        
+        const rango = [];
+        if (filtroFechaDesde) rango.push(`desde ${filtroFechaDesde}`);
+        if (filtroFechaHasta) rango.push(`hasta ${filtroFechaHasta}`);
+        mostrarNotificacion(`Filtro de fecha aplicado: ${rango.join(' ')}`, 'info');
+    }
+}
+
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Cartera Pedidos APP - Inicializado');
+    console.log('🔍 Cartera Pedidos APP - Inicializado');
     
-    // Cargar pedidos
+    // Verificar que el header existe
+    const tableHead = document.querySelector('.table-head');
+    console.log('📍 .table-head elemento:', tableHead);
+    if (tableHead) {
+        console.log('   - Display:', window.getComputedStyle(tableHead).display);
+        console.log('   - Background:', window.getComputedStyle(tableHead).backgroundColor);
+        console.log('   - Clases:', tableHead.className);
+    }
+    
+    const tableHeaderRow = document.querySelector('.table-header-row');
+    console.log('📍 .table-header-row elemento:', tableHeaderRow);
+    if (tableHeaderRow) {
+        console.log('   - Display:', window.getComputedStyle(tableHeaderRow).display);
+        console.log('   - Background:', window.getComputedStyle(tableHeaderRow).backgroundColor);
+        console.log('   - Clases:', tableHeaderRow.className);
+    }
+    
+    const headerCells = document.querySelectorAll('.table-header-cell-cartera');
+    console.log('📍 .table-header-cell-cartera elementos encontrados:', headerCells.length);
+    headerCells.forEach((cell, idx) => {
+        console.log(`   Celda ${idx}:`, {
+            color: window.getComputedStyle(cell).color,
+            fontWeight: window.getComputedStyle(cell).fontWeight,
+            padding: window.getComputedStyle(cell).padding
+        });
+    });
+    
+    // Cargar pedidos por primera vez
     cargarPedidos();
     
-    // Event listeners
+    // Event listeners para botones de acción
     const btnRefresh = elById('btnRefreshPedidos');
     if (btnRefresh) {
-        btnRefresh.addEventListener('click', cargarPedidos);
+        btnRefresh.addEventListener('click', () => {
+            currentPage = 1;
+            cargarPedidos();
+        });
     }
+    
+    // Event listeners para búsqueda
+    const searchInput = elById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            currentSearch = e.target.value;
+            currentPage = 1;
+            cargarPedidos();
+        });
+    }
+    
+    // Event listeners para cambio de items por página
+    const perPageSelect = elById('perPageSelect');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function(e) {
+            perPage = parseInt(e.target.value);
+            currentPage = 1;
+            cargarPedidos();
+        });
+    }
+    
+    // Event listeners para paginación
+    const btnFirstPage = elById('btnFirstPage');
+    if (btnFirstPage) btnFirstPage.addEventListener('click', () => goToPage(1));
+    
+    const btnPrevPage = elById('btnPrevPage');
+    if (btnPrevPage) btnPrevPage.addEventListener('click', () => goToPage(currentPage - 1));
+    
+    const btnNextPage = elById('btnNextPage');
+    if (btnNextPage) btnNextPage.addEventListener('click', () => goToPage(currentPage + 1));
+    
+    const btnLastPage = elById('btnLastPage');
+    if (btnLastPage) btnLastPage.addEventListener('click', () => goToPage(totalPages));
+    
+    // Event listeners para ordenamiento en headers
+    const headerCellsSortable = document.querySelectorAll('.table-header-cell-cartera.sortable');
+    headerCellsSortable.forEach(cell => {
+        cell.addEventListener('click', function() {
+            const sortType = this.getAttribute('data-sort');
+            if (currentSort === sortType) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = sortType;
+                currentSortOrder = 'desc';
+            }
+            updateSortIndicators();
+            currentPage = 1;
+            cargarPedidos();
+        });
+    });
     
     const btnConfirmarAprobacion = elById('btnConfirmarAprobacion');
     if (btnConfirmarAprobacion) {
@@ -63,34 +204,42 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formRechazo) {
         formRechazo.addEventListener('submit', confirmarRechazo);
     }
-    
-    const motivoRechazo = elById('motivoRechazo');
-    if (motivoRechazo) {
-        motivoRechazo.addEventListener('input', function() {
-            const count = this.value.length;
-            const counter = elById('charCount');
-            if (counter) counter.textContent = count;
-        });
-    }
 });
 
-// ===== CARGAR PEDIDOS =====
+function updateSortIndicators() {
+    const sortableCells = document.querySelectorAll('.table-header-cell-cartera.sortable');
+    sortableCells.forEach(cell => {
+        cell.classList.remove('sort-asc', 'sort-desc');
+        if (cell.getAttribute('data-sort') === currentSort) {
+            cell.classList.add(currentSortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+    });
+}
+
+function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        cargarPedidos();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// ===== CARGAR PEDIDOS CON PAGINACIÓN =====
 async function cargarPedidos() {
     const btnRefresh = elById('btnRefreshPedidos');
     const tablaPedidosBody = elById('tablaPedidosBody');
     
-    // Obtener los elementos contenedores
-    const tableHead = document.querySelector('.table-head');
-    const modernTable = document.querySelector('.modern-table');
+    const modernTable = document.querySelector('.modern-table-cartera');
     const emptyState = elById('emptyState');
     const loadingState = elById('loadingState');
+    const paginationContainer = elById('paginationContainer');
     
     try {
         // Mostrar loading
-        if (tableHead) tableHead.style.display = 'none';
         if (modernTable) modernTable.style.display = 'none';
         if (emptyState) emptyState.style.display = 'none';
-        if (loadingState) loadingState.style.display = 'block';
+        if (loadingState) loadingState.style.display = 'flex';
+        if (paginationContainer) paginationContainer.style.display = 'none';
         
         if (btnRefresh) btnRefresh.disabled = true;
         
@@ -98,8 +247,19 @@ async function cargarPedidos() {
         const csrfMeta = el('meta[name="csrf-token"]');
         const token = csrfMeta ? csrfMeta.content : '';
         
+        // Construir URL con parámetros
+        const url = new URL(`${API_BASE}?estado=pendiente_cartera`, window.location.origin);
+        url.searchParams.set('page', currentPage);
+        url.searchParams.set('per_page', perPage);
+        if (currentSearch) url.searchParams.set('search', currentSearch);
+        if (filtroCliente) url.searchParams.set('cliente', filtroCliente);
+        if (filtroFechaDesde) url.searchParams.set('fecha_desde', filtroFechaDesde);
+        if (filtroFechaHasta) url.searchParams.set('fecha_hasta', filtroFechaHasta);
+        url.searchParams.set('sort_by', currentSort);
+        url.searchParams.set('sort_order', currentSortOrder);
+        
         // Llamar API
-        const response = await fetch(`${API_BASE}?estado=pendiente_cartera`, {
+        const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -124,31 +284,58 @@ async function cargarPedidos() {
             pedidosData = [];
         }
         
-        console.log(' Pedidos cargados:', pedidosData);
+        // Actualizar información de paginación
+        if (data.pagination) {
+            totalPages = data.pagination.last_page || 1;
+            currentPage = data.pagination.page || 1;
+            perPage = data.pagination.per_page || 15;
+            
+            // Actualizar controles de paginación
+            updatePaginationControls(data.pagination);
+        }
+        
+        console.log('✓ Pedidos cargados:', pedidosData.length);
         
         // Renderizar tabla
         if (loadingState) loadingState.style.display = 'none';
         
         if (pedidosData.length > 0) {
             renderizarTabla(pedidosData);
-            if (tableHead) tableHead.style.display = 'block';
-            if (modernTable) modernTable.style.display = 'block';
+            if (modernTable) modernTable.style.display = 'flex';
             if (emptyState) emptyState.style.display = 'none';
+            if (paginationContainer) paginationContainer.style.display = 'flex';
         } else {
-            // Vaciar tabla pero mantener header visible
             if (tablaPedidosBody) tablaPedidosBody.innerHTML = '';
-            if (tableHead) tableHead.style.display = 'block';
             if (modernTable) modernTable.style.display = 'none';
             if (emptyState) emptyState.style.display = 'flex';
+            if (paginationContainer) paginationContainer.style.display = 'none';
         }
         
     } catch (error) {
-        console.error(' Error cargando pedidos:', error);
+        console.error('✗ Error cargando pedidos:', error);
         if (loadingState) loadingState.style.display = 'none';
         mostrarNotificacion('Error al cargar los pedidos', 'danger');
     } finally {
         if (btnRefresh) btnRefresh.disabled = false;
     }
+}
+
+function updatePaginationControls(pagination) {
+    elById('currentPage').textContent = pagination.page;
+    elById('totalPages').textContent = pagination.last_page;
+    elById('showingFrom').textContent = pagination.from;
+    elById('showingTo').textContent = pagination.to;
+    elById('totalRecords').textContent = pagination.total;
+    
+    const btnFirst = elById('btnFirstPage');
+    const btnPrev = elById('btnPrevPage');
+    const btnNext = elById('btnNextPage');
+    const btnLast = elById('btnLastPage');
+    
+    if (btnFirst) btnFirst.disabled = pagination.page <= 1;
+    if (btnPrev) btnPrev.disabled = pagination.page <= 1;
+    if (btnNext) btnNext.disabled = pagination.page >= pagination.last_page;
+    if (btnLast) btnLast.disabled = pagination.page >= pagination.last_page;
 }
 
 // ===== RENDERIZAR TABLA =====
@@ -158,74 +345,44 @@ function renderizarTabla(pedidos) {
     
     console.log('📊 Renderizando tabla con pedidos:', pedidos.length);
     
-    // Obtener tamaños del header para debug
-    const headerCells = document.querySelectorAll('.table-header-cell');
-    console.log('📐 Encabezados encontrados:', headerCells.length);
-    headerCells.forEach((cell, idx) => {
-        const flex = cell.style.flex;
-        const width = cell.offsetWidth;
-        console.log(`  ${idx}. Flex: ${flex}, Ancho real: ${width}px`);
-    });
-    
     tablaPedidosBody.innerHTML = '';
     
     pedidos.forEach(pedido => {
         const row = document.createElement('div');
-        row.className = 'table-row';
+        row.className = 'table-row-cartera';
         row.setAttribute('data-orden-id', pedido.id);
         row.setAttribute('data-numero', pedido.numero);
         
+        const fechaFormato = new Date(pedido.created_at).toLocaleDateString('es-CO');
+        
         row.innerHTML = `
             <!-- Acciones -->
-            <div class="table-cell" style="flex: 0 0 200px; justify-content: flex-start; display: flex; gap: 0.5rem; align-items: center;">
-                <button class="btn-action btn-success" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero}')">
-                    <span class="material-symbols-rounded">check_circle</span>
+            <div class="table-cell-cartera" style="flex: 0 0 140px; display: flex; gap: 4px; align-items: center; justify-content: center; padding: 0 4px;">
+                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">check_circle</span>
                 </button>
-                <button class="btn-action btn-danger" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero}')">
-                    <span class="material-symbols-rounded">cancel</span>
+                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">cancel</span>
                 </button>
-                <button class="btn-action btn-info" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero}')">
-                    <span class="material-symbols-rounded">receipt</span>
+                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">receipt</span>
                 </button>
             </div>
             
             <!-- Cliente -->
-            <div class="table-cell" style="flex: 0 0 200px; justify-content: center; display: flex; align-items: center;">
+            <div class="table-cell-cartera" style="flex: 0 0 280px; display: flex; align-items: center; padding: 0 8px;">
                 <span>${pedido.cliente_nombre || 'N/A'}</span>
             </div>
             
             <!-- Fecha -->
-            <div class="table-cell" style="flex: 0 0 160px; justify-content: center; display: flex; align-items: center;">
-                <span>${new Date(pedido.created_at).toLocaleDateString('es-CO')}</span>
+            <div class="table-cell-cartera" style="flex: 0 0 150px; display: flex; align-items: center; padding: 0 8px;">
+                <span>${fechaFormato}</span>
             </div>
         `;
         tablaPedidosBody.appendChild(row);
     });
     
-    // Logs después de renderizar
-    console.log(' Tabla renderizada');
-    setTimeout(() => {
-        const headerRow = document.querySelector('.table-head > div');
-        const firstBodyRow = document.querySelector('.table-row');
-        
-        if (headerRow && firstBodyRow) {
-            const headerWidth = headerRow.offsetWidth;
-            const bodyRowWidth = firstBodyRow.offsetWidth;
-            console.log(` COMPARACIÓN DE ANCHO:`);
-            console.log(`  Header width: ${headerWidth}px`);
-            console.log(`  Body row width: ${bodyRowWidth}px`);
-            console.log(`  Diferencia: ${bodyRowWidth - headerWidth}px`);
-            
-            // Analizar cada celda del body
-            const bodyCells = firstBodyRow.querySelectorAll('.table-cell');
-            console.log(`📊 Celdas del body:`, bodyCells.length);
-            bodyCells.forEach((cell, idx) => {
-                const width = cell.offsetWidth;
-                const flex = cell.style.flex;
-                console.log(`  ${idx}. Ancho: ${width}px, Flex: ${flex}`);
-            });
-        }
-    }, 100);
+    console.log('✓ Tabla renderizada con ' + pedidos.length + ' filas');
 }
 
 // ===== MODAL APROBACIÓN =====

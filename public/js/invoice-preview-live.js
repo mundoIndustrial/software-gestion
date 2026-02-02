@@ -103,7 +103,12 @@ window._abrirGaleriaImagenesDesdeID = function(galeriaId) {
  * Abre una galería de imágenes en un modal
  */
 window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
-    if (!Array.isArray(imagenes) || imagenes.length === 0) return;
+    console.log('[GALERIA-DEBUG] Abriendo galería:', { titulo, cantidadImagenes: imagenes?.length });
+    
+    if (!Array.isArray(imagenes) || imagenes.length === 0) {
+        console.warn('[GALERIA-DEBUG] ❌ Array de imágenes vacío o inválido');
+        return;
+    }
     
     // Normalizar imagenes - convertir objetos a URLs usando la misma función que el renderizado
     const imagenesNormalizadas = imagenes.map(img => {
@@ -116,6 +121,174 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
         }
     });
     
+    console.log('[GALERIA-DEBUG] URLs normalizadas:', { cantidad: imagenesNormalizadas.length, primeraURL: imagenesNormalizadas[0] });
+    
+    // Agregar estilos al documento si no existen
+    if (!document.getElementById('galeria-styles')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'galeria-styles';
+        styleSheet.textContent = `
+            @keyframes galeriaFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes galeriaZoomIn {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            
+            #galeria-imagenes-modal {
+                animation: galeriaFadeIn 0.3s ease;
+            }
+            
+            .galeria-contenedor {
+                animation: galeriaZoomIn 0.3s ease;
+            }
+            
+            .galeria-imagen-wrapper {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(20,20,20,0.8) 100%);
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+                flex-grow: 0;
+                width: 650px !important;
+                height: 450px !important;
+                max-width: none;
+                max-height: none;
+            }
+            
+            .galeria-img {
+                width: 600px !important;
+                height: 400px !important;
+                object-fit: contain;
+                border-radius: 8px;
+                box-shadow: none;
+            }
+            
+            .galeria-titulo {
+                color: white;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 5px;
+                text-align: center;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+                letter-spacing: 0.5px;
+                padding: 5px 20px;
+            }
+            
+            .galeria-navegacion {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin-top: 0;
+                justify-content: center;
+                flex-wrap: wrap;
+                padding: 8px 20px;
+                background: rgba(0, 0, 0, 0.5);
+                width: 100%;
+            }
+            
+            .galeria-btn {
+                padding: 8px 12px;
+                background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 12px;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .galeria-btn:hover {
+                background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+            }
+            
+            .galeria-btn:active {
+                transform: translateY(0);
+            }
+            
+            .galeria-contador {
+                color: white;
+                font-size: 12px;
+                font-weight: 600;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 6px 10px;
+                border-radius: 6px;
+                min-width: 70px;
+                text-align: center;
+                backdrop-filter: blur(4px);
+            }
+            
+            .galeria-btn-cerrar {
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                padding: 10px 14px;
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 14px;
+                transition: all 0.3s ease;
+                z-index: 10004;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            
+            .galeria-btn-cerrar:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+                transform: scale(1.05);
+            }
+            
+            .galeria-thumbnails {
+                display: flex;
+                gap: 8px;
+                margin-top: 15px;
+                overflow-x: auto;
+                padding: 0 10px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .galeria-thumbnail {
+                width: 60px;
+                height: 60px;
+                border-radius: 6px;
+                cursor: pointer;
+                border: 3px solid transparent;
+                opacity: 0.6;
+                transition: all 0.3s ease;
+                object-fit: cover;
+                flex-shrink: 0;
+            }
+            
+            .galeria-thumbnail:hover {
+                opacity: 0.9;
+                transform: scale(1.05);
+            }
+            
+            .galeria-thumbnail.activo {
+                border-color: #1e40af;
+                opacity: 1;
+                box-shadow: 0 0 10px rgba(30, 64, 175, 0.5);
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    }
+    
     // Crear modal de galería
     const modalGaleria = document.createElement('div');
     modalGaleria.id = 'galeria-imagenes-modal';
@@ -125,123 +298,196 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.98);
         z-index: 10002;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 0;
+        overflow: hidden;
     `;
     
     let indiceActual = 0;
     
     const contenido = document.createElement('div');
+    contenido.className = 'galeria-contenedor';
     contenido.style.cssText = `
         position: relative;
-        max-width: 90vw;
-        max-height: 90vh;
+        max-width: 700px;
+        width: auto;
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
+        padding: 0;
     `;
+    
+    const titulo_elem = document.createElement('div');
+    titulo_elem.className = 'galeria-titulo';
+    titulo_elem.textContent = titulo;
+    
+    const imagenWrapper = document.createElement('div');
+    imagenWrapper.className = 'galeria-imagen-wrapper';
+    
+    console.log('[GALERIA-DEBUG] Wrapper creado:', { className: imagenWrapper.className });
     
     const imagen = document.createElement('img');
+    imagen.className = 'galeria-img';
     imagen.src = imagenesNormalizadas[indiceActual];
-    imagen.style.cssText = `
-        max-width: 100%;
-        max-height: 75vh;
-        object-fit: contain;
-        border-radius: 4px;
-    `;
+    imagen.alt = titulo;
+    
+    // Log cuando la imagen carga
+    imagen.onload = function() {
+        console.log('[GALERIA-DEBUG] 📸 Imagen cargada:', {
+            src: this.src,
+            naturalWidth: this.naturalWidth,
+            naturalHeight: this.naturalHeight,
+            displayWidth: this.width,
+            displayHeight: this.height,
+            className: this.className,
+            computedStyle: {
+                maxWidth: window.getComputedStyle(this).maxWidth,
+                maxHeight: window.getComputedStyle(this).maxHeight,
+                width: window.getComputedStyle(this).width,
+                height: window.getComputedStyle(this).height,
+                objectFit: window.getComputedStyle(this).objectFit
+            }
+        });
+    };
+    
+    imagen.onerror = function() {
+        console.error('[GALERIA-DEBUG] ❌ Error cargando imagen:', this.src);
+    };
+    
+    imagenWrapper.appendChild(imagen);
     
     const navegacion = document.createElement('div');
-    navegacion.style.cssText = `
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-top: 10px;
-        color: white;
-        font-size: 12px;
-    `;
+    navegacion.className = 'galeria-navegacion';
     
     const btnAnterior = document.createElement('button');
-    btnAnterior.textContent = '← Anterior';
-    btnAnterior.style.cssText = `
-        padding: 8px 12px;
-        background: #27ae60;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-weight: 600;
-    `;
+    btnAnterior.className = 'galeria-btn';
+    btnAnterior.innerHTML = '<span>←</span> Anterior';
+    btnAnterior.disabled = imagenesNormalizadas.length <= 1;
     btnAnterior.onclick = () => {
         indiceActual = (indiceActual - 1 + imagenesNormalizadas.length) % imagenesNormalizadas.length;
-        imagen.src = imagenesNormalizadas[indiceActual];
-        contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
+        actualizarGaleria();
     };
     
     const contador = document.createElement('span');
+    contador.className = 'galeria-contador';
     contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
     
     const btnSiguiente = document.createElement('button');
-    btnSiguiente.textContent = 'Siguiente →';
-    btnSiguiente.style.cssText = `
-        padding: 8px 12px;
-        background: #27ae60;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-weight: 600;
-    `;
+    btnSiguiente.className = 'galeria-btn';
+    btnSiguiente.innerHTML = 'Siguiente <span>→</span>';
+    btnSiguiente.disabled = imagenesNormalizadas.length <= 1;
     btnSiguiente.onclick = () => {
         indiceActual = (indiceActual + 1) % imagenesNormalizadas.length;
-        imagen.src = imagenesNormalizadas[indiceActual];
-        contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
+        actualizarGaleria();
     };
     
     const btnCerrar = document.createElement('button');
-    btnCerrar.textContent = '✕ Cerrar';
-    btnCerrar.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 8px 12px;
-        background: #e74c3c;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-weight: 600;
-        z-index: 10003;
-    `;
-    btnCerrar.onclick = () => modalGaleria.remove();
+    btnCerrar.className = 'galeria-btn-cerrar';
+    btnCerrar.innerHTML = '<span>✕</span> Cerrar';
+    btnCerrar.onclick = () => {
+        modalGaleria.style.opacity = '0';
+        setTimeout(() => modalGaleria.remove(), 300);
+    };
     
-    const titulo_elem = document.createElement('div');
-    titulo_elem.textContent = titulo;
-    titulo_elem.style.cssText = `
-        color: white;
-        font-size: 11px;
-        font-weight: 700;
-        margin-bottom: 10px;
-    `;
+    // Miniaturas si hay múltiples imágenes
+    const thumbnails = document.createElement('div');
+    thumbnails.className = 'galeria-thumbnails';
+    
+    imagenesNormalizadas.forEach((imgSrc, idx) => {
+        const thumb = document.createElement('img');
+        thumb.className = 'galeria-thumbnail';
+        if (idx === 0) thumb.classList.add('activo');
+        thumb.src = imgSrc;
+        thumb.alt = `Imagen ${idx + 1}`;
+        thumb.onclick = () => {
+            indiceActual = idx;
+            actualizarGaleria();
+        };
+        thumbnails.appendChild(thumb);
+    });
+    
+    function actualizarGaleria() {
+        imagen.src = imagenesNormalizadas[indiceActual];
+        contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
+        
+        console.log('[GALERIA-DEBUG] 🔄 Actualizando galería:', {
+            indice: indiceActual,
+            url: imagenesNormalizadas[indiceActual]
+        });
+        
+        // Actualizar miniaturas activas
+        document.querySelectorAll('.galeria-thumbnail').forEach((thumb, idx) => {
+            if (idx === indiceActual) {
+                thumb.classList.add('activo');
+            } else {
+                thumb.classList.remove('activo');
+            }
+        });
+    }
     
     navegacion.appendChild(btnAnterior);
     navegacion.appendChild(contador);
     navegacion.appendChild(btnSiguiente);
     
     contenido.appendChild(btnCerrar);
-    contenido.appendChild(titulo_elem);
-    contenido.appendChild(imagen);
+    contenido.appendChild(imagenWrapper);
     contenido.appendChild(navegacion);
+    if (imagenesNormalizadas.length > 1) {
+        contenido.appendChild(thumbnails);
+    }
     
     modalGaleria.appendChild(contenido);
+    
+    console.log('[GALERIA-DEBUG] Modal agregado al DOM:', {
+        modalId: modalGaleria.id,
+        children: modalGaleria.children.length
+    });
+    
+    // Log de dimensiones del modal
+    setTimeout(() => {
+        const imgElement = document.querySelector('.galeria-img');
+        const wrapperElement = document.querySelector('.galeria-imagen-wrapper');
+        const modalElement = document.getElementById('galeria-imagenes-modal');
+        
+        console.log('[GALERIA-DEBUG] Dimensiones después de renderizar:', {
+            modal: {
+                width: modalElement?.offsetWidth,
+                height: modalElement?.offsetHeight
+            },
+            wrapper: {
+                width: wrapperElement?.offsetWidth,
+                height: wrapperElement?.offsetHeight,
+                computedStyle: {
+                    width: window.getComputedStyle(wrapperElement).width,
+                    height: window.getComputedStyle(wrapperElement).height,
+                    flexGrow: window.getComputedStyle(wrapperElement).flexGrow
+                }
+            },
+            imagen: {
+                width: imgElement?.offsetWidth,
+                height: imgElement?.offsetHeight,
+                naturalWidth: imgElement?.naturalWidth,
+                naturalHeight: imgElement?.naturalHeight,
+                computedStyle: {
+                    maxWidth: window.getComputedStyle(imgElement).maxWidth,
+                    maxHeight: window.getComputedStyle(imgElement).maxHeight,
+                    width: window.getComputedStyle(imgElement).width,
+                    height: window.getComputedStyle(imgElement).height
+                }
+            }
+        });
+    }, 100);
     
     // Cerrar al clickear en el fondo
     modalGaleria.addEventListener('click', (e) => {
         if (e.target === modalGaleria) {
-            modalGaleria.remove();
+            modalGaleria.style.opacity = '0';
+            setTimeout(() => modalGaleria.remove(), 300);
         }
     });
     
@@ -252,7 +498,8 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
             if (e.key === 'ArrowRight') btnSiguiente.click();
             if (e.key === 'Escape') {
                 document.removeEventListener('keydown', manejadorTeclado);
-                modalGaleria.remove();
+                modalGaleria.style.opacity = '0';
+                setTimeout(() => modalGaleria.remove(), 300);
             }
         }
     };
