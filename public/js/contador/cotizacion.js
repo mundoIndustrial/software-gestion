@@ -51,9 +51,53 @@ function openCotizacionModal(cotizacionId) {
                         color = prenda.variantes[0].color;
                     }
 
-                    // Obtener tela de telas
+                    // Obtener tela de telas o de logo_cotizacion.telas_prendas
                     let telaInfo = '';
-                    if (prenda.telas && prenda.telas.length > 0) {
+                    let imgTela = '';
+                    
+                    // Si es cotización logo, buscar en telas_prendas
+                    if (data.logo_cotizacion && data.logo_cotizacion.telas_prendas && data.logo_cotizacion.telas_prendas.length > 0) {
+                        const telaPrenda = data.logo_cotizacion.telas_prendas.find(tp => tp.prenda_cot_id === prenda.id);
+                        if (telaPrenda) {
+                            telaInfo = telaPrenda.tela || '';
+                            if (telaPrenda.color) {
+                                telaInfo += telaPrenda.tela ? ` | ${telaPrenda.color}` : telaPrenda.color;
+                            }
+                            if (telaPrenda.ref) {
+                                telaInfo += ` REF:${telaPrenda.ref}`;
+                            }
+                            // Obtener la imagen de la tela
+                            if (telaPrenda.img) {
+                                imgTela = telaPrenda.img;
+                                // Convertir ruta storage/app/public/... a ruta pública
+                                if (!imgTela.startsWith('http')) {
+                                    imgTela = '/storage/' + imgTela.replace('storage/app/public/', '');
+                                }
+                            }
+                        }
+                    } 
+                    // Si es cotización reflectivo, buscar en prenda_cot_reflectivo.color_tela_ref
+                    else if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.color_tela_ref) {
+                        const colorTelaRef = Array.isArray(prenda.prenda_cot_reflectivo.color_tela_ref) ? prenda.prenda_cot_reflectivo.color_tela_ref[0] : prenda.prenda_cot_reflectivo.color_tela_ref;
+                        if (colorTelaRef) {
+                            telaInfo = colorTelaRef.tela || '';
+                            if (colorTelaRef.color) {
+                                telaInfo += colorTelaRef.tela ? ` | ${colorTelaRef.color}` : colorTelaRef.color;
+                            }
+                            if (colorTelaRef.referencia) {
+                                telaInfo += ` REF:${colorTelaRef.referencia}`;
+                            }
+                            // Obtener la imagen de la tela si existe en fotos
+                            if (colorTelaRef.fotos && Array.isArray(colorTelaRef.fotos) && colorTelaRef.fotos.length > 0) {
+                                imgTela = colorTelaRef.fotos[0];
+                                if (!imgTela.startsWith('http')) {
+                                    imgTela = '/storage/' + imgTela.replace('storage/app/public/', '');
+                                }
+                            }
+                        }
+                    }
+                    // Si no es logo ni reflectivo, usar telas combinadas
+                    else if (prenda.telas && prenda.telas.length > 0) {
                         const tela = prenda.telas[0];
                         telaInfo = tela.nombre_tela || '';
                         if (tela.referencia) {
@@ -461,6 +505,16 @@ function openCotizacionModal(cotizacionId) {
                         });
                     }
                     
+                    // Recolectar imagen de tela de logo_cotizacion.telas_prendas
+                    if (imgTela) {
+                        imagenesParaMostrar.push({
+                            grupo: 'Tela',
+                            url: imgTela,
+                            titulo: 'Tela Logo',
+                            color: '#1e5ba8'
+                        });
+                    }
+                    
                     // Recolectar imágenes de prenda
                     if (prenda.fotos && prenda.fotos.length > 0) {
                         prenda.fotos.forEach((foto, idx) => {
@@ -482,6 +536,27 @@ function openCotizacionModal(cotizacionId) {
                                     url: foto.url,
                                     titulo: `Reflectivo ${idx + 1}`,
                                     color: '#1e5ba8'
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Recolectar imágenes de tela de reflectivo (prenda_cot_reflectivo)
+                    if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.color_tela_ref) {
+                        const colorTelaRefArray = Array.isArray(prenda.prenda_cot_reflectivo.color_tela_ref) ? prenda.prenda_cot_reflectivo.color_tela_ref : [prenda.prenda_cot_reflectivo.color_tela_ref];
+                        colorTelaRefArray.forEach((item, idx) => {
+                            if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0) {
+                                item.fotos.forEach((foto, fotoIdx) => {
+                                    let urlFoto = foto;
+                                    if (!urlFoto.startsWith('http')) {
+                                        urlFoto = '/storage/' + urlFoto.replace('storage/app/public/', '');
+                                    }
+                                    imagenesParaMostrar.push({
+                                        grupo: 'Tela Reflectivo',
+                                        url: urlFoto,
+                                        titulo: `Tela Reflectivo ${fotoIdx + 1}`,
+                                        color: '#1e5ba8'
+                                    });
                                 });
                             }
                         });
@@ -524,9 +599,9 @@ function openCotizacionModal(cotizacionId) {
 
             htmlPrendas += '</div>';
 
-            // SECCIÓN ESPECIFICACIONES GENERALES (solo para cotización combinada, no reflectivo)
-            // Si tiene prendas, NO es reflectivo (tipo_cotizacion_id !== 4), y tiene especificaciones, mostrar tabla de especificaciones
-            if (data.tiene_prendas && data.cotizacion && data.cotizacion.tipo_cotizacion_id !== 4 && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+            // SECCIÓN ESPECIFICACIONES GENERALES (para cotización combinada y reflectivo)
+            // Si tiene prendas y tiene especificaciones, mostrar tabla de especificaciones
+            if (data.tiene_prendas && data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
                 const especificacionesMap = {
                     'disponibilidad': 'DISPONIBILIDAD',
                     'forma_pago': 'FORMA DE PAGO',

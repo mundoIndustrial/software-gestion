@@ -4272,4 +4272,330 @@ function cerrarModalValidacionTecnica() {
 //  EXPORTAR PARA ACCESO GLOBAL EN create.blade.php
 window.tecnicasAgregadas = tecnicasAgregadas;
 
+// =====================================================
+// FUNCIONES DE ESPECIFICACIONES
+// =====================================================
+
+// FUNCIÓN PARA ABRIR MODAL ESPECIFICACIONES
+function abrirModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    const especificacionesGuardadas = document.getElementById('especificaciones').value;
+
+    // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
+    if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]' && especificacionesGuardadas !== '') {
+        try {
+            const datos = JSON.parse(especificacionesGuardadas);
+            
+            // Si tiene estructura de array (forma_pago, disponibilidad, etc)
+            if (datos.forma_pago || datos.disponibilidad || datos.regimen) {
+                // Procesar FORMA_PAGO
+                if (datos.forma_pago && Array.isArray(datos.forma_pago)) {
+                    datos.forma_pago.forEach((pago) => {
+                        let valorNormalizado = pago.valor.toLowerCase();
+                        if (valorNormalizado === 'crédito' || valorNormalizado === 'credito') {
+                            valorNormalizado = 'credito';
+                        }
+                        
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        let checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            if (pago.observacion) {
+                                let obsName;
+                                if (valorNormalizado === 'contado') {
+                                    obsName = 'tabla_orden[pago_contado_obs]';
+                                } else if (valorNormalizado === 'credito') {
+                                    obsName = 'tabla_orden[pago_credito_obs]';
+                                }
+                                
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = pago.observacion;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Procesar DISPONIBILIDAD
+                if (datos.disponibilidad && Array.isArray(datos.disponibilidad)) {
+                    datos.disponibilidad.forEach((disp) => {
+                        const valorNormalizado = disp.valor.toLowerCase();
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        const checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            if (disp.observacion) {
+                                const obsName = `tabla_orden[${valorNormalizado}_obs]`;
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = disp.observacion;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Procesar RÉGIMEN
+                if (datos.regimen && Array.isArray(datos.regimen)) {
+                    datos.regimen.forEach((reg) => {
+                        const valorNormalizado = reg.valor.toLowerCase();
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        const checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            if (reg.observacion) {
+                                let obsName;
+                                if (valorNormalizado === 'común' || valorNormalizado === 'comun') {
+                                    obsName = 'tabla_orden[regimen_comun_obs]';
+                                } else if (valorNormalizado === 'simplificado') {
+                                    obsName = 'tabla_orden[regimen_simp_obs]';
+                                }
+                                
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = reg.observacion;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Procesar SE HA VENDIDO
+                if (datos.se_ha_vendido && Array.isArray(datos.se_ha_vendido)) {
+                    const tbodyVendido = document.querySelector('#tbody_vendido');
+                    if (tbodyVendido) {
+                        datos.se_ha_vendido.forEach((vendido) => {
+                            const firstRow = tbodyVendido.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="vendido_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="vendido"]');
+                                const obsInput = firstRow.querySelector('input[name*="vendido_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = vendido.valor;
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                }
+                                if (obsInput) {
+                                    obsInput.value = vendido.observacion || '';
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Procesar ÚLTIMA VENTA
+                if (datos.ultima_venta && Array.isArray(datos.ultima_venta)) {
+                    const tbodyUltimaVenta = document.querySelector('#tbody_ultima_venta');
+                    if (tbodyUltimaVenta) {
+                        datos.ultima_venta.forEach((ultimaVenta) => {
+                            const firstRow = tbodyUltimaVenta.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="ultima_venta_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="ultima_venta"]');
+                                const obsInput = firstRow.querySelector('input[name*="ultima_venta_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = ultimaVenta.valor;
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                }
+                                if (obsInput) {
+                                    obsInput.value = ultimaVenta.observacion || '';
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Procesar FLETE
+                if (datos.flete && Array.isArray(datos.flete)) {
+                    const tbodyFlete = document.querySelector('#tbody_flete');
+                    if (tbodyFlete) {
+                        datos.flete.forEach((flete) => {
+                            const firstRow = tbodyFlete.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="flete_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="flete"]');
+                                const obsInput = firstRow.querySelector('input[name*="flete_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = flete.valor;
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                }
+                                if (obsInput) {
+                                    obsInput.value = flete.observacion || '';
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('Error al cargar especificaciones:', e);
+        }
+    } else {
+        // Limpiar todos los checkboxes si no hay especificaciones guardadas
+        document.querySelectorAll('[name^="tabla_orden"]').forEach((element) => {
+            if (element.type === 'checkbox') {
+                element.checked = false;
+            } else if (element.type === 'text') {
+                element.value = '';
+            }
+        });
+    }
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// FUNCIÓN PARA CERRAR MODAL ESPECIFICACIONES
+function cerrarModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// FUNCIÓN PARA GUARDAR ESPECIFICACIONES
+function guardarEspecificacionesReflectivo() {
+    // Estructura final en formato cotizaciones.especificaciones
+    const especificaciones = {
+        forma_pago: [],
+        disponibilidad: [],
+        regimen: [],
+        se_ha_vendido: [],
+        ultima_venta: [],
+        flete: []
+    };
+    
+    const modal = document.getElementById('modalEspecificaciones');
+    if (!modal) {
+        return;
+    }
+    
+    // PROCESAR FORMA_PAGO
+    const formaPagoCheckboxes = [
+        { checkbox: 'contado', label: 'Contado', obsField: 'pago_contado_obs' },
+        { checkbox: 'credito', label: 'Crédito', obsField: 'pago_credito_obs' }
+    ];
+    
+    formaPagoCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.forma_pago.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+        }
+    });
+    
+    // PROCESAR DISPONIBILIDAD
+    const disponibilidadCheckboxes = [
+        { checkbox: 'bodega', label: 'Bodega', obsField: 'bodega_obs' },
+        { checkbox: 'cucuta', label: 'Cúcuta', obsField: 'cucuta_obs' },
+        { checkbox: 'lafayette', label: 'Lafayette', obsField: 'lafayette_obs' },
+        { checkbox: 'fabrica', label: 'Fábrica', obsField: 'fabrica_obs' }
+    ];
+    
+    disponibilidadCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.disponibilidad.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+        }
+    });
+    
+    // PROCESAR RÉGIMEN
+    const regimenCheckboxes = [
+        { checkbox: 'comun', label: 'Común', obsField: 'regimen_comun_obs' },
+        { checkbox: 'simplificado', label: 'Simplificado', obsField: 'regimen_simp_obs' }
+    ];
+    
+    regimenCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.regimen.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+        }
+    });
+    
+    // PROCESAR SE HA VENDIDO
+    const tbodySeHaVendido = modal.querySelector('#tbody_vendido');
+    if (tbodySeHaVendido) {
+        const rows = tbodySeHaVendido.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name="tabla_orden[vendido_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[vendido]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[vendido_obs]"]');
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí';
+                especificaciones.se_ha_vendido.push({
+                    valor: valorTexto,
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+            }
+        });
+    }
+    
+    // PROCESAR ÚLTIMA VENTA
+    const tbodyUltimaVenta = modal.querySelector('#tbody_ultima_venta');
+    if (tbodyUltimaVenta) {
+        const rows = tbodyUltimaVenta.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name="tabla_orden[ultima_venta_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[ultima_venta]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[ultima_venta_obs]"]');
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí';
+                especificaciones.ultima_venta.push({
+                    valor: valorTexto,
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+            }
+        });
+    }
+    
+    // PROCESAR FLETE
+    const tbodyFlete = modal.querySelector('#tbody_flete');
+    if (tbodyFlete) {
+        const rows = tbodyFlete.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name="tabla_orden[flete_item]"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name="tabla_orden[flete]"]');
+            const obsInput = row.querySelector('input[name="tabla_orden[flete_obs]"]');
+            if (checkbox && checkbox.checked) {
+                const valorTexto = valorInput?.value.trim() || 'Sí';
+                especificaciones.flete.push({
+                    valor: valorTexto,
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+            }
+        });
+    }
+    
+    // Convertir a JSON string y guardar en campo oculto
+    const especificacionesJSON = JSON.stringify(especificaciones);
+    document.getElementById('especificaciones').value = especificacionesJSON;
+
+    cerrarModalEspecificaciones();
+}
+
+// FUNCIÓN PARA AGREGAR FILA DE ESPECIFICACIÓN
+function agregarFilaEspecificacion(seccion) {
+    // Función auxiliar, puede ampliarse según necesidad
+}
 

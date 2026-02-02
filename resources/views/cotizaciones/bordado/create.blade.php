@@ -478,6 +478,7 @@ OR
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_venta_bordado" name="tipo_venta_bordado" style="display: none;">
+            <textarea id="especificaciones" name="especificaciones" style="display: none;"></textarea>
 
             <!-- INFORMACIÓN DE TELAS, COLORES Y REFERENCIAS POR PRENDA -->
             <div style="display: none;">
@@ -537,6 +538,248 @@ OR
                 </div>
             </div>
         </form>
+
+        <!-- MENÚ FLOTANTE PARA ESPECIFICACIONES -->
+        <div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
+            <!-- Menú flotante -->
+            <div id="menuFlotante" style="display: none; position: absolute; bottom: 70px; right: 0; background: white; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); overflow: hidden; min-width: 200px;">
+                <button type="button" onclick="abrirModalEspecificaciones(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                    <i class="fas fa-sliders-h" style="color: #3B82F6; font-size: 1.1rem;"></i>
+                    <span>Especificaciones</span>
+                </button>
+            </div>
+            
+            <!-- Botón principal flotante -->
+            <button type="button" id="btnFlotante" onclick="const menu = document.getElementById('menuFlotante'); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; this.style.transform = menu.style.display === 'block' ? 'scale(1) rotate(45deg)' : 'scale(1) rotate(0deg)'" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4); transition: all 0.3s ease; position: relative;" onmouseover="this.style.boxShadow='0 6px 20px rgba(30, 64, 175, 0.5)'; this.style.transform='scale(1.1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')" onmouseout="this.style.boxShadow='0 4px 12px rgba(30, 64, 175, 0.4)'; this.style.transform='scale(1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: ESPECIFICACIONES DEL LOGO -->
+    <div id="modalEspecificaciones" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 3px solid #0284c7; padding-bottom: 1.5rem;">
+                <h3 style="margin: 0; color: #0284c7; font-size: 1.4rem; font-weight: 700;"><i class="fas fa-cog" style="margin-right: 10px;"></i>ESPECIFICACIONES GENERALES</h3>
+                <button type="button" onclick="cerrarModalEspecificaciones()" style="background: #f0f0f0; border: none; font-size: 1.5rem; cursor: pointer; color: #666; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <table class="tabla-control-compacta" style="width: 100%; border-collapse: collapse; background: white;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #0284c7, #0166a0); color: white;">
+                        <th style="width: 20%; text-align: left; padding: 12px; font-weight: 600; border: none;">CONCEPTO</th>
+                        <th style="width: 10%; text-align: center; padding: 12px; font-weight: 600; border: none;">APLICA</th>
+                        <th style="width: 60%; text-align: left; padding: 12px; font-weight: 600; border: none;">OBSERVACIONES</th>
+                        <th style="width: 10%; text-align: center; padding: 12px; font-weight: 600; border: none;">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DISPONIBILIDAD -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-warehouse" style="margin-right: 8px;"></i>DISPONIBILIDAD</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('disponibilidad')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_disponibilidad">
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[bodega]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[bodega_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody id="tbody_disponibilidad_adicional"></tbody>
+                </tbody>
+
+                <!-- FORMA DE PAGO -->
+                <tr class="fila-grupo">
+                    <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #0284c7;"><i class="fas fa-credit-card" style="margin-right: 8px;"></i>FORMA DE PAGO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('forma_pago')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody>
+                    <tr>
+                        <td><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[contado]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[pago_contado_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[credito]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[pago_credito_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- RÉGIMEN -->
+                <tr class="fila-grupo">
+                    <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #0284c7;"><i class="fas fa-balance-scale" style="margin-right: 8px;"></i>RÉGIMEN</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('regimen')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody>
+                    <tr>
+                        <td><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[comun]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[regimen_comun_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[simplificado]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[regimen_simp_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- SE HA VENDIDO -->
+                <tr class="fila-grupo">
+                    <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #0284c7;"><i class="fas fa-check-circle" style="margin-right: 8px;"></i>SE HA VENDIDO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('se_ha_vendido')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_vendido">
+                    <tr>
+                        <td><input type="text" name="tabla_orden[vendido_item]" class="input-compact" placeholder="Especificar..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;"></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[vendido]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[vendido_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- ÚLTIMA VENTA -->
+                <tr class="fila-grupo">
+                    <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #0284c7;"><i class="fas fa-history" style="margin-right: 8px;"></i>ÚLTIMA VENTA</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('ultima_venta')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_ultima_venta">
+                    <tr>
+                        <td><input type="text" name="tabla_orden[ultima_venta_item]" class="input-compact" placeholder="Fecha..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;"></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[ultima_venta]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[ultima_venta_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- FLETE DE ENVÍO -->
+                <tr class="fila-grupo">
+                    <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #0284c7;"><i class="fas fa-truck" style="margin-right: 8px;"></i>FLETE DE ENVÍO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('flete')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_flete">
+                    <tr>
+                        <td><input type="text" name="tabla_orden[flete_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="tabla_orden[flete]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px;">
+                            <input type="text" name="tabla_orden[flete_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" onclick="cerrarModalEspecificaciones()" style="padding: 0.65rem 1.5rem; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; transition: all 0.2s ease;">Cancelar</button>
+                <button type="button" onclick="guardarEspecificacionesReflectivo()" style="padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #0284c7 0%, #0166a0 100%); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.9rem; transition: all 0.2s ease;">Guardar Especificaciones</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -778,6 +1021,15 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         return;
     }
 
+    // ✅ GUARDAR ESPECIFICACIONES SI EL MODAL TIENE DATOS
+    const modalEspecificaciones = document.getElementById('modalEspecificaciones');
+    if (modalEspecificaciones && modalEspecificaciones.style.display !== 'none') {
+        // El modal está abierto, guardar los datos antes de enviar
+        if (typeof guardarEspecificacionesReflectivo === 'function') {
+            guardarEspecificacionesReflectivo();
+        }
+    }
+
     // Desactivar botones durante el envío
     document.querySelectorAll('button[type="submit"]').forEach(btn => {
         btn.disabled = true;
@@ -938,7 +1190,8 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         tecnicas: tecnicasAEnviar,
         observaciones_generales: observacionesDelDOM,
         tipo_venta_bordado: headerTipoVentaElement?.value || '',
-        telas_prendas_json: JSON.stringify(telasPrendas)
+        telas_prendas_json: JSON.stringify(telasPrendas),
+        especificaciones: document.getElementById('especificaciones')?.value || ''
     };
 
 
@@ -990,13 +1243,34 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                         });
                     }
                     
+                    // 🆕 PROCESAR ARCHIVOS DE TELAS DE ESTA PRENDA
+                    if (prenda.telas && Array.isArray(prenda.telas)) {
+                        prenda.telas.forEach((tela, telaIdx) => {
+                            if (tela.archivo && tela.archivo instanceof File) {
+                                const fieldName = `tecnica_${tecnicaIdx}_prenda_${prendaIdx}_tela_${telaIdx}`;
+                                formData.append(fieldName, tela.archivo);
+                                totalArchivosEnTecnicas++;
+                                console.log(`        ✓ Archivo de tela agregado: ${fieldName} (${tela.archivo.name})`);
+                            }
+                        });
+                    }
+                    
                     // Retornar prenda sin archivos para JSON
+                    // IMPORTANTE: Incluir telas para que se procesen en el backend
+                    const telasParaJSON = prenda.telas ? (prenda.telas).map(tela => ({
+                        color: tela.color || null,
+                        tela: tela.tela || null,
+                        referencia: tela.referencia || null,
+                        // El archivo se procesa por separado en FormData
+                    })) : null;
+                    
                     return {
                         nombre_prenda: prenda.nombre_prenda,
                         observaciones: prenda.observaciones,
                         ubicaciones: prenda.ubicaciones,
                         talla_cantidad: prenda.talla_cantidad,
                         variaciones_prenda: prenda.variaciones_prenda || null,
+                        telas: telasParaJSON,  // ← CRUCIAL: Incluir telas
                         imagenes_files: [] // Vacío - los archivos ya están en FormData
                     };
                 }),

@@ -344,6 +344,7 @@ class ContadorController extends Controller
                             'descripcion' => $prendaCotReflectivoPorPrenda[$prenda->id]->descripcion ?? null,
                             'ubicaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) : null,
                             'variaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) : null,
+                            'color_tela_ref' => $prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref) : null,
                         ] : null,
                     ];
                 })->toArray(),
@@ -380,6 +381,18 @@ class ContadorController extends Controller
                         ->toArray();
                 }
 
+                // Telas, colores y referencias de prendas en cotización logo
+                $telasPrendas = $cotizacionModelo->logoCotizacion->telasPrendas ? $cotizacionModelo->logoCotizacion->telasPrendas->map(function($telaPrenda) {
+                    return [
+                        'id' => $telaPrenda->id,
+                        'prenda_cot_id' => $telaPrenda->prenda_cot_id,
+                        'tela' => $telaPrenda->tela,
+                        'color' => $telaPrenda->color,
+                        'ref' => $telaPrenda->ref,
+                        'img' => $telaPrenda->img,
+                    ];
+                })->toArray() : [];
+
                 $logoCotizacion = [
                     'id' => $cotizacionModelo->logoCotizacion->id,
                     'descripcion' => $cotizacionModelo->logoCotizacion->descripcion ?? null,
@@ -388,6 +401,7 @@ class ContadorController extends Controller
                     'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
                     'observaciones_generales' => $cotizacionModelo->logoCotizacion->observaciones_generales ?? [],
                     'fotos' => $logoFotos,
+                    'telas_prendas' => $telasPrendas,
                     'tecnicas_prendas' => $cotizacionModelo->logoCotizacion->tecnicasPrendas ? $cotizacionModelo->logoCotizacion->tecnicasPrendas->map(function($tecnicaPrenda) {
                         return [
                             'id' => $tecnicaPrenda->id,
