@@ -26,6 +26,14 @@ class CarteraPedidosController extends Controller
             $sortBy = $request->get('sort_by', 'fecha');
             $sortOrder = $request->get('sort_order', 'desc');
             
+            // Debug
+            \Log::debug('CarteraPedidosController::obtenerPedidos', [
+                'cliente' => $cliente,
+                'fechaDesde' => $fechaDesde,
+                'fechaHasta' => $fechaHasta,
+                'search' => $search
+            ]);
+            
             // Validar valores
             $page = max(1, $page);
             $perPage = max(1, min($perPage, 100));
@@ -233,6 +241,44 @@ class CarteraPedidosController extends Controller
         }
     }
     
+    /**
+     * Obtener opciones de filtro (clientes únicos y fechas)
+     */
+    public function obtenerOpcionesFiltro(Request $request)
+    {
+        try {
+            $estadosPendientes = ['pendiente_cartera'];
+            
+            // Obtener clientes únicos
+            $clientes = PedidoProduccion::whereIn('estado', $estadosPendientes)
+                ->select('cliente')
+                ->distinct()
+                ->orderBy('cliente')
+                ->pluck('cliente')
+                ->toArray();
+            
+            // Obtener fechas únicas (formateadas como YYYY-MM-DD)
+            $fechas = PedidoProduccion::whereIn('estado', $estadosPendientes)
+                ->selectRaw('DATE(fecha_de_creacion_de_orden) as fecha')
+                ->distinct()
+                ->orderBy('fecha', 'desc')
+                ->pluck('fecha')
+                ->toArray();
+            
+            return response()->json([
+                'success' => true,
+                'clientes' => array_values(array_filter($clientes)),
+                'fechas' => array_values(array_filter($fechas))
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en CarteraPedidosController::obtenerOpcionesFiltro: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones de filtro'
+            ], 500);
+        }
+    }
+
     /**
      * Obtener datos de factura para mostrar en modal
      */

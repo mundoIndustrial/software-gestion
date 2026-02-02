@@ -13,6 +13,10 @@
             height: 100%;
             gap: 16px;
             padding: 0;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .cartera-toolbar {
@@ -24,6 +28,9 @@
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
         }
 
         .cartera-toolbar input,
@@ -50,6 +57,8 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1000px;
         }
 
         .table-scroll-container-cartera {
@@ -78,6 +87,11 @@
             display: flex;
             align-items: center;
             gap: 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.95rem;
+            min-height: 60px;
+            padding: 8px 4px;
+        }
             padding: 14px 8px;
             border-bottom: 1px solid #f3f4f6;
             transition: background-color 0.2s;
@@ -123,30 +137,13 @@
             font-weight: 600 !important;
             color: white !important;
             cursor: pointer !important;
-            padding: 0 !important;
             transition: all 0.2s !important;
             user-select: none !important;
+            box-sizing: border-box !important;
         }
 
         .table-header-cell-cartera:hover {
             opacity: 0.8;
-        }
-
-        .table-header-cell-cartera.sortable::after {
-            content: '⇅';
-            font-size: 0.8em;
-            opacity: 0.6;
-            margin-left: 6px;
-        }
-
-        .table-header-cell-cartera.sort-asc::after {
-            content: '↑';
-            opacity: 1;
-        }
-
-        .table-header-cell-cartera.sort-desc::after {
-            content: '↓';
-            opacity: 1;
         }
 
         .filter-icon {
@@ -169,42 +166,71 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 16px;
-            border-top: 1px solid #f3f4f6;
+            padding: 20px 24px;
+            border-top: 2px solid #e5e7eb;
             flex-wrap: wrap;
+            background: linear-gradient(to right, #f9fafb, #ffffff);
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 0 0 8px 8px;
         }
 
         .pagination-btn {
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            border: 1.5px solid #d1d5db;
             border-radius: 6px;
             background: white;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 44px;
+            height: 44px;
+            color: #374151;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .pagination-btn:hover:not(:disabled) {
             border-color: #3b82f6;
-            background: #f0f9ff;
+            background: #eff6ff;
             color: #3b82f6;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
         }
 
         .pagination-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
+            background: #f3f4f6;
+            border-color: #e5e7eb;
         }
 
         .pagination-btn.active {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            border-color: #3b82f6;
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .pagination-info {
             font-size: 0.9rem;
-            color: #6b7280;
-            margin: 0 8px;
+            color: #374151;
+            margin: 0 12px;
+            white-space: nowrap;
+            font-weight: 500;
+            padding: 8px 12px;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid #3b82f6;
         }
 
         .empty-state-cartera {
@@ -452,21 +478,16 @@
             type="text" 
             id="searchInput" 
             placeholder="🔍 Buscar por cliente, número de pedido..." 
-            style="flex: 1; min-width: 250px;"
+            style="flex: 1; min-width: 250px; max-width: 600px;"
         />
-        <select id="perPageSelect" style="width: 150px;">
-            <option value="10">10 por página</option>
-            <option value="15" selected>15 por página</option>
-            <option value="25">25 por página</option>
-            <option value="50">50 por página</option>
-        </select>
         <button 
-            id="btnRefreshPedidos" 
-            style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.2s;"
-            onmouseover="this.style.background='#2563eb'"
-            onmouseout="this.style.background='#3b82f6'"
+            id="btnActualizar" 
+            onclick="cargarPedidos()" 
+            style="padding: 10px 16px; border: none; border-radius: 6px; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.95rem;"
+            title="Actualizar tabla"
         >
-            🔄 Actualizar
+            <span class="material-symbols-rounded" style="font-size: 1.2rem;">refresh</span>
+            Actualizar
         </button>
     </div>
 
@@ -476,16 +497,16 @@
             <!-- ENCABEZADOS CON FILTROS -->
             <div class="table-head">
                 <div class="table-header-row">
-                    <div class="table-header-cell-cartera" style="flex: 0 0 140px; justify-content: center;">
+                    <div class="table-header-cell-cartera" style="flex: 0 0 180px; justify-content: center; border-right: 6px solid rgba(255,255,255,0.4); box-sizing: border-box; padding: 0 12px;">
                         <span>Acciones</span>
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 280px;" data-sort="cliente">
+                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 310px; padding: 0 14px 0 32px; box-sizing: border-box;" data-sort="cliente">
                         <span>Cliente</span>
                         <span class="filter-icon" title="Filtrar cliente" onclick="abrirModalFiltro('cliente', event)">
                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
                         </span>
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 150px;" data-sort="fecha">
+                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 150px; padding: 0 10px; box-sizing: border-box;" data-sort="fecha">
                         <span>Fecha</span>
                         <span class="filter-icon" title="Filtrar fecha" onclick="abrirModalFiltro('fecha', event)">
                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
@@ -516,14 +537,23 @@
 
         <!-- PAGINACIÓN -->
         <div class="pagination-container" id="paginationContainer" style="display: none;">
-            <button class="pagination-btn" id="btnFirstPage">Primera</button>
-            <button class="pagination-btn" id="btnPrevPage">← Anterior</button>
+            <button class="pagination-btn" id="btnFirstPage" title="Primera página">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">first_page</span>
+            </button>
+            <button class="pagination-btn" id="btnPrevPage" title="Página anterior">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_left</span>
+            </button>
             <span class="pagination-info">
-                Página <span id="currentPage">1</span> de <span id="totalPages">1</span> 
-                (Mostrando <span id="showingFrom">0</span>-<span id="showingTo">0</span> de <span id="totalRecords">0</span>)
+                <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">article</span>
+                Pág. <span id="currentPage">1</span> de <span id="totalPages">1</span> 
+                (<span id="showingFrom">0</span>-<span id="showingTo">0</span> de <span id="totalRecords">0</span>)
             </span>
-            <button class="pagination-btn" id="btnNextPage">Siguiente →</button>
-            <button class="pagination-btn" id="btnLastPage">Última</button>
+            <button class="pagination-btn" id="btnNextPage" title="Próxima página">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_right</span>
+            </button>
+            <button class="pagination-btn" id="btnLastPage" title="Última página">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">last_page</span>
+            </button>
         </div>
     </div>
 </div>
@@ -574,12 +604,13 @@
         </div>
         <div class="modal-filter-body">
             <div class="form-group">
-                <label>Nombre del cliente:</label>
-                <input 
-                    type="text" 
-                    id="filtroClienteInput" 
-                    placeholder="Escriba el nombre del cliente..." 
-                />
+                <label>Seleccione cliente:</label>
+                <select 
+                    id="filtroClienteSelect" 
+                    style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.95rem; cursor: pointer;"
+                >
+                    <option value="">-- Todos los clientes --</option>
+                </select>
             </div>
         </div>
         <div class="modal-filter-footer">
@@ -598,18 +629,13 @@
         </div>
         <div class="modal-filter-body">
             <div class="form-group">
-                <label>Desde:</label>
-                <input 
-                    type="date" 
-                    id="filtroFechaDesde"
-                />
-            </div>
-            <div class="form-group">
-                <label>Hasta:</label>
-                <input 
-                    type="date" 
-                    id="filtroFechaHasta"
-                />
+                <label>Seleccione fecha:</label>
+                <select 
+                    id="filtroFechaSelect" 
+                    style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.95rem; cursor: pointer;"
+                >
+                    <option value="">-- Todas las fechas --</option>
+                </select>
             </div>
         </div>
         <div class="modal-filter-footer">

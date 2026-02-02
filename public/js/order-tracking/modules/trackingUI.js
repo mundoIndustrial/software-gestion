@@ -38,12 +38,22 @@ const TrackingUI = (() => {
      * Formatea el estado del pedido
      */
     function formatOrderStatus(estado) {
+        // Mapeo de valores ENUM a labels (por si acaso vienen en ese formato)
         const statusMap = {
             'PENDIENTE_SUPERVISOR': 'Pendiente por Aprobación',
             'APROBADO_SUPERVISOR': 'Aprobado',
             'EN_PRODUCCION': 'En Producción',
-            'FINALIZADO': 'Finalizado'
+            'FINALIZADO': 'Finalizado',
+            'En Ejecución': 'En Ejecución',
+            'Pendiente': 'Pendiente',
+            'Entregado': 'Entregado',
+            'No iniciado': 'No iniciado',
+            'Anulada': 'Anulada',
+            'PENDIENTE_INSUMOS': 'Pendiente de Insumos',
+            'RECHAZADO_CARTERA': 'Rechazado por Cartera',
+            'pendiente_cartera': 'Pendiente Cartera'
         };
+        // Si el estado está en el mapa, usar el mapping; si no, devolver tal como está
         return statusMap[estado] || estado;
     }
     

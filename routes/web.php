@@ -1261,6 +1261,9 @@ Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('
     // GET pedidos por estado (cartera)
     Route::get('/pedidos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
     
+    // GET opciones de filtro (clientes y fechas únicos)
+    Route::get('/opciones-filtro', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerOpcionesFiltro'])->name('opciones-filtro');
+    
     // POST aprobar pedido
     Route::post('/pedidos/{id}/aprobar', [App\Http\Controllers\CarteraPedidosController::class, 'aprobarPedido'])->name('aprobar');
     

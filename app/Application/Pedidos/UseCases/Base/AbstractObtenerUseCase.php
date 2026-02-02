@@ -86,13 +86,19 @@ abstract class AbstractObtenerUseCase
      */
     protected function enriquecerPedido($pedido, array $opciones): array
     {
+        // Para obtener el estado original de BD, cargar el modelo Eloquent
+        $modeloEloquent = null;
+        if (method_exists($pedido, 'id') && $pedido->id()) {
+            $modeloEloquent = \App\Models\PedidoProduccion::find($pedido->id());
+        }
+        
         $datos = [
             'id' => $pedido->id(),
             'numero' => $pedido->numero() && !$pedido->numero()->esVacio() 
                 ? (string)$pedido->numero() 
                 : null,
             'clienteId' => $pedido->clienteId(),
-            'estado' => $pedido->estado()->valor(),
+            'estado' => $modeloEloquent ? $modeloEloquent->estado : $pedido->estado()->valor(),
             'descripcion' => (string)($pedido->descripcion() ?? ''),
             'totalPrendas' => $pedido->totalPrendas(),
             'totalArticulos' => $pedido->totalArticulos(),
@@ -129,11 +135,30 @@ abstract class AbstractObtenerUseCase
 
     /**
      * Obtener prendas del pedido con relaciones
+     * 
+     * NOTA IMPORTANTE:
+     * - Filtra prendas con de_bodega=TRUE para el rol CORTADOR
+     * - Los demás roles ven TODAS las prendas
      */
     protected function obtenerPrendas(int $pedidoId): array
     {
-        $prendas = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId)
-            ->with([
+        // Obtener el usuario autenticado
+        $usuario = \Illuminate\Support\Facades\Auth::user();
+        $esCortador = $usuario && $usuario->hasRole('cortador');
+
+        $queryBuilder = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId);
+
+        // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
+        if ($esCortador) {
+            $queryBuilder->where('de_bodega', false);
+            
+            \Log::info('[AbstractObtenerUseCase::obtenerPrendas] Filtrando prendas de bodega para CORTADOR', [
+                'pedido_id' => $pedidoId,
+                'usuario' => $usuario->name,
+            ]);
+        }
+
+        $prendas = $queryBuilder->with([
                 'procesos' => function ($q) {
                     $q->orderBy('created_at', 'desc');
                 },

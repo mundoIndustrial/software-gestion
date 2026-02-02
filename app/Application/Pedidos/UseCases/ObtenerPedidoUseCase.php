@@ -7,6 +7,7 @@ use App\Domain\Pedidos\Repositories\PedidoRepository;
 use App\Application\Pedidos\DTOs\PedidoResponseDTO;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Use Case: Obtener Pedido
@@ -62,10 +63,24 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     protected function construirRespuesta(array $datosEnriquecidos, $pedidoId): mixed
     {
         try {
+            // Obtener el usuario autenticado
+            $usuario = Auth::user();
+            $esCortador = $usuario && $usuario->hasRole('cortador');
+
             // Cargar modelo Eloquent completo con relaciones (solo si es necesario)
             $modeloEloquent = \App\Models\PedidoProduccion::with([
-                'prendas' => function($q) {
-                    $q->withTrashed() // INCLUIR SOFT-DELETED
+                'prendas' => function($q) use ($esCortador, $usuario) {
+                    $q->withTrashed(); // INCLUIR SOFT-DELETED
+                    
+                    // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
+                    if ($esCortador) {
+                        $q->where('de_bodega', false);
+                        Log::info('[ObtenerPedidoUseCase] Filtrando prendas de bodega para CORTADOR', [
+                            'usuario' => $usuario->name,
+                        ]);
+                    }
+                    
+                    $q
                       ->with([
                           'tallas',
                           'variantes.tipoManga',      // CARGAR TIPO MANGA

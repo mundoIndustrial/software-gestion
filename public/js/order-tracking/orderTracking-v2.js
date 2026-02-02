@@ -29,19 +29,46 @@ async function openOrderTracking(orderId) {
     try {
 
         
-        // Obtener datos del API
-        const procesos = await ApiClient.getOrderProcesos(orderId);
+        // Obtener procesos del API (devuelve un array directamente)
+        const procesosData = await ApiClient.getOrderProcesos(orderId);
         
         // Obtener días (opcional)
         const diasData = await ApiClient.getOrderDays(orderId);
         
+        // Obtener datos del pedido para el header
+        let pedidoData = {};
+        try {
+            const pedidoResponse = await fetch(`/registros/${orderId}/recibos-datos`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (pedidoResponse.ok) {
+                const response = await pedidoResponse.json();
+                pedidoData = response.data || response;
+            }
+        } catch (e) {
+            // Si falla, continuamos sin estos datos
+        }
+        
+        // Construir objeto con estructura esperada
+        const orderData = {
+            numero_pedido: pedidoData.numero || pedidoData.numero_pedido || orderId,
+            cliente: pedidoData.cliente || '-',
+            estado: pedidoData.estado || '-',
+            fecha_inicio: pedidoData.fecha_creacion || pedidoData.fecha_de_creacion_de_orden || new Date().toISOString(),
+            fecha_estimada_de_entrega: pedidoData.fecha_estimada_de_entrega || null,
+            procesos: Array.isArray(procesosData) ? procesosData : (procesosData.procesos || [])
+        };
+        
         // Agregar información de días si está disponible
         if (diasData) {
-            procesos.total_dias_habiles = diasData.total_dias;
+            orderData.total_dias_habiles = diasData.total_dias;
         }
         
         // Mostrar tracking
-        await displayOrderTrackingWithProcesos(procesos);
+        await displayOrderTrackingWithProcesos(orderData);
         
     } catch (error) {
 

@@ -52,10 +52,50 @@ function ocultarCargando() {
 }
 
 // ===== FUNCIONES DE FILTROS MODALES =====
+function cargarOpcionesFiltro() {
+    return fetch('/api/cartera/opciones-filtro')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cargar opciones de cliente
+                const selectCliente = elById('filtroClienteSelect');
+                if (selectCliente && data.clientes) {
+                    const clienteActual = selectCliente.value;
+                    selectCliente.innerHTML = '<option value="">-- Todos los clientes --</option>';
+                    data.clientes.forEach(cliente => {
+                        const option = document.createElement('option');
+                        option.value = cliente;
+                        option.textContent = cliente;
+                        selectCliente.appendChild(option);
+                    });
+                    selectCliente.value = clienteActual;
+                }
+                
+                // Cargar opciones de fecha
+                const selectFecha = elById('filtroFechaSelect');
+                if (selectFecha && data.fechas) {
+                    const fechaActual = selectFecha.value;
+                    selectFecha.innerHTML = '<option value="">-- Todas las fechas --</option>';
+                    data.fechas.forEach(fecha => {
+                        const option = document.createElement('option');
+                        option.value = fecha;
+                        option.textContent = fecha;
+                        selectFecha.appendChild(option);
+                    });
+                    selectFecha.value = fechaActual;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando opciones de filtro:', error);
+        });
+}
+
 function abrirModalFiltro(tipo, event) {
     event.stopPropagation();
     const modal = elById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
     if (modal) {
+        cargarOpcionesFiltro();
         modal.classList.add('open');
     }
 }
@@ -68,9 +108,9 @@ function cerrarModalFiltro(tipo) {
 }
 
 function aplicarFiltroCliente() {
-    const input = elById('filtroClienteInput');
-    if (input) {
-        filtroCliente = input.value.trim();
+    const select = elById('filtroClienteSelect');
+    if (select) {
+        filtroCliente = select.value.trim();
         currentPage = 1;
         cargarPedidos();
         cerrarModalFiltro('cliente');
@@ -79,26 +119,26 @@ function aplicarFiltroCliente() {
 }
 
 function aplicarFiltroFecha() {
-    const desde = elById('filtroFechaDesde');
-    const hasta = elById('filtroFechaHasta');
+    const select = elById('filtroFechaSelect');
     
-    if (desde && hasta) {
-        filtroFechaDesde = desde.value;
-        filtroFechaHasta = hasta.value;
-        
-        if (filtroFechaDesde && filtroFechaHasta && new Date(filtroFechaDesde) > new Date(filtroFechaHasta)) {
-            mostrarNotificacion('La fecha "desde" no puede ser mayor que la fecha "hasta"', 'warning');
-            return;
+    if (select) {
+        const fecha = select.value;
+        if (fecha) {
+            // Si se selecciona una fecha, usa la misma para desde y hasta (para filtrar solo ese día)
+            filtroFechaDesde = fecha;
+            filtroFechaHasta = fecha;
+        } else {
+            // Si se limpia la selección, limpia ambos filtros
+            filtroFechaDesde = '';
+            filtroFechaHasta = '';
         }
         
         currentPage = 1;
         cargarPedidos();
         cerrarModalFiltro('fecha');
         
-        const rango = [];
-        if (filtroFechaDesde) rango.push(`desde ${filtroFechaDesde}`);
-        if (filtroFechaHasta) rango.push(`hasta ${filtroFechaHasta}`);
-        mostrarNotificacion(`Filtro de fecha aplicado: ${rango.join(' ')}`, 'info');
+        const mensaje = fecha ? `Filtro de fecha aplicado: ${fecha}` : 'Filtro de fecha removido';
+        mostrarNotificacion(mensaje, 'info');
     }
 }
 
@@ -136,30 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar pedidos por primera vez
     cargarPedidos();
     
-    // Event listeners para botones de acción
-    const btnRefresh = elById('btnRefreshPedidos');
-    if (btnRefresh) {
-        btnRefresh.addEventListener('click', () => {
-            currentPage = 1;
-            cargarPedidos();
-        });
-    }
-    
     // Event listeners para búsqueda
     const searchInput = elById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
             currentSearch = e.target.value;
-            currentPage = 1;
-            cargarPedidos();
-        });
-    }
-    
-    // Event listeners para cambio de items por página
-    const perPageSelect = elById('perPageSelect');
-    if (perPageSelect) {
-        perPageSelect.addEventListener('change', function(e) {
-            perPage = parseInt(e.target.value);
             currentPage = 1;
             cargarPedidos();
         });
@@ -357,32 +378,92 @@ function renderizarTabla(pedidos) {
         
         row.innerHTML = `
             <!-- Acciones -->
-            <div class="table-cell-cartera" style="flex: 0 0 140px; display: flex; gap: 4px; align-items: center; justify-content: center; padding: 0 4px;">
-                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">check_circle</span>
+            <div class="table-cell-cartera" style="flex: 0 0 180px; display: flex; gap: 8px; align-items: center; justify-content: center; padding: 0 12px; border-right: 6px solid #e5e7eb; box-sizing: border-box; margin-right: 8px;">
+                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">check_circle</span>
                 </button>
-                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">cancel</span>
+                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">cancel</span>
                 </button>
-                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero}')" style="padding: 8px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">receipt</span>
+                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
                 </button>
             </div>
             
             <!-- Cliente -->
-            <div class="table-cell-cartera" style="flex: 0 0 280px; display: flex; align-items: center; padding: 0 8px;">
-                <span>${pedido.cliente_nombre || 'N/A'}</span>
+            <div class="table-cell-cartera" style="flex: 0 0 310px; display: flex; align-items: center; padding: 0 14px 0 32px; box-sizing: border-box;">
+                <span style="font-size: 0.95rem;">${pedido.cliente_nombre || 'N/A'}</span>
             </div>
             
             <!-- Fecha -->
-            <div class="table-cell-cartera" style="flex: 0 0 150px; display: flex; align-items: center; padding: 0 8px;">
-                <span>${fechaFormato}</span>
+            <div class="table-cell-cartera" style="flex: 0 0 150px; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box;">
+                <span style="font-size: 0.95rem;">${fechaFormato}</span>
             </div>
         `;
         tablaPedidosBody.appendChild(row);
     });
     
     console.log('✓ Tabla renderizada con ' + pedidos.length + ' filas');
+    
+    // DEBUG: Inspeccionar estilos de la tabla
+    console.log('');
+    console.log('=== DEBUG ESTILOS TABLA ===');
+    
+    // Inspeccionar header
+    const headerCells = document.querySelectorAll('.table-header-cell-cartera');
+    console.log(`📍 Headers encontrados: ${headerCells.length}`);
+    headerCells.forEach((cell, idx) => {
+        const styles = window.getComputedStyle(cell);
+        console.log(`   Header ${idx}:`, {
+            flex: cell.style.flex,
+            padding: cell.style.padding,
+            paddingLeft: cell.style.paddingLeft,
+            paddingRight: cell.style.paddingRight,
+            borderRight: cell.style.borderRight,
+            borderRightComputed: styles.borderRight,
+            boxSizing: cell.style.boxSizing,
+            innerHTML: cell.innerHTML.substring(0, 30)
+        });
+    });
+    
+    // Inspeccionar primera fila de datos
+    const firstRow = document.querySelector('.table-row-cartera');
+    if (firstRow) {
+        console.log('');
+        console.log('📍 Primera fila de datos:');
+        const cells = firstRow.querySelectorAll('.table-cell-cartera');
+        cells.forEach((cell, idx) => {
+            const styles = window.getComputedStyle(cell);
+            console.log(`   Cell ${idx}:`, {
+                flex: cell.style.flex,
+                padding: cell.style.padding,
+                paddingLeft: cell.style.paddingLeft,
+                paddingRight: cell.style.paddingRight,
+                borderRight: cell.style.borderRight,
+                borderRightComputed: styles.borderRight,
+                marginRight: cell.style.marginRight,
+                marginRightComputed: styles.marginRight,
+                boxSizing: cell.style.boxSizing,
+                width: styles.width,
+                innerHTML: cell.innerHTML.substring(0, 30)
+            });
+        });
+    }
+    
+    // DEBUG: Mostrar ancho calculado del contenedor
+    console.log('');
+    console.log('📊 Ancho total de columnas:');
+    let totalWidth = 0;
+    const allCells = document.querySelectorAll('.table-cell-cartera');
+    allCells.forEach((cell, idx) => {
+        const styles = window.getComputedStyle(cell);
+        const flexMatch = cell.style.flex.match(/\d+px/);
+        const flexWidth = flexMatch ? flexMatch[0] : '?';
+        console.log(`   Cell ${idx}: flex=${flexWidth}, computed width=${styles.width}`);
+    });
+    
+    console.log('=== FIN DEBUG ===');
+    console.log('');
 }
 
 // ===== MODAL APROBACIÓN =====

@@ -7,12 +7,17 @@ use App\Domain\Shared\CQRS\QueryHandler;
 use App\Domain\Pedidos\Queries\ObtenerPrendasPorPedidoQuery;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * ObtenerPrendasPorPedidoHandler
  * 
  * Maneja ObtenerPrendasPorPedidoQuery
  * Obtiene todas las prendas de un pedido con detalles
+ * 
+ * NOTA IMPORTANTE:
+ * - Las prendas con de_bodega=TRUE NO se muestran al rol CORTADOR
+ * - Los demás roles ven TODAS las prendas (de_bodega=TRUE o FALSE)
  */
 class ObtenerPrendasPorPedidoHandler implements QueryHandler
 {
@@ -31,10 +36,26 @@ class ObtenerPrendasPorPedidoHandler implements QueryHandler
                 'pedido_id' => $query->getPedidoId(),
             ]);
 
-            // ðŸ”„ NO USAR CACHE - Las relaciones (fotos, tallas, etc) pueden cambiar frecuentemente
+            // Obtener el usuario autenticado
+            $usuario = Auth::user();
+            $esCortador = $usuario && $usuario->hasRole('cortador');
+
+            // ðŸ"„ NO USAR CACHE - Las relaciones (fotos, tallas, etc) pueden cambiar frecuentemente
             // Si necesitas cache, considera invalidarlo cuando se actualiza una prenda
-            $prendas = $this->prendaModel
-                ->where('pedido_produccion_id', $query->getPedidoId())
+            $queryBuilder = $this->prendaModel
+                ->where('pedido_produccion_id', $query->getPedidoId());
+
+            // FILTRO: Si el usuario es CORTADOR, excluir prendas de bodega (de_bodega = TRUE)
+            if ($esCortador) {
+                $queryBuilder->where('de_bodega', false);
+                
+                Log::info(' [ObtenerPrendasPorPedidoHandler] Filtrando prendas de bodega para CORTADOR', [
+                    'pedido_id' => $query->getPedidoId(),
+                    'usuario' => $usuario->name,
+                ]);
+            }
+
+            $prendas = $queryBuilder
                 ->with([
                     'variantes',           // manga, broche, bolsillos
                     'tallas',              // tallas por gÃ©nero
