@@ -3040,8 +3040,14 @@ final class CotizacionController extends Controller
                                 $orden = 1;
                                 foreach ($archivos as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
-                                        // Guardar archivo
-                                        $ruta = $archivo->store('cotizaciones/reflectivo', 'public');
+                                        // Guardar archivo en webp
+                                        $nombreImagen = 'reflectivo_' . time() . '_' . uniqid() . '.webp';
+                                        $rutaDirectorio = "cotizaciones/{$cotizacion->id}/reflectivo";
+                                        $ruta = Storage::disk('public')->putFileAs(
+                                            $rutaDirectorio,
+                                            $archivo,
+                                            $nombreImagen
+                                        );
                                         
                                         // Guardar en tabla reflectivo_fotos_cotizacion vinculada a ESTE reflectivo
                                         $foto = \App\Models\ReflectivoCotizacionFoto::create([
@@ -3463,7 +3469,14 @@ final class CotizacionController extends Controller
                                 $orden = 1;
                                 foreach ($request->file($campoImagenes) as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
-                                        $ruta = $archivo->store('cotizaciones/reflectivo', 'public');
+                                        // Guardar archivo en webp
+                                        $nombreImagen = 'reflectivo_' . time() . '_' . uniqid() . '.webp';
+                                        $rutaDirectorio = "cotizaciones/{$id}/reflectivo";
+                                        $ruta = Storage::disk('public')->putFileAs(
+                                            $rutaDirectorio,
+                                            $archivo,
+                                            $nombreImagen
+                                        );
                                         
                                         \App\Models\ReflectivoCotizacionFoto::create([
                                             'reflectivo_cotizacion_id' => $reflectivo->id,
