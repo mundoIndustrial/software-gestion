@@ -553,9 +553,9 @@
 
 <script>
     /**
-     * Mostrar Toast Notification
+     * Mostrar Toast Notification mejorado para mensajes multilínea
      */
-    function showToast(message, type = 'success', duration = 3000) {
+    function showToast(message, type = 'success', duration = 5000) {
         const toastContainer = document.getElementById('toastContainer');
         
         // Determinar colores según tipo
@@ -570,9 +570,14 @@
         
         // Crear elemento de toast
         const toast = document.createElement('div');
-        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3`;
+        toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-start gap-3 max-w-md`;
         toast.style.animation = 'slideIn 0.3s ease-out';
-        toast.innerHTML = `<span>${message}</span>`;
+        
+        // Convertir saltos de línea a <br> para HTML
+        const formattedMessage = message.replace(/\n/g, '<br>');
+        
+        // Usar white-space: pre-line para mantener formato
+        toast.innerHTML = `<span style="white-space: pre-line; line-height: 1.5;">${formattedMessage}</span>`;
         
         toastContainer.appendChild(toast);
         
@@ -2567,11 +2572,27 @@
             
             if (data.success) {
                 cerrarModalConfirmarProduccion();
-                showToast(`Pedido aprobado correctamente. Estado: En Ejecución, Área: Corte`, 'success');
-                // Recargar la página después de 1 segundo
+                
+                // Mostrar mensaje mejorado con información de procesos
+                let mensaje = `Pedido aprobado correctamente. Estado: En Ejecución, Área: Corte`;
+                if (data.procesos_creados > 0) {
+                    mensaje += `\n✅ Se crearon ${data.procesos_creados} procesos automáticamente`;
+                    
+                    // Mostrar detalles de procesos si están disponibles
+                    if (data.detalles_procesos && data.detalles_procesos.length > 0) {
+                        mensaje += '\n\n📋 Procesos creados:';
+                        data.detalles_procesos.forEach((proceso, index) => {
+                            mensaje += `\n   ${index + 1}. ${proceso}`;
+                        });
+                    }
+                }
+                
+                showToast(mensaje, 'success');
+                
+                // Recargar la página después de 2 segundos para dar tiempo de leer el mensaje
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 2000);
             } else {
                 showToast('Error al cambiar el estado: ' + (data.message || ''), 'error');
             }

@@ -56,7 +56,8 @@ const DateUtils = (() => {
     
     /**
      * Calcula días hábiles entre dos fechas (excluyendo fines de semana y festivos)
-     * El contador inicia DESPUÉS de la fecha de inicio
+     * NOTA: El contador comienza DESPUÉS de la fecha de inicio
+     * Ej: Si se crea el 28 (miércoles), el conteo inicia el 29 (jueves)
      */
     function calculateBusinessDays(startDate, endDate, festivos = []) {
         if (!startDate || !endDate) return 0;
@@ -80,8 +81,8 @@ const DateUtils = (() => {
 
         let days = 0;
         const current = new Date(start);
-        
-        // Saltar al próximo día (contador inicia DESPUÉS de la fecha de creación)
+
+        // Saltar al próximo día (el contador inicia DESPUÉS de la fecha de creación)
         current.setDate(current.getDate() + 1);
 
         while (current <= end) {

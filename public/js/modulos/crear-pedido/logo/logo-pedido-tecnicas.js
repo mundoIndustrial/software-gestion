@@ -325,7 +325,7 @@ function renderizarLogoPrendasTecnicas() {
                     </td>
                     <td style="padding: 1rem; vertical-align: top; color: #475569; font-size: 0.95rem;">
                         ${prenda.ubicaciones && prenda.ubicaciones.length > 0 
-                            ? prenda.ubicaciones.join(', ')
+                            ? (Array.isArray(prenda.ubicaciones) ? prenda.ubicaciones.join(', ') : prenda.ubicaciones)
                             : '—'
                         }
                     </td>

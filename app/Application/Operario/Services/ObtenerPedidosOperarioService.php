@@ -25,17 +25,12 @@ class ObtenerPedidosOperarioService
      */
     public function obtenerPedidosDelOperario(User $usuario): ObtenerPedidosOperarioDTO
     {
-        // Verificar si es el usuario especial "Costura-Reflectivo"
-        if (strtolower(trim($usuario->name)) === 'costura-reflectivo') {
-            return $this->obtenerPedidosCosturaReflectivo($usuario);
-        }
-
         // Obtener tipo de operario del usuario
         $tipoOperario = $this->obtenerTipoOperario($usuario);
         $areaOperario = $this->obtenerAreaOperario($tipoOperario);
 
-        // Obtener pedidos en el Ã¡rea del operario
-        $pedidos = $this->obtenerPedidosPorArea($areaOperario);
+        // Obtener pedidos filtrando por procesos donde el usuario sea el encargado
+        $pedidos = $this->obtenerPedidosPorArea($areaOperario, $usuario);
 
         // Contar estados
         $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
@@ -57,76 +52,68 @@ class ObtenerPedidosOperarioService
      * Obtener pedidos especiales para Costura-Reflectivo
      * 
      * Filtra pedidos que:
-     * 1. Tengan Ã¡rea "Costura" EN pedidos_produccion
-     * 2. Y tengan proceso Costura con encargado "Ramiro"
-     * 3. Y estÃ©n en estado "En Ejecución" (campo estado del pedido)
+     * 1. CUALQUIER proceso donde el usuario sea el encargado (sin restricción de área ni estado)
+     * 2. O procesos del área "Costura" en estado "En Ejecución"
      */
     private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
     {
-        \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===');
+        \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===', [
+            'usuario' => $usuario->name,
+            'usuario_id' => $usuario->id
+        ]);
         
-        $pedidos = PedidoProduccion::where('area', 'Costura')
-            ->where('estado', 'En Ejecución')
-            ->with(['prendas'])
+        $usuarioNormalizado = strtolower(trim($usuario->name));
+        
+        // Obtener TODOS los pedidos
+        $todosPedidos = PedidoProduccion::with(['prendas'])
             ->orderBy('fecha_de_creacion_de_orden', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
         
-        \Log::info('Pedidos ANTES del filtro Ramiro:', [
-            'total' => $pedidos->count(),
-            'pedidos' => $pedidos->map(fn($p) => [
-                'numero' => $p->numero_pedido,
-                'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
-                'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
-            ])->toArray()
-        ]);
+        \Log::info('Total de pedidos en BD:', ['total' => $todosPedidos->count()]);
         
-        $pedidos = $pedidos->filter(function ($pedido) {
-            // Verificar que tenga proceso Costura con Ramiro
-            return $this->tieneProcesoRamiro($pedido);
+        // Filtrar: procesos donde el usuario es el encargado
+        $pedidos = $todosPedidos->filter(function ($pedido) use ($usuarioNormalizado) {
+            $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->get();
+            
+            if ($procesos->isEmpty()) {
+                return false;
+            }
+            
+            // Buscar CUALQUIER proceso donde el usuario sea el encargado
+            $tieneProcesoDelUsuario = $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
+                if (!$proceso->encargado) {
+                    return false;
+                }
+                
+                $encargadoNormalizado = strtolower(trim($proceso->encargado));
+                return $encargadoNormalizado === $usuarioNormalizado;
+            });
+            
+            return $tieneProcesoDelUsuario;
         });
         
-        \Log::info('Pedidos DESPUÃ‰S del filtro Ramiro (antes de sortByDesc):', [
+        \Log::info('Pedidos asignados al usuario:', [
+            'usuario' => $usuario->name,
             'total' => $pedidos->count(),
-            'pedidos' => $pedidos->map(fn($p) => [
-                'numero' => $p->numero_pedido,
-                'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
-                'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
-            ])->toArray()
+            'pedidos' => $pedidos->map(fn($p) => $p->numero_pedido)->toArray()
         ]);
         
-        $pedidos = $pedidos->sortByDesc(function ($pedido) {
-            // Obtener fecha de inicio del proceso en Costura (sin filtrar por estado)
-            $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                ->where('proceso', 'Costura')
-                ->where('encargado', 'Ramiro')
-                ->orderBy('fecha_inicio', 'desc')
-                ->first();
+        $pedidos = $pedidos->sortByDesc(function ($pedido) use ($usuarioNormalizado) {
+            // Obtener fecha de inicio del primer proceso del usuario
+            $procesoDelUsuario = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->get()
+                ->first(function ($proceso) use ($usuarioNormalizado) {
+                    if (!$proceso->encargado) {
+                        return false;
+                    }
+                    return strtolower(trim($proceso->encargado)) === $usuarioNormalizado;
+                });
             
-            $fechaOrden = $procesoArea?->fecha_inicio ?? $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
-            
-            \Log::info("Ordenando pedido {$pedido->numero_pedido}: fecha_inicio = " . ($procesoArea?->fecha_inicio?->format('Y-m-d H:i:s') ?? 'null') . ", usando: " . ($fechaOrden ? $fechaOrden->format('Y-m-d H:i:s') : 'null'));
-            
+            $fechaOrden = $procesoDelUsuario?->fecha_inicio ?? $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
             return $fechaOrden;
         })->values();
-        
-        \Log::info('Pedidos DESPUÃ‰S de sortByDesc:', [
-            'total' => $pedidos->count(),
-            'pedidos' => $pedidos->map(function($p) {
-                $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $p->numero_pedido)
-                    ->where('proceso', 'Costura')
-                    ->where('encargado', 'Ramiro')
-                    ->orderBy('fecha_inicio', 'desc')
-                    ->first();
-                
-                return [
-                    'numero' => $p->numero_pedido,
-                    'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
-                    'fecha_inicio_proceso' => $procesoArea?->fecha_inicio?->format('Y-m-d H:i:s'),
-                    'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
-                ];
-            })->toArray()
-        ]);
 
         // Contar estados
         $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
@@ -142,31 +129,6 @@ class ObtenerPedidosOperarioService
             pedidosEnProceso: $pedidosEnProceso,
             pedidosCompletados: $pedidosCompletados
         );
-    }
-
-    /**
-     * Verificar si el pedido tiene proceso Costura asignado a Ramiro
-     * 
-     * Busca en procesos_prenda:
-     * - proceso = "Costura"
-     * - encargado = "Ramiro" (normalizado, sin importar mayÃºsculas)
-     */
-    private function tieneProcesoRamiro($pedido): bool
-    {
-        $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-            ->where('proceso', 'Costura')
-            ->get();
-
-        foreach ($procesos as $proceso) {
-            if ($proceso->encargado) {
-                $encargadoNormalizado = strtolower(trim($proceso->encargado));
-                if ($encargadoNormalizado === 'ramiro') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -199,21 +161,25 @@ class ObtenerPedidosOperarioService
 
     /**
      * Obtener pedidos por Ã¡rea
+     * Filtra pedidos donde el usuario sea el encargado de algún proceso
      */
-    private function obtenerPedidosPorArea(string $area): Collection
+    private function obtenerPedidosPorArea(string $area, User $usuario): Collection
     {
-        $usuarioActual = auth()->user();
-
         return PedidoProduccion::with(['prendas'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->filter(function ($pedido) use ($area, $usuarioActual) {
-                return $this->pedidoPertenecealArea($pedido, $area, $usuarioActual);
+            ->filter(function ($pedido) use ($area, $usuario) {
+                return $this->pedidoPertenecealArea($pedido, $area, $usuario);
             });
     }
 
     /**
      * Verificar si el pedido estÃ¡ asignado al operario actual
+     * 
+     * Lógica:
+     * 1. Busca procesos del área del operario (Corte/Costura) donde el usuario sea el encargado
+     * 2. O, SI NO ENCUENTRA, busca CUALQUIER proceso donde el usuario sea el encargado
+     *    (para permitir que el operario vea pedidos asignados a él directamente)
      */
     private function pedidoPertenecealArea($pedido, string $area, $usuarioActual): bool
     {
@@ -227,35 +193,36 @@ class ObtenerPedidosOperarioService
 
         $usuarioNormalizado = strtolower(trim($usuarioActual->name));
 
-        // Para cortador: buscar procesos "Corte" donde el usuario es el encargado
-        if ($area === 'Corte') {
-            return $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
-                if (!$proceso->encargado) {
-                    return false;
-                }
-                
-                $encargadoNormalizado = strtolower(trim($proceso->encargado));
-                $procesNormalizado = strtolower(trim($proceso->proceso));
-                
-                return $procesNormalizado === 'corte' && $encargadoNormalizado === $usuarioNormalizado;
-            });
+        // PASO 1: Buscar procesos del área específica donde el usuario sea el encargado
+        $procesoDelArea = $procesos->contains(function ($proceso) use ($usuarioNormalizado, $area) {
+            if (!$proceso->encargado) {
+                return false;
+            }
+            
+            $encargadoNormalizado = strtolower(trim($proceso->encargado));
+            $procesNormalizado = strtolower(trim($proceso->proceso));
+            
+            // Validar que sea del área correcta
+            $areaEsperada = strtolower(trim($area));
+            return $procesNormalizado === $areaEsperada && $encargadoNormalizado === $usuarioNormalizado;
+        });
+
+        if ($procesoDelArea) {
+            return true;
         }
 
-        // Para costurero: buscar procesos "Costura" donde el usuario es el encargado
-        if ($area === 'Costura') {
-            return $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
-                if (!$proceso->encargado) {
-                    return false;
-                }
-                
-                $encargadoNormalizado = strtolower(trim($proceso->encargado));
-                $procesNormalizado = strtolower(trim($proceso->proceso));
-                
-                return $procesNormalizado === 'costura' && $encargadoNormalizado === $usuarioNormalizado;
-            });
-        }
+        // PASO 2: Si no hay procesos del área, buscar CUALQUIER proceso donde el usuario sea el encargado
+        // Esto permite que aparezcan pedidos asignados directamente al usuario
+        $cualquierProcesoDelUsuario = $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
+            if (!$proceso->encargado) {
+                return false;
+            }
+            
+            $encargadoNormalizado = strtolower(trim($proceso->encargado));
+            return $encargadoNormalizado === $usuarioNormalizado;
+        });
 
-        return false;
+        return $cualquierProcesoDelUsuario;
     }
 
     /**

@@ -22,6 +22,7 @@ class PedidoResponseDTO
         public array $prendas = [],
         public array $epps = [],
         public ?string $formaDePago = null,
+        public ?string $fechaCreacion = null,
         public string $mensaje = ''
     ) {}
 
@@ -39,6 +40,7 @@ class PedidoResponseDTO
             'total_prendas' => $this->totalPrendas,
             'total_articulos' => $this->totalArticulos,
             'forma_de_pago' => $this->formaDePago,
+            'fecha_creacion' => $this->fechaCreacion,
             'prendas' => $this->prendas,
             'epps' => $this->epps,
             'mensaje' => $this->mensaje,

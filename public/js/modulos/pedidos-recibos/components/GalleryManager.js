@@ -163,6 +163,26 @@ export class GalleryManager {
         html += '</div></div>';
         galeria.innerHTML = html;
         
+        // Agregar event listeners para los thumbnails
+        const thumbnails = galeria.querySelectorAll('.gallery-thumbnail');
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const indice = this.getAttribute('data-indice');
+                const fotosJSON = this.getAttribute('data-fotos');
+                console.log('[GalleryManager] Click en imagen:', { indice, fotosJSON });
+                
+                // Intentar usar la función global si está disponible
+                if (typeof window.abrirModalImagenProcesoGrande === 'function') {
+                    window.abrirModalImagenProcesoGrande(parseInt(indice), fotosJSON);
+                } else {
+                    // Fallback: llamar directamente al método estático
+                    GalleryManager.abrirModalImagenProcesoGrande(parseInt(indice), fotosJSON);
+                }
+            });
+        });
+        
 
     }
 
@@ -181,18 +201,15 @@ export class GalleryManager {
         fotos.forEach((img, idx) => {
             const fotosJSON = JSON.stringify(fotos).replace(/"/g, '&quot;');
             html += `
-                <div style="
-                    aspect-ratio: 1;
-                    border-radius: 4px;
-                    overflow: hidden;
-                    background: #f5f5f5;
-                    cursor: pointer;
+                <div class="gallery-thumbnail" 
+                    style="cursor: pointer; border-radius: 8px; overflow: hidden; 
                     border: 2px solid #e5e5e5;
                     transition: all 0.2s ease;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.08);"
                     onmouseover="this.style.borderColor='#2563eb'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.2)';"
                     onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
-                    onclick="abrirModalImagenProcesoGrande(${idx}, ${fotosJSON})">
+                    data-indice="${idx}"
+                    data-fotos='${fotosJSON}'>
                     <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" 
                          onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'>⚠️ Error al cargar imagen</div>';">
                 </div>

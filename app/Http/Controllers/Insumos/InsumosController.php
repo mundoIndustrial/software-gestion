@@ -698,6 +698,27 @@ class InsumosController extends Controller
             $pedido->area = $nuevaArea;
             $pedido->save();
             
+            // Crear procesos automáticos si el pedido pasa a producción
+            $procesosCreados = 0;
+            $detallesProcesos = [];
+            
+            if (($estadoActual === 'Pendiente' || $estadoActual === 'PENDIENTE_INSUMOS') && $nuevoEstado === 'En Ejecución') {
+                try {
+                    $procesoService = new \App\Services\Insumos\ProcesoAutomaticoService();
+                    $resultadoProcesos = $procesoService->crearProcesosParaPedido($numeroPedido);
+                    
+                    if ($resultadoProcesos['success']) {
+                        $procesosCreados = $resultadoProcesos['procesos_creados'];
+                        $detallesProcesos = $resultadoProcesos['detalles'] ?? [];
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al crear procesos automáticos', [
+                        'numero_pedido' => $numeroPedido,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
             // Logging sin emojis para mejor compatibilidad
             Log::info('Estado del pedido cambiado', [
                 'numero_pedido' => $numeroPedido,
@@ -707,15 +728,24 @@ class InsumosController extends Controller
                 'area_nueva' => $nuevaArea,
                 'usuario_id' => $user->id,
                 'usuario_nombre' => $user->name,
-                'timestamp' => now()->toISOString()
+                'timestamp' => now()->toISOString(),
+                'procesos_creados' => $procesosCreados
             ]);
+            
+            // Construir mensaje mejorado
+            $message = 'Estado actualizado correctamente';
+            if ($procesosCreados > 0) {
+                $message .= ". Se crearon {$procesosCreados} procesos automáticamente";
+            }
             
             return response()->json([
                 'success' => true,
-                'message' => 'Estado actualizado correctamente',
+                'message' => $message,
                 'estado_anterior' => $estadoAnterior,
                 'nuevo_estado' => $nuevoEstado,
-                'nueva_area' => $nuevaArea
+                'nueva_area' => $nuevaArea,
+                'procesos_creados' => $procesosCreados,
+                'detalles_procesos' => $detallesProcesos
             ]);
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

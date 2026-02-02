@@ -1206,9 +1206,10 @@
             return;
         }
         
-        //  USAR EL MISMO ENDPOINT QUE ASESORES: /registros/{numeroPedido}
-        const apiUrl = '/registros/' + numeroPedido;
-        console.log(' URL API (mismo que asesores):', apiUrl);
+        // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
+        // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
+        const apiUrl = '/api/operario/pedido/' + numeroPedido;
+        console.log(' URL API (nuevo endpoint operario):', apiUrl);
         
         fetch(apiUrl)
             .then(function(response) {
@@ -1217,53 +1218,141 @@
                 }
                 return response.json();
             })
-            .then(function(data) {
+            .then(function(response) {
+                // El endpoint retorna {success: true, data: {...}}
+                if (!response.success || !response.data) {
+                    throw new Error('Respuesta inválida del API');
+                }
 
+                const data = response.data;
+                
+                // Procesar prendas para construir descripción formateada
+                let descripcionFormateada = '';
+                if (data.prendas && Array.isArray(data.prendas)) {
+                    data.prendas.forEach(function(prenda, idx) {
+                        if (!descripcionFormateada) {
+                            const lineas = [];
+                            
+                            // Prenda
+                            lineas.push('<strong style="font-size: 13.4px;">PRENDA ' + (idx + 1) + ': ' + (prenda.nombre || 'N/A') + '</strong>');
+                            
+                            // Telas
+                            if (prenda.colores_telas && prenda.colores_telas.length > 0) {
+                                const telas = prenda.colores_telas.map(function(ct) {
+                                    return (ct.tela_nombre || '') + ' / ' + (ct.color_nombre || '') + ' | REF: ' + (ct.referencia || '');
+                                }).join(' | ');
+                                lineas.push('<strong>TELAS:</strong> ' + telas);
+                            }
+                            
+                            // Manga
+                            if (prenda.manga) {
+                                lineas.push('<strong>MANGA:</strong> ' + (prenda.manga || '').toUpperCase());
+                            }
+                            
+                            // Bolsillos
+                            if (prenda.obs_bolsillos) {
+                                lineas.push('• <strong>BOLSILLOS:</strong> ' + (prenda.obs_bolsillos || ''));
+                            }
+                            
+                            // Broche/Botón - Mostrar label dinámico según el tipo
+                            if (prenda.obs_broche && prenda.broche) {
+                                const labelBroche = prenda.broche.toUpperCase();
+                                lineas.push('• <strong>' + labelBroche + ':</strong> ' + (prenda.obs_broche || ''));
+                            }
+                            
+                            // Unir las líneas principales con <br>
+                            descripcionFormateada = lineas.join('<br>');
+                            
+                            // Agregar tallas si existen
+                            if (prenda.tallas && typeof prenda.tallas === 'object') {
+                                descripcionFormateada += '<br><br><strong>TALLAS</strong><br>';
+                                const tallasLineas = [];
+                                Object.keys(prenda.tallas).forEach(function(genero) {
+                                    const tallasCantidades = [];
+                                    Object.keys(prenda.tallas[genero]).forEach(function(talla) {
+                                        const cantidad = prenda.tallas[genero][talla];
+                                        tallasCantidades.push(talla + ': <span style="color: red;"><strong>' + cantidad + '</strong></span>');
+                                    });
+                                    if (tallasCantidades.length > 0) {
+                                        tallasLineas.push(genero.toUpperCase() + ': ' + tallasCantidades.join(', '));
+                                    }
+                                });
+                                descripcionFormateada += tallasLineas.join('<br>');
+                            }
+                        }
+                    });
+                }
 
-
-                //  USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
+                // Construir objeto para llenarReciboCosturaMobile con la misma estructura
                 const pedidoData = {
-                    fecha: data.fecha_de_creacion_de_orden || data.fecha_creacion || new Date().toISOString().split('T')[0],
-                    asesora: data.asesora || 'N/A',
+                    fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],
+                    asesora: data.asesor || 'N/A',
                     formaPago: data.forma_de_pago || 'N/A',
                     cliente: data.cliente || 'N/A',
                     numeroPedido: data.numero_pedido || numeroPedido,
-                    encargado: data.encargado_orden || 'N/A',
-                    prendasEntregadas: (data.total_entregado || 0) + '/' + (data.cantidad_total || data.cantidad || 0),
-                    descripcion: data.descripcion_prendas || '',
+                    encargado: 'Operario',
+                    prendasEntregadas: data.total_prendas + '/' + data.total_prendas,
+                    descripcion: descripcionFormateada,
                     prendas: data.prendas || []
                 };
 
                 if (window.llenarReciboCosturaMobile) {
                     window.llenarReciboCosturaMobile(pedidoData);
                 } else {
+                    console.warn(' llenarReciboCosturaMobile no está disponible');
                 }
                 
-                // ===== CARGAR FOTOS DESDE ENDPOINT DE IMÁGENES (igual que asesores) =====
-                fetch('/registros/' + numeroPedido + '/images')
-                    .then(function(response) {
-                        if (!response.ok) {
-                            throw new Error('Error al cargar imágenes: ' + response.status);
+                // ===== CARGAR FOTOS DIRECTAMENTE DESDE LOS DATOS DEL PEDIDO =====
+                // Fuentes de fotos (SIN DUPLICAR):
+                // 1. prendas[].imagenes (FOTOS DIRECTAS DE PRENDA - NUEVAS)
+                // 2. prendas[].telas_array[].fotos_tela (FOTOS PRINCIPALES DE TELAS)
+                // 3. prendas[].procesos[].imagenes (FOTOS DE PROCESOS/PROCEDIMIENTOS)
+                const todasLasFotos = [];
+                
+                if (data.prendas && Array.isArray(data.prendas)) {
+                    data.prendas.forEach(function(prenda) {
+                        // 1. Fotos directas de prenda (NUEVAS - prenda_fotos_pedido)
+                        if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                            prenda.imagenes.forEach(function(img) {
+                                if (img.ruta_webp || img.url) {
+                                    todasLasFotos.push(img.ruta_webp || img.url);
+                                }
+                            });
                         }
-                        return response.json();
-                    })
-                    .then(function(imageData) {
-                        // Extraer todas las URLs de imágenes de todas las prendas
-                        const todasLasFotos = [];
-                        if (imageData.prendas && imageData.prendas.length > 0) {
-                            imageData.prendas.forEach(function(prenda) {
-                                if (prenda.imagenes && prenda.imagenes.length > 0) {
-                                    prenda.imagenes.forEach(function(imagen) {
-                                        todasLasFotos.push(imagen.url);
+                        
+                        // 2. Fotos de telas_array (FUENTE PRINCIPAL PARA TELAS)
+                        if (prenda.telas_array && Array.isArray(prenda.telas_array)) {
+                            prenda.telas_array.forEach(function(tela) {
+                                // Usar solo fotos_tela (que es la fuente única de verdad)
+                                if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {
+                                    tela.fotos_tela.forEach(function(img) {
+                                        if (img.ruta_webp || img.url) {
+                                            todasLasFotos.push(img.ruta_webp || img.url);
+                                        }
                                     });
                                 }
                             });
                         }
-                        llenarFotos(todasLasFotos);
-                    })
-                    .catch(function(error) {
-                        llenarFotos([]);
+                        
+                        // 3. Fotos de procesos (FUENTE ÚNICA PARA PROCESOS)
+                        if (prenda.procesos && Array.isArray(prenda.procesos)) {
+                            prenda.procesos.forEach(function(proceso) {
+                                if (proceso.imagenes && Array.isArray(proceso.imagenes)) {
+                                    proceso.imagenes.forEach(function(img) {
+                                        if (img.ruta_webp) {
+                                            todasLasFotos.push(img.ruta_webp);
+                                        }
+                                    });
+                                }
+                            });
+                        }
                     });
+                }
+                
+                // Eliminar duplicados usando Set
+                const fotosUnicas = Array.from(new Set(todasLasFotos));
+                llenarFotos(fotosUnicas);
+
             })
             .catch(function(error) {
 

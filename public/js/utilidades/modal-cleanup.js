@@ -51,6 +51,17 @@ class ModalCleanup {
             const element = DOMUtils.getElement(id);
             if (element) {
                 if (element.type === 'select-one') {
+                    // 🔴 IMPORTANTE: NO resetear origen-select en modo edición
+                    // Se cargará correctamente en llenarCamposBasicos()
+                    if (id === 'nueva-prenda-origen-select' && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
+                        console.log('🔴🔴🔴 [limpiarFormulario] ✅✅✅ SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) 🔴🔴🔴', {
+                            prendaEditIndex: window.prendaEditIndex,
+                            selectId: id,
+                            valorActual: element.value,
+                            razon: 'El valor será establecido en llenarCamposBasicos()'
+                        });
+                        return; // No limpiar en modo edición
+                    }
                     element.value = element.querySelector('option')?.value || '';
                 } else {
                     element.value = '';

@@ -85,6 +85,98 @@ Route::get('/storage/cotizaciones/{path}', function ($path) {
     abort(404, 'Imagen no encontrada');
 })->where('path', '.*')->name('storage.cotizaciones');
 
+// Intercepta /storage/prendas/{path} y sirve archivos con fallback de extensiones
+Route::get('/storage/prendas/{path}', function ($path) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+    
+    // Reconstruir la ruta completa (puede tener múltiples segmentos)
+    $fullPath = 'prendas/' . $path;
+    
+    // Intentar servir el archivo tal cual
+    if ($disk->exists($fullPath)) {
+        $contents = $disk->get($fullPath);
+        $mimeType = $disk->mimeType($fullPath);
+        
+        return response($contents, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Cache-Control', 'public, max-age=31536000')
+            ->header('Content-Disposition', 'inline');
+    }
+    
+    // Si no existe y termina en .png, intentar .webp
+    if (str_ends_with($fullPath, '.png')) {
+        $pathWebp = substr($fullPath, 0, -4) . '.webp';
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe y termina en .jpg/.jpeg, intentar .webp
+    if (str_ends_with($fullPath, '.jpg') || str_ends_with($fullPath, '.jpeg')) {
+        $pathWebp = preg_replace('/\.(jpg|jpeg)$/i', '.webp', $fullPath);
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe en ningún formato, devolver 404
+    abort(404, 'Imagen no encontrada');
+})->where('path', '.*')->name('storage.prendas');
+
+// Intercepta /storage/pedidos/{path} y sirve archivos con fallback de extensiones
+Route::get('/storage/pedidos/{path}', function ($path) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+    
+    // Reconstruir la ruta completa (puede tener múltiples segmentos)
+    $fullPath = 'pedidos/' . $path;
+    
+    // Intentar servir el archivo tal cual
+    if ($disk->exists($fullPath)) {
+        $contents = $disk->get($fullPath);
+        $mimeType = $disk->mimeType($fullPath);
+        
+        return response($contents, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Cache-Control', 'public, max-age=31536000')
+            ->header('Content-Disposition', 'inline');
+    }
+    
+    // Si no existe y termina en .png, intentar .webp
+    if (str_ends_with($fullPath, '.png')) {
+        $pathWebp = substr($fullPath, 0, -4) . '.webp';
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe y termina en .jpg/.jpeg, intentar .webp
+    if (str_ends_with($fullPath, '.jpg') || str_ends_with($fullPath, '.jpeg')) {
+        $pathWebp = preg_replace('/\.(jpg|jpeg)$/i', '.webp', $fullPath);
+        if ($disk->exists($pathWebp)) {
+            $contents = $disk->get($pathWebp);
+            return response($contents, 200)
+                ->header('Content-Type', 'image/webp')
+                ->header('Cache-Control', 'public, max-age=31536000')
+                ->header('Content-Disposition', 'inline');
+        }
+    }
+    
+    // Si no existe en ningún formato, devolver 404
+    abort(404, 'Imagen no encontrada');
+})->where('path', '.*')->name('storage.pedidos');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -904,6 +996,9 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Obtener datos en JSON
     Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
+    
+    // Obtener datos de factura para mostrar en modal
+    Route::get('/{id}/factura-datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
     
     // Obtener datos para comparación (pedido vs cotización)
     Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');

@@ -1247,23 +1247,75 @@
             let GalleryManager = null;
             
             return async function(indice, fotosJSON) {
+                console.log('[GalleryManager] Intentando abrir imagen:', indice);
+                
                 // Si ya está cargado, usar directamente
                 if (galleryManagerLoaded && GalleryManager) {
                     return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
                 }
                 
                 try {
-                    // Cargar GalleryManager solo una vez
-                    const module = await import('./js/modulos/pedidos-recibos/components/GalleryManager.js');
-                    GalleryManager = module.GalleryManager;
-                    galleryManagerLoaded = true;
+                    // Intentar cargar el módulo GalleryManager
+                    console.log('[GalleryManager] Cargando módulo...');
+                    
+                    // Primero intentar con la ruta relativa
+                    try {
+                        const module = await import('./js/modulos/pedidos-recibos/components/GalleryManager.js');
+                        GalleryManager = module.GalleryManager;
+                        galleryManagerLoaded = true;
+                        console.log('[GalleryManager] Módulo cargado correctamente');
+                    } catch (importError) {
+                        console.warn('[GalleryManager] Error con ruta relativa, intentando ruta absoluta:', importError);
+                        // Si falla, intentar cargar como script global
+                        if (typeof window.GalleryManager !== 'undefined') {
+                            GalleryManager = window.GalleryManager;
+                            galleryManagerLoaded = true;
+                            console.log('[GalleryManager] Usando GalleryManager global');
+                        } else {
+                            throw new Error('No se pudo cargar GalleryManager');
+                        }
+                    }
                     
                     if (GalleryManager) {
                         return GalleryManager.abrirModalImagenProcesoGrande(indice, fotosJSON);
                     }
                 } catch (err) {
-                    console.error('Error cargando GalleryManager:', err);
+                    console.error('[GalleryManager] Error cargando GalleryManager:', err);
                     galleryManagerLoaded = false;
+                    
+                    // Implementación fallback básica
+                    console.log('[GalleryManager] Usando implementación fallback');
+                    try {
+                        let fotos = typeof fotosJSON === 'string' ? JSON.parse(fotosJSON) : fotosJSON;
+                        if (!fotos || !fotos[indice]) {
+                            console.error('Imagen no encontrada:', indice);
+                            return;
+                        }
+                        
+                        // Crear modal simple
+                        const modal = document.createElement('div');
+                        modal.style.cssText = `
+                            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                            background: rgba(0,0,0,0.9); z-index: 9999; display: flex;
+                            align-items: center; justify-content: center;
+                        `;
+                        modal.innerHTML = `
+                            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                                <img src="${fotos[indice]}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                <button onclick="this.parentElement.parentElement.remove()" style="
+                                    position: absolute; top: 10px; right: 10px;
+                                    background: white; border: none; border-radius: 50%;
+                                    width: 40px; height: 40px; cursor: pointer; font-size: 20px;
+                                ">×</button>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) modal.remove();
+                        });
+                    } catch (fallbackErr) {
+                        console.error('[GalleryManager] Error en fallback:', fallbackErr);
+                    }
                 }
             };
         })();

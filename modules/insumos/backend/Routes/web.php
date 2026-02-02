@@ -27,6 +27,9 @@ Route::middleware(['auth', 'insumos-access'])
         Route::post('/materiales/{numeroPedido}/eliminar', [MaterialesController::class, 'destroy'])
             ->name('materiales.destroy');
 
+        Route::post('/materiales/{numeroPedido}/cambiar-estado', [MaterialesController::class, 'cambiarEstado'])
+            ->name('materiales.cambiar-estado');
+
         Route::get('/api/materiales/{numeroPedido}', [MaterialesController::class, 'show'])
             ->name('api.materiales');
 

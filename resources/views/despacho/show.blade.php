@@ -740,7 +740,7 @@ function generarHTMLFactura(datos) {
                             <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                    📍 ${proc.ubicaciones.join(' • ')}
+                                    📍 ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
                                 </div>
                             ` : ''}
                             ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0) ? `

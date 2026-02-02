@@ -69,6 +69,17 @@ class RegistroOrdenTransformService
         // Agregar descripción de prendas
         $ordenArray['descripcion_prendas'] = $orden->descripcion_prendas ?? '';
 
+        // Mapear nombres de campos largos a cortos para la vista
+        $ordenArray['fecha_creacion'] = $ordenArray['fecha_de_creacion_de_orden'] ?? null;
+        $ordenArray['fecha_estimada'] = $ordenArray['fecha_estimada_de_entrega'] ?? null;
+        $ordenArray['cantidad'] = $ordenArray['cantidad_total'] ?? null;
+        $ordenArray['encargado'] = $encargadosMap[$orden->numero_pedido] ?? '';
+        $ordenArray['dia_entrega'] = $ordenArray['dia_de_entrega'] ?? null;
+        $ordenArray['descripcion'] = $ordenArray['descripcion_prendas'] ?? '';
+        $ordenArray['pedido'] = $ordenArray['numero_pedido'] ?? null;
+        $ordenArray['asesor'] = $ordenArray['asesor'] ?? ''; // Ya está agregado anteriormente
+        $ordenArray['cliente'] = $ordenArray['cliente_nombre'] ?? $ordenArray['cliente'] ?? '';
+
         // Eliminar campos ocultos globales
         foreach ($camposOcultosGlobal as $campo) {
             unset($ordenArray[$campo]);

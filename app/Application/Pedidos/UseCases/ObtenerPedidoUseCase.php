@@ -124,6 +124,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     prendas: [],
                     epps: [],
                     formaDePago: null,
+                    fechaCreacion: null,
                     mensaje: 'Pedido no encontrado'
                 );
             }
@@ -144,6 +145,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 prendas: $prendasCompletas,
                 epps: $eppsCompletos,
                 formaDePago: $datosEnriquecidos['forma_de_pago'] ?? null,
+                fechaCreacion: $modeloEloquent->fecha_de_creacion_de_orden ? $modeloEloquent->fecha_de_creacion_de_orden->format('Y-m-d') : null,
                 mensaje: 'Pedido obtenido exitosamente'
             );
 

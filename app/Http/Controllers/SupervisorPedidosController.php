@@ -6,9 +6,13 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\TablaOriginal;
 use App\Events\OrdenUpdated;
+use App\Application\Pedidos\DTOs\ObtenerFacturaDTO;
+use App\Application\Pedidos\UseCases\ObtenerFacturaUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SupervisorPedidosController extends Controller
@@ -627,6 +631,108 @@ class SupervisorPedidosController extends Controller
         }
 
         return response()->json($ordenArray);
+    }
+
+    /**
+     * Obtener datos de factura para mostrar en modal - DELEGADO A USE CASE
+     * Copia del método en AsesoresController para mantener consistencia
+     */
+    public function obtenerDatosFactura($id)
+    {
+        Log::warning('⚠️⚠️⚠️ [CONTROLLER-FACTURA-SUPERVISOR] ENDPOINT LLAMADO ⚠️⚠️⚠️', ['pedido_id' => $id]);
+        
+        try {
+            // 🔍 LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
+            $usuarioAutenticado = Auth::user();
+            Log::info('[DIAGNÓSTICO-SUPERVISOR] Verificando autenticación y autorización', [
+                'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'NO_AUTENTICADO',
+                'usuario_nombre' => $usuarioAutenticado ? $usuarioAutenticado->name : 'ANÓNIMO',
+                'usuario_email' => $usuarioAutenticado ? $usuarioAutenticado->email : 'N/A',
+                'pedido_id' => $id,
+                'ruta_accedida' => Route::getCurrentRoute()->uri ?? 'desconocida',
+                'método_http' => request()->getMethod(),
+            ]);
+            
+            // 🔍 OBTENER ROLES DEL USUARIO
+            if ($usuarioAutenticado) {
+                $rolesUsuario = $usuarioAutenticado->roles()->pluck('name')->toArray();
+                
+                // 🔄 EXTENSIÓN: APLICAR JERARQUÍA DE ROLES (herencia)
+                $rolesConHerencia = \App\Services\RoleHierarchyService::getEffectiveRoles($rolesUsuario);
+                
+                Log::info('[DIAGNÓSTICO-SUPERVISOR] Roles y permisos del usuario', [
+                    'usuario_id' => $usuarioAutenticado->id,
+                    'roles' => $rolesUsuario,
+                    'roles_con_herencia' => $rolesConHerencia,
+                    'tiene_supervisor_pedidos' => in_array('supervisor_pedidos', $rolesConHerencia),
+                    'tiene_asesor' => in_array('asesor', $rolesConHerencia),
+                    'tiene_admin' => in_array('admin', $rolesConHerencia),
+                ]);
+            }
+            
+            Log::info('[CONTROLLER-FACTURA-SUPERVISOR] Obteniendo datos de factura para pedido: ' . $id);
+            
+            // Crear DTO para el Use Case
+            $dto = ObtenerFacturaDTO::fromRequest((string)$id);
+
+            // Obtener Use Case desde container (inyectado por Laravel)
+            $obtenerFacturaUseCase = app(ObtenerFacturaUseCase::class);
+            
+            // Usar el Use Case DDD
+            $datos = $obtenerFacturaUseCase->ejecutar($dto);
+            
+            Log::info('[CONTROLLER-FACTURA-SUPERVISOR] Datos obtenidos correctamente', [
+                'pedido_id' => $id,
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'procesos_total' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? []))
+            ]);
+            
+            // LOG CRÍTICO ANTES DE ENVIAR JSON
+            if (!empty($datos['prendas'])) {
+                foreach ($datos['prendas'] as $idx => $prenda) {
+                    Log::warning('[CONTROLLER-FACTURA-SUPERVISOR-TELAS] Verificación ANTES de JSON', [
+                        'prenda_idx' => $idx,
+                        'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
+                        'tiene_telas_array' => isset($prenda['telas_array']),
+                        'telas_array_count' => count($prenda['telas_array'] ?? []),
+                        'telas_array_full' => json_encode($prenda['telas_array'] ?? []),
+                    ]);
+                }
+            }
+            
+            Log::info('✅ [CONTROLLER-FACTURA-SUPERVISOR] Datos de factura obtenidos exitosamente');
+            
+            // 🔍 LOG FINAL: Verificar estructura exacta antes de retornar
+            Log::info('[CONTROLLER-FACTURA-SUPERVISOR-JSON-RESPONSE] Estructura JSON final que se envía', [
+                'estructura_keys' => array_keys($datos),
+                'tiene_prendas' => isset($datos['prendas']),
+                'prendas_count' => count($datos['prendas'] ?? []),
+                'prendas_vacio' => empty($datos['prendas']),
+                'prendas_tipo' => gettype($datos['prendas'] ?? null),
+                'prendas_es_array' => is_array($datos['prendas'] ?? false),
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $datos
+            ]);
+        } catch (\Exception $e) {
+            $usuarioAutenticado = Auth::user();
+            Log::error('❌ [CONTROLLER-FACTURA-SUPERVISOR] ERROR obteniendo datos de factura', [
+                'pedido_id' => $id,
+                'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'N/A',
+                'usuario_nombre' => $usuarioAutenticado ? $usuarioAutenticado->name : 'N/A',
+                'error_mensaje' => $e->getMessage(),
+                'error_código' => $e->getCode(),
+                'error_clase' => get_class($e),
+                'archivo' => $e->getFile(),
+                'línea' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Error obteniendo datos de la factura: ' . $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
     }
 
     /**

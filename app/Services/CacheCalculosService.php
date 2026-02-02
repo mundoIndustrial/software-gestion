@@ -93,10 +93,10 @@ class CacheCalculosService
     
     /**
      * Calcular días para una orden específica
-     * LÓGICA MEJORADA: 
-     * - Si hay ambos procesos (Creación + Despacho): De Creación → Despacho
+     * LÓGICA MEJORADA - SIEMPRE comienza desde fecha_de_creacion_de_orden: 
+     * - Si hay Despacho: De fecha_creacion → Despacho
      * - Si está "No iniciado": De fecha_creacion → HOY
-     * - Si está "En Ejecución": De primer_proceso → HOY
+     * - Si está "En Ejecución": De fecha_creacion → HOY
      * - Si está "Entregado": De fecha_creacion → último_proceso
      */
     private static function calcularDiasParaOrden($numeroPedido, $estado = null)
@@ -118,54 +118,34 @@ class CacheCalculosService
                 } catch (\Exception $e) {}
             }
             
-            // PRIMERO: Intentar obtener "Creación de Orden" y "Despacho"
-            $procesoCreacion = DB::table('procesos_prenda')
-                ->where('numero_pedido', $numeroPedido)
-                ->where('proceso', 'Creación de Orden')
-                ->select('fecha_inicio')
-                ->first();
-
+            // PUNTO DE INICIO SIEMPRE: fecha_de_creacion_de_orden
+            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            $estado = $estado ?? $orden->estado;
+            
+            // Buscar proceso "Despacho" para determinar fecha final
             $procesoDespacho = DB::table('procesos_prenda')
                 ->where('numero_pedido', $numeroPedido)
                 ->where('proceso', 'Despacho')
                 ->select('fecha_fin')
                 ->first();
 
-            // Si tiene AMBOS procesos, calcular entre ellos
-            if ($procesoCreacion && $procesoDespacho) {
-                $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
+            // Si tiene proceso Despacho, calcular hasta él
+            if ($procesoDespacho && $procesoDespacho->fecha_fin) {
                 $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
                 return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             }
             
-            // Si NO tiene procesos, usar diferentes lógicas según estado
-            $estado = $estado ?? $orden->estado;
-            
+            // Si NO tiene Despacho, usar diferentes lógicas según estado
             if ($estado === 'No iniciado') {
                 // De fecha_creacion hasta HOY
-                $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
                 $fechaFin = Carbon::now();
                 return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             }
             
             if ($estado === 'En Ejecución') {
-                // De primer proceso hasta HOY
-                $primerProceso = DB::table('procesos_prenda')
-                    ->where('numero_pedido', $numeroPedido)
-                    ->orderBy('fecha_inicio', 'ASC')
-                    ->select('fecha_inicio')
-                    ->first();
-                
-                if ($primerProceso) {
-                    $fechaInicio = Carbon::parse($primerProceso->fecha_inicio);
-                    $fechaFin = Carbon::now();
-                    return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
-                } else {
-                    // Sin procesos pero "En Ejecución", contar desde creación
-                    $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
-                    $fechaFin = Carbon::now();
-                    return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
-                }
+                // De fecha_creacion hasta HOY
+                $fechaFin = Carbon::now();
+                return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             }
             
             if ($estado === 'Entregado') {
@@ -177,14 +157,12 @@ class CacheCalculosService
                     ->first();
                 
                 if ($ultimoProceso && $ultimoProceso->fecha_fin) {
-                    $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
                     $fechaFin = Carbon::parse($ultimoProceso->fecha_fin);
                     return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                 }
             }
             
             // Fallback: De fecha creacion hasta HOY
-            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
             $fechaFin = Carbon::now();
             return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             
@@ -195,7 +173,7 @@ class CacheCalculosService
     
     /**
      * Calcular días para batch de órdenes
-     * LÓGICA MEJORADA: Soporta órdenes sin procesos
+     * LÓGICA MEJORADA: SIEMPRE comienza desde fecha_de_creacion_de_orden
      */
     private static function calcularDiasBatch(array $ordenes, array $festivos): array
     {
@@ -230,53 +208,37 @@ class CacheCalculosService
             }
             
             try {
-                // PRIMERO: Intentar obtener "Creación de Orden" y "Despacho"
-                $procesoCreacion = DB::table('procesos_prenda')
-                    ->where('numero_pedido', $numeroPedido)
-                    ->where('proceso', 'Creación de Orden')
-                    ->select('fecha_inicio')
-                    ->first();
-
+                // PUNTO DE INICIO SIEMPRE: fecha_de_creacion_de_orden
+                $fechaInicio = Carbon::parse($fechaCreacion);
+                
+                // Buscar proceso "Despacho" para determinar fecha final
                 $procesoDespacho = DB::table('procesos_prenda')
                     ->where('numero_pedido', $numeroPedido)
                     ->where('proceso', 'Despacho')
                     ->select('fecha_fin')
                     ->first();
 
-                // Si tiene AMBOS procesos, calcular entre ellos
-                if ($procesoCreacion && $procesoDespacho) {
-                    $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
+                // Si tiene proceso Despacho, calcular hasta él
+                if ($procesoDespacho && $procesoDespacho->fecha_fin) {
                     $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
                     $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                     $resultados[$numeroPedido] = max(0, $dias);
                     continue;
                 }
                 
-                // Si NO tiene procesos, calcular basado en estado
+                // Si NO tiene Despacho, calcular basado en estado
                 if ($estado === 'No iniciado') {
                     // De fecha_creacion hasta HOY
-                    $fechaInicio = Carbon::parse($fechaCreacion);
                     $fechaFin = Carbon::now();
                     $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                     $resultados[$numeroPedido] = max(0, $dias);
                 } elseif ($estado === 'En Ejecución') {
-                    // De primer proceso hasta HOY (o desde creación si sin procesos)
-                    $primerProceso = DB::table('procesos_prenda')
-                        ->where('numero_pedido', $numeroPedido)
-                        ->orderBy('fecha_inicio', 'ASC')
-                        ->select('fecha_inicio')
-                        ->first();
-                    
-                    if ($primerProceso) {
-                        $fechaInicio = Carbon::parse($primerProceso->fecha_inicio);
-                    } else {
-                        $fechaInicio = Carbon::parse($fechaCreacion);
-                    }
+                    // De fecha_creacion hasta HOY
                     $fechaFin = Carbon::now();
                     $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                     $resultados[$numeroPedido] = max(0, $dias);
                 } elseif ($estado === 'Entregado') {
-                    // De fecha_creacion hasta último proceso (o hasta hoy si sin procesos)
+                    // De fecha_creacion hasta último proceso (o hoy si sin procesos)
                     $ultimoProceso = DB::table('procesos_prenda')
                         ->where('numero_pedido', $numeroPedido)
                         ->orderBy('fecha_fin', 'DESC')
@@ -288,12 +250,10 @@ class CacheCalculosService
                     } else {
                         $fechaFin = Carbon::now();
                     }
-                    $fechaInicio = Carbon::parse($fechaCreacion);
                     $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                     $resultados[$numeroPedido] = max(0, $dias);
                 } else {
                     // Fallback: De fecha creacion hasta HOY
-                    $fechaInicio = Carbon::parse($fechaCreacion);
                     $fechaFin = Carbon::now();
                     $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
                     $resultados[$numeroPedido] = max(0, $dias);
@@ -310,6 +270,8 @@ class CacheCalculosService
     
     /**
      * Calcular días hábiles optimizado
+     * NOTA: El contador comienza DESPUÉS de la fecha de inicio
+     * Ej: Si se crea el 28 (miércoles), el conteo inicia el 29 (jueves)
      */
     private static function calcularDiasHabiles(Carbon $inicio, Carbon $fin, $festivosSet): int
     {
@@ -323,28 +285,28 @@ class CacheCalculosService
             $festivosSet = $temp;
         }
         
-        $current = $inicio->copy()->addDay();
+        $current = $inicio->copy()->addDay();  // Saltar al próximo día
         $totalDays = 0;
-        $weekends = 0;
-        $holidays = 0;
         
         $maxIterations = 3650;
         $iterations = 0;
         
+        // El contador inicia DESPUÉS de la fecha de creación
         while ($current <= $fin && $iterations < $maxIterations) {
             $dateString = $current->format('Y-m-d');
             $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
             $isFestivo = isset($festivosSet[$dateString]);
             
-            $totalDays++;
-            if ($isWeekend) $weekends++;
-            if ($isFestivo) $holidays++;
+            // Solo contar si es día hábil (no es fin de semana ni festivo)
+            if (!$isWeekend && !$isFestivo) {
+                $totalDays++;
+            }
             
             $current->addDay();
             $iterations++;
         }
         
-        return $totalDays - $weekends - $holidays;
+        return max(0, $totalDays);
     }
     
     /**

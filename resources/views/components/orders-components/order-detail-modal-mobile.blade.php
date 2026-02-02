@@ -5,8 +5,11 @@
         <!-- Logo -->
         <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         
-        <!-- Botón de navegación (esquina superior derecha) - FUERA de la descripción -->
-        <div id="arrow-container-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>
+        <!-- Botón de navegación de procesos (esquina superior derecha) -->
+        <div id="process-navigation-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>
+        
+        <!-- Botón de navegación de prendas (esquina superior derecha, debajo de procesos) -->
+        <div id="arrow-container-mobile" style="position: absolute; top: 55px; right: 15px; display: none; z-index: 100;"></div>
         
         <!-- Fecha -->
         <div id="order-date" class="order-date">
@@ -24,7 +27,7 @@
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="mobile-cliente"></span></div>
         
         <!-- Descripción -->
-        <div id="order-descripcion" class="order-descripcion">
+        <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 50px;">
             <div id="mobile-descripcion"></div>
         </div>
         
@@ -321,9 +324,144 @@ function previousImageMobile() {
 <script>
 // Función para llenar el recibo móvil
 window.llenarReciboCosturaMobile = function(data) {
-
-
-
+    console.log('📱 [RECIBO MOBILE] 🚀 ========== INICIANDO llenarReciboCosturaMobile ==========');
+    console.log('📱 [RECIBO MOBILE] Datos recibidos:', data);
+    
+    // ===== NAVEGACIÓN DE PROCESOS =====
+    // Inicializar índice de proceso si no existe
+    if (!window.procesoCarouselIndex) {
+        window.procesoCarouselIndex = 0;
+    }
+    
+    console.log('📱 [RECIBO MOBILE] Índice de proceso actual (window.procesoCarouselIndex):', window.procesoCarouselIndex);
+    
+    // Obtener lista de procesos únicos del pedido
+    // Buscar en recibos primero, luego en procesos
+    const todosProcesos = [];
+    if (data.prendas && Array.isArray(data.prendas)) {
+        data.prendas.forEach(function(prenda) {
+            // Opción 1: Usar recibos (si existen)
+            if (prenda.recibos && typeof prenda.recibos === 'object') {
+                Object.keys(prenda.recibos).forEach(function(proceso) {
+                    // Solo agregar si tiene valor (no es null)
+                    if (prenda.recibos[proceso] !== null && !todosProcesos.includes(proceso)) {
+                        todosProcesos.push(proceso);
+                    }
+                });
+            }
+            // Opción 2: Usar procesos (fallback)
+            if (prenda.procesos && Array.isArray(prenda.procesos)) {
+                prenda.procesos.forEach(function(proceso) {
+                    if (proceso.proceso && !todosProcesos.includes(proceso.proceso)) {
+                        todosProcesos.push(proceso.proceso);
+                    }
+                });
+            }
+        });
+    }
+    
+    console.log(' Procesos encontrados:', todosProcesos);
+    console.log(' Data prendas:', data.prendas);
+    
+    // Mostrar navegación de procesos si hay al menos 1 proceso
+    if (todosProcesos.length >= 1) {
+        const processNavContainer = document.getElementById('process-navigation-mobile');
+        if (processNavContainer) {
+            processNavContainer.innerHTML = '';
+            processNavContainer.style.display = 'flex';
+            processNavContainer.style.justifyContent = 'center';
+            processNavContainer.style.alignItems = 'center';
+            processNavContainer.style.gap = '8px';
+            processNavContainer.style.flexDirection = 'row';
+            
+            const procesoActualIndex = window.procesoCarouselIndex || 0;
+            const procesoActual = todosProcesos[procesoActualIndex] || '';
+            
+            // Botón anterior de procesos
+            if (procesoActualIndex > 0) {
+                const prevProcBtn = document.createElement('button');
+                prevProcBtn.style.background = '#EF5350';
+                prevProcBtn.style.border = 'none';
+                prevProcBtn.style.color = 'white';
+                prevProcBtn.style.cursor = 'pointer';
+                prevProcBtn.style.padding = '6px 8px';
+                prevProcBtn.style.borderRadius = '4px';
+                prevProcBtn.style.fontSize = '12px';
+                prevProcBtn.style.fontWeight = '600';
+                prevProcBtn.style.transition = 'all 0.2s ease';
+                prevProcBtn.title = 'Proceso anterior';
+                prevProcBtn.innerHTML = '<span style="font-size: 16px;">◀</span>';
+                prevProcBtn.onmouseover = function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.boxShadow = '0 2px 8px rgba(239, 83, 80, 0.3)';
+                };
+                prevProcBtn.onmouseout = function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = 'none';
+                };
+                prevProcBtn.onclick = function() {
+                    window.procesoCarouselIndex = Math.max(0, window.procesoCarouselIndex - 1);
+                    window.llenarReciboCosturaMobile(data);
+                };
+                processNavContainer.appendChild(prevProcBtn);
+            }
+            
+            // Indicador del proceso actual
+            const processIndicator = document.createElement('div');
+            processIndicator.style.background = '#EF5350';
+            processIndicator.style.color = 'white';
+            processIndicator.style.padding = '4px 10px';
+            processIndicator.style.borderRadius = '4px';
+            processIndicator.style.fontSize = '11px';
+            processIndicator.style.fontWeight = 'bold';
+            processIndicator.style.whiteSpace = 'nowrap';
+            processIndicator.style.textAlign = 'center';
+            processIndicator.textContent = (procesoActualIndex + 1) + '/' + todosProcesos.length;
+            processNavContainer.appendChild(processIndicator);
+            
+            // Botón siguiente de procesos - SIEMPRE MOSTRAR (aunque sea el último)
+            const nextProcBtn = document.createElement('button');
+            nextProcBtn.style.background = '#EF5350';
+            nextProcBtn.style.border = 'none';
+            nextProcBtn.style.color = 'white';
+            nextProcBtn.style.cursor = procesoActualIndex < todosProcesos.length - 1 ? 'pointer' : 'not-allowed';
+            nextProcBtn.style.padding = '6px 8px';
+            nextProcBtn.style.borderRadius = '4px';
+            nextProcBtn.style.fontSize = '12px';
+            nextProcBtn.style.fontWeight = '600';
+            nextProcBtn.style.transition = 'all 0.2s ease';
+            nextProcBtn.style.opacity = procesoActualIndex < todosProcesos.length - 1 ? '1' : '0.5';
+            nextProcBtn.title = 'Proceso siguiente';
+            nextProcBtn.innerHTML = '<span style="font-size: 16px;">▶</span>';
+            nextProcBtn.onmouseover = function() {
+                if (procesoActualIndex < todosProcesos.length - 1) {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.boxShadow = '0 2px 8px rgba(239, 83, 80, 0.3)';
+                }
+            };
+            nextProcBtn.onmouseout = function() {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+            };
+            nextProcBtn.onclick = function() {
+                if (procesoActualIndex < todosProcesos.length - 1) {
+                    window.procesoCarouselIndex = Math.min(todosProcesos.length - 1, window.procesoCarouselIndex + 1);
+                    window.llenarReciboCosturaMobile(data);
+                }
+            };
+            processNavContainer.appendChild(nextProcBtn);
+            
+            // Guardar procesos en variable global para usar en filtrado posterior
+            window.todosProcesosDisponibles = todosProcesos;
+            window.procesoActualSeleccionado = procesoActual;
+        }
+    } else {
+        const processNavContainer = document.getElementById('process-navigation-mobile');
+        if (processNavContainer) {
+            processNavContainer.style.display = 'none';
+        }
+    }
+    
     // Fecha - parsear correctamente
     if (data.fecha && data.fecha !== 'N/A') {
         let fecha;
@@ -396,17 +534,72 @@ window.llenarReciboCosturaMobile = function(data) {
     }
 
     // Descripción - IGUAL QUE ASESORES: Priorizar descripcion_prendas del controlador
-
-
-
     let descripcionHTML = '';
     const descripcionPrendasCompleta = data.descripcion || '';
-    const todasLasPrendas = data.prendas || [];
+    let todasLasPrendas = data.prendas || [];
     const PRENDAS_POR_PAGINA = 2;
     
+    // FILTRAR PRENDAS POR PROCESO SELECCIONADO
+    const procesoActualIndex = window.procesoCarouselIndex || 0;
+    const procesosDisponibles = window.todosProcesosDisponibles || [];
+    const procesoActualSeleccionado = procesosDisponibles[procesoActualIndex] || null;
+    
+    console.log('📱 [RECIBO MOBILE] =========================================');
+    console.log('📱 [RECIBO MOBILE] Proceso actual seleccionado:', procesoActualSeleccionado);
+    console.log('📱 [RECIBO MOBILE] Índice del proceso:', procesoActualIndex);
+    console.log('📱 [RECIBO MOBILE] Procesos disponibles:', procesosDisponibles);
+    console.log('📱 [RECIBO MOBILE] Total prendas ANTES de filtrar:', todasLasPrendas.length);
+    
+    // Solo filtrar por proceso si el usuario está navegando entre procesos (no en primera carga)
+    // Detectar si ya hay prendas mostradas (significa que es llamada desde evento de click de arrow)
+    const esNavegacionDeProc = window.procesoCarouselIndex !== undefined && window.procesoCarouselIndex > 0;
+    
+    console.log('📱 [RECIBO MOBILE] ¿Es navegación de proceso?:', esNavegacionDeProc);
+    
+    if (esNavegacionDeProc && procesoActualSeleccionado && todasLasPrendas.length > 0) {
+        console.log('📱 [RECIBO MOBILE] ⚠️ FILTRANDO prendas para proceso:', procesoActualSeleccionado);
+        // Filtrar prendas que tengan el proceso seleccionado
+        todasLasPrendas = todasLasPrendas.filter(function(prenda) {
+            // Opción 1: Buscar en recibos
+            if (prenda.recibos && typeof prenda.recibos === 'object') {
+                const tieneProc = prenda.recibos[procesoActualSeleccionado] !== null && prenda.recibos[procesoActualSeleccionado] !== undefined;
+                console.log('📱 [RECIBO MOBILE] Prenda:', prenda.nombre, '- Tiene', procesoActualSeleccionado + '?:', tieneProc, 'Valor:', prenda.recibos[procesoActualSeleccionado]);
+                return tieneProc;
+            }
+            // Opción 2: Buscar en procesos (fallback)
+            if (!prenda.procesos || !Array.isArray(prenda.procesos)) {
+                return false;
+            }
+            return prenda.procesos.some(function(proc) {
+                return proc.proceso === procesoActualSeleccionado;
+            });
+        });
+        console.log('📱 [RECIBO MOBILE] Total prendas DESPUÉS de filtrar:', todasLasPrendas.length);
+    } else {
+        console.log('📱 [RECIBO MOBILE] ✅ Primera carga - SIN filtrar, mostrando todas las prendas');
+    }
+    
+    // LIMPIAR CONTENEDOR DE RECIBO ANTES DE RECONSTRUIR
+    const reciboDOMContainer = document.getElementById('mobile-descripcion');
+    if (reciboDOMContainer) {
+        console.log('📱 [RECIBO MOBILE] Limpiando contenedor #mobile-descripcion');
+        reciboDOMContainer.innerHTML = '';
+    }
+    
+    // Declarar prendasActuales al inicio para que esté disponible en todo el scope
+    let prendasActuales = [];
+    
+    console.log('📱 [RECIBO MOBILE] descripcionPrendasCompleta existe?:', !!descripcionPrendasCompleta);
+    console.log('📱 [RECIBO MOBILE] descripcionPrendasCompleta trim():', descripcionPrendasCompleta ? descripcionPrendasCompleta.trim().substring(0, 100) : 'NULL');
+    
     //  PRIMERO: Si existe descripcion_prendas construida en el controlador, usarla directamente (IGUAL QUE ASESORES)
-    if (descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A') {
-
+    // PERO: Si estamos navegando entre procesos, IGNORAR descripcionPrendasCompleta y usar fallback dinámico
+    // para que se reconstruya el recibo con solo las prendas del proceso seleccionado
+    const debeUsarDescripcionPreConstruida = descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A' && !esNavegacionDeProc;
+    
+    if (debeUsarDescripcionPreConstruida) {
+        console.log('📱 [RECIBO MOBILE] 🔧 USANDO RAMA: descripcionPrendasCompleta (pre-construida)');
+        
         // Limpiar espacios al inicio de cada línea
         const descripcionLimpia = descripcionPrendasCompleta
             .split('\n')
@@ -504,18 +697,21 @@ window.llenarReciboCosturaMobile = function(data) {
             })
             .join('<br><br>');
         
-        descripcionHTML = `<div style="line-height: 1.8; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descripcionFormateada}</div>`;
+        descripcionHTML = `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descripcionFormateada}</div>`;
         
         // Actualizar total de bloques para el carousel
         window.totalBloquesPrendas = bloquesPrendas.length;
         
     } else if (todasLasPrendas.length > 0) {
         // FALLBACK: Generar descripción dinámica desde prendas (igual que asesores)
+        console.log('📱 [RECIBO MOBILE] 🔧 USANDO RAMA: Fallback dinámico (descripcion_prendas vacía)');
         console.log(' [MOBILE] Usando lógica de construcción dinámica (descripcion_prendas vacía)');
         
         const startIndex = window.prendaCarouselIndex || 0;
         const endIndex = startIndex + PRENDAS_POR_PAGINA;
-        const prendasActuales = todasLasPrendas.slice(startIndex, endIndex);
+        prendasActuales = todasLasPrendas.slice(startIndex, endIndex);
+        
+        console.log('📱 [RECIBO MOBILE] 🔧 Fallback - prendasActuales rellenadas:', prendasActuales.length);
         
         // Generar descripción dinámica para cada prenda (igual que asesores)
         prendasActuales.forEach((prenda, index) => {
@@ -560,23 +756,25 @@ window.llenarReciboCosturaMobile = function(data) {
             }
             
             // 3. DESCRIPCION - Priorizar descripción completa guardada en BD
-            if (prenda.descripcion && prenda.descripcion !== '-') {
-                // Usar la descripción completa de la BD (incluye ubicaciones del reflectivo)
-                const descripcionCompleta = prenda.descripcion.toUpperCase();
-                
-                // Formatear la descripción: si tiene saltos de línea, convertirlos a <br>
-                const descripcionFormateada = descripcionCompleta.replace(/\n/g, '<br>');
-                
-                html += `<strong>DESCRIPCION:</strong><br>${descripcionFormateada}<br>`;
-            } else if (prenda.descripcion_variaciones) {
-                // Fallback: usar descripcion_variaciones si no hay descripción completa
-                const descripcionVar = prenda.descripcion_variaciones;
-                const partes = [];
-                
-                // Reflectivo
-                const reflectivoMatch = descripcionVar.match(/Reflectivo:\s*(.+?)(?:\s*\||$)/i);
-                if (reflectivoMatch) {
-                    partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Reflectivo:</strong> ${reflectivoMatch[1].trim().toUpperCase()}`);
+            // SOLO mostrar en primera carga, NO cuando estamos navegando entre procesos
+            if (!esNavegacionDeProc) {
+                if (prenda.descripcion && prenda.descripcion !== '-') {
+                    // Usar la descripción completa de la BD (incluye ubicaciones del reflectivo)
+                    const descripcionCompleta = prenda.descripcion.toUpperCase();
+                    
+                    // Formatear la descripción: si tiene saltos de línea, convertirlos a <br>
+                    const descripcionFormateada = descripcionCompleta.replace(/\n/g, '<br>');
+                    
+                    html += `<strong>DESCRIPCION:</strong><br>${descripcionFormateada}<br>`;
+                } else if (prenda.descripcion_variaciones) {
+                    // Fallback: usar descripcion_variaciones si no hay descripción completa
+                    const descripcionVar = prenda.descripcion_variaciones;
+                    const partes = [];
+                    
+                    // Reflectivo
+                    const reflectivoMatch = descripcionVar.match(/Reflectivo:\s*(.+?)(?:\s*\||$)/i);
+                    if (reflectivoMatch) {
+                        partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Reflectivo:</strong> ${reflectivoMatch[1].trim().toUpperCase()}`);
                 }
                 
                 // Bolsillos
@@ -598,6 +796,66 @@ window.llenarReciboCosturaMobile = function(data) {
                 if (partes.length > 0) {
                     html += '<strong>DESCRIPCION:</strong><br>';
                     html += partes.join('<br>') + '<br>';
+                }
+            }
+            }
+            
+            // 3.5. DATOS ESPECÍFICOS DEL PROCESO ACTUAL (si estamos navegando entre procesos)
+            if (esNavegacionDeProc && procesoActualSeleccionado && prenda.procesos && Array.isArray(prenda.procesos)) {
+                // Buscar el proceso actual en el array de procesos
+                const procesoBuscado = prenda.procesos.find(p => 
+                    p.tipo_proceso && p.tipo_proceso.toUpperCase() === procesoActualSeleccionado.toUpperCase()
+                );
+                
+                if (procesoBuscado) {
+                    // UBICACIONES
+                    if (procesoBuscado.ubicaciones) {
+                        let ubicacionesArray = [];
+                        try {
+                            ubicacionesArray = JSON.parse(procesoBuscado.ubicaciones);
+                        } catch (e) {
+                            ubicacionesArray = [procesoBuscado.ubicaciones];
+                        }
+                        
+                        if (ubicacionesArray && ubicacionesArray.length > 0) {
+                            html += `<strong>UBICACIONES:</strong> ${ubicacionesArray.join(', ').toUpperCase()}<br>`;
+                        }
+                    }
+                    
+                    // OBSERVACIONES DEL PROCESO
+                    if (procesoBuscado.observaciones) {
+                        html += `<strong>OBSERVACIONES:</strong> ${procesoBuscado.observaciones.toUpperCase()}<br>`;
+                    }
+                    
+                    // TALLAS Y CANTIDADES ESPECÍFICAS DEL PROCESO
+                    if (procesoBuscado.tallas) {
+                        const tallasProc = [];
+                        if (procesoBuscado.tallas.dama && Object.keys(procesoBuscado.tallas.dama).length > 0) {
+                            Object.entries(procesoBuscado.tallas.dama).forEach(([talla, cantidad]) => {
+                                if (cantidad > 0) {
+                                    tallasProc.push(`DAMA ${talla}: ${cantidad}`);
+                                }
+                            });
+                        }
+                        if (procesoBuscado.tallas.caballero && Object.keys(procesoBuscado.tallas.caballero).length > 0) {
+                            Object.entries(procesoBuscado.tallas.caballero).forEach(([talla, cantidad]) => {
+                                if (cantidad > 0) {
+                                    tallasProc.push(`CABALLERO ${talla}: ${cantidad}`);
+                                }
+                            });
+                        }
+                        if (procesoBuscado.tallas.unisex && Object.keys(procesoBuscado.tallas.unisex).length > 0) {
+                            Object.entries(procesoBuscado.tallas.unisex).forEach(([talla, cantidad]) => {
+                                if (cantidad > 0) {
+                                    tallasProc.push(`UNISEX ${talla}: ${cantidad}`);
+                                }
+                            });
+                        }
+                        
+                        if (tallasProc.length > 0) {
+                            html += `<strong>TALLAS DEL PROCESO:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasProc.join(', ')}</span><br>`;
+                        }
+                    }
                 }
             }
             
@@ -636,6 +894,25 @@ window.llenarReciboCosturaMobile = function(data) {
             descElement.innerHTML = descripcionHTML;
         } else {
             descElement.innerHTML = '<em style="font-size: 10px; color: #999;">Sin descripción</em>';
+        }
+    }
+    
+    // ACTUALIZAR TÍTULO DEL RECIBO CON EL PROCESO ACTUAL
+    // Actualizar SIEMPRE que haya un procesoActualSeleccionado (incluso cuando regresas a índice 0)
+    if (procesoActualSeleccionado) {
+        const titleElement = document.querySelector('.receipt-title');
+        if (titleElement) {
+            titleElement.textContent = 'RECIBO DE ' + procesoActualSeleccionado.toUpperCase();
+        }
+        
+        // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
+        const numeroPedidoElement = document.getElementById('mobile-numero-pedido');
+        if (numeroPedidoElement && data.prendas && data.prendas.length > 0) {
+            const prenda = data.prendas[0];
+            if (prenda.recibos && prenda.recibos[procesoActualSeleccionado]) {
+                const consecutivo = prenda.recibos[procesoActualSeleccionado];
+                numeroPedidoElement.textContent = '#' + consecutivo;
+            }
         }
     }
     
@@ -730,6 +1007,8 @@ window.llenarReciboCosturaMobile = function(data) {
         }
         console.log('🎪 Carousel no requerido - solo', totalBloques, 'bloque(s)');
     }
+    
+    console.log('📱 [RECIBO MOBILE] ✅ ========== FIN llenarReciboCosturaMobile ==========');
 };
 </script>
 

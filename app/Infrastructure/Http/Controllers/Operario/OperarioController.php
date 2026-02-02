@@ -5,6 +5,7 @@ namespace App\Infrastructure\Http\Controllers\Operario;
 use App\Http\Controllers\Controller;
 use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Domain\Operario\Repositories\OperarioRepository;
+use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +18,8 @@ class OperarioController extends Controller
 {
     public function __construct(
         private ObtenerPedidosOperarioService $obtenerPedidosService,
-        private OperarioRepository $operarioRepository
+        private OperarioRepository $operarioRepository,
+        private ObtenerPedidoUseCase $obtenerPedidoUseCase
     ) {
         $this->middleware('auth');
         $this->middleware('operario-access');
@@ -367,69 +369,159 @@ class OperarioController extends Controller
     }
 
     /**
-     * API: Obtener datos del pedido para vista móvil
-     * SIN CACHÉ para asegurar siempre datos frescos
+     * API: Obtener datos completos del pedido (igual que /pedidos-public/{id}/recibos-datos)
+     * Usa el mismo endpoint y lógica que el módulo de recibos públicos
      */
     public function getPedidoData($numeroPedido)
     {
-        $pedido = \App\Models\PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $numeroPedido)->first();
-        
-        if (!$pedido) {
-            return response()->json(['error' => 'not found'], 404);
+        try {
+            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'not found',
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            $pedidoId = $pedido->id;
+            \Log::info("[OperarioController.getPedidoData] Obteniendo detalles", [
+                'numero_pedido' => $numeroPedido,
+                'pedido_id' => $pedidoId
+            ]);
+
+            $response = $this->obtenerPedidoUseCase->ejecutar($pedidoId, false);
+            $responseData = $response->toArray();
+
+            $this->enriquecerPrendasConConsecutivos($responseData, $pedidoId);
+            $this->agregarAnchoMetrajeGeneral($responseData, $pedido);
+
+            return response()->json([
+                'success' => true,
+                'data' => $responseData
+            ], 200);
+
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController.getPedidoData] Error', [
+                'numero_pedido' => $numeroPedido,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enriquecer prendas con consecutivos y ancho/metraje
+     */
+    private function enriquecerPrendasConConsecutivos(&$responseData, int $pedidoId): void
+    {
+        if (!isset($responseData['prendas']) || !is_array($responseData['prendas'])) {
+            return;
         }
 
-        // DEBUG: Log de las prendas cargadas
-        \Log::info("getPedidoData - Prendas cargadas", [
-            'numero_pedido' => $numeroPedido,
-            'total_prendas' => $pedido->prendas->count(),
-            'prendas' => $pedido->prendas->map(function($p) {
-                return [
-                    'nombre' => $p->nombre_prenda,
-                    'cantidad' => $p->cantidad,
-                    'cantidad_talla' => $p->cantidad_talla,
-                    'cantidad_talla_type' => gettype($p->cantidad_talla),
-                    'cantidad_talla_empty' => empty($p->cantidad_talla),
-                ];
-            })->toArray()
+        \Log::info('[OperarioController] Enriqueciendo prendas', [
+            'pedido_id' => $pedidoId,
+            'total_prendas' => count($responseData['prendas'])
         ]);
 
-        // Devolver también las prendas para que el JS construya la descripción
-        $prendasFormatted = $pedido->prendas->map(function($prenda) {
-            // Convertir cantidad_talla array a string legible
-            $tallasPorCantidad = $prenda->cantidad_talla ?? [];
-            $tallasFormateadas = [];
-            
-            if (is_array($tallasPorCantidad) && !empty($tallasPorCantidad)) {
-                foreach ($tallasPorCantidad as $talla => $cantidad) {
-                    $tallasFormateadas[] = $talla . ' (' . $cantidad . ')';
-                }
-                $tallasTexto = implode(', ', $tallasFormateadas);
-            } else {
-                // Si no hay tallas desglosadas, usar la cantidad total
-                $tallasTexto = $prenda->cantidad ? 'Cantidad: ' . $prenda->cantidad : '-';
+        foreach ($responseData['prendas'] as &$prenda) {
+            $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
+            if (!$prendaId) {
+                $prenda['ancho_metraje'] = null;
+                $prenda['recibos'] = null;
+                continue;
             }
-            
-            return [
-                'nombre' => $prenda->nombre_prenda ?? '',
-                'talla' => $tallasTexto,  // Mostrar todas las tallas con sus cantidades
-                'cantidad' => $prenda->cantidad ?? 0,
-                'descripcion' => $prenda->descripcion ?? ''
-            ];
-        });
 
-        return response()->json([
-            'numero_pedido' => $pedido->numero_pedido,
-            'cliente' => $pedido->cliente ?? 'N/A',
-            'asesora' => $pedido->asesora?->name ?? 'N/A',
-            'forma_pago' => $pedido->forma_de_pago ?? 'N/A',
-            'descripcion_prendas' => $pedido->descripcion_prendas ?? 'N/A',
-            'fecha_creacion' => $pedido->fecha_creacion ?? '',
-            'cantidad' => $pedido->cantidad ?? 0,
-            'encargado' => \Illuminate\Support\Facades\Auth::user()?->name ?? 'Operario',
-            'fotos' => $this->obtenerFotosPedido($pedido->numero_pedido),
-            'prendas' => $prendasFormatted
-        ]);
+            $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->first();
+
+            $prenda['ancho_metraje'] = $anchoMetrajePrenda ? [
+                'ancho' => $anchoMetrajePrenda->ancho,
+                'metraje' => $anchoMetrajePrenda->metraje,
+                'prenda_id' => $anchoMetrajePrenda->prenda_pedido_id
+            ] : null;
+
+            $prenda['recibos'] = $this->obtenerConsecutivosPrenda($pedidoId, $prendaId);
+        }
     }
+
+    /**
+     * Agregar ancho/metraje general
+     */
+    private function agregarAnchoMetrajeGeneral(&$responseData, $pedido): void
+    {
+        $responseData['ancho_metraje'] = [
+            'ancho' => $pedido->ancho ?? null,
+            'metraje' => $pedido->metraje ?? null,
+            'fecha_actualizacion' => $pedido->updated_at ?? null
+        ];
+    }
+
+    /**
+     * Obtener consecutivos de una prenda específica
+     * 
+     * @param int $pedidoId
+     * @param int $prendaId
+     * @return array|null
+     */
+    private function obtenerConsecutivosPrenda(int $pedidoId, int $prendaId): ?array
+    {
+        try {
+            \Log::info('[OperarioController] Buscando consecutivos para prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId
+            ]);
+
+            // Obtener consecutivos para este pedido (incluyendo generales y específicos de prenda)
+            $consecutivos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('activo', 1)
+                ->where(function($query) use ($prendaId) {
+                    $query->where('prenda_id', $prendaId)  // Específicos de esta prenda
+                          ->orWhereNull('prenda_id');       // Generales del pedido
+                })
+                ->get();
+
+            if ($consecutivos->isEmpty()) {
+                return null;
+            }
+
+            // Estructurar los consecutivos por tipo
+            $recibos = [
+                'COSTURA' => null,
+                'ESTAMPADO' => null,
+                'BORDADO' => null,
+                'REFLECTIVO' => null
+            ];
+
+            foreach ($consecutivos as $consecutivo) {
+                $tipo = $consecutivo->tipo_recibo;
+                if (array_key_exists($tipo, $recibos)) {
+                    $recibos[$tipo] = $consecutivo->consecutivo_actual;
+                }
+            }
+
+            return $recibos;
+
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error obteniendo consecutivos de prenda', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
 
     /**
      * Marcar proceso como completado

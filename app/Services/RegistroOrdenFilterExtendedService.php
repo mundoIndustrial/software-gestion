@@ -48,8 +48,8 @@ class RegistroOrdenFilterExtendedService
                     continue;
                 }
 
-                // Separar el filtro de total_de_dias_ (procesado después)
-                if ($column === 'total_de_dias_') {
+                // Separar el filtro de total_dias (procesado después)
+                if ($column === 'total_dias' || $column === 'total_de_dias_') {
                     $totalDiasFilter = array_map('intval', $values);
                     continue;
                 }

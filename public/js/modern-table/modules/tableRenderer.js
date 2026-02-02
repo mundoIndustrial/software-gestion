@@ -76,8 +76,8 @@ const TableRenderer = (() => {
                 const cellText = document.createElement('span');
                 cellText.className = 'cell-text';
                 
-                // Manejar total_de_dias_ especialmente
-                if (key === 'total_de_dias_') {
+                // Manejar total_dias especialmente
+                if (key === 'total_dias') {
                     const pedidoKey = orden.numero_pedido || orden.pedido || orden.id;
                     const totalDias = totalDiasCalculados[pedidoKey] || 0;
                     cellText.textContent = totalDias;
@@ -210,23 +210,20 @@ const TableRenderer = (() => {
                 accionesTd.appendChild(accionesDiv);
                 row.appendChild(accionesTd);
 
-                const theadRow = document.querySelector('#tablaOrdenes thead tr');
-                const ths = Array.from(theadRow.querySelectorAll('th'));
+                // Obtener los nombres de columnas del encabezado (#tableHead)
+                const tableHeadDivs = document.querySelectorAll('#tableHead .table-header-cell');
                 
-                // Iterar sobre todos los encabezados excepto el primero (acciones)
-                for (let i = 1; i < ths.length; i++) {
-                    // Obtener el data-column directamente del encabezado
-                    const key = ths[i].dataset.column;
+                // Renderizar celdas en el orden correcto
+                tableHeadDivs.forEach(headerDiv => {
+                    // Saltar la columna de acciones
+                    if (headerDiv.classList.contains('acciones-column')) return;
                     
-                    // Si no hay data-column, intentar extraerlo del texto
-                    if (!key) {
-
-                        continue;
-                    }
+                    const key = headerDiv.dataset.column;
+                    if (!key) return;
                     
                     const value = orden[key] || '';
                     row.appendChild(TableRenderer.createCell(key, value, orden, totalDiasCalculados, areaOptions));
-                }
+                });
 
                 tbody.appendChild(row);
             });

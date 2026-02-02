@@ -79,7 +79,7 @@
                                 <td class="table-cell">
                                     @if($user->roles_ids && count($user->roles_ids) > 0)
                                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                            @foreach($user->roles() as $role)
+                                            @foreach($user->roles()->get() as $role)
                                                 <span class="badge badge-{{ strtolower($role->name) }}">
                                                     {{ $role->name }}
                                                 </span>

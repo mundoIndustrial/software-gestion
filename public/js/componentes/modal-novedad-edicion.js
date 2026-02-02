@@ -524,6 +524,16 @@ class ModalNovedadEdicion {
                     try {
                         const prendaIdInt = parseInt(this.prendaData.prenda_pedido_id || this.prendaData.id);
                         
+                        // ✅ VALIDACIÓN CRÍTICA: El proceso debe tener un ID válido (debe estar guardado en BD)
+                        if (!procesoEditado.id || isNaN(procesoEditado.id)) {
+                            console.warn('[modal-novedad-edicion] ⚠️ SKIPPING: Proceso sin ID válido. No se puede actualizar un proceso que aún no está guardado en BD.', {
+                                tipo: procesoEditado.tipo,
+                                id: procesoEditado.id,
+                                razon: 'Los procesos nuevos NO SE DEBEN PARCHEAR durante la edición de prenda. Deben guardarse como parte de la prenda completa.'
+                            });
+                            continue;
+                        }
+                        
                         // ✅ Determinar si hay cambios (incluyendo imágenes)
                         const tieneImagenesNuevas = window.imagenesProcesoActual?.some(img => img instanceof File);
                         const tieneImagenesExistentes = window.imagenesProcesoExistentes?.length > 0;

@@ -18,6 +18,8 @@ use App\Services\RegistroOrdenProcessesService;
 use App\Models\News;
 use Illuminate\Support\Facades\DB;
 use App\Services\PrendaCotizacionTemplateService;
+use App\Services\CacheCalculosService;
+use App\Services\FestivosColombiaService;
 
 class RegistroOrdenController extends Controller
 {
@@ -539,28 +541,67 @@ class RegistroOrdenController extends Controller
                     $options = $query->pluck('cliente')->filter()->sort()->values()->toArray();
                     break;
                 case 'descripcion':
-                    // Para descripción, agrupar por descripción única
-                    $ordenes = PedidoProduccion::all();
+                    // Para descripción, generar descripciones detalladas de prendas (como en recibos)
+                    $ordenes = PedidoProduccion::with([
+                        'prendas.variantes',
+                        'prendas.coloresTelas.tela',
+                        'prendas.coloresTelas.color'
+                    ])->get();
                     $descripcionesMap = [];
                     
+                    \Log::info("[FILTRO-DESCRIPCION] Iniciando generación de descripciones", ['total_ordenes' => $ordenes->count()]);
+                    
                     foreach ($ordenes as $orden) {
-                        $descripcion = $orden->getNombresPrendas();
-                        if ($descripcion !== '-') {
-                            // Si la descripción ya existe, agregar el pedido a la lista
-                            if (!isset($descripcionesMap[$descripcion])) {
-                                $descripcionesMap[$descripcion] = [];
+                        // Obtener prendas del pedido
+                        if ($orden->prendas && $orden->prendas->count() > 0) {
+                            foreach ($orden->prendas as $index => $prenda) {
+                                // Generar descripción detallada
+                                $descripcionDetallada = $this->generarDescripcionPrenda($prenda, $index + 1);
+                                
+                                \Log::info("[FILTRO-DESCRIPCION] Prenda procesada", [
+                                    'numero_pedido' => $orden->numero_pedido,
+                                    'prenda_nombre' => $prenda->nombre_prenda,
+                                    'descripcion_generada' => substr($descripcionDetallada, 0, 100) . '...'
+                                ]);
+                                
+                                if ($descripcionDetallada) {
+                                    // Si la descripción ya existe, agregar el pedido a la lista
+                                    if (!isset($descripcionesMap[$descripcionDetallada])) {
+                                        $descripcionesMap[$descripcionDetallada] = [];
+                                    }
+                                    if (!in_array($orden->numero_pedido, $descripcionesMap[$descripcionDetallada])) {
+                                        $descripcionesMap[$descripcionDetallada][] = $orden->numero_pedido;
+                                    }
+                                }
                             }
-                            $descripcionesMap[$descripcion][] = $orden->numero_pedido;
+                        } else {
+                            // Fallback a descripción simple
+                            $descripcion = $orden->getNombresPrendas();
+                            if ($descripcion !== '-') {
+                                if (!isset($descripcionesMap[$descripcion])) {
+                                    $descripcionesMap[$descripcion] = [];
+                                }
+                                $descripcionesMap[$descripcion][] = $orden->numero_pedido;
+                            }
                         }
                     }
                     
+                    \Log::info("[FILTRO-DESCRIPCION] Descripciones únicas generadas", ['total_descripciones' => count($descripcionesMap)]);
+                    
                     // Convertir a array de opciones
                     $options = array_map(function($desc, $pedidos) {
+                        // Limitar descripción a 200 caracteres para el display
+                        $displayDesc = strlen($desc) > 200 ? substr(strip_tags($desc), 0, 200) . '...' : strip_tags($desc);
                         return [
                             'value' => implode(',', $pedidos), // Guardar todos los pedidos con esa descripción
-                            'display' => $desc
+                            'display' => $displayDesc
                         ];
                     }, array_keys($descripcionesMap), array_values($descripcionesMap));
+                    
+                    \Log::info("[FILTRO-DESCRIPCION] Opciones finales preparadas", [
+                        'total_opciones' => count($options),
+                        'primera_opcion' => isset($options[0]) ? ['display' => substr($options[0]['display'], 0, 100), 'value' => $options[0]['value']] : 'N/A'
+                    ]);
                     break;
                 case 'asesor':
                     $options = PedidoProduccion::with('asesora')->get()->pluck('asesora.name')->filter()->unique()->sort()->values()->toArray();
@@ -570,6 +611,44 @@ class RegistroOrdenController extends Controller
                     break;
                 case 'encargado':
                     $options = PedidoProduccion::distinct()->pluck('encargado_orden')->filter()->sort()->values()->toArray();
+                    break;
+                case 'total_dias':
+                    // Para total_dias, calcular todos los valores y obtener los únicos
+                    $currentYear = now()->year;
+                    $nextYear = now()->addYear()->year;
+                    $festivos = array_merge(
+                        FestivosColombiaService::obtenerFestivos($currentYear),
+                        FestivosColombiaService::obtenerFestivos($nextYear)
+                    );
+                    
+                    $ordenes = PedidoProduccion::all();
+                    
+                    // Convertir Eloquent Collection a array manteniendo estructura
+                    $ordenesArray = [];
+                    foreach ($ordenes as $orden) {
+                        $ordenesArray[] = $orden->toArray();
+                    }
+                    
+                    \Log::info("Total órdenes para filtro: " . count($ordenesArray));
+                    
+                    // Usar batch calculation para obtener días de forma eficiente
+                    $diasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
+                    
+                    \Log::info("Días calculados: " . json_encode(array_slice($diasCalculados, 0, 10)));
+                    
+                    // Obtener valores únicos
+                    $diasUnicos = [];
+                    foreach ($diasCalculados as $dias) {
+                        if ($dias >= 0) {  // Solo incluir valores válidos
+                            $diasUnicos[$dias] = $dias;
+                        }
+                    }
+                    
+                    \Log::info("Días únicos para filtro: " . json_encode($diasUnicos));
+                    
+                    // Ordenar por número
+                    ksort($diasUnicos);
+                    $options = array_values($diasUnicos);
                     break;
                 default:
                     return response()->json([
@@ -645,6 +724,10 @@ class RegistroOrdenController extends Controller
                         case 'pedido':
                             $query->whereIn('numero_pedido', $values);
                             break;
+                        case 'total_dias':
+                            // Filtro especial para total_dias - requiere cálculo
+                            // Se procesará después de obtener todas las órdenes
+                            break;
                         case 'descripcion':
                             // Filtrar por descripciones (que pueden contener múltiples pedidos)
                             // Los valores vienen como "14342,14328,14329"
@@ -665,10 +748,43 @@ class RegistroOrdenController extends Controller
             }
 
             // Obtener resultados paginados
-            $ordenes = $query->orderBy('created_at', 'asc')->paginate($perPage, ['*'], 'page', $page);
+            $ordenes = $query->orderBy('created_at', 'asc')->get();
+
+            // Filtrar por total_dias si está especificado
+            if (!empty($filters['total_dias'])) {
+                $currentYear = now()->year;
+                $nextYear = now()->addYear()->year;
+                $festivos = array_merge(
+                    FestivosColombiaService::obtenerFestivos($currentYear),
+                    FestivosColombiaService::obtenerFestivos($nextYear)
+                );
+                
+                $diasFiltro = array_map('intval', $filters['total_dias']);
+                
+                // Convertir a array para batch calculation
+                $ordenesArray = $ordenes->map(function($orden) {
+                    return $orden->toArray();
+                })->toArray();
+                
+                $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenesArray, $festivos);
+                
+                // Filtrar órdenes que coincidan con los días seleccionados
+                $ordenes = $ordenes->filter(function($orden) use ($totalDiasCalculados, $diasFiltro) {
+                    $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
+                    return in_array((int)$totalDias, $diasFiltro, true);
+                })->values();
+            }
+
+            // Aplicar paginación manual
+            $perPage = 25;
+            $currentPage = $page;
+            $total = $ordenes->count();
+            $lastPage = ceil($total / $perPage);
+            
+            $ordenesPaginadas = $ordenes->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
             // Transformar datos para la vista
-            $ordenesData = $ordenes->map(function($orden) {
+            $ordenesData = $ordenesPaginadas->map(function($orden) {
                 return [
                     'id' => $orden->id,
                     'numero_pedido' => $orden->numero_pedido,
@@ -692,12 +808,12 @@ class RegistroOrdenController extends Controller
                 'success' => true,
                 'data' => $ordenesData,
                 'pagination' => [
-                    'current_page' => $ordenes->currentPage(),
-                    'total' => $ordenes->total(),
-                    'per_page' => $ordenes->perPage(),
-                    'last_page' => $ordenes->lastPage(),
-                    'from' => $ordenes->firstItem(),
-                    'to' => $ordenes->lastItem(),
+                    'current_page' => $currentPage,
+                    'total' => $total,
+                    'per_page' => $perPage,
+                    'last_page' => $lastPage,
+                    'from' => ($currentPage - 1) * $perPage + 1,
+                    'to' => min($currentPage * $perPage, $total),
                 ]
             ]);
         } catch (\Exception $e) {
@@ -986,6 +1102,96 @@ class RegistroOrdenController extends Controller
                 'success' => false,
                 'message' => 'Error al agregar la novedad: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Generar descripción detallada de una prenda (formato recibo)
+     */
+    private function generarDescripcionPrenda($prenda, $indexPrenda = 1)
+    {
+        try {
+            $lineas = [];
+            $nombrePrenda = $prenda->nombre_prenda ?? $prenda->nombre ?? 'SIN NOMBRE';
+            $lineas[] = "PRENDA {$indexPrenda}: {$nombrePrenda}";
+            
+            // Obtener color y tela de la primera variante (color/tela combinación)
+            if ($prenda->coloresTelas && $prenda->coloresTelas->count() > 0) {
+                $primerColorTela = $prenda->coloresTelas->first();
+                $tela = $primerColorTela && $primerColorTela->tela ? $primerColorTela->tela->nombre ?? $primerColorTela->tela : '-';
+                $color = $primerColorTela && $primerColorTela->color ? $primerColorTela->color->nombre ?? $primerColorTela->color : '-';
+                $ref = $primerColorTela && $primerColorTela->tela ? $primerColorTela->tela->referencia ?? '' : '';
+                
+                $lineas[] = "TELA: {$tela} / COLOR: {$color}" . ($ref ? " (REF: {$ref})" : '');
+            }
+            
+            // Manga
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primerVariante = $prenda->variantes->first();
+                if ($primerVariante && $primerVariante->manga) {
+                    $manga = strtoupper($primerVariante->manga);
+                    $lineas[] = "MANGA: {$manga}";
+                }
+            }
+            
+            // Observaciones de manga
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primerVariante = $prenda->variantes->first();
+                if ($primerVariante && $primerVariante->manga_obs) {
+                    $lineas[] = "OBS. MANGA: {$primerVariante->manga_obs}";
+                }
+            }
+            
+            // Bolsillos
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primerVariante = $prenda->variantes->first();
+                if ($primerVariante && $primerVariante->bolsillos_obs) {
+                    $lineas[] = "BOLSILLOS: {$primerVariante->bolsillos_obs}";
+                }
+            }
+            
+            // Broche/botón
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $primerVariante = $prenda->variantes->first();
+                if ($primerVariante && $primerVariante->broche) {
+                    $broche = strtoupper($primerVariante->broche);
+                    $lineas[] = "BROCHE: {$broche}";
+                    if ($primerVariante->broche_obs) {
+                        $lineas[] = "OBS. BROCHE: {$primerVariante->broche_obs}";
+                    }
+                }
+            }
+            
+            // Tallas
+            if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                $tallasSummary = [];
+                foreach ($prenda->variantes as $variante) {
+                    $talla = $variante->talla ?? '-';
+                    $cantidad = $variante->cantidad ?? 0;
+                    $tallasSummary[] = "{$talla}: {$cantidad}";
+                }
+                if (!empty($tallasSummary)) {
+                    $lineas[] = "TALLAS: " . implode(", ", $tallasSummary);
+                }
+            }
+            
+            $descripcionFinal = implode(" | ", $lineas);
+            
+            \Log::debug("[GENERAR-DESCRIPCION] Descripción generada", [
+                'prenda_id' => $prenda->id,
+                'prenda_nombre' => $nombrePrenda,
+                'lineas_cantidad' => count($lineas),
+                'descripcion_longitud' => strlen($descripcionFinal),
+                'descripcion_preview' => substr($descripcionFinal, 0, 150)
+            ]);
+            
+            return $descripcionFinal;
+        } catch (\Exception $e) {
+            \Log::error("[GENERAR-DESCRIPCION] Error generando descripción", [
+                'error' => $e->getMessage(),
+                'prenda_id' => $prenda->id ?? 'unknown'
+            ]);
+            return null;
         }
     }
 }

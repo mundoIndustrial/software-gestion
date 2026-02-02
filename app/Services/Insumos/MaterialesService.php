@@ -175,7 +175,7 @@ class MaterialesService
     }
 
     /**
-     * Cambiar el estado de un pedido
+     * Cambiar el estado de un pedido y crear procesos automáticos
      */
     public function cambiarEstadoPedido($numeroPedido, $nuevoEstado)
     {
@@ -189,11 +189,11 @@ class MaterialesService
                 ];
             }
 
-            // Verificar que el pedido esté en estado Pendiente
-            if ($orden->estado !== 'Pendiente') {
+            // Verificar que el pedido esté en estado Pendiente o PENDIENTE_INSUMOS
+            if ($orden->estado !== 'Pendiente' && $orden->estado !== 'PENDIENTE_INSUMOS') {
                 return [
                     'success' => false,
-                    'message' => 'Solo se pueden enviar a producción pedidos en estado Pendiente'
+                    'message' => 'Solo se pueden enviar a producción pedidos en estado Pendiente o Pendiente Insumos'
                 ];
             }
 
@@ -203,18 +203,30 @@ class MaterialesService
                 'area' => 'Corte'
             ]);
 
+            // Crear procesos automáticamente
+            $procesoService = new ProcesoAutomaticoService();
+            $resultadoProcesos = $procesoService->crearProcesosParaPedido($numeroPedido);
+
             \Log::info("Pedido #{$numeroPedido} enviado a producción", [
                 'estado_anterior' => 'Pendiente',
                 'estado_nuevo' => 'No iniciado',
                 'area' => 'Corte',
-                'usuario' => auth()->user()->name ?? 'Sistema'
+                'usuario' => auth()->user()->name ?? 'Sistema',
+                'procesos_creados' => $resultadoProcesos['procesos_creados'] ?? 0
             ]);
+
+            $message = 'Pedido enviado a producción correctamente';
+            if ($resultadoProcesos['success'] && $resultadoProcesos['procesos_creados'] > 0) {
+                $message .= ". Se crearon {$resultadoProcesos['procesos_creados']} procesos automáticamente";
+            }
 
             return [
                 'success' => true,
-                'message' => 'Pedido enviado a producción correctamente',
+                'message' => $message,
                 'estado' => 'No iniciado',
-                'area' => 'Corte'
+                'area' => 'Corte',
+                'procesos_creados' => $resultadoProcesos['procesos_creados'] ?? 0,
+                'detalles_procesos' => $resultadoProcesos['detalles'] ?? []
             ];
         } catch (\Exception $e) {
             \Log::error('Error al cambiar estado del pedido: ' . $e->getMessage());

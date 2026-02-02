@@ -51,6 +51,8 @@ class RegistroOrdenUpdateService
             // Procesar área si está presente (crea/actualiza proceso)
             if (array_key_exists('area', $validatedData)) {
                 $this->handleAreaUpdate($orden->numero_pedido, $validatedData['area']);
+                // 🆕 IMPORTANTE: Añadir el área a los updates para que se persista en BD
+                $updates['area'] = $validatedData['area'];
             }
 
             // Procesar día de entrega si está presente
@@ -94,6 +96,7 @@ class RegistroOrdenUpdateService
 
     /**
      * Manejar actualización de área (crea o actualiza proceso)
+     * Cuando se cambia el área, se crea automáticamente un nuevo proceso con estado 'Pendiente'
      */
     private function handleAreaUpdate(int $numeroPedido, string $nuevaArea): void
     {
@@ -102,13 +105,18 @@ class RegistroOrdenUpdateService
             ->first();
         
         if (!$procesoExistente) {
+            // 🆕 Crear nuevo proceso CON estado_proceso establecido
             ProcesoPrenda::create([
                 'numero_pedido' => $numeroPedido,
                 'proceso' => $nuevaArea,
                 'fecha_inicio' => now()->toDateTimeString(),
+                'estado_proceso' => 'Pendiente',  // 🆕 Establecer estado como Pendiente
                 'encargado' => auth()->user()->name ?? 'Sistema'
             ]);
-            \Log::info("Proceso CREADO para pedido {$numeroPedido}: {$nuevaArea}");
+            \Log::info("Proceso CREADO para pedido {$numeroPedido}: {$nuevaArea}", [
+                'estado_proceso' => 'Pendiente',
+                'usuario' => auth()->user()->name ?? 'Sistema'
+            ]);
         } else {
             $procesoExistente->update([
                 'fecha_inicio' => now()->toDateTimeString(),

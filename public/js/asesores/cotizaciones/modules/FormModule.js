@@ -227,6 +227,62 @@ class FormModule {
             formData.append('especificaciones', JSON.stringify(window.especificacionesSeleccionadas));
         }
 
+        // REFLECTIVO - Capturar datos de paso 4
+        console.log('🔍 FormModule - Intentando capturar reflectivo...');
+        console.log('   ✓ typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
+        
+        if (typeof capturePrendasReflectivoPaso4 === 'function') {
+            const prendasReflectivo = capturePrendasReflectivoPaso4();
+            console.log('📦 Reflectivo capturado:', prendasReflectivo);
+            
+            if (prendasReflectivo && prendasReflectivo.length > 0) {
+                // Enviar datos JSON sin imágenes
+                const prendasSinImagenes = prendasReflectivo.map(p => ({
+                    ...p,
+                    imagenes: [] // Limpiar imágenes del JSON
+                }));
+                formData.append('reflectivo', JSON.stringify(prendasSinImagenes));
+                
+                // Procesar imágenes por separado
+                prendasReflectivo.forEach((prenda, prendaIdx) => {
+                    if (prenda.imagenes && prenda.imagenes.length > 0) {
+                        prenda.imagenes.forEach((img, imgIdx) => {
+                            if (img.file instanceof File) {
+                                formData.append(`reflectivo_imagenes[${prendaIdx}][${imgIdx}]`, img.file, img.file.name);
+                            }
+                        });
+                    }
+                });
+                console.log('✅ Reflectivo agregado a FormData');
+            } else {
+                formData.append('reflectivo', JSON.stringify([]));
+                console.log('⚠️ Reflectivo vacío');
+            }
+        } else {
+            console.warn('❌ capturePrendasReflectivoPaso4 no es función');
+            formData.append('reflectivo', JSON.stringify([]));
+        }
+
+        // LOGO TÉCNICAS - Capturar datos de paso 3
+        console.log('🔍 FormModule - Intentando capturar logo técnicas...');
+        console.log('   ✓ typeof capturarLogotecnicasPaso3:', typeof capturarLogotecnicasPaso3);
+        
+        if (typeof capturarLogotecnicasPaso3 === 'function') {
+            const logoTecnicas = capturarLogotecnicasPaso3();
+            console.log('📦 Logo técnicas capturado:', logoTecnicas);
+            
+            if (logoTecnicas && logoTecnicas.length > 0) {
+                formData.append('logo_tecnicas', JSON.stringify(logoTecnicas));
+                console.log('✅ Logo técnicas agregado a FormData');
+            } else {
+                formData.append('logo_tecnicas', JSON.stringify([]));
+                console.log('⚠️ Logo técnicas vacío');
+            }
+        } else {
+            console.warn('❌ capturarLogotecnicasPaso3 no es función');
+            formData.append('logo_tecnicas', JSON.stringify([]));
+        }
+
         // Productos
         const productCards = document.querySelectorAll('.producto-card');
 
@@ -293,7 +349,6 @@ class FormModule {
         // Capturar datos de cada fila de tela de la tabla
         const tblasRows = card.querySelectorAll('.fila-tela');
 
-        
         tblasRows.forEach((row, rowIdx) => {
             const telaIndex = row.getAttribute('data-tela-index') || rowIdx;
             const colorIdInput = row.querySelector(`input[name*="[${telaIndex}][color_id]"]`);
@@ -303,7 +358,6 @@ class FormModule {
             const colorId = colorIdInput ? colorIdInput.value : null;
             const telaId = telaIdInput ? telaIdInput.value : null;
             const referencia = referenciaInput ? referenciaInput.value : null;
-            });
             
             // Guardar datos básicos de la tela
             formData.append(`productos[${index}][telas][${telaIndex}][color_id]`, colorId || '');
@@ -314,11 +368,9 @@ class FormModule {
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
                 const fotosDelaTela = window.telasSeleccionadas[productoId][telaIndex];
 
-                
                 fotosDelaTela.forEach((foto, fotoIdx) => {
                     if (foto instanceof File) {
                         formData.append(`productos[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
-
                     }
                 });
             }

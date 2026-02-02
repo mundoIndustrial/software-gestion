@@ -219,7 +219,7 @@ const UIComponents = {
                             <h6 class="mb-1">Proceso ID: ${proceso.tipo_proceso_id || 'N/A'}</h6>
                             <p class="mb-1 small">${this.escape(proceso.observaciones || '(sin observaciones)')}</p>
                             ${proceso.ubicaciones.length > 0 
-                                ? `<p class="mb-0"><small class="badge badge-secondary">${proceso.ubicaciones.join(', ')}</small></p>`
+                                ? `<p class="mb-0"><small class="badge badge-secondary">${Array.isArray(proceso.ubicaciones) ? proceso.ubicaciones.join(', ') : proceso.ubicaciones}</small></p>`
                                 : '<p class="mb-0 text-muted small">(sin ubicaciones)</p>'
                             }
                         </div>

@@ -97,6 +97,28 @@ const TrackingUI = (() => {
             timelineContainer.appendChild(timelineItem);
         });
         
+        // CORREGIR TOTAL: Calcular desde fecha_de_creacion_de_orden hasta el último proceso (o hoy si no está entregado)
+        if (orderData && (orderData.fecha_de_creacion_de_orden || orderData.fecha_inicio) && procesos.length > 0) {
+            // Usar fecha_inicio (nombre del backend) o fecha_de_creacion_de_orden como fallback
+            const fechaCreacionStr = orderData.fecha_de_creacion_de_orden || orderData.fecha_inicio;
+            const fechaCreacion = DateUtils.parseLocalDate(fechaCreacionStr);
+            const ultimoProceso = procesos[procesos.length - 1];
+            const fechaUltimo = DateUtils.parseLocalDate(ultimoProceso.fecha_inicio);
+            
+            // Si es un proceso de despacho/entrega, el total es hasta ese punto
+            let fechaFin = fechaUltimo;
+            if (ultimoProceso.proceso !== 'Despachos' && ultimoProceso.proceso !== 'Despacho' && ultimoProceso.proceso !== 'Entrega') {
+                // Si no es despacho, contar hasta hoy
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                fechaFin = today;
+            }
+            
+            if (!isNaN(fechaCreacion.getTime()) && !isNaN(fechaFin.getTime())) {
+                totalDiasCalculado = DateUtils.calculateBusinessDays(fechaCreacion, fechaFin, festivos);
+            }
+        }
+        
         return totalDiasCalculado;
     }
     

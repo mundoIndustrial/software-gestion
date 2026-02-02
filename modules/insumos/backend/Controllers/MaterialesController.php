@@ -160,4 +160,29 @@ class MaterialesController extends BaseController
             ], 500);
         }
     }
+
+    /**
+     * Cambiar estado de pedido y crear procesos automáticos
+     */
+    public function cambiarEstado($numeroPedido, Request $request)
+    {
+        try {
+            // Usar nuestro servicio principal que tiene la lógica de procesos
+            $materialesService = new \App\Services\Insumos\MaterialesService(
+                new \App\Repositories\Insumos\MaterialesRepository()
+            );
+            
+            $nuevoEstado = $request->input('estado');
+            $resultado = $materialesService->cambiarEstadoPedido($numeroPedido, $nuevoEstado);
+
+            return response()->json($resultado);
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado en módulo insumos: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado'
+            ], 500);
+        }
+    }
 }

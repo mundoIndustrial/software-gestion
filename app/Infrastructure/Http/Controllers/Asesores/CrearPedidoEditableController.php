@@ -116,7 +116,6 @@ class CrearPedidoEditableController extends Controller
         $inicioCotizaciones = microtime(true);
         $cotizaciones = Cotizacion::with([
             'cliente',
-            'tipoCotizacion',
             'prendas' => function($query) {
                 $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
             },

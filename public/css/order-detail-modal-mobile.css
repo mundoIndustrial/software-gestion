@@ -49,21 +49,21 @@
     right: auto;
     width: auto;
     margin: 0;
-    padding: 6px;
+    padding: 5px 8px;
     background: #000;
     border-radius: 6px;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     color: white;
     text-align: center;
 }
 
 .fec-label {
-    font-size: 8px;
+    font-size: 9px;
     color: white;
-    margin-right: 4px;
+    margin-right: 5px;
     flex-shrink: 0;
     font-weight: bold;
     text-transform: uppercase;
@@ -71,19 +71,19 @@
 
 .date-boxes {
     display: flex;
-    gap: 2px;
-    justify-content: space-between;
+    gap: 3px;
+    justify-content: center;
 }
 
 .date-box {
     background: white;
     color: black;
     border-radius: 3px;
-    width: 25px;
-    height: 20px;
-    line-height: 18px;
+    width: 28px;
+    height: 22px;
+    line-height: 20px;
     font-weight: bold;
-    font-size: 9px;
+    font-size: 10px;
     text-align: center;
 }
 
@@ -183,7 +183,7 @@
     font-size: 10px;
     color: #000;
     width: auto;
-    line-height: 1.5;
+    line-height: 1.2;
     max-height: none;
     overflow: visible;
     margin: 12px 0;
@@ -191,9 +191,9 @@
     background: #f9f9f9;
     border-radius: 4px;
     clear: both;
-    min-height: 80px;
+    min-height: auto;
     display: block;
-    white-space: pre-wrap;
+    white-space: normal;
     word-wrap: break-word;
 }
 

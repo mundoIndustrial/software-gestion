@@ -1131,7 +1131,7 @@ function generarHTMLFactura(datos) {
                                 ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                     <tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Ubicación:</td>
-                                        <td style="padding: 2px 3px;">${proc.ubicaciones.join(', ')}</td>
+                                        <td style="padding: 2px 3px;">${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(', ') : (typeof proc.ubicaciones === 'string' ? proc.ubicaciones : '')}</td>
                                     </tr>
                                 ` : ''}
                                 ${proc.observaciones ? `
