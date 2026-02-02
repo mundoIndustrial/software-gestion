@@ -279,7 +279,26 @@ class GestionItemsUI {
 
     abrirModalAgregarPrendaNueva() {
         const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+        
+        console.log('📂 [abrirModalAgregarPrendaNueva] ==================== ABRIENDO MODAL ====================');
+        console.log(`   Modo: ${esEdicion ? '✏️  EDICIÓN' : '➕ CREACIÓN'}`);
+        
+        // 🟢 Si NO es edición (es creación), limpiar procesos de la prenda anterior
+        if (!esEdicion) {
+            console.log('[abrirModalAgregarPrendaNueva] 🧹 Es CREACIÓN - limpiando procesos de prenda anterior...');
+            if (window.limpiarProcesosSeleccionados) {
+                window.limpiarProcesosSeleccionados();
+                console.log('[abrirModalAgregarPrendaNueva] ✅ Procesos limpiados exitosamente');
+            } else {
+                console.warn('[abrirModalAgregarPrendaNueva] ⚠️  Función limpiarProcesosSeleccionados NO DISPONIBLE');
+            }
+        } else {
+            console.log('[abrirModalAgregarPrendaNueva] 📝 Es EDICIÓN - manteniendo procesos actuales');
+        }
+        
+        console.log('📂 [abrirModalAgregarPrendaNueva] Llamando a prendaEditor.abrirModal()...');
         this.prendaEditor.abrirModal(esEdicion, this.prendaEditIndex);
+        console.log('📂 [abrirModalAgregarPrendaNueva] ==================== MODAL ABIERTO ====================');
     }
 
     /**
@@ -287,31 +306,67 @@ class GestionItemsUI {
      */
     cerrarModalAgregarPrendaNueva() {
         try {
+            console.log('❌ [cerrarModalAgregarPrendaNueva] ==================== CERRANDO MODAL ====================');
+            
             // 🔴 NUEVO: Resetear la bandera de nueva prenda desde cotización
             if (this.prendaEditor) {
                 this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
+                console.log('   ✓ Bandera esNuevaPrendaDesdeCotizacion reseteada');
             }
             
             // Resetear índice
             this.prendaEditIndex = null;
+            console.log('   ✓ prendaEditIndex reseteado a null');
+            
+            // 🟢 LIMPIAR PROCESOS SELECCIONADOS cuando se cierra el modal
+            console.log('❌ [cerrarModalAgregarPrendaNueva] 🧹 Limpiando procesos seleccionados...');
+            if (window.limpiarProcesosSeleccionados) {
+                window.limpiarProcesosSeleccionados();
+                console.log('❌ [cerrarModalAgregarPrendaNueva] ✅ Procesos limpiados exitosamente');
+            } else {
+                console.warn('❌ [cerrarModalAgregarPrendaNueva] ⚠️  Función limpiarProcesosSeleccionados NO DISPONIBLE');
+            }
             
             // Intentar cerrar con window.cerrarModalPrendaNueva
+            console.log('❌ [cerrarModalAgregarPrendaNueva] Cerrando modal visual...');
             if (typeof window.cerrarModalPrendaNueva === 'function') {
                 window.cerrarModalPrendaNueva();
+                console.log('   ✓ window.cerrarModalPrendaNueva() ejecutada');
             } else {
                 // Fallback: cerrar directamente el modal
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
                 if (modal) {
                     modal.style.display = 'none';
+                    console.log('   ✓ Modal ocultado por fallback');
+                } else {
+                    console.warn('   ⚠️  Modal NO ENCONTRADO');
                 }
             }
             
             // Resetear editor
             if (this.prendaEditor) {
                 this.prendaEditor.resetearEdicion();
+                console.log('   ✓ Editor reseteado');
             }
-        } catch (error) {
 
+            // 🚀 NUEVO: Scroll hacia la sección de ítems después de cerrar modal
+            console.log('❌ [cerrarModalAgregarPrendaNueva] 📍 Haciendo scroll hacia lista de prendas...');
+            setTimeout(() => {
+                const seccionItems = document.getElementById('seccion-items-pedido') || 
+                                    document.querySelector('[id*="items-pedido"]') ||
+                                    document.getElementById('lista-items-pedido');
+                
+                if (seccionItems) {
+                    console.log('❌ [cerrarModalAgregarPrendaNueva] ✅ Sección encontrada, scrolleando...');
+                    seccionItems.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    console.warn('❌ [cerrarModalAgregarPrendaNueva] ⚠️  No se encontró sección de items para scroll');
+                }
+            }, 300); // Pequeño delay para permitir que el modal se cierre primero
+            
+            console.log('❌ [cerrarModalAgregarPrendaNueva] ==================== MODAL CERRADO ====================');
+        } catch (error) {
+            console.error('❌ [cerrarModalAgregarPrendaNueva] ❌ Error:', error);
         }
     }
 
@@ -912,8 +967,21 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
     
     // Cargar observaciones
     const obsInput = document.getElementById('proceso-observaciones');
-    if (obsInput && datos.observaciones) {
-        obsInput.value = datos.observaciones;
+    if (obsInput) {
+        // Si hay observaciones en datos, usarlas
+        if (datos.observaciones) {
+            obsInput.value = datos.observaciones;
+        } else if (datos.ubicaciones && Array.isArray(datos.ubicaciones) && datos.ubicaciones.length > 0) {
+            // 🆕 Si no hay observaciones pero sí ubicaciones, extraer descripciones del JSON
+            const descripciones = datos.ubicaciones
+                .map(ubi => ubi.descripcion || ubi.desc || '')
+                .filter(desc => desc && desc.trim())
+                .map(desc => desc.toUpperCase());
+            
+            if (descripciones.length > 0) {
+                obsInput.value = descripciones.join(' | ');
+            }
+        }
     }
     
     // Cargar tallas

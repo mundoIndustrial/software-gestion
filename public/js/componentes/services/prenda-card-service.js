@@ -386,12 +386,15 @@ window.PrendaCardService = {
 
         const procesos = prenda.procesos || {};
 
+        console.log('[PrendaCardService._construirProcesos] 🎬 Iniciando construcción de procesos');
+        console.log('[PrendaCardService._construirProcesos] 📊 Procesos disponibles:', Object.keys(procesos));
         
         const procesosConDatos = Object.entries(procesos).filter(([_, proc]) => proc && (proc.datos !== null || proc.tipo));
 
+        console.log('[PrendaCardService._construirProcesos] ✅ Procesos con datos:', procesosConDatos.length);
         
         if (procesosConDatos.length === 0) {
-
+            console.log('[PrendaCardService._construirProcesos] ⚠️ No hay procesos con datos');
             return '';
         }
 
@@ -405,12 +408,17 @@ window.PrendaCardService = {
 
         let procesosItemsHTML = '';
         procesosConDatos.forEach(([tipoProceso, proceso]) => {
+            console.log(`[PrendaCardService._construirProcesos] 📦 Procesando tipo: "${tipoProceso}"`);
+            
             const datos = proceso.datos || {};
+            console.log(`[PrendaCardService._construirProcesos] 📋 Datos del proceso ${tipoProceso}:`, datos);
+            
             const icono = iconosProcesos[tipoProceso] || '<i class="fas fa-cog"></i>';
             const nombreProceso = tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1);
             
             let ubicacionesHTML = '';
             if (datos.ubicaciones && datos.ubicaciones.length > 0) {
+                console.log(`[PrendaCardService._construirProcesos] 📍 Ubicaciones encontradas:`, datos.ubicaciones);
                 ubicacionesHTML = datos.ubicaciones
                     .map(ubi => {
                         // Extraer texto según el tipo de dato
@@ -431,6 +439,7 @@ window.PrendaCardService = {
             
             let tallasHTML = '';
             if (datos.tallas) {
+                console.log(`[PrendaCardService._construirProcesos] 📏 Tallas encontradas:`, datos.tallas);
                 const damaObj = datos.tallas.dama || {};
                 const caballeroObj = datos.tallas.caballero || {};
                 const damaHasTallas = Object.keys(damaObj).length > 0;
@@ -476,7 +485,14 @@ window.PrendaCardService = {
             }
             
             let observacionesHTML = '';
+            console.log(`[PrendaCardService._construirProcesos] 📝 Verificando observaciones...`);
+            console.log(`[PrendaCardService._construirProcesos]   - datos.observaciones:`, datos.observaciones);
+            console.log(`[PrendaCardService._construirProcesos]   - ¿Existe?:`, !!datos.observaciones);
+            console.log(`[PrendaCardService._construirProcesos]   - Tipo:`, typeof datos.observaciones);
+            console.log(`[PrendaCardService._construirProcesos]   - Largo:`, datos.observaciones?.length);
+            
             if (datos.observaciones) {
+                console.log(`[PrendaCardService._construirProcesos] ✅ CONSTRUYENDO observaciones HTML`);
                 observacionesHTML = `
                     <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px;">
                         <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">
@@ -485,10 +501,15 @@ window.PrendaCardService = {
                         <span style="color: #78350f; font-size: 0.9rem;">${datos.observaciones}</span>
                     </div>
                 `;
+                console.log(`[PrendaCardService._construirProcesos] ✅ HTML de observaciones creado`);
+            } else {
+                console.log(`[PrendaCardService._construirProcesos] ⚠️ NO hay observaciones para mostrar`);
             }
             
             let imagenHTML = '';
             const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
+            console.log(`[PrendaCardService._construirProcesos] 🖼️ Imágenes encontradas:`, imagenes.length);
+            
             if (imagenes.length > 0) {
                 imagenHTML = `
                     <div style="margin-top: 0.75rem;">

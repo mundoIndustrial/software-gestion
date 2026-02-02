@@ -252,12 +252,26 @@ function generarTarjetaProceso(tipo, datos) {
                     </div>
                 ` : ''}
                 
-                ${datos.observaciones ? `
-                    <div>
-                        <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">OBSERVACIONES</div>
-                        <div style="color: #374151; font-size: 0.875rem; font-style: italic;">${datos.observaciones}</div>
-                    </div>
-                ` : ''}
+                ${(() => {
+                    // 🆕 Extraer observaciones: de datos.observaciones o desde descripciones de ubicaciones
+                    let obs = datos.observaciones;
+                    if (!obs && datos.ubicaciones && Array.isArray(datos.ubicaciones) && datos.ubicaciones.length > 0) {
+                        const descripciones = datos.ubicaciones
+                            .map(ubi => ubi.descripcion || ubi.desc || '')
+                            .filter(desc => desc && desc.trim())
+                            .map(desc => desc.toUpperCase());
+                        if (descripciones.length > 0) {
+                            obs = descripciones.join(' | ');
+                        }
+                    }
+                    
+                    return obs ? `
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">OBSERVACIONES</div>
+                            <div style="color: #374151; font-size: 0.875rem; font-style: italic;">${obs}</div>
+                        </div>
+                    ` : '';
+                })()}
             </div>
         </div>
     `;
@@ -597,8 +611,26 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     
     // Cargar observaciones
     const obsInput = document.getElementById('proceso-observaciones');
-    if (obsInput && datos.observaciones) {
-        obsInput.value = datos.observaciones;
+    if (obsInput) {
+        // Si hay observaciones en datos, usarlas
+        if (datos.observaciones) {
+            obsInput.value = datos.observaciones;
+        } else if (datos.ubicaciones && Array.isArray(datos.ubicaciones) && datos.ubicaciones.length > 0) {
+            // 🆕 Si no hay observaciones pero sí ubicaciones, extraer descripciones del JSON
+            const descripciones = [];
+            datos.ubicaciones.forEach((ubi) => {
+                const desc = ubi.descripcion || ubi.desc || '';
+                if (desc && desc.trim()) {
+                    descripciones.push(desc.toUpperCase());
+                }
+            });
+            
+            if (descripciones.length > 0) {
+                const textoFinal = descripciones.join(' | ');
+                obsInput.value = textoFinal;
+                console.log('[cargarDatosProcesoEnModal] 🆕 Observaciones desde ubicaciones:', textoFinal);
+            }
+        }
     }
     
     // Cargar tallas

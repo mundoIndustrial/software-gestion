@@ -88,12 +88,31 @@ class ModalCleanup {
 
         }
 
+        // 🔴 NUEVO: Limpiar storage de imágenes de reflectivo
+        if (window.imagenesReflectivoStorage) {
+            window.imagenesReflectivoStorage.limpiar?.();
+            console.log('[ModalCleanup] ✓ Almacenamiento de imágenes reflectivo limpiado');
+        }
+
         // Limpiar telas agregadas (AMBOS FLUJOS: CREACIÓN y EDICIÓN - SEPARADOS)
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
         }
         if (window.telasEdicion) {
             window.telasEdicion.length = 0;
+        }
+
+        // 🔴 NUEVO: Limpiar tallas seleccionadas del reflectivo
+        if (window.reflectivoTallasSeleccionadas) {
+            window.reflectivoTallasSeleccionadas.dama = { tallas: [], tipo: null };
+            window.reflectivoTallasSeleccionadas.caballero = { tallas: [], tipo: null };
+            console.log('[ModalCleanup] ✓ Tallas seleccionadas del reflectivo limpiadas');
+        }
+
+        // 🔴 NUEVO: Limpiar telas agregadas del reflectivo
+        if (window.telasAgregadasReflectivo) {
+            window.telasAgregadasReflectivo.length = 0;
+            console.log('[ModalCleanup] ✓ Telas agregadas del reflectivo limpiadas');
         }
 
         // Limpiar tallas relacionales (modelo nuevo: {GENERO: {TALLA: CANTIDAD}})
@@ -162,6 +181,20 @@ class ModalCleanup {
      * Limpiar contenedores visuales (tablas, galerías, etc)
      */
     static limpiarContenedores() {
+        // 🔴 NUEVO: Limpiar todas las tarjetas de prendas reflectivo
+        const prendasReflectivo = document.querySelectorAll('.prenda-card-reflectivo');
+        if (prendasReflectivo.length > 0) {
+            console.log(`[ModalCleanup] 🧹 Eliminando ${prendasReflectivo.length} tarjetas de prendas reflectivo`);
+            prendasReflectivo.forEach(card => card.remove());
+        }
+
+        // 🔴 NUEVO: Limpiar contenedor de fotos del reflectivo
+        const reflectivoFotosContainer = DOMUtils.getElement('reflectivo-fotos-container');
+        if (reflectivoFotosContainer) {
+            reflectivoFotosContainer.innerHTML = '';
+            console.log('[ModalCleanup] ✓ Contenedor de fotos reflectivo limpiado');
+        }
+
         // Limpiar tabla de telas - PERO MANTENER LA FILA BASE CON INPUTS
         const tbodyTelas = DOMUtils.getElement('tbody-telas');
         if (tbodyTelas) {

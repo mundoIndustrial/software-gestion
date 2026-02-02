@@ -21,11 +21,13 @@ class ItemRenderer {
     async actualizar(items) {
         const container = document.getElementById(this.containerId);
         if (!container) {
-
+            console.error(`[ItemRenderer] ❌ NO ENCONTRADO: Contenedor con id "${this.containerId}"`);
+            console.error('[ItemRenderer] Elemento no encontrado en el DOM');
             return;
         }
 
         console.log('[ItemRenderer] 🎬 actualizar() - Items recibidos:', items.length);
+        console.log('[ItemRenderer] 📍 Container encontrado:', this.containerId);
         items.forEach((item, idx) => {
             console.log('[ItemRenderer]   Item', idx, ':', item.nombre_prenda || item.nombre_completo || item.nombre);
         });
@@ -35,6 +37,9 @@ class ItemRenderer {
             return;
         }
 
+        // Limpiar empty-state si existe
+        this._limpiarEmptyState(container);
+
         await this.renderizar(items, container);
     }
 
@@ -42,6 +47,7 @@ class ItemRenderer {
      * Renderizar lista de ítems con agrupación
      */
     async renderizar(items, container) {
+        console.log('[ItemRenderer] 📋 renderizar() iniciado');
         container.innerHTML = '';
 
         // Separar items por tipo
@@ -57,40 +63,73 @@ class ItemRenderer {
             }
         });
 
+        console.log('[ItemRenderer] 📊 Items separados por tipo:', { prendas_count: prendas.length, epps_count: epps.length });
+
         // Renderizar grupo PRENDAS
         if (prendas.length > 0) {
+            console.log('[ItemRenderer] 👔 Renderizando grupo PRENDAS...');
             const headerPrendas = this._crearEncabezadoGrupo(' Prendas', prendas.length);
             container.appendChild(headerPrendas);
+            console.log('[ItemRenderer] ✅ Header de prendas agregado');
             
             for (const { item, index } of prendas) {
                 try {
+                    console.log(`[ItemRenderer] 🎯 Procesando prenda ${index}: ${item.nombre_prenda}`);
                     const html = await this.obtenerHTMLItem(item, index);
+                    console.log(`[ItemRenderer] 📝 HTML obtenido (length: ${html.length})`);
+                    
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = html;
-                    container.appendChild(tempDiv.firstElementChild);
+                    console.log(`[ItemRenderer] 🔧 tempDiv tiene ${tempDiv.children.length} elementos hijo`);
+                    
+                    // Mejor forma de agregar todos los elementos: clonarlos para mantener eventos
+                    let elementosAgregados = 0;
+                    while (tempDiv.firstElementChild) {
+                        const element = tempDiv.firstElementChild;
+                        container.appendChild(element);
+                        elementosAgregados++;
+                    }
+                    console.log(`[ItemRenderer] ✅ Prenda ${index} agregada al container (${elementosAgregados} elementos)`);
                 } catch (error) {
-
+                    console.error('[ItemRenderer] ❌ Error renderizando prenda:', error);
                 }
             }
         }
 
         // Renderizar grupo EPPs
         if (epps.length > 0) {
+            console.log('[ItemRenderer] 🎁 Renderizando grupo EPPs...');
             const headerEPPs = this._crearEncabezadoGrupo(' EPPs', epps.length);
             container.appendChild(headerEPPs);
+            console.log('[ItemRenderer] ✅ Header de EPPs agregado');
             
             for (const { item, index } of epps) {
                 try {
+                    console.log(`[ItemRenderer] 🎯 Procesando EPP ${index}`);
                     const html = await this.obtenerHTMLItem(item, index);
+                    console.log(`[ItemRenderer] 📝 HTML obtenido (length: ${html.length})`);
+                    
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = html;
-                    container.appendChild(tempDiv.firstElementChild);
+                    console.log(`[ItemRenderer] 🔧 tempDiv tiene ${tempDiv.children.length} elementos hijo`);
+                    
+                    let elementosAgregados = 0;
+                    while (tempDiv.firstElementChild) {
+                        const element = tempDiv.firstElementChild;
+                        container.appendChild(element);
+                        elementosAgregados++;
+                    }
+                    console.log(`[ItemRenderer] ✅ EPP ${index} agregado al container (${elementosAgregados} elementos)`);
                 } catch (error) {
-
+                    console.error('[ItemRenderer] ❌ Error renderizando EPP:', error);
                 }
             }
         }
 
+        console.log('[ItemRenderer] ✅ renderizar() completado');
+        console.log('[ItemRenderer] 📦 Total elementos finales en container:', container.children.length);
+        console.log('[ItemRenderer] 📌 Container HTML:', container.innerHTML.substring(0, 200) + '...');
+        
         this.actualizarInteractividad();
     }
 
@@ -122,6 +161,30 @@ class ItemRenderer {
         `;
         
         return header;
+    }
+
+    /**
+     * Limpiar empty-state del contenedor
+     * @private
+     */
+    _limpiarEmptyState(container) {
+        // Buscar y eliminar elemento con clase 'empty-state'
+        const emptyState = container.querySelector('.empty-state');
+        if (emptyState) {
+            console.log('[ItemRenderer] 🧹 Removiendo empty-state');
+            emptyState.remove();
+        }
+
+        // Buscar y eliminar div con mensaje genérico
+        const divsMensaje = container.querySelectorAll('div');
+        divsMensaje.forEach(div => {
+            if (div.textContent.includes('No hay ítems') || 
+                div.textContent.includes('Agrega ítems') ||
+                div.textContent.includes('Selecciona una cotización')) {
+                console.log('[ItemRenderer] 🧹 Removiendo mensaje:', div.textContent.trim().substring(0, 50));
+                div.remove();
+            }
+        });
     }
 
     /**

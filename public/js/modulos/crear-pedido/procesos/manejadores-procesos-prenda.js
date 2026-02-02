@@ -100,11 +100,20 @@ window.obtenerProcesosConfigurables = function() {
  * Limpia todos los procesos seleccionados
  */
 window.limpiarProcesosSeleccionados = function() {
+    alert('🚀 [limpiarProcesosSeleccionados] INICIANDO LIMPIEZA');
+    console.log('🧹🧹🧹 [limpiarProcesosSeleccionados] ==================== INICIANDO LIMPIEZA ====================');
+    
+    console.log('📝 Estado ANTES:');
+    console.log('   window.procesosSeleccionados:', window.procesosSeleccionados);
+    console.log('   Claves:', Object.keys(window.procesosSeleccionados || {}));
 
     procesosSeleccionados = {};
     window.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con window
+    alert('✅ window.procesosSeleccionados AHORA VACÍO: ' + JSON.stringify(window.procesosSeleccionados));
+    console.log('✅ window.procesosSeleccionados reiniciado a objeto vacío');
     
     // Desmarcar todos los checkboxes
+    console.log('📋 Desmarcando checkboxes...');
     const checkboxes = [
         'checkbox-reflectivo',
         'checkbox-bordado',
@@ -115,14 +124,64 @@ window.limpiarProcesosSeleccionados = function() {
     
     checkboxes.forEach(id => {
         const checkbox = document.getElementById(id);
-        if (checkbox) checkbox.checked = false;
+        if (checkbox) {
+            console.log(`   ✓ ${id}: ${checkbox.checked} → false`);
+            checkbox.checked = false;
+        } else {
+            console.log(`   ⚠️  ${id}: NO ENCONTRADO`);
+        }
     });
+    
+    // 🔴 NUEVO: Limpiar contenedores visuales de procesos
+    console.log('🗑️  Limpiando contenedores visuales...');
+    
+    // Limpiar tarjetas de prendas reflectivo
+    const prendasReflectivo = document.querySelectorAll('.prenda-card-reflectivo');
+    if (prendasReflectivo.length > 0) {
+        alert('🗑️ Encontradas ' + prendasReflectivo.length + ' tarjetas reflectivo - ELIMINANDO');
+        console.log(`   🗑️  Encontradas ${prendasReflectivo.length} tarjetas reflectivo`);
+        prendasReflectivo.forEach((card, idx) => {
+            console.log(`      ✓ Eliminando tarjeta reflectivo ${idx + 1}`);
+            card.remove();
+        });
+    } else {
+        alert('ℹ️ No hay tarjetas reflectivo en el DOM');
+        console.log('   ℹ️  No hay tarjetas reflectivo en el DOM');
+    }
+    
+    // Limpiar contenedor de fotos del reflectivo
+    const reflectivoFotosContainer = document.getElementById('reflectivo-fotos-container');
+    if (reflectivoFotosContainer) {
+        console.log('   ✓ reflectivo-fotos-container limpiado');
+        reflectivoFotosContainer.innerHTML = '';
+    } else {
+        console.log('   ⚠️  reflectivo-fotos-container NO ENCONTRADO');
+    }
+    
+    // Limpiar tarjetas de procesos renderizadas
+    const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
+    if (contenedorTarjetas) {
+        console.log('   ✓ contenedor-tarjetas-procesos limpiado');
+        contenedorTarjetas.innerHTML = '';
+    } else {
+        console.log('   ⚠️  contenedor-tarjetas-procesos NO ENCONTRADO');
+    }
     
     // Ocultar resumen
     const seccionResumen = document.getElementById('seccion-procesos-resumen');
-    if (seccionResumen) seccionResumen.style.display = 'none';
+    if (seccionResumen) {
+        console.log('   ✓ seccion-procesos-resumen ocultado');
+        seccionResumen.style.display = 'none';
+    } else {
+        console.log('   ⚠️  seccion-procesos-resumen NO ENCONTRADO');
+    }
     
-
+    console.log('📝 Estado DESPUÉS:');
+    console.log('   window.procesosSeleccionados:', window.procesosSeleccionados);
+    console.log('   Claves:', Object.keys(window.procesosSeleccionados || {}));
+    
+    alert('✅✅✅ [limpiarProcesosSeleccionados] LIMPIEZA COMPLETADA - window.procesosSeleccionados: ' + JSON.stringify(window.procesosSeleccionados));
+    console.log('✅✅✅ [limpiarProcesosSeleccionados] ==================== LIMPIEZA COMPLETADA ====================');
 };
 
 

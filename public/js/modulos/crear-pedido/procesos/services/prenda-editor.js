@@ -271,8 +271,9 @@ class PrendaEditor {
         const mapeoVariaciones = {
             'manga': {
                 checkbox: '#aplica-manga',
-                input: '#manga-input',
-                obs: '#manga-obs'
+                input: '#manga-input', // Input TEXT donde va la opción (Corta, Larga, etc)
+                obs: '#manga-obs',
+                isTextInput: true // Indicador para manga que es input text, no select
             },
             'bolsillos': {
                 checkbox: '#aplica-bolsillos',
@@ -281,13 +282,15 @@ class PrendaEditor {
             },
             'broche': {
                 checkbox: '#aplica-broche',
-                input: '#broche-input',
-                obs: '#broche-obs'
+                input: '#broche-input', // SELECT con opciones (boton, broche)
+                obs: '#broche-obs',
+                isSelect: true // Indicador para broche que es select
             },
             'broche/botón': {
                 checkbox: '#aplica-broche',
-                input: '#broche-input',
-                obs: '#broche-obs'
+                input: '#broche-input', // SELECT con opciones (boton, broche)
+                obs: '#broche-obs',
+                isSelect: true // Indicador para broche que es select
             }
         };
         
@@ -321,8 +324,24 @@ class PrendaEditor {
                             if (inputField) {
                                 inputField.disabled = false;
                                 inputField.style.opacity = '1';
-                                // Si hay un valor específico, llenarlo
-                                // Por ahora dejaremos vacío si no hay datos específicos
+                                
+                                // 🆕 APLICAR OPCIÓN AUTOMÁTICAMENTE SI EXISTE
+                                if (variacion.opcion) {
+                                    if (config.isTextInput) {
+                                        // Para Manga: es un input text, copiar la opción directamente
+                                        inputField.value = variacion.opcion.trim();
+                                        console.log(`[aplicarVariacionesReflectivo] 🎯 Manga automáticamente relleno: "${variacion.opcion}"`);
+                                    } else if (config.isSelect) {
+                                        // Para Broche: es un select, normalizar valor (minúsculas + remover acentos)
+                                        let valorNormalizado = variacion.opcion.trim().toLowerCase();
+                                        // Remover acentos: ó→o, é→e, á→a, etc
+                                        valorNormalizado = valorNormalizado.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                        
+                                        inputField.value = valorNormalizado;
+                                        inputField.dispatchEvent(new Event('change', { bubbles: true }));
+                                        console.log(`[aplicarVariacionesReflectivo] 🎯 Broche/Botón automáticamente seleccionado: "${valorNormalizado}" (original: "${variacion.opcion}")`);
+                                    }
+                                }
                             }
                         }
                         
@@ -353,33 +372,110 @@ class PrendaEditor {
      * @private
      */
     aplicarUbicacionesReflectivo(ubicaciones) {
-        if (!ubicaciones || ubicaciones.length === 0) return;
-        
-        console.log('[aplicarUbicacionesReflectivo] 📍 Aplicando ubicaciones al formulario');
-        
-        // Buscar contenedor de ubicaciones
-        const contenedorUbicaciones = document.getElementById('ubicaciones-reflectivo') ||
-                                     document.querySelector('[data-role="ubicaciones-reflectivo"]');
-        
-        if (!contenedorUbicaciones) {
-            console.debug('[aplicarUbicacionesReflectivo] Contenedor de ubicaciones no encontrado');
+        if (!ubicaciones || ubicaciones.length === 0) {
+            console.debug('[aplicarUbicacionesReflectivo] No hay ubicaciones');
             return;
         }
         
-        // Limpiar y agregar ubicaciones
-        let html = '';
-        ubicaciones.forEach((ubi, idx) => {
-            html += `
-                <div class="ubicacion-item" style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 4px;">
-                    <div><strong>📍 ${ubi.ubicacion || 'Ubicación'}</strong></div>
-                    <div style="color: #666; font-size: 0.9rem;">${ubi.descripcion || ''}</div>
-                </div>
-            `;
+        console.log('[aplicarUbicacionesReflectivo] 📍 Aplicando ubicaciones al formulario');
+        
+        // Recopilar descripciones de ubicaciones
+        let descripciones = [];
+        ubicaciones.forEach((ubi) => {
+            if (ubi.descripcion && ubi.descripcion.trim()) {
+                descripciones.push(ubi.descripcion.trim());
+            }
         });
         
-        if (html) {
-            contenedorUbicaciones.innerHTML = html;
-            console.log(`[aplicarUbicacionesReflectivo] ✅ ${ubicaciones.length} ubicaciones agregadas`);
+        console.log('[aplicarUbicacionesReflectivo] 📊 Descripciones extraídas:', descripciones);
+        
+        if (descripciones.length === 0) {
+            console.debug('[aplicarUbicacionesReflectivo] No hay descripciones para procesar');
+            return;
+        }
+        
+        // 🔥 RELLENAR OBSERVACIONES INMEDIATAMENTE (sin delay)
+        // Esto asegura que window.procesosSeleccionados se actualice ANTES de que prendaFormCollector lo copie
+        
+        console.log('[aplicarUbicacionesReflectivo] ⚡ Ejecutando INMEDIATAMENTE (sin delay)...');
+        
+        // Buscar textarea de observaciones - múltiples estrategias
+        let obsField = null;
+        
+        // Estrategia 1: Por ID
+        obsField = document.getElementById('proceso-observaciones');
+        console.log('[aplicarUbicacionesReflectivo] [E1] Por ID proceso-observaciones:', !!obsField);
+        
+        // Estrategia 2: Por atributo data
+        if (!obsField) {
+            obsField = document.querySelector('[data-proceso-obs]');
+            console.log('[aplicarUbicacionesReflectivo] [E2] Por atributo data-proceso-obs:', !!obsField);
+        }
+        
+        // Estrategia 3: Por ID reflectivo-obs
+        if (!obsField) {
+            obsField = document.getElementById('reflectivo-obs');
+            console.log('[aplicarUbicacionesReflectivo] [E3] Por ID reflectivo-obs:', !!obsField);
+        }
+        
+        // Estrategia 4: Por placeholder
+        if (!obsField) {
+            obsField = document.querySelector('textarea[placeholder*="especiales"]');
+            console.log('[aplicarUbicacionesReflectivo] [E4] Por placeholder "especiales":', !!obsField);
+        }
+        
+        // Estrategia 5: Por placeholder alternativo
+        if (!obsField) {
+            obsField = document.querySelector('textarea[placeholder*="instrucciones"]');
+            console.log('[aplicarUbicacionesReflectivo] [E5] Por placeholder "instrucciones":', !!obsField);
+        }
+        
+        // Estrategia 6: Primer textarea del modal (fallback)
+        if (!obsField) {
+            const allTextareas = document.querySelectorAll('textarea');
+            console.log('[aplicarUbicacionesReflectivo] [E6] Total textareas en DOM:', allTextareas.length);
+            if (allTextareas.length > 0) {
+                obsField = allTextareas[0];
+                console.log('[aplicarUbicacionesReflectivo] [E6] Usando primer textarea como fallback');
+            }
+        }
+        
+        if (obsField) {
+            const textoDescripciones = descripciones.join(' | ');
+            const textoUppercase = textoDescripciones.toUpperCase();
+            
+            console.log('[aplicarUbicacionesReflectivo] ✅ Campo de observaciones encontrado!');
+            console.log('[aplicarUbicacionesReflectivo] 📝 Rellenando con:', textoUppercase);
+            
+            obsField.value = textoUppercase;
+            obsField.disabled = false;
+            obsField.style.opacity = '1';
+            
+            // 🔥 SINCRONIZAR A window.procesosSeleccionados INMEDIATAMENTE
+            console.log('[aplicarUbicacionesReflectivo] 🔄 Sincronizando a window.procesosSeleccionados...');
+            if (window.procesosSeleccionados) {
+                console.log('[aplicarUbicacionesReflectivo] ✓ window.procesosSeleccionados existe');
+                if (window.procesosSeleccionados.reflectivo) {
+                    console.log('[aplicarUbicacionesReflectivo] ✓ window.procesosSeleccionados.reflectivo existe');
+                    if (window.procesosSeleccionados.reflectivo.datos) {
+                        window.procesosSeleccionados.reflectivo.datos.observaciones = textoUppercase;
+                        console.log('[aplicarUbicacionesReflectivo] ✅✅✅ SINCRONIZACIÓN INMEDIATA EXITOSA - Observaciones actualizadas:', textoUppercase);
+                        console.log('[aplicarUbicacionesReflectivo] 📦 Verificación: window.procesosSeleccionados.reflectivo.datos.observaciones =', window.procesosSeleccionados.reflectivo.datos.observaciones);
+                    } else {
+                        console.warn('[aplicarUbicacionesReflectivo] ⚠️ window.procesosSeleccionados.reflectivo.datos NO existe');
+                    }
+                } else {
+                    console.warn('[aplicarUbicacionesReflectivo] ⚠️ window.procesosSeleccionados.reflectivo NO existe');
+                }
+            } else {
+                console.warn('[aplicarUbicacionesReflectivo] ⚠️ window.procesosSeleccionados NO existe');
+            }
+        } else {
+            console.error('[aplicarUbicacionesReflectivo] ❌ NO SE PUDO ENCONTRAR TEXTAREA DE OBSERVACIONES');
+            console.log('[aplicarUbicacionesReflectivo] 📋 Listando todos los textareas encontrados:');
+            document.querySelectorAll('textarea').forEach((ta, idx) => {
+                console.log(`  [${idx}] id="${ta.id}" name="${ta.name}" placeholder="${ta.placeholder}" value="${ta.value.substring(0, 50)}"`);
+            });
         }
     }
 

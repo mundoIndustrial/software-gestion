@@ -3,13 +3,27 @@
  * Maneja clicks en menús, botones, fotos y galerías
  */
 
+console.log('🚀🚀🚀 [PRENDA-CARD-HANDLERS] ARCHIVO CARGADO'); // Log al inicio del archivo
+
 window.PrendaCardHandlers = {
+    _listenersRegistrados: false,
+
     inicializar(tarjeta, prenda, indice, callbacks = {}) {
 
-        this._setupEventListeners();
+        // 🔥 CRÍTICO: Solo registrar listeners UNA SOLA VEZ
+        if (!this._listenersRegistrados) {
+            console.log('[PrendaCardHandlers] 🚀 Registrando listeners globales por primera vez...');
+            this._setupEventListeners();
+            this._listenersRegistrados = true;
+            console.log('[PrendaCardHandlers] ✅ Listeners registrados correctamente');
+        } else {
+            console.log('[PrendaCardHandlers] ⏭️ Listeners ya fueron registrados, saltando...');
+        }
     },
 
     _setupEventListeners() {
+        console.log('🔥🔥🔥 [PrendaCardHandlers] _setupEventListeners() INICIÁNDOSE...'); // DEBUG CRÍTICO
+        
         // Debug: Capturar todos los clicks en botones de tres puntos para diagnóstico
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn-menu-tres-puntos')) {
@@ -48,7 +62,10 @@ window.PrendaCardHandlers = {
         }, true); // Use capture phase con máxima prioridad
         
         // Expandir/contraer secciones
+        // Listener general para TODOS los clicks en la tarjeta - MÁXIMA PRIORIDAD
         document.addEventListener('click', (e) => {
+            console.log('🖱️ [PrendaCardHandlers] CLICK GLOBAL DETECTADO en:', e.target, 'Closest prenda-card:', e.target.closest('.prenda-card-readonly'));
+            
             if (e.target.closest('.seccion-expandible-header')) {
                 e.stopPropagation(); // Evitar que otros listeners se ejecuten
                 // e.preventDefault();  // Removido para permitir comportamiento del botón
@@ -363,11 +380,13 @@ window.PrendaCardHandlers = {
             // Botón ELIMINAR
             if (e.target.closest('.btn-eliminar-prenda')) {
 
+                alert('🎯 BOTÓN ELIMINAR CLICKEADO');
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-eliminar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
                 console.log('🔍 [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
+                alert('Index: ' + prendaIndex);
                 console.log('🔍 [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
                 console.log('🔍 [ELIMINAR-PRENDA] window.gestorPrendaSinCotizacion existe:', !!window.gestorPrendaSinCotizacion);
                 
@@ -380,8 +399,23 @@ window.PrendaCardHandlers = {
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
+                    alert('⚠️ RESULTADO SWAL: isConfirmed=' + result.isConfirmed);
+                    
                     if (result.isConfirmed) {
+                        alert('✅ DENTRO DEL IF - Usuario confirmó');
                         console.log('✅ [ELIMINAR-PRENDA] Usuario confirmó eliminación');
+                        
+                        // 🟢 NUEVO: LIMPIAR PROCESOS ANTES DE ELIMINAR
+                        alert('🧹 Llamando limpiarProcesosSeleccionados...');
+                        console.log('🧹 [ELIMINAR-PRENDA] Limpiando procesos seleccionados...');
+                        if (window.limpiarProcesosSeleccionados) {
+                            alert('✅ window.limpiarProcesosSeleccionados EXISTE');
+                            window.limpiarProcesosSeleccionados();
+                            console.log('✅ [ELIMINAR-PRENDA] Procesos limpiados');
+                        } else {
+                            alert('❌ window.limpiarProcesosSeleccionados NO EXISTE');
+                            console.warn('⚠️ [ELIMINAR-PRENDA] window.limpiarProcesosSeleccionados NO disponible');
+                        }
                         
                         // Obtener instancia de GestionItemsUI si existe
                         if (window.gestionItemsUI) {

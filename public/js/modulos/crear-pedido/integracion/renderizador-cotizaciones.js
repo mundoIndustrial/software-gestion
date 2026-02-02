@@ -71,6 +71,15 @@
         // ✅ Agregar el fragmento completo de una sola vez
         container.appendChild(fragment);
         
+        // 🔥 CRÍTICO: Inicializar PrendaCardHandlers DESPUÉS de agregar prendas al DOM
+        console.log('[renderizador-cotizaciones] 🔥 Inicializando PrendaCardHandlers después de renderizar...');
+        if (window.PrendaCardHandlers && typeof window.PrendaCardHandlers.inicializar === 'function') {
+            window.PrendaCardHandlers.inicializar();
+            console.log('[renderizador-cotizaciones] ✅ PrendaCardHandlers inicializado correctamente');
+        } else {
+            console.warn('[renderizador-cotizaciones] ⚠️ PrendaCardHandlers NO está disponible');
+        }
+        
         console.log('[renderizador-cotizaciones] ✅ Renderizado completado - ' + prendas.length + ' prendas renderizadas');
     };
 

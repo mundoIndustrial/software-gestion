@@ -68,10 +68,18 @@ window.renderizarReflectivo = function(prendas, datosReflectivo = null) {
 function generarCardPrendaReflectivo(prenda, index, ubicacionesReflectivo) {
     return `
     <div class="prenda-card-editable reflectivo-card" data-prenda-index="${index}" style="margin-bottom: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); padding: 1.25rem; color: white;">
+        <div style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); padding: 1.25rem; color: white; display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">
                 <i class="fas fa-tshirt" style="margin-right: 0.5rem;"></i>Prenda ${index + 1}
             </h3>
+            <button type="button" 
+                    onclick="eliminarPrendaDelPedido(${index})" 
+                    style="background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 6px; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; transition: background 0.2s ease; display: flex; align-items: center; gap: 0.5rem;"
+                    onmouseover="this.style.background='rgba(239, 68, 68, 1)'"
+                    onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'"
+                    title="Eliminar esta prenda">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
         </div>
         
         <div style="padding: 1.5rem;">

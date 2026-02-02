@@ -51,16 +51,66 @@ window.eliminarTallaReflectivo = window.eliminarTallaReflectivo || function(pren
 // FUNCIÓN GLOBAL: Eliminar Prenda del Pedido
 // ============================================================
 window.eliminarPrendaDelPedido = function(index) {
+    console.log('🗑️  [eliminarPrendaDelPedido] ==================== INICIANDO ELIMINACIÓN ====================');
+    console.log(`🗑️  [eliminarPrendaDelPedido] Eliminando prenda con índice: ${index}`);
 
-    
     const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${index}"]`);
     if (prendaCard) {
+        console.log('✓ Prenda card encontrada, removiendo del DOM...');
         prendaCard.remove();
+        console.log('✅ Prenda card removida del DOM');
 
+        // 🔴 LIMPIAR window.procesosSeleccionados para evitar que persistan en la próxima prenda
+        console.log('🧹 [eliminarPrendaDelPedido] Limpiando window.procesosSeleccionados');
+        console.log('   Estado ANTES de limpiar:', window.procesosSeleccionados);
+        console.log('   Procesos activos:', Object.keys(window.procesosSeleccionados || {}));
+        
+        if (window.limpiarProcesosSeleccionados) {
+            console.log('   📞 Función window.limpiarProcesosSeleccionados ENCONTRADA - Llamando...');
+            window.limpiarProcesosSeleccionados();
+            console.log('   ✅ window.limpiarProcesosSeleccionados() ejecutada');
+        } else if (window.procesosSeleccionados) {
+            console.log('   ⚠️  Función no encontrada - Limpiando manualmente window.procesosSeleccionados...');
+            const keysAEliminar = Object.keys(window.procesosSeleccionados);
+            console.log(`   Encontrados ${keysAEliminar.length} procesos a eliminar:`, keysAEliminar);
+            keysAEliminar.forEach(key => {
+                console.log(`      🗑️  Eliminando proceso: ${key}`);
+                delete window.procesosSeleccionados[key];
+            });
+            console.log('   ✅ Procesos eliminados manualmente');
+        } else {
+            console.warn('   ⚠️  window.procesosSeleccionados no existe');
+        }
+        
+        console.log('   Estado DESPUÉS de limpiar:', window.procesosSeleccionados);
+        console.log('✅ [eliminarPrendaDelPedido] window.procesosSeleccionados limpiado completamente');
+        
+        // Limpiar contenedores visuales del reflectivo
+        console.log('🧹 [eliminarPrendaDelPedido] Limpiando contenedores visuales...');
+        const prendasReflectivo = document.querySelectorAll('.prenda-card-reflectivo');
+        if (prendasReflectivo.length > 0) {
+            console.log(`   🗑️  Encontradas ${prendasReflectivo.length} tarjetas reflectivo - Eliminando...`);
+            prendasReflectivo.forEach((card, idx) => {
+                console.log(`      ✓ Eliminando tarjeta reflectivo ${idx + 1}`);
+                card.remove();
+            });
+        }
+        
+        const reflectivoFotosContainer = document.getElementById('reflectivo-fotos-container');
+        if (reflectivoFotosContainer) {
+            console.log('   🗑️  Limpiando contenedor reflectivo-fotos-container...');
+            reflectivoFotosContainer.innerHTML = '';
+        }
+        
+        console.log('✅ Contenedores visuales limpiados');
         
         // Si no hay más prendas, mostrar mensaje
         window.prendasContainer = document.getElementById('prendas-container-editable');
-        if (window.prendasContainer.querySelectorAll('.prenda-card-editable').length === 0) {
+        const prendasRestantes = window.prendasContainer.querySelectorAll('.prenda-card-editable').length;
+        console.log(`📊 Prendas restantes en el contenedor: ${prendasRestantes}`);
+        
+        if (prendasRestantes === 0) {
+            console.log('ℹ️  No hay más prendas - Mostrando mensaje de "Agregar prenda"');
             window.prendasContainer.innerHTML = `
                 <div style="text-align: center; padding: 2rem;">
                     <p style="color: #6b7280; margin-bottom: 1rem;">No hay prendas agregadas. Haz clic en el botón de abajo para agregar.</p>
@@ -69,7 +119,14 @@ window.eliminarPrendaDelPedido = function(index) {
                     </button>
                 </div>
             `;
+        } else {
+            console.log(`ℹ️  Quedan ${prendasRestantes} prenda(s) en el contenedor`);
         }
+        
+        console.log('🗑️  [eliminarPrendaDelPedido] ==================== ELIMINACIÓN COMPLETADA ====================');
+    } else {
+        console.error(`❌ [eliminarPrendaDelPedido] No se encontró prenda-card con índice ${index}`);
+        console.log('Buscador utilizado:', `.prenda-card-editable[data-prenda-index="${index}"]`);
     }
 };
 
