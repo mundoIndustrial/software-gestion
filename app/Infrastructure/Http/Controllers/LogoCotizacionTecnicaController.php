@@ -221,6 +221,7 @@ class LogoCotizacionTecnicaController extends Controller
                         'descripcion' => $prendaData['observaciones'] ?? '',
                         'cantidad' => $prendaData['cantidad'] ?? 1,
                         'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
+                        'prenda_bodega' => true,
                     ]);
 
                     Log::info(' Prenda guardada en prendas_cot', [

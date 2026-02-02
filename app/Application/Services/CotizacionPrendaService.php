@@ -51,11 +51,14 @@ class CotizacionPrendaService
                 $nombre = $productoData['nombre'] ?? $productoData['nombre_producto'] ?? 'Sin nombre';
                 
                 // 1. Guardar prenda principal en prendas_cot
+                // IMPORTANTE: Para cotizaciones de logo INDIVIDUAL, prenda_bodega siempre es true
+                $prendaBodega = ($productoData['variantes']['prenda_bodega'] === true || $productoData['variantes']['prenda_bodega'] === 'true' || $productoData['variantes']['prenda_bodega'] === '1' || $productoData['variantes']['prenda_bodega'] === 1) ? true : false;
+                
                 $prenda = $cotizacion->prendas()->create([
                     'nombre_producto' => $nombre,
                     'descripcion' => $productoData['descripcion'] ?? '',
                     'cantidad' => $productoData['cantidad'] ?? 1,
-                    'prenda_bodega' => ($productoData['variantes']['prenda_bodega'] === true || $productoData['variantes']['prenda_bodega'] === 'true' || $productoData['variantes']['prenda_bodega'] === '1' || $productoData['variantes']['prenda_bodega'] === 1) ? true : false,
+                    'prenda_bodega' => $prendaBodega,
                 ]);
                 
                 Log::info(" Prenda creada en prendas_cot", [
@@ -354,10 +357,12 @@ class CotizacionPrendaService
         $nombre = $prendaData['nombre_producto'] ?? 'Sin nombre';
         
         // 1. Guardar prenda principal
+        // IMPORTANTE: Para cotizaciones de logo INDIVIDUAL, prenda_bodega siempre es true
         $prenda = $cotizacion->prendas()->create([
             'nombre_producto' => $nombre,
             'descripcion' => $prendaData['descripcion'] ?? '',
             'cantidad' => $prendaData['cantidad'] ?? 1,
+            'prenda_bodega' => true,
         ]);
         
         Log::info(" Prenda creada con telas", [

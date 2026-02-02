@@ -93,6 +93,18 @@ function openCotizacionModal(cotizacionId) {
                                 <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${(() => {
                                     let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
                                     
+                                    // LIMPIEZA: Remover Bolsillos y Broche/Botón de la descripción concatenada
+                                    // Patrón 1: Bolsillos: ... (sin viñeta, hasta siguiente palabra clave)
+                                    descripcionCompleta = descripcionCompleta.replace(/Bolsillos:\s*[^,]*(?:,\s*)?/gi, '');
+                                    // Patrón 2: Botón: ... o Broche: ... (sin viñeta, hasta siguiente palabra clave)
+                                    descripcionCompleta = descripcionCompleta.replace(/(Botón|Broche):\s*[^,]*(?:,\s*)?/gi, '');
+                                    // Patrón 3: • BOLSILLOS: ... (si tiene viñeta)
+                                    descripcionCompleta = descripcionCompleta.replace(/\s*•\s*BOLSILLOS:.*?(?=•|$)/gi, '');
+                                    // Patrón 4: • BROCHE: ... o • BOTÓN: ... (si tiene viñeta)
+                                    descripcionCompleta = descripcionCompleta.replace(/\s*•\s*(BROCHE|BOTÓN):.*?(?=•|$)/gi, '');
+                                    // Limpiar espacios múltiples y comas al inicio/final
+                                    descripcionCompleta = descripcionCompleta.replace(/\s+/g, ' ').replace(/^,\s*|,\s*$/g, '').trim();
+                                    
                                     // Si hay técnicas de logo para esta prenda, agregar ubicaciones
                                     const tecnicasPrendaArray = data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas 
                                         ? data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
@@ -105,9 +117,9 @@ function openCotizacionModal(cotizacionId) {
                                             const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
                                             if (tp.ubicaciones) {
                                                 let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
-                                                // Filtrar vacíos y remover corchetes
+                                                // Filtrar vacíos y remover corchetes y comillas
                                                 ubicacionesArray = ubicacionesArray
-                                                    .map(u => String(u).replace(/[\[\]]/g, '').trim())
+                                                    .map(u => String(u).replace(/[\[\]"']/g, '').trim())
                                                     .filter(u => u);
                                                 if (ubicacionesArray.length > 0) {
                                                     if (!ubicacionesPorTecnica[tecnicaNombre]) {
@@ -120,6 +132,7 @@ function openCotizacionModal(cotizacionId) {
                                         
                                         // Agregar ubicaciones a la descripción SIN corchetes
                                         if (Object.keys(ubicacionesPorTecnica).length > 0) {
+                                            // Solo agregar coma si ya hay descripción
                                             if (descripcionCompleta) {
                                                 descripcionCompleta += ', ';
                                             }
@@ -143,13 +156,13 @@ function openCotizacionModal(cotizacionId) {
                                             descripcionCompleta += pcrRef.descripcion;
                                         }
                                         
-                                        // Agregar ubicaciones del reflectivo con negrita
+                                        // Agregar ubicaciones del reflectivo SIN negrita
                                         if (pcrRef.ubicaciones && Array.isArray(pcrRef.ubicaciones)) {
                                             if (descripcionCompleta) {
                                                 descripcionCompleta += ', ';
                                             }
                                             const ubicacionesReflectivo = pcrRef.ubicaciones
-                                                .map(u => u.ubicacion ? '<strong>' + u.ubicacion + '</strong>' + (u.descripcion ? ': ' + u.descripcion : '') : '')
+                                                .map(u => u.ubicacion ? u.ubicacion + (u.descripcion ? ': ' + u.descripcion : '') : '')
                                                 .filter(u => u)
                                                 .join(', ');
                                             descripcionCompleta += ubicacionesReflectivo;
@@ -329,20 +342,27 @@ function openCotizacionModal(cotizacionId) {
                                 filas.push({ variacion: 'Tipo Manga', tipo: tipo, obs: variante.obs_manga || '' });
                             }
                             
-                            // Bolsillos: si tiene_bolsillos = true, mostrar la observación
+                            // Bolsillos: si tiene_bolsillos = true, mostrar en la tabla de variaciones
                             if (variante.tiene_bolsillos !== null && variante.tiene_bolsillos) {
                                 let obs = variante.obs_bolsillos || '';
                                 filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: obs });
+                            } else if (variante.obs_bolsillos) {
+                                // Si hay observación de bolsillos pero tiene_bolsillos es false, aún mostrar la fila
+                                filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: variante.obs_bolsillos });
                             }
                             
-                            // Broche: usar nombre si existe
+                            // Broche/Botón: mostrar en la tabla de variaciones si existe información
                             if (variante.aplica_broche !== null && variante.aplica_broche) {
-                                let tipo = variante.tipo_broche_nombre || 'Sí';
+                                let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
                                 let obs = variante.obs_broche || '';
                                 filas.push({ variacion: 'Broche', tipo: tipo, obs: obs });
+                            } else if (variante.obs_broche) {
+                                // Si hay observación de broche pero aplica_broche es false, aún mostrar la fila
+                                let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
+                                filas.push({ variacion: 'Broche', tipo: tipo, obs: variante.obs_broche });
                             }
                             
-                            if (variante.descripcion_adicional) filas.push({ variacion: 'Descripción Adicional', tipo: variante.descripcion_adicional, obs: '' });
+                            // NO mostrar Descripción Adicional - se elimina del modal
                         }
                         
                         // Renderizar filas

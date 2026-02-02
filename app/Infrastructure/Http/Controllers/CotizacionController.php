@@ -2886,11 +2886,13 @@ final class CotizacionController extends Controller
                         // La prenda ya está decodificada como array
                         if (is_array($prenda)) {
                             // 1. Guardar prenda en prendas_cot
+                            // IMPORTANTE: Para cotizaciones de reflectivo INDIVIDUAL, prenda_bodega siempre es true
                             $prendaCot = \App\Models\PrendaCot::create([
                                 'cotizacion_id' => $cotizacion->id,
                                 'nombre_producto' => $prenda['tipo'] ?? $prenda['nombre'] ?? 'Prenda',
                                 'cantidad' => 1,
                                 'descripcion' => $prenda['descripcion'] ?? '',
+                                'prenda_bodega' => true,
                             ]);
 
                             // 2. Guardar tallas en prenda_tallas_cot con cantidades
@@ -3382,11 +3384,13 @@ final class CotizacionController extends Controller
                         
                         if (is_array($prenda)) {
                             // Crear prenda
+                            // IMPORTANTE: Para cotizaciones de reflectivo INDIVIDUAL, prenda_bodega siempre es true
                             $prendaCot = \App\Models\PrendaCot::create([
                                 'cotizacion_id' => $cotizacion->id,
                                 'nombre_producto' => $prenda['tipo'] ?? $prenda['nombre'] ?? 'Prenda',
                                 'cantidad' => 1,
                                 'descripcion' => $prenda['descripcion'] ?? '',
+                                'prenda_bodega' => true,
                             ]);
 
                             // Guardar tallas si existen con cantidades
