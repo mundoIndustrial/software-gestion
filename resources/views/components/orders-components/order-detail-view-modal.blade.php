@@ -377,7 +377,9 @@ function showOrderDetailViewModal(orderData) {
     document.getElementById('modalCliente').textContent = orderData.cliente || '-';
     document.getElementById('modalAsesor').textContent = orderData.asesora || '-';
     document.getElementById('modalFormaPago').textContent = orderData.forma_de_pago || '-';
-    document.getElementById('modalEstado').textContent = orderData.estado || '-';
+    // Formatear estado sin guiones bajos
+    const estadoFormato = (orderData.estado || '-').replace(/_/g, ' ');
+    document.getElementById('modalEstado').textContent = estadoFormato;
     
     // Llenar fechas
     document.getElementById('modalFechaCreacion').textContent = orderData.fecha_de_creacion_de_orden ? 

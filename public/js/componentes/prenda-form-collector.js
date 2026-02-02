@@ -182,12 +182,12 @@ class PrendaFormCollector {
                 });
             }
             // ============================================
-            // 4.1. PROCESAR TELAS AGREGADAS (FLUJO COTIZACIÓN)
+            // 4.1. PROCESAR TELAS AGREGADAS (FLUJO EDICIÓN DESDE BD O COTIZACIÓN)
             // ============================================
             else if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
-                console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS DESDE COTIZACIÓN');
+                console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS (BD o Cotización)');
                 prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
-                    // Para cotización, las imágenes ya vienen procesadas desde BD
+                    // Para cotización/BD, las imágenes ya vienen procesadas
                     const imagenesCopia = (tela.imagenes || []).map(img => {
                         // Si es una URL de BD, mantenerla como string
                         if (typeof img === 'string' && img.startsWith('/storage/')) {
@@ -205,9 +205,12 @@ class PrendaFormCollector {
                     }).filter(img => img !== null);
                     
                     return {
+                        id: tela.id,  // Preservar ID de relación para MERGE
                         tela: tela.nombre_tela || tela.tela || '',
                         color: tela.color_nombre || tela.color || '',
                         referencia: tela.referencia || '',
+                        color_id: tela.color_id,  // Preservar para MERGE
+                        tela_id: tela.tela_id,    // Preservar para MERGE
                         imagenes: imagenesCopia
                     };
                 });

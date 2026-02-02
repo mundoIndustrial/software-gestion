@@ -353,11 +353,45 @@
  */
 window.openAsesorasTrackingModal = async function(pedido) {
     try {
-        // Obtener datos del pedido en JSON - usar endpoint DDD
-        const response = await fetch(`/api/pedidos/${pedido}`);
-        if (!response.ok) throw new Error('Error fetching order');
-        const result = await response.json();
-        const order = result.data || result;
+        console.log('[openAsesorasTrackingModal] Abriendo modal para pedido:', pedido);
+        
+        // Obtener datos del pedido - intentar varias rutas
+        let order = null;
+        let response = null;
+        
+        // Intentar primero con /supervisor-pedidos/{id}/datos
+        try {
+            response = await fetch(`/supervisor-pedidos/${pedido}/datos`);
+            if (response.ok) {
+                order = await response.json();
+                console.log('[openAsesorasTrackingModal] Datos obtenidos de /supervisor-pedidos/{id}/datos');
+            }
+        } catch (e) {
+            console.warn('[openAsesorasTrackingModal] Error con ruta supervisor-pedidos:', e);
+        }
+        
+        // Si falla, intentar con /api/pedidos/{id}
+        if (!order) {
+            try {
+                response = await fetch(`/api/pedidos/${pedido}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    order = result.data || result;
+                    console.log('[openAsesorasTrackingModal] Datos obtenidos de /api/pedidos/{id}');
+                }
+            } catch (e) {
+                console.warn('[openAsesorasTrackingModal] Error con ruta /api/pedidos:', e);
+            }
+        }
+        
+        // Si aún no tenemos datos, continuar de todas formas
+        if (!order) {
+            console.warn('[openAsesorasTrackingModal] No se obtuvieron datos del pedido, continuando sin ellos');
+            order = { numero_pedido: pedido };
+        }
+        
+        console.log('[openAsesorasTrackingModal] Datos del pedido:', order);
+        
         // Llenar información básica del modal
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
@@ -370,18 +404,20 @@ window.openAsesorasTrackingModal = async function(pedido) {
         }
         
         // Estado - Convertir a texto legible
-        const estado = formatAsesorasOrderStatus(order.estado) || 'No iniciado';
+        const estado = (typeof formatAsesorasOrderStatus === 'function' ? formatAsesorasOrderStatus(order.estado) : order.estado) || 'No iniciado';
         document.getElementById('asesorasTrackingStatus').textContent = estado;
         
         // Fecha estimada de entrega
         let fechaEstimada = '-';
         if (order.fecha_estimada_de_entrega) {
             const fecha = new Date(order.fecha_estimada_de_entrega);
-            fechaEstimada = fecha.toLocaleDateString('es-ES', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
+            if (!isNaN(fecha.getTime())) {
+                fechaEstimada = fecha.toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            }
         }
         document.getElementById('asesorasTrackingDeliveryDate').textContent = fechaEstimada;
         
@@ -392,8 +428,26 @@ window.openAsesorasTrackingModal = async function(pedido) {
         const modal = document.getElementById('asesorasTrackingModal');
         if (modal) {
             modal.style.display = 'flex';
+            console.log('[openAsesorasTrackingModal] Modal mostrado exitosamente');
         }
     } catch (error) {
+        console.error('[openAsesorasTrackingModal] Error:', error);
+        
+        // Aún así intentar llenar el timeline y mostrar el modal con datos parciales
+        try {
+            console.log('[openAsesorasTrackingModal] Intentando llenar timeline de todas formas...');
+            await fillAsesorasTimeline(pedido);
+            
+            // Mostrar modal
+            const modal = document.getElementById('asesorasTrackingModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                console.log('[openAsesorasTrackingModal] Modal mostrado con datos parciales');
+            }
+        } catch (timelineError) {
+            console.error('[openAsesorasTrackingModal] Error en timeline:', timelineError);
+            alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
+        }
     }
 };
 
@@ -469,7 +523,15 @@ async function fillAsesorasTimeline(pedido) {
         }
         
         if (!procesos || procesos.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 0.9rem;">Sin procesos registrados</p>';
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+                    <svg style="width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+                    </svg>
+                    <p style="margin: 0; font-size: 14px; font-weight: 500;">No hay procesos registrados aún</p>
+                    <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Los procesos se mostrarán conforme avance el pedido</p>
+                </div>
+            `;
             return;
         }
         // Ordenar procesos por fecha de inicio

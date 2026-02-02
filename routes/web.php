@@ -969,6 +969,20 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
 });
 
 // ========================================
+// RUTAS PÚBLICAS DE SUPERVISOR-PEDIDOS (accesibles para asesores, supervisores y admins)
+// ========================================
+Route::middleware(['auth', 'role:asesor,supervisor_pedidos,admin'])->prefix('supervisor-pedidos')->name('supervisor-pedidos.')->group(function () {
+    // Obtener datos en JSON (accesible para asesores, supervisores y admins)
+    Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
+    
+    // Obtener datos de factura para mostrar en modal (accesible para asesores, supervisores y admins)
+    Route::get('/{id}/factura-datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
+    
+    // Obtener datos para comparación (pedido vs cotización) (accesible para asesores, supervisores y admins)
+    Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
+});
+
+// ========================================
 // RUTAS PARA SUPERVISOR DE PEDIDOS
 // ========================================
 Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor-pedidos')->name('supervisor-pedidos.')->group(function () {
@@ -1004,15 +1018,6 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Cambiar estado
     Route::patch('/{id}/estado', [App\Http\Controllers\SupervisorPedidosController::class, 'cambiarEstado'])->name('cambiar-estado');
-    
-    // Obtener datos en JSON
-    Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
-    
-    // Obtener datos de factura para mostrar en modal
-    Route::get('/{id}/factura-datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosFactura'])->name('factura-datos');
-    
-    // Obtener datos para comparación (pedido vs cotización)
-    Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
     
     // Editar pedido
     Route::get('/{id}/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'edit'])->name('editar');

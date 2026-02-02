@@ -55,16 +55,26 @@ window.verFactura = async function verFactura(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.verSeguimiento = function verSeguimiento(numeroPedido) {
-
     
-    // Usar la función simplificada para asesoras
-    if (typeof openAsesorasTrackingModal === 'function') {
-        openAsesorasTrackingModal(numeroPedido);
-
-    } else {
-
-        alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
+    console.log('[verSeguimiento] Abriendo seguimiento para:', numeroPedido);
+    
+    // Intentar primero con openOrderTrackingModal (usado en supervisor-pedidos)
+    if (typeof openOrderTrackingModal === 'function') {
+        console.log('[verSeguimiento] Usando openOrderTrackingModal');
+        openOrderTrackingModal(numeroPedido);
+        return;
     }
+    
+    // Si no está disponible, intentar con openAsesorasTrackingModal (usado en asesores)
+    if (typeof openAsesorasTrackingModal === 'function') {
+        console.log('[verSeguimiento] Usando openAsesorasTrackingModal');
+        openAsesorasTrackingModal(numeroPedido);
+        return;
+    }
+    
+    // Si ninguna está disponible, mostrar error
+    console.error('[verSeguimiento] Ninguna función de tracking está disponible');
+    alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
 }
 
 /**

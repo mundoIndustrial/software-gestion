@@ -321,20 +321,22 @@ class InsumosGaleria {
                             border-radius: 12px; 
                             overflow: hidden; 
                             cursor: pointer; 
-                            transition: all 0.2s ease;
+                            transition: all 0.3s ease;
                             background: white;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                         " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
-                        onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)';"
-                        onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)';">
+                        onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
+                        onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
                             <img src="${imagen.ruta_webp}" alt="${prenda.nombre}" style="
                                 width: 100%; 
-                                height: 180px; 
+                                height: 220px; 
                                 object-fit: cover;
                                 display: block;
+                                transition: all 0.3s ease;
                             ">
                             <div style="padding: 0.75rem; background: #f9fafb;">
                                 <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${prenda.nombre}</div>
-                                <div style="font-size: 0.75rem; color: #6b7280;">Imagen ${index + 1}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
                             </div>
                         </div>
                     `;
@@ -374,20 +376,22 @@ class InsumosGaleria {
                                     border-radius: 12px; 
                                     overflow: hidden; 
                                     cursor: pointer; 
-                                    transition: all 0.2s ease;
+                                    transition: all 0.3s ease;
                                     background: white;
+                                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                                 " onclick="window.insumosGaleria.mostrarImagen(${this.imagenesActuales.length - 1})"
-                                onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)';"
-                                onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)';">
+                                onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.3)';"
+                                onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
                                     <img src="${imagen.ruta_webp}" alt="${prenda.nombre} - ${proceso.tipo_proceso}" style="
                                         width: 100%; 
-                                        height: 180px; 
+                                        height: 220px; 
                                         object-fit: cover;
                                         display: block;
+                                        transition: all 0.3s ease;
                                     ">
                                     <div style="padding: 0.75rem; background: #f9fafb;">
                                         <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${proceso.tipo_proceso}</div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">${prenda.nombre}</div>
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
                                     </div>
                                 </div>
                             `;
@@ -583,189 +587,306 @@ class InsumosGaleria {
         
         this.indiceActual = indice;
         
+        console.log('[mostrarImagen] INICIANDO', {
+            indice: indice,
+            totalImagenes: this.imagenesActuales.length,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight
+        });
+        
         // Cerrar modal anterior si existe
         if (this.modalActivo) {
+            console.log('[mostrarImagen] Cerrando modal anterior');
             this.modalActivo.remove();
         }
         
-        // Crear overlay
+        // Forzar body sin restricciones
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        console.log('[mostrarImagen] Body overflow configurado a hidden');
+        
+        // Crear overlay FULLSCREEN - SIN RESTRICCIONES
         const overlay = document.createElement('div');
         overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(0, 0, 0, 0.98) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 99999 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            animation: fadeInFull 0.3s ease;
+            backdrop-filter: blur(8px);
+            box-sizing: border-box !important;
         `;
         
-        // Crear contenedor principal
-        const container = document.createElement('div');
-        container.style.cssText = `
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        console.log('[mostrarImagen] Overlay creado con cssText aplicado');
+        
+        // Agregar animación si no existe
+        if (!document.getElementById('galeria-animations-fullscreen')) {
+            const style = document.createElement('style');
+            style.id = 'galeria-animations-fullscreen';
+            style.textContent = `
+                @keyframes fadeInFull {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                html, body { box-sizing: border-box; }
+            `;
+            document.head.appendChild(style);
+            console.log('[mostrarImagen] Animaciones agregadas');
+        }
+        
+        // Imagen GRANDE - SIN LÍMITES
+        const img = document.createElement('img');
+        let isZoomed = false;
+        img.style.cssText = `
+            width: auto !important;
+            height: auto !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            object-fit: contain !important;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8) !important;
+            cursor: zoom-in !important;
+            user-select: none !important;
+            transition: all 0.3s ease !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
         `;
         
-        // Crear header con título y botón cerrar
-        const header = document.createElement('div');
-        header.style.cssText = `
-            position: absolute;
-            top: -60px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 12px 12px 0 0;
-            color: white;
-        `;
+        console.log('[mostrarImagen] Elemento img creado con cssText');
         
-        const tituloElemento = document.createElement('div');
-        tituloElemento.style.cssText = `
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-align: center;
-            flex: 1;
-        `;
+        img.onload = () => {
+            const rect = img.getBoundingClientRect();
+            console.log('[mostrarImagen] Imagen cargada - Dimensiones:', {
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+                displayWidth: img.width,
+                displayHeight: img.height,
+                boundingRect: {
+                    width: rect.width,
+                    height: rect.height,
+                    top: rect.top,
+                    left: rect.left
+                }
+            });
+        };
         
+        img.onerror = () => {
+            console.error('[mostrarImagen] Error al cargar imagen');
+        };
+        
+        img.onmouseover = () => {
+            if (!isZoomed) {
+                img.style.transform = 'scale(1.01)';
+            }
+        };
+        img.onmouseout = () => {
+            if (!isZoomed) {
+                img.style.transform = 'scale(1)';
+            }
+        };
+        
+        img.ondblclick = (e) => {
+            e.preventDefault();
+            isZoomed = !isZoomed;
+            if (isZoomed) {
+                img.style.cursor = 'zoom-out';
+            } else {
+                img.style.cursor = 'zoom-in';
+            }
+            console.log('[mostrarImagen] Double-click zoom:', isZoomed);
+        };
+        
+        // Botón cerrar - ESQUINA SUPERIOR DERECHA
         const btnCerrar = document.createElement('button');
-        btnCerrar.innerHTML = '×';
+        btnCerrar.innerHTML = '✕';
         btnCerrar.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: 2px solid rgba(255, 255, 255, 0.4) !important;
+            color: white !important;
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            font-size: 2rem !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+            z-index: 100001 !important;
+            backdrop-filter: blur(4px) !important;
+            padding: 0 !important;
         `;
-        btnCerrar.onmouseover = () => btnCerrar.style.background = 'rgba(255, 255, 255, 0.3)';
-        btnCerrar.onmouseout = () => btnCerrar.style.background = 'rgba(255, 255, 255, 0.2)';
-        btnCerrar.onclick = () => this.cerrarModal();
+        btnCerrar.onmouseover = () => {
+            btnCerrar.style.background = 'rgba(255, 255, 255, 0.3)';
+            btnCerrar.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+            btnCerrar.style.transform = 'scale(1.1)';
+        };
+        btnCerrar.onmouseout = () => {
+            btnCerrar.style.background = 'rgba(255, 255, 255, 0.2)';
+            btnCerrar.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            btnCerrar.style.transform = 'scale(1)';
+        };
+        btnCerrar.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[mostrarImagen] Botón cerrar clickeado');
+            this.cerrarModal();
+        };
         
-        header.appendChild(tituloElemento);
-        header.appendChild(btnCerrar);
-        
-        // Crear contenedor de imagen con flechas
-        const imageContainer = document.createElement('div');
-        imageContainer.style.cssText = `
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-        
-        // Botón anterior
+        // Botón anterior - LADO IZQUIERDO
         const btnAnterior = document.createElement('button');
         btnAnterior.innerHTML = '‹';
         btnAnterior.style.cssText = `
-            position: absolute;
-            left: -60px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            color: #1f2937;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: fixed !important;
+            left: 30px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: 2px solid rgba(255, 255, 255, 0.4) !important;
+            color: white !important;
+            width: 70px !important;
+            height: 70px !important;
+            border-radius: 50% !important;
+            font-size: 3rem !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+            z-index: 100001 !important;
+            backdrop-filter: blur(4px) !important;
+            padding: 0 !important;
         `;
-        btnAnterior.onmouseover = () => btnAnterior.style.background = 'white';
-        btnAnterior.onmouseout = () => btnAnterior.style.background = 'rgba(255, 255, 255, 0.9)';
-        btnAnterior.onclick = () => this.navegarImagen('anterior');
+        btnAnterior.onmouseover = () => {
+            btnAnterior.style.background = 'rgba(255, 255, 255, 0.3)';
+            btnAnterior.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+            btnAnterior.style.transform = 'translateY(-50%) scale(1.1)';
+        };
+        btnAnterior.onmouseout = () => {
+            btnAnterior.style.background = 'rgba(255, 255, 255, 0.2)';
+            btnAnterior.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            btnAnterior.style.transform = 'translateY(-50%) scale(1)';
+        };
+        btnAnterior.onclick = () => {
+            console.log('[mostrarImagen] Navegando a anterior');
+            this.navegarImagen('anterior');
+        };
         
-        // Botón siguiente
+        // Botón siguiente - LADO DERECHO
         const btnSiguiente = document.createElement('button');
         btnSiguiente.innerHTML = '›';
         btnSiguiente.style.cssText = `
-            position: absolute;
-            right: -60px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            color: #1f2937;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: fixed !important;
+            right: 30px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: 2px solid rgba(255, 255, 255, 0.4) !important;
+            color: white !important;
+            width: 70px !important;
+            height: 70px !important;
+            border-radius: 50% !important;
+            font-size: 3rem !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+            z-index: 100001 !important;
+            backdrop-filter: blur(4px) !important;
+            padding: 0 !important;
         `;
-        btnSiguiente.onmouseover = () => btnSiguiente.style.background = 'white';
-        btnSiguiente.onmouseout = () => btnSiguiente.style.background = 'rgba(255, 255, 255, 0.9)';
-        btnSiguiente.onclick = () => this.navegarImagen('siguiente');
+        btnSiguiente.onmouseover = () => {
+            btnSiguiente.style.background = 'rgba(255, 255, 255, 0.3)';
+            btnSiguiente.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+            btnSiguiente.style.transform = 'translateY(-50%) scale(1.1)';
+        };
+        btnSiguiente.onmouseout = () => {
+            btnSiguiente.style.background = 'rgba(255, 255, 255, 0.2)';
+            btnSiguiente.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            btnSiguiente.style.transform = 'translateY(-50%) scale(1)';
+        };
+        btnSiguiente.onclick = () => {
+            console.log('[mostrarImagen] Navegando a siguiente');
+            this.navegarImagen('siguiente');
+        };
         
-        // Imagen principal
-        const img = document.createElement('img');
-        img.style.cssText = `
-            max-width: 90vw;
-            max-height: 80vh;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        `;
-        
-        // Contador de imágenes
+        // Contador - ABAJO
         const contador = document.createElement('div');
         contador.style.cssText = `
-            position: absolute;
-            bottom: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 600;
+            position: fixed !important;
+            bottom: 30px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            background: rgba(0, 0, 0, 0.7) !important;
+            color: white !important;
+            padding: 1rem 1.5rem !important;
+            border-radius: 30px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            z-index: 100001 !important;
+            backdrop-filter: blur(4px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
         `;
         
-        // Ensamblar todo
-        imageContainer.appendChild(btnAnterior);
-        imageContainer.appendChild(img);
-        imageContainer.appendChild(btnSiguiente);
+        // Título - ARRIBA CENTRO
+        const titulo = document.createElement('div');
+        titulo.style.cssText = `
+            position: fixed !important;
+            top: 30px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            background: rgba(0, 0, 0, 0.7) !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 20px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            z-index: 100001 !important;
+            max-width: 70vw !important;
+            text-align: center !important;
+            backdrop-filter: blur(4px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        `;
         
-        container.appendChild(header);
-        container.appendChild(imageContainer);
-        container.appendChild(contador);
-        overlay.appendChild(container);
+        // Agregar elementos al overlay
+        overlay.appendChild(img);
+        overlay.appendChild(btnCerrar);
+        overlay.appendChild(btnAnterior);
+        overlay.appendChild(btnSiguiente);
+        overlay.appendChild(contador);
+        overlay.appendChild(titulo);
+        
         document.body.appendChild(overlay);
         
-        // Guardar referencia
+        console.log('[mostrarImagen] Overlay agregado al DOM');
+        
+        // Guardar referencias
         this.modalActivo = overlay;
         this.imgActual = img;
-        this.tituloActual = tituloElemento;
         this.contadorActual = contador;
+        this.tituloActual = titulo;
         this.btnAnterior = btnAnterior;
         this.btnSiguiente = btnSiguiente;
         
-        // Configurar eventos
+        // Configurar eventos del teclado
         this.configurarEventosModal();
         
-        // Inicializar
+        // Actualizar imagen
+        console.log('[mostrarImagen] Llamando a actualizarImagen()');
         this.actualizarImagen();
     }
 
@@ -787,17 +908,55 @@ class InsumosGaleria {
     actualizarImagen() {
         if (this.imagenesActuales.length > 0 && this.imgActual) {
             const imagenActual = this.imagenesActuales[this.indiceActual];
+            
+            console.log('[actualizarImagen] Actualizando imagen:', {
+                indice: this.indiceActual,
+                src: imagenActual.src,
+                titulo: imagenActual.titulo
+            });
+            
             this.imgActual.src = imagenActual.src;
             this.imgActual.alt = imagenActual.titulo;
             this.tituloActual.textContent = imagenActual.titulo;
             this.contadorActual.textContent = `${this.indiceActual + 1} / ${this.imagenesActuales.length}`;
+            
+            // Log del elemento img después de asignar src
+            setTimeout(() => {
+                const rect = this.imgActual.getBoundingClientRect();
+                console.log('[actualizarImagen] Imagen después de asignar src:', {
+                    src: this.imgActual.src,
+                    width: this.imgActual.width,
+                    height: this.imgActual.height,
+                    naturalWidth: this.imgActual.naturalWidth,
+                    naturalHeight: this.imgActual.naturalHeight,
+                    computedStyle: {
+                        maxWidth: window.getComputedStyle(this.imgActual).maxWidth,
+                        maxHeight: window.getComputedStyle(this.imgActual).maxHeight,
+                        width: window.getComputedStyle(this.imgActual).width,
+                        height: window.getComputedStyle(this.imgActual).height,
+                        objectFit: window.getComputedStyle(this.imgActual).objectFit
+                    },
+                    boundingRect: {
+                        width: rect.width,
+                        height: rect.height,
+                        top: rect.top,
+                        left: rect.left
+                    }
+                });
+            }, 100);
             
             // Ocultar botones si solo hay una imagen
             if (this.btnAnterior && this.btnSiguiente) {
                 const mostrarBotones = this.imagenesActuales.length > 1;
                 this.btnAnterior.style.display = mostrarBotones ? 'flex' : 'none';
                 this.btnSiguiente.style.display = mostrarBotones ? 'flex' : 'none';
+                console.log('[actualizarImagen] Botones de navegación:', mostrarBotones ? 'visibles' : 'ocultos');
             }
+        } else {
+            console.warn('[actualizarImagen] ERROR - No hay imágenes o imgActual no existe', {
+                imagenesActualesLength: this.imagenesActuales.length,
+                imgActualExists: !!this.imgActual
+            });
         }
     }
 
@@ -832,6 +991,10 @@ class InsumosGaleria {
             }
             this.modalActivo.remove();
             this.modalActivo = null;
+            
+            // Restaurar body
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
         }
     }
 }

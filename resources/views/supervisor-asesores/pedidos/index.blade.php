@@ -658,7 +658,7 @@
                             font-weight: 600;
                             display: inline-block;
                         ">
-                            {{ $pedido->estado ?? 'Pendiente' }}
+                            @humanizar($pedido->estado ?? 'Pendiente')
                         </span>
                     </div>
 

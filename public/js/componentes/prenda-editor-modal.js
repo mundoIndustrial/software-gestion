@@ -624,12 +624,16 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             // 🔴 LÓGICA CORRECTA DE ORIGEN:
             // Prioridad 1: prendaCompleta.origen (si viene establecido)
             // Prioridad 2: prenda.origen (origen anterior)
-            // Prioridad 3: Convertir de_bodega a origen
-            // Prioridad 4: Default 'bodega'
+            // Prioridad 3: Convertir de_bodega a origen (verificar ambos prendaCompleta y prenda)
+            // Prioridad 4: Default 'confeccion'
             origen: prendaCompleta.origen || prenda.origen || 
-                    (prendaCompleta.de_bodega === false ? 'confeccion' : 
-                     prendaCompleta.de_bodega === true || prendaCompleta.de_bodega === 1 ? 'bodega' : 
-                     'bodega'),
+                    ((prendaCompleta.de_bodega !== undefined) ? 
+                        (prendaCompleta.de_bodega === false ? 'confeccion' : 'bodega') :
+                        ((prenda.de_bodega !== undefined) ?
+                            (prenda.de_bodega === false ? 'confeccion' : 'bodega') :
+                            'confeccion'
+                        )
+                    ),
             de_bodega: prendaCompleta.de_bodega !== undefined ? prendaCompleta.de_bodega : prenda.de_bodega,
             imagenes: prendaImagenesMapeadas,
             telasAgregadas: telasAgregadas,

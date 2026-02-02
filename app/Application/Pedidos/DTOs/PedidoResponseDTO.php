@@ -23,6 +23,7 @@ class PedidoResponseDTO
         public array $epps = [],
         public ?string $formaDePago = null,
         public ?string $fechaCreacion = null,
+        public ?string $area = null,
         public string $mensaje = ''
     ) {}
 
@@ -41,6 +42,8 @@ class PedidoResponseDTO
             'total_articulos' => $this->totalArticulos,
             'forma_de_pago' => $this->formaDePago,
             'fecha_creacion' => $this->fechaCreacion,
+            'fecha' => $this->fechaCreacion,  // También incluir como 'fecha' para compatibilidad
+            'area' => $this->area,
             'prendas' => $this->prendas,
             'epps' => $this->epps,
             'mensaje' => $this->mensaje,

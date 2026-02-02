@@ -59,7 +59,7 @@
             <div class="header-icon success">
                 <span class="material-symbols-rounded">check_circle</span>
             </div>
-            <h2>Aprobar Pedido <span id="aprobacionPedidoNumero"></span></h2>
+            <h2>Aprobar Pedido</h2>
         </div>
         <div class="modal-body">
             <p class="info-texto">¿Deseas aprobar este pedido? Se marcará como aprobado y procederá al siguiente estado.</p>
@@ -83,7 +83,7 @@
             <div class="header-icon warning">
                 <span class="material-symbols-rounded">block</span>
             </div>
-            <h2>Rechazar Pedido <span id="rechazoPedidoNumero"></span></h2>
+            <h2>Rechazar Pedido</h2>
         </div>
         <div class="modal-body">
             <p class="advertencia-texto">Ingresa el motivo del rechazo. El cliente será notificado sobre esta decisión.</p>

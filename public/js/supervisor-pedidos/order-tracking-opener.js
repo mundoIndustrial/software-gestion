@@ -64,11 +64,12 @@ window.openOrderTrackingModal = function(ordenId) {
                     if (procResponse.ok) {
                         return procResponse.json().then(procesos => {
                             console.log('[openOrderTrackingModal] Procesos obtenidos:', procesos);
-                            pedidoData.procesos = procesos;
+                            // Asegurar que procesos es un array
+                            pedidoData.procesos = Array.isArray(procesos) ? procesos : (procesos.procesos || []);
                             return pedidoData;
                         });
                     }
-                    // Si falla, devolver los datos sin procesos
+                    // Si falla, devolver los datos sin procesos pero mostrar el modal igual
                     console.warn('[openOrderTrackingModal] No se pudieron cargar los procesos (status ' + procResponse.status + '), continuando sin ellos');
                     pedidoData.procesos = [];
                     return pedidoData;

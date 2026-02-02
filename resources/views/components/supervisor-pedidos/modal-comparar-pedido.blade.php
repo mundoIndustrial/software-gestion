@@ -343,7 +343,7 @@ function renderizarComparacion(data, contenedor) {
                     </div>
                     <div class="comparar-info-item">
                         <label>Estado</label>
-                        <strong>${pedido.estado}</strong>
+                        <strong>${(pedido.estado || '-').replace(/_/g, ' ')}</strong>
                     </div>
                     <div class="comparar-info-item">
                         <label>Fecha</label>

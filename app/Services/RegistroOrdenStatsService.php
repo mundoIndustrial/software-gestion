@@ -49,14 +49,34 @@ class RegistroOrdenStatsService
      */
     public function getTotalQuantity(int $pedido): int
     {
-        return (int) DB::table('prendas_pedido')
-            ->where('numero_pedido', $pedido)
-            ->sum('cantidad');
+        try {
+            // Primero obtener los IDs de prendas_pedido para este número de pedido
+            $prendaIds = DB::table('prendas_pedido')
+                ->join('pedidos_produccion', 'prendas_pedido.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->where('pedidos_produccion.numero_pedido', $pedido)
+                ->pluck('prendas_pedido.id');
+
+            if ($prendaIds->isEmpty()) {
+                return 0;
+            }
+
+            // Sumar cantidades desde la tabla prenda_pedido_tallas
+            return (int) DB::table('prenda_pedido_tallas')
+                ->whereIn('prenda_pedido_id', $prendaIds)
+                ->sum('cantidad');
+
+        } catch (\Exception $e) {
+            \Log::warning('Error al calcular getTotalQuantity', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            return 0;
+        }
     }
 
     /**
      * Obtener cantidad total entregada de una orden
-     * Busca en procesos_prenda tabla
+     * Busca en pedidos_procesos_prenda_detalles tabla
      * 
      * @param int $pedido - Número de pedido
      * @return int - Total entregado
@@ -64,13 +84,38 @@ class RegistroOrdenStatsService
     public function getTotalDelivered(int $pedido): int
     {
         try {
-            // Contar procesos completados en lugar de sumar una columna inexistente
-            return (int) DB::table('procesos_prenda')
-                ->where('numero_pedido', $pedido)
-                ->where('estado_proceso', 'Completado')
-                ->count();
+            // Primero obtener los IDs de prendas_pedido para este número de pedido
+            $prendaIds = DB::table('prendas_pedido')
+                ->join('pedidos_produccion', 'prendas_pedido.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->where('pedidos_produccion.numero_pedido', $pedido)
+                ->pluck('prendas_pedido.id');
+
+            if ($prendaIds->isEmpty()) {
+                return 0;
+            }
+
+            // Contar procesos completados y sumar sus cantidades
+            $procesosCompletados = DB::table('pedidos_procesos_prenda_detalles')
+                ->whereIn('prenda_pedido_id', $prendaIds)
+                ->where('estado', 'COMPLETADO')
+                ->get();
+
+            // Sumar cantidades desde las tablas de tallas de procesos
+            $totalEntregado = 0;
+            foreach ($procesosCompletados as $proceso) {
+                $cantidadProceso = DB::table('pedidos_procesos_prenda_tallas')
+                    ->where('proceso_prenda_detalle_id', $proceso->id)
+                    ->sum('cantidad');
+                $totalEntregado += $cantidadProceso;
+            }
+
+            return (int) $totalEntregado;
+
         } catch (\Exception $e) {
-            \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
+            \Log::warning('Error al calcular totalEntregado', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
             return 0;
         }
     }

@@ -165,9 +165,11 @@
     ">
         @php
             if (get_class($pedido) === 'App\Models\LogoPedido') {
-                echo ucfirst($pedido->estado ?? 'pendiente');
+                $estado = $pedido->estado ?? 'pendiente';
+                echo str_replace('_', ' ', ucfirst($estado));
             } else {
-                echo $pedido->estado ?? 'Pendiente';
+                $estado = $pedido->estado ?? 'Pendiente';
+                echo str_replace('_', ' ', $estado);
             }
         @endphp
     </span>

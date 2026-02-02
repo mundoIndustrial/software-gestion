@@ -154,6 +154,7 @@ abstract class AbstractObtenerUseCase
         ]);
 
         // Agregar telas_array a cada prenda construido desde coloresTelas
+        // y asegurar que de_bodega sea incluido
         foreach ($prendas as &$prenda) {
             $telasArray = [];
             
@@ -170,7 +171,8 @@ abstract class AbstractObtenerUseCase
                 'claves_disponibles' => array_keys($prenda),
                 'clave_encontrada' => $coloresTelasKey,
                 'tiene_colores_telas' => isset($prenda['colores_telas']),
-                'tiene_coloresTelas' => isset($prenda['coloresTelas'])
+                'tiene_coloresTelas' => isset($prenda['coloresTelas']),
+                'de_bodega' => $prenda['de_bodega'] ?? 'NO EXISTE'
             ]);
             
             if ($coloresTelasKey && isset($prenda[$coloresTelasKey]) && is_array($prenda[$coloresTelasKey])) {
@@ -209,6 +211,17 @@ abstract class AbstractObtenerUseCase
             }
             
             $prenda['telas_array'] = $telasArray;
+            
+            // Asegurar que de_bodega siempre esté presente
+            if (!isset($prenda['de_bodega'])) {
+                $prenda['de_bodega'] = false;
+            }
+            
+            // Agregar campo 'origen' basado en de_bodega
+            // Si de_bodega es true = "bodega", si es false = "confeccion"
+            $prenda['origen'] = ($prenda['de_bodega'] === true || $prenda['de_bodega'] === 1 || $prenda['de_bodega'] === '1') 
+                ? 'bodega' 
+                : 'confeccion';
         }
 
         return $prendas;

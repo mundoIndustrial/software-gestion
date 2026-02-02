@@ -263,7 +263,13 @@ class ReceiptManager {
         document.getElementById('receipt-total').textContent = recibo.total;
 
         // Actualizar fecha
-        this.actualizarFecha(this.datosFactura.fecha);
+        const fechaAMostrar = this.datosFactura.fecha || this.datosFactura.fecha_creacion;
+        console.log('[ReceiptManager] DEBUG FECHA:', {
+            'datosFactura.fecha': this.datosFactura.fecha,
+            'datosFactura.fecha_creacion': this.datosFactura.fecha_creacion,
+            'fechaAMostrar': fechaAMostrar
+        });
+        this.actualizarFecha(fechaAMostrar);
 
         // Limpiar datos antiguos de ancho/metraje
         this.limpiarDatosAntiguos();
@@ -409,6 +415,15 @@ class ReceiptManager {
      */
     actualizarFecha(fechaStr) {
         if (!fechaStr) {
+            // Intentar actualizar ambos conjuntos de elementos
+            const dayBoxes = document.querySelectorAll('.day-box');
+            const monthBoxes = document.querySelectorAll('.month-box');
+            const yearBoxes = document.querySelectorAll('.year-box');
+            
+            dayBoxes.forEach(el => el.textContent = '--');
+            monthBoxes.forEach(el => el.textContent = '--');
+            yearBoxes.forEach(el => el.textContent = '----');
+            
             document.getElementById('receipt-day').textContent = '--';
             document.getElementById('receipt-month').textContent = '--';
             document.getElementById('receipt-year').textContent = '----';
@@ -434,9 +449,42 @@ class ReceiptManager {
         }
 
         if (!isNaN(fecha)) {
-            document.getElementById('receipt-day').textContent = fecha.getDate();
-            document.getElementById('receipt-month').textContent = fecha.getMonth() + 1;
-            document.getElementById('receipt-year').textContent = fecha.getFullYear();
+            const day = fecha.getDate();
+            const month = fecha.getMonth() + 1;
+            const year = fecha.getFullYear();
+            
+            console.log('[ReceiptManager.actualizarFecha] Fecha parseada correctamente:', {
+                fechaOriginal: fechaStr,
+                day,
+                month,
+                year
+            });
+            
+            // Actualizar elementos visibles (.day-box, .month-box, .year-box)
+            const dayBoxes = document.querySelectorAll('.day-box');
+            const monthBoxes = document.querySelectorAll('.month-box');
+            const yearBoxes = document.querySelectorAll('.year-box');
+            
+            console.log('[ReceiptManager.actualizarFecha] Elementos encontrados:', {
+                dayBoxes: dayBoxes.length,
+                monthBoxes: monthBoxes.length,
+                yearBoxes: yearBoxes.length
+            });
+            
+            dayBoxes.forEach(el => el.textContent = day);
+            monthBoxes.forEach(el => el.textContent = month);
+            yearBoxes.forEach(el => el.textContent = year);
+            
+            // Actualizar elementos ocultos (#receipt-day, #receipt-month, #receipt-year) para compatibilidad
+            const receiptDay = document.getElementById('receipt-day');
+            const receiptMonth = document.getElementById('receipt-month');
+            const receiptYear = document.getElementById('receipt-year');
+            
+            if (receiptDay) receiptDay.textContent = day;
+            if (receiptMonth) receiptMonth.textContent = month;
+            if (receiptYear) receiptYear.textContent = year;
+            
+            console.log('[ReceiptManager.actualizarFecha] Fecha actualizada en elementos del DOM');
         }
     }
 

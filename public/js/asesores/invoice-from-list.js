@@ -544,6 +544,8 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         console.log('datos.asesora:', datos.data?.asesora || datos.asesora);
         console.log('datos.forma_de_pago:', datos.data?.forma_de_pago || datos.forma_de_pago);
         console.log('datos.numero_pedido:', datos.data?.numero_pedido || datos.numero_pedido);
+        console.log('datos.fecha:', datos.data?.fecha || datos.fecha);
+        console.log('datos.fecha_creacion:', datos.data?.fecha_creacion || datos.fecha_creacion);
         console.log('Estructura datos:', Object.keys(datos).slice(0, 10));
         if (datos.data) {
             console.log('Estructura datos.data:', Object.keys(datos.data).slice(0, 10));
@@ -693,6 +695,8 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
         console.log('  asesora:', datosReales.asesora);
         console.log('  forma_de_pago:', datosReales.forma_de_pago);
         console.log('  numero_pedido:', datosReales.numero_pedido);
+        console.log('  fecha:', datosReales.fecha);
+        console.log('  fecha_creacion:', datosReales.fecha_creacion);
         console.log('  prendas.length:', datosReales.prendas ? datosReales.prendas.length : 'UNDEFINED');
         console.groupEnd();
         // ===== FIN DEBUG =====

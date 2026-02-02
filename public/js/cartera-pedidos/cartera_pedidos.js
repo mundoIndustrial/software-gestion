@@ -1,9 +1,10 @@
 /**
  * ===============================================
- * CARTERA PEDIDOS - JAVASCRIPT
+ * CARTERA PEDIDOS - JAVASCRIPT [v2]
  * ===============================================
  * Gestiona los pedidos en estado "Pendiente cartera"
  * Funcionalidades: Cargar, aprobar, rechazar pedidos
+ * Cambio: Columna NÚMERO removida
  */
 
 // ===== VARIABLES GLOBALES =====
@@ -173,13 +174,6 @@ function renderizarTabla(pedidos) {
             <span class="material-symbols-rounded">block</span>
             <span>Rechazar</span>
           </button>
-        </div>
-        
-        <!-- # Pedido -->
-        <div class="table-cell" style="flex: 0 0 140px;">
-          <div class="cell-content">
-            <span style="font-weight: 600; color: var(--primary);">#${numero}</span>
-          </div>
         </div>
         
         <!-- Cliente -->
@@ -360,7 +354,7 @@ async function confirmarAprobacion(event) {
     
     // Mostrar notificación
     mostrarNotificacion(
-      `Pedido #${numeroPedido} aprobado correctamente`,
+      'Aprobado correctamente',
       'success'
     );
     
@@ -505,7 +499,7 @@ async function confirmarRechazo(event) {
     
     // Mostrar notificación
     mostrarNotificacion(
-      `Pedido #${numeroPedido} rechazado correctamente`,
+      'Rechazado correctamente',
       'success'
     );
     

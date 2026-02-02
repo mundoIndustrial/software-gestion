@@ -45,6 +45,7 @@ class ActualizarDescripcionPedidoUseCase
             totalPrendas: $pedido->totalPrendas(),
             totalArticulos: $pedido->totalArticulos(),
             formaDePago: null,
+            area: null,
             mensaje: 'Descripción actualizada exitosamente'
         );
     }

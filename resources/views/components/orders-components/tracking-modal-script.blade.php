@@ -64,7 +64,15 @@ function formatearFecha(fecha, formato = 'dd/mm/yyyy') {
 // Función para renderizar timeline con cálculo dinámico
 function renderizarTimeline(procesos) {
     if (!Array.isArray(procesos) || procesos.length === 0) {
-        return '<p class="text-center text-gray-500">No hay procesos registrados</p>';
+        return `
+            <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+                <svg style="width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+                </svg>
+                <p style="margin: 0; font-size: 14px;">No hay procesos registrados aún para este pedido.</p>
+                <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Los procesos se registrarán conforme el pedido avance en producción.</p>
+            </div>
+        `;
     }
 
     // Ordenar procesos por fecha
@@ -148,6 +156,9 @@ function mostrarTrackingModal(pedidoData) {
     // Llenar información del pedido
     document.getElementById('trackingOrderNumber').textContent = `#${pedidoData.numero_pedido || '-'}`;
     document.getElementById('trackingOrderClient').textContent = pedidoData.cliente || '-';
+    // Reemplazar guiones bajos con espacios en el estado
+    const estadoFormato = (pedidoData.estado || '-').replace(/_/g, ' ');
+    document.getElementById('trackingOrderStatus').textContent = estadoFormato;
     document.getElementById('trackingOrderDate').textContent = formatearFecha(pedidoData.fecha_inicio || pedidoData.fecha_de_creacion_de_orden);
     document.getElementById('trackingEstimatedDate').textContent = formatearFecha(pedidoData.fecha_estimada_de_entrega);
 

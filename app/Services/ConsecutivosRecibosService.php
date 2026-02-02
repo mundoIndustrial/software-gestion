@@ -69,15 +69,31 @@ class ConsecutivosRecibosService
                         continue;
                     }
 
-                    // Obtener el último consecutivo para este tipo de recibo
-                    $ultimoConsecutivo = DB::table('consecutivos_recibos_pedidos')
+                    // Obtener el siguiente consecutivo de la tabla maestra consecutivos_recibos
+                    $registroMaestro = DB::table('consecutivos_recibos')
                         ->where('tipo_recibo', $tipoRecibo)
                         ->where('activo', 1)
-                        ->orderBy('consecutivo_actual', 'desc')
                         ->lockForUpdate()
                         ->first();
 
-                    $nuevoConsecutivo = $ultimoConsecutivo ? $ultimoConsecutivo->consecutivo_actual + 1 : 1;
+                    if (!$registroMaestro) {
+                        Log::warning('🔢 No existe registro maestro para tipo de recibo', [
+                            'tipo_recibo' => $tipoRecibo,
+                            'pedido_id' => $pedido->id
+                        ]);
+                        continue;
+                    }
+
+                    // Obtener el siguiente número y actualizar la tabla maestra
+                    $nuevoConsecutivo = $registroMaestro->consecutivo_actual + 1;
+                    
+                    // Actualizar el consecutivo en la tabla maestra
+                    DB::table('consecutivos_recibos')
+                        ->where('id', $registroMaestro->id)
+                        ->update([
+                            'consecutivo_actual' => $nuevoConsecutivo,
+                            'updated_at' => now()
+                        ]);
 
                     // Insertar registro con la estructura correcta
                     $insertData = [

@@ -36,7 +36,7 @@ class RegistroOrdenExtendedQueryService
                 'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
                 'fecha_estimada_de_entrega', 'asesor_id', 'cliente_id', 'id'
             ])
-            ->where('estado', '!=', 'Pendiente')
+            ->whereIn('estado', ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'])
             ->with([
                 'asesora:id,name',
                 'prendas:id,pedido_produccion_id,nombre_prenda,descripcion',

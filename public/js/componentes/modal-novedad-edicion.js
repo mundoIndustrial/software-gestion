@@ -341,6 +341,10 @@ class ModalNovedadEdicion {
                 ? window.telasAgregadas 
                 : window.telasEdicion;
             
+            // ✅ FIX: MERGE PATTERN para telas
+            // IMPORTANTE: Solo enviar colores_telas si el usuario REALMENTE modificó las telas
+            // - Si hay telas en storage (usuario editó) → enviar lo que haya (preserve o delete)
+            // - Si storage está vacío (usuario NO tocó telas) → NO enviar nada (deja NULL en DTO = no modifica)
             if (telasParaEnviar && telasParaEnviar.length > 0) {
                 const telasArray = telasParaEnviar.map((tela, idx) => {
                     const obj = {
@@ -388,7 +392,7 @@ class ModalNovedadEdicion {
                     return obj;
                 });
                 formData.append('colores_telas', JSON.stringify(telasArray));
-                console.log('[modal-novedad-edicion] Telas enviadas (MERGE):', telasArray);
+                console.log('[modal-novedad-edicion] ✅ Telas enviadas (MERGE):', telasArray);
                 
                 // ✅ ENVIAR FOTOS DE TELAS CON ESTRUCTURA CORRECTA (MERGE PATTERN)
                 const fotosTelaArray = [];
@@ -427,14 +431,22 @@ class ModalNovedadEdicion {
                     formData.append('fotosTelas', JSON.stringify(fotosTelaArray));
                     console.log('[modal-novedad-edicion] ✅ Fotos de telas enviadas (MERGE):', fotosTelaArray);
                 }
+            } else {
+                console.log('[modal-novedad-edicion] ℹ️ Usuario NO modificó telas - no enviar colores_telas para preservar datos existentes');
             }
-
-            // IMPORTANTE: Leer procesos ACTUALIZADOS (window.procesosSeleccionados)
-            // NO del this.prendaData inicial que no incluye procesos nuevos agregados en el modal
-            const procesosParaEnviar = window.procesosSeleccionados || this.prendaData.procesos || {};
+            // IMPORTANTE: Solo enviar procesos si el usuario REALMENTE modificó los procesos
+            // - Si hay procesos en window.procesosSeleccionados (usuario editó) → enviar lo que haya
+            // - Si solo están en prendaData inicial (usuario NO tocó) → NO enviar (deja NULL en DTO = no modifica)
+            const procesosParaEnviar = window.procesosSeleccionados || {};
             const procesosArray = this._transformarProcesosAArray(procesosParaEnviar);
-            formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
-            console.log('[modal-novedad-edicion] ✅ Procesos ACTUALIZADOS enviados:', procesosArray);
+            
+            if (procesosArray && procesosArray.length > 0) {
+                formData.append('procesos', JSON.stringify(procesosArray));
+                console.log('[modal-novedad-edicion] ✅ Procesos enviados (MERGE):', procesosArray);
+            } else {
+                console.log('[modal-novedad-edicion] ℹ️ Usuario NO modificó procesos - no enviar procesos para preservar datos existentes');
+            }
+            
             formData.append('novedad', novedad);
             
             // Obtener prenda_id - puede venir en diferentes propiedades
@@ -501,13 +513,30 @@ class ModalNovedadEdicion {
                 total: imagenesActuales.length
             });
             
-            // Enviar imágenes existentes como JSON para que backend las preserve
-            if (imagenesDB.length > 0) {
-                formData.append('imagenes_existentes', JSON.stringify(imagenesDB));
-            } else if (imagenesDB.length === 0 && imagenesActuales.length === 0) {
-                // Si no hay imágenes (el usuario las eliminó), enviar array vacío
-                // Esto le indica al backend que quita todas las imágenes
-                formData.append('imagenes_existentes', JSON.stringify([]));
+            // ✅ FIX: MERGE PATTERN para imágenes
+            // IMPORTANTE: Solo enviar imagenes_existentes si el usuario REALMENTE modificó las imágenes
+            // - Si hay imágenes en storage (usuario editó la galería) → enviar lo que haya (preserve o delete)
+            // - Si storage está vacío (usuario NO tocó imágenes) → NO enviar nada (deja NULL en DTO = no modifica)
+            
+            // Detectar si el usuario tocó las imágenes
+            const usuarioEditoImagenes = window.imagenesPrendaStorage && 
+                                         typeof window.imagenesPrendaStorage.obtenerImagenes === 'function' &&
+                                         window.imagenesPrendaStorage.obtenerImagenes() !== null;
+            
+            if (usuarioEditoImagenes) {
+                // Usuario SÍ modificó imágenes → enviar el estado actual (puede ser vacío si eliminó todas)
+                if (imagenesDB.length > 0) {
+                    formData.append('imagenes_existentes', JSON.stringify(imagenesDB));
+                    console.log('[modal-novedad-edicion] ✅ Preservando imágenes existentes:', imagenesDB.length);
+                } else {
+                    // Usuario eliminó todas las imágenes explícitamente
+                    formData.append('imagenes_existentes', JSON.stringify([]));
+                    console.log('[modal-novedad-edicion] ⚠️ Usuario eliminó todas las imágenes');
+                }
+            } else {
+                // Usuario NO tocó imágenes → NO enviar imagenes_existentes (deja como NULL en DTO)
+                // Esto hace que el backend NO modifique las imágenes existentes (MERGE preserva)
+                console.log('[modal-novedad-edicion] ℹ️ Usuario NO modificó imágenes - no enviar imagenes_existentes para preservar datos existentes');
             }
             
 

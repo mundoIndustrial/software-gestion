@@ -189,11 +189,6 @@ function renderizarTabla(pedidos) {
                 </button>
             </div>
             
-            <!-- Número -->
-            <div class="table-cell" style="flex: 0 0 140px; justify-content: center; display: flex; align-items: center;">
-                <span style="font-weight: 600; color: #1e5ba8;">#${pedido.numero}</span>
-            </div>
-            
             <!-- Cliente -->
             <div class="table-cell" style="flex: 0 0 200px; justify-content: center; display: flex; align-items: center;">
                 <span>${pedido.cliente_nombre || 'N/A'}</span>
@@ -334,7 +329,7 @@ async function confirmarAprobacion() {
         notifSuccess.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; animation: slideInRight 0.3s ease;';
         notifSuccess.innerHTML = `
             <span class="material-symbols-rounded" style="flex-shrink: 0;">check_circle</span>
-            <span>Pedido #${numeroPedido} aprobado exitosamente</span>
+            <span>Aprobado exitosamente</span>
         `;
         document.body.appendChild(notifSuccess);
         
@@ -441,7 +436,7 @@ async function confirmarRechazo(event) {
         notifSuccess.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; animation: slideInRight 0.3s ease;';
         notifSuccess.innerHTML = `
             <span class="material-symbols-rounded" style="flex-shrink: 0;">check_circle</span>
-            <span>Pedido #${numeroPedido} rechazado exitosamente</span>
+            <span>Rechazado exitosamente</span>
         `;
         document.body.appendChild(notifSuccess);
         

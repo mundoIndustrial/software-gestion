@@ -31,6 +31,7 @@ class ListarPedidosPorClienteUseCase
                 totalPrendas: $pedido->totalPrendas(),
                 totalArticulos: $pedido->totalArticulos(),
                 formaDePago: null,
+                area: null,
                 mensaje: 'Pedidos obtenidos exitosamente'
             ),
             $pedidos

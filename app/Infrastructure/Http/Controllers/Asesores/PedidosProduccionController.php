@@ -947,7 +947,8 @@ class PedidosProduccionController
 
             $resultado = $this->obtenerProcesosPedidoUseCase->ejecutar($id);
 
-            return response()->json($resultado, 200);
+            // Retornar solo el array de procesos, no todo el objeto
+            return response()->json($resultado['procesos'] ?? [], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::warning('[PedidosProduccionController] Pedido no encontrado', ['id' => $id]);
 

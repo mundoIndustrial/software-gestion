@@ -23,7 +23,6 @@
                         @php
                             $columns = [
                                 ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 200px', 'justify' => 'flex-start'],
-                                ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
                                 ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
                                 ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 160px', 'justify' => 'center'],
                             ];
@@ -65,7 +64,7 @@
             <h3 class="modal-title">Aprobar Pedido</h3>
         </div>
         <div class="modal-body">
-            <p>¿Está seguro de que desea <strong>aprobar</strong> el pedido <span id="pedidoNumeroAprobacion" style="color: #1e5ba8; font-weight: 700;"></span>?</p>
+            <p>¿Está seguro de que desea <strong>aprobar</strong> este pedido?</p>
         </div>
         <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
             <button type="button" class="btn" onclick="cerrarModalAprobacion()" style="padding: 10px 24px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; background-color: #e5e7eb; color: #1f2937; transition: background-color 0.2s;">Cancelar</button>
@@ -82,7 +81,6 @@
         </div>
         <form id="formRechazo" onsubmit="confirmarRechazo(event)">
             <div class="modal-body">
-                <p>Pedido: <strong><span id="pedidoNumeroRechazo" style="color: #1e5ba8; font-weight: 700;"></span></strong></p>
                 <div class="form-group" style="margin: 16px 0;">
                     <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Motivo del rechazo *</label>
                     <textarea id="motivoRechazo" class="form-textarea" placeholder="Explique el motivo..." required style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical; min-height: 120px; box-sizing: border-box;"></textarea>

@@ -335,16 +335,25 @@ class PrendaEditor {
             timestamp: new Date().toLocaleTimeString()
         });
         
+        // ⏱️ ASEGURAR QUE EL DOM ESTÁ LISTO (pequeño delay para rendering)
+        setTimeout(() => {
+            this._llenarCamposBasicosInternal(prenda);
+        }, 50);
+    }
+
+    _llenarCamposBasicosInternal(prenda) {
         const nombreField = document.getElementById('nueva-prenda-nombre');
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
 
+        console.log('[llenarCamposBasicos] 🕐 DOM LISTO PARA LLENAR (después de timeout)');
         console.log('[llenarCamposBasicos] DEBUG Elementos encontrados:', {
             nombreField: !!nombreField,
             descripcionField: !!descripcionField,
             origenField: !!origenField,
             origenFieldTagName: origenField?.tagName,
-            origenFieldOptions: origenField?.options?.length
+            origenFieldOptions: origenField?.options?.length,
+            modalVisible: !!document.getElementById('modal-agregar-prenda-nueva')?.offsetParent
         });
         
         if (nombreField) nombreField.value = prenda.nombre_prenda || '';
@@ -530,6 +539,9 @@ class PrendaEditor {
             
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // 🔧 Forzar reflow para asegurar que el navegador renderice el cambio
+            void origenField.offsetHeight;
         } else {
             console.error('[llenarCamposBasicos] ❌ SELECT #nueva-prenda-origen-select NO encontrado en el DOM');
         }

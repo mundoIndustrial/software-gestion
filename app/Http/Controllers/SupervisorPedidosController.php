@@ -142,6 +142,9 @@ class SupervisorPedidosController extends Controller
         // Obtener órdenes con filtros (incluyendo borradas suavemente)
         $query = PedidoProduccion::withTrashed()->with(['asesora', 'prendas', 'cotizacion']);
 
+        // EXCLUIR pedidos en estado pendiente_cartera o RECHAZADO_CARTERA
+        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
+
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         // Si no hay parámetro aprobacion, mostrar todos los pedidos
         if ($request->filled('aprobacion')) {

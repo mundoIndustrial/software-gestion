@@ -558,7 +558,9 @@
             tr.setAttribute('data-pedido', orden.pedido);
             tr.classList.add('new-row-animation');
             
-            const estadoBadge = orden.estado ? orden.estado.toLowerCase().replace(/ /g, '-') : 'default';
+            // Formatear estado sin guiones bajos
+            const estadoFormato = (orden.estado || '-').replace(/_/g, ' ');
+            const estadoBadge = estadoFormato ? estadoFormato.toLowerCase().replace(/ /g, '-') : 'default';
             const fechaCreacion = orden.fecha_de_creacion_de_orden 
                 ? new Date(orden.fecha_de_creacion_de_orden).toLocaleDateString('es-ES')
                 : '-';
@@ -569,7 +571,7 @@
             tr.innerHTML = `
                 <td>
                     <span class="badge badge-${estadoBadge}">
-                        ${orden.estado || '-'}
+                        ${estadoFormato}
                     </span>
                 </td>
                 <td>${fechaCreacion}</td>
