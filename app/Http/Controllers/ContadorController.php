@@ -238,7 +238,7 @@ class ContadorController extends Controller
                     'estado' => $cotizacionModelo->estado,
                     'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
                     'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
-                    'especificaciones' => $cotizacionModelo->especificaciones ?? [],
+                    'especificaciones' => $this->parseEspecificaciones($cotizacionModelo->especificaciones),
                 ],
                 'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($reflectivosPorPrenda, $prendaCotReflectivoPorPrenda) {
                     // Generar descripción formateada usando el método del modelo
@@ -1011,6 +1011,58 @@ class ContadorController extends Controller
                 'message' => 'Error al guardar: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Parsear especificaciones de la cotización
+     * Maneja diferentes formatos: string JSON, array, o null
+     */
+    private function parseEspecificaciones($especificaciones)
+    {
+        if (!$especificaciones) {
+            return [];
+        }
+
+        // Si es un string, intentar parsearlo como JSON
+        if (is_string($especificaciones)) {
+            try {
+                // Primer intento: parsear directamente
+                $parsed = json_decode($especificaciones, true);
+                
+                // Si el resultado es un string (doblemente escapado), parsear nuevamente
+                if (is_string($parsed)) {
+                    $parsed = json_decode($parsed, true);
+                }
+                
+                if (is_array($parsed)) {
+                    return $parsed;
+                }
+                
+                // Si no funcionó, podría estar doblemente escapado con backslashes
+                // Intentar desescapar primero
+                $unescaped = stripslashes($especificaciones);
+                $parsed = json_decode($unescaped, true);
+                
+                // Si el resultado es un string, parsear nuevamente
+                if (is_string($parsed)) {
+                    $parsed = json_decode($parsed, true);
+                }
+                
+                if (is_array($parsed)) {
+                    return $parsed;
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error al parsear especificaciones: ' . $e->getMessage());
+                return [];
+            }
+        }
+
+        // Si ya es un array, devolverlo tal cual
+        if (is_array($especificaciones)) {
+            return $especificaciones;
+        }
+
+        return [];
     }
 
 }

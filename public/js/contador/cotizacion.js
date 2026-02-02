@@ -474,15 +474,19 @@ function openCotizacionModal(cotizacionId) {
                     const imagenesParaMostrar = [];
                     
                     // Recolectar imágenes de logo para esta prenda
+                    // Usar un Set para deduplicar URLs de logo
+                    const urlsLogoAgregadas = new Set();
+                    
                     if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas) {
                         data.logo_cotizacion.tecnicas_prendas.forEach(tp => {
                             if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
                                 tp.fotos.forEach((foto, idx) => {
-                                    if (foto.url) {
+                                    if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
+                                        urlsLogoAgregadas.add(foto.url);
                                         imagenesParaMostrar.push({
-                                            grupo: `Logo - ${tp.tipo_logo_nombre || 'Logo'}`,
+                                            grupo: 'Imagen - Logo',
                                             url: foto.url,
-                                            titulo: `${tp.tipo_logo_nombre || 'Logo'} ${idx + 1}`,
+                                            titulo: 'Imagen - Logo',
                                             color: '#1e5ba8'
                                         });
                                     }
@@ -599,9 +603,49 @@ function openCotizacionModal(cotizacionId) {
 
             htmlPrendas += '</div>';
 
-            // SECCIÓN ESPECIFICACIONES GENERALES (para cotización combinada y reflectivo)
-            // Si tiene prendas y tiene especificaciones, mostrar tabla de especificaciones
-            if (data.tiene_prendas && data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+            // HELPER FUNCTION: Verificar si hay especificaciones reales
+            const verificarEspecificaciones = (especificacionesObj) => {
+                if (!especificacionesObj || typeof especificacionesObj !== 'object') {
+                    return false;
+                }
+                const keys = Object.keys(especificacionesObj);
+                return keys.length > 0 && keys.some(key => {
+                    const valor = especificacionesObj[key];
+                    return valor && (Array.isArray(valor) ? valor.length > 0 : true);
+                });
+            };
+
+            // HELPER FUNCTION: Parsear especificaciones
+            const parseEspecificaciones = (especificacionesRaw) => {
+                if (!especificacionesRaw) return null;
+                
+                if (typeof especificacionesRaw === 'string') {
+                    try {
+                        return JSON.parse(especificacionesRaw);
+                    } catch (e) {
+                        console.log('Error al parsear especificaciones:', e);
+                        return null;
+                    }
+                }
+                
+                if (typeof especificacionesRaw === 'object') {
+                    return especificacionesRaw;
+                }
+                
+                return null;
+            };
+
+            // Parsear especificaciones una sola vez
+            const especificacionesObj = parseEspecificaciones(data.cotizacion?.especificaciones);
+            const tieneEspecificacionesReales = verificarEspecificaciones(especificacionesObj);
+
+            console.log('Especificaciones parseadas:', especificacionesObj);
+            console.log('Tiene especificaciones reales:', tieneEspecificacionesReales);
+            console.log('tiene_prendas:', data.tiene_prendas);
+            console.log('tiene_logo:', data.tiene_logo);
+
+            // SECCIÓN ESPECIFICACIONES GENERALES
+            if (tieneEspecificacionesReales) {
                 const especificacionesMap = {
                     'disponibilidad': 'DISPONIBILIDAD',
                     'forma_pago': 'FORMA DE PAGO',
@@ -625,7 +669,7 @@ function openCotizacionModal(cotizacionId) {
                 `;
 
                 for (const [clave, nombreEspec] of Object.entries(especificacionesMap)) {
-                    const valor = data.cotizacion.especificaciones[clave];
+                    const valor = especificacionesObj[clave];
                     let valorTexto = '-';
 
                     if (valor) {
@@ -634,14 +678,23 @@ function openCotizacionModal(cotizacionId) {
                             valorTexto = valor
                                 .map(v => {
                                     let texto = v.valor || '';
-                                    if (v.observacion) {
+                                    if (v.observacion && v.observacion.trim()) {
                                         texto += ` (${v.observacion})`;
                                     }
                                     return texto;
                                 })
+                                .filter(t => t) // Filtrar vacíos
                                 .join(', ');
+                            
+                            // Si resultó vacío, poner '-'
+                            if (!valorTexto) {
+                                valorTexto = '-';
+                            }
                         } else if (typeof valor === 'string') {
                             valorTexto = valor;
+                        } else if (typeof valor === 'object') {
+                            // Por si acaso es un objeto en lugar de array
+                            valorTexto = valor.valor || String(valor);
                         }
                     }
 
@@ -659,8 +712,9 @@ function openCotizacionModal(cotizacionId) {
                     </div>
                 `;
             }
-            // Si NO es cotización combinada ni reflectivo (es solo logo), mostrar observaciones generales
-            else if (!data.tiene_prendas && data.logo_cotizacion && data.logo_cotizacion.observaciones_generales) {
+                
+            // SECCIÓN DE OBSERVACIONES GENERALES (para cotización logo)
+            if (data.logo_cotizacion && data.logo_cotizacion.observaciones_generales) {
                 let observacionesArray = [];
                 
                 try {
