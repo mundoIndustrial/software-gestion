@@ -643,6 +643,7 @@
                         <thead>
                             <tr style="background-color: #f0f9ff; border-bottom: 2px solid #0ea5e9;">
                                 <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #1e40af; font-size: 0.9rem;">Variación</th>
+                                <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #1e40af; font-size: 0.9rem;">Opción</th>
                                 <th style="padding: 0.75rem; text-align: left; font-weight: 700; color: #1e40af; font-size: 0.9rem;">Observación</th>
                             </tr>
                         </thead>
@@ -650,7 +651,6 @@
                             <!-- Filas de variaciones se agregan aquí -->
                         </tbody>
                     </table>
-                    <button type="button" class="btn-agregar-variacion" onclick="agregarFilaVariacionReflectivo(this)" style="margin-top: 0.75rem; background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">+ Agregar Variación</button>
                     
                     <!-- Campo oculto para almacenar JSON de variaciones -->
                     <input type="hidden" class="variaciones-json-reflectivo" name="productos_reflectivo[][variaciones]" value="[]">

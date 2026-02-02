@@ -371,8 +371,8 @@ function openCotizacionModal(cotizacionId) {
                             variacionesSeleccionadas.forEach(variacion => {
                                 filas.push({
                                     variacion: variacion.variacion || '-',
-                                    tipo: variacion.observacion || '-',
-                                    obs: ''
+                                    tipo: variacion.opcion || '-',
+                                    obs: variacion.observacion || ''
                                 });
                             });
                         } else {

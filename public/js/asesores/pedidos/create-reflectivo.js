@@ -1708,6 +1708,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </td>
             <td style="padding: 0.75rem;">
+                <input type="text" class="variacion-opcion" placeholder="Opción..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+            </td>
+            <td style="padding: 0.75rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <input type="text" class="variacion-observacion" placeholder="Ej: Manga larga, bolsillo izquierdo, etc." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; min-height: 40px;">
                     <button type="button" class="btn-eliminar-variacion" style="background-color: #ef4444; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.8rem;">Eliminar</button>
@@ -1724,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Agregar event listeners para actualizar JSON cuando cambien los inputs
-        fila.querySelectorAll('input').forEach(input => {
+        fila.querySelectorAll('input, select').forEach(input => {
             input.addEventListener('change', () => actualizarVariacionesJSON(seccion));
             input.addEventListener('input', () => actualizarVariacionesJSON(seccion));
         });
@@ -1746,14 +1749,22 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.querySelectorAll('tr').forEach(fila => {
             const checkbox = fila.querySelector('.variacion-checkbox');
             const nombre = fila.querySelector('.variacion-nombre');
+            const opcion = fila.querySelector('.variacion-opcion');
             const observacion = fila.querySelector('.variacion-observacion');
 
             if (checkbox && nombre && observacion) {
-                variaciones.push({
+                const variacion = {
                     variacion: nombre.value.trim(),
                     checked: checkbox.checked,
                     observacion: observacion.value.trim()
-                });
+                };
+                
+                // Agregar opción si existe (para Manga y Broche/Botón)
+                if (opcion && opcion.tagName === 'SELECT') {
+                    variacion.opcion = opcion.value.trim();
+                }
+                
+                variaciones.push(variacion);
             }
         });
 
@@ -1776,28 +1787,99 @@ document.addEventListener('DOMContentLoaded', function() {
                 fila.style.cssText = 'border-bottom: 1px solid #e2e8f0;';
                 fila.classList.add('variacion-fila-default'); // Marcar como fila por defecto
                 
+                let opcionHTML = '';
+                
+                // Generar HTML de opción según el tipo de variación
+                if (variacion === 'Manga') {
+                    opcionHTML = `
+                        <td style="padding: 0.75rem;">
+                            <select class="variacion-opcion" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="Corta">Corta</option>
+                                <option value="Larga">Larga</option>
+                            </select>
+                        </td>
+                    `;
+                } else if (variacion === 'Broche/Botón') {
+                    // Cargar opciones de broche desde el API
+                    opcionHTML = `
+                        <td style="padding: 0.75rem;">
+                            <select class="variacion-opcion" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                                <option value="">-- Cargando --</option>
+                            </select>
+                        </td>
+                    `;
+                } else if (variacion === 'Bolsillos') {
+                    // Bolsillos no tiene opción
+                    opcionHTML = `
+                        <td style="padding: 0.75rem;">
+                            <span style="color: #999; font-size: 0.9rem;">N/A</span>
+                        </td>
+                    `;
+                }
+                
                 fila.innerHTML = `
                     <td style="padding: 0.75rem;">
                         <div class="variaciones-fila-input" style="display: flex; align-items: center; gap: 0.5rem;">
-                            <input type="checkbox" class="variacion-checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0ea5e9;" checked>
+                            <input type="checkbox" class="variacion-checkbox" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0ea5e9;">
                             <input type="text" class="variacion-nombre" value="${variacion}" placeholder="Ej: Manga, Bolsillos, etc." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
                         </div>
                     </td>
+                    ${opcionHTML}
                     <td style="padding: 0.75rem;">
                         <input type="text" class="variacion-observacion" placeholder="Ej: Manga larga, bolsillo izquierdo, etc." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; min-height: 40px;">
                     </td>
                 `;
 
                 // Agregar event listeners para actualizar JSON cuando cambien los inputs
-                fila.querySelectorAll('input').forEach(input => {
+                fila.querySelectorAll('input, select').forEach(input => {
                     input.addEventListener('change', () => actualizarVariacionesJSON(seccion));
                     input.addEventListener('input', () => actualizarVariacionesJSON(seccion));
                 });
 
                 tbody.appendChild(fila);
+                
+                // Si es Broche/Botón, cargar los tipos de broche
+                if (variacion === 'Broche/Botón') {
+                    cargarTiposBrocheEnVariacion(fila);
+                }
             });
             actualizarVariacionesJSON(seccion);
         }
+    };
+    
+    // Función para cargar tipos de broche en el select de variación
+    window.cargarTiposBrocheEnVariacion = function(fila) {
+        const select = fila.querySelector('.variacion-opcion');
+        if (!select) return;
+        
+        fetch('/asesores/api/tipos-broche-boton')
+            .then(response => response.json())
+            .then(data => {
+                let tiposBroche = [];
+                
+                // Manejar respuesta con estructura { success, data }
+                if (data && data.data && Array.isArray(data.data)) {
+                    tiposBroche = data.data;
+                } 
+                // O si es directamente un array
+                else if (Array.isArray(data)) {
+                    tiposBroche = data;
+                }
+                
+                if (tiposBroche.length > 0) {
+                    select.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    tiposBroche.forEach(broche => {
+                        const option = document.createElement('option');
+                        option.value = broche.nombre;
+                        option.textContent = broche.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar tipos de broche:', error);
+            });
     };});
 
 /**
