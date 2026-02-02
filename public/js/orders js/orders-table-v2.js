@@ -385,8 +385,25 @@ function showDeleteNotification(message, type) {
 /**
  * Ver detalle de orden
  * MANTENER: Lógica compleja de modal de detalles
+ * Ahora abre el selector de prendas (igual que en main)
  */
 async function viewDetail(pedido) {
+    try {
+        // Usar el mismo sistema que main: abrirSelectorRecibos
+        if (typeof window.abrirSelectorRecibos === 'function') {
+            window.abrirSelectorRecibos(pedido);
+        } else {
+            console.error('❌ [viewDetail] abrirSelectorRecibos no disponible');
+            alert('Error: Sistema de detalles no disponible');
+        }
+    } catch (error) {
+        console.error('❌ [viewDetail] Error:', error);
+    }
+    
+    return;
+    
+    // CÓDIGO ANTIGUO - COMENTADO (mantener para referencia)
+    /*
     try {
         setCurrentOrder(pedido);
         
@@ -596,6 +613,7 @@ if (typeof loadOrderImages === 'function') {
 
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
     }
+    */
 }
 
 /**

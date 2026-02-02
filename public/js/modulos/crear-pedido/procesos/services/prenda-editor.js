@@ -556,7 +556,9 @@ class PrendaEditor {
             tieneImagenes: !!prenda.imagenes,
             count: prenda.imagenes?.length || 0,
             tienefotos: !!prenda.fotos,
-            countFotos: prenda.fotos?.length || 0
+            countFotos: prenda.fotos?.length || 0,
+            tieneProcesos: !!prenda.procesos,
+            procesosCount: prenda.procesos ? Object.keys(prenda.procesos).length : 0
         });
 
         // 🔧 VERIFICAR/CREAR SERVICIO SI NO EXISTE (para supervisor de pedidos)
@@ -659,6 +661,22 @@ class PrendaEditor {
             console.log('✅ [CARGAR-IMAGENES] Detectado: fotos de BD (alternativo)');
             imagenesACargar = prenda.fotos;
             origen = 'bd-fotos';
+        }
+
+        // ✨ NUEVO: PRIORIDAD 2: Imágenes de procesos (reflectivo, logo, etc)
+        // Si viene de una cotización con procesos, usar esas imágenes del proceso
+        if (!imagenesACargar && prenda.procesos && typeof prenda.procesos === 'object' && Object.keys(prenda.procesos).length > 0) {
+            console.log('✨ [CARGAR-IMAGENES] Detectado: procesos con imágenes (reflectivo/logo)');
+            
+            // Buscar el primer proceso que tenga imágenes
+            for (const [tipoProceso, dataProceso] of Object.entries(prenda.procesos)) {
+                if (dataProceso.imagenes && Array.isArray(dataProceso.imagenes) && dataProceso.imagenes.length > 0) {
+                    console.log(`✅ [CARGAR-IMAGENES] Encontradas ${dataProceso.imagenes.length} imágenes del proceso "${tipoProceso}"`);
+                    imagenesACargar = dataProceso.imagenes;
+                    origen = `procesos-${tipoProceso}`;
+                    break;
+                }
+            }
         }
 
         // Si no hay imágenes, retornar

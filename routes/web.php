@@ -275,7 +275,8 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/registros/filter-orders', [RegistroOrdenController::class, 'filterOrders'])->name('registros.filter-orders');
     Route::post('/registros/search', [RegistroOrdenController::class, 'searchOrders'])->name('registros.search');
     
-    // Rutas con parámetros {pedido}
+    // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
+    Route::get('/registros/{id}/recibos-datos', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDetalleCompleto'])->name('registros.recibos-datos');
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');

@@ -117,7 +117,13 @@ class CrearPedidoEditableController extends Controller
         $cotizaciones = Cotizacion::with([
             'cliente',
             'prendas' => function($query) {
-                $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
+                $query->with([
+                    'fotos', 
+                    'telaFotos', 
+                    'tallas', 
+                    'variantes',
+                    'reflectivo.fotos'  // ✅ Agregar fotos de reflectivo para imágenes del proceso
+                ]);
             },
             'logoCotizacion.fotos',
             'reflectivoCotizacion.fotos'

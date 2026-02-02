@@ -340,6 +340,7 @@
             // Determinar la ruta correcta según la página actual
             let apiUrl;
             if (window.location.pathname.includes('/registros')) {
+                // Usar la ruta de registros recibos-datos
                 apiUrl = `/registros/${pedidoId}/recibos-datos`;
             } else {
                 apiUrl = `/api/pedidos/${pedidoId}`;

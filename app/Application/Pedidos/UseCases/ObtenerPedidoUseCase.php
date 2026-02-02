@@ -612,16 +612,20 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         try {
             if ($prenda->procesos && $prenda->procesos->count() > 0) {
                 foreach ($prenda->procesos as $proceso) {
-                    // ⚠️ CRÍTICO: Si está configurado para filtrar procesos PENDIENTE y el proceso está en ese estado, omitir
-                    if ($this->filtrarProcesosPendientes && $proceso->estado === 'PENDIENTE') {
-                        Log::info('[PROCESOS-FILTRADO] Proceso en estado PENDIENTE - Omitiendo (modo: solo /registros)', [
-                            'proceso_id' => $proceso->id,
-                            'prenda_id' => $prenda->id,
-                            'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'N/A',
-                            'estado' => $proceso->estado,
-                            'filtrar_pendientes' => $this->filtrarProcesosPendientes
-                        ]);
-                        continue; // Saltar este proceso
+                    // ⚠️ CRÍTICO: Si está configurado para filtrar procesos PENDIENTE
+                    // En la vista /registros, solo mostrar procesos APROBADOS
+                    if ($this->filtrarProcesosPendientes) {
+                        // Solo mostrar procesos con estado APROBADO
+                        if ($proceso->estado !== 'APROBADO') {
+                            Log::info('[PROCESOS-FILTRADO] Proceso NO aprobado - Omitiendo (solo APROBADOS en /registros)', [
+                                'proceso_id' => $proceso->id,
+                                'prenda_id' => $prenda->id,
+                                'tipo_proceso' => $proceso->tipoProceso?->nombre ?? 'N/A',
+                                'estado' => $proceso->estado,
+                                'filtrar_pendientes' => $this->filtrarProcesosPendientes
+                            ]);
+                            continue; // Saltar este proceso
+                        }
                     }
                     $imagenes = [];
                     

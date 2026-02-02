@@ -112,32 +112,14 @@
    * Acción: Ver detalle de la orden
    */
   function handleDetalle(ordenId) {
-
     
-    // Obtener datos de la orden usando el mismo endpoint que asesores
-    fetch(`/registros/${ordenId}`, {
-      method: 'GET',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
-      }
-    })
-    .then(response => {
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-
-      // Disparar evento con los datos de la orden
-      window.dispatchEvent(new CustomEvent('load-order-detail', { detail: data }));
-    })
-    .catch(error => {
-
-      alert('Error al cargar los detalles de la orden: ' + error.message);
-    });
+    // Usar el mismo sistema que main: abrirSelectorRecibos
+    if (typeof window.abrirSelectorRecibos === 'function') {
+      window.abrirSelectorRecibos(ordenId);
+    } else {
+      console.error('❌ [handleDetalle] abrirSelectorRecibos no disponible');
+      alert('Error: Sistema de detalles no disponible');
+    }
   }
 
   /**

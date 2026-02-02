@@ -461,7 +461,27 @@ class PedidoController extends Controller
     public function obtenerDetalleCompleto(int $id, bool $filtrarProcesosPendientes = false): JsonResponse
     {
         try {
-            $response = $this->obtenerPedidoUseCase->ejecutar($id, $filtrarProcesosPendientes);
+            // Buscar el pedido por ID o por numero_pedido
+            $pedido = \App\Models\PedidoProduccion::find($id);
+            
+            // Si no encuentra por ID, intenta buscar por numero_pedido
+            if (!$pedido) {
+                $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $id)->first();
+            }
+            
+            // Si aún no encuentra el pedido, devolver error
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Pedido {$id} no encontrado"
+                ], 404);
+            }
+            
+            // Usar el ID real del pedido para obtener los detalles
+            // En /registros: filtrar solo procesos APROBADOS (no mostrar PENDIENTE)
+            // En otras vistas (supervisor): mostrar todos
+            $filtrarSoloAprobados = request()->is('registros*');
+            $response = $this->obtenerPedidoUseCase->ejecutar($pedido->id, $filtrarSoloAprobados);
             
             // Convertir a array para modificar
             $responseData = $response->toArray();
@@ -469,7 +489,7 @@ class PedidoController extends Controller
             // Agregar ancho y metraje a cada prenda individual
             if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 \Log::info('[PedidoController] Agregando ancho/metraje y consecutivos a prendas', [
-                    'pedido_id' => $id,
+                    'pedido_id' => $pedido->id,
                     'total_prendas' => count($responseData['prendas'])
                 ]);
                 
@@ -484,7 +504,7 @@ class PedidoController extends Controller
                     
                     if ($prendaId) {
                         // Buscar ancho y metraje para esta prenda específica
-                        $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $id)
+                        $anchoMetrajePrenda = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
                             ->where('prenda_pedido_id', $prendaId)
                             ->first();
                         
@@ -496,7 +516,7 @@ class PedidoController extends Controller
                             ];
                             
                             \Log::info('[PedidoController] Ancho/Metraje encontrado para prenda', [
-                                'pedido_id' => $id,
+                                'pedido_id' => $pedido->id,
                                 'prenda_id' => $prendaId,
                                 'prenda_nombre' => $prenda['nombre'] ?? 'N/A',
                                 'ancho' => $anchoMetrajePrenda->ancho,
@@ -506,18 +526,18 @@ class PedidoController extends Controller
                             $prenda['ancho_metraje'] = null;
                             
                             \Log::info('[PedidoController] No hay ancho/metraje para prenda', [
-                                'pedido_id' => $id,
+                                'pedido_id' => $pedido->id,
                                 'prenda_id' => $prendaId,
                                 'prenda_nombre' => $prenda['nombre'] ?? 'N/A'
                             ]);
                         }
                         
                         // Agregar consecutivos para esta prenda
-                        $consecutivos = $this->obtenerConsecutivosPrenda($id, $prendaId);
+                        $consecutivos = $this->obtenerConsecutivosPrenda($pedido->id, $prendaId);
                         $prenda['recibos'] = $consecutivos;
                         
                         \Log::info('[PedidoController] Consecutivos agregados a prenda', [
-                            'pedido_id' => $id,
+                            'pedido_id' => $pedido->id,
                             'prenda_id' => $prendaId,
                             'consecutivos_devueltos' => $consecutivos,
                             'consecutivos_es_null' => is_null($consecutivos)
