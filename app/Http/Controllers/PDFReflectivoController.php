@@ -19,21 +19,29 @@ class PDFReflectivoController extends Controller
     public function generate($id, Request $request)
     {
         try {
-            // 1. Obtener la cotización
-            $cotizacion = Cotizacion::find($id);
+            // 1. Obtener la cotización con todas sus relaciones
+            $cotizacion = Cotizacion::with([
+                'usuario:id,name',
+                'cliente:id,nombre',
+                'tipoCotizacion:id,codigo,nombre',
+                'prendaCotReflectivos' => function($query) {
+                    $query->with([
+                        'prendaCot:id,cotizacion_id,nombre_producto,descripcion',
+                        'prendaCot.tallas:id,prenda_cot_id,talla,cantidad',
+                        'prendaCot.prendaCotReflectivo:id,prenda_cot_id,color_tela_ref,descripcion,ubicaciones,variaciones',
+                        'prendaCot.telaFotos:id,prenda_cot_id,tela_index,ruta_original,ruta_webp'
+                    ]);
+                },
+                'reflectivoPrendas.fotos:id,reflectivo_cotizacion_id,ruta_original,ruta_webp'
+            ])->findOrFail($id);
 
-            if (!$cotizacion) {
-                return response()->json(['success' => false, 'message' => 'Cotización no encontrada'], 404);
+            // 2. Validar que sea una cotización reflectivo (tipo_cotizacion_id = 4 o código RF)
+            $esReflectivo = $cotizacion->tipo_cotizacion_id == 4 || 
+                           ($cotizacion->tipoCotizacion && $cotizacion->tipoCotizacion->codigo === 'RF');
+            
+            if (!$esReflectivo) {
+                return response()->json(['success' => false, 'message' => 'Esta cotización no es de tipo reflectivo'], 400);
             }
-
-            // 2. Cargar prendas de reflectivo con sus datos completos
-            $cotizacion->load([
-                'prendaCotReflectivos:id,cotizacion_id,prenda_cot_id,variaciones',
-                'prendaCotReflectivos.prendaCot:id,cotizacion_id,nombre_producto,descripcion',
-                'prendaCotReflectivos.prendaCot.fotos:id,prenda_cot_id,ruta_webp',
-                'prendaCotReflectivos.prendaCot.tallas:id,prenda_cot_id,talla,cantidad',
-                'reflectivoPrendas.fotos:id,reflectivo_cotizacion_id,ruta_webp'
-            ]);
 
             // 3. Generar diseño HTML usando el componente
             $design = new ReflectivoPdfDesign($cotizacion);
@@ -45,8 +53,14 @@ class PDFReflectivoController extends Controller
             // 5. Retornar descarga
             return $this->downloadPdf($pdfContent, $cotizacion);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Cotización no encontrada'], 404);
         } catch (\Exception $e) {
-            \Log::error('Error al generar PDF de reflectivo: ' . $e->getMessage());
+            \Log::error('Error al generar PDF de reflectivo: ' . $e->getMessage(), [
+                'cotizacion_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['success' => false, 'message' => 'Error al generar PDF: ' . $e->getMessage()], 500);
         }
     }

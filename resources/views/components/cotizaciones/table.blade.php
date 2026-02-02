@@ -113,18 +113,19 @@
                                                 $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
                                                 $tieneReflectivo = false;
                                                 
-                                                if ($cot->tipo === 'RF') {
-                                                    $tieneReflectivo = true;
-                                                } else {
+                                                // Verificar si es reflectivo por tipo_cotizacion_id (4 = RF)
+                                                $esReflectivo = $cot->tipo_cotizacion_id == 4;
+                                                
+                                                if (!$esReflectivo) {
                                                     $tieneReflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cot->id)->whereNotNull('prenda_cot_id')->exists();
                                                 }
                                                 
                                                 // Detectar si es COMBINADA (prendas + logo)
                                                 $esCombinad = $tienePrendas && $tieneLogo;
                                                 
-                                                // Construir array de botones SOLO si NO es combinada
+                                                // Construir array de botones SOLO si NO es combinada y NO es reflectivo
                                                 $pdfButtons = [];
-                                                if (!$esCombinad) {
+                                                if (!$esCombinad && !$esReflectivo) {
                                                     if ($tienePrendas) {
                                                         $pdfButtons[] = [
                                                             'tipo' => 'prenda',
@@ -153,6 +154,15 @@
                                                 <!-- Cotización COMBINADA: Descargar directamente sin menú -->
                                                 <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'combinada')" 
                                                     title="Descargar PDF Combinada"
+                                                    style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                    <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                                                </button>
+                                            @elseif($esReflectivo)
+                                                <!-- Cotización REFLECTIVO: Descargar directamente sin menú -->
+                                                <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'reflectivo')" 
+                                                    title="Descargar PDF Reflectivo"
                                                     style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                     onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                     onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
