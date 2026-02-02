@@ -27,7 +27,7 @@
             '#cotizacion_search_editable',
             '#cotizacion_dropdown_editable',
             '#cotizacion_selected_editable',
-            function(id, numero, cliente, asesora, formaPago) {
+            function(id, numero, cliente, asesora, formaPago, tipoCotizacion) {  // ✅ Agregar parámetro tipo
                 // Callback cuando se selecciona una cotización
 
                 
@@ -37,7 +37,14 @@
                 document.getElementById('cliente_editable').value = cliente;
                 document.getElementById('asesora_editable').value = asesora;
                 document.getElementById('forma_de_pago_editable').value = formaPago || '';
-                document.getElementById('cotizacion_selected_text_editable').textContent = `${numero} - ${cliente}`;
+                document.getElementById('cotizacion_selected_text_editable').textContent = `${numero} - ${cliente} (${asesora}) - Tipo: ${tipoCotizacion}`;  // ✅ Incluir tipo
+                
+                // ✅ Actualizar el campo de tipo de cotización
+                const tipoCotElement = document.getElementById('cotizacion_tipo_text_editable');
+                if (tipoCotElement) {
+                    tipoCotElement.textContent = tipoCotizacion;
+                }
+                
                 selectedDiv.style.display = 'block';
 
                 // Cargar prendas usando el cargador

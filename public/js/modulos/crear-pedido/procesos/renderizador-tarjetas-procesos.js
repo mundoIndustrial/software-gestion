@@ -337,6 +337,47 @@ window.editarProcesoDesdeModal = function(tipo) {
         
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
         
+        // ✅ NUEVO: Aplicar automáticamente tallas desde la prenda SI es una cotización
+        setTimeout(() => {
+            // Copiar tallas de window.tallasRelacionales a window.tallasCantidadesProceso
+            if (window.tallasRelacionales) {
+                console.log('[EDITAR-PROCESO-MODAL] 🔄 Sincronizando tallas desde prenda a proceso...');
+                console.log('[EDITAR-PROCESO-MODAL] 📊 window.tallasRelacionales:', window.tallasRelacionales);
+                
+                // Inicializar si no existe
+                if (!window.tallasCantidadesProceso) {
+                    window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+                }
+                
+                // Copiar DAMA
+                if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
+                    window.tallasCantidadesProceso.dama = { ...window.tallasRelacionales.DAMA };
+                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
+                }
+                
+                // Copiar CABALLERO
+                if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
+                    window.tallasCantidadesProceso.caballero = { ...window.tallasRelacionales.CABALLERO };
+                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
+                }
+                
+                // Sincronizar tallas seleccionadas
+                if (!window.tallasSeleccionadasProceso) {
+                    window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
+                }
+                window.tallasSeleccionadasProceso.dama = Object.keys(window.tallasCantidadesProceso.dama || {});
+                window.tallasSeleccionadasProceso.caballero = Object.keys(window.tallasCantidadesProceso.caballero || {});
+                console.log('[EDITAR-PROCESO-MODAL] ✅ Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
+            }
+            
+            // Renderizar el resumen con las tallas ya aplicadas
+            if (window.actualizarResumenTallasProceso && typeof window.actualizarResumenTallasProceso === 'function') {
+                console.log('[EDITAR-PROCESO-MODAL] 📊 Renderizando resumen de tallas automáticamente con "done_all"...');
+                window.actualizarResumenTallasProceso();
+                console.log('[EDITAR-PROCESO-MODAL] ✅ Resumen de tallas renderizado con tallas aplicadas');
+            }
+        }, 200);
+        
         // Verificar z-index después de abrir
         setTimeout(() => {
             const modalProceso = document.getElementById('modal-proceso-generico');

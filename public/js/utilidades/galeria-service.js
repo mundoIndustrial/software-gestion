@@ -326,3 +326,95 @@ window.Galeria = {
     }
 };
 
+/**
+ * Función global para mostrar imagen en modal fullscreen
+ * Usada por prenda-card-service.js para mostrar imágenes de procesos
+ */
+window.mostrarImagenProcesoGrande = function(srcImagen) {
+    // Crear contenedor modal si no existe
+    let modalExistente = document.getElementById('modal-imagen-proceso-grande');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'modal-imagen-proceso-grande';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+    `;
+    
+    const contenido = document.createElement('div');
+    contenido.style.cssText = `
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    const img = document.createElement('img');
+    img.src = srcImagen;
+    img.style.cssText = `
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+    `;
+    
+    // Botón cerrar
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerHTML = '✕';
+    btnCerrar.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: none;
+        color: #000;
+        font-size: 28px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 1000000;
+    `;
+    btnCerrar.onclick = () => modal.remove();
+    
+    contenido.appendChild(img);
+    contenido.appendChild(btnCerrar);
+    modal.appendChild(contenido);
+    
+    // Cerrar al clickear fuera de la imagen
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    
+    // Cerrar con tecla ESC
+    const handleKeyPress = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', handleKeyPress);
+        }
+    };
+    document.addEventListener('keydown', handleKeyPress);
+    
+    document.body.appendChild(modal);
+};
+
+

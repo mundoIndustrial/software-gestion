@@ -554,30 +554,30 @@ window.PrendaCardHandlers = {
 
         const generarContenidoGaleria = (idx) => {
             return `
-                <div style="max-width: 500px; margin: 0 auto;">
-                    <div id="galeria-foto-container" style="position: relative; margin-bottom: 1rem;">
+                <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div id="galeria-foto-container" style="position: relative; display: flex; justify-content: center; align-items: center; width: 500px; height: 350px; background: #f9fafb; border-radius: 12px; padding: 1rem;">
                         <img 
                             id="galeria-foto-actual"
                             src="${fotosUrls[idx]}" 
                             alt="Foto prenda"
-                            style="width: 100%; border-radius: 8px; max-height: 400px; object-fit: contain;"
+                            style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; image-rendering: crisp-edges;"
                         />
                         ${fotosUrls.length > 1 ? `
                             <button id="btn-foto-anterior" type="button" 
                                 style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); 
                                        background: rgba(0,0,0,0.6); color: white; border: none; 
-                                       width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.2s;">
+                                       width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.2s; z-index: 10;">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <button id="btn-foto-siguiente" type="button" 
                                 style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
                                        background: rgba(0,0,0,0.6); color: white; border: none; 
-                                       width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.2s;">
+                                       width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.2s; z-index: 10;">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         ` : ''}
                     </div>
-                    <div style="text-align: center; color: #666; font-size: 0.9rem;">
+                    <div style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 1rem;">
                         <i class="fas fa-images"></i> Foto ${idx + 1} de ${fotosUrls.length}
                     </div>
                 </div>
@@ -585,12 +585,35 @@ window.PrendaCardHandlers = {
         };
 
         Swal.fire({
-            title: ` ${prenda.nombre_producto}`,
+            title: `${prenda.nombre_producto || prenda.nombre_prenda || 'Galería de Fotos'}`,
             html: generarContenidoGaleria(indiceActual),
-            width: '600px',
+            width: 'auto',
+            padding: '1.5rem',
             confirmButtonText: 'Cerrar',
             confirmButtonColor: '#0ea5e9',
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            backdrop: 'rgba(0, 0, 0, 0.4)',
+            position: 'center',
+            scrollbarPadding: false,
             didOpen: () => {
+                // Centrar el modal perfectamente en la vista
+                const popup = Swal.getPopup();
+                if (popup) {
+                    popup.style.width = 'auto';
+                    popup.style.height = 'auto';
+                    popup.style.maxWidth = '600px';
+                    popup.style.display = 'flex';
+                    popup.style.flexDirection = 'column';
+                    popup.style.justifyContent = 'center';
+                    popup.style.alignItems = 'center';
+                    popup.style.position = 'fixed';
+                    popup.style.top = '50%';
+                    popup.style.left = '50%';
+                    popup.style.transform = 'translate(-50%, -50%)';
+                    popup.style.minHeight = 'auto';
+                }
+                
                 const actualizarGaleria = () => {
                     const container = document.querySelector('.swal2-html-container');
                     if (container) {
@@ -598,6 +621,7 @@ window.PrendaCardHandlers = {
                         
                         const btnAnterior = document.getElementById('btn-foto-anterior');
                         const btnSiguiente = document.getElementById('btn-foto-siguiente');
+
 
                         if (btnAnterior) {
                             btnAnterior.addEventListener('click', (e) => {

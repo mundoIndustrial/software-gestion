@@ -1404,14 +1404,13 @@ class PrendaEditor {
                     window.tallasRelacionales[generoUpper] = { ...tallasObj };
                 }
             });
-        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0 && prenda.cotizacion_id) {
+        } else if (prenda.cotizacion_id) {
             // SOLO para cotizaciones: Pre-seleccionar tallas que vienen de la base de datos
-            console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde cotización:', prenda.tallas);
-            console.log('[cargarTallasYCantizacion] 📋 Género de la prenda:', prenda.genero);
-            console.log('[cargarTallasYCantidades] 🏷️ ID Cotización:', prenda.cotizacion_id);
+            console.log('[cargarTallasYCantidades] ✓ Detectada cotización, intentando cargar tallas');
+            console.log('[cargarTallasYCantidades] 📋 prenda.tallas:', prenda.tallas);
+            console.log('[cargarTallasYCantidades] 📋 prenda.procesos:', prenda.procesos);
             
-            // Convertir array de tallas a objeto por género usando el género de la prenda
-            // Manejar ambos casos: genero como objeto con nombre o como string directo
+            // Determinar género
             let generoPrenda = 'DAMA'; // valor por defecto
             if (prenda.genero) {
                 if (typeof prenda.genero === 'string') {
@@ -1426,15 +1425,53 @@ class PrendaEditor {
             window.tallasDesdeCotizacion = window.tallasDesdeCotizacion || {};
             window.tallasDesdeCotizacion[generoPrenda] = new Set();
             
-            prenda.tallas.forEach(tallaObj => {
-                const talla = tallaObj.talla;
-                const cantidad = tallaObj.cantidad || 0;
-                console.log(`[cargarTallasYCantidades] 📏 Agregando ${generoPrenda} - ${talla}: ${cantidad}`);
-                window.tallasRelacionales[generoPrenda][talla] = cantidad;
-                window.tallasDesdeCotizacion[generoPrenda].add(talla);
-            });
+            let tallasEncontradas = false;
+            let tallasArray = [];
             
-            console.log('[cargarTallasYCantidades] 📋 Tallas de cotización para pre-selección:', window.tallasDesdeCotizacion);
+            // OPCIÓN 1: Si vienen en prenda.tallas (desde BD prenda_tallas_cot)
+            if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+                console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde prenda.tallas (BD):', prenda.tallas);
+                tallasArray = prenda.tallas;
+                tallasEncontradas = true;
+            } 
+            // OPCIÓN 2: Si vienen en procesos[PROCESO].talla_cantidad (desde logo_cotizacion_tecnica_prendas)
+            else if (prenda.procesos && typeof prenda.procesos === 'object') {
+                console.log('[cargarTallasYCantidades] 🔍 prenda.tallas vacío, buscando en procesos...');
+                
+                // Buscar en todos los procesos
+                for (const [procesoKey, procesoData] of Object.entries(prenda.procesos)) {
+                    if (procesoData && procesoData.talla_cantidad) {
+                        console.log(`[cargarTallasYCantidades] ✓ Encontradas tallas en procesos.${procesoKey}:`, procesoData.talla_cantidad);
+                        
+                        // Convertir a array si es necesario
+                        if (Array.isArray(procesoData.talla_cantidad)) {
+                            tallasArray = procesoData.talla_cantidad;
+                        } else if (typeof procesoData.talla_cantidad === 'object') {
+                            // Si es objeto {talla: cantidad}, convertir a array
+                            tallasArray = Object.entries(procesoData.talla_cantidad).map(([talla, cantidad]) => ({
+                                talla: talla,
+                                cantidad: cantidad
+                            }));
+                        }
+                        tallasEncontradas = true;
+                        break;  // Usar el primer proceso que tenga tallas
+                    }
+                }
+            }
+            
+            if (tallasEncontradas && tallasArray.length > 0) {
+                tallasArray.forEach(tallaObj => {
+                    const talla = tallaObj.talla;
+                    const cantidad = tallaObj.cantidad || 0;
+                    console.log(`[cargarTallasYCantidades] 📏 Agregando ${generoPrenda} - ${talla}: ${cantidad}`);
+                    window.tallasRelacionales[generoPrenda][talla] = cantidad;
+                    window.tallasDesdeCotizacion[generoPrenda].add(talla);
+                });
+                
+                console.log('[cargarTallasYCantidades] 📋 Tallas de cotización para pre-selección:', window.tallasDesdeCotizacion);
+            } else {
+                console.log('[cargarTallasYCantidades] ⚠️ No se encontraron tallas en BD ni en procesos');
+            }
         } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas disponibles:', prenda.tallas_disponibles);
             
@@ -1514,6 +1551,83 @@ class PrendaEditor {
                 checkboxGenero.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
+        
+        // ✅ AUTOMÁTICO PARA COTIZACIONES: Si vinieron tallas desde procesos de cotización, aplicarlas automáticamente
+        if (prenda.cotizacion_id && prenda.procesos && window.tallasRelacionales) {
+            console.log('[cargarTallasYCantidades] 🔄 COTIZACIÓN DETECTADA: Preparando aplicación automática de tallas a procesos...');
+            
+            // Esperar a que se renderice todo y LUEGO aplicar tallas a procesos
+            setTimeout(() => {
+                // Obtener tallas de la prenda (ya cargadas en window.tallasRelacionales)
+                const tallasDama = window.tallasRelacionales.DAMA || {};
+                const tallasCaballero = window.tallasRelacionales.CABALLERO || {};
+                
+                console.log('[cargarTallasYCantidades] 📊 Tallas a aplicar:', { 
+                    dama: tallasDama, 
+                    caballero: tallasCaballero 
+                });
+                
+                // Recorrer todos los procesos y aplicar automáticamente las tallas
+                Object.keys(prenda.procesos).forEach(procesoSlug => {
+                    const procesoData = prenda.procesos[procesoSlug];
+                    
+                    if (procesoData && procesoData.talla_cantidad) {
+                        console.log(`[cargarTallasYCantidades] ✅ PROCESO "${procesoSlug}" con talla_cantidad:`, procesoData.talla_cantidad);
+                        
+                        // Aplicar tallas directamente a window.tallasCantidadesProceso
+                        // para cada género disponible
+                        if (Object.keys(tallasDama).length > 0) {
+                            if (!window.tallasCantidadesProceso) {
+                                window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+                            }
+                            window.tallasCantidadesProceso.dama = { ...tallasDama };
+                            console.log(`[cargarTallasYCantidades] ✏️ Aplicadas tallas DAMA al proceso ${procesoSlug}:`, tallasDama);
+                        }
+                        
+                        if (Object.keys(tallasCaballero).length > 0) {
+                            if (!window.tallasCantidadesProceso) {
+                                window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+                            }
+                            window.tallasCantidadesProceso.caballero = { ...tallasCaballero };
+                            console.log(`[cargarTallasYCantidades] ✏️ Aplicadas tallas CABALLERO al proceso ${procesoSlug}:`, tallasCaballero);
+                        }
+                    }
+                });
+                
+                // Sincronizar las tallas seleccionadas del proceso
+                if (window.tallasSeleccionadasProceso) {
+                    window.tallasSeleccionadasProceso.dama = Object.keys(tallasDama);
+                    window.tallasSeleccionadasProceso.caballero = Object.keys(tallasCaballero);
+                    console.log('[cargarTallasYCantidades] ✅ Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
+                }
+                
+                // 🔴 FIX CRÍTICO: Sincronizar tallas a window.procesosSeleccionados ANTES de re-renderizar
+                console.log('[cargarTallasYCantidades] 🔄 SINCRONIZANDO TALLAS A window.procesosSeleccionados...');
+                if (window.procesosSeleccionados && Object.keys(window.procesosSeleccionados).length > 0) {
+                    Object.keys(window.procesosSeleccionados).forEach(tipoProceso => {
+                        const proceso = window.procesosSeleccionados[tipoProceso];
+                        if (proceso && proceso.datos) {
+                            // Actualizar las tallas del proceso con las del relacional
+                            proceso.datos.tallas = {
+                                dama: { ...tallasDama },
+                                caballero: { ...tallasCaballero }
+                            };
+                            console.log(`[cargarTallasYCantidades] ✏️ Tallas sincronizadas en proceso "${tipoProceso}":`, proceso.datos.tallas);
+                        }
+                    });
+                }
+                
+                // 🔴 RE-RENDERIZAR TARJETAS CON LAS TALLAS ACTUALIZADAS
+                if (window.renderizarTarjetasProcesos) {
+                    console.log('[cargarTallasYCantidades] 🎨 RE-RENDERIZANDO TARJETAS CON TALLAS...');
+                    window.renderizarTarjetasProcesos();
+                } else {
+                    console.warn('[cargarTallasYCantidades] ⚠️ window.renderizarTarjetasProcesos no disponible');
+                }
+                
+                console.log('[cargarTallasYCantidades] ✅✅✅ TALLAS AUTOMÁTICAMENTE APLICADAS CON "done_all" ✅✅✅');
+            }, 600);
+        }
     }
 
     /**

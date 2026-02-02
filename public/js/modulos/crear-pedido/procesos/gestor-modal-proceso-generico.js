@@ -246,6 +246,17 @@ window.eliminarImagenProceso = function(indice) {
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual[indice - 1] = null;
     }
+    
+    // ✅ NUEVO: Marcar como null en imagenesProcesoExistentes para que la imagen eliminada no se envíe
+    // Esto preserva los índices y no daña otros flujos
+    if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
+        window.imagenesProcesoExistentes[indice - 1] = null;
+        console.log('[eliminarImagenProceso] 🗑️ Imagen existente marcada como eliminada en imagenesProcesoExistentes:', {
+            indice: indice - 1,
+            imagenesExistentes: window.imagenesProcesoExistentes
+        });
+    }
+    
     console.log('[eliminarImagenProceso] ✅ Imagen eliminada del índice:', indice);
     
     const input = document.getElementById(`proceso-foto-input-${indice}`);
@@ -1238,12 +1249,24 @@ window.guardarTallasSeleccionadas = function() {
 
 // Actualizar resumen de tallas
 window.actualizarResumenTallasProceso = function() {
+    console.log('[actualizarResumenTallasProceso] 🎬 Iniciando renderización de resumen...');
+    
     const resumen = document.getElementById('proceso-tallas-resumen');
-    if (!resumen) return;
+    console.log('[actualizarResumenTallasProceso] 🔍 Elemento resumen encontrado?:', !!resumen);
+    
+    if (!resumen) {
+        console.warn('[actualizarResumenTallasProceso] ⚠️ NO SE ENCONTRÓ elemento #proceso-tallas-resumen');
+        return;
+    }
+    
+    console.log('[actualizarResumenTallasProceso] 📊 window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
+    console.log('[actualizarResumenTallasProceso] 📊 window.tallasCantidadesProceso:', window.tallasCantidadesProceso);
     
     const totalTallas = window.tallasSeleccionadasProceso.dama.length + window.tallasSeleccionadasProceso.caballero.length;
+    console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas);
     
     if (totalTallas === 0) {
+        console.log('[actualizarResumenTallasProceso] ⚠️ No hay tallas seleccionadas, mostrando placeholder');
         resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         return;
     }
@@ -1252,10 +1275,13 @@ window.actualizarResumenTallasProceso = function() {
     
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
     const tallasProceso = window.tallasCantidadesProceso || { dama: {}, caballero: {} };
+    console.log('[actualizarResumenTallasProceso] 📦 tallasProceso para renderizar:', tallasProceso);
     
     if (window.tallasSeleccionadasProceso.dama.length > 0) {
+        console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', window.tallasSeleccionadasProceso.dama);
         const tallasDamaHTML = window.tallasSeleccionadasProceso.dama.map(t => {
             const cantidad = tallasProceso.dama?.[t] || 0;
+            console.log(`[actualizarResumenTallasProceso] 📏 DAMA ${t}: cantidad=${cantidad}`);
             return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
                 <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1275,8 +1301,10 @@ window.actualizarResumenTallasProceso = function() {
     }
     
     if (window.tallasSeleccionadasProceso.caballero.length > 0) {
+        console.log('[actualizarResumenTallasProceso] 👨 Renderizando CABALLERO:', window.tallasSeleccionadasProceso.caballero);
         const tallasCaballeroHTML = window.tallasSeleccionadasProceso.caballero.map(t => {
             const cantidad = tallasProceso.caballero?.[t] || 0;
+            console.log(`[actualizarResumenTallasProceso] 📏 CABALLERO ${t}: cantidad=${cantidad}`);
             return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
                 ${t}
                 <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
@@ -1296,7 +1324,12 @@ window.actualizarResumenTallasProceso = function() {
     }
     
     html += '</div>';
+    console.log('[actualizarResumenTallasProceso] 🎨 HTML generado (length):', html.length);
+    console.log('[actualizarResumenTallasProceso] 🎨 HTML preview:', html.substring(0, 200) + '...');
+    
     resumen.innerHTML = html;
+    console.log('[actualizarResumenTallasProceso] ✅ HTML inyectado en DOM');
+    console.log('[actualizarResumenTallasProceso] 📝 innerHTML actual:', resumen.innerHTML.substring(0, 200));
 };
 
 // Agregar proceso al pedido
@@ -1307,8 +1340,19 @@ window.agregarProcesoAlPedido = function() {
     }
     
     try {
-        // Recolectar datos
-        const imagenesValidas = imagenesProcesoActual.filter(img => img !== null);
+        // 🔴 FIX CRÍTICO: Combinar imágenes nuevas (File) + existentes (URLs)
+        // IMPORTANTE: Filtrar null de ambos arrays para soportar eliminación de imágenes
+        const imagenesNuevas = imagenesProcesoActual.filter(img => img !== null);
+        const imagenesExistentes = (window.imagenesProcesoExistentes || []).filter(img => img !== null);
+        // Combinar: primero existentes (para mantener orden), luego nuevas
+        const imagenesValidas = [...imagenesExistentes, ...imagenesNuevas];
+        
+        console.log('[agregarProcesoAlPedido] 🖼️ IMÁGENES CAPTURADAS:', {
+            imagenesNuevas: imagenesNuevas.length,
+            imagenesExistentes: imagenesExistentes.length,
+            imagenesValidas: imagenesValidas.length,
+            imagenesExistentesDetalle: imagenesExistentes
+        });
         
         // IMPORTANTE: Usar tallasCantidadesProceso que contiene las cantidades DEL PROCESO
         // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
@@ -1320,7 +1364,7 @@ window.agregarProcesoAlPedido = function() {
                 dama: { ...window.tallasCantidadesProceso?.dama } || {},
                 caballero: { ...window.tallasCantidadesProceso?.caballero } || {}
             },
-            imagenes: imagenesValidas // Array de imágenes
+            imagenes: imagenesValidas // Array de imágenes (existentes + nuevas)
         };
         
         console.log('[agregarProcesoAlPedido] Datos capturados:', {

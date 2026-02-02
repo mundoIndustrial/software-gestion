@@ -85,12 +85,29 @@ class GestorCotizacion {
      * @returns {string} HTML de la opción
      */
     generarHTMLOpcion(cot) {
+        // Extraer nombre del tipo de cotización - puede venir como objeto o string
+        let tipoCotizacion = 'N/A';
+        if (cot.tipo_cotizacion) {
+            if (typeof cot.tipo_cotizacion === 'object') {
+                tipoCotizacion = cot.tipo_cotizacion.nombre || cot.tipo_cotizacion.codigo || 'N/A';
+            } else {
+                tipoCotizacion = cot.tipo_cotizacion;
+            }
+        } else if (cot.tipoCotizacion) {
+            if (typeof cot.tipoCotizacion === 'object') {
+                tipoCotizacion = cot.tipoCotizacion.nombre || cot.tipoCotizacion.codigo || 'N/A';
+            } else {
+                tipoCotizacion = cot.tipoCotizacion;
+            }
+        }
+        
         return `
-            <div onclick="window.gestorCotizacion.seleccionar(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.asesora}', '${cot.formaPago || ''}')" 
+            <div onclick="window.gestorCotizacion.seleccionar(${cot.id}, '${cot.numero}', '${cot.cliente}', '${cot.asesora}', '${cot.formaPago || ''}', '${tipoCotizacion}')" 
                  style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s;"
                  onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
                 <div style="font-weight: 600; color: #1f2937;">${cot.numero}</div>
                 <div style="font-size: 0.875rem; color: #6b7280;">${cot.cliente} - ${cot.asesora}</div>
+                <div style="font-size: 0.8rem; color: #0d47a1; margin-top: 0.25rem;"><strong>Tipo:</strong> ${tipoCotizacion}</div>
             </div>
         `;
     }
@@ -111,14 +128,16 @@ class GestorCotizacion {
      * @param {string} cliente - Nombre del cliente
      * @param {string} asesora - Nombre de la asesora
      * @param {string} formaPago - Forma de pago
+     * @param {string} tipoCotizacion - Tipo de cotización  // ✅ Agregar parámetro tipo
      */
-    seleccionar(id, numero, cliente, asesora, formaPago) {
+    seleccionar(id, numero, cliente, asesora, formaPago, tipoCotizacion) {
         this.cotizacionSeleccionada = {
             id,
             numero,
             cliente,
             asesora,
-            formaPago
+            formaPago,
+            tipoCotizacion  // ✅ Guardar tipo
         };
 
         // Actualizar campos del formulario
@@ -145,8 +164,15 @@ class GestorCotizacion {
         if (this.seleccionadoDiv) {
             const textDiv = this.seleccionadoDiv.querySelector('#cotizacion_selected_text_editable');
             if (textDiv) {
-                textDiv.textContent = `${numero} - ${cliente}`;
+                textDiv.textContent = `${numero} - ${cliente} (${asesora}) - Tipo: ${tipoCotizacion}`;  // ✅ Incluir tipo
             }
+            
+            // ✅ Actualizar el campo de tipo de cotización
+            const tipoDiv = this.seleccionadoDiv.querySelector('#cotizacion_tipo_text_editable');
+            if (tipoDiv) {
+                tipoDiv.textContent = tipoCotizacion;
+            }
+            
             this.seleccionadoDiv.style.display = 'block';
         }
 

@@ -117,18 +117,39 @@
         console.log('📋 [INIT-BUSCADOR] Datos de cotizaciones encontrados:', window.cotizacionesData.length);
 
         // Transformar datos de cotizaciones del servidor
-        const cotizacionesFormateadas = window.cotizacionesData.map(cot => ({
-            id: cot.id,
-            numero_cotizacion: cot.numero || cot.numero_cotizacion || `COT-${cot.id}`,
-            cliente: cot.cliente?.nombre || cot.cliente || 'Sin cliente',
-            asesora: cot.asesor?.name || window.asesorActualNombre || 'N/A',
-            forma_pago: cot.especificaciones?.forma_pago || cot.forma_de_pago || 'N/A',
-            estado: cot.estado || 'APROBADO_PARA_PEDIDO',
-            // Mantener datos originales para cargar después
-            original: cot
-        }));
+        const cotizacionesFormateadas = window.cotizacionesData.map(cot => {
+            // Extraer nombre del tipo de cotización - puede venir como objeto o string
+            let tipoNombre = 'N/A';
+            if (cot.tipoCotizacion) {
+                if (typeof cot.tipoCotizacion === 'object') {
+                    tipoNombre = cot.tipoCotizacion.nombre || cot.tipoCotizacion.codigo || 'N/A';
+                } else {
+                    tipoNombre = cot.tipoCotizacion;
+                }
+            } else if (cot.tipo_cotizacion) {
+                if (typeof cot.tipo_cotizacion === 'object') {
+                    tipoNombre = cot.tipo_cotizacion.nombre || cot.tipo_cotizacion.codigo || 'N/A';
+                } else {
+                    tipoNombre = cot.tipo_cotizacion;
+                }
+            }
+            
+            return {
+                id: cot.id,
+                numero_cotizacion: cot.numero || cot.numero_cotizacion || `COT-${cot.id}`,
+                cliente: cot.cliente?.nombre || cot.cliente || 'Sin cliente',
+                asesora: cot.asesor?.name || window.asesorActualNombre || 'N/A',
+                forma_pago: cot.especificaciones?.forma_pago || cot.forma_de_pago || 'N/A',
+                tipo_cotizacion: tipoNombre,  // ✅ Ya extraído correctamente
+                estado: cot.estado || 'APROBADO_PARA_PEDIDO',
+                // Mantener datos originales para cargar después
+                original: cot
+            };
+        });
 
         console.log('📋 Cotizaciones cargadas:', cotizacionesFormateadas.length);
+        console.log('🔍 DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  // ✅ Debug
+        console.log('🔍 DEBUG - Datos originales primero:', window.cotizacionesData[0]);  // ✅ Debug
         
         let cotizacionSeleccionada = null;
         
@@ -173,17 +194,24 @@
                 return;
             }
             
-            cotizacionesFormateadas.forEach(cot => {
+            cotizaciones.forEach(cot => {  // ✅ Usar el parámetro cotizaciones, no cotizacionesFormateadas
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora})`;
+                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - ${cot.tipo_cotizacion}`;  // ✅ Incluir tipo en el dropdown
                 item.style.padding = '8px 12px';
                 item.style.cursor = 'pointer';
                 item.style.borderBottom = '1px solid #e5e7eb';
                 
                 item.addEventListener('click', function() {
                     selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente}`;
-                    selectedText.textContent = cot.numero_cotizacion;
+                    selectedText.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - Tipo: ${cot.tipo_cotizacion}`;  // ✅ Incluir tipo
+                    
+                    // ✅ Actualizar el campo de tipo de cotización
+                    const tipoCotElement = document.getElementById('cotizacion_tipo_text_editable');
+                    if (tipoCotElement) {
+                        tipoCotElement.textContent = cot.tipo_cotizacion;
+                    }
+                    
                     hiddenInput.value = cot.id;
                     dropdown.style.display = 'none';
                     cotizacionSeleccionada = cot;
