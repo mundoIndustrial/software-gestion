@@ -389,15 +389,19 @@ function mostrarPrendaVisor(indice) {
     const imagenesParaMostrar = [];
     
     // Recolectar imágenes de logo para esta prenda
+    // Usar un Set para deduplicar URLs de logo
+    const urlsLogoAgregadas = new Set();
+    
     if (visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion && visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas) {
         visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas.forEach(tp => {
             if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
                 tp.fotos.forEach((foto, idx) => {
-                    if (foto.url) {
+                    if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
+                        urlsLogoAgregadas.add(foto.url);
                         imagenesParaMostrar.push({
-                            grupo: `Logo - ${tp.tipo_logo_nombre || 'Logo'}`,
+                            grupo: 'Imagen - Logo',
                             url: foto.url,
-                            titulo: `${tp.tipo_logo_nombre || 'Logo'} ${idx + 1}`,
+                            titulo: 'Imagen - Logo',
                             color: '#1e5ba8'
                         });
                     }
