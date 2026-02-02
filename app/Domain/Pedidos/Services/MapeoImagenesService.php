@@ -105,6 +105,18 @@ class MapeoImagenesService
         );
         $tiempoResolver = round((microtime(true) - $inicioResolver) * 1000, 2);
 
+        // LOG DETALLADO: Mostrar todos los keys en el mapeo
+        Log::info('[MAPEO-IMAGENES] 📊 MAPEO COMPLETO DE UID→RUTA', [
+            'total_keys' => count($mapeoUidARuta),
+            'mapeo_keys_rutas' => array_map(function($key) use ($mapeoUidARuta) {
+                return [
+                    'key' => $key,
+                    'ruta' => $mapeoUidARuta[$key],
+                    'tipo_key' => (strpos($key, 'prendas[') === 0) ? 'formdata_key' : 'uid',
+                ];
+            }, array_keys($mapeoUidARuta)),
+        ]);
+
         Log::info('[MAPEO-IMAGENES] ✅ Mapeo UID→Ruta completado', [
             'imagenes_mapeadas' => count($mapeoUidARuta),
             'tiempo_resolver_ms' => $tiempoResolver,
@@ -159,12 +171,55 @@ class MapeoImagenesService
             // ========================================
             foreach ($prendaDTO['imagenes'] as $imgIdx => $imagenDTO) {
                 $imagenUID = $imagenDTO['uid'];
-                $rutaFinal = $mapeoUidARuta[$imagenUID] ?? null;
+                $formDataKey = $imagenDTO['formdata_key'] ?? null;
+                $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
+                $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
+                
+                Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE PRENDA', [
+                    'prenda_id' => $prenda->id,
+                    'nombre_prenda' => $prendaDTO['nombre_prenda'] ?? 'N/A',
+                    'imagen_uid' => $imagenUID,
+                    'formdata_key' => $formDataKey,
+                    'is_existing_from_cotizacion' => $isExistingFromCotizacion,
+                    'ruta_existente' => $rutaExistente,
+                    'existe_en_mapeo_por_uid' => isset($mapeoUidARuta[$imagenUID]),
+                    'existe_en_mapeo_por_formdata_key' => $formDataKey ? isset($mapeoUidARuta[$formDataKey]) : false,
+                ]);
+                
+                // Intentar con formdata_key primero (más específico), luego con uid
+                $rutaFinal = null;
+                if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
+                    $rutaFinal = $mapeoUidARuta[$formDataKey];
+                    Log::info('[MapeoImagenesService] ✅ IMAGEN ENCONTRADA POR formdata_key', [
+                        'prenda_id' => $prenda->id,
+                        'formdata_key' => $formDataKey,
+                        'ruta' => $rutaFinal,
+                    ]);
+                } elseif (isset($mapeoUidARuta[$imagenUID])) {
+                    $rutaFinal = $mapeoUidARuta[$imagenUID];
+                    Log::info('[MapeoImagenesService] ✅ IMAGEN ENCONTRADA POR uid', [
+                        'prenda_id' => $prenda->id,
+                        'uid' => $imagenUID,
+                        'ruta' => $rutaFinal,
+                    ]);
+                } elseif ($isExistingFromCotizacion && $rutaExistente) {
+                    // NUEVO: Usar ruta de cotización existente
+                    $rutaFinal = $rutaExistente;
+                    Log::info('[MapeoImagenesService] ✅ IMAGEN EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                        'prenda_id' => $prenda->id,
+                        'uid' => $imagenUID,
+                        'ruta' => $rutaFinal,
+                    ]);
+                }
 
                 if (!$rutaFinal) {
-                    Log::warning('[MapeoImagenesService] Imagen sin ruta', [
+                    Log::warning('[MapeoImagenesService] ❌ IMAGEN SIN RUTA - MAPEO KEYS', [
                         'imagen_uid' => $imagenUID,
+                        'formdata_key' => $formDataKey,
+                        'is_existing_from_cotizacion' => $isExistingFromCotizacion,
                         'prenda_id' => $prenda->id,
+                        'mapeo_total_keys' => count($mapeoUidARuta),
+                        'mapeo_keys' => array_keys($mapeoUidARuta),
                     ]);
                     continue;
                 }
@@ -203,9 +258,55 @@ class MapeoImagenesService
 
                 foreach ($telaDTO['imagenes'] as $imgIdx => $imagenDTO) {
                     $imagenUID = $imagenDTO['uid'];
-                    $rutaFinal = $mapeoUidARuta[$imagenUID] ?? null;
+                    $formDataKey = $imagenDTO['formdata_key'] ?? null;
+                    $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
+                    $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
+                    
+                    Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE TELA', [
+                        'prenda_id' => $prenda->id,
+                        'tela_id' => $telaEnBD->id,
+                        'imagen_uid' => $imagenUID,
+                        'formdata_key' => $formDataKey,
+                        'is_existing_from_cotizacion' => $isExistingFromCotizacion,
+                        'existe_por_uid' => isset($mapeoUidARuta[$imagenUID]),
+                        'existe_por_formdata_key' => $formDataKey ? isset($mapeoUidARuta[$formDataKey]) : false,
+                    ]);
+                    
+                    // Intentar con formdata_key primero (más específico), luego con uid
+                    $rutaFinal = null;
+                    if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
+                        $rutaFinal = $mapeoUidARuta[$formDataKey];
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA ENCONTRADA POR formdata_key', [
+                            'tela_id' => $telaEnBD->id,
+                            'formdata_key' => $formDataKey,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    } elseif (isset($mapeoUidARuta[$imagenUID])) {
+                        $rutaFinal = $mapeoUidARuta[$imagenUID];
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA ENCONTRADA POR uid', [
+                            'tela_id' => $telaEnBD->id,
+                            'uid' => $imagenUID,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    } elseif ($isExistingFromCotizacion && $rutaExistente) {
+                        // NUEVO: Usar ruta de cotización existente
+                        $rutaFinal = $rutaExistente;
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                            'tela_id' => $telaEnBD->id,
+                            'uid' => $imagenUID,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    }
 
-                    if (!$rutaFinal) continue;
+                    if (!$rutaFinal) {
+                        Log::warning('[MapeoImagenesService] ❌ IMAGEN TELA SIN RUTA', [
+                            'imagen_uid' => $imagenUID,
+                            'formdata_key' => $formDataKey,
+                            'is_existing_from_cotizacion' => $isExistingFromCotizacion,
+                            'tela_id' => $telaEnBD->id,
+                        ]);
+                        continue;
+                    }
 
                     \App\Models\PrendaFotoTelaPedido::create([
                         'prenda_pedido_colores_telas_id' => $telaEnBD->id,
@@ -243,6 +344,7 @@ class MapeoImagenesService
             
             foreach ($prendaDTO['procesos'] as $procesoIdx => $procesoDTO) {
                 $procesoUID = $procesoDTO['uid'];
+                $nombreProcesoDTOReal = $procesoDTO['tipo'] ?? $procesoIdx;  // Usar el tipo real del DTO
                 
                 // Buscar proceso en BD por UID guardado en datos_adicionales
                 // (El UID se guardó en PedidoWebService::crearProcesosCompletos)
@@ -255,17 +357,16 @@ class MapeoImagenesService
                 if (!$procesoEnBD) {
                     // Si no encuentra por UID, intentar búsqueda alternativa por tipo de proceso
                     // (Por si el UID no se guardó correctamente)
-                    // Usar el índice del DTO como nombre del tipo (ej: "reflectivo", "bordado")
-                    $nombreProcesoDTO = strtoupper($procesoIdx);
+                    // Usar el NOMBRE DEL TIPO desde el DTO ($procesoDTO['tipo'])
                     Log::debug('[MapeoImagenesService] Búsqueda alternativa por tipo', [
                         'procesoIdx' => $procesoIdx,
-                        'nombreProcesoDTO' => $nombreProcesoDTO,
+                        'nombreProcesoDTO' => $nombreProcesoDTOReal,
                         'tipos_disponibles' => $procesosEnPrenda->map(fn($p) => strtoupper($p->tipoProceso->nombre ?? ''))->unique()->toArray(),
                     ]);
-                    if ($nombreProcesoDTO) {
+                    if ($nombreProcesoDTOReal) {
                         $procesoEnBD = $procesosEnPrenda
-                            ->first(function ($p) use ($nombreProcesoDTO) {
-                                return strtoupper($p->tipoProceso->nombre ?? '') === $nombreProcesoDTO;
+                            ->first(function ($p) use ($nombreProcesoDTOReal) {
+                                return strtoupper($p->tipoProceso->nombre ?? '') === strtoupper($nombreProcesoDTOReal);
                             });
                     }
                 }
@@ -291,9 +392,56 @@ class MapeoImagenesService
 
                 foreach ($procesoDTO['imagenes'] as $imgIdx => $imagenDTO) {
                     $imagenUID = $imagenDTO['uid'];
-                    $rutaFinal = $mapeoUidARuta[$imagenUID] ?? null;
+                    $formDataKey = $imagenDTO['formdata_key'] ?? null;
+                    $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
+                    $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
+                    
+                    Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE PROCESO', [
+                        'prenda_id' => $prenda->id,
+                        'proceso_id' => $procesoEnBD->id,
+                        'tipo_proceso' => $procesoDTO['tipo'] ?? 'desconocido',
+                        'imagen_uid' => $imagenUID,
+                        'formdata_key' => $formDataKey,
+                        'is_existing_from_cotizacion' => $isExistingFromCotizacion,
+                        'existe_por_uid' => isset($mapeoUidARuta[$imagenUID]),
+                        'existe_por_formdata_key' => $formDataKey ? isset($mapeoUidARuta[$formDataKey]) : false,
+                    ]);
+                    
+                    // Intentar con formdata_key primero (más específico), luego con uid
+                    $rutaFinal = null;
+                    if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
+                        $rutaFinal = $mapeoUidARuta[$formDataKey];
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO ENCONTRADA POR formdata_key', [
+                            'proceso_id' => $procesoEnBD->id,
+                            'formdata_key' => $formDataKey,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    } elseif (isset($mapeoUidARuta[$imagenUID])) {
+                        $rutaFinal = $mapeoUidARuta[$imagenUID];
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO ENCONTRADA POR uid', [
+                            'proceso_id' => $procesoEnBD->id,
+                            'uid' => $imagenUID,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    } elseif ($isExistingFromCotizacion && $rutaExistente) {
+                        // NUEVO: Usar ruta de cotización existente
+                        $rutaFinal = $rutaExistente;
+                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                            'proceso_id' => $procesoEnBD->id,
+                            'uid' => $imagenUID,
+                            'ruta' => $rutaFinal,
+                        ]);
+                    }
 
-                    if (!$rutaFinal) continue;
+                    if (!$rutaFinal) {
+                        Log::warning('[MapeoImagenesService] ❌ IMAGEN PROCESO SIN RUTA', [
+                            'imagen_uid' => $imagenUID,
+                            'formdata_key' => $formDataKey,
+                            'is_existing_from_cotizacion' => $isExistingFromCotizacion,
+                            'proceso_id' => $procesoEnBD->id,
+                        ]);
+                        continue;
+                    }
 
                     \App\Models\PedidosProcessImagenes::create([
                         'proceso_prenda_detalle_id' => $procesoEnBD->id,

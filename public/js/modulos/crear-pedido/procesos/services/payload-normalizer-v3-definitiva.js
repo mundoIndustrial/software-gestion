@@ -238,7 +238,7 @@
                             if (Array.isArray(procesoImgs)) {
                                 procesoImgs.forEach(function(imgObj, imgIdx) {
                                     const file = imgObj.file || imgObj;
-                                    const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][' + imgIdx + ']');
+                                    const formdataKey = imgObj.formdata_key || ('prendas[' + prendaIdx + '][procesos][' + procesoKey + '][imagenes][' + imgIdx + ']');
                                     
                                     if (file instanceof File) {
                                         formData.append(formdataKey, file);

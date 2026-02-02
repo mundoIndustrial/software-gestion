@@ -43,8 +43,8 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
-                'timeout' => 5, // Reducido a 5 segundos para fallar rápido si no está disponible
-                'connect_timeout' => 5,
+                'timeout' => 5, // Timeout normal - el broadcast se ejecuta en background sin bloquear
+                'connect_timeout' => 3,
             ],
         ],
 

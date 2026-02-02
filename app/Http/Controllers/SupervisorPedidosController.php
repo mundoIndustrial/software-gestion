@@ -319,8 +319,8 @@ class SupervisorPedidosController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido aprobado correctamente. Estado cambiado a PENDIENTE_INSUMOS y consecutivos generados.',
-                'estado' => 'PENDIENTE_INSUMOS'
+                'message' => 'Pedido aprobado correctamente. Estado cambiado a Pendiente Insumos y consecutivos generados.',
+                'estado' => 'Pendiente Insumos'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al aprobar pedido: ' . $e->getMessage());

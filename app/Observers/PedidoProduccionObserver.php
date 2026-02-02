@@ -9,6 +9,7 @@ use App\Services\ConsecutivosRecibosService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 
 class PedidoProduccionObserver
 {
@@ -125,20 +126,43 @@ class PedidoProduccionObserver
                 return;
             }
 
-            // Fire-and-Forget: Intenta enviar broadcast, pero no espera respuesta
-            // Óptimo para múltiples asesores simultáneos (sin cola)
+            // Fire-and-Forget: Ejecutar broadcast en proceso separado sin bloquear
+            // El evento se envía correctamente pero NO bloquea la respuesta HTTP
             try {
-                PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
+                // Serializar datos para pasarlos al comando
+                $pedidoData = json_encode([
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                ]);
+                
+                $asesorData = json_encode([
+                    'id' => $asesor->id,
+                    'name' => $asesor->name,
+                ]);
+                
+                $changedFieldsData = json_encode($changedFields);
+                
+                // Inicia el proceso en BACKGROUND - no espera respuesta
+                Process::start(
+                    sprintf(
+                        'php artisan broadcast:pedido-actualizado %d %d %s %s %s "%s"',
+                        $pedido->id,
+                        $asesor->id,
+                        base64_encode($pedidoData),
+                        base64_encode($asesorData),
+                        base64_encode($changedFieldsData),
+                        $action
+                    )
+                )->detach();
 
-                Log::info('PedidoActualizado event dispatched (fire-and-forget)', [
+                Log::info('PedidoActualizado event queued for broadcast (background)', [
                     'pedido_id' => $pedido->id,
                     'asesor_id' => $asesor->id,
                     'action' => $action,
-                    'changed_fields' => $changedFields,
                 ]);
             } catch (\Exception $broadcastError) {
-                // Error no crítico - el broadcast falló pero la orden se guardó
-                Log::warning('⚠️ Broadcast fallo (no crítico), orden guardada', [
+                // Error no crítico - el pedido se guardó igual
+                Log::debug('Broadcast process failed', [
                     'pedido_id' => $pedido->id,
                     'action' => $action,
                     'error' => $broadcastError->getMessage(),

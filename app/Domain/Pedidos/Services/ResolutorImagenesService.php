@@ -247,8 +247,21 @@ class ResolutorImagenesService
                     $tiempoGuardado = round((microtime(true) - $inicioGuardado) * 1000, 2);
 
                     // Mapear UID → ruta final
+                    // IMPORTANTE: También mapear por formdata_key para evitar colisiones de UIDs
                     $rutaFinal = $resultado['webp'];
                     $mapeoUidARuta[$imagenUID] = $rutaFinal;
+                    if ($formDataKey) {
+                        $mapeoUidARuta[$formDataKey] = $rutaFinal;
+                    }
+
+                    Log::debug('[RESOLVER-IMAGENES] 🔑 MAPEO CREADO', [
+                        'imagen_uid' => $imagenUID,
+                        'formdata_key' => $formDataKey,
+                        'ruta_webp' => $rutaFinal,
+                        'form_prefix' => $formPrefix,
+                        'mapeado_por_uid' => true,
+                        'mapeado_por_formdata_key' => !empty($formDataKey),
+                    ]);
 
                     // Notificar al callback (para actualizar DTO u otros)
                     $registrarUID($imagenUID, $rutaFinal);

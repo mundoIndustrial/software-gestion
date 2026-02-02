@@ -374,7 +374,16 @@ class PedidoProduccionRepository
                 }
 
                 // Obtener foto principal de prenda
-                $foto = $prenda->fotos ? $prenda->fotos->first() : null;
+                $foto = null;
+                $fotosPrend = [];
+                
+                // Obtener fotos de prenda primero
+                if ($prenda->fotos && $prenda->fotos->count() > 0) {
+                    $foto = $prenda->fotos->first();
+                }
+                
+                // Si no hay fotos de prenda, NO usar fotos de proceso como fallback
+                // (Se dejará null la imagen principal de prenda)
                 
                 // Array simple de todas las fotos de tela para compatibilidad (fallback)
                 $fotoTelas = [];
@@ -461,13 +470,13 @@ class PedidoProduccionRepository
                                     return $this->normalizarRutaImagen($url);
                                 })->toArray();
                             } else {
-                                // Si no está cargada, obtenerla con query directo
+                                // Si no está cargada, obtenerla con query directo en la tabla correcta de procesos
                                 \Log::debug('[FACTURA-IMAGENES] Intento de carga directo para proceso', [
                                     'proceso_id' => $proc->id,
                                 ]);
                                 try {
-                                    $imagenesDirectas = \DB::table('prenda_fotos_pedido')
-                                        ->where('prenda_pedido_id', $proc->prenda_pedido_id ?? $prenda->id)
+                                    $imagenesDirectas = \DB::table('pedidos_procesos_imagenes')
+                                        ->where('proceso_prenda_detalle_id', $proc->id)
                                         ->where('deleted_at', null)
                                         ->orderBy('orden', 'asc')
                                         ->get();

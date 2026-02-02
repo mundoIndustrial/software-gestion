@@ -283,35 +283,74 @@ document.getElementById('modalAnulacion')?.addEventListener('click', function(e)
 
 // Función para aprobar orden
 function aprobarOrden(ordenId, numeroOrden) {
-    if (!confirm(`¿Confirmar aprobación de orden #${numeroOrden}?`)) {
-        return;
-    }
+    Swal.fire({
+        title: '¿Aprobar Pedido?',
+        html: `<p>¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?</p>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-check"></i> Sí, aprobar',
+        cancelButtonText: 'Cancelar',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar modal de cargando
+            Swal.fire({
+                title: 'Procesando...',
+                html: '<p>Por favor espera mientras se aprueba el pedido</p><div style="margin-top: 20px;"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div>',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-    fetch(`/supervisor-pedidos/${ordenId}/aprobar`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({}),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Orden aprobada correctamente');
-            // Recargar notificaciones si la función existe
-            if (typeof cargarNotificacionesPendientes === 'function') {
-                cargarNotificacionesPendientes();
-            }
-            // Recargar la página después de 1 segundo
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            alert('Error: ' + data.message);
+            fetch(`/supervisor-pedidos/${ordenId}/aprobar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Aprobado!',
+                        html: `<p>${data.message || 'Pedido aprobado correctamente'}</p><p style="margin-top: 10px; font-weight: 600; color: #10b981;">Estado: ${data.estado}</p>`,
+                        icon: 'success',
+                        confirmButtonColor: '#10b981'
+                    }).then(() => {
+                        // Recargar notificaciones si la función existe
+                        if (typeof cargarNotificacionesPendientes === 'function') {
+                            cargarNotificacionesPendientes();
+                        }
+                        // Recargar la página después de 1 segundo
+                        setTimeout(() => location.reload(), 1000);
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo aprobar el pedido',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al aprobar la orden:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al procesar la solicitud',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            });
         }
-    })
-    .catch(error => {
-
-        alert('Error al aprobar la orden');
     });
 }
 

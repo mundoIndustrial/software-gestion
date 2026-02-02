@@ -751,14 +751,22 @@ class ItemAPIService {
 
                         imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
-                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][${imgIdx}]`;
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
                                 prendaData.procesos[procesoKey].push({
                                     file: img,
                                     formdata_key: formdataKey,
                                     uid: img.uid || null  // ← AGREGADO: Capturar UID de la imagen del proceso si existe
                                 });
                                 estructura.archivosMap[formdataKey] = img;
-                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
+                                console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][imagenes][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
+                            } else if (img && (typeof img === 'string' || (typeof img === 'object' && (img.ruta || img.url)))) {
+                                // ✅ CRÍTICO: Convertir URLs de cotización a File objects
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
+                                const promise = this.convertirImagenDeCotizacionAFile(img, formdataKey, prendaData.procesos[procesoKey], estructura.archivosMap, item.uid);
+                                
+                                if (promise) {
+                                    conversionPromises.push(promise);
+                                }
                             }
                         });
                     });
@@ -851,7 +859,7 @@ class ItemAPIService {
 
                         imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {
-                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][${imgIdx}]`;
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
                                 prendaData.procesos[procesoKey].push({ file: img, formdata_key: formdataKey });
                                 estructura.archivosMap[formdataKey] = img;
                             }

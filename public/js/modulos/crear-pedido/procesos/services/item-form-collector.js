@@ -150,7 +150,7 @@ class ItemFormCollector {
                         // EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
                         // MANTENER ESTRUCTURA CON UID PARA POSTERIOR ENRIQUECIMIENTO
                         if (datosProceso.imagenes && Array.isArray(datosProceso.imagenes)) {
-                            datosProceso.imagenes = datosProceso.imagenes.map(img => {
+                            datosProceso.imagenes = datosProceso.imagenes.map((img, idx) => {
                                 let file = null;
                                 
                                 // Extraer el File object
@@ -159,10 +159,21 @@ class ItemFormCollector {
                                 } else if (img instanceof File) {
                                     file = img;
                                 } else if (typeof img === 'string') {
-                                    // Ruta existente, devolver como está
-                                    return img;
+                                    // Ruta existente, marcarla como imagen de cotización
+                                    return {
+                                        ruta_webp: img,
+                                        is_existing_from_cotizacion: true,
+                                        uid: `existing-proceso-${key}-${idx}-${Date.now()}`
+                                    };
                                 } else if (img.data) {
                                     file = img.data;
+                                } else if (img && typeof img === 'object' && img.ruta_webp && !img.file) {
+                                    // Ya es un objeto con ruta existente, solo asegurar marca
+                                    return {
+                                        ruta_webp: img.ruta_webp,
+                                        is_existing_from_cotizacion: true,
+                                        uid: img.uid || `existing-proceso-${key}-${idx}-${Date.now()}`
+                                    };
                                 }
                                 
                                 // Si tenemos un File, devolverlo con estructura enriquecida
@@ -604,22 +615,49 @@ class ItemFormCollector {
             const fotosGestor = window.gestorPrendaSinCotizacion.fotosNuevas[prendaIndex];
             
             // Convertir objetos de foto a File objects o rutas
-            fotosParaEnviar = fotosGestor.map(foto => {
+            fotosParaEnviar = fotosGestor.map((foto, idx) => {
                 // Si tiene File object, usarlo
                 if (foto.file instanceof File) {
                     return foto.file;
                 }
-                // Si tiene ruta webp (foto existente), usar la ruta
-                if (foto.ruta_webp || foto.preview) {
-                    return foto.ruta_webp || foto.preview;
+                // Si tiene ruta webp (foto EXISTENTE de cotización), marcarla
+                if (foto.ruta_webp || foto.preview || foto.ruta) {
+                    // Retornar como objeto marcado para que FormDataBuilder y MapeoImagenesService
+                    // sepan que es una ruta existente, no un archivo nuevo
+                    return {
+                        ruta_webp: foto.ruta_webp || foto.ruta || foto.preview,
+                        is_existing_from_cotizacion: true,
+                        uid: foto.uid || `existing-${prendaIndex}-${idx}-${Date.now()}`
+                    };
                 }
                 // Fallback
                 return foto;
             }).filter(Boolean);
         } else if (prenda.imagenes && prenda.imagenes.length > 0) {
-            fotosParaEnviar = prenda.imagenes;
+            fotosParaEnviar = prenda.imagenes.map((img, idx) => {
+                // Si es un object con ruta_webp o ruta, es imagen existente
+                if (img && typeof img === 'object' && (img.ruta_webp || img.ruta)) {
+                    return {
+                        ruta_webp: img.ruta_webp || img.ruta,
+                        is_existing_from_cotizacion: true,
+                        uid: img.uid || `existing-prenda-${prendaIndex}-${idx}-${Date.now()}`
+                    };
+                }
+                // Si es string, puede ser ruta o File
+                return img;
+            });
         } else if (prenda.fotos && prenda.fotos.length > 0) {
-            fotosParaEnviar = prenda.fotos;
+            fotosParaEnviar = prenda.fotos.map((foto, idx) => {
+                // Si tiene estructura de objeto con ruta o ruta_webp
+                if (foto && typeof foto === 'object' && (foto.ruta_webp || foto.ruta)) {
+                    return {
+                        ruta_webp: foto.ruta_webp || foto.ruta,
+                        is_existing_from_cotizacion: true,
+                        uid: foto.uid || `existing-fotos-${prendaIndex}-${idx}-${Date.now()}`
+                    };
+                }
+                return foto;
+            });
         }
 
         return fotosParaEnviar;
@@ -645,15 +683,42 @@ class ItemFormCollector {
             // Intentar obtener imágenes del gestor principal
             if (window.gestorPrendaSinCotizacion?.telasFotosNuevas?.[prendaIndex]?.[telaIndex]) {
                 const fotosGestor = window.gestorPrendaSinCotizacion.telasFotosNuevas[prendaIndex][telaIndex];
-                imagenesTela = fotosGestor.map(foto => {
+                imagenesTela = fotosGestor.map((foto, idx) => {
                     if (foto.file instanceof File) return foto.file;
-                    if (foto.ruta_webp || foto.preview) return foto.ruta_webp || foto.preview;
+                    if (foto.ruta_webp || foto.ruta || foto.preview) {
+                        // Imagen existente de cotización
+                        return {
+                            ruta_webp: foto.ruta_webp || foto.ruta || foto.preview,
+                            is_existing_from_cotizacion: true,
+                            uid: foto.uid || `existing-tela-${prendaIndex}-${telaIndex}-${idx}-${Date.now()}`
+                        };
+                    }
                     return foto;
                 }).filter(Boolean);
             } else if (tela.imagenes && tela.imagenes.length > 0) {
-                imagenesTela = tela.imagenes;
+                imagenesTela = tela.imagenes.map((img, idx) => {
+                    // Si es un object con ruta_webp o ruta, es imagen existente
+                    if (img && typeof img === 'object' && (img.ruta_webp || img.ruta)) {
+                        return {
+                            ruta_webp: img.ruta_webp || img.ruta,
+                            is_existing_from_cotizacion: true,
+                            uid: img.uid || `existing-tela-imagenes-${prendaIndex}-${telaIndex}-${idx}-${Date.now()}`
+                        };
+                    }
+                    return img;
+                });
             } else if (tela.fotos && tela.fotos.length > 0) {
-                imagenesTela = tela.fotos;
+                imagenesTela = tela.fotos.map((foto, idx) => {
+                    // Si tiene estructura de objeto con ruta o ruta_webp
+                    if (foto && typeof foto === 'object' && (foto.ruta_webp || foto.ruta)) {
+                        return {
+                            ruta_webp: foto.ruta_webp || foto.ruta,
+                            is_existing_from_cotizacion: true,
+                            uid: foto.uid || `existing-fotos-${prendaIndex}-${telaIndex}-${idx}-${Date.now()}`
+                        };
+                    }
+                    return foto;
+                });
             }
 
             return {

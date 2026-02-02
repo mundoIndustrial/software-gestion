@@ -73,6 +73,14 @@ class FormDataBuilder {
                                 nombre_archivo: img.name,
                                 formdata_key: formKey  // Para resolver luego
                             };
+                        } else if (img && typeof img === 'object' && img.is_existing_from_cotizacion) {
+                            // Imagen existente de cotización - guardar metadata pero sin archivo
+                            item.imagenes[imgIdx] = {
+                                uid: img.uid || this._generateUUID(),
+                                ruta_webp: img.ruta_webp,
+                                is_existing_from_cotizacion: true,
+                                formdata_key: null  // No hay archivo en FormData
+                            };
                         }
                     });
                 }
@@ -98,6 +106,14 @@ class FormDataBuilder {
                                         uid: imgUID,
                                         nombre_archivo: img.name,
                                         formdata_key: formKey
+                                    };
+                                } else if (img && typeof img === 'object' && img.is_existing_from_cotizacion) {
+                                    // Imagen existente de cotización
+                                    tela.imagenes[imgIdx] = {
+                                        uid: img.uid || this._generateUUID(),
+                                        ruta_webp: img.ruta_webp,
+                                        is_existing_from_cotizacion: true,
+                                        formdata_key: null
                                     };
                                 }
                             });
@@ -128,6 +144,14 @@ class FormDataBuilder {
                                         nombre_archivo: img.name,
                                         formdata_key: formKey
                                     };
+                                } else if (img && typeof img === 'object' && img.is_existing_from_cotizacion) {
+                                    // Imagen existente de cotización
+                                    proceso.imagenes[imgIdx] = {
+                                        uid: img.uid || this._generateUUID(),
+                                        ruta_webp: img.ruta_webp,
+                                        is_existing_from_cotizacion: true,
+                                        formdata_key: null
+                                    };
                                 }
                             });
                         }
@@ -156,6 +180,14 @@ class FormDataBuilder {
                                 uid: imgUID,
                                 nombre_archivo: img.name,
                                 formdata_key: formKey
+                            };
+                        } else if (img && typeof img === 'object' && img.is_existing_from_cotizacion) {
+                            // Imagen existente de cotización
+                            epp.imagenes[imgIdx] = {
+                                uid: img.uid || this._generateUUID(),
+                                ruta_webp: img.ruta_webp,
+                                is_existing_from_cotizacion: true,
+                                formdata_key: null
                             };
                         }
                     });
