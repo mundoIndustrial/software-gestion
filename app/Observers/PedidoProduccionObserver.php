@@ -125,19 +125,20 @@ class PedidoProduccionObserver
                 return;
             }
 
-            // Emitir evento de broadcasting en background para no bloquear
+            // Fire-and-Forget: Intenta enviar broadcast, pero no espera respuesta
+            // Óptimo para múltiples asesores simultáneos (sin cola)
             try {
                 PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
 
-                Log::info('PedidoActualizado event dispatched', [
+                Log::info('PedidoActualizado event dispatched (fire-and-forget)', [
                     'pedido_id' => $pedido->id,
                     'asesor_id' => $asesor->id,
                     'action' => $action,
                     'changed_fields' => $changedFields,
                 ]);
             } catch (\Exception $broadcastError) {
-                // Error no crítico - el broadcast falló pero la operación continúa
-                Log::warning('⚠️ Error de broadcast en Observer (no crítico)', [
+                // Error no crítico - el broadcast falló pero la orden se guardó
+                Log::warning('⚠️ Broadcast fallo (no crítico), orden guardada', [
                     'pedido_id' => $pedido->id,
                     'action' => $action,
                     'error' => $broadcastError->getMessage(),

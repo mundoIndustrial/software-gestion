@@ -156,8 +156,8 @@ class PedidoRepositoryImpl implements PedidoRepository
         
         return PedidoAggregate::reconstruir(
             id: $model->id,
-            numero: NumeroPedido::desde((string)$model->numero_pedido),
-            clienteId: $model->cliente_id,
+            numero: NumeroPedido::desde($model->numero_pedido),
+            clienteId: $model->cliente_id ?? null,
             estado: Estado::desde($estadoDDD),
             descripcion: $model->novedades ?? '',
             prendas: [], // Las prendas se cargan desde prendas_pedido si es necesario

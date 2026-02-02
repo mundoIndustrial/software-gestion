@@ -88,7 +88,9 @@ abstract class AbstractObtenerUseCase
     {
         $datos = [
             'id' => $pedido->id(),
-            'numero' => (string)$pedido->numero(),
+            'numero' => $pedido->numero() && !$pedido->numero()->esVacio() 
+                ? (string)$pedido->numero() 
+                : null,
             'clienteId' => $pedido->clienteId(),
             'estado' => $pedido->estado()->valor(),
             'descripcion' => (string)($pedido->descripcion() ?? ''),

@@ -20,7 +20,7 @@ use Illuminate\Support\Collection;
 class PedidoAggregate extends AggregateRoot
 {
     private NumeroPedido $numero;
-    private int $clienteId;
+    private ?int $clienteId;
     private Estado $estado;
     private string $descripcion;
     private ?string $observaciones;
@@ -31,7 +31,7 @@ class PedidoAggregate extends AggregateRoot
     private function __construct(
         ?int $id,
         NumeroPedido $numero,
-        int $clienteId,
+        ?int $clienteId,
         Estado $estado,
         string $descripcion,
         Collection $prendas,
@@ -100,7 +100,7 @@ class PedidoAggregate extends AggregateRoot
     public static function reconstruir(
         int $id,
         NumeroPedido $numero,
-        int $clienteId,
+        ?int $clienteId,
         Estado $estado,
         string $descripcion,
         array $prendas,
@@ -199,7 +199,7 @@ class PedidoAggregate extends AggregateRoot
     // Getters
     public function id(): ?int { return $this->id; }
     public function numero(): NumeroPedido { return $this->numero; }
-    public function clienteId(): int { return $this->clienteId; }
+    public function clienteId(): ?int { return $this->clienteId; }
     public function estado(): Estado { return $this->estado; }
     public function descripcion(): string { return $this->descripcion; }
     public function observaciones(): ?string { return $this->observaciones; }

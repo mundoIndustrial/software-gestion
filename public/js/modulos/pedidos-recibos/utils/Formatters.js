@@ -245,11 +245,25 @@ export class Formatters {
         }
 
         // 3. Ubicaciones
-        if (proceso.ubicaciones && Array.isArray(proceso.ubicaciones) && proceso.ubicaciones.length > 0) {
+        let ubicacionesArray = [];
+        if (proceso.ubicaciones) {
+            // Si es string JSON, parsearlo
+            if (typeof proceso.ubicaciones === 'string') {
+                try {
+                    ubicacionesArray = JSON.parse(proceso.ubicaciones);
+                } catch (e) {
+                    console.warn('[Formatters] Error parseando ubicaciones:', proceso.ubicaciones, e);
+                }
+            } else if (Array.isArray(proceso.ubicaciones)) {
+                ubicacionesArray = proceso.ubicaciones;
+            }
+        }
+        
+        if (ubicacionesArray && ubicacionesArray.length > 0) {
             lineas.push('');
             lineas.push('<strong>UBICACIONES:</strong>');
-            proceso.ubicaciones.forEach((ubicacion) => {
-                lineas.push(`• ${ubicacion.toUpperCase()}`);
+            ubicacionesArray.forEach((ubicacion) => {
+                lineas.push(`• ${String(ubicacion).toUpperCase()}`);
             });
         }
 

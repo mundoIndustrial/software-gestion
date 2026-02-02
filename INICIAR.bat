@@ -61,7 +61,7 @@ echo       Cache limpiada
 echo.
 
 echo ========================================
-echo   INICIANDO SERVICIOS (Terminal unica)
+echo   INICIANDO SERVICIOS (4 procesos)
 echo ========================================
 echo.
 echo Ejecutando 3 procesos simultaneamente:

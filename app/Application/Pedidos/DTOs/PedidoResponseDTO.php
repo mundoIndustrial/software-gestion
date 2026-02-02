@@ -11,8 +11,8 @@ class PedidoResponseDTO
 {
     public function __construct(
         public ?int $id,
-        public string $numero,
-        public int $clienteId,
+        public ?string $numero,
+        public ?int $clienteId,
         public ?string $cliente = null,
         public ?string $asesor = null,
         public string $estado,

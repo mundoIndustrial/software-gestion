@@ -12,16 +12,22 @@ namespace App\Domain\Pedidos\ValueObjects;
  */
 class NumeroPedido
 {
-    private string $valor;
+    private ?string $valor;
 
-    private function __construct(string $valor)
+    private function __construct(?string $valor)
     {
-        $this->validar($valor);
+        if ($valor !== null) {
+            $this->validar($valor);
+        }
         $this->valor = $valor;
     }
 
-    public static function desde(string $valor): self
+    public static function desde(?string $valor): self
     {
+        // Convertir strings vacíos a null para consistencia
+        if ($valor === '') {
+            $valor = null;
+        }
         return new self($valor);
     }
 
@@ -33,20 +39,21 @@ class NumeroPedido
 
     private function validar(string $valor): void
     {
+        // Solo validar si hay un valor real (no vacío)
         if (empty($valor)) {
-            throw new \InvalidArgumentException('NÃºmero de pedido no puede estar vacÃ­o');
+            return;
         }
 
         if (strlen($valor) > 50) {
-            throw new \InvalidArgumentException('NÃºmero de pedido muy largo (mÃ¡x 50 caracteres)');
+            throw new \InvalidArgumentException('Número de pedido muy largo (máx 50 caracteres)');
         }
 
         if (!preg_match('/^[A-Z0-9\-]+$/', $valor)) {
-            throw new \InvalidArgumentException('NÃºmero de pedido contiene caracteres invÃ¡lidos');
+            throw new \InvalidArgumentException('Número de pedido contiene caracteres inválidos');
         }
     }
 
-    public function valor(): string
+    public function valor(): ?string
     {
         return $this->valor;
     }
@@ -56,9 +63,14 @@ class NumeroPedido
         return $this->valor === $otro->valor;
     }
 
+    public function esVacio(): bool
+    {
+        return $this->valor === null || $this->valor === '';
+    }
+
     public function __toString(): string
     {
-        return $this->valor;
+        return $this->valor ?? '';
     }
 }
 

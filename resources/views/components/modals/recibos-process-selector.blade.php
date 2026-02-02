@@ -345,6 +345,8 @@
                 apiUrl = `/api/pedidos/${pedidoId}`;
             }
             
+            console.log('[abrirSelectorRecibos] Fetching URL:', apiUrl);
+            
             const response = await fetch(apiUrl);
             
             if (!response.ok) {
@@ -352,13 +354,20 @@
             }
 
             const result = await response.json();
+            console.log('[abrirSelectorRecibos] API Response:', result);
+            
             const datos = result.data || result;
+            console.log('[abrirSelectorRecibos] datos:', datos);
+            console.log('[abrirSelectorRecibos] prendas array:', datos.prendas);
+            
             window.selectorRecibosState.prendas = datos.prendas || [];
 
-            // Actualizar número de pedido
-            document.getElementById('selector-pedido-numero').textContent = `#${datos.numero_pedido}`;
+            // Actualizar número de pedido (puede ser null)
+            const numeroPedido = datos.numero || datos.numero_pedido || datos.id;
+            document.getElementById('selector-pedido-numero').textContent = `#${numeroPedido}`;
 
             // Renderizar prendas
+            console.log('[abrirSelectorRecibos] Renderizando prendas, cantidad:', (datos.prendas || []).length);
             renderizarPrendasEnSelector(datos.prendas);
 
             loading.style.display = 'none';
@@ -400,11 +409,7 @@
                 es_base: true
             };
             
-            // Ocultar Costura - Bodega para cualquier rol
-            if (prenda.de_bodega == 1) {
-                return; // Saltar esta prenda, no agregar ningún recibo
-            }
-            
+            // Agregar recibo base (permite tanto costura como costura-bodega)
             recibos.push(reciboBase);
 
             //  PROCESOS ADICIONALES
