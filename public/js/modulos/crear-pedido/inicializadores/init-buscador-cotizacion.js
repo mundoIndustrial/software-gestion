@@ -28,7 +28,6 @@
             return;
         }
         
-        console.log('🔧 [INIT-STORAGE] Inicializando servicios de imágenes...');
         
         // Esperar a que ImageStorageService esté disponible (puede venir del lazy loader)
         function verificarServicio() {
@@ -44,7 +43,6 @@
                 window.imagenesReflectivoStorage = new ImageStorageService(3);
                 inicializado = true;
                 esperandoServicio = false;
-                console.log('✅ [INIT-STORAGE] Servicios de imágenes inicializados correctamente');
             } else {
                 esperandoServicio = true;
                 console.log('⏳ [INIT-STORAGE] Esperando a ImageStorageService...');

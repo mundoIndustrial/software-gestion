@@ -118,11 +118,8 @@ window.PrendaEditorLoader = (function() {
                 if (loaded >= scriptsToLoad.length) {
                     const tiempoTotal = performance.now() - tiempoInicio;
                     const tiemposOrdenados = Object.entries(tiemposScripts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                    console.log(`[PrendaEditorLoader] 📊 TIEMPO POR SCRIPT (top 5 más lentos):`);
                     tiemposOrdenados.forEach(([nombre, tiempo], idx) => {
-                        console.log(`  ${idx + 1}. ${nombre}: ${tiempo.toFixed(2)}ms`);
                     });
-                    console.log(`[PrendaEditorLoader] ⏱️ TOTAL: ${tiempoTotal.toFixed(2)}ms`);
                     resolve();
                     return;
                 }
@@ -158,7 +155,6 @@ window.PrendaEditorLoader = (function() {
                         // Reintentar con exponential backoff
                         if (retryCount < 3) {
                             const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-                            console.warn(`[PrendaEditorLoader] 🔄 Error cargando ${filename}, reintentando en ${delay}ms (intento ${retryCount + 1}/3)`);
                             
                             setTimeout(() => {
                                 const retryScript = document.createElement('script');

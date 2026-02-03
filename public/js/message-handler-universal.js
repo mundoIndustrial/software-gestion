@@ -17,7 +17,6 @@
 (function() {
     'use strict';
     
-    console.log('[MessageHandler] Inicializando handler universal de mensajes...');
     
     // ==================== ESTADO GLOBAL ====================
     const handlerState = {
@@ -79,7 +78,6 @@
                     throw new Error(`Entorno no soportado: ${env}`);
             }
         } catch (error) {
-            console.warn('[MessageHandler] Error enviando mensaje:', error.message);
             throw error;
         }
     }
@@ -214,7 +212,7 @@
                     try {
                         sendResponse(data);
                     } catch (e) {
-                        console.warn('[MessageHandler] Error enviando respuesta Chrome:', e.message);
+                        // Error silenciado
                     }
                 }
             };
@@ -247,7 +245,7 @@
                                 break;
                             }
                         } catch (error) {
-                            console.warn(`[MessageHandler] Listener ${listenerId} error:`, error.message);
+                            // Error del listener silenciado
                         }
                     }
                     
@@ -262,7 +260,6 @@
                     }
                     
                 } catch (error) {
-                    console.error('[MessageHandler] Error en listener Chrome:', error);
                     // IMPORTANTE: Enviar respuesta incluso en caso de error SI hay handlers
                     clearTimeout(timeoutId);
                     if (hasAsyncHandler) {
@@ -279,8 +276,6 @@
             }
             return hasListeners;
         });
-        
-        console.log('[MessageHandler] Chrome listener configurado');
     }
     
     // ==================== LISTENERS PARA FIREFOX ====================
@@ -309,7 +304,7 @@
                                 break;
                             }
                         } catch (error) {
-                            console.warn(`[MessageHandler] Listener ${listenerId} error:`, error.message);
+                            // Error del listener silenciado
                         }
                     }
                     
@@ -321,13 +316,10 @@
                     }
                     
                 } catch (error) {
-                    console.error('[MessageHandler] Error en listener Firefox:', error);
                     return { success: false, error: error.message };
                 }
             })();
         });
-        
-        console.log('[MessageHandler] Firefox listener configurado');
     }
     
     // ==================== LISTENERS PARA WEB ====================
@@ -345,11 +337,10 @@
             debug(`Mensaje Web recibido: ${JSON.stringify(message).substring(0, 100)}`);
             
             handleWebMessage(message, event.source).catch(error => {
-                console.error('[MessageHandler] Error manejando mensaje web:', error);
+                // Error manejado silenciosamente
             });
         });
         
-        console.log('[MessageHandler] Web listener configurado');
     }
     
     /**
@@ -379,7 +370,7 @@
                         break;
                     }
                 } catch (error) {
-                    console.warn(`[MessageHandler] Listener ${listenerId} error:`, error.message);
+                    // Error del listener silenciado
                 }
             }
             
@@ -392,7 +383,6 @@
             }, '*');
             
         } catch (error) {
-            console.error('[MessageHandler] Error en handleWebMessage:', error);
             try {
                 source.postMessage({
                     type: 'universal-response',
@@ -401,7 +391,7 @@
                     id: message?.id
                 }, '*');
             } catch (e) {
-                console.error('[MessageHandler] No se pudo enviar respuesta de error web:', e.message);
+                // Error enviando respuesta silenciado
             }
         }
     }
@@ -478,7 +468,6 @@
          */
         init() {
             if (handlerState.initialized) {
-                console.log('[MessageHandler] Ya está inicializado');
                 return;
             }
             
@@ -497,7 +486,6 @@
             }
             
             handlerState.initialized = true;
-            console.log(`[MessageHandler] ✅ Handler inicializado para entorno: ${env}`);
         }
     };
     
@@ -512,7 +500,5 @@
     window.sendUniversalMessage = (message, options) => UniversalMessageHandler.sendMessage(message, options);
     window.addUniversalListener = (callback) => UniversalMessageHandler.addListener(callback);
     window.removeUniversalListener = (id) => UniversalMessageHandler.removeListener(id);
-    
-    console.log('[MessageHandler] ✅ Handler universal de mensajes cargado');
     
 })();

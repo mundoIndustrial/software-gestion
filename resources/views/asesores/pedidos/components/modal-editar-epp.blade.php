@@ -25,15 +25,12 @@
 
 <script>
     // Debug: Log de z-index del modal
-    console.log('🔍 [CSS Debug] Estilos de toast cargados');
-    console.log('🔍 [CSS Debug] Z-index del toast debe ser: 99999999');
-    
+ 
     /**
      * 🔄 Recargar la tabla de pedidos sin recargar la página
      */
     async function recargarTablaPedidos() {
         try {
-            console.log('🔄 [recargarTablaPedidos] Reloading table...');
             
             // Obtener parámetros de URL actuales
             const urlParams = new URLSearchParams(window.location.search);
@@ -48,7 +45,6 @@
             });
             
             if (!response.ok) {
-                console.error('❌ [recargarTablaPedidos] Error fetching page:', response.status);
                 return;
             }
             
@@ -65,9 +61,7 @@
             if (nuevaTabla && tablaActual) {
                 // Reemplazar la tabla actual con la nueva
                 tablaActual.replaceWith(nuevaTabla);
-                console.log('✅ [recargarTablaPedidos] Tabla recargada exitosamente');
             } else {
-                console.warn('⚠️ [recargarTablaPedidos] Table container not found');
             }
         } catch (error) {
             console.error('❌ [recargarTablaPedidos] Error:', error);
@@ -177,20 +171,15 @@
      * Abrir modal de edición para un EPP específico
      */
     function abrirEditarEPPEspecifico(eppIndex) {
-        console.log('🔥 [EDITAR-EPP-ESPECIFICO] Iniciando con índice:', eppIndex);
         
         Validator.requireEppItem(eppIndex, async (epp) => {
-            console.log('✅ [EDITAR-EPP-ESPECIFICO] Validador pasado, EPP:', epp);
             
             try {
                 // Obtener datos frescos de la BD
                 const pedidoId = window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido;
                 const pedidoEppId = epp.id;
                 
-                console.log('📡 [EDITAR-EPP-ESPECIFICO] Obteniendo datos del servidor...');
-                console.log('   - Pedido ID:', pedidoId);
-                console.log('   - PedidoEpp ID:', pedidoEppId);
-                
+           
                 const response = await fetch(`/api/pedidos/${pedidoId}/epp/${pedidoEppId}`);
                 
                 if (!response.ok) {
@@ -312,7 +301,6 @@
             inicializarBuscadorEpp();
         }, 100);
         
-        console.log('✅ Modal de edición abierto');
     }
     
     function cerrarModalEditarEppForm() {

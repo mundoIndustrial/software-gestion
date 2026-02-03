@@ -20,7 +20,6 @@
             return;
         }
         
-        console.log('🔧 [INIT-STORAGE] Inicializando servicios de imágenes...');
         
         // Verificar si ImageStorageService está disponible
         if (typeof ImageStorageService === 'undefined') {
@@ -34,7 +33,6 @@
             window.imagenesTelaStorage = new ImageStorageService(3);
             window.imagenesReflectivoStorage = new ImageStorageService(3);
             inicializado = true;
-            console.log('✅ [INIT-STORAGE] Servicios de imágenes inicializados correctamente');
         } catch (error) {
             console.error('❌ [INIT-STORAGE] Error al inicializar servicios:', error);
         }

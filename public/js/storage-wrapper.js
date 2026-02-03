@@ -111,4 +111,3 @@ const SafeSessionStorage = {
 window.SafeStorage = SafeStorage;
 window.SafeSessionStorage = SafeSessionStorage;
 
-console.log('✅ [storage-wrapper.js] Storage wrappers cargados');

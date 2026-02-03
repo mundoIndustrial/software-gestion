@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" onload="window._PAGE_FULLY_LOADED=true">
 <head>
-    <!-- 🛡️🛡️🛡️ PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO 🛡️🛡️🛡️ -->
+    <!--  PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO  -->
     <script>
         // PASO 0: Capturar el error ANTES de que se lance - en el evento dispatchEvent
         const originalDispatchEvent = Element.prototype.dispatchEvent;

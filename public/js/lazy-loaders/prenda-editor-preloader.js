@@ -71,7 +71,6 @@ window.PrendaEditorPreloader = (function() {
      * @private
      */
     function initPreload() {
-        console.log('[PrendaEditorPreloader] 🔄 Precarguía iniciada...');
         
         // Esperar a que la página esté visualmente estable
         setTimeout(() => {
@@ -112,7 +111,6 @@ window.PrendaEditorPreloader = (function() {
                 config.isPreloaded = true;
                 config.isPreloading = false;
                 
-                console.log(`[PrendaEditorPreloader] ✅ Precarguía completada en ${elapsed.toFixed(0)}ms`);
                 
                 // Disparar evento (para debugging)
                 window.dispatchEvent(new CustomEvent('prendaEditorPreloaded', {

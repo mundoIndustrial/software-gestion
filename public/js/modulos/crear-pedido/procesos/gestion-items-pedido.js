@@ -944,47 +944,29 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
 }
 
 // Inicializar cuando el DOM esté listo O inmediatamente si el script se carga dinámicamente
-console.log('[gestion-items-pedido.js] 🚀 Script cargado, readyState:', document.readyState);
 
 if (document.readyState === 'loading') {
     // Si aún está cargando el DOM, esperar
     document.addEventListener('DOMContentLoaded', () => {
         if (!window.gestionItemsUI) {
-            // Verificar disponibilidad de servicios
-            console.log('[gestion-items-pedido.js] 🔍 Verificando servicios:', {
-                'NotificationService': typeof NotificationService,
-                'notificationServiceInstance': typeof NotificationService !== 'undefined' ? 'disponible' : 'no disponible'
-            });
-            
             // Inicializar con servicios disponibles
             const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
-            console.log('[gestion-items-pedido.js] 📢 notificationService creado:', !!notificationService);
             
             window.gestionItemsUI = new GestionItemsUI({
                 notificationService: notificationService
             });
-            
-            console.log('[gestion-items-pedido.js] ✅ GestionItemsUI inicializado');
         }
     });
 } else {
     // Si el DOM ya está cargado (carga dinámica de script), inicializar inmediatamente
     if (!window.gestionItemsUI) {
-        // Verificar disponibilidad de servicios
-        console.log('[gestion-items-pedido.js] 🔍 Verificando servicios (DOM listo):', {
-            'NotificationService': typeof NotificationService,
-            'notificationServiceInstance': typeof NotificationService !== 'undefined' ? 'disponible' : 'no disponible'
-        });
-        
         // Inicializar con servicios disponibles
         const notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : null;
-        console.log('[gestion-items-pedido.js] 📢 notificationService creado (DOM listo):', !!notificationService);
         
         window.gestionItemsUI = new GestionItemsUI({
             notificationService: notificationService
         });
         
-        console.log('[gestion-items-pedido.js] ✅ GestionItemsUI inicializado (DOM listo)');
     }
 }
  

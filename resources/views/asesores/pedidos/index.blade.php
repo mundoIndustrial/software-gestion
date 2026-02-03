@@ -1275,27 +1275,22 @@
      * Envuelve funciones de interfaz para cargar módulos bajo demanda
      */
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[PedidosInit] 🚀 Inicializando lazy loaders...');
 
         // ✅ Inicializar PrendaEditorPreloader si está disponible
         if (window.PrendaEditorPreloader) {
-            console.log('[PedidosInit] 🔄 Iniciando precarguía en background...');
             window.PrendaEditorPreloader.start();
-            console.log('[PedidosInit] ✅ Preloader iniciado - Cargará en background sin bloquear');
         } else {
             console.warn('[PedidosInit] ⚠️ PrendaEditorPreloader no encontrado');
         }
 
         // ✅ Inicializar PrendaEditorLoader si está disponible
         if (window.PrendaEditorLoader) {
-            console.log('[PedidosInit] ✅ PrendaEditorLoader disponible');
         } else {
             console.warn('[PedidosInit] ⚠️ PrendaEditorLoader no encontrado - revisar script de carga');
         }
 
         // ✅ Inicializar EPPManagerLoader si está disponible
         if (window.EPPManagerLoader) {
-            console.log('[PedidosInit] ✅ EPPManagerLoader disponible');
         } else {
             console.warn('[PedidosInit] ⚠️ EPPManagerLoader no encontrado - revisar script de carga');
         }
@@ -1331,10 +1326,8 @@
                 }
                 return originalAgregar.apply(this, args);
             };
-            console.log('[PedidosInit] ✅ abrirAgregarPrenda envuelto para lazy loading');
         }
 
-        console.log('[PedidosInit] 🎉 Inicialización completada - Lista para ediciones bajo demanda');
     });
 </script>
 

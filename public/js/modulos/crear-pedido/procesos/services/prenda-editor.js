@@ -11,9 +11,6 @@ class PrendaEditor {
         this.modalId = options.modalId || 'modal-agregar-prenda-nueva';
         this.prendaEditIndex = null;
         this.cotizacionActual = options.cotizacionActual || null;
-        
-        console.log('[PrendaEditor] Inicializado. CotizacionPrendaHandler disponible:', 
-            typeof CotizacionPrendaHandler !== 'undefined');
     }
 
     /**

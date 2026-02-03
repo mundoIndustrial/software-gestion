@@ -3,7 +3,7 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-// 🛡️ CREAR STUB DE STORAGE POR SEGURIDAD (por si acaso no esté disponible)
+//  CREAR STUB DE STORAGE POR SEGURIDAD (por si acaso no esté disponible)
 if (typeof window.localStorage === 'undefined') {
     window.localStorage = {
         getItem: () => null,
@@ -63,16 +63,7 @@ function initializeEcho() {
             },
             wsErrorMessage: 'WebSocket connection failed',
         });
-
-        if (!isProduction) {
-            console.log('[Reverb] Echo conectado exitosamente', {
-                wsHost,
-                wsPort,
-                key: import.meta.env.VITE_REVERB_APP_KEY,
-            });
-        }
     } catch (error) {
-        console.error('[Reverb] Error inicializando Echo:', error);
     }
 }
 

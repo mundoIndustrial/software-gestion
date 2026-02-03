@@ -147,7 +147,7 @@ foreach ($tiposPorPrenda as $prendaId => $tipos) {
 - **Ejemplos**: 45926, 22607, 5
 - **Por año**: Reinicia cada año (2026-01-01)
 
-## 🛡️ Características de Seguridad
+##  Características de Seguridad
 
 ### Transaccionalidad
 - Todo o nada: Si falla algún consecutivo, se revierte todo
