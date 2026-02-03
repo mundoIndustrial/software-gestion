@@ -191,7 +191,18 @@ class GestionItemsUI {
     }
 
     async eliminarItem(index) {
-        if (!confirm('¿Eliminar este ítem?')) return;
+        // Mostrar confirmación con SweetAlert
+        const result = await Swal.fire({
+            title: '¿Eliminar este ítem?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             if (!this.apiService || !this.renderer || !this.notificationService) {
@@ -258,6 +269,12 @@ class GestionItemsUI {
                 });
                 
                 console.log(`[eliminarItem] ✅ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
+                
+                // 🔄 SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
+                if (tipoBuscado === 'prenda' && window.gestorPrendaSinCotizacion?.eliminar) {
+                    console.log(`[eliminarItem] 🔄 Sincronizando eliminación en gestorPrendaSinCotizacion (índice original: ${indiceBuscado})`);
+                    window.gestorPrendaSinCotizacion.eliminar(indiceBuscado);
+                }
             }
             
             // Renderizar items actualizados

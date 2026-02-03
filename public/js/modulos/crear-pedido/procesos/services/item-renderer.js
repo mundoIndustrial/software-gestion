@@ -44,13 +44,16 @@ class ItemRenderer {
     async renderizar(items, container) {
         container.innerHTML = '';
 
-        // Separar items por tipo
+        // Renderizar items manteniendo sus índices originales
+        // La agrupación visual es solo para UI, los índices deben ser consistentes con obtenerItemsOrdenados()
+        
+        // Separar items por tipo para agrupación visual (pero mantener índices originales)
         const prendas = [];
         const epps = [];
         
         items.forEach((item, idx) => {
-            // Detectar tipo: si tiene 'telasAgregadas' o 'generosConTallas' es prenda, si no es EPP
-            if (item.telasAgregadas || item.generosConTallas || item.variantes) {
+            // Detectar tipo: si tiene 'telasAgregadas' o 'generosConTallas' o 'procesos' es prenda, si no es EPP
+            if (item.telasAgregadas || item.generosConTallas || item.variantes || item.procesos) {
                 prendas.push({ item, index: idx });
             } else {
                 epps.push({ item, index: idx });
@@ -69,7 +72,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-
+                    console.error('[ItemRenderer] ❌ Error renderizando prenda:', error);
                 }
             }
         }
@@ -86,7 +89,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-
+                    console.error('[ItemRenderer] ❌ Error renderizando EPP:', error);
                 }
             }
         }

@@ -147,12 +147,16 @@ class GestorPrendaSinCotizacion {
     }
 
     /**
-     * Eliminar prenda (marcar para eliminación)
-     * @param {number} index - Índice de la prenda
+     * Eliminar prenda realmente del array
+     * @param {number} index - Índice de la prenda a eliminar
      */
     eliminar(index) {
-        this.prendasEliminadas.add(index);
-
+        if (index >= 0 && index < this.prendas.length) {
+            this.prendas.splice(index, 1);
+            console.log('[GestorPrendaSinCotizacion] ✅ Prenda eliminada del array en index:', index, '- Quedan:', this.prendas.length);
+        } else {
+            console.warn('[GestorPrendaSinCotizacion] ⚠️ Índice inválido:', index);
+        }
     }
 
     /**
