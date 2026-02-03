@@ -72,6 +72,9 @@
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     Cliente
                                 </th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">
+                                    Estado
+                                </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
                                     Creación
                                 </th>
@@ -94,6 +97,35 @@
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">
                                         {{ $pedido->cliente ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-block px-2 py-1 rounded text-xs font-medium
+                                            @if($pedido->estado === 'PENDIENTE_SUPERVISOR')
+                                                bg-blue-100 text-blue-800
+                                            @elseif($pedido->estado === 'APROBADO_SUPERVISOR')
+                                                bg-yellow-100 text-yellow-800
+                                            @elseif($pedido->estado === 'EN_PRODUCCION')
+                                                bg-orange-100 text-orange-800
+                                            @elseif($pedido->estado === 'FINALIZADO')
+                                                bg-green-100 text-green-800
+                                            @elseif($pedido->estado === 'En Ejecución')
+                                                bg-orange-100 text-orange-800
+                                            @elseif($pedido->estado === 'Entregado')
+                                                bg-green-100 text-green-800
+                                            @elseif($pedido->estado === 'Pendiente')
+                                                bg-blue-100 text-blue-800
+                                            @elseif($pedido->estado === 'No iniciado')
+                                                bg-slate-100 text-slate-800
+                                            @elseif($pedido->estado === 'Anulada')
+                                                bg-red-100 text-red-800
+                                            @elseif($pedido->estado === 'PENDIENTE_INSUMOS')
+                                                bg-purple-100 text-purple-800
+                                            @else
+                                                bg-slate-100 text-slate-800
+                                            @endif
+                                        ">
+                                            {{ str_replace('_', ' ', $pedido->estado) ?? '—' }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
                                         {{ $pedido->fecha_de_creacion_de_orden?->format('d/m/Y H:i') ?? '—' }}

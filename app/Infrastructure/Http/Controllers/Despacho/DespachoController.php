@@ -24,7 +24,7 @@ class DespachoController extends Controller
         
         $query = PedidoProduccion::query();
         
-        // Excluir pedidos con estados no deseados
+        // Mostrar todos los pedidos excepto los rechazados o en cartera
         $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
         
         if ($search) {

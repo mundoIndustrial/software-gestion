@@ -107,7 +107,7 @@
                                                 $tela = $fila->objetoPrenda['tela'] ?? null;
                                                 $color = $fila->objetoPrenda['color'] ?? null;
                                             @endphp
-                                            <div class="text-slate-600 mb-1 text-xs">
+                                            <div class="text-slate-900 mb-1 text-xs">
                                                 @if($tela && $color)
                                                     <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
                                                 @elseif($tela)
@@ -129,7 +129,7 @@
                                                 $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
                                                 $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
                                             @endphp
-                                            <div class="text-slate-600 mb-1 text-xs space-y-0.5">
+                                            <div class="text-slate-900 mb-1 text-xs space-y-0.5">
                                                 @if($manga)
                                                     <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
                                                 @endif
@@ -142,11 +142,16 @@
                                             </div>
                                         @endif
                                         @if($fila->objetoPrenda && isset($fila->objetoPrenda['procesos']) && is_array($fila->objetoPrenda['procesos']) && count($fila->objetoPrenda['procesos']) > 0)
-                                            <div class="text-slate-600 mt-1 text-xs">
+                                            <div class="text-slate-900 mt-1 text-xs">
                                                 <div class="ml-2 mt-0.5">
                                                     @foreach($fila->objetoPrenda['procesos'] as $proc)
                                                         @php
                                                             $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                                            // Si es string, intenta decodificar como JSON
+                                                            if (is_string($ubicaciones)) {
+                                                                $decoded = json_decode($ubicaciones, true);
+                                                                $ubicaciones = is_array($decoded) ? $decoded : [$ubicaciones];
+                                                            }
                                                             $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
                                                         @endphp
                                                         <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
