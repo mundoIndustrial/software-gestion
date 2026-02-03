@@ -26,6 +26,12 @@ class PDFCotizacionHelper
             'margin_header' => 0,
             'margin_footer' => 0,
             'tempDir' => storage_path('app/temp'), // Usar directorio temporal
+            'allow_output_buffering' => true,
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+            'use_kwt' => true, // Enable HTML to PDF conversion
+            'setAutoTopMargin' => 'stretch',
+            'setAutoBottomMargin' => 'stretch',
         ];
         
         $config = array_merge($defaultConfig, $config);

@@ -24,6 +24,7 @@ use App\Http\Controllers\TestTelasPrendaController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFReflectivoController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
+use App\Http\Controllers\PDFLogoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -687,7 +688,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
     Route::get('/cotizacion/{id}/pdf/reflectivo', [PDFReflectivoController::class, 'generate'])->name('cotizacion.pdf.reflectivo');
-    Route::get('/cotizacion/{id}/pdf/logo', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.logo');
+    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo');
     
     // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');

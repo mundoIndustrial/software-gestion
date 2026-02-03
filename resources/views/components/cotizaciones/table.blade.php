@@ -114,18 +114,21 @@
                                                 $tieneReflectivo = false;
                                                 
                                                 // Verificar si es reflectivo por tipo_cotizacion_id (4 = RF)
-                                                $esReflectivo = $cot->tipo_cotizacion_id == 4;
+                                                $esReflectivo = $cot->tipo_cotizacion_id == 4 || $cot->tipo === 'RF';
+                                                
+                                                // Verificar si es LOGO por tipo_cotizacion_id (2 = L) o código tipo
+                                                $esLogo = $cot->tipo_cotizacion_id == 2 || $cot->tipo === 'L';
+                                                
+                                                // Verificar si es COMBINADA por tipo_cotizacion_id (1 = PL) o código tipo
+                                                $esCombinada = $cot->tipo_cotizacion_id == 1 || $cot->tipo === 'PL';
                                                 
                                                 if (!$esReflectivo) {
                                                     $tieneReflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cot->id)->whereNotNull('prenda_cot_id')->exists();
                                                 }
                                                 
-                                                // Detectar si es COMBINADA (prendas + logo)
-                                                $esCombinad = $tienePrendas && $tieneLogo;
-                                                
-                                                // Construir array de botones SOLO si NO es combinada y NO es reflectivo
+                                                // Construir array de botones según tipo de cotización
                                                 $pdfButtons = [];
-                                                if (!$esCombinad && !$esReflectivo) {
+                                                if (!$esCombinada && !$esReflectivo && !$esLogo) {
                                                     if ($tienePrendas) {
                                                         $pdfButtons[] = [
                                                             'tipo' => 'prenda',
@@ -150,10 +153,19 @@
                                                 }
                                             @endphp
                                             
-                                            @if($esCombinad)
+                                            @if($esCombinada)
                                                 <!-- Cotización COMBINADA: Descargar directamente sin menú -->
                                                 <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'combinada')" 
                                                     title="Descargar PDF Combinada"
+                                                    style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                    <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                                                </button>
+                                            @elseif($esLogo)
+                                                <!-- Cotización LOGO: Descargar directamente el PDF de logo -->
+                                                <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo')" 
+                                                    title="Descargar PDF Logo"
                                                     style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                     onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                     onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
