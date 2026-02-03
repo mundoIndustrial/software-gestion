@@ -209,6 +209,37 @@
             tr {
                 page-break-inside: avoid;
             }
+
+            /* Ocultar contenido de celdas de datos (mantener estructura) */
+            tbody td {
+                color: transparent;
+                min-height: 30px;
+                padding: 15px 10px;
+            }
+
+            tbody tr:nth-child(even) {
+                background: white;
+            }
+
+            tbody tr:hover {
+                background: white;
+            }
+
+            /* Mantener visible solo los headers */
+            thead th {
+                color: #334155;
+            }
+
+            /* Mantener visible la información del pedido */
+            .info-box value {
+                color: #1e293b;
+            }
+
+            .header h1,
+            .header p,
+            .table-title {
+                color: inherit;
+            }
         }
 
         /* Botones (solo en pantalla) */

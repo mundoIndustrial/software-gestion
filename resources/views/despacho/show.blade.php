@@ -22,11 +22,11 @@
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
                         Ver Pedido
                     </button>
-                    <a href="{{ route('despacho.print', $pedido->id) }}"
-                       target="_blank"
-                       class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded transition-colors">
+                    <button type="button"
+                            onclick="imprimirTablaVacia()"
+                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded transition-colors">
                         Imprimir
-                    </a>
+                    </button>
                 </div>
             </div>
             
@@ -915,6 +915,67 @@ function cerrarModalExito() {
     const modal = document.getElementById('modalExito');
     modal.classList.add('hidden');
 }
+
+/**
+ * Imprimir tabla de despacho vacía
+ */
+function imprimirTablaVacia() {
+    const tabla = document.querySelector('table');
+    
+    if (!tabla) {
+        alert('No se encontró la tabla');
+        return;
+    }
+
+    // Clonar la tabla
+    const tablaClonada = tabla.cloneNode(true);
+
+    // Hacer transparente el contenido de los inputs
+    const inputs = tablaClonada.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.style.color = 'transparent';
+        input.style.background = 'white';
+    });
+
+    // Crear ventana de impresión
+    const ventana = window.open('', '', 'width=1200,height=800');
+    
+    const htmlContent = '<!DOCTYPE html>' +
+        '<html lang="es">' +
+        '<head>' +
+        '<meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>Despacho - Imprimir</title>' +
+        '<style>' +
+        '@page { margin: 8mm; size: letter portrait; }' +
+        '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+        'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; background: white; overflow-x: auto; }' +
+        'table { width: 100%; border-collapse: collapse; margin-top: 5px; }' +
+        'thead { background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }' +
+        'th { padding: 2px 1px; text-align: center; font-weight: 600; font-size: 12px; border: 1px solid #e2e8f0; line-height: 1; }' +
+        'th:first-child { font-size: 12px; padding: 3px 2px; }' +
+        'td { padding: 3px 2px; border: 1px solid #e2e8f0; font-size: 9px; }' +
+        'td:first-child { padding: 8px 3px; font-size: 12px; font-weight: 600; }' +
+        'tbody tr:nth-child(even) { background: white; }' +
+        'tbody tr.bg-slate-50 { background: #f1f5f9; }' +
+        'tbody tr.bg-slate-50 td { background: #f1f5f9; font-weight: 600; padding: 6px 2px; font-size: 10px; }' +
+        'input[type="number"] { width: 100%; border: 1px solid #cbd5e1; padding: 1px 0px; background: white; font-size: 8px; text-align: center; height: 16px; }' +
+        '@media print { body { margin: 0; padding: 0; } table { page-break-inside: avoid; } tr { page-break-inside: avoid; } }' +
+        '</style>' +
+        '</head>' +
+        '<body>' +
+        tablaClonada.outerHTML +
+        '<script>' +
+        'window.print();' +
+        'window.onafterprint = function() { window.close(); };' +
+        '<\/script>' +
+        '</body>' +
+        '</html>';
+    
+    ventana.document.write(htmlContent);
+    ventana.document.close();
+}
+
 </script>
 
 <style>
