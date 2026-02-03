@@ -36,21 +36,38 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 - **Independiente de**: `de_bodega`
 - **Razón**: El bordado siempre necesita recibo, sin importar el origen de la prenda
 
-### 4. REFLECTIVO
+### 4. DTF (Direct-to-Film)
+- **Se genera**: Si la prenda tiene proceso de tipo "DTF"
+- **Independiente de**: `de_bodega`
+- **Propio consecutivo**: Separado de ESTAMPADO y SUBLIMADO
+- **Razón**: DTF requiere su propio proceso y control independiente
+
+### 5. SUBLIMADO
+- **Se genera**: Si la prenda tiene proceso de tipo "SUBLIMADO"
+- **Independiente de**: `de_bodega`
+- **Propio consecutivo**: Separado de ESTAMPADO y DTF
+- **Razón**: Sublimado requiere su propio proceso y control independiente
+
+### 6. REFLECTIVO
 - **Se genera**: Si la prenda tiene proceso de tipo "REFLECTIVO"
 - **Independiente de**: `de_bodega`
 - **Razón**: El reflectivo siempre necesita recibo, sin importar el origen de la prenda
 
 ## 📊 Tabla de Decisiones
 
-| de_bodega | Procesos | COSTURA | ESTAMPADO | BORDADO | REFLECTIVO | Total Consecutivos |
-|-----------|----------|---------|-----------|---------|------------|-------------------|
-| false | Ninguno | ✅ | ❌ | ❌ | ❌ | 1 |
-| false | Estampado | ✅ | ✅ | ❌ | ❌ | 2 |
-| false | Bordado, Reflectivo | ✅ | ❌ | ✅ | ✅ | 3 |
-| true | Ninguno | ❌ | ❌ | ❌ | ❌ | 0 |
-| true | Estampado | ❌ | ✅ | ❌ | ❌ | 1 |
-| true | Bordado, Reflectivo | ❌ | ❌ | ✅ | ✅ | 2 |
+| de_bodega | Procesos | COSTURA | ESTAMPADO | BORDADO | DTF | SUBLIMADO | REFLECTIVO | Total Consecutivos |
+|-----------|----------|---------|-----------|---------|-----|-----------|------------|-------------------|
+| false | Ninguno | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
+| false | Estampado | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | 2 |
+| false | DTF | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | 2 |
+| false | Sublimado | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | 2 |
+| false | Bordado, Reflectivo | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | 3 |
+| false | Estampado, DTF, Sublimado | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | 4 |
+| true | Ninguno | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0 |
+| true | Estampado | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | 1 |
+| true | DTF | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | 1 |
+| true | Sublimado | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | 1 |
+| true | Bordado, Reflectivo | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | 2 |
 
 ## 🔄 Flujo de Generación
 
@@ -83,6 +100,8 @@ foreach ($pedido->prendas as $prenda) {
         switch ($proceso->tipo) {
             case 'ESTAMPADO': $tiposPrenda[] = 'ESTAMPADO'; break;
             case 'BORDADO': $tiposPrenda[] = 'BORDADO'; break;
+            case 'DTF': $tiposPrenda[] = 'DTF'; break;
+            case 'SUBLIMADO': $tiposPrenda[] = 'SUBLIMADO'; break;
             case 'REFLECTIVO': $tiposPrenda[] = 'REFLECTIVO'; break;
         }
     }
@@ -112,7 +131,7 @@ foreach ($tiposPorPrenda as $prendaId => $tipos) {
 ### Tablas Involucradas
 
 1. **consecutivos_recibos** (Maestra)
-   - `tipo_recibo`: COSTURA, ESTAMPADO, BORDADO, REFLECTIVO
+   - `tipo_recibo`: COSTURA, ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO
    - `año`: Año actual
    - `consecutivo_actual`: Último número usado
    - `activo`: Si está en uso
@@ -202,10 +221,11 @@ Total: 3 consecutivos
 2. **Por Prenda**: Cada prenda genera sus propios consecutivos
 3. **COSTURA Especial**: Solo para prendas que no son de bodega
 4. **Procesos Siempre**: Los procesos siempre generan consecutivos
-5. **Sin Prefijos**: Solo números secuenciales
-6. **Transaccional**: Todo o nada
-7. **Único**: No hay duplicados
-8. **Anual**: Reinicia cada año
+5. **Procesos Independientes**: DTF, SUBLIMADO y ESTAMPADO tienen consecutivos independientes
+6. **Sin Prefijos**: Solo números secuenciales
+7. **Transaccional**: Todo o nada
+8. **Único**: No hay duplicados
+9. **Anual**: Reinicia cada año
 
 ## 📞 Soporte y Mantenimiento
 
@@ -226,7 +246,7 @@ Total: 3 consecutivos
 
 ---
 
-**Versión**: 1.0  
-**Fecha**: 30/01/2026  
+**Versión**: 1.1  
+**Fecha**: 03/02/2026  
 **Autor**: Sistema de Gestión Industrial  
-**Estado**: Implementado y Verificado
+**Estado**: Actualizado con DTF y SUBLIMADO como procesos independientes

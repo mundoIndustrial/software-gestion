@@ -500,6 +500,8 @@ class OperarioController extends Controller
                 'COSTURA' => null,
                 'ESTAMPADO' => null,
                 'BORDADO' => null,
+                'DTF' => null,
+                'SUBLIMADO' => null,
                 'REFLECTIVO' => null
             ];
 

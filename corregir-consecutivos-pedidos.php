@@ -9,7 +9,7 @@ echo "=== CORRECCIÓN: Actualizar consecutivos_recibos_pedidos ===\n\n";
 
 // Obtener los valores correctos de la tabla maestra
 $maestro = DB::table('consecutivos_recibos')
-    ->whereIn('tipo_recibo', ['COSTURA', 'ESTAMPADO', 'BORDADO', 'REFLECTIVO'])
+    ->whereIn('tipo_recibo', ['COSTURA', 'ESTAMPADO', 'BORDADO', 'REFLECTIVO', 'DTF', 'SUBLIMADO'])
     ->get()
     ->keyBy('tipo_recibo');
 

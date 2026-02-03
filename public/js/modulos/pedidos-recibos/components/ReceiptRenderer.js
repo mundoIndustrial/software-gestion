@@ -64,8 +64,9 @@ export class ReceiptRenderer {
                 'costura-bodega': 'COSTURA',
                 'bordado': 'BORDADO',
                 'estampado': 'ESTAMPADO',
+                'dtf': 'DTF',
                 'reflectivo': 'REFLECTIVO',
-                'sublimado': 'ESTAMPADO',
+                'sublimado': 'SUBLIMADO',
                 'bordado-punto': 'BORDADO',
                 'bordado-plano': 'BORDADO'
             };

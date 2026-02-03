@@ -69,16 +69,21 @@ class ConsecutivosRecibosService
                         continue;
                     }
 
+                    // Extraer el tipo de recibo real (sin el sufijo de prenda si existe)
+                    // COSTURA_20 -> COSTURA, ESTAMPADO -> ESTAMPADO
+                    $tipoReciboReal = $config['tipo_recibo'] ?? explode('_', $tipoRecibo)[0];
+
                     // Obtener el siguiente consecutivo de la tabla maestra consecutivos_recibos
                     $registroMaestro = DB::table('consecutivos_recibos')
-                        ->where('tipo_recibo', $tipoRecibo)
+                        ->where('tipo_recibo', $tipoReciboReal)
                         ->where('activo', 1)
                         ->lockForUpdate()
                         ->first();
 
                     if (!$registroMaestro) {
                         Log::warning('🔢 No existe registro maestro para tipo de recibo', [
-                            'tipo_recibo' => $tipoRecibo,
+                            'tipo_recibo_buscado' => $tipoReciboReal,
+                            'tipo_recibo_clave' => $tipoRecibo,
                             'pedido_id' => $pedido->id
                         ]);
                         continue;
@@ -222,6 +227,24 @@ class ConsecutivosRecibosService
                             $procesosPorPedido['ESTAMPADO'] = true;
                             $tiposRecibo['ESTAMPADO'] = [
                                 'tipo_recibo' => 'ESTAMPADO',
+                                'prenda_pedido_id' => null
+                            ];
+                        }
+                        break;
+                    case 'DTF':
+                        if (!isset($procesosPorPedido['DTF'])) {
+                            $procesosPorPedido['DTF'] = true;
+                            $tiposRecibo['DTF'] = [
+                                'tipo_recibo' => 'DTF',
+                                'prenda_pedido_id' => null
+                            ];
+                        }
+                        break;
+                    case 'SUBLIMADO':
+                        if (!isset($procesosPorPedido['SUBLIMADO'])) {
+                            $procesosPorPedido['SUBLIMADO'] = true;
+                            $tiposRecibo['SUBLIMADO'] = [
+                                'tipo_recibo' => 'SUBLIMADO',
                                 'prenda_pedido_id' => null
                             ];
                         }
