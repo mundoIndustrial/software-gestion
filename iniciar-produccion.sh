@@ -21,8 +21,11 @@ echo "      - REVERB_PORT=8080"
 echo "      - REVERB_SCHEME=https"
 echo ""
 
-echo "[3/4] Compilando assets optimizados..."
+echo "[3/4] Corrigiendo permisos y compilando..."
+sudo chmod -R 777 ~/app/storage ~/app/bootstrap/cache 2>/dev/null || true
 npm run build
+php artisan config:cache
+php artisan route:cache
 echo "      Assets compilados para produccion"
 echo ""
 
