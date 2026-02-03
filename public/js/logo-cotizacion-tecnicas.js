@@ -2909,7 +2909,7 @@ function renderizarTecnicasAgregadas() {
             justify-content: center;
             transition: background 0.2s;
         " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" data-prenda-nombre="${nombrePrenda}" title="Editar">
-            
+            <i class="fas fa-edit" style="font-size: 1rem;"></i>
         </button>`;
         headerHTML += `<button type="button" class="btn-eliminar-prenda" style="
             background: rgba(255,255,255,0.2);
@@ -3315,8 +3315,14 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
     // Agrupar por NOMBRE DE PRENDA y mantener datos de CADA TÉCNICA
     const prendasMap = {};
     const datosPorTecnica = {}; // Guardar datos específicos de cada técnica
+    const logosCompartidosGlobal = {}; // Guardar logos compartidos de TODAS las técnicas
     
     tecnicasDelGrupo.forEach((tecnica, tecnicaIdx) => {
+        // Guardar logos compartidos si existen
+        if (tecnica.logosCompartidos && Object.keys(tecnica.logosCompartidos).length > 0) {
+            Object.assign(logosCompartidosGlobal, tecnica.logosCompartidos);
+        }
+        
         tecnica.prendas.forEach(prenda => {
             const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
             
@@ -3333,7 +3339,8 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     variaciones_prenda: prenda.variaciones_prenda || {}, // Incluir variaciones
                     telas: prenda.telas || [], // Incluir telas
                     tecnicas: [],
-                    tecnicasData: {} // Guardar datos por técnica
+                    tecnicasData: {}, // Guardar datos por técnica
+                    logosCompartidos: logosCompartidosGlobal // Referencia a logos compartidos
                 };
             }
             
@@ -3421,28 +3428,86 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
         
         let imagenesHTML = '';
         if (prenda.tecnicas && prenda.tecnicas.length > 0) {
+            const hayLogosCompartidos = prenda.logosCompartidos && Object.keys(prenda.logosCompartidos).length > 0;
+            
             imagenesHTML = `
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;"> Imágenes por Técnica</label>
                     <div style="display: grid; gap: 12px;">
             `;
             
+            // Si hay logos compartidos y más de una técnica
+            if (hayLogosCompartidos && prenda.tecnicas.length > 1) {
+                imagenesHTML += `
+                    <div style="border: 2px solid #0284c7; border-radius: 4px; padding: 12px; background: #e0f2fe;">
+                        <div style="font-weight: 600; margin-bottom: 10px; color: #0284c7; font-size: 0.95rem;">🔗 Logo Compartido para:</div>
+                `;
+                
+                // Renderizar logos compartidos
+                for (const clave in prenda.logosCompartidos) {
+                    const logoFile = prenda.logosCompartidos[clave];
+                    const tecnicasNombres = clave.split('-').map(nombre => nombre.trim()).join(' + ');
+                    
+                    // Crear URL de la imagen si es un File
+                    let imagenUrl = null;
+                    if (logoFile instanceof File) {
+                        imagenUrl = URL.createObjectURL(logoFile);
+                    } else if (typeof logoFile === 'string') {
+                        imagenUrl = logoFile;
+                    } else if (logoFile && logoFile.data_url) {
+                        imagenUrl = logoFile.data_url;
+                    }
+                    
+                    imagenesHTML += `
+                        <div style="margin-bottom: 12px; padding: 8px; background: white; border-radius: 4px;">
+                            <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                                ${imagenUrl ? `
+                                    <div style="position: relative;">
+                                        <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                        <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${clave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                                    </div>
+                                ` : `<span style="color: #999;">Logo no disponible</span>`}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                imagenesHTML += `
+                    </div>
+                `;
+            }
+            
+            // Renderizar imágenes individuales de técnicas (si no usan logo compartido)
             prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
                 const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
                 const imagenesActuales = datosActuales.imagenes_data_urls || [];
+                
+                // Si hay logos compartidos, filtrar para mostrar solo las que no son compartidas
+                const imagenesIndividuales = hayLogosCompartidos ? 
+                    imagenesActuales.filter(img => !img.esCompartida) : 
+                    imagenesActuales;
+                
+                // Si hay logos compartidos y la técnica usa logo compartido, no mostrar esta sección
+                const usaLogoCompartido = hayLogosCompartidos && 
+                    Object.keys(prenda.logosCompartidos).some(clave => clave.includes(tecnica.tipo_logo.nombre));
+                
+                if (usaLogoCompartido && imagenesIndividuales.length === 0) {
+                    return; // No mostrar sección de imágenes si usa logo compartido
+                }
                 
                 imagenesHTML += `
                     <div style="border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f9f9f9;">
                         <div style="font-weight: 600; margin-bottom: 8px; color: ${tecnica.tipo_logo.color || '#333'}; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</div>
                 `;
                 
-                // Mostrar imágenes existentes
-                if (imagenesActuales && imagenesActuales.length > 0) {
+                // Mostrar imágenes existentes (solo las individuales si hay compartidas)
+                if (imagenesIndividuales && imagenesIndividuales.length > 0) {
                     imagenesHTML += `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" class="edit-imagenes-container" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}">
-                            ${imagenesActuales.map((img, imgIdx) => `
+                            ${imagenesIndividuales.map((img, imgIdx) => `
                                 <div style="position: relative;" class="imagen-item" data-img-idx="${imgIdx}">
-                                    <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                    <img src="${typeof img === 'string' ? img : (img && img.data_url ? img.data_url : img)}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
                                     <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${imgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
                                 </div>
                             `).join('')}
@@ -3495,13 +3560,13 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
             
             prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
                 const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
-                const ubicacionesTecnica = datosActuales.ubicaciones || [];
-                const ubicacionActual = ubicacionesTecnica[0] || ''; // La primera ubicación para esta técnica
+                const ubicacionesTecnica = datosActuales.ubicaciones || []; // TODAS las ubicaciones
+                const ubicacionesJoinadas = ubicacionesTecnica.join(', '); // Mostrar todas separadas por coma
                 
                 ubicacionesHTML += `
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f0f4f8; border-radius: 4px; border-left: 3px solid ${tecnica.tipo_logo.color || '#333'};">
-                        <label style="font-weight: 600; min-width: 100px; font-size: 0.85rem; color: #333; flex-shrink: 0;">${tecnica.tipo_logo.nombre}:</label>
-                        <input type="text" class="edit-ubicacion-tecnica" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" value="${ubicacionActual}" placeholder="Ej: Pecho, Espalda, Manga..." style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; background: #f0f4f8; border-radius: 4px; border-left: 3px solid ${tecnica.tipo_logo.color || '#333'};">
+                        <label style="font-weight: 600; min-width: 100px; font-size: 0.85rem; color: #333; flex-shrink: 0; padding-top: 6px;">${tecnica.tipo_logo.nombre}:</label>
+                        <textarea class="edit-ubicacion-tecnica" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" placeholder="Ej: Pecho, Espalda, Manga..." style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem; resize: vertical; min-height: 40px; font-family: inherit;">${ubicacionesJoinadas}</textarea>
                     </div>
                 `;
             });
@@ -3547,19 +3612,42 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                                 <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
                                     <thead>
                                         <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
-                                            <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 40%;">Imagen</th>
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Color</th>
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Tela</th>
+                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Referencia</th>
+                                            <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 55%;">Imagen</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${prenda.telas.map((tela, idx) => {
-                                            let imagenHTML = '<span style="color: #999;">Sin imagen</span>';
-                                            if (tela.archivo && tela.archivo instanceof File) {
-                                                imagenHTML = '<span style="color: #999; font-size: 0.7rem;">Cargando...</span>';
-                                            } else if (tela.imagen) {
-                                                imagenHTML = `<img src="${tela.imagen}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
+                                            let imagenHTML = '<span style="color: #999; font-size: 0.75rem;">Sin imagen</span>';
+                                            
+                                            // Determinar la URL de imagen
+                                            let imagenUrl = tela.imagen;
+                                            
+                                            // Si no tiene imagen pero tiene archivo, crear URL
+                                            if (!imagenUrl && tela.archivo) {
+                                                if (tela.archivo instanceof File) {
+                                                    imagenUrl = URL.createObjectURL(tela.archivo);
+                                                }
+                                            }
+                                            
+                                            // Mostrar imagen si existe
+                                            if (imagenUrl) {
+                                                imagenHTML = `
+                                                    <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                                                        <img src="${imagenUrl}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
+                                                        <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
+                                                    </div>
+                                                `;
+                                            } else {
+                                                // Opción para cargar imagen si no existe
+                                                imagenHTML = `
+                                                    <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
+                                                        <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}" accept="image/*" style="display: none;">
+                                                        📤 Cargar imagen
+                                                    </label>
+                                                `;
                                             }
                                             
                                             return `
@@ -3568,7 +3656,9 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                                                     <td style="padding: 0.4rem; color: #475569;">${tela.tela || '-'}</td>
                                                     <td style="padding: 0.4rem; color: #475569;">${tela.referencia || '-'}</td>
                                                     <td style="padding: 0.4rem; text-align: center;">
-                                                        ${imagenHTML}
+                                                        <div class="edit-tela-imagen-container" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}">
+                                                            ${imagenHTML}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             `;
@@ -3606,6 +3696,160 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#333',
         didOpen: (modal) => {
+            // Procesar archivos de tela para generar URLs de imagen
+            todasLasPrendas.forEach((prenda, prendaIdx) => {
+                if (prenda.telas && prenda.telas.length > 0) {
+                    prenda.telas.forEach((tela, telaIdx) => {
+                        // Si tiene archivo pero no tiene imagen URL, crear la URL
+                        if (tela.archivo && !tela.imagen && tela.archivo instanceof File) {
+                            tela.imagen = URL.createObjectURL(tela.archivo);
+                            
+                            // Actualizar el HTML en el DOM
+                            const container = document.querySelector(
+                                `.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`
+                            );
+                            
+                            if (container) {
+                                container.innerHTML = `
+                                    <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                                        <img src="${tela.imagen}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
+                                        <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
+                                    </div>
+                                `;
+                                
+                                // Reasignar evento al botón de eliminar
+                                const deleteBtn = container.querySelector('.edit-btn-eliminar-tela-imagen');
+                                if (deleteBtn) {
+                                    deleteBtn.addEventListener('click', (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        
+                                        const telaIdxDel = parseInt(deleteBtn.getAttribute('data-tela-idx'));
+                                        const prendaIdxDel = parseInt(deleteBtn.getAttribute('data-prenda-idx'));
+                                        
+                                        // Limpiar imagen del objeto
+                                        if (todasLasPrendas[prendaIdxDel] && todasLasPrendas[prendaIdxDel].telas[telaIdxDel]) {
+                                            todasLasPrendas[prendaIdxDel].telas[telaIdxDel].imagen = null;
+                                            todasLasPrendas[prendaIdxDel].telas[telaIdxDel].archivo = null;
+                                        }
+                                        
+                                        // Actualizar UI
+                                        container.innerHTML = `
+                                            <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
+                                                <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdxDel}" data-tela-idx="${telaIdxDel}" accept="image/*" style="display: none;">
+                                                📤 Cargar imagen
+                                            </label>
+                                        `;
+                                        
+                                        // Reasignar evento al input
+                                        const fileInput = container.querySelector('.edit-input-tela-imagen');
+                                        if (fileInput) {
+                                            fileInput.addEventListener('change', handleTelaImagenChange);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Event listeners para eliminar logos compartidos
+            document.querySelectorAll('.edit-btn-eliminar-logo-compartido').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
+                    const logoClave = btn.getAttribute('data-logo-clave');
+                    
+                    // Eliminar del objeto logosCompartidos
+                    if (todasLasPrendas[prendaIdx].logosCompartidos && todasLasPrendas[prendaIdx].logosCompartidos[logoClave]) {
+                        delete todasLasPrendas[prendaIdx].logosCompartidos[logoClave];
+                    }
+                    
+                    // Obtener referencias
+                    const divLogo = btn.closest('div[style*="background: white"]');
+                    const tecnicasNombres = logoClave.split('-').map(nombre => nombre.trim()).join(' + ');
+                    
+                    // Reemplazar con input file para cargar nuevo logo
+                    divLogo.innerHTML = `
+                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                        <label style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border: 2px dashed #0284c7;
+                            border-radius: 4px;
+                            padding: 20px;
+                            background: #f0f7ff;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
+                            <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" accept="image/*" style="display: none;">
+                            <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
+                        </label>
+                    `;
+                    
+                    // Asignar event listener al nuevo input
+                    const nuevoInput = divLogo.querySelector('.edit-input-logo-compartido-nuevo');
+                    if (nuevoInput) {
+                        nuevoInput.addEventListener('change', (changeE) => {
+                            const file = changeE.target.files[0];
+                            if (!file) return;
+                            
+                            // Guardar el archivo en logosCompartidos
+                            todasLasPrendas[prendaIdx].logosCompartidos[logoClave] = file;
+                            
+                            // Crear URL para previsualizar
+                            const imagenUrl = URL.createObjectURL(file);
+                            
+                            // Actualizar el DOM
+                            divLogo.innerHTML = `
+                                <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                                    <div style="position: relative;">
+                                        <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                        <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Re-asignar evento al nuevo botón de eliminar
+                            const nuevoBtn = divLogo.querySelector('.edit-btn-eliminar-logo-compartido');
+                            if (nuevoBtn) {
+                                nuevoBtn.click = function(e) {
+                                    e.preventDefault();
+                                    // Limpiar imagen
+                                    if (todasLasPrendas[prendaIdx].logosCompartidos) {
+                                        delete todasLasPrendas[prendaIdx].logosCompartidos[logoClave];
+                                    }
+                                    // Mostrar input nuevamente
+                                    divLogo.innerHTML = `
+                                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                                        <label style="
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            border: 2px dashed #0284c7;
+                                            border-radius: 4px;
+                                            padding: 20px;
+                                            background: #f0f7ff;
+                                            cursor: pointer;
+                                            transition: all 0.2s;
+                                        " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
+                                            <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" accept="image/*" style="display: none;">
+                                            <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
+                                        </label>
+                                    `;
+                                    // Re-asignar listeners recursivamente...
+                                    // (Esto se hace automáticamente en el siguiente didOpen)
+                                };
+                                nuevoBtn.addEventListener('click', nuevoBtn.click);
+                            }
+                        });
+                    }
+                });
+            });
+            
             // Agregar evento a botones de agregar talla
             document.querySelectorAll('.edit-btn-agregar-talla').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -3747,6 +3991,175 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     btn.closest('.edit-talla-row').remove();
                 });
             });
+            
+            // Event listeners para imágenes de tela (eliminar y cargar)
+            // Botones para eliminar imágenes de tela
+            document.querySelectorAll('.edit-btn-eliminar-tela-imagen').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
+                    const telaIdx = parseInt(btn.getAttribute('data-tela-idx'));
+                    
+                    // Eliminar la imagen de la tela
+                    if (todasLasPrendas[prendaIdx] && todasLasPrendas[prendaIdx].telas[telaIdx]) {
+                        todasLasPrendas[prendaIdx].telas[telaIdx].imagen = null;
+                        todasLasPrendas[prendaIdx].telas[telaIdx].archivo = null;
+                        
+                        // Actualizar el DOM
+                        const container = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`);
+                        if (container) {
+                            container.innerHTML = `
+                                <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
+                                    <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" accept="image/*" style="display: none;">
+                                    📤 Cargar imagen
+                                </label>
+                            `;
+                            
+                            // Re-asignar event listener al nuevo input
+                            const newInput = container.querySelector('.edit-input-tela-imagen');
+                            newInput.addEventListener('change', handleTelaImagenChange);
+                        }
+                    }
+                });
+            });
+            
+            // Inputs para cargar imágenes de tela
+            // Asignar event listener a todos los inputs de archivo de tela
+            document.querySelectorAll('.edit-input-tela-imagen').forEach(input => {
+                input.addEventListener('change', handleTelaImagenChange);
+            });
+            
+            function handleTelaImagenChange(e) {
+                const input = e.target;
+                const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
+                const telaIdx = parseInt(input.getAttribute('data-tela-idx'));
+                const file = input.files[0];
+                
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const dataUrl = event.target.result;
+                    
+                    // Guardar en el objeto de tela
+                    if (todasLasPrendas[prendaIdx] && todasLasPrendas[prendaIdx].telas[telaIdx]) {
+                        todasLasPrendas[prendaIdx].telas[telaIdx].imagen = dataUrl;
+                        todasLasPrendas[prendaIdx].telas[telaIdx].archivo = file;
+                        
+                        // Actualizar el DOM
+                        const container = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`);
+                        if (container) {
+                            container.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                                    <img src="${dataUrl}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
+                                    <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
+                                </div>
+                            `;
+                            
+                            // Re-asignar event listener al nuevo botón
+                            const newBtn = container.querySelector('.edit-btn-eliminar-tela-imagen');
+                            newBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                const prendaIdx2 = parseInt(newBtn.getAttribute('data-prenda-idx'));
+                                const telaIdx2 = parseInt(newBtn.getAttribute('data-tela-idx'));
+                                
+                                if (todasLasPrendas[prendaIdx2] && todasLasPrendas[prendaIdx2].telas[telaIdx2]) {
+                                    todasLasPrendas[prendaIdx2].telas[telaIdx2].imagen = null;
+                                    todasLasPrendas[prendaIdx2].telas[telaIdx2].archivo = null;
+                                    
+                                    const container2 = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx2}"][data-tela-idx="${telaIdx2}"]`);
+                                    if (container2) {
+                                        container2.innerHTML = `
+                                            <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
+                                                <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx2}" data-tela-idx="${telaIdx2}" accept="image/*" style="display: none;">
+                                                📤 Cargar imagen
+                                            </label>
+                                        `;
+                                        
+                                        const newInput2 = container2.querySelector('.edit-input-tela-imagen');
+                                        newInput2.addEventListener('change', handleTelaImagenChange);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            document.querySelectorAll('.edit-input-tela-imagen').forEach(input => {
+                input.addEventListener('change', handleTelaImagenChange);
+            });
+            
+            // Event listeners para inputs de logo compartido nuevo
+            document.querySelectorAll('.edit-input-logo-compartido-nuevo').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
+                    const logoClave = input.getAttribute('data-logo-clave');
+                    
+                    // Guardar el archivo en logosCompartidos
+                    todasLasPrendas[prendaIdx].logosCompartidos[logoClave] = file;
+                    
+                    // Crear URL para previsualizar
+                    const imagenUrl = URL.createObjectURL(file);
+                    const tecnicasNombres = logoClave.split('-').map(nombre => nombre.trim()).join(' + ');
+                    
+                    // Actualizar el DOM
+                    const container = input.closest('label').parentElement;
+                    container.innerHTML = `
+                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                            <div style="position: relative;">
+                                <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Re-asignar evento al nuevo botón de eliminar
+                    const nuevoBtn = container.querySelector('.edit-btn-eliminar-logo-compartido');
+                    if (nuevoBtn) {
+                        nuevoBtn.addEventListener('click', (clickE) => {
+                            clickE.preventDefault();
+                            const prendaIdxDel = parseInt(nuevoBtn.getAttribute('data-prenda-idx'));
+                            const logoClaveDel = nuevoBtn.getAttribute('data-logo-clave');
+                            
+                            // Eliminar del objeto logosCompartidos
+                            if (todasLasPrendas[prendaIdxDel].logosCompartidos && todasLasPrendas[prendaIdxDel].logosCompartidos[logoClaveDel]) {
+                                delete todasLasPrendas[prendaIdxDel].logosCompartidos[logoClaveDel];
+                            }
+                            
+                            // Mostrar input nuevamente
+                            container.innerHTML = `
+                                <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
+                                <label style="
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    border: 2px dashed #0284c7;
+                                    border-radius: 4px;
+                                    padding: 20px;
+                                    background: #f0f7ff;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
+                                    <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdxDel}" data-logo-clave="${logoClaveDel}" accept="image/*" style="display: none;">
+                                    <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
+                                </label>
+                            `;
+                            
+                            // Re-asignar evento al nuevo input (recursivo)
+                            const nuevoInputDel = container.querySelector('.edit-input-logo-compartido-nuevo');
+                            if (nuevoInputDel) {
+                                nuevoInputDel.addEventListener('change', arguments.callee);
+                            }
+                        });
+                    }
+                });
+            });
         },
         preConfirm: () => {
             // Validar que al menos una prenda tenga nombre
@@ -3780,12 +4193,17 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 // Capturar ubicaciones por técnica y actualizar tecnicasData
                 document.querySelectorAll(`.edit-ubicacion-tecnica[data-prenda-idx="${prendaIdxStr}"]`).forEach(input => {
                     const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
-                    const ubicacion = input.value.trim();
+                    const ubicacionTexto = input.value.trim();
+                    
+                    // Dividir por comas y limpiar espacios en blanco
+                    const ubicaciones = ubicacionTexto
+                        .split(',')
+                        .map(u => u.trim())
+                        .filter(u => u.length > 0);
                     
                     // Actualizar la ubicación en tecnicasData
                     if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
-                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = [ubicacion];
-
+                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = ubicaciones.length > 0 ? ubicaciones : [];
                     }
                 });
                 
