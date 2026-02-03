@@ -76,29 +76,13 @@ class SupervisorAsesoresController extends Controller
      */
     public function dashboardStats(Request $request)
     {
-        $dias = $request->get('dias', 7);
         $asesores = $this->getAsesores();
         $asesoresIds = $asesores->pluck('id')->toArray();
-        
-        // Parámetros de filtro para gráfica de estados
-        $fechaDesde = $request->get('fecha_desde');
-        $fechaHasta = $request->get('fecha_hasta');
-        $mes = $request->get('mes');
-        $estadosFilter = $request->get('estados_filter') === 'true';
         
         // ============================================
         // Estadísticas Generales
         // ============================================
-        $cotizacionesHoy = Cotizacion::whereIn('asesor_id', $asesoresIds)
-            ->whereDate('created_at', today())
-            ->count();
-        
         $cotizacionesMes = Cotizacion::whereIn('asesor_id', $asesoresIds)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->count();
-            
-        $pedidosMes = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
@@ -107,97 +91,11 @@ class SupervisorAsesoresController extends Controller
         $totalPedidosMes = PedidoProduccion::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-            
-        $totalAsesores = count($asesores);
-        
-        $pedidosPendientes = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
-            ->whereIn('estado', ['No iniciado', 'En Ejecución'])
-            ->count();
-
-        // ============================================
-        // Datos para Gráficas
-        // ============================================
-        
-        // Gráfica de Tendencia (línea) - SOLO datos de asesores
-        $fecha_inicio = now()->subDays($dias);
-        $labels = [];
-        $cotizaciones_por_dia = [];
-        $pedidos_por_dia = [];
-        
-        for ($i = 0; $i < $dias; $i++) {
-            $fecha = $fecha_inicio->copy()->addDays($i);
-            $labels[] = $fecha->format('d/m');
-            
-            $cotizaciones_por_dia[] = Cotizacion::whereIn('asesor_id', $asesoresIds)
-                ->whereDate('created_at', $fecha)
-                ->count();
-                
-            $pedidos_por_dia[] = PedidoProduccion::whereIn('asesor_id', $asesoresIds)
-                ->whereDate('created_at', $fecha)
-                ->count();
-        }
-
-        // Gráfica de Cotizaciones por Asesor (top 10)
-        // Usar Cotizacion, no PedidoProduccion
-        $asesoresCotizaciones = Cotizacion::select('asesor_id', DB::raw('COUNT(*) as total'))
-            ->whereIn('asesor_id', $asesoresIds)
-            ->groupBy('asesor_id')
-            ->orderBy('total', 'desc')
-            ->limit(10)
-            ->with('asesora:id,name')
-            ->get();
-            
-        $asesores_labels = $asesoresCotizaciones->map(function($item) {
-            return $item->asesora?->name ?? 'Desconocido';
-        })->toArray();
-        
-        $asesores_data = $asesoresCotizaciones->pluck('total')->toArray();
-
-        // Gráfica de Estados (con filtros opcionales)
-        // Filtrar SIEMPRE por asesores del supervisor
-        $estadosQuery = PedidoProduccion::select('estado', DB::raw('COUNT(*) as total'))
-            ->whereIn('asesor_id', $asesoresIds);
-        
-        // Aplicar filtros si se solicita
-        if ($estadosFilter) {
-            if ($fechaDesde) {
-                $estadosQuery->whereDate('created_at', '>=', $fechaDesde);
-            }
-            if ($fechaHasta) {
-                $estadosQuery->whereDate('created_at', '<=', $fechaHasta);
-            }
-            if ($mes) {
-                $estadosQuery->whereMonth('created_at', $mes)
-                    ->whereYear('created_at', now()->year);
-            }
-        } else {
-            // Si no hay filtros específicos, mostrar datos del mes actual
-            $estadosQuery->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year);
-        }
-        
-        $estadosPedidos = $estadosQuery->groupBy('estado')->get();
-            
-        $estados_labels = $estadosPedidos->pluck('estado')->toArray();
-        $estados_data = $estadosPedidos->pluck('total')->toArray();
 
         return response()->json([
             // Tarjetas de estadísticas
-            'cotizaciones_hoy' => $cotizacionesHoy,
             'cotizaciones_mes' => $cotizacionesMes,
-            'pedidos_mes' => $pedidosMes,
-            'total_pedidos_mes' => $totalPedidosMes,
-            'total_asesores' => $totalAsesores,
-            'pedidos_pendientes' => $pedidosPendientes,
-            
-            // Datos para gráficas
-            'labels' => $labels,
-            'cotizaciones_por_dia' => $cotizaciones_por_dia,
-            'pedidos_por_dia' => $pedidos_por_dia,
-            'asesores_labels' => $asesores_labels,
-            'asesores_data' => $asesores_data,
-            'estados_labels' => $estados_labels,
-            'estados_data' => $estados_data
+            'total_pedidos_mes' => $totalPedidosMes
         ]);
     }
 
@@ -241,6 +139,7 @@ class SupervisorAsesoresController extends Controller
             $obj = (object)[
                 'id' => $cot->id,
                 'numero_cotizacion' => $cot->numero_cotizacion,
+                'tipo_cotizacion_id' => $cot->tipo_cotizacion_id,
                 'tipo' => $cot->tipo_cotizacion_id ? ($cot->tipoCotizacion->codigo ?? 'P') : 'P',
                 'estado' => $cot->estado,
                 'es_borrador' => $cot->es_borrador,

@@ -627,7 +627,7 @@
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
                     
                     <!-- Acciones -->
-                    <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido ?? 'sin-numero' }}" data-pedido="{{ $pedido->numero_pedido ?? 'sin-numero' }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
+                    <button onclick="verFacturaDelPedido('', {{ $pedido->id }})" style="
                         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                         color: white;
                         border: none;
@@ -1181,7 +1181,44 @@
         }
     });
 
-
+// Función verFacturaDelPedido para supervisores (mismo que asesores)
+window.verFacturaDelPedido = window.verFacturaDelPedido || async function verFacturaDelPedido(numeroPedido, pedidoId) {
+    console.log('[INICIO-verFacturaDelPedido] ⚠️ FUNCIÓN LLAMADA', {numeroPedido, pedidoId});
+    
+    try {
+        const url = `/pedidos-public/${pedidoId}/factura-datos`;
+        console.log('[ANTES-FETCH] Llamando a endpoint', {url});
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error('Error fetching factura: ' + response.status);
+        }
+        
+        const resultado = await response.json();
+        console.log('[FACTURA-DEBUG] Datos completos del servidor:', resultado);
+        
+        if (resultado.success && resultado.data) {
+            console.log('[FACTURA-DEBUG] ¿Tiene prendas?', !!resultado.data.prendas);
+            console.log('[FACTURA-DEBUG] Tipo de prendas:', typeof resultado.data.prendas);
+            console.log('[FACTURA-DEBUG] ¿Es array?', Array.isArray(resultado.data.prendas));
+            console.log('[FACTURA-DEBUG] Prendas count:', resultado.data.prendas?.length);
+            console.log('[FACTURA-DEBUG] Prendas recibidas:', resultado.data.prendas);
+            
+            // Llamar a la función de asesores para crear el modal
+            if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
+                crearModalFacturaDesdeListaPedidos(resultado.data);
+            } else {
+                console.error('crearModalFacturaDesdeListaPedidos no está disponible');
+            }
+        } else {
+            throw new Error('Respuesta inválida del servidor');
+        }
+    } catch (error) {
+        console.error('Error al abrir factura:', error);
+        alert('Error al cargar la factura: ' + error.message);
+    }
+};
 
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
@@ -1189,7 +1226,7 @@
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
-<script src="{{ asset('js/orders/order-detail-modal-manager.js') }}"></script>
+<script src="{{ asset('js/invoice-preview-live.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>

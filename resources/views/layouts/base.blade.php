@@ -376,9 +376,11 @@
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
     
-    <!-- Laravel Echo - Para actualizaciones en tiempo real -->
+    <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para asesores) -->
     @auth
+    @if(auth()->user()->hasRole('asesor'))
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    @endif
     @endauth
 
     <!-- Modal de Cotización Global -->
