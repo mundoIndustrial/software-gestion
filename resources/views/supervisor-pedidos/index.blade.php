@@ -991,6 +991,9 @@
 @include('asesores.pedidos.components.modal-editar-prenda')
 @include('asesores.pedidos.components.modal-editar-epp')
 
+<!-- Modal para Editar Procesos Genéricos -->
+@include('asesores.pedidos.modals.modal-proceso-generico')
+
 @push('scripts')
     <!-- ✅ SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
     <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
