@@ -193,7 +193,7 @@
                                 }
                             @endphp
                             @if($novedades_count > 0)
-                                <button class="btn-novedades" type="button" data-orden-id="{{ $orden->id }}" data-novedades="{{ Illuminate\Support\Js::from($orden->novedades) }}" style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">
+                                <button class="btn-novedades" type="button" data-orden-id="{{ $orden->id }}" data-novedades='{{ json_encode($orden->novedades, JSON_UNESCAPED_UNICODE) }}' style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">
                                     {{ $novedades_count }} novedades
                                 </button>
                             @else
@@ -1429,15 +1429,16 @@
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     const ordenId = this.dataset.ordenId;
-                    // El atributo data-novedades ya contiene el valor de string directamente
-                    const novedades = this.getAttribute('data-novedades');
+                    // El atributo data-novedades contiene una cadena JSON escapada que debe ser parseada
+                    const novedadesJson = this.getAttribute('data-novedades');
                     
                     try {
-                        // El valor ya está en formato string desde Laravel
+                        // Parsear JSON para obtener la cadena real
+                        const novedades = JSON.parse(novedadesJson);
                         abrirNovedades(ordenId, novedades);
                     } catch (err) {
-                        console.error('[Novedades] Error:', err);
-                        console.log('[Novedades] Novedades:', novedades);
+                        console.error('[Novedades] Error al parsear JSON:', err);
+                        console.log('[Novedades] JSON raw:', novedadesJson);
                     }
                 });
             });
