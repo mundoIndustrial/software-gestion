@@ -25,9 +25,11 @@ echo "[3/4] Compilando assets y configuración..."
 # Cargar variables de entorno y compilar config
 source ~/app/.env
 npm run build
-# Regenerar config cache con variables de entorno explícitas
-APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" php artisan config:clear
-APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" php artisan config:cache
+# Eliminar archivo hot de desarrollo (importante para producción)
+rm -f ~/app/public/hot
+# Regenerar config cache con variables de entorno explícitas (incluyendo SESSION)
+APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" SESSION_DRIVER=file SESSION_DOMAIN=sistemamundoindustrial.online php artisan config:clear
+APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" SESSION_DRIVER=file SESSION_DOMAIN=sistemamundoindustrial.online php artisan config:cache
 php artisan route:cache
 echo "      ✓ Assets y configuración compilados para produccion"
 echo ""
