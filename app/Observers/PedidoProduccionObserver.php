@@ -153,7 +153,7 @@ class PedidoProduccionObserver
                         base64_encode($changedFieldsData),
                         $action
                     )
-                )->detach();
+                );
 
                 Log::info('PedidoActualizado event queued for broadcast (background)', [
                     'pedido_id' => $pedido->id,
