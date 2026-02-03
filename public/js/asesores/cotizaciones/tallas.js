@@ -9,29 +9,29 @@ const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '
 function actualizarGeneroSeleccionado(select) {
     const productoCard = select.closest('.producto-card');
     if (!productoCard) {
-
+        console.warn('No se encontró .producto-card');
         return;
     }
     
     const generoInput = productoCard.querySelector('.genero-id-hidden');
     if (!generoInput) {
-
+        console.warn('No se encontró .genero-id-hidden');
         return;
     }
     
     const generoValue = select.value;
 
     
-    // Mapear valores de género a IDs
+    // Mapear valores de género a IDs (según generos_prenda)
     let generoId = '';
     if (generoValue === 'dama') {
-        generoId = '1';
+        generoId = '2';  // DAMA = ID 2
     } else if (generoValue === 'caballero') {
-        generoId = '2';
+        generoId = '1';  // CABALLERO = ID 1
     }
     
     generoInput.value = generoId;
-
+    console.log(`Género actualizado: ${generoValue} => ID: ${generoId}`);
 }
 
 /**
