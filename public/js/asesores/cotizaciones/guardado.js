@@ -4,6 +4,76 @@
  * Compatible con: localStorage (persistencia) y WebSockets (sin conflictos)
  */
 
+// ============ COMPRESIÓN DE IMÁGENES PARA EVITAR ERROR 413 ============
+
+/**
+ * Comprimir imagen para reducir tamaño
+ * @param {File} file - Archivo de imagen
+ * @param {number} calidad - Calidad de compresión (0-1, default 0.7)
+ * @returns {Promise<File>} Archivo comprimido
+ */
+async function comprimirImagen(file, calidad = 0.7) {
+    return new Promise((resolve) => {
+        // Si no es imagen, devolver sin cambios
+        if (!file.type.startsWith('image/')) {
+            resolve(file);
+            return;
+        }
+
+        // Si el archivo es menor a 500KB, no comprimir
+        if (file.size < 500 * 1024) {
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Limitar dimensiones máximas
+                let { width, height } = img;
+                const maxDim = 1920;
+                if (width > maxDim || height > maxDim) {
+                    const ratio = Math.min(maxDim / width, maxDim / height);
+                    width *= ratio;
+                    height *= ratio;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob(
+                    (blob) => {
+                        const archivoComprimido = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(archivoComprimido);
+                    },
+                    'image/jpeg',
+                    calidad
+                );
+            };
+        };
+    });
+}
+
+/**
+ * Comprimir múltiples imágenes
+ * @param {File[]} archivos - Array de archivos
+ * @returns {Promise<File[]>} Array de archivos comprimidos
+ */
+async function comprimirImagenes(archivos) {
+    if (!Array.isArray(archivos)) return archivos;
+    return Promise.all(archivos.map(f => comprimirImagen(f)));
+}
+
 // ============ FUNCIÓN HELPER: PROCESAR GÉNERO "AMBOS" ============
 
 /**
@@ -181,7 +251,8 @@ async function guardarCotizacion() {
         
         //  PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
-            datos.productos.forEach((producto, index) => {
+            for (let index = 0; index < datos.productos.length; index++) {
+                const producto = datos.productos[index];
                 // Datos de prenda
                 formData.append(`prendas[${index}][nombre_producto]`, producto.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
@@ -235,7 +306,7 @@ async function guardarCotizacion() {
                 //  FOTOS DE PRENDA (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                     const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
-                    const fotosNuevas = [];
+                    let fotosNuevas = [];
                     const fotosExistentes = [];
                     
                     fotosDeEstaPrenda.forEach((item, fotoIndex) => {
@@ -247,6 +318,9 @@ async function guardarCotizacion() {
 
                         }
                     });
+                    
+                    // COMPRIMIR imágenes para evitar error 413
+                    fotosNuevas = await comprimirImagenes(fotosNuevas);
                     
                     fotosNuevas.forEach((foto) => {
                         formData.append(`prendas[${index}][fotos][]`, foto);
@@ -281,6 +355,11 @@ async function guardarCotizacion() {
 
                         }
                     });
+                    
+                    // COMPRIMIR imágenes de telas para evitar error 413
+                    for (let telaIdx in telasPorIndice) {
+                        telasPorIndice[telaIdx] = await comprimirImagenes(telasPorIndice[telaIdx]);
+                    }
                     
                     Object.keys(telasPorIndice).forEach(telaIdx => {
                         telasPorIndice[telaIdx].forEach((foto, fotoIdx) => {
@@ -367,7 +446,7 @@ async function guardarCotizacion() {
                 if (!telasYaProcesadas) {
 
                 }
-            });
+            }
         }
         
         // 🗑️ FOTOS ELIMINADAS DEL SERVIDOR (enviar IDs para eliminar)
@@ -520,7 +599,9 @@ async function guardarCotizacion() {
                 // Procesar imágenes compartidas identificadas
                 for (let clave in imagenesCompartidasEnProceso) {
                     const dato = imagenesCompartidasEnProceso[clave];
-                    formData.append(dato.fieldName, dato.file);
+                    // COMPRIMIR imagen compartida
+                    const imagenComprimida = await comprimirImagen(dato.file);
+                    formData.append(dato.fieldName, imagenComprimida);
                     
                     // Agregar metadatos de imagen compartida
                     formData.append(`logo[imagenes_compartidas][${clave}]`, JSON.stringify({
@@ -530,8 +611,8 @@ async function guardarCotizacion() {
                     
                     archivosAgregados.push({
                         fieldName: dato.fieldName,
-                        size: dato.file.size,
-                        type: dato.file.type,
+                        size: imagenComprimida.size,
+                        type: imagenComprimida.type,
                         esCompartida: true,
                         tecnicasCompartidas: dato.tecnicasCompartidas
                     });
@@ -540,19 +621,24 @@ async function guardarCotizacion() {
                 }
                 
                 // PASO 2: Procesar imágenes no compartidas
-                window.tecnicasAgregadasPaso3.forEach((tecnica, tecnicaIndex) => {
+                for (let tecnicaIndex = 0; tecnicaIndex < window.tecnicasAgregadasPaso3.length; tecnicaIndex++) {
+                    const tecnica = window.tecnicasAgregadasPaso3[tecnicaIndex];
                     if (tecnica.prendas && Array.isArray(tecnica.prendas)) {
-                        tecnica.prendas.forEach((prenda, prendaIndex) => {
+                        for (let prendaIndex = 0; prendaIndex < tecnica.prendas.length; prendaIndex++) {
+                            const prenda = tecnica.prendas[prendaIndex];
                             if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-                                prenda.imagenes.forEach((imagen, imagenIndex) => {
+                                for (let imagenIndex = 0; imagenIndex < prenda.imagenes.length; imagenIndex++) {
+                                    const imagen = prenda.imagenes[imagenIndex];
                                     // Solo procesar imágenes nuevas del PASO 3 que NO sean compartidas
                                     if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso3' && !imagen.nombreCompartido) {
                                         const fieldName = `logo[imagenes_paso3][${tecnicaIndex}][${prendaIndex}][${imagenIndex}]`;
-                                        formData.append(fieldName, imagen.file);
+                                        // COMPRIMIR imagen del paso 3
+                                        const imagenComprimida = await comprimirImagen(imagen.file);
+                                        formData.append(fieldName, imagenComprimida);
                                         archivosAgregados.push({
                                             fieldName: fieldName,
-                                            size: imagen.file.size,
-                                            type: imagen.file.type,
+                                            size: imagenComprimida.size,
+                                            type: imagenComprimida.type,
                                             esCompartida: false
                                         });
                                         totalImagenesP3++;
@@ -560,11 +646,11 @@ async function guardarCotizacion() {
                                     } else if (imagen.tipo === 'paso3' && !imagen.file) {
 
                                     }
-                                });
+                                }
                             }
-                        });
+                        }
                     }
-                });
+                }
                 
 
 
