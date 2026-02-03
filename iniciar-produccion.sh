@@ -21,12 +21,15 @@ echo "      - REVERB_PORT=8080"
 echo "      - REVERB_SCHEME=https"
 echo ""
 
-echo "[3/4] Corrigiendo permisos y compilando..."
-sudo chmod -R 777 ~/app/storage ~/app/bootstrap/cache 2>/dev/null || true
+echo "[3/4] Compilando assets y configuración..."
+# Cargar variables de entorno y compilar config
+source ~/app/.env
 npm run build
-php artisan config:cache
+# Regenerar config cache con variables de entorno explícitas
+APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" php artisan config:clear
+APP_ENV=production DB_USERNAME=mundo DB_PASSWORD="${DB_PASSWORD}" php artisan config:cache
 php artisan route:cache
-echo "      Assets compilados para produccion"
+echo "      ✓ Assets y configuración compilados para produccion"
 echo ""
 
 echo "[4/4] Iniciando servicios..."
