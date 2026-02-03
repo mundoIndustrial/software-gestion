@@ -5,7 +5,7 @@
 /**
  * Confirmar anulación de pedido
  */
-function confirmarAnularPedido(numeroPedido) {
+function confirmarAnularPedido(pedidoId, numeroPedido) {
     Swal.fire({
         title: '¿Anular Pedido?',
         html: `
@@ -102,7 +102,7 @@ function confirmarAnularPedido(numeroPedido) {
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
-            anularPedido(numeroPedido, result.value);
+            anularPedido(pedidoId, result.value, numeroPedido);
         }
     });
     
@@ -118,7 +118,7 @@ function confirmarAnularPedido(numeroPedido) {
 /**
  * Anular pedido - Enviar petición al servidor
  */
-function anularPedido(numeroPedido, novedad) {
+function anularPedido(pedidoId, novedad, numeroPedido) {
     // Mostrar loading
     Swal.fire({
         title: 'Anulando pedido...',
@@ -176,7 +176,7 @@ function anularPedido(numeroPedido, novedad) {
     }
     
     // Enviar petición
-    fetch(`/asesores/pedidos/${numeroPedido}/anular`, {
+    fetch(`/asesores/pedidos/${pedidoId}/anular`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

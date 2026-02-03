@@ -107,7 +107,7 @@
         $estado = get_class($pedido) === 'App\Models\LogoPedido' ? ($pedido->estado ?? 'pendiente') : ($pedido->estado ?? 'Pendiente');
     @endphp
     @if($estado !== 'Anulada' && $estado !== 'anulada')
-    <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
+    <button onclick="confirmarAnularPedido({{ $pedido->id }}, '{{ $numeroPedido }}')" title="Anular Pedido" style="
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         color: white;
         border: none;

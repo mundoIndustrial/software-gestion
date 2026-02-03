@@ -152,7 +152,7 @@
 
                             <!-- Botón Anular (solo si está pendiente de aprobación) -->
                             @if($estado === 'PENDIENTE_SUPERVISOR')
-                            <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
+                            <button onclick="confirmarAnularPedido({{ $orden->id }}, '{{ $numeroPedido }}')" title="Anular Pedido" style="
                                 background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
                                 color: white;
                                 border: none;
