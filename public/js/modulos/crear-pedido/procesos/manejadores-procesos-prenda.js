@@ -100,7 +100,6 @@ window.obtenerProcesosConfigurables = function() {
  * Limpia todos los procesos seleccionados
  */
 window.limpiarProcesosSeleccionados = function() {
-    alert('🚀 [limpiarProcesosSeleccionados] INICIANDO LIMPIEZA');
     console.log('🧹🧹🧹 [limpiarProcesosSeleccionados] ==================== INICIANDO LIMPIEZA ====================');
     
     console.log('📝 Estado ANTES:');
@@ -109,7 +108,6 @@ window.limpiarProcesosSeleccionados = function() {
 
     procesosSeleccionados = {};
     window.procesosSeleccionados = procesosSeleccionados; // Mantener sincronizado con window
-    alert('✅ window.procesosSeleccionados AHORA VACÍO: ' + JSON.stringify(window.procesosSeleccionados));
     console.log('✅ window.procesosSeleccionados reiniciado a objeto vacío');
     
     // Desmarcar todos los checkboxes
@@ -138,14 +136,12 @@ window.limpiarProcesosSeleccionados = function() {
     // Limpiar tarjetas de prendas reflectivo
     const prendasReflectivo = document.querySelectorAll('.prenda-card-reflectivo');
     if (prendasReflectivo.length > 0) {
-        alert('🗑️ Encontradas ' + prendasReflectivo.length + ' tarjetas reflectivo - ELIMINANDO');
         console.log(`   🗑️  Encontradas ${prendasReflectivo.length} tarjetas reflectivo`);
         prendasReflectivo.forEach((card, idx) => {
             console.log(`      ✓ Eliminando tarjeta reflectivo ${idx + 1}`);
             card.remove();
         });
     } else {
-        alert('ℹ️ No hay tarjetas reflectivo en el DOM');
         console.log('   ℹ️  No hay tarjetas reflectivo en el DOM');
     }
     
@@ -180,7 +176,6 @@ window.limpiarProcesosSeleccionados = function() {
     console.log('   window.procesosSeleccionados:', window.procesosSeleccionados);
     console.log('   Claves:', Object.keys(window.procesosSeleccionados || {}));
     
-    alert('✅✅✅ [limpiarProcesosSeleccionados] LIMPIEZA COMPLETADA - window.procesosSeleccionados: ' + JSON.stringify(window.procesosSeleccionados));
     console.log('✅✅✅ [limpiarProcesosSeleccionados] ==================== LIMPIEZA COMPLETADA ====================');
 };
 

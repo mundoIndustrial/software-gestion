@@ -380,13 +380,11 @@ window.PrendaCardHandlers = {
             // Botón ELIMINAR
             if (e.target.closest('.btn-eliminar-prenda')) {
 
-                alert('🎯 BOTÓN ELIMINAR CLICKEADO');
                 e.stopPropagation();
                 const btn = e.target.closest('.btn-eliminar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
                 console.log('🔍 [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
-                alert('Index: ' + prendaIndex);
                 console.log('🔍 [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
                 console.log('🔍 [ELIMINAR-PRENDA] window.gestorPrendaSinCotizacion existe:', !!window.gestorPrendaSinCotizacion);
                 
@@ -399,32 +397,31 @@ window.PrendaCardHandlers = {
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
-                    alert('⚠️ RESULTADO SWAL: isConfirmed=' + result.isConfirmed);
-                    
                     if (result.isConfirmed) {
-                        alert('✅ DENTRO DEL IF - Usuario confirmó');
                         console.log('✅ [ELIMINAR-PRENDA] Usuario confirmó eliminación');
                         
                         // 🟢 NUEVO: LIMPIAR PROCESOS ANTES DE ELIMINAR
-                        alert('🧹 Llamando limpiarProcesosSeleccionados...');
                         console.log('🧹 [ELIMINAR-PRENDA] Limpiando procesos seleccionados...');
                         if (window.limpiarProcesosSeleccionados) {
-                            alert('✅ window.limpiarProcesosSeleccionados EXISTE');
                             window.limpiarProcesosSeleccionados();
                             console.log('✅ [ELIMINAR-PRENDA] Procesos limpiados');
                         } else {
-                            alert('❌ window.limpiarProcesosSeleccionados NO EXISTE');
                             console.warn('⚠️ [ELIMINAR-PRENDA] window.limpiarProcesosSeleccionados NO disponible');
                         }
                         
                         // Obtener instancia de GestionItemsUI si existe
                         if (window.gestionItemsUI) {
                             console.log('✅ [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI');
-                            const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
-                            if (prendaIndex >= 0 && prendaIndex < itemsOrdenados.length) {
-                                itemsOrdenados.splice(prendaIndex, 1);
-                                console.log('✅ [ELIMINAR-PRENDA] Prenda eliminada del array');
+                            // 🔴 CRÍTICO: Usar el nuevo método eliminarPrendaDelOrden
+                            if (window.gestionItemsUI.eliminarPrendaDelOrden) {
+                                console.log('✅ [ELIMINAR-PRENDA] Método eliminarPrendaDelOrden disponible');
+                                window.gestionItemsUI.eliminarPrendaDelOrden(prendaIndex);
+                                console.log('✅ [ELIMINAR-PRENDA] Prenda eliminada del estado interno');
+                            } else {
+                                console.error('❌ [ELIMINAR-PRENDA] Método eliminarPrendaDelOrden NO DISPONIBLE');
                             }
+                        } else {
+                            console.warn('⚠️ [ELIMINAR-PRENDA] window.gestionItemsUI NO disponible');
                         }
                         
                         // También eliminar desde gestor si existe
@@ -433,37 +430,21 @@ window.PrendaCardHandlers = {
                             window.gestorPrendaSinCotizacion.eliminar(prendaIndex);
                         }
                         
-                        // Eliminar la tarjeta del DOM inmediatamente
-                        const prendaCard = document.querySelector(`.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`);
-                        console.log('🔍 [ELIMINAR-PRENDA] Buscando tarjeta con selector:', `.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`);
-                        console.log('🔍 [ELIMINAR-PRENDA] Tarjeta encontrada:', !!prendaCard);
-                        
-                        if (prendaCard) {
-                            console.log('✅ [ELIMINAR-PRENDA] ELIMINANDO TARJETA DEL DOM');
-                            prendaCard.remove();
-                            
-                            // Verificar si hay más prendas
-                            const container = document.getElementById('lista-items-pedido');
-                            const prendasRestantes = container?.querySelectorAll('.prenda-card-readonly').length || 0;
-                            console.log('🔍 [ELIMINAR-PRENDA] Prendas restantes:', prendasRestantes);
-                            
-                            if (prendasRestantes === 0 && container) {
-                                console.log('✅ [ELIMINAR-PRENDA] No hay más prendas, mostrando mensaje vacío');
-                                container.innerHTML = `
-                                    <div class="empty-state" style="text-align: center; padding: 2rem; color: #9ca3af;">
-                                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                        <p>No hay ítems agregados.</p>
-                                    </div>
-                                `;
-                            }
+                        // 🔴 NUEVO: RE-RENDERIZAR LA LISTA PARA REFLEJAR LOS CAMBIOS
+                        console.log('🔄 [ELIMINAR-PRENDA] Re-renderizando lista de items...');
+                        if (window.gestionItemsUI && window.gestionItemsUI.renderer) {
+                            const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
+                            console.log('📦 [ELIMINAR-PRENDA] Items restantes para renderizar:', itemsOrdenados.length);
+                            window.gestionItemsUI.renderer.actualizar(itemsOrdenados);
+                            console.log('✅ [ELIMINAR-PRENDA] Lista re-renderizada correctamente');
                         } else {
-                            console.error('❌ [ELIMINAR-PRENDA] NO SE ENCONTRÓ LA TARJETA EN EL DOM');
-                            // Intentar buscar cualquier prenda-card-readonly
-                            const todasPrendas = document.querySelectorAll('.prenda-card-readonly');
-                            console.log('❌ [ELIMINAR-PRENDA] Total de prendas en DOM:', todasPrendas.length);
-                            todasPrendas.forEach((prenda, idx) => {
-                                console.log(`   Prenda ${idx}: data-prenda-index="${prenda.dataset.prendaIndex}"`);
-                            });
+                            console.warn('⚠️ [ELIMINAR-PRENDA] No se pudo re-renderizar (renderer no disponible)');
+                            // Fallback: eliminar del DOM manualmente
+                            const prendaCard = document.querySelector(`.prenda-card-readonly[data-prenda-index="${prendaIndex}"]`);
+                            if (prendaCard) {
+                                console.log('✅ [ELIMINAR-PRENDA] ELIMINANDO TARJETA DEL DOM (FALLBACK)');
+                                prendaCard.remove();
+                            }
                         }
                     }
                 });

@@ -55,11 +55,16 @@ class ItemRenderer {
         const epps = [];
         
         items.forEach((item, idx) => {
-            // Detectar tipo: si tiene 'telasAgregadas' o 'generosConTallas' es prenda, si no es EPP
-            if (item.telasAgregadas || item.generosConTallas || item.variantes) {
-                prendas.push({ item, index: idx });
+            // 🔴 NUEVO: items ahora son objetos {item, tipo, index}
+            // Extraer el objeto item actual
+            const itemObj = item.item || item; // Fallback si aún viene el item directo
+            const tipoItem = item.tipo || (itemObj.telasAgregadas || itemObj.generosConTallas || itemObj.variantes ? 'prenda' : 'epp');
+            const indexReal = item.index !== undefined ? item.index : idx;
+            
+            if (tipoItem === 'prenda') {
+                prendas.push({ item: itemObj, index: indexReal });
             } else {
-                epps.push({ item, index: idx });
+                epps.push({ item: itemObj, index: indexReal });
             }
         });
 

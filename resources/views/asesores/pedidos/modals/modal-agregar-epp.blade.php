@@ -743,7 +743,8 @@ function guardarEdicionEPP() {
     }
 
     // Actualizar visualmente en la tarjeta
-    const tarjeta = document.querySelector(`.item-epp[data-item-id="${eppEnEdicion.epp_id || eppEnEdicion.id}"]`);
+    // 🔴 CORREGIDO: Usar el selector correcto .item-epp-card con data-epp-id
+    const tarjeta = document.querySelector(`.item-epp-card[data-epp-id="${eppEnEdicion.epp_id || eppEnEdicion.id}"]`);
     if (tarjeta) {
         // Buscar el h4 que contiene el nombre y actualizarlo
         const titulo = tarjeta.querySelector('h4');
@@ -763,7 +764,25 @@ function guardarEdicionEPP() {
             console.log('✅ [guardarEdicionEPP] Observaciones actualizadas en tarjeta');
         }
     } else {
-        console.warn('⚠️ [guardarEdicionEPP] Tarjeta no encontrada en DOM');
+        console.warn('⚠️ [guardarEdicionEPP] Tarjeta no encontrada en DOM con selector:', `.item-epp-card[data-epp-id="${eppEnEdicion.epp_id || eppEnEdicion.id}"]`);
+        console.log('📋 [guardarEdicionEPP] EPP en edición:', eppEnEdicion);
+        console.log('📋 [guardarEdicionEPP] Buscando todas las tarjetas item-epp-card disponibles...');
+        const todasLasTarjetas = document.querySelectorAll('.item-epp-card');
+        console.log(`📋 [guardarEdicionEPP] Total tarjetas encontradas: ${todasLasTarjetas.length}`);
+        todasLasTarjetas.forEach((tarj, idx) => {
+            console.log(`   [${idx}] data-epp-id="${tarj.dataset.eppId}", data-epp-index="${tarj.dataset.eppIndex}"`);
+        });
+    }
+    
+    // 🟢 NUEVO: RE-RENDERIZAR LA LISTA COMPLETA para sincronizar todos los cambios
+    console.log('🔄 [guardarEdicionEPP] Re-renderizando lista de items...');
+    if (window.gestionItemsUI && window.gestionItemsUI.renderer) {
+        const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
+        console.log('📦 [guardarEdicionEPP] Items totales para renderizar:', itemsOrdenados.length);
+        window.gestionItemsUI.renderer.actualizar(itemsOrdenados);
+        console.log('✅ [guardarEdicionEPP] Lista re-renderizada correctamente');
+    } else {
+        console.warn('⚠️ [guardarEdicionEPP] No se pudo re-renderizar (gestionItemsUI o renderer no disponible)');
     }
 
     // Limpiar referencia

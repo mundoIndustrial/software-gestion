@@ -38,6 +38,7 @@ class GestionItemsUI {
 
     /**
      * Obtener todos los items en orden de inserción
+     * Retorna: [{item, tipo, index}, ...]
      */
     obtenerItemsOrdenados() {
         const itemsOrdenados = [];
@@ -47,11 +48,21 @@ class GestionItemsUI {
         
         this.ordenItems.forEach(({ tipo, index }) => {
             if (tipo === 'prenda' && this.prendas[index]) {
-                itemsOrdenados.push(this.prendas[index]);
-                console.log('[gestionItemsUI] ✅ Agregado PRENDA index:', index);
+                // 🔴 NUEVO: Retornar objeto con item, tipo e index real
+                itemsOrdenados.push({
+                    item: this.prendas[index],
+                    tipo: 'prenda',
+                    index: index // Índice real en this.prendas
+                });
+                console.log('[gestionItemsUI] ✅ Agregado PRENDA con index real:', index);
             } else if (tipo === 'epp' && this.epps[index]) {
-                itemsOrdenados.push(this.epps[index]);
-                console.log('[gestionItemsUI] ✅ Agregado EPP index:', index);
+                // 🔴 NUEVO: Retornar objeto con item, tipo e index real
+                itemsOrdenados.push({
+                    item: this.epps[index],
+                    tipo: 'epp',
+                    index: index // Índice real en this.epps
+                });
+                console.log('[gestionItemsUI] ✅ Agregado EPP con index real:', index);
             } else {
                 console.log('[gestionItemsUI] ⚠️ ITEM NO ENCONTRADO - tipo:', tipo, 'index:', index);
             }
@@ -90,6 +101,54 @@ class GestionItemsUI {
         console.log('[gestionItemsUI]  agregarEPPAlOrden() - Total EPPs:', this.epps.length);
 
         return index;
+    }
+
+    /**
+     * 🔴 NUEVO: Eliminar prenda del orden y del array interno
+     * Sincroniza el array interno con el DOM
+     */
+    eliminarPrendaDelOrden(prendaIndex) {
+        console.log('🗑️  [GestionItemsUI.eliminarPrendaDelOrden] ==================== INICIANDO ELIMINACIÓN ====================');
+        console.log(`🗑️  [GestionItemsUI.eliminarPrendaDelOrden] Eliminando prenda con índice: ${prendaIndex}`);
+        
+        // Estado antes
+        console.log('📝 Estado ANTES:');
+        console.log('   this.prendas.length:', this.prendas.length);
+        console.log('   this.ordenItems:', JSON.stringify(this.ordenItems));
+        
+        // Eliminar del array de prendas
+        if (prendaIndex >= 0 && prendaIndex < this.prendas.length) {
+            this.prendas.splice(prendaIndex, 1);
+            console.log(`✅ Prenda removida del array this.prendas`);
+        } else {
+            console.error(`❌ Índice inválido: ${prendaIndex} (rango válido: 0-${this.prendas.length - 1})`);
+            return false;
+        }
+        
+        // Eliminar del orden
+        const ordenOriginal = this.ordenItems.length;
+        this.ordenItems = this.ordenItems.filter(item => {
+            // Si es prenda con este índice, eliminar
+            if (item.tipo === 'prenda' && item.index === prendaIndex) {
+                return false;
+            }
+            // Si es prenda con índice mayor, decrementar el índice
+            if (item.tipo === 'prenda' && item.index > prendaIndex) {
+                item.index--;
+                console.log(`🔄 Índice de prenda desplazado: ${item.index + 1} → ${item.index}`);
+            }
+            return true;
+        });
+        
+        console.log(`📊 Elementos eliminados del orden: ${ordenOriginal - this.ordenItems.length}`);
+        
+        // Estado después
+        console.log('📝 Estado DESPUÉS:');
+        console.log('   this.prendas.length:', this.prendas.length);
+        console.log('   this.ordenItems:', JSON.stringify(this.ordenItems));
+        console.log('🗑️  [GestionItemsUI.eliminarPrendaDelOrden] ==================== ELIMINACIÓN COMPLETADA ====================');
+        
+        return true;
     }
 
     /**
@@ -212,33 +271,24 @@ class GestionItemsUI {
             // 🔍 ALTERNATIVA: buscar por posición en itemsOrdenados
             const itemsOrdenados = this.obtenerItemsOrdenados();
             if (index >= 0 && index < itemsOrdenados.length) {
+                // 🔴 NUEVO: itemsOrdenados ahora retorna {item, tipo, index}
                 const itemEnPosicion = itemsOrdenados[index];
-                
-                // Encontrar qué array y qué índice tiene este item
-                let tipoBuscado, indiceBuscado;
-                
-                if (itemEnPosicion.nombre_prenda) {
-                    // Es una prenda - buscar en this.prendas
-                    tipoBuscado = 'prenda';
-                    indiceBuscado = this.prendas.findIndex(p => p === itemEnPosicion);
-                } else if (itemEnPosicion.nombre_completo || itemEnPosicion.nombre) {
-                    // Es un EPP - buscar en this.epps
-                    tipoBuscado = 'epp';
-                    indiceBuscado = this.epps.findIndex(e => e === itemEnPosicion);
-                }
+                const itemObj = itemEnPosicion.item || itemEnPosicion;
+                const tipoItem = itemEnPosicion.tipo;
+                const indiceReal = itemEnPosicion.index;
                 
                 console.log(`[eliminarItem] 🔍 Eliminando item en posición ${index}:`, {
-                    tipo: tipoBuscado,
-                    indiceEnArray: indiceBuscado,
-                    item: itemEnPosicion
+                    tipo: tipoItem,
+                    indiceEnArray: indiceReal,
+                    item: itemObj
                 });
                 
-                // Eliminar de los arrays correspondientes
-                if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
-                    this.prendas.splice(indiceBuscado, 1);
+                // Eliminar de los arrays correspondientes usando el índice real
+                if (tipoItem === 'prenda' && indiceReal >= 0) {
+                    this.prendas.splice(indiceReal, 1);
                     console.log(`[eliminarItem] ✅ Prenda eliminada del array. Quedan: ${this.prendas.length}`);
-                } else if (tipoBuscado === 'epp' && indiceBuscado >= 0) {
-                    this.epps.splice(indiceBuscado, 1);
+                } else if (tipoItem === 'epp' && indiceReal >= 0) {
+                    this.epps.splice(indiceReal, 1);
                     console.log(`[eliminarItem] ✅ EPP eliminado del array. Quedan: ${this.epps.length}`);
                 }
                 
