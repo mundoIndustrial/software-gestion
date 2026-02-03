@@ -388,66 +388,86 @@ function mostrarPrendaVisor(indice) {
     // Recopilar todas las imágenes (logo, tela, prenda, reflectivo) como lo hace el modal de cotización
     const imagenesParaMostrar = [];
     
-    // Recolectar imágenes de logo para esta prenda
-    // Usar un Set para deduplicar URLs de logo
-    const urlsLogoAgregadas = new Set();
+    // DETECTAR SI ES COTIZACIÓN COMBINADA (tiene logo_cotizacion)
+    const esCotizacionCombinada = visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion;
     
-    if (visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion && visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas) {
-        visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas.forEach(tp => {
-            if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
-                tp.fotos.forEach((foto, idx) => {
-                    if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
-                        urlsLogoAgregadas.add(foto.url);
-                        imagenesParaMostrar.push({
-                            grupo: 'Imagen - Logo',
-                            url: foto.url,
-                            titulo: 'Imagen - Logo',
-                            color: '#1e5ba8'
-                        });
-                    }
-                });
-            }
-        });
-    }
-    
-    // Recolectar imágenes de tela para esta prenda
-    if (detalles.tela_fotos && detalles.tela_fotos.length > 0) {
-        detalles.tela_fotos.forEach((foto, idx) => {
-            if (foto) {
+    // En cotizaciones combinadas, SOLO mostrar imágenes de prenda
+    if (esCotizacionCombinada) {
+        // Recolectar SOLO imágenes de prenda
+        if (detalles.fotos && detalles.fotos.length > 0) {
+            detalles.fotos.forEach((foto, idx) => {
                 imagenesParaMostrar.push({
-                    grupo: 'Tela',
+                    grupo: 'Prenda',
                     url: foto,
-                    titulo: `Tela ${idx + 1}`,
+                    titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
                     color: '#1e5ba8'
                 });
-            }
-        });
-    }
-    
-    // Recolectar imágenes de prenda
-    if (detalles.fotos && detalles.fotos.length > 0) {
-        detalles.fotos.forEach((foto, idx) => {
-            imagenesParaMostrar.push({
-                grupo: 'Prenda',
-                url: foto,
-                titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                color: '#1e5ba8'
             });
-        });
-    }
-    
-    // Recolectar imágenes de reflectivo
-    if (detalles.reflectivo && detalles.reflectivo.fotos && detalles.reflectivo.fotos.length > 0) {
-        detalles.reflectivo.fotos.forEach((foto, idx) => {
-            if (foto.url) {
+        }
+    } else {
+        // En cotizaciones normales, mostrar todas las imágenes
+        
+        // Recolectar imágenes de logo para esta prenda
+        // Usar un Set para deduplicar URLs de logo
+        const urlsLogoAgregadas = new Set();
+        
+        if (visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion && visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas) {
+            visorCostosActual.cotizacionData.logo_cotizacion.tecnicas_prendas.forEach(tp => {
+                if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                    tp.fotos.forEach((foto, idx) => {
+                        if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
+                            urlsLogoAgregadas.add(foto.url);
+                            imagenesParaMostrar.push({
+                                grupo: 'Imagen - Logo',
+                                url: foto.url,
+                                titulo: 'Imagen - Logo',
+                                color: '#1e5ba8'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Recolectar imágenes de tela para esta prenda
+        if (detalles.tela_fotos && detalles.tela_fotos.length > 0) {
+            detalles.tela_fotos.forEach((foto, idx) => {
+                if (foto) {
+                    imagenesParaMostrar.push({
+                        grupo: 'Tela',
+                        url: foto,
+                        titulo: `Tela ${idx + 1}`,
+                        color: '#1e5ba8'
+                    });
+                }
+            });
+        }
+        
+        // Recolectar imágenes de prenda
+        if (detalles.fotos && detalles.fotos.length > 0) {
+            detalles.fotos.forEach((foto, idx) => {
                 imagenesParaMostrar.push({
-                    grupo: 'Reflectivo',
-                    url: foto.url,
-                    titulo: `Reflectivo ${idx + 1}`,
+                    grupo: 'Prenda',
+                    url: foto,
+                    titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
                     color: '#1e5ba8'
                 });
-            }
-        });
+            });
+        }
+        
+        // Recolectar imágenes de reflectivo
+        if (detalles.reflectivo && detalles.reflectivo.fotos && detalles.reflectivo.fotos.length > 0) {
+            detalles.reflectivo.fotos.forEach((foto, idx) => {
+                if (foto.url) {
+                    imagenesParaMostrar.push({
+                        grupo: 'Reflectivo',
+                        url: foto.url,
+                        titulo: `Reflectivo ${idx + 1}`,
+                        color: '#1e5ba8'
+                    });
+                }
+            });
+        }
     }
     
     // Calcular cantidad de filas: items + 1 fila de total

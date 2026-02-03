@@ -177,6 +177,56 @@ class ContadorController extends Controller
     public function getCotizacionDetail($id)
     {
         try {
+            // Permitir acceso solo a usuarios autenticados
+            $user = Auth::user();
+            \Log::info('getCotizacionDetail - Usuario request', [
+                'user_id' => $user ? $user->id : 'null',
+                'user_name' => $user ? $user->name : 'null',
+                'user_email' => $user ? $user->email : 'null',
+                'user_roles_ids' => $user ? $user->roles_ids : 'null',
+                'user_role_id' => $user ? $user->role_id : 'null',
+            ]);
+            
+            if (!$user) {
+                \Log::warning('getCotizacionDetail - Usuario no autenticado');
+                abort(401, 'Usuario no autenticado');
+            }
+            
+            // Permitir acceso a: contador, admin, aprobador_cotizaciones
+            // Verificar usando hasRole (que soporta nombre de rol o ID)
+            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones'];
+            $hasAccess = false;
+            
+            foreach ($allowedRoles as $role) {
+                $check = $user->hasRole($role);
+                \Log::info('getCotizacionDetail - Checking role', [
+                    'role' => $role,
+                    'hasRole' => $check,
+                    'user_id' => $user->id
+                ]);
+                if ($check) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+            
+            \Log::info('getCotizacionDetail - Authorization check', [
+                'hasAccess' => $hasAccess,
+                'allowed_roles' => $allowedRoles,
+                'user_id' => $user->id
+            ]);
+            
+            if (!$hasAccess) {
+                \Log::warning('getCotizacionDetail - ACCESS DENIED', [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'allowed_roles' => $allowedRoles,
+                    'user_roles_ids' => $user->roles_ids,
+                    'user_role_id' => $user->role_id
+                ]);
+                abort(403, 'No tienes permiso para acceder a esta cotización');
+            }
+
             // Obtener la cotización con TODAS sus relaciones anidadas
             $cotizacionModelo = Cotizacion::with([
                 'cliente',

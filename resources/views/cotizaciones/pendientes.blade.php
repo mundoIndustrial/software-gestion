@@ -5,6 +5,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/contador/cotizacion-modal.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -62,11 +63,11 @@
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
-                                            <a href="#" class="action-menu-item" data-action="cotizacion" onclick="verComparacion({{ $cotizacion->id }}); return false;">
+                                            <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
                                                 <i class="fas fa-file-alt"></i>
                                                 <span>Ver Cotización</span>
                                             </a>
-                                            <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostosAprobacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente?->nombre ?? 'N/A' }}'); return false;">
+                                            <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente?->nombre ?? 'N/A' }}'); return false;">
                                                 <i class="fas fa-chart-bar"></i>
                                                 <span>Ver Costos</span>
                                             </a>
@@ -177,23 +178,7 @@
     @endif
 </div>
 
-<!-- Modal para comparar cotización -->
-<div id="modal-comparar-cotizacion" class="modal-overlay" onclick="if(event.target === this) cerrarModalComparar();">
-    <div class="modal-content">
-        <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #3b82f6, #1e40af);">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Cotización</h2>
-            <button onclick="cerrarModalComparar()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
 
-        <!-- Contenido del Modal - Con scroll vertical -->
-        <div id="modal-contenido-comparar" style="padding: 24px; display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto;">
-            <!-- Se llenará dinámicamente con JavaScript -->
-        </div>
-    </div>
-</div>
 
 <!-- Modal para corrección de cotización -->
 <div id="modal-corregir-cotizacion" class="modal-overlay" onclick="if(event.target === this) cerrarModalCorregir();" style="z-index: 9999; background: rgba(0, 0, 0, 0.7);">
@@ -289,13 +274,10 @@
         margin: 20px auto;
     }
     
-    #modal-comparar-cotizacion .modal-content {
-        max-width: 1200px;
-    }
-    
     #modal-corregir-cotizacion .modal-content {
         max-width: 600px;
     }
+
     
     .ver-submenu {
         display: none !important;
@@ -311,225 +293,29 @@
 </style>
 
 <script>
-// Mapeo de estados en enums a labels legibles
-const estadosLabel = {
-    'BORRADOR': 'Borrador',
-    'ENVIADA_CONTADOR': 'Enviada a Contador',
-    'APROBADA_CONTADOR': 'Aprobada por Contador',
-    'APROBADA_COTIZACIONES': 'Aprobada por Aprobador',
-    'APROBADO_PARA_PEDIDO': 'Aprobada para Pedido',
-    'EN_CORRECCION': 'En Corrección',
-    'CONVERTIDA_PEDIDO': 'Convertida a Pedido',
-    'FINALIZADA': 'Finalizada',
-    'EN_PRODUCCION': 'En Producción'
-};
-
-function transformarEstado(estado) {
-    return estadosLabel[estado] || estado;
-}
-
-function verComparacion(cotizacionId) {
-    fetch(`/cotizaciones/${cotizacionId}/datos`)
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar los datos');
-            return response.json();
-        })
-        .then(data => {
-            mostrarComparacionCotizacion(data);
-            const modal = document.getElementById('modal-comparar-cotizacion');
-            modal.style.setProperty('display', 'flex', 'important');
-            modal.style.setProperty('visibility', 'visible', 'important');
-            modal.style.setProperty('opacity', '1', 'important');
+function openCotizacionModal(cotizacionId) {
+    const modal = document.getElementById('cotizacionModal');
+    const content = document.getElementById('modalBody');
+    
+    fetch(`/contador/cotizacion/${cotizacionId}`)
+        .then(response => response.text())
+        .then(html => {
+            content.innerHTML = html;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         })
         .catch(error => {
-            Swal.fire('Error', 'No se pudo cargar la comparación', 'error');
+            alert('Error al cargar la cotización');
         });
 }
 
-function mostrarComparacionCotizacion(data) {
-    const contenido = document.getElementById('modal-contenido-comparar');
-    
-    // Función para convertir markdown bold
-    const convertMarkdownBold = (texto) => {
-        return texto.replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    };
-    
-    // Función para procesar la descripción con formato
-    const procesarDescripcion = (descripcion) => {
-        if (!descripcion || descripcion === 'N/A') {
-            return '<em style="color: #999; font-size: 0.75rem;">Sin descripción</em>';
-        }
-        
-        const lineas = descripcion.split('\n');
-        let htmlResultado = '';
-        
-        lineas.forEach((linea) => {
-            const lineaTrimmed = linea.trim();
-            
-            if (lineaTrimmed === '') {
-                htmlResultado += '<br>';
-            } else if (lineaTrimmed.startsWith('PRENDA')) {
-                htmlResultado += '<strong style="font-size: 11px; display: block; margin-top: 8px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
-            } else if (lineaTrimmed.includes(':') && (lineaTrimmed.includes('DESCRIPCION') || lineaTrimmed.includes('Tallas') || lineaTrimmed.includes('Reflectivo') || lineaTrimmed.includes('Bolsillos') || lineaTrimmed.includes('Botón') || lineaTrimmed.includes('Broche') || lineaTrimmed.includes('Manga'))) {
-                htmlResultado += '<strong style="font-size: 10px; display: block; margin-top: 6px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
-            } else if (lineaTrimmed.startsWith('•') || lineaTrimmed.startsWith('.')) {
-                htmlResultado += '<div style="margin-left: 12px; font-size: 10px;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            } else if (lineaTrimmed.startsWith('-') && lineaTrimmed.length === 1) {
-                htmlResultado += '<br>';
-            } else if (lineaTrimmed.includes(':') && lineaTrimmed.includes('|')) {
-                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            } else {
-                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            }
-        });
-        
-        return htmlResultado;
-    };
-    
-    const cotizacion = data.cotizacion;
-    const prendas = data.prendas_cotizaciones || [];
-    
-    let html = `
-        <!-- Información de la Cotización -->
-        <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <h3 style="color: #3b82f6; font-weight: bold; margin: 0 0 16px 0;">Cotización #${cotizacion.numero_cotizacion}</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ASESORA</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.asesora_nombre || 'N/A'}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CLIENTE</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.nombre_cliente || 'N/A'}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">FECHA</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${new Date(cotizacion.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ESTADO</p>
-                    <p style="margin: 4px 0 0 0;"><span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; font-weight: bold;">${transformarEstado(cotizacion.estado)}</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Prendas de la Cotización -->
-        <div style="margin-top: 24px;">
-            <h4 style="font-weight: bold; margin: 0 0 12px 0; color: #374151;">Prendas Cotizadas</h4>
-            <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-    `;
-    
-    if (prendas.length === 0) {
-        html += '<div style="padding: 16px; color: #6b7280; text-align: center;">No hay prendas en esta cotización</div>';
-    } else {
-        html += '<table style="width: 100%; border-collapse: collapse;">';
-        html += `
-            <thead>
-                <tr style="background: #f3f4f6; border-bottom: 1px solid #e5e7eb;">
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">PRENDA</th>
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">TELA</th>
-                    <th style="padding: 12px; text-align: center; color: #374151; font-weight: bold; font-size: 0.875rem;">CANTIDAD</th>
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">DESCRIPCIÓN</th>
-                </tr>
-            </thead>
-            <tbody>
-        `;
-        
-        prendas.forEach((prenda, indiceFor) => {
-            const fotosArray = Array.isArray(prenda.fotos) ? prenda.fotos : [];
-            const telasArray = Array.isArray(prenda.tela_fotos) ? prenda.tela_fotos : [];
-            const fotosCount = fotosArray.length;
-            const telasCount = telasArray.length;
-            
-            // Guardar los arrays en variables globales para acceso desde event listeners
-            window[`fotos_${indiceFor}`] = fotosArray;
-            window[`telas_${indiceFor}`] = telasArray;
-            
-            html += `
-                <tr style="border-bottom: 1px solid #e5e7eb; ${indiceFor % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
-                    <td style="padding: 12px; color: #1f2937; font-weight: 500;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            ${fotosCount > 0 ? `
-                                <div class="foto-prenda-container" data-fotos-key="fotos_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')}" style="position: relative; cursor: pointer;">
-                                    <img src="${fotosArray[0]}" alt="${prenda.nombre_prenda || 'Prenda'}" 
-                                         width="60" height="60"
-                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #3b82f6;">
-                                    ${fotosCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${fotosCount - 1}</div>` : ''}
-                                </div>
-                            ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin foto</div>'}
-                            <span>${prenda.nombre_prenda || 'Prenda'}</span>
-                        </div>
-                    </td>
-                    <td style="padding: 12px; color: #1f2937; font-weight: 500;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            ${telasCount > 0 ? `
-                                <div class="foto-tela-container" data-fotos-key="telas_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')} - Tela" style="position: relative; cursor: pointer;">
-                                    <img src="${telasArray[0]}" alt="Tela" 
-                                         width="60" height="60"
-                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #8B4513;">
-                                    ${telasCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${telasCount - 1}</div>` : ''}
-                                </div>
-                            ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin tela</div>'}
-                        </div>
-                    </td>
-                    <td style="padding: 12px; text-align: center; color: #1f2937; font-weight: 500;">${prenda.cantidad}</td>
-                    <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${procesarDescripcion(prenda.descripcion_formateada || prenda.descripcion || prenda.detalles_proceso)}
-                            ${prenda.tallas && prenda.tallas.length > 0 ? `
-                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-                                    <strong style="font-size: 10px; display: block; margin-bottom: 4px;">TALLAS:</strong>
-                                    <div style="font-size: 9px; color: #4b5563;">${prenda.tallas.map(t => t.talla).join(', ')}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        html += `
-            </tbody>
-        </table>
-        `;
-    }
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    contenido.innerHTML = html;
-    
-    // Agregar event listeners para fotos de prendas
-    document.querySelectorAll('.foto-prenda-container').forEach(el => {
-        el.addEventListener('click', function() {
-            const fotosKey = this.getAttribute('data-fotos-key');
-            const title = this.getAttribute('data-title');
-            const fotos = window[fotosKey] || [];
-            abrirModalImagenesArray(fotos, title, 0);
-        });
-    });
-    
-    // Agregar event listeners para fotos de telas
-    document.querySelectorAll('.foto-tela-container').forEach(el => {
-        el.addEventListener('click', function() {
-            const fotosKey = this.getAttribute('data-fotos-key');
-            const title = this.getAttribute('data-title');
-            const fotos = window[fotosKey] || [];
-            abrirModalImagenesArray(fotos, title, 0);
-        });
-    });
+function closeCotizacionModal() {
+    const modal = document.getElementById('cotizacionModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
 }
 
-function cerrarModalComparar() {
-    const modal = document.getElementById('modal-comparar-cotizacion');
-    modal.style.setProperty('display', 'none', 'important');
-    modal.style.setProperty('visibility', 'hidden', 'important');
-    modal.style.setProperty('opacity', '0', 'important');
-}
+
 
 function cerrarModalCorregir() {
     const modal = document.getElementById('modal-corregir-cotizacion');
@@ -667,15 +453,6 @@ function aprobarCotizacionAprobador(cotizacionId) {
     });
 }
 
-// Cerrar menú al hacer clic en otro lugar
-document.addEventListener('click', function(event) {
-    const comparar = document.getElementById('modal-comparar-cotizacion');
-    
-    if (comparar && event.target === comparar) {
-        cerrarModalComparar();
-    }
-});
-
 // Variables globales para el modal de imágenes
 let imagenesActuales = [];
 let imagenActualIndex = 0;
@@ -763,75 +540,7 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// ===== WRAPPER FUNCTION FOR VISOR COSTOS =====
-// Override abrirModalVisorCostos to use public routes instead of contador routes
-window.abrirModalVisorCostosAprobacion = function(cotizacionId, cliente) {
-    visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, prendas: [], indiceActual: 0 };
-    
-    // Usar ruta pública de cotizaciones en lugar de ruta de contador
-    fetch(`/cotizaciones/${cotizacionId}/datos`)
-        .then(response => response.json())
-        .then(cotizacionData => {
-            // Mapear nombres de prendas
-            const prendasNombres = {};
-            if (cotizacionData.prendas_cotizaciones && Array.isArray(cotizacionData.prendas_cotizaciones)) {
-                cotizacionData.prendas_cotizaciones.forEach((prenda, idx) => {
-                    prendasNombres[idx] = prenda.nombre_prenda || `Prenda ${idx + 1}`;
-                });
-            }
-            
-            // Obtener costos usando ruta pública de cotizaciones
-            return fetch(`/cotizaciones/${cotizacionId}/costos`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('No se pudieron cargar los costos');
-                    }
-                    return response.json();
-                })
-                .then(data => ({ costos: data, nombres: prendasNombres }));
-        })
-        .then(({ costos, nombres }) => {
-            if (costos.success && costos.prendas.length > 0) {
-                // Asignar nombres a las prendas
-                costos.prendas.forEach((prenda, idx) => {
-                    if (!prenda.nombre_producto || prenda.nombre_producto === 'Prenda sin nombre') {
-                        prenda.nombre_producto = nombres[idx] || `Prenda ${idx + 1}`;
-                    }
-                });
-                
-                visorCostosActual.prendas = costos.prendas;
-                document.getElementById('visorCostosModal').style.display = 'flex';
-                
-                // Resetear scroll al abrir
-                setTimeout(() => {
-                    const contenido = document.getElementById('visorCostosContenido');
-                    if (contenido) {
-                        contenido.scrollTop = 0;
-                    }
-                }, 0);
-                
-                mostrarPrendaVisor(0);
-            } else {
-                // Mostrar modal de "sin costos"
-                Swal.fire({
-                    title: 'Sin Costos Calculados',
-                    html: `No hay costos calculados para la cotización del cliente <strong>${cliente}</strong>.<br><br>Por favor, solicita al contador que calcule los costos de las prendas primero.`,
-                    icon: 'info',
-                    confirmButtonColor: '#1e5ba8',
-                    confirmButtonText: 'Entendido'
-                });
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                title: 'Error al Cargar Costos',
-                html: `Ocurrió un error al intentar cargar los costos de la cotización.<br><br>${error.message || 'Por favor, intenta de nuevo más tarde.'}`,
-                icon: 'error',
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Cerrar'
-            });
-        });
-};
+
 
 // ===== HORIZONTAL SCROLL SYNCHRONIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -886,31 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Modal Visor de Costos -->
-<div id="visorCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 9998; justify-content: center; align-items: center; padding: 2rem;">
-    <div id="visorCostosModalContent" style="background: white; border-radius: 12px; width: 100%; max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden;">
-        
-        <!-- Header -->
-        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e40af 100%); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                 COSTOS DE PRENDAS
-            </h2>
-            <button onclick="cerrarVisorCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                ✕
-            </button>
-        </div>
 
-        <!-- Tabs de Prendas -->
-        <div id="visorCostosTabsContainer" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; background: #f9fafb;">
-            <!-- Se llenará dinámicamente -->
-        </div>
-
-        <!-- Contenido -->
-        <div id="visorCostosContenido" style="padding: 2rem; overflow-y: auto; flex: 1; background: white;">
-            <!-- Se llenará dinámicamente -->
-        </div>
-    </div>
-</div>
 
 <!-- Estilos para botones de filtro -->
 <style>
@@ -938,8 +623,65 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
-<!-- Scripts -->
-<script src="{{ asset('js/contador/visor-costos.js') }}"></script>
+<!-- Modal de Visor de Costos -->
+<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: flex-start; padding: 2rem; overflow: hidden; padding-top: 4rem;">
+    <div style="position: relative; width: 90%; max-width: 900px;">
+        <!-- Tabs de Prendas que sobresalen del modal -->
+        <div id="visorCostosTabsContainer" style="display: flex; gap: 0.75rem; margin-bottom: -1.5rem; position: relative; z-index: 11; flex-wrap: wrap; justify-content: flex-start;">
+            <!-- Tabs generados dinámicamente por visor-costos.js -->
+        </div>
+        
+        <!-- Contenedor principal del modal -->
+        <div class="modal-content" id="visorCostosModalContent" style="width: 100%; max-height: 85vh; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; position: relative;">
+            <button onclick="cerrarVisorCostos()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d; z-index: 10;">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            <div id="visorCostosContenido" style="overflow-y: auto; flex: 1; padding: 1.5rem;">
+                <!-- Contenido cargado dinámicamente por visor-costos.js -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cotización (Full Screen) -->
+<div id="cotizacionModal" class="modal fullscreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; z-index: 99999; overflow: hidden; margin: 0; padding: 0;">
+    <div class="modal-content" style="background: white; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; margin: 0; padding: 0;">
+        <div class="modal-header" style="background: linear-gradient(to right, #1e5ba8, #1a4d8f); padding: 1.5rem 2rem; display: flex; align-items: center; gap: 2rem; color: white; flex-shrink: 0; border-bottom: 2px solid #0f3a6e;">
+            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60" style="object-fit: contain; filter: brightness(0) invert(1);">
+            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; font-size: 0.85rem;">
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cotización #</p>
+                    <p id="modalHeaderNumber" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Fecha</p>
+                    <p id="modalHeaderDate" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cliente</p>
+                    <p id="modalHeaderClient" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Asesora</p>
+                    <p id="modalHeaderAdvisor" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+            </div>
+            <button onclick="closeCotizacionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+        </div>
+        <div id="modalBody" style="padding: 2rem; overflow-y: auto; background: white; flex: 1;"></div>
+    </div>
+</div>
+
+<script src="{{ asset('js/contador/cotizacion.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/contador/visor-costos.js') }}?v={{ time() }}"></script>
+
+<script>
+    function cerrarVisorCostos() {
+        document.getElementById('visorCostosModal').style.display = 'none';
+    }
+</script>
 
 @endsection
 

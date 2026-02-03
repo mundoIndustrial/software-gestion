@@ -474,8 +474,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pendientes-count', [CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])
         ->name('cotizaciones.pendientes-count');
 
-    // Endpoint para obtener contador de cotizaciones pendientes
-    // NOTA: Funcionalidad migrada a Handlers DDD
+    // Acceso a modal de ver cotización desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
+    Route::get('/contador/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])
+        ->middleware('auth')
+        ->name('aprobador.cotizacion.detail');
+
+    // Acceso a costos de cotización desde aprobador de cotizaciones - RUTA ACCESIBLE PARA APROBADOR, CONTADOR Y ADMIN
+    Route::get('/contador/cotizacion/{cotizacion}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])
+        ->name('aprobador.cotizacion.costos');
 });
 
 // ========================================
@@ -494,8 +500,7 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     Route::get('/todas', [App\Http\Controllers\ContadorController::class, 'todas'])->name('todas');
     Route::get('/por-revisar', [App\Http\Controllers\ContadorController::class, 'porRevisar'])->name('por-revisar');
     Route::get('/aprobadas', [App\Http\Controllers\ContadorController::class, 'aprobadas'])->name('aprobadas');
-    Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
-    Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
+    Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion-delete');
     // NOTA: Funcionalidad migrada a Handlers DDD
     // Route::get('/por-corregir', [App\Http\Controllers\CotizacionesViewController::class, 'porCorregir'])->name('por-corregir');
     
