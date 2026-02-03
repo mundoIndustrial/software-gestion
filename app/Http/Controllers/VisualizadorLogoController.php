@@ -26,9 +26,12 @@ class VisualizadorLogoController extends Controller
         
         $query = Cotizacion::with([
             'asesor',
+            'cliente',
             'logoCotizacion',
             'logoCotizacion.fotos'
         ])
+        ->select('cotizaciones.*')
+        ->selectRaw('(SELECT nombre FROM clientes WHERE clientes.id = cotizaciones.cliente_id) as cliente_nombre')
         ->whereNotNull('numero_cotizacion') // Solo cotizaciones enviadas (no borradores)
         ->where('es_borrador', false);
 
@@ -54,7 +57,9 @@ class VisualizadorLogoController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('numero_cotizacion', 'like', "%{$search}%")
-                  ->orWhere('cliente', 'like', "%{$search}%");
+                  ->orWhereHas('cliente', function($subQ) use ($search) {
+                      $subQ->where('nombre', 'like', "%{$search}%");
+                  });
             });
             \Log::info('🔎 Filtro de búsqueda aplicado:', ['search' => $search]);
         }
@@ -87,8 +92,15 @@ class VisualizadorLogoController extends Controller
             \Log::info(" Cotización #{$index}:", [
                 'id' => $cot->id,
                 'numero_cotizacion' => $cot->numero_cotizacion,
-                'cliente_campo_texto' => $cot->cliente,
                 'cliente_id' => $cot->cliente_id,
+                'cliente_nombre' => $cot->cliente_nombre,
+                'cliente_objeto' => $cot->cliente ? [
+                    'id' => $cot->cliente->id ?? null,
+                    'nombre' => $cot->cliente->nombre ?? null,
+                    'razon_social' => $cot->cliente->razon_social ?? null,
+                    'nit' => $cot->cliente->nit ?? null,
+                ] : null,
+                'cliente_campo_texto' => $cot->cliente ?? null,
                 'asesor_id' => $cot->asesor_id,
                 'asesor_name' => $cot->asesor?->name ?? null,
                 'tipo_cotizacion_id' => $cot->tipo_cotizacion_id,

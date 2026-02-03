@@ -34,13 +34,7 @@
                 <li class="menu-item">
                     <button class="menu-link" aria-label="Ver pedidos de bordado">
                         <span class="material-symbols-rounded">edit</span>
-                        <span class="menu-label">Pedidos Bordado</span>
-                    </button>
-                </li>
-                <li class="menu-item">
-                    <button class="menu-link" aria-label="Ver pedidos de estampado">
-                        <span class="material-symbols-rounded">palette</span>
-                        <span class="menu-label">Pedidos Estampado</span>
+                        <span class="menu-label">Pedidos Logo</span>
                     </button>
                 </li>
             </ul>

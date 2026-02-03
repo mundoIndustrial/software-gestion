@@ -159,10 +159,9 @@
                                                 <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                                                     @foreach($tecnicaPrenda->fotos->sortBy('orden') as $foto)
                                                     <img src="{{ asset('storage/' . $foto->ruta_webp) }}" alt="Foto logo" 
-                                                         style="max-width: 100px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s;" 
+                                                         style="max-width: 100px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; transition: transform 0.2s;" 
                                                          onmouseover="this.style.transform='scale(1.05)'"
-                                                         onmouseout="this.style.transform='scale(1)'"
-                                                         onclick="verImagenCompleta('{{ asset('storage/' . $foto->ruta_original) }}')">
+                                                         onmouseout="this.style.transform='scale(1)'">
                                                     @endforeach
                                                 </div>
                                             @else
@@ -243,10 +242,9 @@
                                                 <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                                                     @foreach($prenda->fotos->sortBy('orden') as $foto)
                                                     <img src="{{ asset('storage/' . $foto->ruta_webp) }}" alt="Foto prenda" 
-                                                         style="max-width: 120px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s;" 
+                                                         style="max-width: 120px; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; transition: transform 0.2s;" 
                                                          onmouseover="this.style.transform='scale(1.05)'"
-                                                         onmouseout="this.style.transform='scale(1)'"
-                                                         onclick="verImagenCompleta('{{ asset('storage/' . $foto->ruta_original ?? $foto->ruta_webp) }}')">
+                                                         onmouseout="this.style.transform='scale(1)'">
                                                     @endforeach
                                                 </div>
                                             @else
@@ -344,26 +342,7 @@
     </div>
 </div>
 
-<!-- Modal para ver imagen completa -->
-<div class="modal fade" id="modalImagen" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Imagen del Logo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="imagenCompleta" src="" class="img-fluid" alt="Logo">
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-function verImagenCompleta(url) {
-    document.getElementById('imagenCompleta').src = url;
-    const modal = new bootstrap.Modal(document.getElementById('modalImagen'));
-    modal.show();
-}
+// Función eliminada - modal de imagen completa eliminado
 </script>
 @endsection

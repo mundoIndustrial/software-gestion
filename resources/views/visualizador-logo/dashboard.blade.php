@@ -5,57 +5,7 @@
 @section('page-title', 'Cotizaciones')
 
 @section('content')
-<div style="padding: 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-    <!-- Header Title -->
-    <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
-        <div style="text-align: center; width: 100%; max-width: 900px;">
-            <h1 style="margin: 0; font-size: 2rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;">
-                <i class="fas fa-file-pdf" style="color: #e11d48; margin-right: 0.5rem;"></i>Cotizaciones
-            </h1>
-            <p style="margin: 0.5rem 0 0 0; color: #64748b; font-size: 0.95rem;">Gestiona y descarga tus cotizaciones de bordado y estampado</p>
-        </div>
-    </div>
-
-    <!-- Filtros Card -->
-    <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
-        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); width: 100%; max-width: 900px; border: 1px solid #e2e8f0;">
-            <div style="display: grid; grid-template-columns: 1fr 150px 130px 130px 110px; gap: 1rem; align-items: end;">
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-search" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Buscar
-                    </label>
-                    <input type="text" id="filtro-search" placeholder="Cotización, cliente..." style="width: 100%; padding: 0.7rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; background: #f8fafc;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'" onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e2e8f0'">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-filter" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Estado
-                    </label>
-                    <select id="filtro-estado" style="width: 100%; padding: 0.7rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; background: white; color: #334155;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'" onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e2e8f0'">
-                        <option value="">Todos</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="aprobado">Aprobado</option>
-                        <option value="rechazado">Rechazado</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-calendar" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Desde
-                    </label>
-                    <input type="date" id="filtro-fecha-desde" style="width: 100%; padding: 0.7rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; background: #f8fafc;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'" onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e2e8f0'">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-calendar" style="margin-right: 0.5rem; color: #0ea5e9;"></i>Hasta
-                    </label>
-                    <input type="date" id="filtro-fecha-hasta" style="width: 100%; padding: 0.7rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; background: #f8fafc;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'" onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e2e8f0'">
-                </div>
-                <button id="btn-filtrar" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3); height: auto; text-transform: uppercase; letter-spacing: 0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(14, 165, 233, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(14, 165, 233, 0.3)'">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
+<div style="padding: 1rem 1rem 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     <!-- Tabla de Cotizaciones -->
     <div style="display: flex; justify-content: center;">
         <div style="width: 100%; max-width: 900px;">
@@ -144,61 +94,113 @@
     cursor: not-allowed;
     opacity: 0.5;
 }
+
+/* Estilos para el modal fullscreen */
+.modal.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+}
+
+.modal.fullscreen .modal-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.modal.fullscreen .modal-header {
+    background: linear-gradient(135deg, #1d78e1 0%, #0f4c81 100%);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.modal.fullscreen .modal-header-logo {
+    height: 40px;
+    width: auto;
+    filter: brightness(0) invert(1); /* Cambia el logo a blanco */
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let paginaActual = 1;
+    let searchTimeout;
+    let cotizacionesOriginales = [];
     
     // Cargar cotizaciones
     cargarCotizaciones();
     
-    // Event listeners para filtros
-    document.getElementById('btn-filtrar').addEventListener('click', function() {
-        paginaActual = 1;
-        cargarCotizaciones();
-    });
+    // Event listeners para la barra de búsqueda
+    const searchInput = document.getElementById('search-input');
+    const clearSearchBtn = document.getElementById('clear-search');
     
-    // Enter en búsqueda
-    document.getElementById('filtro-search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            paginaActual = 1;
-            cargarCotizaciones();
-        }
-    });
-    
-    // Filtrar al cambiar estado
-    document.getElementById('filtro-estado').addEventListener('change', function() {
-        paginaActual = 1;
-        cargarCotizaciones();
-    });
-    
-    // Filtrar al cambiar fecha desde
-    document.getElementById('filtro-fecha-desde').addEventListener('change', function() {
-        paginaActual = 1;
-        cargarCotizaciones();
-    });
-    
-    // Filtrar al cambiar fecha hasta
-    document.getElementById('filtro-fecha-hasta').addEventListener('change', function() {
-        paginaActual = 1;
-        cargarCotizaciones();
-    });
-    
-    function cargarCotizaciones() {
-        const params = new URLSearchParams({
-            page: paginaActual,
-            search: document.getElementById('filtro-search').value,
-            estado: document.getElementById('filtro-estado').value,
-            fecha_desde: document.getElementById('filtro-fecha-desde').value,
-            fecha_hasta: document.getElementById('filtro-fecha-hasta').value,
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            
+            // Mostrar/ocultar botón de limpiar
+            if (searchTerm) {
+                clearSearchBtn.style.display = 'block';
+            } else {
+                clearSearchBtn.style.display = 'none';
+            }
+            
+            // Búsqueda en tiempo real con debounce
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                paginaActual = 1;
+                cargarCotizaciones(searchTerm);
+            }, 300);
         });
+    }
+    
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            this.style.display = 'none';
+            paginaActual = 1;
+            cargarCotizaciones('');
+            searchInput.focus();
+        });
+    }
+    
+    function cargarCotizaciones(searchTerm = '') {
+        const params = new URLSearchParams({
+            page: paginaActual
+        });
+        
+        if (searchTerm) {
+            params.append('search', searchTerm);
+        }
         
         fetch(`{{ route("visualizador-logo.cotizaciones") }}?${params}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    renderizarCotizaciones(data.cotizaciones);
+                    // Guardar datos originales para filtrado local si es necesario
+                    if (cotizacionesOriginales.length === 0 && !searchTerm) {
+                        cotizacionesOriginales = data.cotizaciones.data;
+                    }
+                    renderizarCotizaciones(data.cotizaciones, searchTerm);
                 }
             })
             .catch(error => {
@@ -206,35 +208,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function renderizarCotizaciones(cotizaciones) {
+    function renderizarCotizaciones(cotizaciones, searchTerm = '') {
         const tbody = document.getElementById('cotizaciones-body');
-        
-        // Debug: Mostrar estructura de datos
-
-
-
-        if (cotizaciones.data.length > 0) {
-            console.log(' Primer registro completo:', cotizaciones.data[0]);
-            console.log('Campo cliente:', cotizaciones.data[0].cliente);
-            console.log('🆔 Campo cliente_id:', cotizaciones.data[0].cliente_id);
-            console.log('👨 Objeto asesor:', cotizaciones.data[0].asesor);
-            console.log(' Todas las propiedades del primer registro:', Object.keys(cotizaciones.data[0]));
-        }
         
         if (cotizaciones.data.length === 0) {
             tbody.innerHTML = `
                 <div style="padding: 3rem 2rem; text-align: center; color: #64748b; background: #f8fafc;">
                     <i class="fas fa-inbox" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
-                    <p style="margin: 0; font-size: 1rem; font-weight: 500;">No se encontraron cotizaciones</p>
+                    <p style="margin: 0; font-size: 1rem; font-weight: 500;">
+                        ${searchTerm ? 'No se encontraron cotizaciones para tu búsqueda' : 'No se encontraron cotizaciones'}
+                    </p>
                 </div>
             `;
             return;
         }
         
         tbody.innerHTML = cotizaciones.data.map((cot, index) => {
-            // Extraer nombre del cliente - el campo 'cliente' es texto plano en la tabla
-            let nombreCliente = cot.cliente || '-';
+            // Extraer nombre del cliente usando el accessor
+            let nombreCliente = cot.cliente_nombre || '-';
             let nombreAsesor = cot.asesor?.name || cot.asesor_nombre || '-';
+            
+            // Resaltar término de búsqueda si existe
+            let numeroCotizacion = cot.numero_cotizacion || 'Borrador';
+            if (searchTerm) {
+                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                numeroCotizacion = numeroCotizacion.replace(regex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+                nombreCliente = nombreCliente.replace(regex, '<mark style="background: #fef3c7; color: #92400e; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+            }
             
             return `
                 <div style="
@@ -248,12 +248,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     border-bottom: 1px solid #e2e8f0;
                 " onmouseover="this.style.background='#f8fafc'; this.style.boxShadow='inset 0 0 0 1px #e2e8f0'" onmouseout="this.style.background='white'; this.style.boxShadow='none'">
                     
-                    <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${cot.numero_cotizacion || 'Borrador'}</div>
+                    <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroCotizacion}</div>
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreAsesor}</div>
                     <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(cot.fecha_envio)}</div>
                     <div style="display: flex; justify-content: center; gap: 0.5rem;">
-                        <a href="/visualizador-logo/cotizaciones/${cot.id}" 
+                        <button 
+                           onclick="openCotizacionModal(${cot.id})"
                            title="Ver detalle"
                            style="
                                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
@@ -270,10 +271,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                width: 40px;
                                height: 40px;
                                box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
-                               text-decoration: none;
                            " onmouseover="this.style.transform='translateY(-3px) scale(1.1)'; this.style.boxShadow='0 6px 16px rgba(14, 165, 233, 0.35)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.2)'">
                             <i class="fas fa-eye"></i>
-                        </a>
+                        </button>
                         <a href="/cotizacion/${cot.id}/pdf?tipo=logo" 
                            target="_blank"
                            title="Descargar PDF Logo"
@@ -355,7 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const page = parseInt(this.dataset.page);
                 if (page && page !== paginaActual) {
                     paginaActual = page;
-                    cargarCotizaciones();
+                    const searchTerm = document.getElementById('search-input').value.trim();
+                    cargarCotizaciones(searchTerm);
                 }
             });
         });
@@ -371,6 +372,58 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 });
+
+// Funciones para el modal de cotización
+function openCotizacionModal(cotizacionId) {
+    const modal = document.getElementById('cotizacionModal');
+    const content = document.getElementById('modalBody');
+    
+    fetch(`/contador/cotizacion/${cotizacionId}`)
+        .then(response => response.text())
+        .then(html => {
+            content.innerHTML = html;
+            modal.style.display = 'flex';
+        })
+        .catch(error => {
+            alert('Error al cargar la cotización');
+        });
+}
+
+function closeCotizacionModal() {
+    document.getElementById('cotizacionModal').style.display = 'none';
+}
 </script>
+
+<!-- Modal de Cotización del Contador -->
+<div id="cotizacionModal" class="modal fullscreen" style="display: none;">
+    <div class="modal-content" style="background: white;">
+        <div class="modal-header">
+            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
+            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cotización #</p>
+                    <p id="modalHeaderNumber" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Fecha</p>
+                    <p id="modalHeaderDate" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cliente</p>
+                    <p id="modalHeaderClient" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Asesora</p>
+                    <p id="modalHeaderAdvisor" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+            </div>
+            <button onclick="closeCotizacionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+        </div>
+        <div id="modalBody" style="padding: 2rem; overflow-y: auto; background: white;"></div>
+    </div>
+</div>
+
 @endsection
 

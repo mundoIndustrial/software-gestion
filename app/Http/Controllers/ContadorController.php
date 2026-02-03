@@ -192,9 +192,9 @@ class ContadorController extends Controller
                 abort(401, 'Usuario no autenticado');
             }
             
-            // Permitir acceso a: contador, admin, aprobador_cotizaciones
+            // Permitir acceso a: contador, admin, aprobador_cotizaciones, visualizador_cotizaciones_logo
             // Verificar usando hasRole (que soporta nombre de rol o ID)
-            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones'];
+            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones', 'visualizador_cotizaciones_logo'];
             $hasAccess = false;
             
             foreach ($allowedRoles as $role) {

@@ -77,6 +77,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Accessor para obtener el nombre del cliente como texto plano (compatibilidad)
+     */
+    public function getClienteNombreAttribute()
+    {
+        return $this->cliente?->nombre ?? '-';
+    }
+
+    /**
      * Relación: Una cotización pertenece a un tipo de cotización
      */
     public function tipoCotizacion(): BelongsTo
