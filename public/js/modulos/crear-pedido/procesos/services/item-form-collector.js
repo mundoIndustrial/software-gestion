@@ -44,6 +44,17 @@ class ItemFormCollector {
                 return null; // Los EPPs se procesarán después
             }
             
+            // 🔍 DEBUG: Ver exactamente qué recibe
+            console.log('[ItemFormCollector] 🔍 Item CRUDO recibido:', {
+                itemIndex,
+                tipo: item.tipo,
+                nombre_prenda: item.nombre_prenda,
+                nombre_producto: item.nombre_producto,
+                nombre: item.nombre,
+                cantidad_talla: item.cantidad_talla,
+                telas: item.telas?.length || 0
+            });
+            
             const baseItem = {
                 tipo: item.tipo,
                 nombre_prenda: item.nombre_prenda || item.nombre_producto || item.prenda?.nombre || item.nombre || '',
@@ -56,6 +67,12 @@ class ItemFormCollector {
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
             };
+            
+            console.log('[ItemFormCollector] 📦 baseItem CONSTRUIDO:', {
+                itemIndex,
+                nombre_prenda: baseItem.nombre_prenda,
+                cantidad_talla_keys: Object.keys(baseItem.cantidad_talla || {}).length
+            });
             
             // DEBUG: Log para verificar valores de origen y de_bodega
             console.log('[ItemFormCollector] 📦 Item procesado:', {

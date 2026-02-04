@@ -333,6 +333,7 @@ class ItemAPIService {
             }
 
             const resultado = await respuesta.json();
+            console.log('[crearPedido] ✅ RESPUESTA DEL SERVIDOR:', resultado);
             console.debug('[crearPedido] ÉXITO:', {
                 pedido_id: resultado.pedido_id,
                 numero_pedido: resultado.numero_pedido

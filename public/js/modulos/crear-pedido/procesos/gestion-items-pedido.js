@@ -66,6 +66,7 @@ class GestionItemsUI {
      */
     agregarPrendaAlOrden(prenda) {
         const index = this.prendas.length;
+        
         this.prendas.push(prenda);
         this.ordenItems.push({ tipo: 'prenda', index });
         
@@ -556,6 +557,18 @@ class GestionItemsUI {
 
                     this.notificationService?.exito('Prenda agregada correctamente');
                     
+                    // ✅ NORMALIZAR: cambiar tipo de 'prenda_nueva' a 'prenda' para que ItemFormCollector lo procese
+                    if (prendaData.tipo === 'prenda_nueva') {
+                        prendaData.tipo = 'prenda';
+                    }
+                    
+                    console.log('[gestionItemsUI] 🔄 Prenda normalizada antes de agregar:', {
+                        tipo: prendaData.tipo,
+                        nombre_prenda: prendaData.nombre_prenda,
+                        cantidad_talla: prendaData.cantidad_talla,
+                        telas: prendaData.telas?.length || 0
+                    });
+                    
                     // Agregar prenda al orden
                     this.agregarPrendaAlOrden(prendaData);
 
@@ -657,16 +670,27 @@ class GestionItemsUI {
 
             this.mostrarCargando('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
+            console.log('[gestion-items-pedido] 📋 Resultado recibido:', resultado);
+            console.log('[gestion-items-pedido] ¿resultado.success?', resultado.success);
+            console.log('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
 
             if (resultado.success) {
+                console.log('[gestion-items-pedido] ✅ ENTRANDO AL IF - Pedido creado exitosamente');
                 this.datosPedidoCreado = {
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido
                 };
+                console.log('[gestion-items-pedido] 📌 datosPedidoCreado:', this.datosPedidoCreado);
                 
                 // Ocultar loader y mostrar modal de éxito existente
                 this.ocultarCargando();
-                setTimeout(() => this.mostrarModalExito(), 300);
+                console.log('[gestion-items-pedido] 🎬 Llamando mostrarModalExito()...');
+                setTimeout(() => {
+                    console.log('[gestion-items-pedido] 🎬 EN TIMEOUT - Ejecutando mostrarModalExito()');
+                    this.mostrarModalExito();
+                }, 300);
+            } else {
+                console.warn('[gestion-items-pedido] ⚠️ resultado.success es FALSE o undefined');
             }
         } catch (error) {
             console.error('[gestion-items-pedido]  ERROR CAPTURADO:', error);
@@ -822,19 +846,39 @@ class GestionItemsUI {
     }
 
     mostrarModalExito() {
+        console.log('[mostrarModalExito] 🎬 INICIANDO');
+        console.log('[mostrarModalExito] ¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
+        console.log('[mostrarModalExito] ¿datosPedidoCreado?', this.datosPedidoCreado);
+        
         let modalElement = document.getElementById('modalExitoPedido');
+        console.log('[mostrarModalExito] ¿modalElement existe?', !!modalElement);
+        
         if (!modalElement) {
+            console.log('[mostrarModalExito] 🔧 Creando modal desde HTML...');
+            if (typeof MODAL_EXITO_PEDIDO_HTML === 'undefined') {
+                console.error('[mostrarModalExito] ❌ CRÍTICO: MODAL_EXITO_PEDIDO_HTML no está definido');
+                throw new Error('MODAL_EXITO_PEDIDO_HTML no está disponible');
+            }
             document.body.insertAdjacentHTML('beforeend', MODAL_EXITO_PEDIDO_HTML);
             modalElement = document.getElementById('modalExitoPedido');
+            console.log('[mostrarModalExito] ✅ Modal creado, elemento encontrado?', !!modalElement);
         }
 
         const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
+        console.log('[mostrarModalExito] ¿btnVolverAPedidos encontrado?', !!btnVolverAPedidos);
+        
         if (btnVolverAPedidos) {
-            btnVolverAPedidos.onclick = () => window.location.href = '/asesores/pedidos';
+            console.log('[mostrarModalExito] 🔗 Asignando onclick');
+            btnVolverAPedidos.onclick = () => {
+                console.log('[mostrarModalExito] 👉 Botón presionado, redirigiendo...');
+                window.location.href = '/asesores/pedidos';
+            };
         }
 
+        console.log('[mostrarModalExito] 🎨 Mostrando modal');
         modalElement.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        console.log('[mostrarModalExito] ✅ COMPLETADO');
     }
 
     renderizarProcesosDirectos() {
