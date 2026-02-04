@@ -66,14 +66,14 @@
                 @if($prenda->fotos && $prenda->fotos->count() > 0)
                     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
                         @php
-                            $fotosArray = $prenda->fotos->map(fn($f) => $f->url)->toArray();
+                            $fotosArray = $prenda->fotos->map(fn($f) => asset($f->url))->toArray();
                             $fotosJson = json_encode($fotosArray);
                         @endphp
                         @foreach($prenda->fotos as $index => $foto)
-                            <img src="{{ $foto->url }}" alt="Prenda {{ $index + 1 }}"
+                            <img src="{{ asset($foto->url) }}" alt="Prenda {{ $index + 1 }}"
                                  width="50" height="50"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                 onclick="abrirModalImagen('{{ $foto->url }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
+                                 onclick="abrirModalImagen('{{ asset($foto->url) }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
                         @endforeach
                     </div>
                 @else
@@ -89,14 +89,14 @@
                 @if($prenda->telaFotos && $prenda->telaFotos->count() > 0)
                     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
                         @php
-                            $telasArray = $prenda->telaFotos->map(fn($t) => $t->url)->toArray();
+                            $telasArray = $prenda->telaFotos->map(fn($t) => asset($t->url))->toArray();
                             $telasJson = json_encode($telasArray);
                         @endphp
                         @foreach($prenda->telaFotos as $index => $tela)
-                            <img src="{{ $tela->url }}" alt="Tela {{ $index + 1 }}"
+                            <img src="{{ asset($tela->url) }}" alt="Tela {{ $index + 1 }}"
                                  width="50" height="50"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                 onclick="abrirModalImagen('{{ $tela->url }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ $telasJson }}, {{ $index }})">
+                                 onclick="abrirModalImagen('{{ asset($tela->url) }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ $telasJson }}, {{ $index }})">
                         @endforeach
                     </div>
                 @else

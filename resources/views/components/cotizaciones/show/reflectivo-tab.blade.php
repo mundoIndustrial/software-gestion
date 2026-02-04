@@ -149,8 +149,8 @@
                     @foreach($reflectivo->fotos as $foto)
                         @if($foto->ruta_original)
                             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                                <a href="{{ $foto->url }}" target="_blank" style="display: block;">
-                                    <img src="{{ $foto->url }}" alt="Reflectivo" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                                <a href="{{ asset($foto->url) }}" target="_blank" style="display: block;">
+                                    <img src="{{ asset($foto->url) }}" alt="Reflectivo" style="width: 100%; height: 200px; object-fit: cover; display: block;">
                                 </a>
                             </div>
                         @endif

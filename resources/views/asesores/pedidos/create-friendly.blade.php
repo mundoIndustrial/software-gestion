@@ -147,14 +147,13 @@
 <script src="{{ asset('js/asesores/color-tela-referencia.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/integracion-variantes-inline.js') }}"></script>
 
-<!-- 3b. Módulos específicos de paso-tres y reflectivo -->
+<!-- 3b. Módulos específicos de paso-tres -->
 <script src="{{ asset('js/paso-tres-cotizacion-combinada.js') }}"></script>
-<script src="{{ asset('js/paso-cuatro-cotizacion-combinada.js') }}"></script>
 
 <!-- 3c. Configuración dinámica del stepper -->
 <script src="{{ asset('js/asesores/cotizaciones/config-stepper.js') }}"></script>
 
-<!-- 3d. Resumen completo del Paso 5 (Revisar) -->
+<!-- 3d. Resumen completo del Paso 4 (Revisar) -->
 <script src="{{ asset('js/asesores/cotizaciones/resumen-paso5-completo.js') }}"></script>
 
 <!-- 4. Configuración global -->

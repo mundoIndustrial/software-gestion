@@ -213,7 +213,7 @@
                                              style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #f3f4f6; cursor: pointer; transition: transform 0.2s;"
                                              onmouseover="this.style.transform='scale(1.05)'" 
                                              onmouseout="this.style.transform='scale(1)'">
-                                            <img src="{{ $foto->url }}" 
+                                            <img src="{{ asset($foto->url) }}" 
                                                  alt="Foto reflectivo" 
                                                  style="width: 100%; height: 200px; object-fit: cover;"
                                                  onerror="this.parentElement.innerHTML='<div style=\'padding:1rem;text-align:center;color:#ef4444;\'><p> Error cargando imagen</p></div>';">
