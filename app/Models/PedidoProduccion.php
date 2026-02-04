@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 use App\Models\Cliente;
+use App\Models\ConsecutivoReciboPedido;
 use App\Services\CalculadorDiasService;
 use App\Events\PedidoCreado;
 use Illuminate\Support\Facades\DB;
@@ -151,7 +152,7 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene muchas prendas
+     * Relación: Un pedido tiene muchos prendas
      * 
      * ACTUALIZACIÓN [16/01/2026]:
      * - Foreign Key: pedido_produccion_id (antes numero_pedido)
@@ -161,6 +162,16 @@ class PedidoProduccion extends Model
     public function prendas(): HasMany
     {
         return $this->hasMany(PrendaPedido::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Un pedido tiene muchos consecutivos de recibos
+     * Conecta con la tabla consecutivos_recibos_pedidos
+     * Usada para obtener números de consecutivos por tipo de recibo
+     */
+    public function consecutivosRecibos(): HasMany
+    {
+        return $this->hasMany(ConsecutivoReciboPedido::class, 'pedido_produccion_id');
     }
 
     /**

@@ -90,7 +90,7 @@
 .receipt-title {
     position: absolute;
     top: 80px;
-    right: 12px;
+    right: 20px;
     left: auto;
     font-weight: bold;
     font-size: 11px;
@@ -99,7 +99,8 @@
     margin: 0;
     color: #000;
     text-align: center;
-    max-width: 120px;
+    max-width: 200px;
+    word-wrap: break-word;
 }
 
 .pedido-number {
@@ -370,10 +371,13 @@
         margin: 0;
         position: absolute;
         top: 95px;
-        right: 80px;
+        right: 25px;
+        left: auto;
         width: auto;
-        white-space: nowrap;
-        text-align: right;
+        max-width: 250px;
+        white-space: normal;
+        text-align: center;
+        word-wrap: break-word;
     }
 
     .pedido-number {

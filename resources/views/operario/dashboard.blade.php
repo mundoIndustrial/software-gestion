@@ -66,14 +66,16 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons">
-                                    <!-- Botón Reportar Pendiente -->
+                                    <!-- Botón Reportar Pendiente - NO para bodeguero -->
+                                    @if(!auth()->user()->hasRole('bodeguero'))
                                     <button class="btn-reportar-pendiente" onclick="abrirModalReportar('{{ $pedido['numero_pedido'] }}', '{{ $pedido['cliente'] }}')">
                                         <span class="material-symbols-rounded">warning</span>
                                         REPORTAR PENDIENTE
                                     </button>
+                                    @endif
                                     
-                                    @if(!(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
-                                    <!-- Botón Completar Proceso -->
+                                    <!-- Botón Completar Proceso - NO para bodeguero -->
+                                    @if(!auth()->user()->hasRole('bodeguero') && !(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
                                     <button class="btn-completar-proceso" onclick="marcarProcesoCompletado('{{ $pedido['numero_pedido'] }}')">
                                         <span class="material-symbols-rounded">check_circle</span>
                                         COMPLETAR PROCESO

@@ -14,6 +14,30 @@ class VistasController extends Controller
 {
     public function index(Request $request)
     {
+        // Verificar acceso para bodeguero: SOLO puede ver tipo=bodega
+        if (auth()->check() && auth()->user()->hasRole('bodeguero')) {
+            $tipo = $request->get('tipo');
+            
+            // Si intenta acceder a otra vista que no sea bodega, redirigir
+            if ($tipo !== 'bodega') {
+                \Log::warning('🔐 [VistasController] Intento de acceso bloqueado para bodeguero', [
+                    'user_id' => auth()->id(),
+                    'tipo_solicitado' => $tipo,
+                    'mensaje' => 'Bodeguero intentó acceder a: ' . $tipo
+                ]);
+                
+                return redirect()->route('vistas.index', ['tipo' => 'bodega'])
+                    ->with('error', 'Solo puedes acceder a la vista de Bodega');
+            }
+            
+            // Bodeguero no puede cambiar origen
+            $origen = $request->get('origen');
+            if ($origen && $origen !== 'pedido') {
+                return redirect()->route('vistas.index', ['tipo' => 'bodega'])
+                    ->with('error', 'Acceso no permitido');
+            }
+        }
+
         // Determinar el tipo basado en el referer o parámetro
         $tipo = $this->determinarTipo($request);
 
@@ -89,8 +113,16 @@ class VistasController extends Controller
         }
 
         $registros = $registrosQuery->paginate(50)->appends(['search' => $query]);
+        
+        // Para bodega y corte, agrupar por pedido (estructura similar a corte)
+        if ($tipo === 'bodega' || $tipo === 'corte') {
+            $groupedRegistros = $registros->groupBy('pedido');
+        } else {
+            // Para costura-pedidos
+            $groupedRegistros = collect();
+        }
 
-        return view('vistas.index', compact('registros', 'title', 'icon', 'tipo', 'query'));
+        return view('vistas.index', compact('registros', 'groupedRegistros', 'title', 'icon', 'tipo', 'query'));
     }
 
     public function search(Request $request)

@@ -124,6 +124,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Bodeguero - Dashboard de operario (mismo que cortador/costurero)
+            if ($roleName === 'bodeguero') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Supervisor Personal - Gestión de asistencia
             if ($roleName === 'supervisor-personal') {
                 return redirect(route('asistencia-personal.index', absolute: false));

@@ -1,7 +1,23 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
 
-<div class="order-detail-modal-container" style="max-width: 100%; padding: 0.5rem;">
-    <div class="order-detail-card" style="position: relative;">
+<div class="order-detail-modal-container" style="
+    max-width: 100%;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: transparent;
+">
+    <div class="order-detail-card" style="
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    ">
         <!-- Logo -->
         <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         
