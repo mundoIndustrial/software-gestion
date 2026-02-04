@@ -83,7 +83,6 @@ window.PrendaEditorLoader = (function() {
         `/css/form-modal-consistency.css?v=${cssVersion}`,
         `/css/swal-z-index-fix.css?v=${cssVersion}`,
         `/css/componentes/prendas.css?v=${cssVersion}`,
-        `/css/componentes/reflectivo.css?v=${cssVersion}`,
         `/css/modales-personalizados.css?v=${cssVersion}`,
     ];
 
