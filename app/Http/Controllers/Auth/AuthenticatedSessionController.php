@@ -129,6 +129,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Costura-Reflectivo - Dashboard de operario
+            if ($roleName === 'costura-reflectivo') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Supervisor Personal - Gestión de asistencia
             if ($roleName === 'supervisor-personal') {
                 return redirect(route('asistencia-personal.index', absolute: false));

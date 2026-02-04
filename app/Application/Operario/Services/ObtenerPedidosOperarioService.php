@@ -29,6 +29,11 @@ class ObtenerPedidosOperarioService
         $tipoOperario = $this->obtenerTipoOperario($usuario);
         $areaOperario = $this->obtenerAreaOperario($tipoOperario);
 
+        // Para costura-reflectivo: lógica especial
+        if ($tipoOperario === 'costura-reflectivo') {
+            return $this->obtenerPedidosCosturaReflectivo($usuario);
+        }
+
         // Para bodeguero: obtener SOLO pedidos que tengan RECIBO COSTURA-BODEGA
         if ($tipoOperario === 'bodeguero') {
             $pedidos = PedidoProduccion::with(['prendas'])
@@ -163,6 +168,10 @@ class ObtenerPedidosOperarioService
             return 'bodeguero';
         }
 
+        if ($usuario->hasRole('costura-reflectivo')) {
+            return 'costura-reflectivo';
+        }
+
         return 'desconocido';
     }
 
@@ -175,6 +184,7 @@ class ObtenerPedidosOperarioService
             'cortador' => 'Corte',
             'costurero' => 'Costura',
             'bodeguero' => 'Bodega',
+            'costura-reflectivo' => 'Costura-Reflectivo',
             default => 'Desconocida',
         };
     }
