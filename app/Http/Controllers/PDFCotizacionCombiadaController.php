@@ -42,18 +42,13 @@ class PDFCotizacionCombiadaController extends Controller
                         'variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche,es_jean_pantalon,tipo_jean_pantalon,telas_multiples',
                         'variantes.manga:id,nombre',
                         'variantes.broche:id,nombre',
-                        'telas.tela:id,nombre,referencia',
-                        'prendaCotReflectivo:id,prenda_cot_id,descripcion,variaciones,ubicaciones'
+                        'telas.tela:id,nombre,referencia'
                     ]);
                 },
                 'logoCotizacion' => function($query) {
                     $query->with(['fotos', 'tecnicasPrendas' => function($q) {
                         $q->with(['prenda', 'tipoLogo', 'fotos']);
                     }]);
-                },
-                'reflectivoPrendas' => function($query) {
-                    $query->select('id', 'cotizacion_id', 'prenda_cot_id', 'descripcion')
-                        ->with('fotos:id,reflectivo_cotizacion_id,ruta_webp');
                 }
             ])->findOrFail($id);
 

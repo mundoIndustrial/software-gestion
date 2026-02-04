@@ -724,138 +724,80 @@ class CotizacionPrendaController extends Controller
             $ubicaciones = [];
             $descripcion = '';
             
-            // VERIFICAR SI ES COTIZACIÓN DE REFLECTIVO (tipo_cotizacion_id = 4)
-            if ($cotizacion->tipo_cotizacion_id == 4) {
-                // Obtener datos de prenda_cot_reflectivo
-                $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::where([
-                    'cotizacion_id' => $cotizacionId,
-                    'prenda_cot_id' => $prendaId
-                ])->first();
-                
-                if ($prendaCotReflectivo) {
-                    // Extraer telas desde color_tela_ref
-                    if ($prendaCotReflectivo->color_tela_ref) {
-                        // Asegurar que sea array (json_decode manual si es string)
-                        $colorTelaRef = $prendaCotReflectivo->color_tela_ref;
-                        if (is_string($colorTelaRef)) {
-                            $colorTelaRef = json_decode($colorTelaRef, true) ?? [];
-                        }
-                        
-                        if (is_array($colorTelaRef) && count($colorTelaRef) > 0) {
-                            $telas = array_map(function ($item, $index) {
-                                return [
-                                    'id' => 'reflectivo_tela_' . $index,
-                                    'nombre_tela' => $item['tela'] ?? 'Reflectivo',
-                                    'referencia' => $item['referencia'] ?? '',
-                                    'color' => $item['color'] ?? 'Sin color',
-                                    'codigo_color' => '',
-                                    'variante_id' => null,
-                                    'es_reflectivo' => true,
-                                    'fotos' => [],
-                                ];
-                            }, $colorTelaRef, array_keys($colorTelaRef));
-                        }
-                    }
-                    
-                    // Extraer variaciones
-                    if ($prendaCotReflectivo->variaciones) {
-                        $variacionsJson = $prendaCotReflectivo->variaciones;
-                        if (is_string($variacionsJson)) {
-                            $variaciones = json_decode($variacionsJson, true) ?? [];
-                        } else {
-                            $variaciones = is_array($variacionsJson) ? $variacionsJson : [];
-                        }
-                    }
-                    
-                    // Extraer ubicaciones
-                    if ($prendaCotReflectivo->ubicaciones) {
-                        $ubicacionesJson = $prendaCotReflectivo->ubicaciones;
-                        if (is_string($ubicacionesJson)) {
-                            $ubicaciones = json_decode($ubicacionesJson, true) ?? [];
-                        } else {
-                            $ubicaciones = is_array($ubicacionesJson) ? $ubicacionesJson : [];
-                        }
-                    }
-                    
-                    // Extraer descripción
-                    $descripcion = $prendaCotReflectivo->descripcion ?? '';
-                }
+            // FLUJO NORMAL: Obtener telas de prenda_telas_cot para otras cotizaciones
+            // Obtener telas de la prenda con relaciones necesarias
+            $telasCotizacion = \App\Models\PrendaTelaCot::where('prenda_cot_id', $prendaId)
+                ->with([
+                    'tela:id,nombre,referencia',
+                    'color:id,nombre,codigo',
+                    'fotos' // prenda_tela_fotos_cot
+                ])
+                ->get();
+            
+            // Mapear respuesta si hay telas en prenda_telas_cot
+            if ($telasCotizacion->count() > 0) {
+                $telas = $telasCotizacion->map(function ($telaCot) {
+                    return [
+                        'id' => $telaCot->id,
+                        'nombre_tela' => $telaCot->tela?->nombre ?? 'Sin nombre',
+                        'referencia' => $telaCot->tela?->referencia ?? '',
+                        'color' => $telaCot->color?->nombre ?? 'Sin color',
+                        'codigo_color' => $telaCot->color?->codigo ?? '',
+                        'variante_id' => $telaCot->variante_prenda_cot_id,
+                        'fotos' => $telaCot->fotos->map(function ($foto) {
+                            return [
+                                'id' => $foto->id,
+                                'ruta_original' => $foto->ruta_original ?? '',
+                                'ruta_webp' => $foto->ruta_webp ?? '',
+                                'ruta_miniatura' => $foto->ruta_miniatura ?? '',
+                                'orden' => $foto->orden ?? 0,
+                            ];
+                        })->toArray(),
+                    ];
+                })->toArray();
+            } elseif ($telaFotos = \App\Models\PrendaTelaFotoCot::where('prenda_cot_id', $prendaId)->get() and $telaFotos->count() > 0) {
+                // FALLBACK: Si no hay telas en prenda_telas_cot, intentar obtener de tela_fotos
+                $telas = $telaFotos->groupBy('tela_index')->map(function ($fotos, $telaIndex) {
+                    return [
+                        'id' => 'tela_' . $telaIndex,
+                        'nombre_tela' => 'Tela ' . ($telaIndex + 1),
+                        'referencia' => '',
+                        'color' => 'Sin especificar',
+                        'codigo_color' => '',
+                        'variante_id' => null,
+                        'fotos' => $fotos->map(function ($foto) {
+                            return [
+                                'id' => $foto->id,
+                                'ruta_original' => $foto->ruta_original ?? '',
+                                'ruta_webp' => $foto->ruta_webp ?? '',
+                                'ruta_miniatura' => $foto->ruta_miniatura ?? '',
+                                'orden' => $foto->orden ?? 0,
+                            ];
+                        })->toArray(),
+                    ];
+                })->values()->toArray();
             } else {
-                // FLUJO NORMAL: Obtener telas de prenda_telas_cot para otras cotizaciones
-                // Obtener telas de la prenda con relaciones necesarias
-                $telasCotizacion = \App\Models\PrendaTelaCot::where('prenda_cot_id', $prendaId)
-                    ->with([
-                        'tela:id,nombre,referencia',
-                        'color:id,nombre,codigo',
-                        'fotos' // prenda_tela_fotos_cot
-                    ])
+                // FALLBACK 2: Intentar obtener de telas_multiples en variantes
+                $variantes = \App\Models\PrendaVarianteCot::where('prenda_cot_id', $prendaId)
                     ->get();
                 
-                // Mapear respuesta si hay telas en prenda_telas_cot
-                if ($telasCotizacion->count() > 0) {
-                    $telas = $telasCotizacion->map(function ($telaCot) {
-                        return [
-                            'id' => $telaCot->id,
-                            'nombre_tela' => $telaCot->tela?->nombre ?? 'Sin nombre',
-                            'referencia' => $telaCot->tela?->referencia ?? '',
-                            'color' => $telaCot->color?->nombre ?? 'Sin color',
-                            'codigo_color' => $telaCot->color?->codigo ?? '',
-                            'variante_id' => $telaCot->variante_prenda_cot_id,
-                            'fotos' => $telaCot->fotos->map(function ($foto) {
-                                return [
-                                    'id' => $foto->id,
-                                    'ruta_original' => $foto->ruta_original ?? '',
-                                    'ruta_webp' => $foto->ruta_webp ?? '',
-                                    'ruta_miniatura' => $foto->ruta_miniatura ?? '',
-                                    'orden' => $foto->orden ?? 0,
+                if ($variantes->count() > 0) {
+                    foreach ($variantes as $variante) {
+                        $telasMultiples = is_string($variante->telas_multiples) 
+                            ? json_decode($variante->telas_multiples, true) 
+                            : $variante->telas_multiples;
+                        
+                        if (is_array($telasMultiples) && count($telasMultiples) > 0) {
+                            foreach ($telasMultiples as $index => $telaData) {
+                                $telas[] = [
+                                    'id' => 'tela_variante_' . $variante->id . '_' . $index,
+                                    'nombre_tela' => $telaData['tela'] ?? 'Sin nombre',
+                                    'referencia' => $telaData['referencia'] ?? '',
+                                    'color' => $telaData['color'] ?? 'Sin color',
+                                    'codigo_color' => '',
+                                    'variante_id' => $variante->id,
+                                    'fotos' => [],
                                 ];
-                            })->toArray(),
-                        ];
-                    })->toArray();
-                } elseif ($telaFotos = \App\Models\PrendaTelaFotoCot::where('prenda_cot_id', $prendaId)->get() and $telaFotos->count() > 0) {
-                    // FALLBACK: Si no hay telas en prenda_telas_cot, intentar obtener de tela_fotos
-                    $telas = $telaFotos->groupBy('tela_index')->map(function ($fotos, $telaIndex) {
-                        return [
-                            'id' => 'tela_' . $telaIndex,
-                            'nombre_tela' => 'Tela ' . ($telaIndex + 1),
-                            'referencia' => '',
-                            'color' => 'Sin especificar',
-                            'codigo_color' => '',
-                            'variante_id' => null,
-                            'fotos' => $fotos->map(function ($foto) {
-                                return [
-                                    'id' => $foto->id,
-                                    'ruta_original' => $foto->ruta_original ?? '',
-                                    'ruta_webp' => $foto->ruta_webp ?? '',
-                                    'ruta_miniatura' => $foto->ruta_miniatura ?? '',
-                                    'orden' => $foto->orden ?? 0,
-                                ];
-                            })->toArray(),
-                        ];
-                    })->values()->toArray();
-                } else {
-                    // FALLBACK 2: Intentar obtener de telas_multiples en variantes
-                    $variantes = \App\Models\PrendaVarianteCot::where('prenda_cot_id', $prendaId)
-                        ->get();
-                    
-                    if ($variantes->count() > 0) {
-                        foreach ($variantes as $variante) {
-                            $telasMultiples = is_string($variante->telas_multiples) 
-                                ? json_decode($variante->telas_multiples, true) 
-                                : $variante->telas_multiples;
-                            
-                            if (is_array($telasMultiples) && count($telasMultiples) > 0) {
-                                foreach ($telasMultiples as $index => $telaData) {
-                                    $telas[] = [
-                                        'id' => 'tela_variante_' . $variante->id . '_' . $index,
-                                        'nombre_tela' => $telaData['tela'] ?? 'Sin nombre',
-                                        'referencia' => $telaData['referencia'] ?? '',
-                                        'color' => $telaData['color'] ?? 'Sin color',
-                                        'codigo_color' => '',
-                                        'variante_id' => $variante->id,
-                                        'fotos' => [],
-                                    ];
-                                }
                             }
                         }
                     }
