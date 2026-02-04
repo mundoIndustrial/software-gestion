@@ -6,15 +6,9 @@
 
 @push('scripts')
 <script src="{{ asset('js/asesores/cotizaciones-show.js') }}"></script>
-<script src="{{ asset('js/asesores/cotizaciones/reflectivo-paso4-show.js') }}"></script>
 @endpush
 
 @section('content')
-
-@php
-    $idReflectivo = \App\Models\TipoCotizacion::getIdPorCodigo('RF');
-    $esReflectivo = $cotizacion->tipo_cotizacion_id === $idReflectivo;
-@endphp
 
 <div class="page-wrapper">
     <div class="container-fluid py-4">
@@ -24,56 +18,30 @@
         {{-- Info Cards --}}
         @include('components.cotizaciones.show.info-cards', ['cotizacion' => $cotizacion])
 
-        @if($esReflectivo)
-            {{-- Si es SOLO reflectivo, mostrar directamente sin tabs --}}
-            <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                @include('components.cotizaciones.show.reflectivo-tab-direct', [
-                    'cotizacion' => $cotizacion
-                ])
-            </div>
-        @else
-            {{-- Tabs Navigation --}}
-            @include('components.cotizaciones.show.tabs', ['cotizacion' => $cotizacion, 'logo' => $logo ?? null])
+        {{-- Tabs Navigation --}}
+        @include('components.cotizaciones.show.tabs', ['cotizacion' => $cotizacion, 'logo' => $logo ?? null])
 
-            {{-- Tab Content Wrapper --}}
-            <div class="tab-content-wrapper">
-                {{-- Prendas Tab --}}
-                @php
-                    $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
-                    $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
-                    $esLogoTab = $cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada;
-                @endphp
-                @include('components.cotizaciones.show.prendas-tab', [
-                    'cotizacion' => $cotizacion,
-                    'esLogo' => $esLogoTab,
-                    'tienePrendas' => $cotizacion->prendas && count($cotizacion->prendas) > 0
-                ])
+        {{-- Tab Content Wrapper --}}
+        <div class="tab-content-wrapper">
+            {{-- Prendas Tab --}}
+            @php
+                $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
+                $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
+                $esLogoTab = $cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada;
+            @endphp
+            @include('components.cotizaciones.show.prendas-tab', [
+                'cotizacion' => $cotizacion,
+                'esLogo' => $esLogoTab,
+                'tienePrendas' => $cotizacion->prendas && count($cotizacion->prendas) > 0
+            ])
 
-                {{-- Logo Tab --}}
-                @include('components.cotizaciones.show.logo-tab', [
-                    'logo' => $logo ?? null,
-                    'cotizacion' => $cotizacion,
-                    'esLogo' => $esLogoTab
-                ])
-
-                {{-- Reflectivo Tab (PASO 4) --}}
-                @php
-                    // Verificar si hay reflectivos por prenda (PASO 4)
-                    $tieneReflectivoPaso4 = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacion->id)->count() > 0;
-                @endphp
-                
-                @if($tieneReflectivoPaso4)
-                    @include('components.cotizaciones.show.reflectivo-paso4-prenda', [
-                        'cotizacion' => $cotizacion
-                    ])
-                @else
-                    {{-- Mostrar reflectivo general si existe (para cotizaciones tipo RF) --}}
-                    @include('components.cotizaciones.show.reflectivo-tab', [
-                        'cotizacion' => $cotizacion
-                    ])
-                @endif
-            </div>
-        @endif
+            {{-- Logo Tab --}}
+            @include('components.cotizaciones.show.logo-tab', [
+                'logo' => $logo ?? null,
+                'cotizacion' => $cotizacion,
+                'esLogo' => $esLogoTab
+            ])
+        </div>
     </div>
 </div>
 

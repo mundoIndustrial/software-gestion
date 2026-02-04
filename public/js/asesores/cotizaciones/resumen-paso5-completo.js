@@ -1,15 +1,15 @@
 /**
- * resumen-paso5-completo.js
- * Actualización completa del Paso 5 con tablas dinámicas
+ * resumen-paso4-completo.js
+ * Actualización completa del Paso 4 con tablas dinámicas
  * Renderiza solo las secciones que tienen datos
  */
 
 /**
- * FUNCIÓN PRINCIPAL: Actualizar todo el resumen del Paso 5
+ * FUNCIÓN PRINCIPAL: Actualizar todo el resumen del Paso 4
  */
-function actualizarResumenPaso5Completo() {
+function actualizarResumenPaso4Completo() {
     // 1. Actualizar información del cliente
-    actualizarResumenClientePaso5();
+    actualizarResumenClientePaso4();
     
     // 2. Generar cards de prenda con tablas dinámicas
     generarCardsPredasConTablas();
@@ -18,7 +18,7 @@ function actualizarResumenPaso5Completo() {
 /**
  * 1. ACTUALIZAR INFORMACIÓN DEL CLIENTE
  */
-function actualizarResumenClientePaso5() {
+function actualizarResumenClientePaso4() {
     // Cliente
     const clienteInput = document.getElementById('cliente');
     const resumenCliente = document.getElementById('resumen_cliente');
@@ -46,23 +46,15 @@ function actualizarResumenClientePaso5() {
         const prendas = document.querySelectorAll('.producto-card');
         const tienePrendas = prendas.length > 0;
         const tieneLogo = document.getElementById('descripcion_logo')?.value?.trim() !== '';
-        const tieneReflectivo = window.prendas_reflectivo_paso4 && window.prendas_reflectivo_paso4.length > 0;
+        const tieneReflectivo = false; // Paso 4 eliminado - ya no hay reflectivo
         
-        let tipoDetectado = '📋 Cotización';
-        if (tienePrendas && tieneLogo && tieneReflectivo) {
-            tipoDetectado = '📦 Combinada (Prendas + Logo + Reflectivo)';
-        } else if (tienePrendas && tieneLogo) {
+        let tipoDetectado = '� Cotización';
+        if (tienePrendas && tieneLogo) {
             tipoDetectado = '📦 Combinada (Prendas + Logo)';
-        } else if (tienePrendas && tieneReflectivo) {
-            tipoDetectado = '📦 Combinada (Prendas + Reflectivo)';
-        } else if (tieneLogo && tieneReflectivo) {
-            tipoDetectado = ' Logo + Reflectivo';
         } else if (tienePrendas) {
             tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo) {
             tipoDetectado = ' Logo/Bordado';
-        } else if (tieneReflectivo) {
-            tipoDetectado = '🔸 Reflectivo';
         }
         resumenTipo.textContent = tipoDetectado;
     }
@@ -127,8 +119,8 @@ function generarCardPrenda(prenda, index) {
     // TABLA DE LOGO (PASO 3)
     html += generarTablaLogoPaso3(nombre);
     
-    // TABLA DE REFLECTIVO (PASO 4) - SEPARADA Y CLARA
-    html += generarTablaReflectivoPaso4(nombre);
+    // TABLA DE REFLECTIVO - ELIMINADO (PASO 4)
+    // html += generarTablaReflectivoPaso4(nombre);
     
     // TABLA DE ESPECIFICACIONES (PASO 1)
     html += generarTablaEspecificacionesPaso1();
@@ -474,4 +466,6 @@ function generarTablaEspecificacionesPaso1() {
 }
 
 // Exportar función principal
-window.actualizarResumenPaso5Completo = actualizarResumenPaso5Completo;
+window.actualizarResumenPaso4Completo = actualizarResumenPaso4Completo;
+// Mantener compatibilidad con el nombre antiguo
+window.actualizarResumenPaso5Completo = actualizarResumenPaso4Completo;

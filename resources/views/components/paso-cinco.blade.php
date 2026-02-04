@@ -1,5 +1,5 @@
-<!-- PASO 5: REVISAR COTIZACIÓN COMBINADA COMPLETA -->
-<div class="form-step" data-step="5">
+<!-- PASO 4: REVISAR COTIZACIÓN COMBINADA COMPLETA -->
+<div class="form-step" data-step="4">
     <div class="paso5-header">
         <h2>Revisar Cotización</h2>
         <p>Verifica que toda la información esté correcta antes de enviar</p>
@@ -42,7 +42,7 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(4)">
+        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(3)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
         <div style="display: flex; gap: 10px;">
