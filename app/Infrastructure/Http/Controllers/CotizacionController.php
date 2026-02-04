@@ -1552,6 +1552,16 @@ final class CotizacionController extends Controller
                 $logoTecnicasAgregadas = (array)$logoTecnicasAgregadas;
             }
             
+            // DEBUG: Log completo de lo recibido
+            \Log::info('🔍 DEBUG PASO 3 - Datos recibidos:', [
+                'logo_tecnicas_agregadas_raw' => $request->input('logo.tecnicas_agregadas'),
+                'logo_tecnicas_agregadas_decoded' => $logoTecnicasAgregadas,
+                'tipo_venta_paso3' => $request->input('tipo_venta_paso3'),
+                'request_all_step3' => array_filter($request->all(), function($key) {
+                    return strpos($key, 'logo') !== false || strpos($key, 'paso3') !== false;
+                }, ARRAY_FILTER_USE_KEY)
+            ]);
+            
             // El logo tiene información válida si hay técnicas agregadas con prendas
             $logoTieneInformacionValida = false;
             if (!empty($logoTecnicasAgregadas) && is_array($logoTecnicasAgregadas)) {
@@ -1561,7 +1571,19 @@ final class CotizacionController extends Controller
                         foreach ($tecnica['prendas'] as $prenda) {
                             $tieneUbicaciones = !empty($prenda['ubicaciones']);
                             $tieneTallas = !empty($prenda['talla_cantidad']);
-                            $tieneImagenes = !empty($prenda['imagenes_files']);
+                            $tieneImagenes = !empty($prenda['imagenes']);
+                            
+                            // DEBUG: Log de cada prenda evaluada
+                            \Log::info('🔍 Evaluando prenda:', [
+                                'nombre_prenda' => $prenda['nombre_prenda'] ?? 'N/A',
+                                'ubicaciones' => $prenda['ubicaciones'] ?? null,
+                                'talla_cantidad' => $prenda['talla_cantidad'] ?? null,
+                                'imagenes' => $prenda['imagenes'] ?? null,
+                                'tieneUbicaciones' => $tieneUbicaciones,
+                                'tieneTallas' => $tieneTallas,
+                                'tieneImagenes' => $tieneImagenes,
+                                'condicion_final' => $tieneUbicaciones && ($tieneTallas || $tieneImagenes)
+                            ]);
                             
                             if ($tieneUbicaciones && ($tieneTallas || $tieneImagenes)) {
                                 $logoTieneInformacionValida = true;
