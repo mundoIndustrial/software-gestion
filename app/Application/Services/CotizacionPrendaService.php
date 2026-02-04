@@ -136,16 +136,56 @@ class CotizacionPrendaService
                 }
 
                 // 4b.  GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
-                // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15]
+                // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15] o JSON con géneros: {"dama": ["S", "M"], "caballero": ["30", "32"]}
                 $cantidades = $productoData['cantidades'] ?? [];
+                $tallasJson = $productoData['tallas'] ?? ''; // Nuevo campo con tallas separadas por género
+                
                 if (is_string($cantidades)) {
                     $cantidades = json_decode($cantidades, true) ?? [];
                 }
-                if (!empty($cantidades) && is_array($cantidades)) {
-                    // Primero, limpiar tallas previas si existen
-                    $prenda->tallas()->delete();
-                    
-                    // Guardar las tallas con sus cantidades
+                
+                // Procesar tallas con género si vienen en formato JSON
+                $tallasPorGenero = [];
+                if (!empty($tallasJson)) {
+                    if (is_string($tallasJson)) {
+                        $tallasPorGenero = json_decode($tallasJson, true) ?? [];
+                    } elseif (is_array($tallasJson)) {
+                        $tallasPorGenero = $tallasJson;
+                    }
+                }
+                
+                // Primero, limpiar tallas previas si existen
+                $prenda->tallas()->delete();
+                
+                if (!empty($tallasPorGenero) && is_array($tallasPorGenero)) {
+                    // Guardar tallas separadas por género
+                    foreach ($tallasPorGenero as $genero => $tallasGenero) {
+                        $generoId = null;
+                        if ($genero === 'dama') {
+                            $generoId = 2; // ID de Dama en generos_prenda
+                        } elseif ($genero === 'caballero') {
+                            $generoId = 1; // ID de Caballero en generos_prenda
+                        }
+                        
+                        if (is_array($tallasGenero)) {
+                            foreach ($tallasGenero as $talla) {
+                                $cantidad = $cantidades[$talla] ?? 1; // Usar cantidad del array o 1 por defecto
+                                if ($talla && $cantidad > 0) {
+                                    $prenda->tallas()->create([
+                                        'talla' => (string)$talla,
+                                        'cantidad' => (int)$cantidad,
+                                        'genero_id' => $generoId
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    Log::info(" Tallas guardadas con género", [
+                        'tallas_por_genero' => $tallasPorGenero,
+                        'cantidad_tallas' => array_sum(array_map('count', $tallasPorGenero))
+                    ]);
+                } elseif (!empty($cantidades) && is_array($cantidades)) {
+                    // Guardar tallas sin género (compatibilidad con datos antiguos)
                     foreach ($cantidades as $talla => $cantidad) {
                         if ($talla && $cantidad > 0) {
                             $prenda->tallas()->create([
@@ -154,7 +194,7 @@ class CotizacionPrendaService
                             ]);
                         }
                     }
-                    Log::info(" Tallas con cantidades guardadas", [
+                    Log::info(" Tallas con cantidades guardadas (sin género)", [
                         'cantidad_tallas' => count($cantidades),
                         'tallas' => array_keys($cantidades)
                     ]);
@@ -226,10 +266,29 @@ class CotizacionPrendaService
                     }
                     
                     // GUARDAR UN SOLO REGISTRO DE VARIANTE
-                    // genero_id = null significa "Aplica a Ambos géneros"
-                    // También convertir cadenas vacías a null
+                    // genero_id ahora es JSON: [1] para caballero, [2] para dama, [1,2] para ambos
                     $generoIdAGuardar = isset($variantes['genero_id']) ? $variantes['genero_id'] : null;
-                    if ($generoIdAGuardar === '' || $generoIdAGuardar === '0') {
+                    
+                    // Si viene como string, decodificarlo
+                    if (is_string($generoIdAGuardar)) {
+                        $generoIdAGuardar = json_decode($generoIdAGuardar, true) ?? [];
+                    }
+                    
+                    // Asegurar que sea un array para guardar como JSON
+                    if (!is_array($generoIdAGuardar)) {
+                        $generoIdAGuardar = $generoIdAGuardar ? [$generoIdAGuardar] : [];
+                    }
+                    
+                    // Filtrar valores vacíos o nulos
+                    $generoIdAGuardar = array_filter($generoIdAGuardar, function($value) {
+                        return $value !== null && $value !== '' && $value !== '0';
+                    });
+                    
+                    // Reindexar array para JSON limpio
+                    $generoIdAGuardar = array_values($generoIdAGuardar);
+                    
+                    // Si está vacío, guardar como null
+                    if (empty($generoIdAGuardar)) {
                         $generoIdAGuardar = null;
                     }
                     

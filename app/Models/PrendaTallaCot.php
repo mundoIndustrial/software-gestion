@@ -13,6 +13,7 @@ class PrendaTallaCot extends Model
         'prenda_cot_id',
         'talla',
         'cantidad',
+        'genero_id',
     ];
 
     protected $casts = [
@@ -25,5 +26,13 @@ class PrendaTallaCot extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
+    }
+
+    /**
+     * Relación: Una talla pertenece a un género
+     */
+    public function genero(): BelongsTo
+    {
+        return $this->belongsTo(GeneroPrenda::class, 'genero_id');
     }
 }

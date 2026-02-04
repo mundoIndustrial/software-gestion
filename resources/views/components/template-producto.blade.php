@@ -318,11 +318,17 @@
                                 <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
                             </select>
                             
-                            <select class="talla-genero-select" onchange="actualizarGeneroSeleccionado(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
-                                <option value="">Selecciona género</option>
-                                <option value="dama">Dama</option>
-                                <option value="caballero">Caballero</option>
-                            </select>
+                            <!-- Selectores de género con checkboxes para permitir selección múltiple -->
+                            <div class="talla-genero-selectores" style="display: none; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #0066cc;">
+                                    <input type="checkbox" class="talla-genero-checkbox" value="dama" onchange="actualizarGeneroSeleccionado(this)" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
+                                    <span>👩 Dama</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #0066cc;">
+                                    <input type="checkbox" class="talla-genero-checkbox" value="caballero" onchange="actualizarGeneroSeleccionado(this)" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
+                                    <span>👨 Caballero</span>
+                                </label>
+                            </div>
                             
                             <select class="talla-modo-select" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
                                 <option value="">Selecciona modo</option>

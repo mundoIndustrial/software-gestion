@@ -4,10 +4,10 @@ const tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '2
 const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
 
 /**
- * Actualiza el input oculto genero_id con el género seleccionado
+ * Actualiza el input oculto genero_id con los géneros seleccionados
  */
-function actualizarGeneroSeleccionado(select) {
-    const productoCard = select.closest('.producto-card');
+function actualizarGeneroSeleccionado(checkbox) {
+    const productoCard = checkbox.closest('.producto-card');
     if (!productoCard) {
         console.warn('No se encontró .producto-card');
         return;
@@ -19,19 +19,23 @@ function actualizarGeneroSeleccionado(select) {
         return;
     }
     
-    const generoValue = select.value;
-
+    // Obtener todos los checkboxes marcados
+    const generoSelectors = checkbox.closest('.talla-genero-selectores');
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
     
-    // Mapear valores de género a IDs (según generos_prenda)
-    let generoId = '';
-    if (generoValue === 'dama') {
-        generoId = '2';  // DAMA = ID 2
-    } else if (generoValue === 'caballero') {
-        generoId = '1';  // CABALLERO = ID 1
-    }
+    // Construir array con los IDs de género
+    const generosIds = [];
+    checkboxesMarcados.forEach(cb => {
+        if (cb.value === 'dama') {
+            generosIds.push('2');  // DAMA = ID 2
+        } else if (cb.value === 'caballero') {
+            generosIds.push('1');  // CABALLERO = ID 1
+        }
+    });
     
-    generoInput.value = generoId;
-    console.log(`Género actualizado: ${generoValue} => ID: ${generoId}`);
+    // Guardar como array JSON para manejar múltiples géneros
+    generoInput.value = JSON.stringify(generosIds);
+    console.log(`Géneros actualizados: ${generosIds.join(', ')} => IDs: [${generosIds.join(', ')}]`);
 }
 
 /**
@@ -43,7 +47,7 @@ function actualizarSelectTallas(select) {
     const container = select.closest('.producto-section');
     const tallaBotones = container.querySelector('.talla-botones');
     const botonesDiv = container.querySelector('.talla-botones-container');
-    const generoSelect = container.querySelector('.talla-genero-select');
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
@@ -76,10 +80,12 @@ function actualizarSelectTallas(select) {
 
     
     // 4. Resetear género
-    if (generoSelect) {
-        generoSelect.style.display = 'none';
-        generoSelect.value = '';  // RESETEAR GÉNERO
-
+    if (generoSelectors) {
+        generoSelectors.style.display = 'none';
+        // Limpiar checkboxes
+        generoSelectors.querySelectorAll('.talla-genero-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
     
     // 5. Resetear modo
@@ -101,17 +107,14 @@ function actualizarSelectTallas(select) {
     }
 
     
-    // 6. Remover event listeners del generoSelect
-    if (generoSelect) {
-        if (generoSelect._handlerLetras) {
-            generoSelect.removeEventListener('change', generoSelect._handlerLetras);
-            generoSelect._handlerLetras = null;
-        }
-        if (generoSelect._handler) {
-            generoSelect.removeEventListener('change', generoSelect._handler);
-            generoSelect._handler = null;
-        }
-
+    // 6. Remover event listeners de los checkboxes de género
+    if (generoSelectors) {
+        generoSelectors.querySelectorAll('.talla-genero-checkbox').forEach(checkbox => {
+            if (checkbox._handler) {
+                checkbox.removeEventListener('change', checkbox._handler);
+                checkbox._handler = null;
+            }
+        });
     }
     
 
@@ -119,15 +122,13 @@ function actualizarSelectTallas(select) {
     if (tipo === 'letra') {
 
         // LETRAS ahora muestra selector de género
-        if (generoSelect) {
-            generoSelect.style.display = 'block';
-            generoSelect.value = '';
-
+        if (generoSelectors) {
+            generoSelectors.style.display = 'block';
         }
         
         // Mostrar selector de modo para LETRAS
         modoSelect.style.display = 'block';
-        modoSelect.value = 'manual';
+        modoSelect.value = ''; // Cambiado a vacío para que muestre "Selecciona modo"
 
         
         // Agregar event listener al modoSelect para LETRAS
@@ -139,51 +140,27 @@ function actualizarSelectTallas(select) {
 
         
         // Mostrar botones de talla directamente para LETRAS
-        tallaBotones.style.display = 'block';
+        tallaBotones.style.display = 'none'; // Cambiado a none para que no muestre nada hasta seleccionar modo
         tallaRangoSelectors.style.display = 'none';
         
-        // Crear botones de LETRAS
-
-        botonesDiv.innerHTML = '';
-        tallasLetras.forEach(talla => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = talla;
-            btn.className = 'talla-btn';
-            btn.dataset.talla = talla;
-            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-            btn.onclick = function(e) {
-                e.preventDefault();
-                this.classList.toggle('activo');
-                if (this.classList.contains('activo')) {
-                    this.style.background = '#0066cc';
-                    this.style.color = 'white';
-                } else {
-                    this.style.background = 'white';
-                    this.style.color = '#0066cc';
-                }
-            };
-            botonesDiv.appendChild(btn);
-        });
+        // No llamar a actualizarModoLetras automáticamente, esperar a que el usuario seleccione un modo
 
         
     } else if (tipo === 'numero') {
 
-        if (generoSelect) {
-            generoSelect.style.display = 'block';
-            generoSelect.value = '';  // Asegurar que esté vacío
-
+        if (generoSelectors) {
+            generoSelectors.style.display = 'block';
         }
         
-        if (generoSelect) {
-
-            generoSelect._handler = function() {
-
-                actualizarBotonesPorGenero(container, this.value);
-            };
-            generoSelect.addEventListener('change', generoSelect._handler);
+        if (generoSelectors) {
+            // Agregar event listeners a los checkboxes
+            const checkboxes = generoSelectors.querySelectorAll('.talla-genero-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox._handler = function() {
+                    actualizarBotonesPorGenero(container);
+                };
+                checkbox.addEventListener('change', checkbox._handler);
+            });
         }
     }
 }
@@ -195,35 +172,126 @@ function actualizarModoLetras(container, modo) {
     const tallaBotones = container.querySelector('.talla-botones');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const botonesDiv = container.querySelector('.talla-botones-container');
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
     
     botonesDiv.innerHTML = '';
+    
+    // Eliminar pestañas anteriores si existen
+    const tabsAnteriores = container.querySelector('.tabs-genero-container');
+    if (tabsAnteriores) {
+        tabsAnteriores.remove();
+    }
+    
+    // Obtener géneros seleccionados
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
     
     if (modo === 'manual') {
         tallaBotones.style.display = 'block';
         tallaRangoSelectors.style.display = 'none';
         
-        tallasLetras.forEach(talla => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = talla;
-            btn.className = 'talla-btn';
-            btn.dataset.talla = talla;
-            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-            btn.onclick = function(e) {
-                e.preventDefault();
-                this.classList.toggle('activo');
-                if (this.classList.contains('activo')) {
-                    this.style.background = '#0066cc';
-                    this.style.color = 'white';
-                } else {
-                    this.style.background = 'white';
-                    this.style.color = '#0066cc';
-                }
-            };
-            botonesDiv.appendChild(btn);
-        });
+        if (checkboxesMarcados.length === 0) {
+            // No hay géneros seleccionados
+            tallaBotones.style.display = 'none';
+            return;
+        }
+        
+        if (checkboxesMarcados.length === 1) {
+            // Solo un género seleccionado - comportamiento normal
+            const genero = checkboxesMarcados[0].value;
+            
+            tallasLetras.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.dataset.genero = genero;
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+            
+        } else {
+            // Múltiples géneros seleccionados - crear pestañas
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-genero-container';
+            tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
+            
+            const tabsData = [];
+            
+            checkboxesMarcados.forEach((checkbox, index) => {
+                const genero = checkbox.value;
+                const esPrimero = index === 0;
+                
+                const tab = document.createElement('button');
+                tab.type = 'button';
+                tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+                tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
+                tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
+                tab.dataset.genero = genero;
+                
+                tabsContainer.appendChild(tab);
+                tabsData.push({ tab, genero });
+                
+                // Event listener para la pestaña
+                tab.onclick = function(e) {
+                    e.preventDefault();
+                    
+                    // Actualizar estilos de pestañas
+                    tabsData.forEach(({ tab: t }) => {
+                        t.style.borderBottom = '3px solid white';
+                        t.classList.remove('activo');
+                    });
+                    tab.style.borderBottom = '3px solid #0066cc';
+                    tab.classList.add('activo');
+                    
+                    // Actualizar botones de tallas
+                    botonesDiv.innerHTML = '';
+                    
+                    tallasLetras.forEach(talla => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = talla;
+                        btn.className = 'talla-btn';
+                        btn.dataset.talla = talla;
+                        btn.dataset.genero = genero;
+                        btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                        btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                        btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                        btn.onclick = function(e) {
+                            e.preventDefault();
+                            this.classList.toggle('activo');
+                            if (this.classList.contains('activo')) {
+                                this.style.background = '#0066cc';
+                                this.style.color = 'white';
+                            } else {
+                                this.style.background = 'white';
+                                this.style.color = '#0066cc';
+                            }
+                        };
+                        botonesDiv.appendChild(btn);
+                    });
+                };
+            });
+            
+            // Insertar pestañas antes de los botones
+            botonesDiv.parentElement.insertBefore(tabsContainer, botonesDiv);
+            
+            // Mostrar botones del primer género por defecto
+            tabsData[0].tab.click();
+        }
     } else if (modo === 'rango') {
         tallaBotones.style.display = 'none';
         tallaRangoSelectors.style.display = 'flex';
@@ -307,22 +375,25 @@ function actualizarModoTallas(select) {
 function actualizarSelectoresRango(container) {
 
     
-    const generoSelect = container.querySelector('.talla-genero-select');
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
-    const genero = generoSelect.value;
-    let tallas = [];
-    if (genero === 'dama') {
-
-        tallas = tallasDama;
-    } else if (genero === 'caballero') {
-
-        tallas = tallasCaballero;
-    } else {
-
-    }
     
-
+    // Obtener géneros seleccionados
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+    let tallas = [];
+    
+    // Combinar tallas de todos los géneros seleccionados
+    checkboxesMarcados.forEach(cb => {
+        if (cb.value === 'dama') {
+            tallas = tallas.concat(tallasDama);
+        } else if (cb.value === 'caballero') {
+            tallas = tallas.concat(tallasCaballero);
+        }
+    });
+    
+    // Eliminar duplicados y ordenar
+    tallas = [...new Set(tallas)].sort((a, b) => parseInt(a) - parseInt(b));
     
     desdeSelect.innerHTML = '<option value="">Desde</option>';
     hastaSelect.innerHTML = '<option value="">Hasta</option>';
@@ -349,7 +420,7 @@ function agregarTallasRango(btn) {
     const container = btn.closest('.producto-section');
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
-    const generoSelect = container.querySelector('.talla-genero-select');
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
     const tallasSection = container.querySelector('.tallas-section');
     
@@ -368,12 +439,18 @@ function agregarTallasRango(btn) {
         tallas = tallasLetras;
         esLetra = true;
     } else {
-        const genero = generoSelect.value;
-        if (genero === 'dama') {
-            tallas = tallasDama;
-        } else if (genero === 'caballero') {
-            tallas = tallasCaballero;
-        }
+        // Obtener géneros seleccionados y combinar tallas
+        const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+        checkboxesMarcados.forEach(cb => {
+            if (cb.value === 'dama') {
+                tallas = tallas.concat(tallasDama);
+            } else if (cb.value === 'caballero') {
+                tallas = tallas.concat(tallasCaballero);
+            }
+        });
+        
+        // Eliminar duplicados y ordenar
+        tallas = [...new Set(tallas)].sort((a, b) => parseInt(a) - parseInt(b));
     }
     
     const desdeIdx = tallas.indexOf(desde);
@@ -386,53 +463,126 @@ function agregarTallasRango(btn) {
     
     const tallasRango = tallas.slice(desdeIdx, hastaIdx + 1);
     
-
-    
-    // LIMPIAR todos los divs previamente agregados
-    tallasAgregadas.querySelectorAll('div').forEach(div => {
-
-        div.remove();
+    // Obtener tallas existentes por género
+    let tallasExistentes = {};
+    tallasAgregadas.querySelectorAll('.grupo-genero-tallas').forEach(grupo => {
+        const genero = grupo.dataset.genero;
+        const tallas = [];
+        grupo.querySelectorAll('.talla-item').forEach(item => {
+            tallas.push(item.dataset.talla);
+        });
+        tallasExistentes[genero] = tallas;
     });
     
-    tallasRango.forEach(talla => {
-        const valor = talla;
-        
-        const tag = document.createElement('div');
-        tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
-        tag.innerHTML = `
-            <span>${valor}</span>
-            <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-        `;
-        
-
-        tallasAgregadas.appendChild(tag);
+    // Determinar género(s) para las tallas de rango
+    if (esLetra) {
+        // Para letras, usar los géneros seleccionados
+        const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+        if (checkboxesMarcados.length === 1) {
+            const genero = checkboxesMarcados[0].value;
+            if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
+            tallasRango.forEach(talla => {
+                if (!tallasExistentes[genero].includes(talla)) {
+                    tallasExistentes[genero].push(talla);
+                }
+            });
+        } else if (checkboxesMarcados.length > 1) {
+            // Múltiples géneros - agregar a ambos
+            checkboxesMarcados.forEach(checkbox => {
+                const genero = checkbox.value;
+                if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
+                tallasRango.forEach(talla => {
+                    if (!tallasExistentes[genero].includes(talla)) {
+                        tallasExistentes[genero].push(talla);
+                    }
+                });
+            });
+        }
+    } else {
+        // Para números, las tallas ya vienen combinadas de múltiples géneros
+        // Asignar según el género de cada talla
+        checkboxesMarcados.forEach(checkbox => {
+            const genero = checkbox.value;
+            const tallasGenero = genero === 'dama' ? tallasDama : tallasCaballero;
+            
+            if (!tallasExistentes[genero]) tallasExistentes[genero] = [];
+            
+            tallasRango.forEach(talla => {
+                if (tallasGenero.includes(talla) && !tallasExistentes[genero].includes(talla)) {
+                    tallasExistentes[genero].push(talla);
+                }
+            });
+        });
+    }
+    
+    // Limpiar y reconstruir la vista
+    tallasAgregadas.innerHTML = '';
+    
+    // Crear secciones por género
+    Object.keys(tallasExistentes).forEach(genero => {
+        if (tallasExistentes[genero].length > 0) {
+            const grupoDiv = document.createElement('div');
+            grupoDiv.className = 'grupo-genero-tallas';
+            grupoDiv.dataset.genero = genero;
+            grupoDiv.style.cssText = 'margin-bottom: 1rem;';
+            
+            // Título del género
+            const titulo = document.createElement('div');
+            titulo.style.cssText = 'font-weight: 600; color: #0066cc; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
+            titulo.innerHTML = genero === 'dama' ? '👩 Tallas Dama:' : genero === 'caballero' ? '👨 Tallas Caballero:' : '📏 Tallas:';
+            grupoDiv.appendChild(titulo);
+            
+            // Contenedor de tallas de este género
+            const tallasGeneroDiv = document.createElement('div');
+            tallasGeneroDiv.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.5rem;';
+            
+            // Agregar tallas de este género
+            tallasExistentes[genero].forEach(talla => {
+                const tag = document.createElement('div');
+                tag.className = 'talla-item';
+                tag.dataset.talla = talla;
+                tag.dataset.genero = genero;
+                tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+                tag.innerHTML = `
+                    <span>${talla}</span>
+                    <button type="button" onclick="this.closest('.talla-item').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+                `;
+                tallasGeneroDiv.appendChild(tag);
+            });
+            
+            grupoDiv.appendChild(tallasGeneroDiv);
+            tallasAgregadas.appendChild(grupoDiv);
+        }
     });
     
     tallasSection.style.display = 'block';
-    
-    const tallasHidden = container.querySelector('.tallas-hidden');
     actualizarTallasHidden(container);
     
 
 }
 
 /**
- * Actualiza los botones según el género seleccionado
+ * Actualiza los botones según los géneros seleccionados
  */
-function actualizarBotonesPorGenero(container, genero) {
-
+function actualizarBotonesPorGenero(container) {
     
     const tallaBotones = container.querySelector('.talla-botones');
     const botonesDiv = container.querySelector('.talla-botones-container');
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
+    
     // LIMPIAR COMPLETAMENTE ANTES DE CAMBIAR
     botonesDiv.innerHTML = '';
-
+    
+    // Eliminar pestañas anteriores si existen
+    const tabsAnteriores = container.querySelector('.tabs-genero-container');
+    if (tabsAnteriores) {
+        tabsAnteriores.remove();
+    }
     
     // Resetear modoSelect
     modoSelect.value = '';
-
     
     // Remover listeners anteriores
     if (modoSelect._handlerLetras) {
@@ -441,23 +591,32 @@ function actualizarBotonesPorGenero(container, genero) {
     }
     
     modoSelect.style.display = 'block';
-
-    
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
-
     
-    if (genero === 'dama') {
-
+    // Obtener géneros seleccionados
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+    
+    if (checkboxesMarcados.length === 0) {
+        // No hay géneros seleccionados
+        tallaBotones.style.display = 'none';
+        return;
+    }
+    
+    if (checkboxesMarcados.length === 1) {
+        // Solo un género seleccionado - comportamiento normal
+        const genero = checkboxesMarcados[0].value;
+        
         tallaBotones.style.display = 'block';
-        botonesDiv.innerHTML = '';
-
-        tallasDama.forEach(talla => {
+        const tallas = genero === 'dama' ? tallasDama : tallasCaballero;
+        
+        tallas.forEach(talla => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = talla;
             btn.className = 'talla-btn';
             btn.dataset.talla = talla;
+            btn.dataset.genero = genero;
             btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
             btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
             btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
@@ -475,171 +634,88 @@ function actualizarBotonesPorGenero(container, genero) {
             botonesDiv.appendChild(btn);
         });
         
-
-        modoSelect.removeEventListener('change', modoSelect._handler);
+        // Agregar event listener para modo
         modoSelect._handler = function() {
-
             actualizarModoTallas(this);
         };
         modoSelect.addEventListener('change', modoSelect._handler);
-        
-    } else if (genero === 'caballero') {
-
-        tallaBotones.style.display = 'block';
-        botonesDiv.innerHTML = '';
-
-        tallasCaballero.forEach(talla => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = talla;
-            btn.className = 'talla-btn';
-            btn.dataset.talla = talla;
-            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-            btn.onclick = function(e) {
-                e.preventDefault();
-                this.classList.toggle('activo');
-                if (this.classList.contains('activo')) {
-                    this.style.background = '#0066cc';
-                    this.style.color = 'white';
-                } else {
-                    this.style.background = 'white';
-                    this.style.color = '#0066cc';
-                }
-            };
-            botonesDiv.appendChild(btn);
-        });
-        
-
-        modoSelect.removeEventListener('change', modoSelect._handler);
-        modoSelect._handler = function() {
-
-            actualizarModoTallas(this);
-        };
-        modoSelect.addEventListener('change', modoSelect._handler);
-        
-    } else if (genero === 'ambos') {
-
-        
-        // Crear pestañas para Dama y Caballero
-        const tabsContainer = document.createElement('div');
-        tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
-        
-        const tabDama = document.createElement('button');
-        tabDama.type = 'button';
-        tabDama.textContent = '👩 DAMA';
-        tabDama.style.cssText = 'padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;';
-        tabDama.className = 'tab-genero activo';
-        tabDama.dataset.genero = 'dama';
-        
-        const tabCaballero = document.createElement('button');
-        tabCaballero.type = 'button';
-        tabCaballero.textContent = '👨 CABALLERO';
-        tabCaballero.style.cssText = 'padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;';
-        tabCaballero.className = 'tab-genero';
-        tabCaballero.dataset.genero = 'caballero';
-        
-        tabsContainer.appendChild(tabDama);
-        tabsContainer.appendChild(tabCaballero);
-        botonesDiv.parentElement.insertBefore(tabsContainer, botonesDiv);
-        
-        // Inicializar con DAMA
-        botonesDiv.innerHTML = '';
-
-        tallasDama.forEach(talla => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = talla;
-            btn.className = 'talla-btn';
-            btn.dataset.talla = talla;
-            btn.dataset.genero = 'dama';
-            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-            btn.onclick = function(e) {
-                e.preventDefault();
-                this.classList.toggle('activo');
-                if (this.classList.contains('activo')) {
-                    this.style.background = '#0066cc';
-                    this.style.color = 'white';
-                } else {
-                    this.style.background = 'white';
-                    this.style.color = '#0066cc';
-                }
-            };
-            botonesDiv.appendChild(btn);
-        });
-        
-        tallaBotones.style.display = 'block';
-        
-        // Event listeners para las pestañas
-        tabDama.onclick = function(e) {
-            e.preventDefault();
-            tabDama.style.borderBottom = '3px solid #0066cc';
-            tabCaballero.style.borderBottom = '3px solid white';
-            botonesDiv.innerHTML = '';
-            
-            tallasDama.forEach(talla => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = talla;
-                btn.className = 'talla-btn';
-                btn.dataset.talla = talla;
-                btn.dataset.genero = 'dama';
-                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-                btn.onclick = function(e) {
-                    e.preventDefault();
-                    this.classList.toggle('activo');
-                    if (this.classList.contains('activo')) {
-                        this.style.background = '#0066cc';
-                        this.style.color = 'white';
-                    } else {
-                        this.style.background = 'white';
-                        this.style.color = '#0066cc';
-                    }
-                };
-                botonesDiv.appendChild(btn);
-            });
-
-        };
-        
-        tabCaballero.onclick = function(e) {
-            e.preventDefault();
-            tabDama.style.borderBottom = '3px solid white';
-            tabCaballero.style.borderBottom = '3px solid #0066cc';
-            botonesDiv.innerHTML = '';
-            
-            tallasCaballero.forEach(talla => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = talla;
-                btn.className = 'talla-btn';
-                btn.dataset.talla = talla;
-                btn.dataset.genero = 'caballero';
-                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
-                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
-                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
-                btn.onclick = function(e) {
-                    e.preventDefault();
-                    this.classList.toggle('activo');
-                    if (this.classList.contains('activo')) {
-                        this.style.background = '#0066cc';
-                        this.style.color = 'white';
-                    } else {
-                        this.style.background = 'white';
-                        this.style.color = '#0066cc';
-                    }
-                };
-                botonesDiv.appendChild(btn);
-            });
-
-        };
         
     } else {
-        tallaBotones.style.display = 'none';
+        // Múltiples géneros seleccionados - crear pestañas
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'tabs-genero-container';
+        tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
+        
+        const tabsData = [];
+        
+        checkboxesMarcados.forEach((checkbox, index) => {
+            const genero = checkbox.value;
+            const esPrimero = index === 0;
+            
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+            tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
+            tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
+            tab.dataset.genero = genero;
+            
+            tabsContainer.appendChild(tab);
+            tabsData.push({ tab, genero });
+            
+            // Event listener para la pestaña
+            tab.onclick = function(e) {
+                e.preventDefault();
+                
+                // Actualizar estilos de pestañas
+                tabsData.forEach(({ tab: t }) => {
+                    t.style.borderBottom = '3px solid white';
+                    t.classList.remove('activo');
+                });
+                tab.style.borderBottom = '3px solid #0066cc';
+                tab.classList.add('activo');
+                
+                // Actualizar botones de tallas
+                botonesDiv.innerHTML = '';
+                const tallas = genero === 'dama' ? tallasDama : tallasCaballero;
+                
+                tallas.forEach(talla => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = talla;
+                    btn.className = 'talla-btn';
+                    btn.dataset.talla = talla;
+                    btn.dataset.genero = genero;
+                    btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                    btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                    btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        this.classList.toggle('activo');
+                        if (this.classList.contains('activo')) {
+                            this.style.background = '#0066cc';
+                            this.style.color = 'white';
+                        } else {
+                            this.style.background = 'white';
+                            this.style.color = '#0066cc';
+                        }
+                    };
+                    botonesDiv.appendChild(btn);
+                });
+            };
+        });
+        
+        // Insertar pestañas antes de los botones
+        botonesDiv.parentElement.insertBefore(tabsContainer, botonesDiv);
+        
+        // Mostrar botones del primer género por defecto
+        tallaBotones.style.display = 'block';
+        tabsData[0].tab.click();
+        
+        // Agregar event listener para modo
+        modoSelect._handler = function() {
+            actualizarModoTallas(this);
+        };
+        modoSelect.addEventListener('change', modoSelect._handler);
     }
 }
 
@@ -706,7 +782,7 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
 }
 
 /**
- * Agrega las tallas seleccionadas
+ * Agrega las tallas seleccionadas manteniendo separación por género
  */
 function agregarTallasSeleccionadas(btn) {
     const container = btn.closest('.producto-section');
@@ -715,41 +791,90 @@ function agregarTallasSeleccionadas(btn) {
     const tallasSection = container.querySelector('.tallas-section');
     const tallasHidden = container.querySelector('.tallas-hidden');
     
-
-
-
-    
     if (botonesActivos.length === 0) {
         alert('Por favor selecciona al menos una talla');
         return;
     }
     
-    // LIMPIAR todos los divs previamente agregados (pero NO el input hidden)
-    tallasAgregadas.querySelectorAll('div').forEach(div => {
-
-        div.remove();
+    // Obtener tallas existentes por género
+    let tallasExistentes = {};
+    tallasAgregadas.querySelectorAll('.grupo-genero-tallas').forEach(grupo => {
+        const genero = grupo.dataset.genero;
+        const tallas = [];
+        grupo.querySelectorAll('.talla-item').forEach(item => {
+            tallas.push(item.dataset.talla);
+        });
+        tallasExistentes[genero] = tallas;
     });
     
+    // Agrupar tallas nuevas por género
+    const tallasNuevasPorGenero = {};
     botonesActivos.forEach(boton => {
         const talla = boton.dataset.talla;
+        const genero = boton.dataset.genero || 'general';
         
-        const tag = document.createElement('div');
-        tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
-        tag.innerHTML = `
-            <span>${talla}</span>
-            <button type="button" onclick="this.closest('div').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-        `;
-        
-
-        tallasAgregadas.appendChild(tag);
+        if (!tallasNuevasPorGenero[genero]) {
+            tallasNuevasPorGenero[genero] = [];
+        }
+        tallasNuevasPorGenero[genero].push(talla);
+    });
+    
+    // Combinar tallas existentes con nuevas (sin duplicados)
+    Object.keys(tallasNuevasPorGenero).forEach(genero => {
+        if (!tallasExistentes[genero]) {
+            tallasExistentes[genero] = [];
+        }
+        tallasNuevasPorGenero[genero].forEach(talla => {
+            if (!tallasExistentes[genero].includes(talla)) {
+                tallasExistentes[genero].push(talla);
+            }
+        });
+    });
+    
+    // Limpiar y reconstruir la vista
+    tallasAgregadas.innerHTML = '';
+    
+    // Crear secciones por género
+    Object.keys(tallasExistentes).forEach(genero => {
+        if (tallasExistentes[genero].length > 0) {
+            const grupoDiv = document.createElement('div');
+            grupoDiv.className = 'grupo-genero-tallas';
+            grupoDiv.dataset.genero = genero;
+            grupoDiv.style.cssText = 'margin-bottom: 1rem;';
+            
+            // Título del género
+            const titulo = document.createElement('div');
+            titulo.style.cssText = 'font-weight: 600; color: #0066cc; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
+            titulo.innerHTML = genero === 'dama' ? '👩 Tallas Dama:' : genero === 'caballero' ? '👨 Tallas Caballero:' : '📏 Tallas:';
+            grupoDiv.appendChild(titulo);
+            
+            // Contenedor de tallas de este género
+            const tallasGeneroDiv = document.createElement('div');
+            tallasGeneroDiv.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.5rem;';
+            
+            // Agregar tallas de este género
+            tallasExistentes[genero].forEach(talla => {
+                const tag = document.createElement('div');
+                tag.className = 'talla-item';
+                tag.dataset.talla = talla;
+                tag.dataset.genero = genero;
+                tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+                tag.innerHTML = `
+                    <span>${talla}</span>
+                    <button type="button" onclick="this.closest('.talla-item').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+                `;
+                tallasGeneroDiv.appendChild(tag);
+            });
+            
+            grupoDiv.appendChild(tallasGeneroDiv);
+            tallasAgregadas.appendChild(grupoDiv);
+        }
     });
     
     tallasSection.style.display = 'block';
-    
     actualizarTallasHidden(container);
     
-
-    
+    // Limpiar botones activos
     botonesActivos.forEach(boton => {
         boton.classList.remove('activo');
         boton.style.background = 'white';
@@ -758,11 +883,10 @@ function agregarTallasSeleccionadas(btn) {
 }
 
 /**
- * Actualiza el campo hidden con las tallas seleccionadas
+ * Actualiza el campo hidden con las tallas seleccionadas por género
  */
 function actualizarTallasHidden(container) {
     if (!container) {
-
         return;
     }
     
@@ -770,21 +894,25 @@ function actualizarTallasHidden(container) {
     const tallasHidden = container.querySelector('.tallas-hidden');
     
     if (!tallasAgregadas || !tallasHidden) {
-
         return;
     }
     
-    const tallas = [];
+    const tallasPorGenero = {};
     
-    tallasAgregadas.querySelectorAll('div').forEach(tag => {
-        const span = tag.querySelector('span');
-        if (span) {
-            tallas.push(span.textContent);
-
+    // Recopilar tallas por género
+    tallasAgregadas.querySelectorAll('.grupo-genero-tallas').forEach(grupo => {
+        const genero = grupo.dataset.genero;
+        const tallas = [];
+        grupo.querySelectorAll('.talla-item').forEach(item => {
+            tallas.push(item.dataset.talla);
+        });
+        if (tallas.length > 0) {
+            tallasPorGenero[genero] = tallas;
         }
     });
     
-    tallasHidden.value = tallas.join(', ');
-
+    // Formatear como JSON para mantener estructura por género
+    tallasHidden.value = JSON.stringify(tallasPorGenero);
+    console.log('Tallas guardadas por género:', tallasPorGenero);
 }
 

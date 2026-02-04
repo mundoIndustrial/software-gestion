@@ -38,6 +38,7 @@ class PrendaVarianteCot extends Model
         'aplica_broche' => 'boolean',
         'tiene_reflectivo' => 'boolean',
         'telas_multiples' => 'json',
+        'genero_id' => 'json',
     ];
 
     /**
@@ -96,27 +97,48 @@ class PrendaVarianteCot extends Model
     }
 
     /**
-     * Accessor: Retorna el nombre del género
-     * Si genero_id es NULL, retorna "Dama y Caballero"
+     * Accessor: Retorna el nombre del género o géneros
+     * Maneja múltiples géneros en formato JSON
      */
     public function getGeneroNombreAttribute()
     {
-        if ($this->genero_id === null) {
-            return 'Dama y Caballero';
+        $generosIds = $this->genero_id;
+        
+        // Si es null o vacío, retornar valor por defecto
+        if (!$generosIds) {
+            return 'No especificado';
         }
-
-        // Si existe relación cargada, usar el nombre del género
-        if ($this->relationLoaded('genero') && $this->genero) {
-            return $this->genero->nombre ?? 'Desconocido';
+        
+        // Si es un array (JSON decodificado)
+        if (is_array($generosIds)) {
+            if (count($generosIds) === 0) {
+                return 'No especificado';
+            }
+            
+            // Mapeo de IDs a nombres
+            $mapeoGeneros = [
+                1 => 'Caballero',
+                2 => 'Dama',
+                3 => 'Unisex',
+            ];
+            
+            $nombres = [];
+            foreach ($generosIds as $id) {
+                if (isset($mapeoGeneros[$id])) {
+                    $nombres[] = $mapeoGeneros[$id];
+                }
+            }
+            
+            return count($nombres) > 0 ? implode(' y ', $nombres) : 'No especificado';
         }
-
-        // Fallback: mapeo directo de IDs
-        $generos = [
-            1 => 'Dama',
-            2 => 'Caballero',
+        
+        // Si es un solo valor (compatibilidad con datos antiguos)
+        $mapeoGeneros = [
+            1 => 'Caballero',
+            2 => 'Dama',
             3 => 'Unisex',
         ];
-
-        return $generos[$this->genero_id] ?? 'Desconocido';
+        
+        return $mapeoGeneros[$generosIds] ?? 'Desconocido';
     }
 }
