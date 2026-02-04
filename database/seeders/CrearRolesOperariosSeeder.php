@@ -39,6 +39,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Costura-Reflectivo
+        Role::firstOrCreate(
+            ['name' => 'costura-reflectivo'],
+            [
+                'description' => 'Operario encargado del área de costura reflexiva',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }
