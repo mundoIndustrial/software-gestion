@@ -12,7 +12,6 @@
         $obsManga = null;
         $obsBolsillos = null;
         $obsBroche = null;
-        $obsReflectivo = null;
         
         foreach ($obsArray as $obs) {
             if (strpos($obs, 'Manga:') === 0) {
@@ -21,8 +20,6 @@
                 $obsBolsillos = trim(str_replace('Bolsillos:', '', $obs));
             } elseif (strpos($obs, 'Broche:') === 0) {
                 $obsBroche = trim(str_replace('Broche:', '', $obs));
-            } elseif (strpos($obs, 'Reflectivo:') === 0) {
-                $obsReflectivo = trim(str_replace('Reflectivo:', '', $obs));
             }
         }
     @endphp
@@ -129,19 +126,4 @@
             @endif
         </div>
     @endif
-
-    {{-- Reflectivo --}}
-    <div style="margin-bottom: 8px;">
-        <span style="font-weight: 600; color: #0066cc;">Reflectivo:</span>
-        @if($variante->tiene_reflectivo)
-            <span style="color: #16a34a; font-weight: 600;">Sí</span>
-            @if($variante->obs_reflectivo || $obsReflectivo)
-                <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">
-                    {{ $variante->obs_reflectivo ?? $obsReflectivo }}
-                </div>
-            @endif
-        @else
-            <span style="color: #dc2626; font-weight: 600;">No</span>
-        @endif
-    </div>
 </div>

@@ -248,33 +248,11 @@ class ContadorController extends Controller
                     $query->with(['fotos', 'tecnicasPrendas' => function($q) {
                         $q->with(['prenda', 'tipoLogo', 'fotos']);
                     }]);
-                },
-                'reflectivoPrendas' => function($query) {
-                    $query->with(['fotos']);
                 }
             ])->findOrFail($id);
 
             \Log::info('getCotizacionDetail - Cotización ID: ' . $id);
             \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());
-
-            // Mapear reflectivos por prenda_cot_id para acceso rápido
-            $reflectivosPorPrenda = [];
-            if ($cotizacionModelo->reflectivoPrendas) {
-                foreach ($cotizacionModelo->reflectivoPrendas as $reflectivo) {
-                    if ($reflectivo->prenda_cot_id) {
-                        $reflectivosPorPrenda[$reflectivo->prenda_cot_id] = $reflectivo;
-                    }
-                }
-            }
-            
-            // Mapear prenda_cot_reflectivos por prenda_cot_id
-            $prendaCotReflectivos = \App\Models\PrendaCotReflectivo::where('cotizacion_id', $id)->get();
-            $prendaCotReflectivoPorPrenda = [];
-            foreach ($prendaCotReflectivos as $pcr) {
-                if ($pcr->prenda_cot_id) {
-                    $prendaCotReflectivoPorPrenda[$pcr->prenda_cot_id] = $pcr;
-                }
-            }
 
             // Preparar datos de la cotización
             $datos = [
@@ -290,7 +268,7 @@ class ContadorController extends Controller
                     'tipo_cotizacion_id' => $cotizacionModelo->tipo_cotizacion_id ?? null,
                     'especificaciones' => $this->parseEspecificaciones($cotizacionModelo->especificaciones),
                 ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) use ($reflectivosPorPrenda, $prendaCotReflectivoPorPrenda) {
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
                     // Generar descripción formateada usando el método del modelo
                     $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
                     
@@ -369,33 +347,9 @@ class ContadorController extends Controller
                                 'tipo_broche_id' => $variante->tipo_broche_id ?? null,
                                 'tipo_broche_nombre' => $nombreTipoBroche,
                                 'obs_broche' => $variante->obs_broche ?? null,
-                                'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
-                                'obs_reflectivo' => $variante->obs_reflectivo ?? null,
                                 'descripcion_adicional' => $variante->descripcion_adicional ?? null,
                             ];
                         })->toArray() : [],
-                        // Reflectivo de esta prenda
-                        'reflectivo' => isset($reflectivosPorPrenda[$prenda->id]) ? [
-                            'id' => $reflectivosPorPrenda[$prenda->id]->id,
-                            'descripcion' => $reflectivosPorPrenda[$prenda->id]->descripcion ?? null,
-                            'ubicaciones' => [],
-                            'variaciones' => [],
-                            'fotos' => $reflectivosPorPrenda[$prenda->id]->fotos ? $reflectivosPorPrenda[$prenda->id]->fotos->map(function($foto) {
-                                return [
-                                    'id' => $foto->id,
-                                    'url' => $foto->url ?? null,
-                                    'orden' => $foto->orden ?? 1,
-                                ];
-                            })->toArray() : [],
-                        ] : null,
-                        // Prenda Cot Reflectivo
-                        'prenda_cot_reflectivo' => isset($prendaCotReflectivoPorPrenda[$prenda->id]) ? [
-                            'id' => $prendaCotReflectivoPorPrenda[$prenda->id]->id,
-                            'descripcion' => $prendaCotReflectivoPorPrenda[$prenda->id]->descripcion ?? null,
-                            'ubicaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->ubicaciones) : null,
-                            'variaciones' => $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->variaciones, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->variaciones) : null,
-                            'color_tela_ref' => $prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref ? (is_string($prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref) ? json_decode($prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref, true) : $prendaCotReflectivoPorPrenda[$prenda->id]->color_tela_ref) : null,
-                        ] : null,
                     ];
                 })->toArray(),
             ];
@@ -797,7 +751,7 @@ class ContadorController extends Controller
                         $desc = $prenda->descripcion;
                         
                         // Extraer Logo
-                        if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Otros:|$)/is', $desc, $matches)) {
+                        if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Otros:|$)/is', $desc, $matches)) {
                             $logoText = trim($matches[1]);
                             $logoText = preg_replace('/^(SI|NO)\s*-\s*/i', '', $logoText);
                             if ($logoText) {
@@ -806,26 +760,20 @@ class ContadorController extends Controller
                         }
                         
                         // Extraer Bolsillos
-                        if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|Broche:|$)/is', $desc, $matches)) {
+                        if (preg_match('/Bolsillos?:\s*(.+?)(?:Otros:|Broche:|$)/is', $desc, $matches)) {
                             $bolsillosText = trim($matches[1]);
                             $datosFormato['bolsillos'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $bolsillosText)));
                         }
                         
                         // Extraer Broche
-                        if (preg_match('/Broche:\s*(.+?)(?:Reflectivo?s?:|Otros:|Bolsillos?:|$)/is', $desc, $matches)) {
+                        if (preg_match('/Broche:\s*(.+?)(?:Otros:|Bolsillos?:|$)/is', $desc, $matches)) {
                             $brocheText = trim($matches[1]);
                             $brocheText = str_replace('|', '', $brocheText);
                             $datosFormato['broche'] = trim($brocheText);
                         }
                         
-                        // Extraer Reflectivos
-                        if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|Broche:|$)/is', $desc, $matches)) {
-                            $reflectivosText = trim($matches[1]);
-                            $datosFormato['reflectivos'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $reflectivosText)));
-                        }
-                        
                         // Extraer Otros detalles
-                        if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|$)/is', $desc, $matches)) {
+                        if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Broche:|$)/is', $desc, $matches)) {
                             $otrosText = trim($matches[1]);
                             $datosFormato['otros'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $otrosText)));
                         }

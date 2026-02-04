@@ -4,18 +4,13 @@
     $idPrenda = \App\Models\TipoCotizacion::getIdPorCodigo('P');
     $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
     $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
-    $idReflectivo = \App\Models\TipoCotizacion::getIdPorCodigo('RF');
     
     // Determinar qué tabs mostrar basado en el tipo_cotizacion_id
     $tipoCotizacionId = $cotizacion->tipo_cotizacion_id;
     $esPrenda = $tipoCotizacionId === $idPrenda;
     $esLogo = $tipoCotizacionId === $idLogo;
     $esCombinada = $tipoCotizacionId === $idCombinada;
-    $esReflectivo = $tipoCotizacionId === $idReflectivo;
     $tienePrendas = $cotizacion->prendas && count($cotizacion->prendas) > 0;
-    $tieneReflectivoCotizacion = $cotizacion->reflectivoCotizacion !== null;
-
-    $tieneReflectivo = $tieneReflectivoCotizacion;
 
     //  MOSTRAR TAB DE LOGO SI:
     // 1. Es tipo logo O combinada

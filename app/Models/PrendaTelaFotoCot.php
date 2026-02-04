@@ -107,12 +107,12 @@ class PrendaTelaFotoCot extends Model
             return $ruta;
         }
         
-        // Si comienza con 'storage/', devolverla tal cual (ya tiene el formato correcto)
+        // Si comienza con 'storage/', convertir a /storage/
         if (str_starts_with($ruta, 'storage/')) {
-            return $ruta;
+            return '/' . $ruta;
         }
         
-        // Si es una ruta relativa, agregar storage/
-        return 'storage/' . ltrim($ruta, '/');
+        // Si es una ruta relativa, agregar /storage/
+        return '/storage/' . ltrim($ruta, '/');
     }
 }

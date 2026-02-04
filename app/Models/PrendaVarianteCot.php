@@ -38,7 +38,6 @@ class PrendaVarianteCot extends Model
         'aplica_broche' => 'boolean',
         'tiene_reflectivo' => 'boolean',
         'telas_multiples' => 'json',
-        'genero_id' => 'json',
     ];
 
     /**
@@ -74,9 +73,18 @@ class PrendaVarianteCot extends Model
 
     /**
      * Relación: Una variante tiene un género
+     * Nota: Esta relación solo funciona si genero_id es un ID simple
+     * Para múltiples géneros, usar el accessor getGeneroNombreAttribute
      */
     public function genero(): BelongsTo
     {
+        // Si genero_id es un array, no podemos establecer la relación
+        if (is_array($this->genero_id)) {
+            return new class {
+                public function first() { return null; }
+            };
+        }
+        
         return $this->belongsTo(GeneroPrenda::class, 'genero_id');
     }
 
@@ -102,11 +110,16 @@ class PrendaVarianteCot extends Model
      */
     public function getGeneroNombreAttribute()
     {
-        $generosIds = $this->genero_id;
+        $generosIds = $this->attributes['genero_id'] ?? null;
         
         // Si es null o vacío, retornar valor por defecto
         if (!$generosIds) {
             return 'No especificado';
+        }
+        
+        // Si es un string JSON, decodificarlo primero
+        if (is_string($generosIds)) {
+            $generosIds = json_decode($generosIds, true) ?? $generosIds;
         }
         
         // Si es un array (JSON decodificado)
