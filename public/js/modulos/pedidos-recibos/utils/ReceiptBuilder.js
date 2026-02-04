@@ -14,64 +14,71 @@ export class ReceiptBuilder {
     static construirListaRecibos(prenda) {
         const recibos = [];
         
-        // PASO 1: AGREGAR RECIBO BASE
-        const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
-        
-        // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
-        let tallasObj = {};
-        if (prenda.tallas && typeof prenda.tallas === 'object') {
-            for (const [categoria, tallasByCategoria] of Object.entries(prenda.tallas)) {
-                if (typeof tallasByCategoria === 'object' && !Array.isArray(tallasByCategoria)) {
-                    // Es un objeto anidado: {L: 30, S: 20}
-                    for (const [talla, cantidad] of Object.entries(tallasByCategoria)) {
-                        const claveTalla = categoria === 'dama' || categoria === 'caballero' ? `${categoria}-${talla}` : talla;
-                        tallasObj[claveTalla] = cantidad;
+        // PASO 1: AGREGAR RECIBO BASE - SOLO SI NO ES DE BODEGA
+        // Nota: Costura - Bodega nunca debe aparecer (de_bodega == 1 se filtra)
+        if (prenda.de_bodega != 1) {
+            const tipoBase = "costura";
+            
+            // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
+            let tallasObj = {};
+            if (prenda.tallas && typeof prenda.tallas === 'object') {
+                for (const [categoria, tallasByCategoria] of Object.entries(prenda.tallas)) {
+                    if (typeof tallasByCategoria === 'object' && !Array.isArray(tallasByCategoria)) {
+                        // Es un objeto anidado: {L: 30, S: 20}
+                        for (const [talla, cantidad] of Object.entries(tallasByCategoria)) {
+                            const claveTalla = categoria === 'dama' || categoria === 'caballero' ? `${categoria}-${talla}` : talla;
+                            tallasObj[claveTalla] = cantidad;
+                        }
+                    } else if (typeof tallasByCategoria === 'number') {
+                        // Es directo: {L: 30, S: 20}
+                        tallasObj[categoria] = tallasByCategoria;
                     }
-                } else if (typeof tallasByCategoria === 'number') {
-                    // Es directo: {L: 30, S: 20}
-                    tallasObj[categoria] = tallasByCategoria;
                 }
             }
-        }
-        
-        // Obtener procesos para usarlos tanto en el recibo base como en los recibos de proceso
-        const procesos = prenda.procesos || [];
-        
-        // Preparar imágenes para el recibo base
-        let imagenesBase = [];
-        
-        // Agregar imágenes de la prenda
-        if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-            imagenesBase = [...imagenesBase, ...prenda.imagenes];
-        }
-        
-        // Agregar imágenes de tela
-        if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
-            imagenesBase = [...imagenesBase, ...prenda.imagenes_tela];
-        }
-        
-        // Agregar imágenes de todos los procesos
-        procesos.forEach((proc) => {
-            if (proc.imagenes && Array.isArray(proc.imagenes)) {
-                imagenesBase = [...imagenesBase, ...proc.imagenes];
+            
+            // Obtener procesos para usarlos tanto en el recibo base como en los recibos de proceso
+            const procesos = prenda.procesos || [];
+            
+            // Preparar imágenes para el recibo base
+            let imagenesBase = [];
+            
+            // Agregar imágenes de la prenda
+            if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                imagenesBase = [...imagenesBase, ...prenda.imagenes];
             }
-        });
-        
-        recibos.push({
-            tipo: tipoBase,
-            tipo_proceso: tipoBase,
-            nombre_proceso: tipoBase,
-            estado: "Pendiente",
-            es_base: true,
-            ubicaciones: [],
-            observaciones: '',
-            imagenes: imagenesBase,
-            tallas: tallasObj
-        });
+            
+            // Agregar imágenes de tela
+            if (prenda.imagenes_tela && Array.isArray(prenda.imagenes_tela)) {
+                imagenesBase = [...imagenesBase, ...prenda.imagenes_tela];
+            }
+            
+            // Agregar imágenes de todos los procesos
+            procesos.forEach((proc) => {
+                if (proc.imagenes && Array.isArray(proc.imagenes)) {
+                    imagenesBase = [...imagenesBase, ...proc.imagenes];
+                }
+            });
+            
+            recibos.push({
+                tipo: tipoBase,
+                tipo_proceso: tipoBase,
+                nombre_proceso: tipoBase,
+                estado: "Pendiente",
+                es_base: true,
+                ubicaciones: [],
+                observaciones: '',
+                imagenes: imagenesBase,
+                tallas: tallasObj
+            });
+        }
         // PASO 2: AGREGAR PROCESOS ADICIONALES
+        // Filtrar para NO incluir "costura-bodega" nunca
+        const procesos = prenda.procesos || [];
         procesos.forEach((proc) => {
             const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
-            if (tipoProceso) {
+            
+            // FILTRO: No agregar si es "costura-bodega" (nunca debe aparecer)
+            if (tipoProceso && tipoProceso.toLowerCase() !== 'costura-bodega') {
                 // Preparar imágenes para este proceso (prenda + tela + imágenes del proceso)
                 let imagenesProceso = [];
                 

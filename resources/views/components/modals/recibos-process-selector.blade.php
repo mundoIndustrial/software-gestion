@@ -402,16 +402,18 @@
             // PASO 1: Construir lista de recibos (BASE + ADICIONALES)
             const recibos = [];
 
-            //  RECIBO BASE - SIEMPRE PRIMERO
-            const reciboBase = {
-                tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
-                nombre: prenda.de_bodega == 1 ? "Costura - Bodega" : "Costura",
-                estado: "",
-                es_base: true
-            };
-            
-            // Agregar recibo base (permite tanto costura como costura-bodega)
-            recibos.push(reciboBase);
+            // RECIBO BASE - SOLO SI NO ES DE BODEGA (de_bodega != 1)
+            // Nota: Costura - Bodega nunca se muestra
+            if (prenda.de_bodega != 1) {
+                const reciboBase = {
+                    tipo: "costura",
+                    nombre: "Costura",
+                    estado: "",
+                    es_base: true
+                };
+                
+                recibos.push(reciboBase);
+            }
 
             //  PROCESOS ADICIONALES
             const procesos = prenda.procesos || [];
@@ -419,12 +421,15 @@
                 // Garantizar que tipo_proceso es STRING
                 const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
                 
-                recibos.push({
-                    tipo: tipoProceso,
-                    nombre: `${tipoProceso}`,
-                    estado: proc.estado || "",
-                    es_base: false
-                });
+                // FILTRO: No agregar si es "costura-bodega" (nunca debe aparecer)
+                if (tipoProceso.toLowerCase() !== 'costura-bodega') {
+                    recibos.push({
+                        tipo: tipoProceso,
+                        nombre: `${tipoProceso}`,
+                        estado: proc.estado || "",
+                        es_base: false
+                    });
+                }
             });
 
             const idAccordion = `prenda-${prenda.id || prendaIdx}`;
