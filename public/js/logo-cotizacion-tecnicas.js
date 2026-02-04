@@ -235,72 +235,7 @@ function abrirModalDatosIguales(tecnicas) {
                     <button type="button" id="dBtnAgregarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla general</button>
                 </div>
                 
-                <!-- TABLA COLOR, TELA Y REFERENCIA -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">🎨 Color, Tela y Referencia</h3>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 10px;">
-                        <thead>
-                            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Color</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Tela</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; width: 18%;">Referencia</th>
-                                <th style="padding: 8px; text-align: center; font-weight: 600; color: #333; width: 28%;">Imagen Tela</th>
-                                <th style="padding: 8px; text-align: center; font-weight: 600; color: #333; width: 18%;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dTablaTelasMulti" style="background: white;">
-                            <!-- Filas de telas aquí -->
-                        </tbody>
-                    </table>
-                    <button type="button" id="dBtnAgregarTelaMulti" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar Tela</button>
-                </div>
-                
-                <!-- VARIACIONES DE PRENDA (Manga, Bolsillos, Broche) -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones</h3>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                        <thead>
-                            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Opción</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Valor</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 8px; font-weight: 600; color: #555;">Manga</td>
-                                <td style="padding: 8px;">
-                                    <input type="text" id="dVariacionManga" placeholder="Corta, Larga, Tres Cuartos" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                </td>
-                                <td style="padding: 8px;">
-                                    <input type="text" id="dVariacionMangaObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                </td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 8px; font-weight: 600; color: #555;">Bolsillos</td>
-                                <td style="padding: 8px;">
-                                    <input type="text" id="dVariacionBolsillos" placeholder="Con Tapa, Sin Tapa, Con Botón" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                </td>
-                                <td style="padding: 8px;">
-                                    <input type="text" id="dVariacionBolsillosObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px; font-weight: 600; color: #555;">Broche/Botón</td>
-                                <td style="padding: 8px;">
-                                    <select id="dVariacionBroche" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                        <option value="">-- Seleccionar --</option>
-                                        <option value="BROCHE">BROCHE</option>
-                                        <option value="BOTÓN">BOTÓN</option>
-                                    </select>
-                                </td>
-                                <td style="padding: 8px;">
-                                    <input type="text" id="dVariacionBrocheObs" placeholder="Observación" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem;">
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                
                 
                 <!-- LOGO COMPARTIDO (Nuevo) -->
                 <div style="margin-bottom: 25px; padding: 12px; background: #f0f7ff; border: 2px solid #dbeafe; border-radius: 6px;">
@@ -634,19 +569,6 @@ function abrirModalDatosIguales(tecnicas) {
             }
             
             // ========================================
-            // LÓGICA DE TABLA TELAS (MÚLTIPLES TÉCNICAS)
-            // ========================================
-            const btnAgregarTelaMulti = document.getElementById('dBtnAgregarTelaMulti');
-            const tablaTelasMulti = document.getElementById('dTablaTelasMulti');
-            
-            if (btnAgregarTelaMulti) {
-                btnAgregarTelaMulti.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    agregarFilaTelaMultiTecnica(tablaTelasMulti);
-                });
-            }
-            
-            // ========================================
             // LÓGICA DE LOGO COMPARTIDO
             // ========================================
             const checkboxLogoCompartido = document.getElementById('dUsarLogoCompartido');
@@ -723,11 +645,8 @@ function abrirModalDatosIguales(tecnicas) {
                 }
             });
             
-            // Validar que haya al menos una talla
-            if (tallas.length === 0) {
-                Swal.showValidationMessage('Agrega al menos una talla');
-                return false;
-            }
+            // Validar tallas (opcional)
+            // Las tallas ya no son obligatorias
             
             // Todas las técnicas usan las mismas tallas genéricas
             window.tecnicasCombinadas.forEach((tecnica, idx) => {
@@ -747,71 +666,11 @@ function abrirModalDatosIguales(tecnicas) {
                 });
             }
             
-            // Recopilar variaciones (Manga, Bolsillos, Broche)
+            // Las variaciones están deshabilitadas
             const variacionesPrenda = {};
             
-            const manga = document.getElementById('dVariacionManga')?.value.trim() || '';
-            const mangaObs = document.getElementById('dVariacionMangaObs')?.value.trim() || '';
-            if (manga) {
-                variacionesPrenda.manga = {
-                    opcion: manga,
-                    observacion: mangaObs || null
-                };
-            }
-            
-            const bolsillos = document.getElementById('dVariacionBolsillos')?.value.trim() || '';
-            const bolsillosObs = document.getElementById('dVariacionBolsillosObs')?.value.trim() || '';
-            if (bolsillos) {
-                variacionesPrenda.bolsillos = {
-                    opcion: bolsillos,
-                    observacion: bolsillosObs || null
-                };
-            }
-            
-            const broche = document.getElementById('dVariacionBroche')?.value || '';
-            const brocheObs = document.getElementById('dVariacionBrocheObs')?.value.trim() || '';
-            if (broche) {
-                variacionesPrenda.broche_boton = {
-                    opcion: broche,
-                    observacion: brocheObs || null
-                };
-            }
-            
-            // Recopilar telas (COLOR, TELA, REFERENCIA E IMAGEN)
+            // Las telas están deshabilitadas
             const telas = [];
-            const tbodyTelas = document.getElementById('dTablaTelasMulti');
-            console.log('🔍 DEBUG - Extrayendo telas de dTablaTelasMulti:', {
-                tbodyTelasEncontrado: !!tbodyTelas,
-                elementId: 'dTablaTelasMulti'
-            });
-            
-            if (tbodyTelas) {
-                const filasTelaMulti = tbodyTelas.querySelectorAll('.fila-tela-multi');
-                console.log(`🔍 DEBUG - Filas de telas encontradas: ${filasTelaMulti.length}`);
-                
-                filasTelaMulti.forEach((filaTela, telaIdx) => {
-                    const color = filaTela.querySelector('.input-color-multi')?.value?.trim();
-                    const tela = filaTela.querySelector('.input-tela-multi')?.value?.trim();
-                    const referencia = filaTela.querySelector('.input-referencia-multi')?.value?.trim();
-                    const inputFile = filaTela.querySelector('.input-file-tela-multi');
-                    
-                    // Guardar archivo directamente (no usar FileReader async)
-                    const archivo = (inputFile && inputFile.files.length > 0) 
-                        ? inputFile.files[0] 
-                        : null;
-                    
-                    if (color || tela || referencia) {
-                        telas.push({
-                            color: color || null,
-                            tela: tela || null,
-                            referencia: referencia || null,
-                            archivo: archivo
-                        });
-                    }
-                });
-            }
-            
-            console.log(`✅ DEBUG - Telas extraídas en preload:`, telas);
             
             return {
                 nombre_prenda: nombrePrenda,
@@ -820,8 +679,8 @@ function abrirModalDatosIguales(tecnicas) {
                 tallasPorTecnica: tallasPorTecnica,
                 imagenesPorTecnica: imagenesPorTecnica,
                 logosCompartidos: window.logosCompartidosCotizacionIndividual || {},
-                variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,
-                telas: telas.length > 0 ? telas : null
+                variaciones_prenda: null,
+                telas: null  // Telas deshabilitadas
             };
         }
     }).then((result) => {
@@ -1528,10 +1387,7 @@ function mostrarFormularioTecnicaDiferente(index) {
                 Swal.showValidationMessage('Debe agregar al menos una ubicación');
                 return false;
             }
-            if (tallas.length === 0) {
-                Swal.showValidationMessage('Debe agregar al menos una talla');
-                return false;
-            }
+            // Las tallas son opcionales, no validar si están vacías
             
             return { nombre, ubicaciones, observaciones, tallas };
         }
@@ -1619,80 +1475,8 @@ function agregarFilaPrenda() {
                 <textarea class="observaciones" rows="2" placeholder="Detalles adicionales (opcional)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.9rem;"></textarea>
             </div>
             
-            <!-- TABLA DE COLOR, TELA Y REFERENCIA -->
-            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; margin-top: 12px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.85rem;">🎨 Color, Tela y Referencia</label>
-                <table class="telas-tabla-logo" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 10px;">
-                    <thead>
-                        <tr style="background: #e8f1ff;">
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: 600; color: #333; width: 25%;">Imagen Tela</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: 600; color: #333; width: 15%;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="telas-tbody-logo" style="background: white;">
-                        <!-- Filas de telas aquí -->
-                    </tbody>
-                </table>
-                <button type="button" class="btn-agregar-tela-logo" onclick="agregarFilaTelaLogo(this)" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">
-                    + Agregar Tela
-                </button>
-            </div>
-            
-            <!-- TABLA DE VARIACIONES -->
-            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; margin-top: 12px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333; font-size: 0.85rem;"> Variaciones de Prenda</label>
-                <table class="variaciones-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                    <thead>
-                        <tr style="background: #e8f1ff;">
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Variación</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Opción</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- MANGA -->
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Manga</td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <input type="text" class="variacion-manga" placeholder="Ej: Corta, Larga..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                            </td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <input type="text" class="observacion-manga" placeholder="Observación..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                            </td>
-                        </tr>
                         
-                        <!-- BOLSILLOS -->
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Bolsillos</td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <input type="text" class="variacion-bolsillos" placeholder="Ej: Con bolsillos, Sin..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                            </td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <input type="text" class="observacion-bolsillos" placeholder="Observación..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                            </td>
-                        </tr>
                         
-                        <!-- BROCHE/BOTÓN -->
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: 600; color: #333;">Broche/Botón</td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <select class="variacion-broche" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                                    <option value="">SELECCIONAR</option>
-                                    <option value="BROCHE">BROCHE</option>
-                                    <option value="BOTÓN">BOTÓN</option>
-                                </select>
-                            </td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                <input type="text" class="observacion-broche" placeholder="Ej: Metálico, Plástico..." style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;">
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
             <!-- Imágenes de Prenda (máximo 3) con Drag and Drop -->
             <div>
                 <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Imágenes (máximo 3)</label>
@@ -2416,90 +2200,13 @@ function extraerPrendasDelModal() {
             throw new Error('VALIDATION_ERROR');
         }
         
-        if (tallaCantidad.length === 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sin tallas',
-                text: `${nombrePrenda}: Debes agregar al menos una talla con cantidad`
-            });
-            throw new Error('VALIDATION_ERROR');
-        }
+        // Las tallas son opcionales, no validar si están vacías
         
-        // Extraer datos de variaciones
+        // Las variaciones están deshabilitadas
         const variacionesPrenda = {};
         
-
-        
-        // Verificar que la tabla existe
-        const tablaVariaciones = fila.querySelector('.variaciones-table');
-
-        
-        // MANGA
-        const mangaInput = fila.querySelector('.variacion-manga');
-
-        const manga = mangaInput?.value?.trim();
-        const obsMangaInput = fila.querySelector('.observacion-manga');
-        const obsManga = obsMangaInput?.value?.trim();
-
-        if (manga) {
-            variacionesPrenda.manga = {
-                opcion: manga,
-                observacion: obsManga || null
-            };
-        }
-        
-        // BOLSILLOS
-        const bolsillosInput = fila.querySelector('.variacion-bolsillos');
-
-        const bolsillos = bolsillosInput?.value?.trim();
-        const obsBolsillosInput = fila.querySelector('.observacion-bolsillos');
-        const obsBolsillos = obsBolsillosInput?.value?.trim();
-
-        if (bolsillos) {
-            variacionesPrenda.bolsillos = {
-                opcion: bolsillos,
-                observacion: obsBolsillos || null
-            };
-        }
-        
-        // BROCHE/BOTÓN (es un SELECT)
-        const brocheSelect = fila.querySelector('.variacion-broche');
-
-        const broche = brocheSelect?.value?.trim();
-        const obsBrocheInput = fila.querySelector('.observacion-broche');
-        const obsBroche = obsBrocheInput?.value?.trim();
-
-        if (broche && broche !== '') {
-            variacionesPrenda.broche_boton = {
-                opcion: broche,
-                observacion: obsBroche || null
-            };
-        }
-        
-        // EXTRAER TELAS (COLOR, TELA, REFERENCIA E IMAGEN)
+        // Las telas están deshabilitadas
         const telas = [];
-        const tbodyTelas = fila.querySelector('.telas-tbody-logo');
-        if (tbodyTelas) {
-            const filasTelaInput = tbodyTelas.querySelectorAll('.fila-tela-logo');
-            filasTelaInput.forEach((filaTela, telaIdx) => {
-                const color = filaTela.querySelector('.input-color-logo')?.value?.trim();
-                const tela = filaTela.querySelector('.input-tela-logo')?.value?.trim();
-                const referencia = filaTela.querySelector('.input-referencia-logo')?.value?.trim();
-                const inputFile = filaTela.querySelector('.input-file-tela-logo');
-                
-                // Guardar el File object directamente, no el data URL
-                const archivo = (inputFile && inputFile.files.length > 0) ? inputFile.files[0] : null;
-                
-                if (color || tela || referencia) {
-                    telas.push({
-                        color: color || null,
-                        tela: tela || null,
-                        referencia: referencia || null,
-                        archivo: archivo  // Guardar File object
-                    });
-                }
-            });
-        }
         
 
         
@@ -2509,8 +2216,8 @@ function extraerPrendasDelModal() {
             ubicaciones: ubicacionesChecked,
             talla_cantidad: tallaCantidad,
             imagenes_files: imagenesArray,  // Array de File objects
-            variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,  // JSON con variaciones
-            telas: telas.length > 0 ? telas : null  // Array de telas con color, tela, referencia e imagen
+            variaciones_prenda: null,  // Variaciones deshabilitadas
+            telas: null  // Telas deshabilitadas
         });
         
 
@@ -3101,83 +2808,8 @@ function renderizarTecnicasAgregadas() {
             }
         });
         
-        // TELAS (COLOR, TELA, REFERENCIA E IMAGEN)
+        // Las telas están deshabilitadas
         let telasPrenda = [];
-        console.log(`🔍 DEBUG - Buscando telas para prenda "${nombrePrenda}" en ${datosPrenda.tecnicas.length} técnicas`);
-        console.log(`🔍 DEBUG - datosPrenda.tecnicas:`, datosPrenda.tecnicas);
-        
-        // Solo obtener telas de la PRIMERA técnica que tenga esta prenda (evitar duplicados)
-        for (let tecIdx = 0; tecIdx < datosPrenda.tecnicas.length; tecIdx++) {
-            const tecData = datosPrenda.tecnicas[tecIdx];
-            const tecnica = tecData.tecnica;
-            console.log(`🔍 DEBUG - Técnica ${tecIdx} (${tecnica?.tipo_logo?.nombre}):`, {
-                tienePrendas: !!tecnica.prendas,
-                cantidadPrendas: tecnica.prendas?.length || 0,
-                prendas: tecnica.prendas
-            });
-            
-            if (tecnica.prendas && tecnica.prendas.length > 0) {
-                for (let pIdx = 0; pIdx < tecnica.prendas.length; pIdx++) {
-                    const p = tecnica.prendas[pIdx];
-                    console.log(`   - Prenda en técnica: "${p.nombre_prenda}", ¿tiene telas?: ${!!p.telas}, cantidad: ${p.telas?.length || 0}`);
-                    
-                    if (p.nombre_prenda === nombrePrenda && p.telas && p.telas.length > 0) {
-                        console.log(`   ✅ ENCONTRADO: Telas para ${nombrePrenda}:`, p.telas);
-                        telasPrenda = p.telas; // Solo asignar, no agregar para evitar duplicados
-                        break; // Salir del loop de prendas
-                    }
-                }
-                // Si ya encontramos las telas, salir del loop de técnicas
-                if (telasPrenda.length > 0) break;
-            }
-        }
-        
-        console.log(`✅ Total telas para prenda "${nombrePrenda}":`, telasPrenda.length, telasPrenda);
-        
-        if (telasPrenda && telasPrenda.length > 0) {
-            bodyHTML += `
-                <div style="margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; padding: 0.8rem; background: #fafafa;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #333; display: block; margin-bottom: 0.6rem;">
-                        🎨 Color, Tela y Referencia:
-                    </span>
-                    <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
-                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Color</th>
-                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Tela</th>
-                                <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 20%;">Referencia</th>
-                                <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 40%;">Imagen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${telasPrenda.map((tela, idx) => {
-                                // Renderizar imagen (puede ser File object o data URL)
-                                let imagenHTML = '<span style="color: #999;">Sin imagen</span>';
-                                if (tela.archivo && tela.archivo instanceof File) {
-                                    // Es un File object - necesita convertirse a data URL
-                                    // Por ahora mostrar placeholder - se actualizará asincronamente
-                                    imagenHTML = '<span style="color: #999; font-size: 0.7rem;">Cargando...</span>';
-                                } else if (tela.imagen) {
-                                    // Es un data URL
-                                    imagenHTML = `<img src="${tela.imagen}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">`;
-                                }
-                                
-                                return `
-                                    <tr style="border-bottom: 1px solid #eee;" data-tela-idx="${idx}">
-                                        <td style="padding: 0.4rem; color: #475569;">${tela.color || '-'}</td>
-                                        <td style="padding: 0.4rem; color: #475569;">${tela.tela || '-'}</td>
-                                        <td style="padding: 0.4rem; color: #475569;">${tela.referencia || '-'}</td>
-                                        <td style="padding: 0.4rem; text-align: center; position: relative;">
-                                            ${imagenHTML}
-                                        </td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
         
         if (variacionesPrenda && Object.keys(variacionesPrenda).length > 0) {
             bodyHTML += `
@@ -3375,56 +3007,8 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
             `;
         });
         
-        // Construir tabla de variaciones
+        // Las variaciones están deshabilitadas
         let variacionesHTML = '';
-        const variacionesPrenda = prenda.variaciones_prenda || {};
-        if (Object.keys(variacionesPrenda).length > 0) {
-            variacionesHTML = `
-                <div style="margin-bottom: 12px; border: 1px solid #e0e7ff; border-radius: 6px; padding: 0.8rem; background: #f8f9ff;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.6rem; font-size: 0.85rem; color: #3730a3;"> Variaciones</label>
-                    <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
-                        <tbody>
-            `;
-            
-            // MANGA
-            const manga = variacionesPrenda.manga || {};
-            variacionesHTML += `
-                <tr style="border-bottom: 1px solid #e0e7ff;">
-                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Manga:</td>
-                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-manga" data-prenda-idx="${prendaIdx}" value="${manga.opcion || ''}" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
-                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-manga-obs" data-prenda-idx="${prendaIdx}" value="${manga.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
-                </tr>
-            `;
-            
-            // BOLSILLOS
-            const bolsillos = variacionesPrenda.bolsillos || {};
-            variacionesHTML += `
-                <tr style="border-bottom: 1px solid #e0e7ff;">
-                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Bolsillos:</td>
-                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-bolsillos" data-prenda-idx="${prendaIdx}" value="${bolsillos.opcion || ''}" placeholder="Con/Sin tapa..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
-                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-bolsillos-obs" data-prenda-idx="${prendaIdx}" value="${bolsillos.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
-                </tr>
-            `;
-            
-            // BROCHE/BOTÓN
-            const broche = variacionesPrenda.broche_boton || {};
-            variacionesHTML += `
-                <tr>
-                    <td style="padding: 0.4rem; font-weight: 600; color: #334155;">Broche/Botón:</td>
-                    <td style="padding: 0.4rem;">
-                        <select class="edit-var-broche" data-prenda-idx="${prendaIdx}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;">
-                            <option value="">-- Seleccionar --</option>
-                            <option value="BROCHE" ${broche.opcion === 'BROCHE' ? 'selected' : ''}>BROCHE</option>
-                            <option value="BOTÓN" ${broche.opcion === 'BOTÓN' ? 'selected' : ''}>BOTÓN</option>
-                        </select>
-                    </td>
-                    <td style="padding: 0.4rem;"><input type="text" class="edit-var-broche-obs" data-prenda-idx="${prendaIdx}" value="${broche.observacion || ''}" placeholder="Obs" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.75rem;"></td>
-                </tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
         
         let imagenesHTML = '';
         if (prenda.tecnicas && prenda.tecnicas.length > 0) {
@@ -3603,74 +3187,8 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 
                 ${variacionesHTML}
                 
-                ${(() => {
-                    // Construir HTML de telas
-                    if (prenda.telas && prenda.telas.length > 0) {
-                        let telasHTML = `
-                            <div style="margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; padding: 0.8rem; background: #fafafa;">
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.6rem; font-size: 0.85rem; color: #333;">🎨 Color, Tela y Referencia</label>
-                                <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Color</th>
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Tela</th>
-                                            <th style="padding: 0.4rem; text-align: left; font-weight: 600; color: #333; width: 15%;">Referencia</th>
-                                            <th style="padding: 0.4rem; text-align: center; font-weight: 600; color: #333; width: 55%;">Imagen</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${prenda.telas.map((tela, idx) => {
-                                            let imagenHTML = '<span style="color: #999; font-size: 0.75rem;">Sin imagen</span>';
-                                            
-                                            // Determinar la URL de imagen
-                                            let imagenUrl = tela.imagen;
-                                            
-                                            // Si no tiene imagen pero tiene archivo, crear URL
-                                            if (!imagenUrl && tela.archivo) {
-                                                if (tela.archivo instanceof File) {
-                                                    imagenUrl = URL.createObjectURL(tela.archivo);
-                                                }
-                                            }
-                                            
-                                            // Mostrar imagen si existe
-                                            if (imagenUrl) {
-                                                imagenHTML = `
-                                                    <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
-                                                        <img src="${imagenUrl}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
-                                                        <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
-                                                    </div>
-                                                `;
-                                            } else {
-                                                // Opción para cargar imagen si no existe
-                                                imagenHTML = `
-                                                    <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
-                                                        <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}" accept="image/*" style="display: none;">
-                                                        📤 Cargar imagen
-                                                    </label>
-                                                `;
-                                            }
-                                            
-                                            return `
-                                                <tr style="border-bottom: 1px solid #eee;">
-                                                    <td style="padding: 0.4rem; color: #475569;">${tela.color || '-'}</td>
-                                                    <td style="padding: 0.4rem; color: #475569;">${tela.tela || '-'}</td>
-                                                    <td style="padding: 0.4rem; color: #475569;">${tela.referencia || '-'}</td>
-                                                    <td style="padding: 0.4rem; text-align: center;">
-                                                        <div class="edit-tela-imagen-container" data-prenda-idx="${prendaIdx}" data-tela-idx="${idx}">
-                                                            ${imagenHTML}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
-                        return telasHTML;
-                    }
+                // Las telas están deshabilitadas
                     return '';
-                })()}
                 
                 ${imagenesHTML}
                 
@@ -3696,63 +3214,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#333',
         didOpen: (modal) => {
-            // Procesar archivos de tela para generar URLs de imagen
-            todasLasPrendas.forEach((prenda, prendaIdx) => {
-                if (prenda.telas && prenda.telas.length > 0) {
-                    prenda.telas.forEach((tela, telaIdx) => {
-                        // Si tiene archivo pero no tiene imagen URL, crear la URL
-                        if (tela.archivo && !tela.imagen && tela.archivo instanceof File) {
-                            tela.imagen = URL.createObjectURL(tela.archivo);
-                            
-                            // Actualizar el HTML en el DOM
-                            const container = document.querySelector(
-                                `.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`
-                            );
-                            
-                            if (container) {
-                                container.innerHTML = `
-                                    <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
-                                        <img src="${tela.imagen}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
-                                        <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
-                                    </div>
-                                `;
-                                
-                                // Reasignar evento al botón de eliminar
-                                const deleteBtn = container.querySelector('.edit-btn-eliminar-tela-imagen');
-                                if (deleteBtn) {
-                                    deleteBtn.addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        
-                                        const telaIdxDel = parseInt(deleteBtn.getAttribute('data-tela-idx'));
-                                        const prendaIdxDel = parseInt(deleteBtn.getAttribute('data-prenda-idx'));
-                                        
-                                        // Limpiar imagen del objeto
-                                        if (todasLasPrendas[prendaIdxDel] && todasLasPrendas[prendaIdxDel].telas[telaIdxDel]) {
-                                            todasLasPrendas[prendaIdxDel].telas[telaIdxDel].imagen = null;
-                                            todasLasPrendas[prendaIdxDel].telas[telaIdxDel].archivo = null;
-                                        }
-                                        
-                                        // Actualizar UI
-                                        container.innerHTML = `
-                                            <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
-                                                <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdxDel}" data-tela-idx="${telaIdxDel}" accept="image/*" style="display: none;">
-                                                📤 Cargar imagen
-                                            </label>
-                                        `;
-                                        
-                                        // Reasignar evento al input
-                                        const fileInput = container.querySelector('.edit-input-tela-imagen');
-                                        if (fileInput) {
-                                            fileInput.addEventListener('change', handleTelaImagenChange);
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            });
+            // Las telas están deshabilitadas - no procesar archivos de tela
             
             // Event listeners para eliminar logos compartidos
             document.querySelectorAll('.edit-btn-eliminar-logo-compartido').forEach(btn => {
@@ -3992,104 +3454,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                 });
             });
             
-            // Event listeners para imágenes de tela (eliminar y cargar)
-            // Botones para eliminar imágenes de tela
-            document.querySelectorAll('.edit-btn-eliminar-tela-imagen').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
-                    const telaIdx = parseInt(btn.getAttribute('data-tela-idx'));
-                    
-                    // Eliminar la imagen de la tela
-                    if (todasLasPrendas[prendaIdx] && todasLasPrendas[prendaIdx].telas[telaIdx]) {
-                        todasLasPrendas[prendaIdx].telas[telaIdx].imagen = null;
-                        todasLasPrendas[prendaIdx].telas[telaIdx].archivo = null;
-                        
-                        // Actualizar el DOM
-                        const container = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`);
-                        if (container) {
-                            container.innerHTML = `
-                                <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
-                                    <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" accept="image/*" style="display: none;">
-                                    📤 Cargar imagen
-                                </label>
-                            `;
-                            
-                            // Re-asignar event listener al nuevo input
-                            const newInput = container.querySelector('.edit-input-tela-imagen');
-                            newInput.addEventListener('change', handleTelaImagenChange);
-                        }
-                    }
-                });
-            });
-            
-            // Inputs para cargar imágenes de tela
-            // Asignar event listener a todos los inputs de archivo de tela
-            document.querySelectorAll('.edit-input-tela-imagen').forEach(input => {
-                input.addEventListener('change', handleTelaImagenChange);
-            });
-            
-            function handleTelaImagenChange(e) {
-                const input = e.target;
-                const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
-                const telaIdx = parseInt(input.getAttribute('data-tela-idx'));
-                const file = input.files[0];
-                
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const dataUrl = event.target.result;
-                    
-                    // Guardar en el objeto de tela
-                    if (todasLasPrendas[prendaIdx] && todasLasPrendas[prendaIdx].telas[telaIdx]) {
-                        todasLasPrendas[prendaIdx].telas[telaIdx].imagen = dataUrl;
-                        todasLasPrendas[prendaIdx].telas[telaIdx].archivo = file;
-                        
-                        // Actualizar el DOM
-                        const container = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx}"][data-tela-idx="${telaIdx}"]`);
-                        if (container) {
-                            container.innerHTML = `
-                                <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
-                                    <img src="${dataUrl}" style="max-width: 50px; max-height: 50px; border-radius: 4px; border: 1px solid #ddd;" alt="Imagen tela">
-                                    <button type="button" class="edit-btn-eliminar-tela-imagen" data-prenda-idx="${prendaIdx}" data-tela-idx="${telaIdx}" style="background: #ef4444; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">✕</button>
-                                </div>
-                            `;
-                            
-                            // Re-asignar event listener al nuevo botón
-                            const newBtn = container.querySelector('.edit-btn-eliminar-tela-imagen');
-                            newBtn.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                const prendaIdx2 = parseInt(newBtn.getAttribute('data-prenda-idx'));
-                                const telaIdx2 = parseInt(newBtn.getAttribute('data-tela-idx'));
-                                
-                                if (todasLasPrendas[prendaIdx2] && todasLasPrendas[prendaIdx2].telas[telaIdx2]) {
-                                    todasLasPrendas[prendaIdx2].telas[telaIdx2].imagen = null;
-                                    todasLasPrendas[prendaIdx2].telas[telaIdx2].archivo = null;
-                                    
-                                    const container2 = document.querySelector(`.edit-tela-imagen-container[data-prenda-idx="${prendaIdx2}"][data-tela-idx="${telaIdx2}"]`);
-                                    if (container2) {
-                                        container2.innerHTML = `
-                                            <label style="cursor: pointer; color: #0369a1; font-weight: 500; font-size: 0.75rem;">
-                                                <input type="file" class="edit-input-tela-imagen" data-prenda-idx="${prendaIdx2}" data-tela-idx="${telaIdx2}" accept="image/*" style="display: none;">
-                                                📤 Cargar imagen
-                                            </label>
-                                        `;
-                                        
-                                        const newInput2 = container2.querySelector('.edit-input-tela-imagen');
-                                        newInput2.addEventListener('change', handleTelaImagenChange);
-                                    }
-                                }
-                            });
-                        }
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-            
-            document.querySelectorAll('.edit-input-tela-imagen').forEach(input => {
-                input.addEventListener('change', handleTelaImagenChange);
-            });
+            // Las telas están deshabilitadas - no hay eventos de imágenes de tela
             
             // Event listeners para inputs de logo compartido nuevo
             document.querySelectorAll('.edit-input-logo-compartido-nuevo').forEach(input => {
@@ -4207,31 +3572,8 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     }
                 });
                 
-                // Capturar variaciones
+                // Las variaciones están deshabilitadas
                 const variacionesPrenda = {};
-                const mangaInput = document.querySelector(`.edit-var-manga[data-prenda-idx="${prendaIdxStr}"]`);
-                if (mangaInput && mangaInput.value.trim()) {
-                    variacionesPrenda.manga = {
-                        opcion: mangaInput.value.trim(),
-                        observacion: document.querySelector(`.edit-var-manga-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
-                    };
-                }
-                
-                const bolsillosInput = document.querySelector(`.edit-var-bolsillos[data-prenda-idx="${prendaIdxStr}"]`);
-                if (bolsillosInput && bolsillosInput.value.trim()) {
-                    variacionesPrenda.bolsillos = {
-                        opcion: bolsillosInput.value.trim(),
-                        observacion: document.querySelector(`.edit-var-bolsillos-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
-                    };
-                }
-                
-                const brocheInput = document.querySelector(`.edit-var-broche[data-prenda-idx="${prendaIdxStr}"]`);
-                if (brocheInput && brocheInput.value) {
-                    variacionesPrenda.broche_boton = {
-                        opcion: brocheInput.value,
-                        observacion: document.querySelector(`.edit-var-broche-obs[data-prenda-idx="${prendaIdxStr}"]`)?.value.trim() || null
-                    };
-                }
                 
                 const nuevasTallas = [];
                 document.querySelectorAll(`.edit-talla-row[data-prenda-idx="${prendaIdxStr}"]`).forEach(row => {
@@ -4245,17 +3587,13 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                     }
                 });
                 
-                if (nuevasTallas.length === 0) {
-
-                    valido = false;
-                    return;
-                }
+                // Las tallas son opcionales, no validar si están vacías
                 
                 prendasActualizadas[prendaIdx] = {
                     nombre_prenda: nombrePrenda,
                     observaciones: observaciones,
                     talla_cantidad: nuevasTallas,
-                    variaciones_prenda: Object.keys(variacionesPrenda).length > 0 ? variacionesPrenda : null,
+                    variaciones_prenda: null,  // Variaciones deshabilitadas
                     telas: todasLasPrendas[prendaIdx].telas || null,
                     tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
                 };
@@ -4265,7 +3603,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
             });
             
             if (!valido || contadorPrendas === 0) {
-                Swal.showValidationMessage('Completa todos los campos de cada prenda y agrega al menos una talla');
+                Swal.showValidationMessage('Completa todos los campos de cada prenda');
                 return false;
             }
             

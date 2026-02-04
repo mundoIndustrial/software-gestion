@@ -400,13 +400,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     </div>
                 </div>
                 
-                <!-- VARIACIONES -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones por Técnica</h3>
-                    <div id="dVariacionesPorTecnicaP3" style="display: grid; gap: 12px;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                </div>
                 
                 <!-- OBSERVACIONES -->
                 <div style="margin-bottom: 25px;">
@@ -499,61 +492,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     }
                 }
                 
-                // CARGAR VARIACIONES DE PRENDA DESDE PASO 2
-                const variacionesJson = selectedOption.getAttribute('data-variaciones');
-                let variacionesPaso2 = {};
-                
-                try {
-                    if (variacionesJson) {
-                        variacionesPaso2 = JSON.parse(variacionesJson);
-                    }
-                } catch (err) {
-                    console.error('Error al parsear variaciones:', err);
-                    variacionesPaso2 = {};
-                }
-                
-                // Cargar variaciones en la tabla única (no por técnica)
-                const swalPopup = Swal.getPopup();
-                const mangaValor = swalPopup.querySelector('.dVariacionManga-valor-p3-unique');
-                const mangaObs = swalPopup.querySelector('.dVariacionManga-obs-p3-unique');
-                const bolsillosValor = swalPopup.querySelector('.dVariacionBolsillos-valor-p3-unique');
-                const bolsillosObs = swalPopup.querySelector('.dVariacionBolsillos-obs-p3-unique');
-                const brocheValor = swalPopup.querySelector('.dVariacionBroche-valor-p3-unique');
-                const brocheObs = swalPopup.querySelector('.dVariacionBroche-obs-p3-unique');
-                
-                if (variacionesPaso2 && Object.keys(variacionesPaso2).length > 0) {
-                    if (variacionesPaso2.manga) {
-                        if (mangaValor) mangaValor.value = variacionesPaso2.manga.valor || '';
-                        if (mangaObs) mangaObs.value = variacionesPaso2.manga.observacion || '';
-                    } else {
-                        if (mangaValor) mangaValor.value = '';
-                        if (mangaObs) mangaObs.value = '';
-                    }
-                    
-                    if (variacionesPaso2.bolsillos) {
-                        if (bolsillosValor) bolsillosValor.value = variacionesPaso2.bolsillos.valor || '';
-                        if (bolsillosObs) bolsillosObs.value = variacionesPaso2.bolsillos.observacion || '';
-                    } else {
-                        if (bolsillosValor) bolsillosValor.value = '';
-                        if (bolsillosObs) bolsillosObs.value = '';
-                    }
-                    
-                    if (variacionesPaso2.broche_boton) {
-                        if (brocheValor) brocheValor.value = variacionesPaso2.broche_boton.valor || '';
-                        if (brocheObs) brocheObs.value = variacionesPaso2.broche_boton.observacion || '';
-                    } else {
-                        if (brocheValor) brocheValor.value = '';
-                        if (brocheObs) brocheObs.value = '';
-                    }
-                } else {
-                    // Si no hay variaciones, limpiar campos
-                    if (mangaValor) mangaValor.value = '';
-                    if (mangaObs) mangaObs.value = '';
-                    if (bolsillosValor) bolsillosValor.value = '';
-                    if (bolsillosObs) bolsillosObs.value = '';
-                    if (brocheValor) brocheValor.value = '';
-                    if (brocheObs) brocheObs.value = '';
-                }
             });
             
             // Crear inputs de ubicación por técnica, dropzones de imagen y variaciones
@@ -755,45 +693,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 }
             });
             
-            // CREAR TABLA DE VARIACIONES UNA SOLA VEZ (NO POR TÉCNICA)
-            const divVariaciones = document.createElement('div');
-            divVariaciones.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
-            divVariaciones.innerHTML = `
-                <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
-                    Variaciones de la Prenda
-                </label>
-                <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
-                    <thead>
-                        <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
-                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
-                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
-                            <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
-                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionManga-valor-p3-unique" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            <td style="padding: 8px;"><input type="text" class="dVariacionManga-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
-                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionBolsillos-valor-p3-unique" placeholder="Sí, No..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            <td style="padding: 8px;"><input type="text" class="dVariacionBolsillos-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
-                            <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionBroche-valor-p3-unique" placeholder="Automático, Metal..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            <td style="padding: 8px;"><input type="text" class="dVariacionBroche-obs-p3-unique" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
-            
-            const variacionesPorTecnicaDiv = document.getElementById('dVariacionesPorTecnicaP3');
-            if (variacionesPorTecnicaDiv) {
-                variacionesPorTecnicaDiv.appendChild(divVariaciones);
-            }
             
             // ============================================================
             // MANEJO DE LOGOS COMPARTIDOS
@@ -919,7 +818,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             
             if (!valido) return false;
             
-            // Validar tallas
+            // Validar tallas (opcional)
             const tallasFilas = document.querySelectorAll('[data-talla-id]');
             let tallas = [];
             tallasFilas.forEach(fila => {
@@ -930,39 +829,15 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 }
             });
             
-            if (tallas.length === 0) {
-                Swal.showValidationMessage('Agrega al menos una talla y cantidad');
-                return false;
-            }
+            // Las tallas son opcionales, no validar si están vacías
             
-            // Capturar variaciones (UNA SOLA VEZ para todas las técnicas)
-            const variacionesUnicas = {
-                manga: {
-                    valor: document.querySelector('.dVariacionManga-valor-p3-unique')?.value.trim() || '',
-                    observacion: document.querySelector('.dVariacionManga-obs-p3-unique')?.value.trim() || ''
-                },
-                bolsillos: {
-                    valor: document.querySelector('.dVariacionBolsillos-valor-p3-unique')?.value.trim() || '',
-                    observacion: document.querySelector('.dVariacionBolsillos-obs-p3-unique')?.value.trim() || ''
-                },
-                broche_boton: {
-                    valor: document.querySelector('.dVariacionBroche-valor-p3-unique')?.value.trim() || '',
-                    observacion: document.querySelector('.dVariacionBroche-obs-p3-unique')?.value.trim() || ''
-                }
-            };
-            
-            // Replicar las mismas variaciones para todas las técnicas
-            const variaciones_prenda = {};
-            window.tecnicasCombinadas.forEach((tecnica) => {
-                variaciones_prenda[tecnica.nombre] = variacionesUnicas;
-            });
             
             return {
                 nombre_prenda: nombrePrendaCompleto,
                 observaciones: document.getElementById('dObservacionesP3').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 tallas: tallas,
-                variaciones_prenda: variaciones_prenda,
+                variaciones_prenda: {},
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3,
                 imagenesCompartidas: window.imagenesCompartidasP3 || {}
             };
@@ -1394,35 +1269,6 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
                     <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
                     <textarea id="dObservacionesDifP3" placeholder="..." rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
                 </div>
-                <div style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Variaciones:</label>
-                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
-                        <thead>
-                            <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionMangaDifP3Valor" placeholder="Corta, Larga..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" id="dVariacionMangaDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionBolsillosDifP3Valor" placeholder="Sí, No..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" id="dVariacionBolsillosDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" id="dVariacionBrocheDifP3Valor" placeholder="Automático, Metal..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" id="dVariacionBrocheDifP3Obs" placeholder="Observación..." style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         `,
         showCancelButton: true,
@@ -1498,20 +1344,7 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
                 nombre_prenda: nombre.toUpperCase(),
                 ubicaciones: ubicacionesDif,
                 observaciones: document.getElementById('dObservacionesDifP3').value.trim(),
-                variaciones_prenda: {
-                    manga: {
-                        valor: document.getElementById('dVariacionMangaDifP3Valor').value.trim() || '',
-                        observacion: document.getElementById('dVariacionMangaDifP3Obs').value.trim() || ''
-                    },
-                    bolsillos: {
-                        valor: document.getElementById('dVariacionBolsillosDifP3Valor').value.trim() || '',
-                        observacion: document.getElementById('dVariacionBolsillosDifP3Obs').value.trim() || ''
-                    },
-                    broche_boton: {
-                        valor: document.getElementById('dVariacionBrocheDifP3Valor').value.trim() || '',
-                        observacion: document.getElementById('dVariacionBrocheDifP3Obs').value.trim() || ''
-                    }
-                },
+                variaciones_prenda: {},
                 tecnica_idx: indice
             };
         }
@@ -1541,7 +1374,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
                                  return Array.isArray(ubicaciones) && ubicaciones.some(u => u.trim());
                              });
     
-    // Validar tallas
+    // Validar tallas (opcional)
     const tieneTallas = datosForm.tallas && datosForm.tallas.length > 0;
     
     // Validar imágenes
@@ -1556,8 +1389,8 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
         }
     }
     
-    // La información es válida si hay ubicaciones Y (tallas O imágenes)
-    tieneInformacionValida = tieneUbicaciones && (tieneTallas || tieneImagenes);
+    // La información es válida si hay ubicaciones (tallas e imágenes son opcionales)
+    tieneInformacionValida = tieneUbicaciones;
     
     console.log('🔍 VALIDACIÓN PASO 3 - Información requerida:', {
         tieneUbicaciones,
@@ -2592,10 +2425,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 }
             });
             
-            if (tallas.length === 0) {
-                Swal.showValidationMessage('Agrega al menos una talla y cantidad');
-                return false;
-            }
+            // Las tallas son opcionales, no validar si están vacías
             
             // Capturar ubicaciones (múltiples por técnica)
             const ubicacionesActualizadas = {};
