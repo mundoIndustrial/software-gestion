@@ -126,7 +126,7 @@ class AuthenticatedSessionController extends Controller
 
             // Bodeguero - Gestión de pedidos en bodega
             if ($roleName === 'bodeguero') {
-                return redirect(route('bodega.pedidos', absolute: false));
+                return redirect(route('gestion-bodega.pedidos', absolute: false));
             }
 
             // Costura-Reflectivo - Dashboard de operario

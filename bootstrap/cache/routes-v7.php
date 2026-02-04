@@ -13,7 +13,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::wTGoFQRPb8PDKCxg',
+            '_route' => 'generated::ABZYS4cixL6o2jWi',
           ),
           1 => NULL,
           2 => 
@@ -603,7 +603,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::lyHUZsdq8bsrZwHf',
+            '_route' => 'generated::QSObNR7of3xTjSNk',
           ),
           1 => NULL,
           2 => 
@@ -622,7 +622,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::znbgtFyNl6Ze4ptF',
+            '_route' => 'generated::KCwD7aNjCRYkvIqQ',
           ),
           1 => NULL,
           2 => 
@@ -642,7 +642,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::q4msr713QZZxKILl',
+            '_route' => 'generated::lOixkeDn6HvwIDEE',
           ),
           1 => NULL,
           2 => 
@@ -681,7 +681,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::AOwro8lKKe6baSjf',
+            '_route' => 'generated::gnAFfshis4Up2SoD',
           ),
           1 => NULL,
           2 => 
@@ -701,7 +701,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::mmWbt3Xoo7waUkbW',
+            '_route' => 'generated::0J0EUPNDnts0Sa0g',
           ),
           1 => NULL,
           2 => 
@@ -4409,7 +4409,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::tOzT8tOUqIZmX3bf',
+            '_route' => 'generated::8fKjH9LXDwbZlTxO',
           ),
           1 => NULL,
           2 => 
@@ -4445,7 +4445,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::VUblrvYNid0eal7y',
+            '_route' => 'generated::F8iaegPMBaURfYyK',
           ),
           1 => NULL,
           2 => 
@@ -4615,7 +4615,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::ac4b2nFH9qVUR0vu',
+            '_route' => 'generated::Ne2NyYSjUEXizfSO',
           ),
           1 => NULL,
           2 => 
@@ -4703,13 +4703,113 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      '/bodega/pedidos/observaciones' => 
+      '/pedidos-test' => 
       array (
         0 => 
         array (
           0 => 
           array (
-            '_route' => 'bodega.actualizar-observaciones',
+            '_route' => 'generated::SC02IF8yEwjqJ27h',
+          ),
+          1 => NULL,
+          2 => 
+          array (
+            'GET' => 0,
+            'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      '/pedidos-temp' => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'generated::fzwyhSq62myL0qxK',
+          ),
+          1 => NULL,
+          2 => 
+          array (
+            'GET' => 0,
+            'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      '/gestion-bodega' => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'gestion-bodega.',
+          ),
+          1 => NULL,
+          2 => 
+          array (
+            'GET' => 0,
+            'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      '/gestion-bodega/pedidos' => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'gestion-bodega.pedidos',
+          ),
+          1 => NULL,
+          2 => 
+          array (
+            'GET' => 0,
+            'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      '/gestion-bodega/dashboard' => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'gestion-bodega.dashboard',
+          ),
+          1 => NULL,
+          2 => 
+          array (
+            'GET' => 0,
+            'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      '/gestion-bodega/pedidos/observaciones' => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'gestion-bodega.actualizar-observaciones',
           ),
           1 => NULL,
           2 => 
@@ -4722,13 +4822,13 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      '/bodega/pedidos/fecha' => 
+      '/gestion-bodega/pedidos/fecha' => 
       array (
         0 => 
         array (
           0 => 
           array (
-            '_route' => 'bodega.actualizar-fecha',
+            '_route' => 'gestion-bodega.actualizar-fecha',
           ),
           1 => NULL,
           2 => 
@@ -4741,13 +4841,13 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      '/bodega/pedidos/export' => 
+      '/gestion-bodega/pedidos/export' => 
       array (
         0 => 
         array (
           0 => 
           array (
-            '_route' => 'bodega.export',
+            '_route' => 'gestion-bodega.export',
           ),
           1 => NULL,
           2 => 
@@ -4767,7 +4867,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::NMPxw5pHMwVGGF8x',
+            '_route' => 'generated::vo7HxcGuo97AUlJl',
           ),
           1 => NULL,
           2 => 
@@ -4785,7 +4885,7 @@ app('router')->setCompiledRoutes(
     ),
     2 => 
     array (
-      0 => '{^(?|/a(?|pi/(?|a(?|pi/(?|v1/ordenes/(?|([^/]++)(*:50)|cliente/([^/]++)(*:73)|estado/([^/]++)(*:95)|([^/]++)(?|/(?|aprobar(*:124)|iniciar\\-produccion(*:151)|completar(*:168))|(*:177)))|procesos/([^/]++)/activar\\-recibo(*:220))|rticulos/([^/]++)(*:246))|p(?|r(?|enda(?|s(?|/(?|([^/]++)(*:286)|search(*:300)|([^/]++)(?|(*:319)))|\\-pedido/([^/]++)/(?|e(?|ditar(?|(*:362)|/(?|campos(*:380)|tallas(*:394)))|stado(*:409))|procesos/([^/]++)(*:435)|variantes/([^/]++)/(?|e(?|ditar(?|(*:477)|/campos(*:492))|stado(*:506))|colores(*:522)|telas(*:535))))|\\-pedido/([^/]++)/(?|tallas(*:573)|variantes(*:590)|colores\\-telas(*:612)))|ocesos/(?|prendas/([^/]++)(?|(*:651))|([^/]++)(?|(*:671)|/(?|a(?|probar(*:693)|ctivar\\-recibo(*:715))|rechazar(*:732)|imagenes(?|(*:751)|/([^/]++)(?|/principal(*:781)|(*:789)))|e(?|ditar(*:808)|liminar(*:823))))))|e(?|didos/(?|([^/]++)(*:857)|cliente/([^/]++)(*:881)|([^/]++)/(?|c(?|onfirmar(*:913)|ancelar(*:928))|actualizar\\-descripcion(*:960)|epp(?|s(?|(*:978)|/(?|([^/]++)(?|(*:1001))|exportar/json(*:1024)))|(*:1035)|/(?|agregar(*:1055)|([^/]++)(?|(*:1075)|(*:1084))))))|rsonal/([^/]++)/rol(*:1117)))|c(?|otizaciones/([^/]++)(?|(*:1155)|/prendas/([^/]++)/telas\\-cotizacion(*:1199))|artera/pedidos/([^/]++)/(?|aprobar(*:1243)|rechazar(*:1260)|factura\\-datos(*:1283)))|epp/(?|([^/]++)/imagenes(*:1318)|imagenes/([^/]++)(*:1344)|([^/]++)(*:1361))|o(?|perario/pedido/([^/]++)(*:1398)|rdenes/([^/]++)/(?|procesos(*:1434)|novedades(?|(*:1455)|/add(*:1468))))|horarios/([^/]++)(*:1497)|registros(?|/([^/]++)/(?|dias(*:1535)|calcular\\-fecha\\-estimada(*:1569))|\\-por\\-orden(?|/([^/]++)(*:1603)|\\-bodega/([^/]++)(*:1629)))|logo\\-(?|pedidos/([^/]++)(*:1665)|cotizacion\\-tecnicas/(?|cotizacion/([^/]++)(*:1717)|([^/]++)(?|(*:1737)|/observaciones(*:1760))|prendas(?|(*:1780))))|tabla\\-original(?|/([^/]++)/procesos(*:1828)|\\-bodega/([^/]++)/procesos(*:1863))|bodega/([^/]++)/(?|dias(*:1896)|novedades(?|(*:1917)|/add(*:1930)))|valor\\-hora\\-extra/(?|([^/]++)(*:1971)|guardar(*:1987)))|s(?|esores/(?|notifications/([^/]++)/mark\\-read(*:2045)|p(?|edidos(?|/(?|([^/]++)(?|(*:2082)|/edit(*:2096)|(*:2105))|([0-9]+)/factura\\-datos(*:2138)|([0-9]+)/anular(*:2162)|([0-9]+)/confirmar\\-correccion(*:2201)|([0-9]+)/actualizar\\-prenda(*:2237))|\\-produccion/(?|([^/]++)(*:2271)|obtener\\-(?|datos\\-cotizacion/([^/]++)(*:2318)|prenda\\-completa/([0-9]+)/([0-9]+)(*:2361))|([0-9]+)/prenda/([0-9]+)/datos(*:2401)))|rendas\\-pedido/([0-9]+)/fotos(*:2441))|c(?|otizacion(?|es/(?|([^/]++)(*:2481)|imagenes/(?|prenda/([^/]++)(*:2517)|tela/([^/]++)(*:2539)|logo/([^/]++)(*:2561))|([^/]++)(?|/(?|ver(*:2589)|editar(*:2604)|imagenes(*:2621))|(*:2631))|guardar(*:2648)|([^/]++)(?|/(?|editar\\-borrador(*:2688)|borrador(*:2705)|anular(*:2720))|(*:2730))|prenda(?|(*:2749)|/([^/]++)(?|/e(?|ditar(*:2780)|nviar(*:2794))|(*:2804)))|bordado(?|(*:2825)|/([^/]++)(?|/e(?|ditar(*:2856)|nviar(*:2870))|(*:2880))))|/([^/]++)/pdf(?|/(?|prenda(*:2918)|combinada(*:2936)|logo(*:2949))|(*:2959)))|lientes/([^/]++)(?|(*:2989)))|api/pedidos/(?|([^/]++)(?|(*:3026)|/(?|estado(*:3045)|prendas(*:3061))|(*:3071))|filtro/estado(*:3094)|buscar/([^/]++)(*:3118)|([^/]++)/prendas(*:3143))|reportes/([^/]++)(?|(*:3173)))|istencia\\-personal/(?|([^/]++)(?|(*:3217)|/editar(*:3233)|(*:3242))|procesar\\-pdf(*:3265)|validar\\-registros(*:3292)|guardar\\-(?|registros(*:3322)|asistencia\\-detallada(*:3352)|hora\\-extra\\-agregada(*:3382)|marcas\\-(?|editadas(*:3410)|multiples(*:3428)))|calcular\\-horas(*:3454)|reportes/([^/]++)/(?|detalles(*:3492)|ausencias(*:3510))|agregar\\-marca\\-faltante(*:3544)|obtener\\-(?|todas\\-las\\-personas\\-test(*:3591)|horas\\-extras\\-agregadas(?|\\-batch(*:3634)|/([^/]++)(*:3652)))|test\\-simple(*:3675))))|/s(?|torage(?|/(?|cotizaciones/(.*)(*:3722)|p(?|rendas/(.*)(*:3746)|edidos/(.*)(*:3766))|(.*)(*:3780))|\\-serve/(.*)(*:3802))|upervisor\\-(?|asesores/(?|pedidos/([^/]++)/confirmar\\-correccion(*:3876)|asesores/([^/]++)(*:3902))|pedidos/(?|([^/]++)/(?|datos(*:3940)|factura\\-datos(*:3963)|comparar(*:3980))|notificaciones/([^/]++)/marcar\\-leida(*:4027)|filtro\\-opciones/([^/]++)(*:4061)|([^/]++)(?|(*:4081)|/(?|pdf(*:4097)|a(?|nular(*:4115)|probar(*:4130)|ctualizar(?|(*:4151)))|e(?|stado(*:4171)|ditar(*:4185))))|imagen/([^/]++)/([^/]++)(*:4221))))|/p(?|edidos(?|\\-public/(?|([0-9]+)/factura\\-datos(*:4282)|([0-9]+)/recibos\\-datos(*:4314))|/([^/]++)/(?|aprobar\\-supervisor(*:4356)|historial(*:4374)|seguimiento(*:4394)))|r(?|enda\\-variaciones/([^/]++)(*:4435)|ocesos/([^/]++)/activar\\-recibo(*:4475)))|/notifications/([^/]++)/mark\\-read(*:4520)|/users/([^/]++)(?|(*:4547)|/password(*:4565)|(*:4574))|/entrega/(pedido|bodega)(?|(*:4611)|/(?|co(?|stura\\-data(*:4640)|rte\\-data(*:4658))|order\\-data/([^/]++)(*:4688)|garments/([^/]++)(*:4714)|sizes/([^/]++)/([^/]++)(*:4746)|(costura|corte)/([^/]++)(?|(*:4782)))|(*:4793))|/re(?|gistros/(?|filter\\-column\\-options/([^/]++)(*:4852)|([^/]++)(?|/(?|recibos\\-datos(*:4890)|images(*:4905)|descripcion\\-prendas(*:4934))|(*:4944))|validate\\-pedido(*:4970)|update\\-(?|pedido(*:4996)|descripcion\\-prendas(*:5025))|([^/]++)(?|(*:5046))|update\\-status(*:5070)|([^/]++)/e(?|ntregas(*:5099)|dit\\-full(*:5117)))|set\\-password/([^/]++)(*:5150))|/o(?|rders/([^/]++)(*:5179)|perario/(?|pedido/([^/]++)(*:5214)|api/(?|pedido/([^/]++)(*:5245)|novedades/([^/]++)(*:5272)|completar\\-proceso/([^/]++)(*:5308))))|/facturas/([^/]++)(?|(*:5341)|/(?|preview(*:5361)|download(*:5378)))|/b(?|odega/(?|([^/]++)(?|(*:5414)|/(?|prendas(*:5434)|e(?|ntregas(*:5454)|dit\\-full(*:5472))))|validate\\-pedido(*:5500)|update\\-(?|pedido(*:5526)|descripcion\\-prendas(*:5555))|([^/]++)(*:5573)|pedidos(?|(*:5592)|/([^/]++)/entregar(*:5619))|dashboard(*:5638))|alanceo/(?|prenda/([^/]++)(?|/(?|edit(*:5685)|balanceo(*:5702))|(*:5712))|([^/]++)(?|(*:5733)|/operacion(*:5752))|operacion/([^/]++)(?|(*:5783))|([^/]++)/(?|data(*:5809)|toggle\\-estado(*:5832))))|/tableros/(?|([^/]++)(?|(*:5868)|/duplicate(*:5887))|dashboard\\-tables\\-data(*:5920)|get\\-seguimiento\\-data(*:5951)|unique\\-values(*:5974))|/co(?|tizacion(?|es(?|\\-(?|prenda/([^/]++)(?|/e(?|ditar(*:6039)|nviar(*:6053))|(*:6063))|bordado/([^/]++)(?|/(?|borra(?|dor(*:6107)|r\\-imagen(*:6125))|e(?|ditar(*:6144)|nviar(*:6158)))|(*:6169)))|/([^/]++)/(?|borrar\\-imagen\\-(?|prenda(*:6218)|tela(*:6231))|logo/telas\\-prenda(?|(*:6262)|/([^/]++)(*:6280))|datos(*:6295)|costos(*:6310)|enviar(*:6325)|aprobar\\-(?|contador(*:6354)|para\\-pedido(*:6375)|aprobador(*:6393))|rechazar(*:6411)|historial(*:6429)|seguimiento(*:6449)))|/([^/]++)/pdf(*:6473))|ntador/(?|co(?|tizacion/([^/]++)(?|(*:6518)|/(?|costos(?|(*:6540)|(*:6549))|pdf(*:6562)|estado(*:6577))|(*:6587))|stos/obtener/([^/]++)(*:6618))|prenda/([^/]++)/(?|notas\\-tallas(*:6660)|texto\\-personalizado\\-tallas(*:6697))))|/v(?|isualizador\\-logo/cotizaciones/([^/]++)(?|(*:6756)|/pdf\\-logo(*:6775))|erify\\-email/([^/]++)/([^/]++)(*:6815))|/in(?|ventario\\-telas/(?|([^/]++)(*:6858)|historial(*:6876))|sumos/(?|materiales/([^/]++)/(?|guardar(?|(*:6928)|\\-ancho\\-metraje(?|(*:6956)|\\-prenda(*:6973)))|eliminar(*:6992)|obtener\\-(?|ancho\\-metraje(?|(*:7030)|\\-prenda/([^/]++)(*:7056))|prendas(*:7073))|cambiar\\-estado(*:7098))|api/(?|materiales/([^/]++)(*:7134)|filtros/([^/]++)(*:7159))))|/despacho/(?|([0-9]+)(*:7192)|([0-9]+)/guardar(*:7217)|([0-9]+)/print(*:7240)|([0-9]+)/obtener\\-despachos(*:7276)|([0-9]+)/factura\\-datos(*:7308)))/?$}sDu',
+      0 => '{^(?|/a(?|pi/(?|a(?|pi/(?|v1/ordenes/(?|([^/]++)(*:50)|cliente/([^/]++)(*:73)|estado/([^/]++)(*:95)|([^/]++)(?|/(?|aprobar(*:124)|iniciar\\-produccion(*:151)|completar(*:168))|(*:177)))|procesos/([^/]++)/activar\\-recibo(*:220))|rticulos/([^/]++)(*:246))|p(?|r(?|enda(?|s(?|/(?|([^/]++)(*:286)|search(*:300)|([^/]++)(?|(*:319)))|\\-pedido/([^/]++)/(?|e(?|ditar(?|(*:362)|/(?|campos(*:380)|tallas(*:394)))|stado(*:409))|procesos/([^/]++)(*:435)|variantes/([^/]++)/(?|e(?|ditar(?|(*:477)|/campos(*:492))|stado(*:506))|colores(*:522)|telas(*:535))))|\\-pedido/([^/]++)/(?|tallas(*:573)|variantes(*:590)|colores\\-telas(*:612)))|ocesos/(?|prendas/([^/]++)(?|(*:651))|([^/]++)(?|(*:671)|/(?|a(?|probar(*:693)|ctivar\\-recibo(*:715))|rechazar(*:732)|imagenes(?|(*:751)|/([^/]++)(?|/principal(*:781)|(*:789)))|e(?|ditar(*:808)|liminar(*:823))))))|e(?|didos/(?|([^/]++)(*:857)|cliente/([^/]++)(*:881)|([^/]++)/(?|c(?|onfirmar(*:913)|ancelar(*:928))|actualizar\\-descripcion(*:960)|epp(?|s(?|(*:978)|/(?|([^/]++)(?|(*:1001))|exportar/json(*:1024)))|(*:1035)|/(?|agregar(*:1055)|([^/]++)(?|(*:1075)|(*:1084))))))|rsonal/([^/]++)/rol(*:1117)))|c(?|otizaciones/([^/]++)(?|(*:1155)|/prendas/([^/]++)/telas\\-cotizacion(*:1199))|artera/pedidos/([^/]++)/(?|aprobar(*:1243)|rechazar(*:1260)|factura\\-datos(*:1283)))|epp/(?|([^/]++)/imagenes(*:1318)|imagenes/([^/]++)(*:1344)|([^/]++)(*:1361))|o(?|perario/pedido/([^/]++)(*:1398)|rdenes/([^/]++)/(?|procesos(*:1434)|novedades(?|(*:1455)|/add(*:1468))))|horarios/([^/]++)(*:1497)|registros(?|/([^/]++)/(?|dias(*:1535)|calcular\\-fecha\\-estimada(*:1569))|\\-por\\-orden(?|/([^/]++)(*:1603)|\\-bodega/([^/]++)(*:1629)))|logo\\-(?|pedidos/([^/]++)(*:1665)|cotizacion\\-tecnicas/(?|cotizacion/([^/]++)(*:1717)|([^/]++)(?|(*:1737)|/observaciones(*:1760))|prendas(?|(*:1780))))|tabla\\-original(?|/([^/]++)/procesos(*:1828)|\\-bodega/([^/]++)/procesos(*:1863))|bodega/([^/]++)/(?|dias(*:1896)|novedades(?|(*:1917)|/add(*:1930)))|valor\\-hora\\-extra/(?|([^/]++)(*:1971)|guardar(*:1987)))|s(?|esores/(?|notifications/([^/]++)/mark\\-read(*:2045)|p(?|edidos(?|/(?|([^/]++)(?|(*:2082)|/edit(*:2096)|(*:2105))|([0-9]+)/factura\\-datos(*:2138)|([0-9]+)/anular(*:2162)|([0-9]+)/confirmar\\-correccion(*:2201)|([0-9]+)/actualizar\\-prenda(*:2237))|\\-produccion/(?|([^/]++)(*:2271)|obtener\\-(?|datos\\-cotizacion/([^/]++)(*:2318)|prenda\\-completa/([0-9]+)/([0-9]+)(*:2361))|([0-9]+)/prenda/([0-9]+)/datos(*:2401)))|rendas\\-pedido/([0-9]+)/fotos(*:2441))|c(?|otizacion(?|es/(?|([^/]++)(*:2481)|imagenes/(?|prenda/([^/]++)(*:2517)|tela/([^/]++)(*:2539)|logo/([^/]++)(*:2561))|([^/]++)(?|/(?|ver(*:2589)|editar(*:2604)|imagenes(*:2621))|(*:2631))|guardar(*:2648)|([^/]++)(?|/(?|editar\\-borrador(*:2688)|borrador(*:2705)|anular(*:2720))|(*:2730))|prenda(?|(*:2749)|/([^/]++)(?|/e(?|ditar(*:2780)|nviar(*:2794))|(*:2804)))|bordado(?|(*:2825)|/([^/]++)(?|/e(?|ditar(*:2856)|nviar(*:2870))|(*:2880))))|/([^/]++)/pdf(?|/(?|prenda(*:2918)|combinada(*:2936)|logo(*:2949))|(*:2959)))|lientes/([^/]++)(?|(*:2989)))|api/pedidos/(?|([^/]++)(?|(*:3026)|/(?|estado(*:3045)|prendas(*:3061))|(*:3071))|filtro/estado(*:3094)|buscar/([^/]++)(*:3118)|([^/]++)/prendas(*:3143))|reportes/([^/]++)(?|(*:3173)))|istencia\\-personal/(?|([^/]++)(?|(*:3217)|/editar(*:3233)|(*:3242))|procesar\\-pdf(*:3265)|validar\\-registros(*:3292)|guardar\\-(?|registros(*:3322)|asistencia\\-detallada(*:3352)|hora\\-extra\\-agregada(*:3382)|marcas\\-(?|editadas(*:3410)|multiples(*:3428)))|calcular\\-horas(*:3454)|reportes/([^/]++)/(?|detalles(*:3492)|ausencias(*:3510))|agregar\\-marca\\-faltante(*:3544)|obtener\\-(?|todas\\-las\\-personas\\-test(*:3591)|horas\\-extras\\-agregadas(?|\\-batch(*:3634)|/([^/]++)(*:3652)))|test\\-simple(*:3675))))|/s(?|torage(?|/(?|cotizaciones/(.*)(*:3722)|p(?|rendas/(.*)(*:3746)|edidos/(.*)(*:3766))|(.*)(*:3780))|\\-serve/(.*)(*:3802))|upervisor\\-(?|asesores/(?|pedidos/([^/]++)/confirmar\\-correccion(*:3876)|asesores/([^/]++)(*:3902))|pedidos/(?|([^/]++)/(?|datos(*:3940)|factura\\-datos(*:3963)|comparar(*:3980))|notificaciones/([^/]++)/marcar\\-leida(*:4027)|filtro\\-opciones/([^/]++)(*:4061)|([^/]++)(?|(*:4081)|/(?|pdf(*:4097)|a(?|nular(*:4115)|probar(*:4130)|ctualizar(?|(*:4151)))|e(?|stado(*:4171)|ditar(*:4185))))|imagen/([^/]++)/([^/]++)(*:4221))))|/p(?|edidos(?|\\-public/(?|([0-9]+)/factura\\-datos(*:4282)|([0-9]+)/recibos\\-datos(*:4314))|/([^/]++)/(?|aprobar\\-supervisor(*:4356)|historial(*:4374)|seguimiento(*:4394)))|r(?|enda\\-variaciones/([^/]++)(*:4435)|ocesos/([^/]++)/activar\\-recibo(*:4475)))|/notifications/([^/]++)/mark\\-read(*:4520)|/users/([^/]++)(?|(*:4547)|/password(*:4565)|(*:4574))|/entrega/(pedido|bodega)(?|(*:4611)|/(?|co(?|stura\\-data(*:4640)|rte\\-data(*:4658))|order\\-data/([^/]++)(*:4688)|garments/([^/]++)(*:4714)|sizes/([^/]++)/([^/]++)(*:4746)|(costura|corte)/([^/]++)(?|(*:4782)))|(*:4793))|/re(?|gistros/(?|filter\\-column\\-options/([^/]++)(*:4852)|([^/]++)(?|/(?|recibos\\-datos(*:4890)|images(*:4905)|descripcion\\-prendas(*:4934))|(*:4944))|validate\\-pedido(*:4970)|update\\-(?|pedido(*:4996)|descripcion\\-prendas(*:5025))|([^/]++)(?|(*:5046))|update\\-status(*:5070)|([^/]++)/e(?|ntregas(*:5099)|dit\\-full(*:5117)))|set\\-password/([^/]++)(*:5150))|/o(?|rders/([^/]++)(*:5179)|perario/(?|pedido/([^/]++)(*:5214)|api/(?|pedido/([^/]++)(*:5245)|novedades/([^/]++)(*:5272)|completar\\-proceso/([^/]++)(*:5308))))|/facturas/([^/]++)(?|(*:5341)|/(?|preview(*:5361)|download(*:5378)))|/b(?|odega/(?|([^/]++)(?|(*:5414)|/(?|prendas(*:5434)|e(?|ntregas(*:5454)|dit\\-full(*:5472))))|validate\\-pedido(*:5500)|update\\-(?|pedido(*:5526)|descripcion\\-prendas(*:5555))|([^/]++)(*:5573))|alanceo/(?|prenda/([^/]++)(?|/(?|edit(*:5620)|balanceo(*:5637))|(*:5647))|([^/]++)(?|(*:5668)|/operacion(*:5687))|operacion/([^/]++)(?|(*:5718))|([^/]++)/(?|data(*:5744)|toggle\\-estado(*:5767))))|/tableros/(?|([^/]++)(?|(*:5803)|/duplicate(*:5822))|dashboard\\-tables\\-data(*:5855)|get\\-seguimiento\\-data(*:5886)|unique\\-values(*:5909))|/co(?|tizacion(?|es(?|\\-(?|prenda/([^/]++)(?|/e(?|ditar(*:5974)|nviar(*:5988))|(*:5998))|bordado/([^/]++)(?|/(?|borra(?|dor(*:6042)|r\\-imagen(*:6060))|e(?|ditar(*:6079)|nviar(*:6093)))|(*:6104)))|/([^/]++)/(?|borrar\\-imagen\\-(?|prenda(*:6153)|tela(*:6166))|logo/telas\\-prenda(?|(*:6197)|/([^/]++)(*:6215))|datos(*:6230)|costos(*:6245)|enviar(*:6260)|aprobar\\-(?|contador(*:6289)|para\\-pedido(*:6310)|aprobador(*:6328))|rechazar(*:6346)|historial(*:6364)|seguimiento(*:6384)))|/([^/]++)/pdf(*:6408))|ntador/(?|co(?|tizacion/([^/]++)(?|(*:6453)|/(?|costos(?|(*:6475)|(*:6484))|pdf(*:6497)|estado(*:6512))|(*:6522))|stos/obtener/([^/]++)(*:6553))|prenda/([^/]++)/(?|notas\\-tallas(*:6595)|texto\\-personalizado\\-tallas(*:6632))))|/v(?|isualizador\\-logo/cotizaciones/([^/]++)(?|(*:6691)|/pdf\\-logo(*:6710))|erify\\-email/([^/]++)/([^/]++)(*:6750))|/in(?|ventario\\-telas/(?|([^/]++)(*:6793)|historial(*:6811))|sumos/(?|materiales/([^/]++)/(?|guardar(?|(*:6863)|\\-ancho\\-metraje(?|(*:6891)|\\-prenda(*:6908)))|eliminar(*:6927)|obtener\\-(?|ancho\\-metraje(?|(*:6965)|\\-prenda/([^/]++)(*:6991))|prendas(*:7008))|cambiar\\-estado(*:7033))|api/(?|materiales/([^/]++)(*:7069)|filtros/([^/]++)(*:7094))))|/despacho/(?|([0-9]+)(*:7127)|([0-9]+)/guardar(*:7152)|([0-9]+)/print(*:7175)|([0-9]+)/obtener\\-despachos(*:7211)|([0-9]+)/factura\\-datos(*:7243))|/gestion\\-bodega/pedidos/([^/]++)/entregar(*:7295))/?$}sDu',
     ),
     3 => 
     array (
@@ -4974,7 +5074,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::rvL8DhXaFApm3zG1',
+            '_route' => 'generated::BBi6I7UDS0dZu17z',
           ),
           1 => 
           array (
@@ -8263,7 +8363,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'asistencia-personal.generated::lGTD4QngVSKh8MRi',
+            '_route' => 'asistencia-personal.generated::HQ4BSRixNiYGwgSM',
           ),
           1 => 
           array (
@@ -9875,73 +9975,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5592 => 
-      array (
-        0 => 
-        array (
-          0 => 
-          array (
-            '_route' => 'bodega.pedidos',
-          ),
-          1 => 
-          array (
-          ),
-          2 => 
-          array (
-            'GET' => 0,
-            'HEAD' => 1,
-          ),
-          3 => NULL,
-          4 => false,
-          5 => false,
-          6 => NULL,
-        ),
-      ),
-      5619 => 
-      array (
-        0 => 
-        array (
-          0 => 
-          array (
-            '_route' => 'bodega.entregar',
-          ),
-          1 => 
-          array (
-            0 => 'id',
-          ),
-          2 => 
-          array (
-            'POST' => 0,
-          ),
-          3 => NULL,
-          4 => false,
-          5 => false,
-          6 => NULL,
-        ),
-      ),
-      5638 => 
-      array (
-        0 => 
-        array (
-          0 => 
-          array (
-            '_route' => 'bodega.dashboard',
-          ),
-          1 => 
-          array (
-          ),
-          2 => 
-          array (
-            'GET' => 0,
-            'HEAD' => 1,
-          ),
-          3 => NULL,
-          4 => false,
-          5 => false,
-          6 => NULL,
-        ),
-      ),
-      5685 => 
+      5620 => 
       array (
         0 => 
         array (
@@ -9964,7 +9998,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5702 => 
+      5637 => 
       array (
         0 => 
         array (
@@ -9986,7 +10020,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5712 => 
+      5647 => 
       array (
         0 => 
         array (
@@ -10047,7 +10081,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5733 => 
+      5668 => 
       array (
         0 => 
         array (
@@ -10088,7 +10122,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5752 => 
+      5687 => 
       array (
         0 => 
         array (
@@ -10110,7 +10144,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5783 => 
+      5718 => 
       array (
         0 => 
         array (
@@ -10151,7 +10185,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5809 => 
+      5744 => 
       array (
         0 => 
         array (
@@ -10174,7 +10208,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5832 => 
+      5767 => 
       array (
         0 => 
         array (
@@ -10196,7 +10230,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5868 => 
+      5803 => 
       array (
         0 => 
         array (
@@ -10237,7 +10271,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5887 => 
+      5822 => 
       array (
         0 => 
         array (
@@ -10259,7 +10293,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5920 => 
+      5855 => 
       array (
         0 => 
         array (
@@ -10281,7 +10315,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5951 => 
+      5886 => 
       array (
         0 => 
         array (
@@ -10303,7 +10337,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      5974 => 
+      5909 => 
       array (
         0 => 
         array (
@@ -10325,7 +10359,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6039 => 
+      5974 => 
       array (
         0 => 
         array (
@@ -10348,7 +10382,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6053 => 
+      5988 => 
       array (
         0 => 
         array (
@@ -10370,7 +10404,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6063 => 
+      5998 => 
       array (
         0 => 
         array (
@@ -10411,7 +10445,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6107 => 
+      6042 => 
       array (
         0 => 
         array (
@@ -10433,7 +10467,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6125 => 
+      6060 => 
       array (
         0 => 
         array (
@@ -10455,7 +10489,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6144 => 
+      6079 => 
       array (
         0 => 
         array (
@@ -10478,7 +10512,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6158 => 
+      6093 => 
       array (
         0 => 
         array (
@@ -10500,7 +10534,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6169 => 
+      6104 => 
       array (
         0 => 
         array (
@@ -10541,7 +10575,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6218 => 
+      6153 => 
       array (
         0 => 
         array (
@@ -10563,7 +10597,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6231 => 
+      6166 => 
       array (
         0 => 
         array (
@@ -10585,7 +10619,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6262 => 
+      6197 => 
       array (
         0 => 
         array (
@@ -10627,7 +10661,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6280 => 
+      6215 => 
       array (
         0 => 
         array (
@@ -10650,7 +10684,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6295 => 
+      6230 => 
       array (
         0 => 
         array (
@@ -10673,7 +10707,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6310 => 
+      6245 => 
       array (
         0 => 
         array (
@@ -10696,7 +10730,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6325 => 
+      6260 => 
       array (
         0 => 
         array (
@@ -10718,7 +10752,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6354 => 
+      6289 => 
       array (
         0 => 
         array (
@@ -10740,7 +10774,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6375 => 
+      6310 => 
       array (
         0 => 
         array (
@@ -10762,7 +10796,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6393 => 
+      6328 => 
       array (
         0 => 
         array (
@@ -10784,7 +10818,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6411 => 
+      6346 => 
       array (
         0 => 
         array (
@@ -10806,7 +10840,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6429 => 
+      6364 => 
       array (
         0 => 
         array (
@@ -10829,7 +10863,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6449 => 
+      6384 => 
       array (
         0 => 
         array (
@@ -10852,7 +10886,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6473 => 
+      6408 => 
       array (
         0 => 
         array (
@@ -10875,7 +10909,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6518 => 
+      6453 => 
       array (
         0 => 
         array (
@@ -10898,7 +10932,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6540 => 
+      6475 => 
       array (
         0 => 
         array (
@@ -10921,7 +10955,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6549 => 
+      6484 => 
       array (
         0 => 
         array (
@@ -10944,7 +10978,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6562 => 
+      6497 => 
       array (
         0 => 
         array (
@@ -10967,7 +11001,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6577 => 
+      6512 => 
       array (
         0 => 
         array (
@@ -10989,7 +11023,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6587 => 
+      6522 => 
       array (
         0 => 
         array (
@@ -11011,7 +11045,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6618 => 
+      6553 => 
       array (
         0 => 
         array (
@@ -11034,7 +11068,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6660 => 
+      6595 => 
       array (
         0 => 
         array (
@@ -11056,7 +11090,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6697 => 
+      6632 => 
       array (
         0 => 
         array (
@@ -11078,7 +11112,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6756 => 
+      6691 => 
       array (
         0 => 
         array (
@@ -11101,7 +11135,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6775 => 
+      6710 => 
       array (
         0 => 
         array (
@@ -11124,7 +11158,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6815 => 
+      6750 => 
       array (
         0 => 
         array (
@@ -11148,7 +11182,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6858 => 
+      6793 => 
       array (
         0 => 
         array (
@@ -11170,7 +11204,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6876 => 
+      6811 => 
       array (
         0 => 
         array (
@@ -11192,7 +11226,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6928 => 
+      6863 => 
       array (
         0 => 
         array (
@@ -11214,7 +11248,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6956 => 
+      6891 => 
       array (
         0 => 
         array (
@@ -11236,7 +11270,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6973 => 
+      6908 => 
       array (
         0 => 
         array (
@@ -11258,7 +11292,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      6992 => 
+      6927 => 
       array (
         0 => 
         array (
@@ -11280,7 +11314,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7030 => 
+      6965 => 
       array (
         0 => 
         array (
@@ -11303,7 +11337,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7056 => 
+      6991 => 
       array (
         0 => 
         array (
@@ -11327,7 +11361,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7073 => 
+      7008 => 
       array (
         0 => 
         array (
@@ -11350,7 +11384,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7098 => 
+      7033 => 
       array (
         0 => 
         array (
@@ -11372,7 +11406,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7134 => 
+      7069 => 
       array (
         0 => 
         array (
@@ -11395,7 +11429,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7159 => 
+      7094 => 
       array (
         0 => 
         array (
@@ -11418,7 +11452,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7192 => 
+      7127 => 
       array (
         0 => 
         array (
@@ -11441,7 +11475,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7217 => 
+      7152 => 
       array (
         0 => 
         array (
@@ -11463,7 +11497,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7240 => 
+      7175 => 
       array (
         0 => 
         array (
@@ -11486,7 +11520,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7276 => 
+      7211 => 
       array (
         0 => 
         array (
@@ -11509,7 +11543,7 @@ app('router')->setCompiledRoutes(
           6 => NULL,
         ),
       ),
-      7308 => 
+      7243 => 
       array (
         0 => 
         array (
@@ -11525,6 +11559,28 @@ app('router')->setCompiledRoutes(
           array (
             'GET' => 0,
             'HEAD' => 1,
+          ),
+          3 => NULL,
+          4 => false,
+          5 => false,
+          6 => NULL,
+        ),
+      ),
+      7295 => 
+      array (
+        0 => 
+        array (
+          0 => 
+          array (
+            '_route' => 'gestion-bodega.entregar',
+          ),
+          1 => 
+          array (
+            0 => 'id',
+          ),
+          2 => 
+          array (
+            'POST' => 0,
           ),
           3 => NULL,
           4 => false,
@@ -11547,7 +11603,7 @@ app('router')->setCompiledRoutes(
   ),
   'attributes' => 
   array (
-    'generated::wTGoFQRPb8PDKCxg' => 
+    'generated::ABZYS4cixL6o2jWi' => 
     array (
       'methods' => 
       array (
@@ -11568,7 +11624,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::wTGoFQRPb8PDKCxg',
+        'as' => 'generated::ABZYS4cixL6o2jWi',
       ),
       'fallback' => false,
       'defaults' => 
@@ -13406,7 +13462,7 @@ app('router')->setCompiledRoutes(
             \'line\' => $e->getLine(),
         ], 500);
     }
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b1f0000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b240000000000000000";}}',
         'namespace' => NULL,
         'prefix' => 'api',
         'where' => 
@@ -14592,7 +14648,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::lyHUZsdq8bsrZwHf' => 
+    'generated::QSObNR7of3xTjSNk' => 
     array (
       'methods' => 
       array (
@@ -14612,7 +14668,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::lyHUZsdq8bsrZwHf',
+        'as' => 'generated::QSObNR7of3xTjSNk',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14628,7 +14684,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::znbgtFyNl6Ze4ptF' => 
+    'generated::KCwD7aNjCRYkvIqQ' => 
     array (
       'methods' => 
       array (
@@ -14649,7 +14705,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::znbgtFyNl6Ze4ptF',
+        'as' => 'generated::KCwD7aNjCRYkvIqQ',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14665,7 +14721,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::rvL8DhXaFApm3zG1' => 
+    'generated::BBi6I7UDS0dZu17z' => 
     array (
       'methods' => 
       array (
@@ -14686,7 +14742,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::rvL8DhXaFApm3zG1',
+        'as' => 'generated::BBi6I7UDS0dZu17z',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14702,7 +14758,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::q4msr713QZZxKILl' => 
+    'generated::lOixkeDn6HvwIDEE' => 
     array (
       'methods' => 
       array (
@@ -14723,7 +14779,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::q4msr713QZZxKILl',
+        'as' => 'generated::lOixkeDn6HvwIDEE',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14778,7 +14834,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::AOwro8lKKe6baSjf' => 
+    'generated::gnAFfshis4Up2SoD' => 
     array (
       'methods' => 
       array (
@@ -14806,8 +14862,8 @@ app('router')->setCompiledRoutes(
                     return response(\\Illuminate\\Support\\Facades\\View::file(\'C:\\\\Users\\\\Usuario\\\\Documents\\\\mundoindustrial\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Configuration\'.\'/../resources/health-up.blade.php\', [
                         \'exception\' => $exception,
                     ]), status: $exception ? 500 : 200);
-                }";s:5:"scope";s:54:"Illuminate\\Foundation\\Configuration\\ApplicationBuilder";s:4:"this";N;s:4:"self";s:32:"0000000000000aef0000000000000000";}}',
-        'as' => 'generated::AOwro8lKKe6baSjf',
+                }";s:5:"scope";s:54:"Illuminate\\Foundation\\Configuration\\ApplicationBuilder";s:4:"this";N;s:4:"self";s:32:"0000000000000af40000000000000000";}}',
+        'as' => 'generated::gnAFfshis4Up2SoD',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14823,7 +14879,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::mmWbt3Xoo7waUkbW' => 
+    'generated::0J0EUPNDnts0Sa0g' => 
     array (
       'methods' => 
       array (
@@ -14839,13 +14895,13 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:44:"function () {
     return \\view(\'welcome\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b480000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b4d0000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
         array (
         ),
-        'as' => 'generated::mmWbt3Xoo7waUkbW',
+        'as' => 'generated::0J0EUPNDnts0Sa0g',
       ),
       'fallback' => false,
       'defaults' => 
@@ -14877,7 +14933,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:46:"function () {
     return \\view(\'test-echo\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b4a0000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b4f0000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -14915,7 +14971,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:52:"function () {
     return \\view(\'test-pdf-upload\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b4c0000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b510000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -14994,7 +15050,7 @@ app('router')->setCompiledRoutes(
     
     // Si no existe en ningún formato, devolver 404
     \\abort(404, \'Imagen no encontrada\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b4e0000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b530000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -15074,7 +15130,7 @@ app('router')->setCompiledRoutes(
     
     // Si no existe en ningún formato, devolver 404
     \\abort(404, \'Imagen no encontrada\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b500000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b550000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -15154,7 +15210,7 @@ app('router')->setCompiledRoutes(
     
     // Si no existe en ningún formato, devolver 404
     \\abort(404, \'Imagen no encontrada\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b520000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b570000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -15427,7 +15483,7 @@ app('router')->setCompiledRoutes(
             \'token\' => \\csrf_token(),
             \'timestamp\' => \\now()->toIso8601String()
         ]);
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b5c0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b610000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -21671,7 +21727,7 @@ app('router')->setCompiledRoutes(
             : 0;
         
         return \\view(\'cotizaciones.pendientes\', \\compact(\'cotizaciones\', \'totalAprobadores\'));
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000bff0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000c040000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -22997,7 +23053,7 @@ app('router')->setCompiledRoutes(
                 \'pedidos_count\' => $pedidos->count()
             ]
         ]);
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000c210000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000c260000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '/asesores',
         'where' => 
@@ -25243,7 +25299,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:77:"function () {
         return \\view(\'asesores.prendas.agregar-prendas\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000c5c0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000c610000000000000000";}}',
         'as' => 'asesores.prendas.agregar',
         'namespace' => NULL,
         'prefix' => '/asesores',
@@ -27755,7 +27811,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:117:"function($id) {
         return \\redirect()->route(\'pdf.cotizacion\', [\'cotizacionId\' => $id, \'tipo\' => \'logo\']);
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cbe0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cc30000000000000000";}}',
         'as' => 'visualizador-logo.cotizaciones.pdf-logo',
         'namespace' => NULL,
         'prefix' => '/visualizador-logo',
@@ -28214,7 +28270,7 @@ app('router')->setCompiledRoutes(
     // Por ahora retornar vacío ya que el sistema maneja las variaciones automáticamente
     // El frontend espera null cuando no hay variaciones predefinidas
     return \\response()->json(null);
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b560000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b5b0000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -28717,7 +28773,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:57:"function () {
         return \\view(\'insumos.test\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cd90000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cde0000000000000000";}}',
         'as' => 'insumos.test',
         'namespace' => NULL,
         'prefix' => '/insumos',
@@ -28757,7 +28813,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:67:"function () {
         return \\view(\'insumos.metrajes.index\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cdb0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000ce00000000000000000";}}',
         'as' => 'insumos.metrajes.index',
         'namespace' => NULL,
         'prefix' => '/insumos',
@@ -29568,7 +29624,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:58:"function () {
         return \\view(\'bordado.index\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf10000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf60000000000000000";}}',
         'as' => 'bordado.index',
         'namespace' => NULL,
         'prefix' => '/bordado',
@@ -29608,7 +29664,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:84:"function () {
         return \\redirect()->route(\'bordado.cotizaciones.lista\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf30000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf80000000000000000";}}',
         'as' => 'bordado.cotizaciones',
         'namespace' => NULL,
         'prefix' => '/bordado',
@@ -29648,7 +29704,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:79:"function () {
             return \\view(\'bordado.cotizaciones.lista\');
-        }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf70000000000000000";}}',
+        }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cfc0000000000000000";}}',
         'as' => 'bordado.cotizaciones.lista',
         'namespace' => NULL,
         'prefix' => 'bordado/cotizaciones',
@@ -29688,7 +29744,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:81:"function () {
             return \\view(\'bordado.cotizaciones.medidas\');
-        }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cf90000000000000000";}}',
+        }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000cfe0000000000000000";}}',
         'as' => 'bordado.cotizaciones.medidas',
         'namespace' => NULL,
         'prefix' => 'bordado/cotizaciones',
@@ -30259,7 +30315,7 @@ app('router')->setCompiledRoutes(
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:118:"function($path) {
     $path = \\str_replace(\'..\', \'\', $path);
     return \\redirect(\'/storage/\' . \\ltrim($path, \'/\'));
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b550000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000b5a0000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -30983,7 +31039,7 @@ app('router')->setCompiledRoutes(
             \'test\' => \'OK\',
             \'message\' => \'La ruta test funciona\'
         ]);
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d1b0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d200000000000000000";}}',
         'as' => 'asistencia-personal.',
         'namespace' => NULL,
         'prefix' => '/asistencia-personal',
@@ -31005,7 +31061,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'asistencia-personal.generated::lGTD4QngVSKh8MRi' => 
+    'asistencia-personal.generated::HQ4BSRixNiYGwgSM' => 
     array (
       'methods' => 
       array (
@@ -31022,8 +31078,8 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:68:"function() {
         return \\response()->json([\'ok\' => true]);
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d1d0000000000000000";}}',
-        'as' => 'asistencia-personal.generated::lGTD4QngVSKh8MRi',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d220000000000000000";}}',
+        'as' => 'asistencia-personal.generated::HQ4BSRixNiYGwgSM',
         'namespace' => NULL,
         'prefix' => '/asistencia-personal',
         'where' => 
@@ -31214,7 +31270,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:105:"function() {
         return \\redirect()->route(\'asesores.pedidos-editable.crear-desde-cotizacion\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d240000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d290000000000000000";}}',
         'as' => 'asesores.pedidos-editable.',
         'namespace' => NULL,
         'prefix' => '/asesores/pedidos-editable',
@@ -31523,7 +31579,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:87:"function () {
         return \\view(\'cartera-pedidos.cartera-pedidos-supervisor\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d2d0000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d320000000000000000";}}',
         'as' => 'cartera.pedidos',
         'namespace' => NULL,
         'prefix' => '/cartera',
@@ -31737,7 +31793,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::tOzT8tOUqIZmX3bf' => 
+    'generated::8fKjH9LXDwbZlTxO' => 
     array (
       'methods' => 
       array (
@@ -31758,7 +31814,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::tOzT8tOUqIZmX3bf',
+        'as' => 'generated::8fKjH9LXDwbZlTxO',
       ),
       'fallback' => false,
       'defaults' => 
@@ -31812,7 +31868,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::VUblrvYNid0eal7y' => 
+    'generated::F8iaegPMBaURfYyK' => 
     array (
       'methods' => 
       array (
@@ -31833,7 +31889,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::VUblrvYNid0eal7y',
+        'as' => 'generated::F8iaegPMBaURfYyK',
       ),
       'fallback' => false,
       'defaults' => 
@@ -32229,7 +32285,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::ac4b2nFH9qVUR0vu' => 
+    'generated::Ne2NyYSjUEXizfSO' => 
     array (
       'methods' => 
       array (
@@ -32250,7 +32306,7 @@ app('router')->setCompiledRoutes(
         'where' => 
         array (
         ),
-        'as' => 'generated::ac4b2nFH9qVUR0vu',
+        'as' => 'generated::Ne2NyYSjUEXizfSO',
       ),
       'fallback' => false,
       'defaults' => 
@@ -32360,7 +32416,7 @@ app('router')->setCompiledRoutes(
         \\request()->session()->invalidate();
         \\request()->session()->regenerateToken();
         return \\redirect(\'/\')->with(\'success\', \'Sesión cerrada correctamente\');
-    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d450000000000000000";}}',
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d4a0000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -32620,28 +32676,114 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.pedidos' => 
+    'generated::SC02IF8yEwjqJ27h' => 
     array (
       'methods' => 
       array (
         0 => 'GET',
         1 => 'HEAD',
       ),
-      'uri' => 'bodega/pedidos',
+      'uri' => 'pedidos-test',
       'action' => 
       array (
         'middleware' => 
         array (
           0 => 'web',
-          1 => 'auth',
-          2 => 'role:bodeguero',
-          3 => 'permission:view-bodega-pedidos',
+        ),
+        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:653:"function() {
+    $user = \\auth()->user();
+    return \\response()->json([
+        \'mensaje\' => \'Ruta de bodega funciona\',
+        \'autenticado\' => $user ? true: false,
+        \'usuario_actual\' => $user ? $user->name : \'No autenticado\',
+        \'usuario_id\' => $user ? $user->id : null,
+        \'roles\' => $user ? $user->getRoleNames()->toArray() : [],
+        \'role_ids\' => $user ? $user->roles_ids : null,
+        \'role_id\' => $user ? $user->role_id : null,
+        \'permisos\' => $user ? $user->getAllPermissions()->pluck(\'name\')->toArray() : [],
+        \'tiene_permiso_bodega\' => $user ? $user->hasPermissionTo(\'view-bodega-pedidos\') : false,
+    ]);
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d0c0000000000000000";}}',
+        'namespace' => NULL,
+        'prefix' => '',
+        'where' => 
+        array (
+        ),
+        'as' => 'generated::SC02IF8yEwjqJ27h',
+      ),
+      'fallback' => false,
+      'defaults' => 
+      array (
+      ),
+      'wheres' => 
+      array (
+      ),
+      'bindingFields' => 
+      array (
+      ),
+      'lockSeconds' => NULL,
+      'waitSeconds' => NULL,
+      'withTrashed' => false,
+    ),
+    'generated::fzwyhSq62myL0qxK' => 
+    array (
+      'methods' => 
+      array (
+        0 => 'GET',
+        1 => 'HEAD',
+      ),
+      'uri' => 'pedidos-temp',
+      'action' => 
+      array (
+        'middleware' => 
+        array (
+          0 => 'web',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@index',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@index',
-        'as' => 'bodega.pedidos',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '',
+        'where' => 
+        array (
+        ),
+        'as' => 'generated::fzwyhSq62myL0qxK',
+      ),
+      'fallback' => false,
+      'defaults' => 
+      array (
+      ),
+      'wheres' => 
+      array (
+      ),
+      'bindingFields' => 
+      array (
+      ),
+      'lockSeconds' => NULL,
+      'waitSeconds' => NULL,
+      'withTrashed' => false,
+    ),
+    'gestion-bodega.' => 
+    array (
+      'methods' => 
+      array (
+        0 => 'GET',
+        1 => 'HEAD',
+      ),
+      'uri' => 'gestion-bodega',
+      'action' => 
+      array (
+        'middleware' => 
+        array (
+          0 => 'web',
+          1 => 'auth',
+          2 => 'role:bodeguero',
+        ),
+        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:80:"function () {
+        return \\redirect()->route(\'gestion-bodega.pedidos\');
+    }";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d550000000000000000";}}',
+        'as' => 'gestion-bodega.',
+        'namespace' => NULL,
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32660,14 +32802,14 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.dashboard' => 
+    'gestion-bodega.pedidos' => 
     array (
       'methods' => 
       array (
         0 => 'GET',
         1 => 'HEAD',
       ),
-      'uri' => 'bodega/dashboard',
+      'uri' => 'gestion-bodega/pedidos',
       'action' => 
       array (
         'middleware' => 
@@ -32675,13 +32817,51 @@ app('router')->setCompiledRoutes(
           0 => 'web',
           1 => 'auth',
           2 => 'role:bodeguero',
-          3 => 'permission:view-bodega-dashboard',
+        ),
+        'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@index',
+        'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@index',
+        'as' => 'gestion-bodega.pedidos',
+        'namespace' => NULL,
+        'prefix' => '/gestion-bodega',
+        'where' => 
+        array (
+        ),
+      ),
+      'fallback' => false,
+      'defaults' => 
+      array (
+      ),
+      'wheres' => 
+      array (
+      ),
+      'bindingFields' => 
+      array (
+      ),
+      'lockSeconds' => NULL,
+      'waitSeconds' => NULL,
+      'withTrashed' => false,
+    ),
+    'gestion-bodega.dashboard' => 
+    array (
+      'methods' => 
+      array (
+        0 => 'GET',
+        1 => 'HEAD',
+      ),
+      'uri' => 'gestion-bodega/dashboard',
+      'action' => 
+      array (
+        'middleware' => 
+        array (
+          0 => 'web',
+          1 => 'auth',
+          2 => 'role:bodeguero',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@dashboard',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@dashboard',
-        'as' => 'bodega.dashboard',
+        'as' => 'gestion-bodega.dashboard',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32700,13 +32880,13 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.entregar' => 
+    'gestion-bodega.entregar' => 
     array (
       'methods' => 
       array (
         0 => 'POST',
       ),
-      'uri' => 'bodega/pedidos/{id}/entregar',
+      'uri' => 'gestion-bodega/pedidos/{id}/entregar',
       'action' => 
       array (
         'middleware' => 
@@ -32714,13 +32894,12 @@ app('router')->setCompiledRoutes(
           0 => 'web',
           1 => 'auth',
           2 => 'role:bodeguero',
-          3 => 'permission:marcar-entregado',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@entregar',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@entregar',
-        'as' => 'bodega.entregar',
+        'as' => 'gestion-bodega.entregar',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32739,13 +32918,13 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.actualizar-observaciones' => 
+    'gestion-bodega.actualizar-observaciones' => 
     array (
       'methods' => 
       array (
         0 => 'POST',
       ),
-      'uri' => 'bodega/pedidos/observaciones',
+      'uri' => 'gestion-bodega/pedidos/observaciones',
       'action' => 
       array (
         'middleware' => 
@@ -32753,13 +32932,12 @@ app('router')->setCompiledRoutes(
           0 => 'web',
           1 => 'auth',
           2 => 'role:bodeguero',
-          3 => 'permission:editar-observaciones',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@actualizarObservaciones',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@actualizarObservaciones',
-        'as' => 'bodega.actualizar-observaciones',
+        'as' => 'gestion-bodega.actualizar-observaciones',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32778,13 +32956,13 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.actualizar-fecha' => 
+    'gestion-bodega.actualizar-fecha' => 
     array (
       'methods' => 
       array (
         0 => 'POST',
       ),
-      'uri' => 'bodega/pedidos/fecha',
+      'uri' => 'gestion-bodega/pedidos/fecha',
       'action' => 
       array (
         'middleware' => 
@@ -32792,13 +32970,12 @@ app('router')->setCompiledRoutes(
           0 => 'web',
           1 => 'auth',
           2 => 'role:bodeguero',
-          3 => 'permission:editar-fecha-entrega',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@actualizarFecha',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@actualizarFecha',
-        'as' => 'bodega.actualizar-fecha',
+        'as' => 'gestion-bodega.actualizar-fecha',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32817,14 +32994,14 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'bodega.export' => 
+    'gestion-bodega.export' => 
     array (
       'methods' => 
       array (
         0 => 'GET',
         1 => 'HEAD',
       ),
-      'uri' => 'bodega/pedidos/export',
+      'uri' => 'gestion-bodega/pedidos/export',
       'action' => 
       array (
         'middleware' => 
@@ -32832,13 +33009,12 @@ app('router')->setCompiledRoutes(
           0 => 'web',
           1 => 'auth',
           2 => 'role:bodeguero',
-          3 => 'permission:export-bodega',
         ),
         'uses' => 'App\\Http\\Controllers\\Bodega\\PedidosController@export',
         'controller' => 'App\\Http\\Controllers\\Bodega\\PedidosController@export',
-        'as' => 'bodega.export',
+        'as' => 'gestion-bodega.export',
         'namespace' => NULL,
-        'prefix' => '/bodega',
+        'prefix' => '/gestion-bodega',
         'where' => 
         array (
         ),
@@ -32916,7 +33092,7 @@ app('router')->setCompiledRoutes(
             \'message\' => \'Error al actualizar estado: \' . $e->getMessage()
         ], 500);
     }
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d080000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"0000000000000d540000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -32938,7 +33114,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::NMPxw5pHMwVGGF8x' => 
+    'generated::vo7HxcGuo97AUlJl' => 
     array (
       'methods' => 
       array (
@@ -32964,7 +33140,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 'Illuminate\\Foundation\\Http\\Middleware\\VerifyCsrfToken',
         ),
-        'as' => 'generated::NMPxw5pHMwVGGF8x',
+        'as' => 'generated::vo7HxcGuo97AUlJl',
       ),
       'fallback' => false,
       'defaults' => 
@@ -32996,7 +33172,7 @@ app('router')->setCompiledRoutes(
                         $config,
                         $isProduction
                     ))($request, $path);
-                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"0000000000000d6c0000000000000000";}}',
+                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"0000000000000d760000000000000000";}}',
         'as' => 'storage.local',
       ),
       'fallback' => false,

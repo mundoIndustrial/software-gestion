@@ -15,50 +15,42 @@ Route::get('/pedidos-test', function() {
         'autenticado' => $user ? true : false,
         'usuario_actual' => $user ? $user->name : 'No autenticado',
         'usuario_id' => $user ? $user->id : null,
-        'roles' => $user ? $user->getRoleNames()->toArray() : [],
         'role_ids' => $user ? $user->roles_ids : null,
         'role_id' => $user ? $user->role_id : null,
-        'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
-        'tiene_permiso_bodega' => $user ? $user->hasPermissionTo('view-bodega-pedidos') : false,
     ]);
 });
 
 // Ruta temporal para acceso sin restricciones (solo para diagnóstico)
 Route::get('/pedidos-temp', [PedidosController::class, 'index']);
 
-Route::middleware(['auth', 'role:bodeguero'])->group(function () {
+Route::middleware(['auth', 'role:bodeguero'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
     
-    // Gestión de Pedidos
-    Route::prefix('bodega')->name('bodega.')->group(function () {
-        
-        // Listar pedidos
-        Route::get('/pedidos', [PedidosController::class, 'index'])
-            ->name('pedidos')
-            ->middleware('permission:view-bodega-pedidos');
-
-        // Dashboard
-        Route::get('/dashboard', [PedidosController::class, 'dashboard'])
-            ->name('dashboard')
-            ->middleware('permission:view-bodega-dashboard');
-
-        // Acciones AJAX
-        Route::post('/pedidos/{id}/entregar', [PedidosController::class, 'entregar'])
-            ->name('entregar')
-            ->middleware('permission:marcar-entregado');
-
-        Route::post('/pedidos/observaciones', [PedidosController::class, 'actualizarObservaciones'])
-            ->name('actualizar-observaciones')
-            ->middleware('permission:editar-observaciones');
-
-        Route::post('/pedidos/fecha', [PedidosController::class, 'actualizarFecha'])
-            ->name('actualizar-fecha')
-            ->middleware('permission:editar-fecha-entrega');
-
-        // Exportar (opcional)
-        Route::get('/pedidos/export', [PedidosController::class, 'export'])
-            ->name('export')
-            ->middleware('permission:export-bodega');
+    // Ruta raíz - redirige a pedidos
+    Route::get('/', function () {
+        return redirect()->route('gestion-bodega.pedidos');
     });
+    
+    // Listar pedidos
+    Route::get('/pedidos', [PedidosController::class, 'index'])
+        ->name('pedidos');
+
+    // Dashboard
+    Route::get('/dashboard', [PedidosController::class, 'dashboard'])
+        ->name('dashboard');
+
+    // Acciones AJAX
+    Route::post('/pedidos/{id}/entregar', [PedidosController::class, 'entregar'])
+        ->name('entregar');
+
+    Route::post('/pedidos/observaciones', [PedidosController::class, 'actualizarObservaciones'])
+        ->name('actualizar-observaciones');
+
+    Route::post('/pedidos/fecha', [PedidosController::class, 'actualizarFecha'])
+        ->name('actualizar-fecha');
+
+    // Exportar (opcional)
+    Route::get('/pedidos/export', [PedidosController::class, 'export'])
+        ->name('export');
 });
 
 // Ruta alternativa si prefieres acceso público (para testing)

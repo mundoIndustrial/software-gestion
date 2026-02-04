@@ -190,8 +190,8 @@
           <!-- Módulo Bodega para Bodeguero -->
           @if(auth()->user()->hasRole('bodeguero'))
           <li class="submenu-item">
-            <a href="{{ route('bodega.pedidos') }}"
-               class="menu-link {{ request()->routeIs('bodega.pedidos') ? 'active' : '' }}"
+            <a href="{{ route('gestion-bodega.pedidos') }}"
+               class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
                aria-label="Gestión de pedidos - Bodega">
               <span class="menu-label">📦 Gestión Pedidos</span>
             </a>

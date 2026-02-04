@@ -8,14 +8,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==================== ELEMENTOS DOM ====================
     const searchInput = document.getElementById('searchInput');
     const asesorFilter = document.getElementById('asesorFilter');
-    const estadoFilter = document.getElementById('estadoFilter');
     const pedidosTableBody = document.getElementById('pedidosTableBody');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
 
     // ==================== INICIALIZACIÓN ====================
     initializeEventListeners();
-    updateStatistics();
 
     /**
      * Inicializar event listeners
@@ -24,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Filtros
         searchInput?.addEventListener('input', filterTable);
         asesorFilter?.addEventListener('change', filterTable);
-        estadoFilter?.addEventListener('change', filterTable);
 
         // Botones de entregar
         document.querySelectorAll('.entregar-btn').forEach(btn => {
@@ -290,8 +287,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('countPendiente').textContent = countPendiente;
-        document.getElementById('countEntregado').textContent = countEntregado;
-        document.getElementById('countRetrasado').textContent = countRetrasado;
+        // Solo actualizar si los elementos existen
+        const elCountPendiente = document.getElementById('countPendiente');
+        const elCountEntregado = document.getElementById('countEntregado');
+        const elCountRetrasado = document.getElementById('countRetrasado');
+        
+        if (elCountPendiente) elCountPendiente.textContent = countPendiente;
+        if (elCountEntregado) elCountEntregado.textContent = countEntregado;
+        if (elCountRetrasado) elCountRetrasado.textContent = countRetrasado;
     }
 });

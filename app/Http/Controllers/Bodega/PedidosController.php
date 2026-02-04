@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Bodega;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReciboPrenda;
-use App\Models\OrdenAsesor;
-use App\Models\Cliente;
-use App\Models\Prenda;
+use App\Models\PrendaPedido;
+use App\Models\PedidoEpp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -18,9 +17,9 @@ class PedidosController extends Controller
      */
     public function index()
     {
-        // Obtener los datos agrupados por número de pedido
-        $pedidos = ReciboPrenda::with(['asesor', 'empresa'])
-            ->where('estado', '!=', 'cancelado')
+        // Obtener los pedidos de producción
+        $pedidos = ReciboPrenda::with(['asesor'])
+            ->where('estado', '!=', 'Anulada')
             ->orderBy('numero_pedido', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -28,15 +27,46 @@ class PedidosController extends Controller
         // Agrupar por número de pedido
         $pedidosAgrupados = $pedidos->groupBy('numero_pedido')->map(function ($items) {
             return $items->map(function ($item) {
+                // Obtener prendas con sus tallas (como en despacho)
+                $prendas = PrendaPedido::where('pedido_produccion_id', $item->id)
+                    ->with('prendaPedidoTallas')
+                    ->get();
+
+                // Construir descripción de prendas con tallas
+                $prendasDesc = $prendas->map(function($prenda) {
+                    $tallas = $prenda->prendaPedidoTallas
+                        ->map(fn($t) => "{$t->talla} ({$t->cantidad})")
+                        ->implode(', ');
+                    return "{$prenda->nombre_prenda}" . ($tallas ? " - Tallas: $tallas" : "");
+                })->toArray();
+
+                // Obtener EPPs con su información completa
+                $epps = PedidoEpp::where('pedido_produccion_id', $item->id)
+                    ->with('epp')
+                    ->get();
+
+                // Construir descripción de EPPs
+                $eppsDesc = $epps->map(function($epp) {
+                    $nombre = $epp->epp->nombre_completo ?? $epp->epp->nombre ?? 'EPP sin nombre';
+                    $codigo = $epp->epp->codigo ? " ({$epp->epp->codigo})" : '';
+                    return "{$nombre}{$codigo}" . ($epp->cantidad ? " x{$epp->cantidad}" : "");
+                })->toArray();
+
+                // Combinar todas las descripciones
+                $todasLasArticulos = array_merge($prendasDesc, $eppsDesc);
+                $articuoDescription = !empty($todasLasArticulos) 
+                    ? implode(' | ', $todasLasArticulos) 
+                    : 'Sin prendas ni EPP';
+
                 return [
                     'id' => $item->id,
                     'numero_pedido' => $item->numero_pedido,
-                    'asesor' => $item->asesor->nombre ?? 'N/A',
-                    'empresa' => $item->empresa->nombre ?? 'N/A',
-                    'articulo' => $item->articulo->nombre ?? 'N/A',
-                    'cantidad' => $item->cantidad,
-                    'observaciones' => $item->observaciones,
-                    'fecha_entrega' => $item->fecha_entrega ? $item->fecha_entrega->format('Y-m-d') : null,
+                    'asesor' => $item->asesor->nombre ?? $item->asesor->name ?? 'N/A',
+                    'empresa' => $item->cliente ?? 'N/A',
+                    'articulo' => $articuoDescription,
+                    'cantidad_total' => $item->cantidad_total ?? 0,
+                    'observaciones' => $item->novedades ?? '',
+                    'fecha_entrega' => $item->fecha_estimada_de_entrega ? Carbon::parse($item->fecha_estimada_de_entrega)->format('Y-m-d') : null,
                     'fecha_pedido' => $item->created_at->format('Y-m-d'),
                     'estado' => $this->determinarEstado($item),
                 ];
@@ -45,6 +75,7 @@ class PedidosController extends Controller
 
         // Obtener lista única de asesores para filtro
         $asesores = $pedidos->pluck('asesor.nombre')
+            ->filter()
             ->unique()
             ->sort()
             ->values()
@@ -72,13 +103,6 @@ class PedidosController extends Controller
                 'estado' => 'entregado',
                 'fecha_entrega_real' => Carbon::now(),
             ]);
-
-            // Registrar en auditoría si tienes
-            activity()
-                ->performedOn($reciboPrenda)
-                ->causedBy(auth()->user())
-                ->event('entregado')
-                ->log('Pedido marcado como entregado en bodega');
 
             return response()->json([
                 'success' => true,
@@ -119,12 +143,6 @@ class PedidosController extends Controller
             ]);
 
             // Registrar en auditoría
-            activity()
-                ->performedOn($reciboPrenda)
-                ->causedBy(auth()->user())
-                ->event('observaciones_actualizadas')
-                ->withProperties(['observaciones' => $validated['observaciones']])
-                ->log('Observaciones actualizadas en bodega');
 
             return response()->json([
                 'success' => true,
@@ -165,13 +183,8 @@ class PedidosController extends Controller
                 'fecha_entrega' => Carbon::createFromFormat('Y-m-d', $validated['fecha_entrega']),
             ]);
 
-            // Registrar en auditoría
-            activity()
-                ->performedOn($reciboPrenda)
-                ->causedBy(auth()->user())
-                ->event('fecha_actualizada')
-                ->withProperties(['fecha_entrega' => $validated['fecha_entrega']])
-                ->log('Fecha de entrega actualizada en bodega');
+            // Actualizar fecha
+            $reciboPrenda->update(['fecha_entrega' => $validated['fecha_entrega']]);
 
             return response()->json([
                 'success' => true,
@@ -196,13 +209,13 @@ class PedidosController extends Controller
      */
     private function determinarEstado($item): string
     {
-        // Si está marcado como entregado
-        if ($item->estado === 'entregado') {
+        // Si está marcado como Entregado
+        if ($item->estado === 'Entregado') {
             return 'entregado';
         }
 
-        // Si la fecha de entrega ya pasó
-        if ($item->fecha_entrega && Carbon::createFromFormat('Y-m-d H:i:s', $item->fecha_entrega) < Carbon::now()) {
+        // Si la fecha de entrega estimada ya pasó
+        if ($item->fecha_estimada_de_entrega && Carbon::parse($item->fecha_estimada_de_entrega) < Carbon::now()) {
             return 'retrasado';
         }
 
