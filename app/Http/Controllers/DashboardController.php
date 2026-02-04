@@ -31,7 +31,7 @@ class DashboardController extends Controller
             }
 
             if ($roleName === 'bodeguero') {
-                return redirect()->route('bodega.pedidos');
+                return redirect()->route('gestion-bodega.pedidos');
             }
 
             if ($roleName === 'insumos') {

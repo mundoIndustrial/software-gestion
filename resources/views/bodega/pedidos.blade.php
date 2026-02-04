@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.bodega-clean')
 
 @section('title', 'Gestión de Pedidos - Bodega')
 
@@ -19,7 +19,7 @@
                 <div class="flex items-center space-x-6">
                     <div class="text-right">
                         <p class="text-sm font-bold text-slate-900">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-slate-500 font-medium">{{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}</p>
+                        <p class="text-xs text-slate-500 font-medium">Bodeguero</p>
                     </div>
                     <div class="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,22 +63,6 @@
                             <option value="{{ $asesor }}">{{ $asesor }}</option>
                         @empty
                         @endforelse
-                    </select>
-                </div>
-
-                <!-- Filtro Estado -->
-                <div>
-                    <label class="block text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">
-                        📊 Filtrar Estado
-                    </label>
-                    <select
-                        id="estadoFilter"
-                        class="w-full px-3 py-2 border-2 border-slate-300 text-xs focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition bg-white"
-                    >
-                        <option value="">TODOS</option>
-                        <option value="pendiente">⏳ PENDIENTE</option>
-                        <option value="entregado">✓ ENTREGADO</option>
-                        <option value="retrasado">⚠ RETRASADO</option>
                     </select>
                 </div>
             </div>
@@ -166,7 +150,7 @@
                                     
                                     <!-- CANTIDAD -->
                                     <td class="px-4 py-3 text-center text-xs font-black text-slate-900 border-r border-slate-200 font-mono">
-                                        {{ str_pad($item['cantidad'], 2, '0', STR_PAD_LEFT) }}
+                                        {{ str_pad($item['cantidad_total'], 2, '0', STR_PAD_LEFT) }}
                                     </td>
                                     
                                     <!-- OBSERVACIONES -->
@@ -232,69 +216,6 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Estadísticas Corporativas -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
-            <!-- Total Pedidos -->
-            <div class="bg-white border-2 border-slate-300 p-5">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-black text-slate-600 uppercase tracking-wider">Total Pedidos</p>
-                        <p class="text-3xl font-black text-slate-900 mt-2">{{ count($pedidosAgrupados) }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-slate-700 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pendientes -->
-            <div class="bg-white border-2 border-amber-300 p-5">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-black text-amber-700 uppercase tracking-wider">Pendientes</p>
-                        <p class="text-3xl font-black text-amber-600 mt-2" id="countPendiente">0</p>
-                    </div>
-                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-amber-600 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Entregados -->
-            <div class="bg-white border-2 border-blue-300 p-5">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-black text-blue-700 uppercase tracking-wider">Entregados</p>
-                        <p class="text-3xl font-black text-blue-600 mt-2" id="countEntregado">0</p>
-                    </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Retrasados -->
-            <div class="bg-white border-2 border-red-300 p-5">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-black text-red-700 uppercase tracking-wider">Retrasados</p>
-                        <p class="text-3xl font-black text-red-600 mt-2" id="countRetrasado">0</p>
-                    </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-600 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
