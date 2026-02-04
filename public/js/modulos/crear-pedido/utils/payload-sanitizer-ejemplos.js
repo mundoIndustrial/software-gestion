@@ -33,7 +33,7 @@ const variacionesSucias = {
 // DESPUÉS: Objeto limpio para Laravel
 const variacionesLimpias = PayloadSanitizer.sanitizarVariaciones(variacionesSucias);
 
-console.log('✅ Variaciones sanitizadas:');
+console.log(' Variaciones sanitizadas:');
 console.log(JSON.stringify(variacionesLimpias, null, 2));
 /* Resultado:
 {
@@ -107,7 +107,7 @@ const itemSucio = {
 // DESPUÉS: Item limpio
 const itemLimpio = PayloadSanitizer.sanitizarItem(itemSucio);
 
-console.log('✅ Item sanitizado:');
+console.log(' Item sanitizado:');
 console.log(JSON.stringify(itemLimpio, null, 2));
 
 // ==================== EJEMPLO 3: SANITIZAR PEDIDO COMPLETO ====================
@@ -155,7 +155,7 @@ const pedidoSucio = {
 // DESPUÉS: Pedido limpio
 const pedidoLimpio = PayloadSanitizer.sanitizarPedido(pedidoSucio);
 
-console.log('✅ Pedido sanitizado:');
+console.log(' Pedido sanitizado:');
 console.log(JSON.stringify(pedidoLimpio, null, 2));
 
 // ==================== EJEMPLO 4: USO CON FETCH ====================
@@ -199,7 +199,7 @@ async function crearPedido(pedidoFormulario) {
         }
         
         const resultado = await response.json();
-        console.log('✅ Pedido creado:', resultado);
+        console.log(' Pedido creado:', resultado);
         
         return resultado;
         
@@ -227,7 +227,7 @@ async function crearPedidoConAxios(pedidoFormulario) {
         // Enviar
         const response = await axios.post('/api/pedidos-editable/crear', payloadLimpio);
         
-        console.log('✅ Pedido creado:', response.data);
+        console.log(' Pedido creado:', response.data);
         return response.data;
         
     } catch (error) {
@@ -287,7 +287,7 @@ async function enviarPedido() {
         }
         
         const resultado = await response.json();
-        console.log('✅ Pedido creado:', resultado);
+        console.log(' Pedido creado:', resultado);
         
         // Redirigir o mostrar success
         alert('Pedido creado exitosamente');
@@ -322,7 +322,7 @@ function testSanitizador() {
     console.group('🧪 Tests del PayloadSanitizer');
     
     // Test 1: Eliminar propiedades reactivas
-    console.log('\n✅ Test 1: Eliminar propiedades reactivas');
+    console.log('\n Test 1: Eliminar propiedades reactivas');
     const conReactivos = { nombre: "Test", __v_isRef: true, _value: {} };
     const sinReactivos = PayloadSanitizer.clonarProfundo(conReactivos);
     console.assert(!sinReactivos.__v_isRef, 'Debería eliminar __v_isRef');
@@ -331,7 +331,7 @@ function testSanitizador() {
     console.log('Después:', Object.keys(sinReactivos));
     
     // Test 2: Convertir booleanos
-    console.log('\n✅ Test 2: Convertir booleanos');
+    console.log('\n Test 2: Convertir booleanos');
     console.assert(PayloadSanitizer.convertirBoolean("true") === true, '"true" -> true');
     console.assert(PayloadSanitizer.convertirBoolean("false") === false, '"false" -> false');
     console.assert(PayloadSanitizer.convertirBoolean("1") === true, '"1" -> true');
@@ -340,20 +340,20 @@ function testSanitizador() {
     console.assert(PayloadSanitizer.convertirBoolean(0) === false, '0 -> false');
     
     // Test 3: Convertir números
-    console.log('\n✅ Test 3: Convertir números');
+    console.log('\n Test 3: Convertir números');
     console.assert(PayloadSanitizer.convertirNumero("123") === 123, '"123" -> 123');
     console.assert(PayloadSanitizer.convertirNumero("45.67") === 45.67, '"45.67" -> 45.67');
     console.assert(PayloadSanitizer.convertirNumero("") === null, '"" -> null');
     console.assert(PayloadSanitizer.convertirNumero(null) === null, 'null -> null');
     
     // Test 4: Limpiar strings
-    console.log('\n✅ Test 4: Limpiar strings');
+    console.log('\n Test 4: Limpiar strings');
     console.assert(PayloadSanitizer.limpiarString("  test  ") === "test", 'Elimina espacios');
     console.assert(PayloadSanitizer.limpiarString("") === null, 'String vacío -> null');
     console.assert(PayloadSanitizer.limpiarString(null) === null, 'null -> null');
     
     // Test 5: Aplanar arrays anidados
-    console.log('\n✅ Test 5: Sanitizar imágenes (aplanar arrays)');
+    console.log('\n Test 5: Sanitizar imágenes (aplanar arrays)');
     const imagenesAnidadas = [[[{ original: "img1.jpg" }]], [{ original: "img2.jpg" }]];
     const imagenesLimpias = PayloadSanitizer.sanitizarImagenes(imagenesAnidadas);
     console.assert(imagenesLimpias.length === 2, 'Debería aplanar correctamente');
@@ -361,7 +361,7 @@ function testSanitizador() {
     console.log('Limpias:', imagenesLimpias);
     
     console.groupEnd();
-    console.log('\n✅ Todos los tests pasaron');
+    console.log('\n Todos los tests pasaron');
 }
 
 // Ejecutar tests
@@ -371,19 +371,19 @@ testSanitizador();
 
 console.log('\n📚 RESUMEN Y MEJORES PRÁCTICAS:');
 console.log(`
-✅ SIEMPRE sanitizar antes de enviar a Laravel:
+ SIEMPRE sanitizar antes de enviar a Laravel:
    const payload = PayloadSanitizer.sanitizarPedido(formData);
 
-✅ VALIDAR después de sanitizar:
+ VALIDAR después de sanitizar:
    const { valido, errores } = PayloadSanitizer.validarPayload(payload);
 
-✅ DEBUG en desarrollo:
+ DEBUG en desarrollo:
    PayloadSanitizer.debug(antes, despues);
 
  NUNCA enviar objetos reactivos directamente:
    fetch('/api', { body: JSON.stringify(reactive(data)) }); // MAL
 
-✅ USAR siempre el sanitizador:
+ USAR siempre el sanitizador:
    fetch('/api', { body: JSON.stringify(PayloadSanitizer.sanitizarPedido(data)) }); // BIEN
 
 📦 INCLUIR en tu HTML:

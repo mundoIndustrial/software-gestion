@@ -43,13 +43,13 @@ class SimularLoginCosturero extends Command
             return;
         }
 
-        $this->line("✅ Usuario encontrado: {$user->name} (ID: {$user->id})");
+        $this->line(" Usuario encontrado: {$user->name} (ID: {$user->id})");
         $this->line('');
 
         // Verificar roles
         $this->info('Verificando roles:');
-        $this->line("   - hasRole('costurero'): " . ($user->hasRole('costurero') ? '✅ true' : '❌ false'));
-        $this->line("   - hasAnyRole(['cortador', 'costurero']): " . ($user->hasAnyRole(['cortador', 'costurero']) ? '✅ true' : '❌ false'));
+        $this->line("   - hasRole('costurero'): " . ($user->hasRole('costurero') ? ' true' : '❌ false'));
+        $this->line("   - hasAnyRole(['cortador', 'costurero']): " . ($user->hasAnyRole(['cortador', 'costurero']) ? ' true' : '❌ false'));
         $this->line('');
 
         // Simular el middleware OperarioAccess
@@ -61,7 +61,7 @@ class SimularLoginCosturero extends Command
             return;
         }
         
-        $this->line("   ✅ MIDDLEWARE PERMITIDO");
+        $this->line("    MIDDLEWARE PERMITIDO");
         $this->line('');
 
         // Simular el AuthenticatedSessionController
@@ -77,13 +77,13 @@ class SimularLoginCosturero extends Command
         $this->line("   - Rol detectado: {$roleName}");
 
         if ($roleName === 'costurero') {
-            $this->line("   ✅ REDIRECCIÓN: operario.dashboard");
+            $this->line("    REDIRECCIÓN: operario.dashboard");
         } else {
             $this->error("   ❌ ERROR: Rol '{$roleName}' no tiene ruta de redirección");
         }
 
         $this->line('');
-        $this->line('✅ Simulación completada');
+        $this->line(' Simulación completada');
         $this->line('');
     }
 }

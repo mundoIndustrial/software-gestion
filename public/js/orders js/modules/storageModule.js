@@ -2,14 +2,14 @@
  * MÓDULO: storageModule.js v2.0
  * Responsabilidad: Sincronización entre pestañas via storage universal
  * 
- * ✅ Características:
+ *  Características:
  * - Usa localStorage/sessionStorage a través del proxy seguro (storage-proxy.js)
  * - Fallback automático a memoria si storage no está disponible
  * - Comunicación entre pestañas con BroadcastChannel y Storage Events
  * - Sin errores "Access to storage is not allowed from this context"
  * - Manejador de errores robusto y sin promesas rechazadas
  * 
- * ⚠️ REQUISITO: storage-proxy.js debe cargarse ANTES de este archivo
+ *  REQUISITO: storage-proxy.js debe cargarse ANTES de este archivo
  */
 
 const StorageModule = {
@@ -76,7 +76,7 @@ const StorageModule = {
         this._setupStorageEvents();
         this.initialized = true;
         
-        console.log('[StorageModule] ✅ Listener inicializado');
+        console.log('[StorageModule]  Listener inicializado');
     },
 
     /**
@@ -102,7 +102,7 @@ const StorageModule = {
                 console.warn('[StorageModule] BroadcastChannel error:', error.message);
             };
             
-            console.log('[StorageModule] ✅ BroadcastChannel configurado');
+            console.log('[StorageModule]  BroadcastChannel configurado');
         } catch (error) {
             console.warn('[StorageModule] BroadcastChannel no disponible:', error.message);
             this.broadcastChannel = null;
@@ -129,7 +129,7 @@ const StorageModule = {
             window.addEventListener('storage', storageListener);
             this.storageListeners.push(storageListener);
             
-            console.log('[StorageModule] ✅ Storage events configurados');
+            console.log('[StorageModule]  Storage events configurados');
         } catch (error) {
             console.warn('[StorageModule] Storage events no disponibles:', error.message);
         }
@@ -299,4 +299,4 @@ const StorageModule = {
 window.StorageModule = StorageModule;
 globalThis.StorageModule = StorageModule;
 
-console.log('[StorageModule] ✅ Módulo cargado correctamente');
+console.log('[StorageModule]  Módulo cargado correctamente');

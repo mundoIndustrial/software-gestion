@@ -106,7 +106,7 @@ class MapeoImagenesService
         $tiempoResolver = round((microtime(true) - $inicioResolver) * 1000, 2);
 
         // LOG DETALLADO: Mostrar todos los keys en el mapeo
-        Log::info('[MAPEO-IMAGENES] 📊 MAPEO COMPLETO DE UID→RUTA', [
+        Log::info('[MAPEO-IMAGENES]  MAPEO COMPLETO DE UID→RUTA', [
             'total_keys' => count($mapeoUidARuta),
             'mapeo_keys_rutas' => array_map(function($key) use ($mapeoUidARuta) {
                 return [
@@ -117,7 +117,7 @@ class MapeoImagenesService
             }, array_keys($mapeoUidARuta)),
         ]);
 
-        Log::info('[MAPEO-IMAGENES] ✅ Mapeo UID→Ruta completado', [
+        Log::info('[MAPEO-IMAGENES]  Mapeo UID→Ruta completado', [
             'imagenes_mapeadas' => count($mapeoUidARuta),
             'tiempo_resolver_ms' => $tiempoResolver,
         ]);
@@ -190,14 +190,14 @@ class MapeoImagenesService
                 $rutaFinal = null;
                 if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
                     $rutaFinal = $mapeoUidARuta[$formDataKey];
-                    Log::info('[MapeoImagenesService] ✅ IMAGEN ENCONTRADA POR formdata_key', [
+                    Log::info('[MapeoImagenesService]  IMAGEN ENCONTRADA POR formdata_key', [
                         'prenda_id' => $prenda->id,
                         'formdata_key' => $formDataKey,
                         'ruta' => $rutaFinal,
                     ]);
                 } elseif (isset($mapeoUidARuta[$imagenUID])) {
                     $rutaFinal = $mapeoUidARuta[$imagenUID];
-                    Log::info('[MapeoImagenesService] ✅ IMAGEN ENCONTRADA POR uid', [
+                    Log::info('[MapeoImagenesService]  IMAGEN ENCONTRADA POR uid', [
                         'prenda_id' => $prenda->id,
                         'uid' => $imagenUID,
                         'ruta' => $rutaFinal,
@@ -205,7 +205,7 @@ class MapeoImagenesService
                 } elseif ($isExistingFromCotizacion && $rutaExistente) {
                     // NUEVO: Usar ruta de cotización existente
                     $rutaFinal = $rutaExistente;
-                    Log::info('[MapeoImagenesService] ✅ IMAGEN EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                    Log::info('[MapeoImagenesService]  IMAGEN EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
                         'prenda_id' => $prenda->id,
                         'uid' => $imagenUID,
                         'ruta' => $rutaFinal,
@@ -276,14 +276,14 @@ class MapeoImagenesService
                     $rutaFinal = null;
                     if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
                         $rutaFinal = $mapeoUidARuta[$formDataKey];
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA ENCONTRADA POR formdata_key', [
+                        Log::info('[MapeoImagenesService]  IMAGEN TELA ENCONTRADA POR formdata_key', [
                             'tela_id' => $telaEnBD->id,
                             'formdata_key' => $formDataKey,
                             'ruta' => $rutaFinal,
                         ]);
                     } elseif (isset($mapeoUidARuta[$imagenUID])) {
                         $rutaFinal = $mapeoUidARuta[$imagenUID];
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA ENCONTRADA POR uid', [
+                        Log::info('[MapeoImagenesService]  IMAGEN TELA ENCONTRADA POR uid', [
                             'tela_id' => $telaEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
@@ -291,7 +291,7 @@ class MapeoImagenesService
                     } elseif ($isExistingFromCotizacion && $rutaExistente) {
                         // NUEVO: Usar ruta de cotización existente
                         $rutaFinal = $rutaExistente;
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN TELA EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                        Log::info('[MapeoImagenesService]  IMAGEN TELA EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
                             'tela_id' => $telaEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
@@ -411,14 +411,14 @@ class MapeoImagenesService
                     $rutaFinal = null;
                     if ($formDataKey && isset($mapeoUidARuta[$formDataKey])) {
                         $rutaFinal = $mapeoUidARuta[$formDataKey];
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO ENCONTRADA POR formdata_key', [
+                        Log::info('[MapeoImagenesService]  IMAGEN PROCESO ENCONTRADA POR formdata_key', [
                             'proceso_id' => $procesoEnBD->id,
                             'formdata_key' => $formDataKey,
                             'ruta' => $rutaFinal,
                         ]);
                     } elseif (isset($mapeoUidARuta[$imagenUID])) {
                         $rutaFinal = $mapeoUidARuta[$imagenUID];
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO ENCONTRADA POR uid', [
+                        Log::info('[MapeoImagenesService]  IMAGEN PROCESO ENCONTRADA POR uid', [
                             'proceso_id' => $procesoEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,
@@ -426,7 +426,7 @@ class MapeoImagenesService
                     } elseif ($isExistingFromCotizacion && $rutaExistente) {
                         // NUEVO: Usar ruta de cotización existente
                         $rutaFinal = $rutaExistente;
-                        Log::info('[MapeoImagenesService] ✅ IMAGEN PROCESO EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
+                        Log::info('[MapeoImagenesService]  IMAGEN PROCESO EXISTENTE DE COTIZACIÓN - USANDO RUTA DIRECTA', [
                             'proceso_id' => $procesoEnBD->id,
                             'uid' => $imagenUID,
                             'ruta' => $rutaFinal,

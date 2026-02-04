@@ -277,7 +277,7 @@ async function crearEPPNuevoYAgregar() {
             });
             console.log('[DEBUG] Producto establecido en stateManager:', window.eppStateManager.getProductoSeleccionado());
         } else {
-            console.error('[DEBUG] ⚠️ window.eppStateManager NO EXISTE');
+            console.error('[DEBUG]  window.eppStateManager NO EXISTE');
         }
 
         // Actualizar tarjeta
@@ -574,7 +574,7 @@ function actualizarModalAExito(titulo, mensaje) {
         
         console.log('[DEBUG] Modal actualizado a éxito');
     } else {
-        console.warn('[DEBUG] ⚠️ No se encontraron los elementos del modal');
+        console.warn('[DEBUG]  No se encontraron los elementos del modal');
     }
 }
 

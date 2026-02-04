@@ -1021,7 +1021,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         return;
     }
 
-    // ✅ GUARDAR ESPECIFICACIONES SI EL MODAL TIENE DATOS
+    //  GUARDAR ESPECIFICACIONES SI EL MODAL TIENE DATOS
     const modalEspecificaciones = document.getElementById('modalEspecificaciones');
     if (modalEspecificaciones && modalEspecificaciones.style.display !== 'none') {
         // El modal está abierto, guardar los datos antes de enviar
@@ -1162,7 +1162,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                     imagen: imagen
                 });
                 
-                console.log(`    ✅ Tela ${telaCounter} agregada:`, { nombre: nombrePrenda, color, tela, ref });
+                console.log(`     Tela ${telaCounter} agregada:`, { nombre: nombrePrenda, color, tela, ref });
             }
         });
         

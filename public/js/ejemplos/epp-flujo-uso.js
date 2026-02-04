@@ -76,7 +76,7 @@ async function manejarSubmitFormulario(event) {
         const resultado = await flujo.crearPedidoCompleto(pedidoData);
 
         // Éxito
-        alert(`✅ Pedido creado exitosamente\n` +
+        alert(` Pedido creado exitosamente\n` +
               `Número: ${resultado.numero_pedido}\n` +
               `Imágenes subidas: ${resultado.imagenes_resultado.imagenes_subidas}`);
 
@@ -103,7 +103,7 @@ async function crearPedidoPaso1(pedidoData) {
     
     try {
         const resultado = await flujo.crearPedido(pedidoData);
-        console.log('✅ Pedido creado, ID:', resultado.pedido_id);
+        console.log(' Pedido creado, ID:', resultado.pedido_id);
         
         return resultado.pedido_id;
     } catch (error) {
@@ -117,7 +117,7 @@ async function subirImagenesPaso2(pedidoId, pedidoData) {
     
     try {
         const resultado = await flujo.subirImagenesPedido(pedidoId, pedidoData);
-        console.log('✅ Imágenes subidas:', resultado.imagenes_subidas);
+        console.log(' Imágenes subidas:', resultado.imagenes_subidas);
         
         return resultado;
     } catch (error) {
@@ -144,7 +144,7 @@ async function flujoManual() {
         const imagenesSubidas = await subirImagenesPaso2(pedidoCreado, pedidoData);
         
         if (imagenesSubidas.success) {
-            console.log('✅ Todo perfecto');
+            console.log(' Todo perfecto');
         } else {
             console.warn(' Pedido OK pero imágenes fallaron');
         }
@@ -171,7 +171,7 @@ async function crearPedidoConManejErrors(pedidoData) {
         }
 
         const pedidoId = pedidoCreado.pedido_id;
-        console.log(`✅ Pedido ${pedidoId} creado`);
+        console.log(` Pedido ${pedidoId} creado`);
 
         // PASO 2: Subir imágenes
         console.log('🖼️ Subiendo imágenes...');
@@ -187,7 +187,7 @@ async function crearPedidoConManejErrors(pedidoData) {
             };
         }
 
-        console.log(`✅ ${imagenesSubidas.imagenes_subidas} imágenes subidas`);
+        console.log(` ${imagenesSubidas.imagenes_subidas} imágenes subidas`);
 
         return {
             success: true,

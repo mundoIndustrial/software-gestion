@@ -1509,7 +1509,7 @@ class RegistroOrdenQueryController extends Controller
             // Resolver PedidoController correctamente desde el contenedor
             $pedidoController = app()->make(\App\Http\Controllers\Api_temp\PedidoController::class);
             
-            // ⚠️ CRÍTICO: Pasar true para filtrar procesos PENDIENTE en /registros
+            //  CRÍTICO: Pasar true para filtrar procesos PENDIENTE en /registros
             $response = $pedidoController->obtenerDetalleCompleto($pedidoId, true);
             $responseData = $response->getData(true);
             

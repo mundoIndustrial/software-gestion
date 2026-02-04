@@ -244,7 +244,7 @@ class TallaComponent {
                                  LETRA<br><small>(XS, S, M, L, XL...)</small>
                             </button>
                             <button type="button" class="swal2-confirm swal2-styled" id="btn-numero" style="flex: 1;">
-                                🔢 NÚMERO<br><small>(6, 8, 10, 12...)</small>
+                                 NÚMERO<br><small>(6, 8, 10, 12...)</small>
                             </button>
                         </div>
                     </div>

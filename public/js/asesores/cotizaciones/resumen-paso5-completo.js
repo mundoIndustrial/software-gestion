@@ -237,7 +237,7 @@ function generarTablaLogoPaso3(nombrePrenda) {
                 tecnicaData.prendas.forEach(prenda => {
                     // Buscar por nombre de prenda: permite búsqueda parcial (.includes()) ya que Paso 3 guarda el nombre con más detalles
                     if (prenda.nombre_prenda && prenda.nombre_prenda.toUpperCase().includes(nombrePrenda.toUpperCase())) {
-                        console.log('✅ Prenda encontrada:', prenda.nombre_prenda);
+                        console.log(' Prenda encontrada:', prenda.nombre_prenda);
                         const nombreTecnica = tecnicaData.tipo || tecnicaData.nombre || 'Técnica';
                         
                         // Inicializar array de ubicaciones para esta técnica
@@ -309,7 +309,7 @@ function generarTablaReflectivoPaso4(nombrePrenda) {
         window.prendas_reflectivo_paso4.forEach(prenda => {
             // Buscar por nombre de prenda (búsqueda parcial con .includes())
             if (prenda.tipo_prenda && prenda.tipo_prenda.toUpperCase().includes(nombrePrenda.toUpperCase())) {
-                console.log('✅ Prenda reflectivo encontrada:', prenda.tipo_prenda);
+                console.log(' Prenda reflectivo encontrada:', prenda.tipo_prenda);
                 
                 // Extraer ubicaciones de esta prenda
                 if (prenda.ubicaciones && Array.isArray(prenda.ubicaciones) && prenda.ubicaciones.length > 0) {

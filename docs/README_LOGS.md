@@ -1,4 +1,4 @@
-# 📊 LOGS DE DIAGNÓSTICO - Creación de Pedidos
+#  LOGS DE DIAGNÓSTICO - Creación de Pedidos
 
 ##  ¿Qué Se Hizo?
 
@@ -50,27 +50,27 @@ Si ves en el resumen:
 ## 📍 Archivos Modificados
 
 ### Controllers (2 archivos)
-- ✅ `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`
+-  `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`
   - `crearNuevo()` - Carga de página
   - `crearDesdeCotizacion()` - Carga de página desde cotización
   - `crearPedido()` - 8 pasos desglosados con timing
 
 ### Domain Services (2 archivos)
-- ✅ `app/Domain/Pedidos/Services/ResolutorImagenesService.php`
+-  `app/Domain/Pedidos/Services/ResolutorImagenesService.php`
   - Extracción y procesamiento de imágenes
   
-- ✅ `app/Domain/Pedidos/Services/MapeoImagenesService.php`
+-  `app/Domain/Pedidos/Services/MapeoImagenesService.php`
   - Mapeo de referencias de imágenes
 
 ### Application Services (1 archivo)
-- ✅ `app/Application/Services/ImageUploadService.php`
+-  `app/Application/Services/ImageUploadService.php`
   - Guardado de imágenes con conversión WebP
 
 ---
 
-## 📊 Ejemplo de Logs Que Verás
+##  Ejemplo de Logs Que Verás
 
-### ✅ Caso Normal (Rápido)
+###  Caso Normal (Rápido)
 ```
 [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
 "tiempo_total_ms": 1500,
@@ -145,7 +145,7 @@ Si ves "diferencia > 0" → Problema en FormData del frontend
 
 ---
 
-## 📊 Tabla de Tiempos Normales
+##  Tabla de Tiempos Normales
 
 | Operación | Normal | Alerta | Crítico |
 |---|---|---|---|
@@ -211,13 +211,13 @@ ALTER TABLE clientes ADD INDEX idx_asesor_nombre (asesor_id, nombre);
 
 ---
 
-## ✅ Listo para Usar
+##  Listo para Usar
 
 Los logs están **100% implementados** en:
-- ✅ Controlador de creación
-- ✅ Servicios de imágenes
-- ✅ Mapeo de referencias
-- ✅ Guardado de archivos
+-  Controlador de creación
+-  Servicios de imágenes
+-  Mapeo de referencias
+-  Guardado de archivos
 
 Solo hay que **ejecutar la acción y revisar los logs**.
 

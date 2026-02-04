@@ -50,7 +50,7 @@ class TestConsecutivosCommand extends Command
                 ->count();
 
             if ($consecutivosExistentes > 0) {
-                $this->warn("⚠️  El pedido ya tiene {$consecutivosExistentes} consecutivos generados");
+                $this->warn("  El pedido ya tiene {$consecutivosExistentes} consecutivos generados");
                 $this->info('🔍 Mostrando consecutivos existentes:');
                 
                 $existentes = DB::table('consecutivos_recibos_pedidos')
@@ -73,7 +73,7 @@ class TestConsecutivosCommand extends Command
             $resultado = $service->generarConsecutivosSiAplica($pedido, $estadoAnterior, $estadoNuevo);
             
             if ($resultado) {
-                $this->info('✅ Consecutivos generados exitosamente');
+                $this->info(' Consecutivos generados exitosamente');
                 
                 // Mostrar los consecutivos generados
                 $nuevosConsecutivos = DB::table('consecutivos_recibos_pedidos')
@@ -93,7 +93,7 @@ class TestConsecutivosCommand extends Command
                 }
                 
             } else {
-                $this->info('ℹ️  No se generaron consecutivos (revisar logs para más detalles)');
+                $this->info('  No se generaron consecutivos (revisar logs para más detalles)');
             }
 
         } catch (\Exception $e) {

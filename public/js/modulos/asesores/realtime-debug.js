@@ -13,11 +13,11 @@ window.verificarEstadoRealtime = function() {
     const estado = window.pedidosRealtimeRefresh.getStatus();
     
     console.group('🔍 Estado Sistema Pedidos Real-time');
-    console.log('📊 Tipo de Conexión:', estado.connectionType);
+    console.log(' Tipo de Conexión:', estado.connectionType);
     console.log('🔄 Estado:', estado.isRunning ? 'Activo' : 'Inactivo');
-    console.log('🌐 WebSockets:', estado.usingWebSockets ? '✅ Activo' : '❌ Inactivo');
-    console.log('👁️ Página Visible:', estado.isVisible ? '✅' : '❌');
-    console.log(' Foco:', estado.hasFocus ? '✅' : '❌');
+    console.log('🌐 WebSockets:', estado.usingWebSockets ? ' Activo' : '❌ Inactivo');
+    console.log('👁️ Página Visible:', estado.isVisible ? '' : '❌');
+    console.log(' Foco:', estado.hasFocus ? '' : '❌');
     console.log('📈 Pedidos Monitoreados:', estado.pedidosCount);
     console.log('⏱️ Intervalo:', estado.checkInterval + 'ms');
     console.log('🕐 Último Cambio:', estado.lastChangeTime);
@@ -36,4 +36,4 @@ window.verificarEstadoRealtime = function() {
 // Atajo para consola
 window.rt = window.verificarEstadoRealtime;
 
-console.log('✅ Utilidad de depuración de realtime disponible. Usa rt() o verificarEstadoRealtime() en consola');
+console.log(' Utilidad de depuración de realtime disponible. Usa rt() o verificarEstadoRealtime() en consola');

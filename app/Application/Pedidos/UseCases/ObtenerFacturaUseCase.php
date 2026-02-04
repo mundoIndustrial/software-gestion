@@ -52,7 +52,7 @@ class ObtenerFacturaUseCase
                 }
             }
             
-            \Log::info('✅ [USECASE-FACTURA] Retornando datos exitosamente');
+            \Log::info(' [USECASE-FACTURA] Retornando datos exitosamente');
             return $datos;
         } catch (\Exception $e) {
             \Log::error('❌ [USECASE-FACTURA] ERROR EN USECASE', [

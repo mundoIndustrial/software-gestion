@@ -29,11 +29,11 @@
         // Formato de estado
         const estados = {
             preloading: status.isPreloading ? '🔄 PRECARGANDO...' : '⏹️  Inactivo',
-            preloaded: status.isPreloaded ? '✅ PRECARGADO' : '❌ No precargado',
-            error: status.preloadError ? `⚠️ ${status.preloadError}` : '✓ Sin errores'
+            preloaded: status.isPreloaded ? ' PRECARGADO' : '❌ No precargado',
+            error: status.preloadError ? ` ${status.preloadError}` : '✓ Sin errores'
         };
 
-        console.log('%c📊 ESTADO ACTUAL', 'font-weight: bold; color: #2ecc71; font-size: 13px;');
+        console.log('%c ESTADO ACTUAL', 'font-weight: bold; color: #2ecc71; font-size: 13px;');
         console.log(`  ${estados.preloading}`);
         console.log(`  ${estados.preloaded}`);
         console.log(`  ${estados.error}`);
@@ -91,8 +91,8 @@
             if (status) {
                 const icons = {
                     preloading: status.isPreloading ? '🔄' : '⏹️',
-                    preloaded: status.isPreloaded ? '✅' : '❌',
-                    error: status.preloadError ? '⚠️' : '✓'
+                    preloaded: status.isPreloaded ? '' : '❌',
+                    error: status.preloadError ? '' : '✓'
                 };
                 
                 console.clear();
@@ -100,7 +100,7 @@
             }
         }, intervalMs);
 
-        console.log(`%c✅ Monitor automático iniciado (intervalo: ${intervalMs}ms)`, 'color: #16a085; font-weight: bold;');
+        console.log(`%c Monitor automático iniciado (intervalo: ${intervalMs}ms)`, 'color: #16a085; font-weight: bold;');
         console.log(`%c Para detener, ejecuta: clearInterval(window.preloaderMonitorInterval)`, 'color: #e74c3c;');
         
         window.preloaderMonitorInterval = interval;
@@ -112,7 +112,7 @@
      */
     window.onPrendaEditorPreloaded = function(callback) {
         window.addEventListener('prendaEditorPreloaded', (e) => {
-            console.log(`%c✅ Precarguía completada en ${e.detail.elapsed.toFixed(0)}ms`, 'color: #27ae60; font-weight: bold;');
+            console.log(`%c Precarguía completada en ${e.detail.elapsed.toFixed(0)}ms`, 'color: #27ae60; font-weight: bold;');
             if (callback) callback(e.detail);
         });
     };

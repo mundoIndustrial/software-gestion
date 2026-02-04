@@ -59,14 +59,14 @@ class TestTelasPrendaController extends Controller
                 'img' => null,
             ]);
 
-            Log::info('✅ Registro de prueba creado', [
+            Log::info(' Registro de prueba creado', [
                 'id' => $telasPrenda->id,
                 'logo_cotizacion_id' => $logoCotizacion->id,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Registro de prueba creado exitosamente',
+                'message' => ' Registro de prueba creado exitosamente',
                 'data' => [
                     'id' => $telasPrenda->id,
                     'logo_cotizacion_id' => $telasPrenda->logo_cotizacion_id,

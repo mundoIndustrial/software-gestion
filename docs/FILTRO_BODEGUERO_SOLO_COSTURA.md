@@ -94,25 +94,25 @@ Response: SOLO procesos COSTURA-BODEGA
 ## Variantes Soportadas
 
 El filtro detecta variantes del nombre:
-- ✅ `costura-bodega`
-- ✅ `COSTURA-BODEGA`
-- ✅ `costurabodega`
-- ✅ `COSTURABODEGA`
-- ✅ `Costura-Bodega`
+-  `costura-bodega`
+-  `COSTURA-BODEGA`
+-  `costurabodega`
+-  `COSTURABODEGA`
+-  `Costura-Bodega`
 
 ## Retrocompatibilidad
 
-✅ **Sin efectos en otros roles**: Cortador, Costurero, Asesor, Admin, etc. ven todos los procesos normalmente.
+ **Sin efectos en otros roles**: Cortador, Costurero, Asesor, Admin, etc. ven todos los procesos normalmente.
 
-✅ **Sin efectos en otras vistas**: Solo aplica en endpoints que retornan `recibos-datos`.
+ **Sin efectos en otras vistas**: Solo aplica en endpoints que retornan `recibos-datos`.
 
 ## Notas Importantes
 
-- ⚠️ El filtro solo aplica si el usuario está autenticado Y tiene rol bodeguero
-- ⚠️ Si no hay procesos COSTURA-BODEGA, el bodeguero verá prenda sin procesos
-- ⚠️ El frontend (`ReceiptBuilder`) recibirá solo 1 proceso, por lo que mostrará solo COSTURA-BODEGA
+-  El filtro solo aplica si el usuario está autenticado Y tiene rol bodeguero
+-  Si no hay procesos COSTURA-BODEGA, el bodeguero verá prenda sin procesos
+-  El frontend (`ReceiptBuilder`) recibirá solo 1 proceso, por lo que mostrará solo COSTURA-BODEGA
 
 ---
 
 **Implementación**: 4 de Febrero de 2026
-**Estado**: ✅ Producción
+**Estado**:  Producción

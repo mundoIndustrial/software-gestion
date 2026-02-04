@@ -23,7 +23,7 @@ class StorageDiagnoseCommand extends Command
         if ($fix) {
             $this->warn('  Modo REPARACIÓN activo');
         } else {
-            $this->info('ℹ️  Modo LECTURA (sin cambios)');
+            $this->info('  Modo LECTURA (sin cambios)');
         }
 
         $this->newLine();
@@ -41,11 +41,11 @@ class StorageDiagnoseCommand extends Command
 
         if (is_link($publicStoragePath)) {
             $linkTarget = readlink($publicStoragePath);
-            $this->components->twoColumnDetail('✅ Enlace simbólico', 'Existe');
+            $this->components->twoColumnDetail(' Enlace simbólico', 'Existe');
             $this->components->twoColumnDetail('  Apunta a', $linkTarget);
 
             if (realpath($publicStoragePath) === realpath($targetPath)) {
-                $this->components->twoColumnDetail('  Destino correcto', '✅');
+                $this->components->twoColumnDetail('  Destino correcto', '');
             } else {
                 $this->components->twoColumnDetail('  Destino correcto', ' INCORRECTO');
                 if ($fix) {
@@ -59,9 +59,9 @@ class StorageDiagnoseCommand extends Command
             $targetRealPath = realpath($targetPath);
             
             if ($realPath === $targetRealPath) {
-                $this->components->twoColumnDetail('✅ Enlace simbólico', 'Existe (Windows)');
+                $this->components->twoColumnDetail(' Enlace simbólico', 'Existe (Windows)');
                 $this->components->twoColumnDetail('  Apunta a', $realPath);
-                $this->components->twoColumnDetail('  Destino correcto', '✅');
+                $this->components->twoColumnDetail('  Destino correcto', '');
             } else {
                 $this->components->twoColumnDetail(' Enlace simbólico', 'NO EXISTE o INCORRECTO');
                 if ($fix) {
@@ -96,7 +96,7 @@ class StorageDiagnoseCommand extends Command
         foreach ($directories as $label => $path) {
             if (is_dir($path)) {
                 $perms = substr(sprintf('%o', fileperms($path)), -4);
-                $this->components->twoColumnDetail("✅ $label", "Existe ($perms)");
+                $this->components->twoColumnDetail(" $label", "Existe ($perms)");
             } else {
                 $this->components->twoColumnDetail(" $label", 'NO EXISTE');
             }
@@ -115,8 +115,8 @@ class StorageDiagnoseCommand extends Command
         foreach ($directories as $label => $path) {
             if (is_dir($path)) {
                 $perms = substr(sprintf('%o', fileperms($path)), -4);
-                $readable = is_readable($path) ? '✅' : '';
-                $writable = is_writable($path) ? '✅' : '';
+                $readable = is_readable($path) ? '' : '';
+                $writable = is_writable($path) ? '' : '';
 
                 $this->components->twoColumnDetail("$label", "R:$readable W:$writable (perms: $perms)");
 
@@ -156,7 +156,7 @@ class StorageDiagnoseCommand extends Command
         try {
             // Probar URL
             $testUrl = Storage::disk('public')->url('test.jpg');
-            $this->components->twoColumnDetail('✅ Storage::disk(public)->url()', $testUrl);
+            $this->components->twoColumnDetail(' Storage::disk(public)->url()', $testUrl);
         } catch (\Exception $e) {
             $this->components->twoColumnDetail(' Storage::disk(public)->url()', $e->getMessage());
         }
@@ -164,7 +164,7 @@ class StorageDiagnoseCommand extends Command
         try {
             // Probar asset
             $assetUrl = asset('storage/test.jpg');
-            $this->components->twoColumnDetail('✅ asset(storage/test.jpg)', $assetUrl);
+            $this->components->twoColumnDetail(' asset(storage/test.jpg)', $assetUrl);
         } catch (\Exception $e) {
             $this->components->twoColumnDetail(' asset(storage/test.jpg)', $e->getMessage());
         }
@@ -215,7 +215,7 @@ class StorageDiagnoseCommand extends Command
         if (function_exists('apache_get_modules')) {
             $modules = apache_get_modules();
             $rewriteEnabled = in_array('mod_rewrite', $modules);
-            $this->components->twoColumnDetail('mod_rewrite', $rewriteEnabled ? '✅' : '');
+            $this->components->twoColumnDetail('mod_rewrite', $rewriteEnabled ? '' : '');
         }
 
         $this->newLine();
@@ -231,9 +231,9 @@ class StorageDiagnoseCommand extends Command
         $this->newLine();
 
         if ($fix) {
-            $this->info('✅ Diagnóstico y reparación completados');
+            $this->info(' Diagnóstico y reparación completados');
         } else {
-            $this->info('✅ Diagnóstico completado');
+            $this->info(' Diagnóstico completado');
             $this->line('💡 Para reparar automáticamente, ejecuta:');
             $this->line('   php artisan storage:diagnose --fix');
         }
@@ -271,7 +271,7 @@ class StorageDiagnoseCommand extends Command
                 symlink('../storage/app/public', $publicPath);
             }
 
-            $this->components->twoColumnDetail('✅ Enlace simbólico', 'REPARADO');
+            $this->components->twoColumnDetail(' Enlace simbólico', 'REPARADO');
         } catch (\Exception $e) {
             $this->error("Error al reparar enlace: {$e->getMessage()}");
         }
@@ -286,7 +286,7 @@ class StorageDiagnoseCommand extends Command
             } else {
                 // Linux/Mac
                 @chmod($path, 0755);
-                $this->components->twoColumnDetail("✅ Permisos reparados", $path);
+                $this->components->twoColumnDetail(" Permisos reparados", $path);
             }
         } catch (\Exception $e) {
             $this->error("Error al reparar permisos: {$e->getMessage()}");

@@ -862,7 +862,7 @@ class CotizacionPrendaController extends Controller
                 }
             }
 
-            Log::info('✅ Telas de cotización obtenidas', [
+            Log::info(' Telas de cotización obtenidas', [
                 'cotizacion_id' => $cotizacionId,
                 'prenda_id' => $prendaId,
                 'telas_count' => count($telas),

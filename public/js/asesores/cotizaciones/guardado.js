@@ -760,14 +760,14 @@ async function guardarCotizacion() {
                     window.prendas_reflectivo_paso4.forEach((prenda, prendaIndex) => {
                         if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
                             prenda.imagenes.forEach((imagen, imagenIndex) => {
-                                // ✅ IMPORTANTE: Solo procesar imágenes del PASO 4 que tengan File object (no base64)
+                                //  IMPORTANTE: Solo procesar imágenes del PASO 4 que tengan File object (no base64)
                                 if (imagen.file && (imagen.file instanceof Blob || imagen.file instanceof File) && imagen.tipo === 'paso4') {
                                     const fieldName = `reflectivo[imagenes_paso4][${prendaIndex}][${imagenIndex}]`;
                                     console.log(` APPENDING IMAGE TO FORMDATA - Prenda ${prendaIndex}, Imagen ${imagenIndex}: ${imagen.file.name}`);
                                     formData.append(fieldName, imagen.file);
                                     totalImagenesP4Reflectivo++;
                                 } else if (imagen.tipo === 'paso2') {
-                                    // ✅ Las imágenes del PASO 2 NO se envían como archivos, solo se guardan la referencia
+                                    //  Las imágenes del PASO 2 NO se envían como archivos, solo se guardan la referencia
                                     // Estas ya están en la BD desde el PASO 2
                                     console.log(` Imagen del PASO 2 detectada (no se envía): ${imagen.preview?.substring(0, 50)}...`);
                                 }

@@ -3,7 +3,7 @@
  * Mostrar, navegar y eliminar imágenes de prendas con modal
  */
 
-console.log('✅ [galeria-imagenes-prenda.js] ARCHIVO CARGADO - Definiendo window.mostrarGaleriaImagenesPrenda');
+console.log(' [galeria-imagenes-prenda.js] ARCHIVO CARGADO - Definiendo window.mostrarGaleriaImagenesPrenda');
 
 /**
  * Mostrar galería de imágenes de prenda
@@ -122,7 +122,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
             // CASO 5: Imagen de BD con ruta
             blobUrl = img.ruta;
         } else {
-            console.warn('[galeria-imagenes-prenda] ⚠️ Imagen sin URL válida:', img);
+            console.warn('[galeria-imagenes-prenda]  Imagen sin URL válida:', img);
             return null;
         }
         return {
@@ -132,12 +132,12 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     }).filter(img => img !== null);
     
     if (imagenesConBlobUrl.length === 0) {
-        console.warn('[galeria-imagenes-prenda] ⚠️ No se encontraron imágenes válidas para mostrar');
+        console.warn('[galeria-imagenes-prenda]  No se encontraron imágenes válidas para mostrar');
         window.__galeriaPrendaAbierta = false;
         return;
     }
     
-    console.log('✅ [galeria-imagenes-prenda] Creando modal con', imagenesConBlobUrl.length, 'imágenes');
+    console.log(' [galeria-imagenes-prenda] Creando modal con', imagenesConBlobUrl.length, 'imágenes');
     
     let indiceActual = indiceInicial;
     
@@ -348,7 +348,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                 } else {
                     // Prenda normal: eliminar directamente
                     prenda.imagenes.splice(indiceActual, 1);
-                    console.log('✅ [galeria] Imagen eliminada directamente (prenda normal):', imagenEliminadaDatos);
+                    console.log(' [galeria] Imagen eliminada directamente (prenda normal):', imagenEliminadaDatos);
                 }
                 
                 imagenEliminada = true;
@@ -361,13 +361,13 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                             //  SI ES COTIZACIÓN: no eliminar del storage temporal, solo marcar
                             if (!esPrendaDeCotizacion) {
                                 window.imagenesPrendaStorage.eliminarImagen(indiceActual);
-                                console.log('✅ [galeria] Eliminada imagen del storage en modo edición');
+                                console.log(' [galeria] Eliminada imagen del storage en modo edición');
                             } else {
                                 console.log('🔒 [galeria] Protección: NO eliminada del storage (es cotización)');
                             }
                         }
                     } catch (error) {
-                        console.warn('⚠️ [galeria] Error eliminando del storage en modo edición:', error);
+                        console.warn(' [galeria] Error eliminando del storage en modo edición:', error);
                     }
                 }
             }
@@ -403,7 +403,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
             } else {
                 // Para prendas normales: eliminar del array local
                 imagenesConBlobUrl.splice(indiceActual, 1);
-                console.log('✅ [galeria] Imagen eliminada del array local');
+                console.log(' [galeria] Imagen eliminada del array local');
             }
 
         } else {

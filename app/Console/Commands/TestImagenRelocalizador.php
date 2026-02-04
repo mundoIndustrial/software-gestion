@@ -39,7 +39,7 @@ class TestImagenRelocalizador extends Command
 
         $this->info('');
         if (!empty($rutasFinales)) {
-            $this->line('✅ Relocalización EXITOSA:');
+            $this->line(' Relocalización EXITOSA:');
             foreach ($rutasFinales as $ruta) {
                 $this->line("  → {$ruta}");
                 if (Storage::disk('public')->exists($ruta)) {
@@ -73,7 +73,7 @@ class TestImagenRelocalizador extends Command
 
         $this->info('');
         if (!empty($rutasFinales2)) {
-            $this->line('✅ Relocalización EXITOSA:');
+            $this->line(' Relocalización EXITOSA:');
             foreach ($rutasFinales2 as $ruta) {
                 $this->line("  → {$ruta}");
                 if (Storage::disk('public')->exists($ruta)) {

@@ -19,7 +19,7 @@ import { PedidoCompletoUnificado } from './PedidoCompletoUnificado.js';
 // Hacer disponible globalmente para código legacy
 window.PedidoCompletoUnificado = PedidoCompletoUnificado;
 
-console.log('✅ [PedidoCompletoUnificado] Builder cargado y disponible globalmente');
+console.log(' [PedidoCompletoUnificado] Builder cargado y disponible globalmente');
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -144,7 +144,7 @@ window.construirPedidoLimpio = function(datosFormulario) {
 
 // Esperar a que ApiService esté disponible
 if (window.ApiService) {
-    console.log('✅ [Builder] ApiService detectado, extendiendo métodos');
+    console.log(' [Builder] ApiService detectado, extendiendo métodos');
     
     // Reemplazar método crearPedidoSinCotizacion con versión que usa builder
     const originalCrearPedido = window.ApiService.crearPedidoSinCotizacion.bind(window.ApiService);
@@ -194,4 +194,4 @@ if (window.ApiService) {
     console.warn(' [Builder] ApiService no detectado, funcionalidad limitada');
 }
 
-console.log('✅ [PedidoCompletoUnificado] Inicializador cargado completamente');
+console.log(' [PedidoCompletoUnificado] Inicializador cargado completamente');

@@ -203,16 +203,16 @@ class PedidosEditableWebClient {
                                 formdata_key: `prendas[${prendaIdx}][imagenes][${imgIdx}]`,
                                 uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                             };
-                            console.log(`✅ [agregarFormDataKey] Prenda imagen convertida: ${prenda.imagenes[imgIdx].formdata_key}`, {
+                            console.log(` [agregarFormDataKey] Prenda imagen convertida: ${prenda.imagenes[imgIdx].formdata_key}`, {
                                 nombre: file.name,
                                 size: file.size
                             });
                         } else if (img.file && img.file instanceof File) {
                             img.formdata_key = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;
                             img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                            console.log(`✅ [agregarFormDataKey] Prenda imagen: ${img.formdata_key}`, {uid: img.uid});
+                            console.log(` [agregarFormDataKey] Prenda imagen: ${img.formdata_key}`, {uid: img.uid});
                         } else {
-                            console.log(`⚠️ [agregarFormDataKey] Prenda ${prendaIdx} img ${imgIdx} no es un File válido:`, img);
+                            console.log(` [agregarFormDataKey] Prenda ${prendaIdx} img ${imgIdx} no es un File válido:`, img);
                         }
                     });
                 }
@@ -230,11 +230,11 @@ class PedidosEditableWebClient {
                                         formdata_key: `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`,
                                         uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                                     };
-                                    console.log(`✅ [agregarFormDataKey] Tela imagen convertida: ${tela.imagenes[imgIdx].formdata_key}`);
+                                    console.log(` [agregarFormDataKey] Tela imagen convertida: ${tela.imagenes[imgIdx].formdata_key}`);
                                 } else if (img.file && img.file instanceof File) {
                                     img.formdata_key = `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`;
                                     img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                                    console.log(`✅ [agregarFormDataKey] Tela imagen: ${img.formdata_key}`);
+                                    console.log(` [agregarFormDataKey] Tela imagen: ${img.formdata_key}`);
                                 }
                             });
                         }
@@ -254,11 +254,11 @@ class PedidosEditableWebClient {
                                         formdata_key: `prendas[${prendaIdx}][procesos][${procKey}][imagenes][${imgIdx}]`,
                                         uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                                     };
-                                    console.log(`✅ [agregarFormDataKey] Proceso imagen convertida: ${procData.imagenes[imgIdx].formdata_key}`);
+                                    console.log(` [agregarFormDataKey] Proceso imagen convertida: ${procData.imagenes[imgIdx].formdata_key}`);
                                 } else if (img.file && img.file instanceof File) {
                                     img.formdata_key = `prendas[${prendaIdx}][procesos][${procKey}][imagenes][${imgIdx}]`;
                                     img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                                    console.log(`✅ [agregarFormDataKey] Proceso imagen: ${img.formdata_key}`);
+                                    console.log(` [agregarFormDataKey] Proceso imagen: ${img.formdata_key}`);
                                 }
                             });
                         }
@@ -279,11 +279,11 @@ class PedidosEditableWebClient {
                                 formdata_key: `epps[${eppIdx}][imagenes][${imgIdx}]`,
                                 uid: `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                             };
-                            console.log(`✅ [agregarFormDataKey] EPP imagen convertida: ${epp.imagenes[imgIdx].formdata_key}`);
+                            console.log(` [agregarFormDataKey] EPP imagen convertida: ${epp.imagenes[imgIdx].formdata_key}`);
                         } else if (img.file && img.file instanceof File) {
                             img.formdata_key = `epps[${eppIdx}][imagenes][${imgIdx}]`;
                             img.uid = img.uid || `uid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                            console.log(`✅ [agregarFormDataKey] EPP imagen: ${img.formdata_key}`);
+                            console.log(` [agregarFormDataKey] EPP imagen: ${img.formdata_key}`);
                         }
                     });
                 }

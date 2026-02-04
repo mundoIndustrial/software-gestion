@@ -177,7 +177,7 @@ id | pedido_id | tipo_item | item_id | talla_id | pendiente_inicial | parcial_1 
 
 ## Puntos Clave de Validación
 
-### ✅ Lo que SÍ hace el sistema:
+###  Lo que SÍ hace el sistema:
 
 1. **Almacena valores exactamente como fueron ingresados**
    - Todos los campos numéricos (pendiente_inicial, parcial_*, pendiente_*) se guardan tal cual
@@ -350,11 +350,11 @@ INSERT INTO despacho_parciales VALUES
 
 El módulo cumple con los requisitos:
 
-✅ **NO realiza cálculos automáticos**
-✅ **NO modifica valores ingresados por el usuario**
-✅ **Cada fila es un registro independiente**
-✅ **`item_id` almacena ID de `prenda_pedido_tallas`**
-✅ **Campos de pendientes se guardan exactamente como ingresados**
-✅ **`tipo_item='prenda'` es automático**
-✅ **`usuario_id` y `fecha_despacho` se asignan automáticamente**
-✅ **Itera por cada talla enviada desde frontend**
+ **NO realiza cálculos automáticos**
+ **NO modifica valores ingresados por el usuario**
+ **Cada fila es un registro independiente**
+ **`item_id` almacena ID de `prenda_pedido_tallas`**
+ **Campos de pendientes se guardan exactamente como ingresados**
+ **`tipo_item='prenda'` es automático**
+ **`usuario_id` y `fecha_despacho` se asignan automáticamente**
+ **Itera por cada talla enviada desde frontend**

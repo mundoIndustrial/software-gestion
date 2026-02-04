@@ -264,3 +264,170 @@ function anularPedido(pedidoId, novedad, numeroPedido) {
         });
     });
 }
+
+/**
+ * Confirmar corrección de pedido - Cambiar de DEVUELTO_A_ASESORA a PENDIENTE_SUPERVISOR
+ */
+function confirmarCorreccionPedido(pedidoId, numeroPedido) {
+    Swal.fire({
+        title: '¿Confirmar Corrección?',
+        html: `
+            <div style="width: 100%; box-sizing: border-box; overflow: hidden;">
+                <p style="margin-bottom: 1rem; color: #374151; font-size: 0.95rem;">
+                    Estás a punto de confirmar la corrección del pedido <strong style="color: #10b981;">#${numeroPedido}</strong>
+                </p>
+                <p style="margin-bottom: 1rem; color: #6b7280; font-size: 0.9rem; line-height: 1.5;">
+                    El pedido será enviado nuevamente a supervisión para su revisión.
+                </p>
+            </div>
+        `,
+        icon: 'question',
+        width: '500px',
+        padding: '1.5rem',
+        position: 'center',
+        allowOutsideClick: false,
+        didOpen: (modal) => {
+            // Aplicar estilos de centrado al modal
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.zIndex = '999999';
+            
+            // Aplicar estilos al contenedor
+            const container = document.querySelector('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+                container.style.position = 'fixed';
+                container.style.zIndex = '999998';
+            }
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-check"></i> Confirmar',
+        cancelButtonText: 'Cancelar',
+        focusConfirm: false,
+        customClass: {
+            popup: 'swal-confirmar-correccion',
+            container: 'swal-confirmar-correccion-container',
+            htmlContainer: 'swal-html-container-custom'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            confirmarCorreccionEnServidor(pedidoId, numeroPedido);
+        }
+    });
+}
+
+/**
+ * Enviar confirmación de corrección al servidor
+ */
+function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
+    // Mostrar loading
+    Swal.fire({
+        title: 'Confirmando corrección...',
+        html: 'Por favor espera',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        position: 'center',
+        didOpen: () => {
+            Swal.showLoading();
+            // Centrar el modal
+            const modal = document.querySelector('.swal2-popup');
+            if (modal) {
+                modal.style.position = 'fixed';
+                modal.style.top = '50%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translate(-50%, -50%)';
+            }
+            const container = document.querySelector('.swal2-container');
+            if (container) {
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.justifyContent = 'center';
+            }
+        }
+    });
+    
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    fetch(`/asesores/pedidos/${pedidoId}/confirmar-correccion`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({
+            pedido_id: pedidoId,
+            numero_pedido: numeroPedido
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Mostrar éxito
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'La corrección ha sido confirmada y enviada a supervisión.',
+                icon: 'success',
+                confirmButtonColor: '#10b981',
+                position: 'center',
+                didOpen: () => {
+                    // Centrar el modal
+                    const modal = document.querySelector('.swal2-popup');
+                    if (modal) {
+                        modal.style.position = 'fixed';
+                        modal.style.top = '50%';
+                        modal.style.left = '50%';
+                        modal.style.transform = 'translate(-50%, -50%)';
+                    }
+                    const container = document.querySelector('.swal2-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.justifyContent = 'center';
+                    }
+                }
+            }).then(() => {
+                // Recargar la página para actualizar la lista
+                window.location.reload();
+            });
+        } else {
+            throw new Error(data.message || 'Error al confirmar la corrección');
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Ocurrió un error al confirmar la corrección',
+            icon: 'error',
+            confirmButtonColor: '#ef4444',
+            position: 'center',
+            didOpen: () => {
+                // Centrar el modal
+                const modal = document.querySelector('.swal2-popup');
+                if (modal) {
+                    modal.style.position = 'fixed';
+                    modal.style.top = '50%';
+                    modal.style.left = '50%';
+                    modal.style.transform = 'translate(-50%, -50%)';
+                }
+                const container = document.querySelector('.swal2-container');
+                if (container) {
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                }
+            }
+        });
+    });
+}

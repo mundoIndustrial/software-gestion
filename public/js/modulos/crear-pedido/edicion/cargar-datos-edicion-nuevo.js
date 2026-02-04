@@ -361,7 +361,7 @@ function cargarEPPs(epps) {
             }
         }
         
-        // ✅ IMPORTANTE: Registrar EPPs en gestionItemsUI para que no se pierdan al agregar prendas
+        //  IMPORTANTE: Registrar EPPs en gestionItemsUI para que no se pierdan al agregar prendas
         if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
             epps.forEach((epp) => {
                 try {
@@ -522,7 +522,7 @@ function inicializarEventListenersEpp() {
 // Escuchar evento de prenda actualizada (desde modal-novedad-edicion.js)
 // Este evento se dispara después de guardar cambios en una prenda editada
 window.addEventListener('prendaActualizada', (event) => {
-    console.log('[cargar-datos-edicion-nuevo] 🔔 Evento prendaActualizada recibido:', event.detail);
+    console.log('[cargar-datos-edicion-nuevo]  Evento prendaActualizada recibido:', event.detail);
     
     try {
         const { pedidoId, prendaId } = event.detail;
@@ -541,9 +541,9 @@ window.addEventListener('prendaActualizada', (event) => {
                 // Re-renderizar las prendas (se cargarán desde window.datosEdicionPedido)
                 if (typeof window.renderizarPrendasSinCotizacion === 'function') {
                     window.renderizarPrendasSinCotizacion();
-                    console.log('[cargar-datos-edicion-nuevo] ✅ Prendas re-renderizadas');
+                    console.log('[cargar-datos-edicion-nuevo]  Prendas re-renderizadas');
                 } else {
-                    console.warn('[cargar-datos-edicion-nuevo] ⚠️ renderizarPrendasSinCotizacion no disponible');
+                    console.warn('[cargar-datos-edicion-nuevo]  renderizarPrendasSinCotizacion no disponible');
                 }
             }
         }
@@ -558,13 +558,13 @@ window.addEventListener('prendaActualizada', (event) => {
             // Re-renderizar
             if (typeof window.renderizarEppsSinCotizacion === 'function') {
                 window.renderizarEppsSinCotizacion();
-                console.log('[cargar-datos-edicion-nuevo] ✅ EPPs re-renderizados correctamente');
+                console.log('[cargar-datos-edicion-nuevo]  EPPs re-renderizados correctamente');
             } else {
-                console.warn('[cargar-datos-edicion-nuevo] ⚠️ renderizarEppsSinCotizacion no disponible');
+                console.warn('[cargar-datos-edicion-nuevo]  renderizarEppsSinCotizacion no disponible');
             }
         }
         
-        console.log('[cargar-datos-edicion-nuevo] ✅ Actualización completada sin perder items');
+        console.log('[cargar-datos-edicion-nuevo]  Actualización completada sin perder items');
     } catch (error) {
         console.error('[cargar-datos-edicion-nuevo] ❌ Error al procesar prendaActualizada:', error);
     }

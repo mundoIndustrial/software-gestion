@@ -116,6 +116,77 @@ window.cargarTiposMangaDisponibles = cargarTiposMangaDisponibles;
 window.procesarMangaInput = procesarMangaInput;
 window.limpiarCacheTiposManga = limpiarCacheTiposManga;
 
+// Cache para tipos de broche/botón
+let tiposBrocheCache = null;
+let tiposBrochePromise = null;
+
+/**
+ * Cargar tipos de broche/botón disponibles desde la BD
+ * Con sistema de caché para evitar múltiples llamadas
+ */
+async function cargarTiposBrocheBotonDisponibles() {
+    // Si ya tenemos datos en caché, retornar inmediatamente
+    if (tiposBrocheCache) {
+        console.log('[Broche] Usando cache de tipos de broche/botón');
+        return tiposBrocheCache;
+    }
+    
+    // Si hay una petición en curso, esperar a que termine
+    if (tiposBrochePromise) {
+        console.log('[Broche] Esperando petición existente...');
+        return await tiposBrochePromise;
+    }
+    
+    // Crear nueva petición
+    console.log('[Broche] Cargando tipos de broche/botón desde BD...');
+    tiposBrochePromise = (async () => {
+        try {
+            const response = await fetch('/asesores/api/tipos-broche-boton');
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                tiposBrocheCache = result.data;
+                
+                // Actualizar datalist
+                const datalist = document.getElementById('opciones-broche');
+                if (datalist) {
+                    datalist.innerHTML = '';
+                    result.data.forEach(tipo => {
+                        const option = document.createElement('option');
+                        option.value = tipo.nombre;
+                        option.dataset.id = tipo.id;
+                        datalist.appendChild(option);
+                    });
+                }
+                
+                console.log('[Broche] Tipos cargados y cacheados:', result.data.length);
+                return result.data;
+            }
+        } catch (error) {
+            console.warn('[Broche] Error cargando tipos de broche:', error);
+            return [];
+        } finally {
+            // Limpiar la promesa cuando termine
+            tiposBrochePromise = null;
+        }
+    })();
+    
+    return await tiposBrochePromise;
+}
+
+/**
+ * Limpiar caché de tipos de broche (útil después de crear/editar)
+ */
+function limpiarCacheTiposBroche() {
+    tiposBrocheCache = null;
+    tiposBrochePromise = null;
+    console.log('[Broche] Caché limpiado');
+}
+
+// Exportar función global
+window.cargarTiposBrocheBotonDisponibles = cargarTiposBrocheBotonDisponibles;
+window.limpiarCacheTiposBroche = limpiarCacheTiposBroche;
+
 /**
  * Procesar input de manga cuando pierde el foco
  * Si no existe en la BD, lo crea automáticamente

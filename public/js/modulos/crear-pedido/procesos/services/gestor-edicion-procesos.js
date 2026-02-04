@@ -45,7 +45,7 @@ class GestorEditacionProcesos {
             const datosActuales = window.procesosSeleccionados[tipo]?.datos;
             if (datosActuales) {
                 window.procesosEditor.iniciarEdicion(tipo, datosActuales);
-                console.log('✅ [GESTOR-EDICION] Editor de procesos iniciado en modo edición');
+                console.log(' [GESTOR-EDICION] Editor de procesos iniciado en modo edición');
             }
         }
     }
@@ -68,7 +68,7 @@ class GestorEditacionProcesos {
             hayEditor: !!window.procesosEditor
         });
 
-        // ✅ Verificar si hay imágenes nuevas (Files) o existentes
+        //  Verificar si hay imágenes nuevas (Files) o existentes
         const tieneImagenesNuevas = window.imagenesProcesoActual?.some(img => img instanceof File);
         const tieneImagenesExistentes = window.imagenesProcesoExistentes?.length > 0;
         const tieneImagenes = tieneImagenesNuevas || tieneImagenesExistentes;
@@ -92,7 +92,7 @@ class GestorEditacionProcesos {
                 datosCompletos: datosCompletos
             });
 
-            console.log('✅ [GESTOR-EDICION] Cambios registrados como editados:', {
+            console.log(' [GESTOR-EDICION] Cambios registrados como editados:', {
                 tipo,
                 cambios: Object.keys(cambios),
                 idProceso: datosCompletos.id,

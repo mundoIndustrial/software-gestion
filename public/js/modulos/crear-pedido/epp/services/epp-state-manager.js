@@ -69,8 +69,8 @@ class EppStateManager {
         });
         
         const imagenesDepues = this.estado.imagenesSubidas.length;
-        console.log(`✅ [EppStateManager] Eliminadas: ${imagenesAntes - imagenesDepues} imagen(es)`);
-        console.log('✅ [EppStateManager] Imágenes en estado DESPUÉS:', this.estado.imagenesSubidas.map(img => ({id: img.id, nombre: img.nombre})));
+        console.log(` [EppStateManager] Eliminadas: ${imagenesAntes - imagenesDepues} imagen(es)`);
+        console.log(' [EppStateManager] Imágenes en estado DESPUÉS:', this.estado.imagenesSubidas.map(img => ({id: img.id, nombre: img.nombre})));
     }
 
     /**

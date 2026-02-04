@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // En este flujo, las prendas se agregan individualmente, no se cargan todas desde backend
         if (window.location.pathname.includes('crear-desde-cotizacion')) {
             console.log('[cargarPrendasDesdeCotizacion] 🔄 Flujo desde cotización detectado, omitiendo carga masiva');
-            console.log('[cargarPrendasDesdeCotizacion] ℹ️ Las prendas se agregan individualmente mediante el selector');
+            console.log('[cargarPrendasDesdeCotizacion]  Las prendas se agregan individualmente mediante el selector');
             return;
         }
         

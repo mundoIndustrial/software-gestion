@@ -34,7 +34,7 @@ class AssignBodegueroRoleSeeder extends Seeder
 
         // Verificar si ya tiene el rol
         if ($user->hasRole('bodeguero')) {
-            $this->command->warn('⚠️  El usuario ya tiene el rol bodeguero');
+            $this->command->warn('  El usuario ya tiene el rol bodeguero');
             return;
         }
 

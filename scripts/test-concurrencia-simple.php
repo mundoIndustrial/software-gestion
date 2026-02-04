@@ -29,7 +29,7 @@ try {
     $usuarios = User::take($numeroUsuarios)->get();
     
     if ($usuarios->count() < $numeroUsuarios) {
-        echo "⚠️  Solo hay {$usuarios->count()} usuarios disponibles\n";
+        echo "  Solo hay {$usuarios->count()} usuarios disponibles\n";
         $numeroUsuarios = $usuarios->count();
     }
     
@@ -66,7 +66,7 @@ try {
                 'usuario_index' => $index
             ];
             
-            echo "  ✅ Pedido #{$pedido->id} creado por usuario {$index}\n";
+            echo "   Pedido #{$pedido->id} creado por usuario {$index}\n";
             
         } catch (\Exception $e) {
             echo "  ❌ Error usuario {$index}: " . $e->getMessage() . "\n";
@@ -80,7 +80,7 @@ try {
     $endTime = microtime(true);
     $duracion = $endTime - $startTime;
     
-    echo "\n📊 RESULTADOS:\n";
+    echo "\n RESULTADOS:\n";
     echo "Pedidos creados: " . count($resultados) . "\n";
     echo "Duración: " . round($duracion, 3) . "s\n";
     echo "Promedio por pedido: " . round($duracion / max(count($resultados), 1), 3) . "s\n";
@@ -93,7 +93,7 @@ try {
         echo "\n🔍 VERIFICACIÓN DE INTEGRIDAD:\n";
         
         if (count($ids) === count($idsUnicos)) {
-            echo "✅ Todos los IDs son únicos\n";
+            echo " Todos los IDs son únicos\n";
         } else {
             echo "🚨 ¡IDS DUPLICADOS DETECTADOS!\n";
         }
@@ -102,7 +102,7 @@ try {
         sort($ids);
         $esperado = range($ids[0], $ids[0] + count($ids) - 1);
         if ($ids === $esperado) {
-            echo "✅ Secuencia de IDs correcta\n";
+            echo " Secuencia de IDs correcta\n";
         } else {
             echo "🚨 ¡SECUENCIA DE IDS ROTA!\n";
         }
@@ -110,7 +110,7 @@ try {
         // Verificar números de pedido
         $numerosNoNulos = array_filter(array_column($resultados, 'numero_pedido'));
         if (empty($numerosNoNulos)) {
-            echo "✅ números de pedido correctos (null)\n";
+            echo " números de pedido correctos (null)\n";
         } else {
             echo "🚨 ¡NÚMEROS DE PEDIDO NO DEBEN SER NULOS!\n";
         }
@@ -141,7 +141,7 @@ try {
         echo "Último usado: {$secuencia->ultimo_usado}\n";
     }
     
-    echo "\n✅ PRUEBA COMPLETADA\n";
+    echo "\n PRUEBA COMPLETADA\n";
     
 } catch (\Exception $e) {
     echo "❌ Error fatal: " . $e->getMessage() . "\n";

@@ -23,7 +23,7 @@ class LogoCotizacionCompartidaTest extends TestCase
     public function test_logo_compartido_se_forma_correctamente()
     {
         echo "\n\n═══════════════════════════════════════════════════════════";
-        echo "\n✅ TEST 1: Logo compartido se forma correctamente";
+        echo "\n TEST 1: Logo compartido se forma correctamente";
         echo "\n═══════════════════════════════════════════════════════════\n";
 
         // PASO 1: Simular datos de técnicas como vienen del frontend
@@ -111,11 +111,11 @@ class LogoCotizacionCompartidaTest extends TestCase
         $this->assertContains('ESTAMPADO', $metadata['tecnicasCompartidas'], '❌ Debe incluir ESTAMPADO');
         $this->assertEquals('logo.jpg', $metadata['archivoNombre'], '❌ Nombre archivo correcto');
 
-        echo "✅ Metadata formado correctamente:";
+        echo " Metadata formado correctamente:";
         echo "\n   - Clave: {$metadata['nombreCompartido']}";
         echo "\n   - Técnicas: " . implode(' + ', $metadata['tecnicasCompartidas']);
         echo "\n   - Archivo: {$metadata['archivoNombre']} ({$metadata['tamaño']} bytes)";
-        echo "\n✅ TEST 1 PASÓ\n";
+        echo "\n TEST 1 PASÓ\n";
     }
 
     /**
@@ -126,7 +126,7 @@ class LogoCotizacionCompartidaTest extends TestCase
     public function test_formdata_structure_es_correcta()
     {
         echo "\n\n═══════════════════════════════════════════════════════════";
-        echo "\n✅ TEST 2: Estructura FormData para logos compartidos";
+        echo "\n TEST 2: Estructura FormData para logos compartidos";
         echo "\n═══════════════════════════════════════════════════════════\n";
 
         // Simular FormData como array (simular lo que PHP recibiría)
@@ -179,14 +179,14 @@ class LogoCotizacionCompartidaTest extends TestCase
         $this->assertCount(2, $logosEncontrados, '❌ Debería encontrar 2 logos compartidos');
         $this->assertCount(1, $metadatosEncontrados, '❌ Debería encontrar 1 set de metadatos');
 
-        echo "✅ FormData parseado correctamente:";
+        echo " FormData parseado correctamente:";
         echo "\n   - Logos encontrados: " . count($logosEncontrados);
         foreach ($logosEncontrados as $logo) {
             echo "\n     • tecnica_{$logo['tecnica_idx']}_logo_compartido_{$logo['clave']}";
         }
         echo "\n   - Metadatos encontrados: " . count($metadatosEncontrados);
         echo "\n   - Técnicas en metadata: " . implode(', ', $metadatosEncontrados[0]['tecnicasCompartidas']);
-        echo "\n✅ TEST 2 PASÓ\n";
+        echo "\n TEST 2 PASÓ\n";
     }
 
     /**
@@ -197,7 +197,7 @@ class LogoCotizacionCompartidaTest extends TestCase
     public function test_flujo_completo_datos_logo_compartido()
     {
         echo "\n\n═══════════════════════════════════════════════════════════";
-        echo "\n✅ TEST 3: Flujo completo de datos logo compartido";
+        echo "\n TEST 3: Flujo completo de datos logo compartido";
         echo "\n═══════════════════════════════════════════════════════════\n";
 
         // ============================================
@@ -301,14 +301,14 @@ class LogoCotizacionCompartidaTest extends TestCase
         // ============================================
         // CONCLUSIÓN
         // ============================================
-        echo "\n✅ FLUJO COMPLETO EXITOSO:\n";
+        echo "\n FLUJO COMPLETO EXITOSO:\n";
         echo "   1️⃣  Frontend detecta logos compartidos\n";
         echo "   2️⃣  Extrae metadatos con técnicas involucradas\n";
         echo "   3️⃣  Envía FormData con archivos y metadatos\n";
         echo "   4️⃣  Backend agrupa logos por técnica\n";
         echo "   5️⃣  Backend encuentra metadatos y verifica técnicas\n";
         echo "   6️⃣  Logo se guarda UNA sola vez pero se referencia en ambas técnicas\n";
-        echo "\n✅ TEST 3 PASÓ\n";
+        echo "\n TEST 3 PASÓ\n";
     }
 }
 

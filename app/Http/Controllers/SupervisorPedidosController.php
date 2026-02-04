@@ -375,29 +375,34 @@ class SupervisorPedidosController extends Controller
         // seguido de salto de línea y el motivo
         $fechaActual = now();
         $fechaFormato = $fechaActual->format('d/m/Y') . '-' . $fechaActual->format('g:iA');
-        $linea_novedad = "{$nombreUsuario}-{$rol}-{$fechaFormato}\nANULACIÓN PEDIDO: {$request->motivo_anulacion}";
+        $linea_novedad = "{$nombreUsuario}-{$rol}-{$fechaFormato}\nPASAR A REVISIÓN: {$request->motivo_anulacion}";
 
         // Actualizar estado
         // IMPORTANTE: Se registra aprobado_por_supervisor_en para marcar que el supervisor ha actuado sobre la orden
-        // Esto hace que la orden aparezca en el registro (tanto si es aprobada como si es anulada)
+        // Esto hace que la orden aparezca en el registro (tanto si es aprobada como si es revisada)
         $orden->update([
-            'estado' => 'Anulada',
-            'motivo_anulacion' => $request->motivo_anulacion,
-            'fecha_anulacion' => now(),
-            'usuario_anulacion' => auth()->user()->name,
+            'estado' => 'DEVUELTO_A_ASESORA',
+            'motivo_revision' => $request->motivo_anulacion,
+            'fecha_revision' => now(),
+            'usuario_revision' => auth()->user()->name,
             'aprobado_por_supervisor_en' => now(), // Registrar acción del supervisor
         ]);
 
-        // Agregar novedad al campo novedades del pedido
+        // Agregar novedad al campo novedades del pedido de forma segura
+        // Se recarga el modelo para evitar conflictos de concurrencia
+        $orden->refresh();
+        
+        $novedadCompleta = "\n" . str_repeat("=", 70) . "\n" . $linea_novedad . "\n" . str_repeat("=", 70);
+        
         if (!empty($orden->novedades)) {
-            $orden->novedades .= "\n\n" . str_repeat("-", 60) . "\n" . $linea_novedad;
+            $orden->novedades .= $novedadCompleta;
         } else {
             $orden->novedades = $linea_novedad;
         }
         $orden->save();
 
         // Log de auditoría
-        \Log::info("Orden #{$orden->numero_pedido} anulada por " . auth()->user()->name, [
+        \Log::info("Orden #{$orden->numero_pedido} enviada a revisión por " . auth()->user()->name, [
             'motivo' => $request->motivo_anulacion,
             'fecha' => now(),
             'usuario' => $nombreUsuario,
@@ -406,7 +411,7 @@ class SupervisorPedidosController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Orden anulada correctamente',
+            'message' => 'Orden enviada a revisión correctamente',
             'orden' => $orden,
         ]);
     }
@@ -642,7 +647,7 @@ class SupervisorPedidosController extends Controller
      */
     public function obtenerDatosFactura($id)
     {
-        Log::warning('⚠️⚠️⚠️ [CONTROLLER-FACTURA-SUPERVISOR] ENDPOINT LLAMADO ⚠️⚠️⚠️', ['pedido_id' => $id]);
+        Log::warning(' [CONTROLLER-FACTURA-SUPERVISOR] ENDPOINT LLAMADO ', ['pedido_id' => $id]);
         
         try {
             // 🔍 LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
@@ -703,7 +708,7 @@ class SupervisorPedidosController extends Controller
                 }
             }
             
-            Log::info('✅ [CONTROLLER-FACTURA-SUPERVISOR] Datos de factura obtenidos exitosamente');
+            Log::info(' [CONTROLLER-FACTURA-SUPERVISOR] Datos de factura obtenidos exitosamente');
             
             // 🔍 LOG FINAL: Verificar estructura exacta antes de retornar
             Log::info('[CONTROLLER-FACTURA-SUPERVISOR-JSON-RESPONSE] Estructura JSON final que se envía', [

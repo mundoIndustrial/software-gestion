@@ -20,7 +20,7 @@ class ConsecutivosRecibosService
     {
         // Solo ejecutar cuando el estado cambia a PENDIENTE_INSUMOS
         if ($estadoAnterior === 'PENDIENTE_INSUMOS' || $estadoNuevo !== 'PENDIENTE_INSUMOS') {
-            Log::info('🔢 Consecutivos: No aplica generación', [
+            Log::info(' Consecutivos: No aplica generación', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'estado_anterior' => $estadoAnterior,
@@ -32,7 +32,7 @@ class ConsecutivosRecibosService
 
         // Verificar que el usuario tenga rol SUPERVISOR_PEDIDOS o supervisor_pedidos
         if (!auth()->user()->hasRole('SUPERVISOR_PEDIDOS') && !auth()->user()->hasRole('supervisor_pedidos')) {
-            Log::info('🔢 Consecutivos: Usuario no autorizado', [
+            Log::info(' Consecutivos: Usuario no autorizado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'usuario' => auth()->user()->name ?? 'sistema',
@@ -45,7 +45,7 @@ class ConsecutivosRecibosService
         $tiposRecibo = $this->determinarTiposRecibo($pedido);
         
         if (empty($tiposRecibo)) {
-            Log::info('🔢 Consecutivos: No hay tipos de recibo aplicables', [
+            Log::info(' Consecutivos: No hay tipos de recibo aplicables', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido
             ]);
@@ -61,7 +61,7 @@ class ConsecutivosRecibosService
                     // Validar que no existan duplicados
                     $existe = $this->existeConsecutivo($pedido->id, $tipoRecibo, $config['prenda_pedido_id'] ?? null);
                     if ($existe) {
-                        Log::warning('🔢 Consecutivo ya existe, omitiendo', [
+                        Log::warning(' Consecutivo ya existe, omitiendo', [
                             'pedido_id' => $pedido->id,
                             'tipo_recibo' => $tipoRecibo,
                             'prenda_pedido_id' => $config['prenda_pedido_id'] ?? null
@@ -81,7 +81,7 @@ class ConsecutivosRecibosService
                         ->first();
 
                     if (!$registroMaestro) {
-                        Log::warning('🔢 No existe registro maestro para tipo de recibo', [
+                        Log::warning(' No existe registro maestro para tipo de recibo', [
                             'tipo_recibo_buscado' => $tipoReciboReal,
                             'tipo_recibo_clave' => $tipoRecibo,
                             'pedido_id' => $pedido->id
@@ -128,7 +128,7 @@ class ConsecutivosRecibosService
                     ];
                 }
 
-                Log::info('🔢 Consecutivos generados exitosamente', [
+                Log::info(' Consecutivos generados exitosamente', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
                     'estado_anterior' => 'PENDIENTE_SUPERVISOR',
@@ -140,7 +140,7 @@ class ConsecutivosRecibosService
                 return true;
 
             } catch (\Exception $e) {
-                Log::error('🔢 Error al generar consecutivos', [
+                Log::error(' Error al generar consecutivos', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
                     'error' => $e->getMessage(),
@@ -262,7 +262,7 @@ class ConsecutivosRecibosService
             }
         }
 
-        Log::info('🔢 Tipos de recibo determinados', [
+        Log::info(' Tipos de recibo determinados', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'tipos_recibo' => $tiposRecibo,
@@ -303,7 +303,7 @@ class ConsecutivosRecibosService
             }
         }
         
-        Log::info('🔢 Consecutivos obtenidos para pedido', [
+        Log::info(' Consecutivos obtenidos para pedido', [
             'pedido_id' => $pedidoId,
             'resultado' => $resultado,
             'total_registros' => $consecutivos->count()

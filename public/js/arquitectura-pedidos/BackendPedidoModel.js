@@ -4,10 +4,10 @@
  * MODELO SERIALIZABLE DEL PEDIDO (para enviar al backend)
  * 
  * Características:
- * ✅ 100% JSON serializable
- * ✅ Sin File objects
- * ✅ Solo referencias (uid, nombre_archivo)
- * ✅ Normalizado según espera el backend
+ *  100% JSON serializable
+ *  Sin File objects
+ *  Solo referencias (uid, nombre_archivo)
+ *  Normalizado según espera el backend
  * 
  * Se genera a partir de DOMPedidoModel extrayendo solo la metadata
  */

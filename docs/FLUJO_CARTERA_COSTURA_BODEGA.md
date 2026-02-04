@@ -169,14 +169,14 @@ try {
 ## Verificación Post-Implementación
 
 ### ✓ Cumplido (Implementación)
-1. ✅ Método `generarConsecutivoCosturaBodega()` agregado a CarteraPedidosController
-2. ✅ Se llama automáticamente cuando CARTERA aprueba
-3. ✅ Incrementa consecutivo en `consecutivos_recibos`
-4. ✅ Inserta registro en `consecutivos_recibos_pedidos`
-5. ✅ Registra logs para auditoría
-6. ✅ Maneja duplicados
-7. ✅ Usa transacciones para atomicidad
-8. ✅ Sintaxis PHP validada (sin errores)
+1.  Método `generarConsecutivoCosturaBodega()` agregado a CarteraPedidosController
+2.  Se llama automáticamente cuando CARTERA aprueba
+3.  Incrementa consecutivo en `consecutivos_recibos`
+4.  Inserta registro en `consecutivos_recibos_pedidos`
+5.  Registra logs para auditoría
+6.  Maneja duplicados
+7.  Usa transacciones para atomicidad
+8.  Sintaxis PHP validada (sin errores)
 
 ### 📋 Por Probar (Testing)
 1. ⏳ Aprobar un pedido desde módulo de Cartera

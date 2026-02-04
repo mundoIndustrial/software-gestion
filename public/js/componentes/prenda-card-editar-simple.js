@@ -187,7 +187,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         console.log(' [OBTENER-ID] Después de obtenerPedidoId():', pedidoId);
     }
 
-    console.log('✅ [PEDIDO-ID-FINAL] pedidoId usado será:', pedidoId);
+    console.log(' [PEDIDO-ID-FINAL] pedidoId usado será:', pedidoId);
 
     // Obtener datos frescos de la BD
     let prendaEditable = JSON.parse(JSON.stringify(prenda));
@@ -211,14 +211,14 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         try {
             const url = `/asesores/pedidos/${pedidoId}/factura-datos`;
             console.log('🔥 [FETCH] Llamando a URL:', url);
-            console.log('📊 [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
+            console.log(' [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
 
             const response = await fetch(url);
-            console.log('✅ [FETCH-RESPONSE] Status:', response.status, 'OK:', response.ok);
+            console.log(' [FETCH-RESPONSE] Status:', response.status, 'OK:', response.ok);
             
             if (response.ok) {
                 const resultado = await response.json();
-                console.log('✅ [FETCH-JSON] Respuesta completa:', {
+                console.log(' [FETCH-JSON] Respuesta completa:', {
                     success: resultado.success,
                     tiene_data: !!resultado.data,
                     tiene_prendas: !!(resultado.data?.prendas),
@@ -260,7 +260,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                 });
                 
                 if (prendaDelPedido) {
-                    console.log('✅ [PRENDA-ENCONTRADA] Prenda encontrada en datos del pedido:', prendaDelPedido.nombre_prenda);
+                    console.log(' [PRENDA-ENCONTRADA] Prenda encontrada en datos del pedido:', prendaDelPedido.nombre_prenda);
                     console.log('📦 [DATOS-RECIBIDOS]', {
                         procesos: prendaDelPedido.procesos?.length ?? 0,
                         tallas: Object.keys(prendaDelPedido.tallas || {}).length,
@@ -283,7 +283,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                         fecha_creacion: pedidoData.fecha_creacion || new Date().toLocaleDateString(),
                         prendas: [prendaEditable]
                     };
-                    console.log('✅ [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
+                    console.log(' [DATOS-FACTURA-ACTUALIZADO]:', datosParaFactura);
                 } else {
                     console.warn(' [PRENDA-NO-ENCONTRADA] Prenda no encontrada en datos del pedido');
                     datosParaFactura.prendas = [prendaEditable];
@@ -301,7 +301,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         datosParaFactura.prendas = [prendaEditable];
     }
     
-    console.log('✅ [FINAL-DATOS-FACTURA] Datos finales para generar HTML:', datosParaFactura);
+    console.log(' [FINAL-DATOS-FACTURA] Datos finales para generar HTML:', datosParaFactura);
     
     // Obtener HTML de factura
     if (typeof generarHTMLFactura !== 'function') {

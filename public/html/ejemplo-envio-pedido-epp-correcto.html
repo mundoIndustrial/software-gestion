@@ -1,7 +1,7 @@
 /**
  * ejemplo-envio-pedido-epp-correcto.html
  * 
- * ✅ EJEMPLO HTML + JAVASCRIPT COMPLETO
+ *  EJEMPLO HTML + JAVASCRIPT COMPLETO
  * Cómo usar FormData correctamente para enviar EPP con imágenes
  */
 
@@ -162,7 +162,7 @@
     </style>
 </head>
 <body>
-    <h1>✅ Crear Pedido con EPP - Ejemplo Correcto</h1>
+    <h1> Crear Pedido con EPP - Ejemplo Correcto</h1>
 
     <div id="status"></div>
 
@@ -345,7 +345,7 @@
             });
             
             renderEpps();
-            mostrarStatus(`✅ ${Array.from(files).length} imagen(es) agregada(s)`, 'success');
+            mostrarStatus(` ${Array.from(files).length} imagen(es) agregada(s)`, 'success');
         }
 
         function quitarImagen(eppId, imgIdx) {
@@ -364,7 +364,7 @@
         }
 
         // =====================================================
-        // ✅ EXTRAER ARCHIVOS Y CONSTRUIR FormData
+        //  EXTRAER ARCHIVOS Y CONSTRUIR FormData
         // =====================================================
         
         function recolectarDatos() {
@@ -377,7 +377,7 @@
                     epp_id: parseInt(epp.epp_id) || 0,
                     cantidad: parseInt(epp.cantidad) || 1,
                     observaciones: epp.observaciones,
-                    imagenes: epp.imagenes  // ✅ Aquí van File objects
+                    imagenes: epp.imagenes  //  Aquí van File objects
                 }))
             };
         }
@@ -395,7 +395,7 @@
                     epp_id: epp.epp_id,
                     cantidad: epp.cantidad,
                     observaciones: epp.observaciones,
-                    // ⚠️ NO incluir imagenes aquí
+                    //  NO incluir imagenes aquí
                 }))
             };
 
@@ -403,7 +403,7 @@
 
             console.log('Pedido JSON:', pedidoLimpio);
 
-            // 2. ✅ Agregar archivos de EPP
+            // 2.  Agregar archivos de EPP
             pedidoData.epps.forEach((epp, eppIdx) => {
                 if (epp.imagenes && Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
@@ -434,7 +434,7 @@
                 mostrarStatus('Validando datos...', 'info');
                 
                 const pedidoData = recolectarDatos();
-                console.log('📊 Datos recolectados:', pedidoData);
+                console.log(' Datos recolectados:', pedidoData);
                 
                 // Validar
                 if (!pedidoData.cliente) {
@@ -467,11 +467,11 @@
                 }
 
                 mostrarStatus(
-                    `✅ Pedido #${resultado.numero_pedido} creado exitosamente`,
+                    ` Pedido #${resultado.numero_pedido} creado exitosamente`,
                     'success'
                 );
 
-                console.log('✅ Respuesta:', resultado);
+                console.log(' Respuesta:', resultado);
                 document.getElementById('form-pedido').reset();
                 state.epps = [];
                 renderEpps();
@@ -522,7 +522,7 @@
         // INICIALIZAR
         // =====================================================
         
-        console.log('✅ Script cargado');
+        console.log(' Script cargado');
         renderEpps();
     </script>
 </body>

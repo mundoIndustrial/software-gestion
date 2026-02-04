@@ -246,6 +246,6 @@
         ajustarTituloPaso5();
         patchFuncionIrAlPaso();
 
-        console.log('✅ Stepper configurado para tipo:', tipo);
+        console.log(' Stepper configurado para tipo:', tipo);
     });
 })();

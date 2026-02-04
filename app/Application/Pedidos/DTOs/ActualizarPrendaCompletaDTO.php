@@ -24,6 +24,7 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?int $deBodega = null,  // Cambiar a INT: 1=bodega, 0=confección
         public readonly ?array $imagenes = null,
         public readonly ?array $imagenesExistentes = null,  // URLs de imágenes existentes a preservar
+        public readonly ?array $imagenesAEliminar = null,   // Array de IDs o rutas de imágenes a eliminar
         public readonly ?array $cantidadTalla = null,                  // { GENERO: { TALLA: CANTIDAD } }
         public readonly ?array $variantes = null,                      // [ { manga_id, broche_id, bolsillos, obs } ]
         public readonly ?array $coloresTelas = null,                   // [ { color_id, tela_id } ]
@@ -129,6 +130,16 @@ final class ActualizarPrendaCompletaDTO
             }
         }
 
+        // Parsear imagenes_a_eliminar si viene como JSON string
+        $imagenesAEliminar = null;
+        if (!empty($data['imagenes_a_eliminar'])) {
+            if (is_string($data['imagenes_a_eliminar'])) {
+                $imagenesAEliminar = json_decode($data['imagenes_a_eliminar'], true);
+            } else {
+                $imagenesAEliminar = $data['imagenes_a_eliminar'];
+            }
+        }
+
         return new self(
             prendaId: $prendaId,
             nombrePrenda: $data['nombre_prenda'] ?? null,
@@ -138,11 +149,12 @@ final class ActualizarPrendaCompletaDTO
                 : (isset($data['origen']) ? ($data['origen'] === 'bodega' ? 1 : 0) : null),
             imagenes: $imagenes,
             imagenesExistentes: $imagenesExistentes,
+            imagenesAEliminar: $imagenesAEliminar,
             cantidadTalla: $cantidadTalla,
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,
-            // 🔧 FIX: IMPORTANTE - Usar $imagenesExistentes como base para eliminar imágenes correctamente
+            //  FIX: IMPORTANTE - Usar $imagenesExistentes como base para eliminar imágenes correctamente
             // Patrón MERGE:
             // 1. Si hay imágenes nuevas + existentes -> MERGE ambas
             // 2. Si solo hay existentes (usuario no agregó nuevas pero puede haber eliminado) -> usar existentes

@@ -68,7 +68,7 @@ class CrearPedidoEditableController extends Controller
         ]);
         
         $user = Auth::user();
-        Log::info('[CREAR-DESDE-COTIZACION] ✅ Usuario obtenido', [
+        Log::info('[CREAR-DESDE-COTIZACION]  Usuario obtenido', [
             'usuario_id' => $user->id,
             'usuario_nombre' => $user->name,
         ]);
@@ -116,21 +116,21 @@ class CrearPedidoEditableController extends Controller
         $inicioCotizaciones = microtime(true);
         $cotizaciones = Cotizacion::with([
             'cliente',
-            'tipoCotizacion',  // ✅ Agregar el tipo de cotización
+            'tipoCotizacion',  //  Agregar el tipo de cotización
             'prendas' => function($query) {
                 $query->with([
                     'fotos', 
                     'telaFotos', 
                     'tallas', 
                     'variantes',
-                    'reflectivo.fotos',  // ✅ Agregar fotos de reflectivo para imágenes del proceso
-                    'logoCotizacionTelasPrenda' => function($q) {  // ✅ Nueva carga para telas de logo
+                    'reflectivo.fotos',  //  Agregar fotos de reflectivo para imágenes del proceso
+                    'logoCotizacionTelasPrenda' => function($q) {  //  Nueva carga para telas de logo
                         // Cargar todas las telas/colores/referencias para esta prenda en cotización de logo
                     }
                 ]);
             },
             'logoCotizacion.fotos',
-            'logoCotizacion.telasPrendas',  // ✅ Agregar telasPrendas de la cotización de logo
+            'logoCotizacion.telasPrendas',  //  Agregar telasPrendas de la cotización de logo
             'reflectivoCotizacion.fotos'
         ])
             ->where('asesor_id', $user->id)
@@ -222,7 +222,7 @@ class CrearPedidoEditableController extends Controller
         ]);
         
         $user = Auth::user();
-        Log::info('[CREAR-PEDIDO-NUEVO] ✅ Usuario obtenido', [
+        Log::info('[CREAR-PEDIDO-NUEVO]  Usuario obtenido', [
             'usuario_id' => $user->id,
             'usuario_nombre' => $user->name,
         ]);
@@ -607,7 +607,7 @@ class CrearPedidoEditableController extends Controller
             // DEBUG: Validar que no hay File objects en el JSON
             $this->validarJsonSinFiles($datosFrontend);
             $tiempoPaso1 = round((microtime(true) - $inicioPaso1) * 1000, 2);
-            Log::info('[CREAR-PEDIDO] ✅ PASO 1: JSON decodificado', ['tiempo_ms' => $tiempoPaso1]);
+            Log::info('[CREAR-PEDIDO]  PASO 1: JSON decodificado', ['tiempo_ms' => $tiempoPaso1]);
 
             // ====== PASO 2: Obtener/crear cliente ======
             $inicioPaso2 = microtime(true);
@@ -615,7 +615,7 @@ class CrearPedidoEditableController extends Controller
             $cliente = $this->obtenerOCrearCliente($clienteNombre);
             $tiempoPaso2 = round((microtime(true) - $inicioPaso2) * 1000, 2);
 
-            Log::info('[CREAR-PEDIDO] ✅ PASO 2: Cliente obtenido/creado', [
+            Log::info('[CREAR-PEDIDO]  PASO 2: Cliente obtenido/creado', [
                 'cliente_id' => $cliente->id,
                 'nombre' => $cliente->nombre,
                 'tiempo_ms' => $tiempoPaso2,
@@ -629,7 +629,7 @@ class CrearPedidoEditableController extends Controller
             );
             $tiempoPaso3 = round((microtime(true) - $inicioPaso3) * 1000, 2);
 
-            Log::info('[CREAR-PEDIDO] ✅ PASO 3: Pedido normalizado (DTO)', [
+            Log::info('[CREAR-PEDIDO]  PASO 3: Pedido normalizado (DTO)', [
                 'cliente_id' => $dtoPedido->cliente_id,
                 'prendas' => count($dtoPedido->prendas),
                 'epps' => count($dtoPedido->epps),
@@ -660,7 +660,7 @@ class CrearPedidoEditableController extends Controller
             $pedidoId = $pedido->id;
             $tiempoPaso5 = round((microtime(true) - $inicioPaso5) * 1000, 2);
 
-            Log::info('[CREAR-PEDIDO] ✅ PASO 5: Pedido base creado', [
+            Log::info('[CREAR-PEDIDO]  PASO 5: Pedido base creado', [
                 'pedido_id' => $pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'tiempo_ms' => $tiempoPaso5,
@@ -671,7 +671,7 @@ class CrearPedidoEditableController extends Controller
             $this->crearCarpetasPedido($pedidoId);
             $tiempoPaso6 = round((microtime(true) - $inicioPaso6) * 1000, 2);
 
-            Log::info('[CREAR-PEDIDO] ✅ PASO 6: Carpetas creadas', [
+            Log::info('[CREAR-PEDIDO]  PASO 6: Carpetas creadas', [
                 'pedido_id' => $pedidoId,
                 'tiempo_ms' => $tiempoPaso6,
             ]);
@@ -685,7 +685,7 @@ class CrearPedidoEditableController extends Controller
             );
             $tiempoPaso7 = round((microtime(true) - $inicioPaso7) * 1000, 2);
 
-            Log::info('[CREAR-PEDIDO] ✅ PASO 7: Imágenes mapeadas y creadas', [
+            Log::info('[CREAR-PEDIDO]  PASO 7: Imágenes mapeadas y creadas', [
                 'pedido_id' => $pedidoId,
                 'imagenes_mapeadas' => count($dtoPedido->imagen_uid_a_ruta),
                 'tiempo_ms' => $tiempoPaso7,
@@ -698,7 +698,7 @@ class CrearPedidoEditableController extends Controller
                 $this->procesarYAsignarEpps($request, $pedidoId, $dtoPedido->epps);
                 $tiempoPaso7B = round((microtime(true) - $inicioPaso7B) * 1000, 2);
                 
-                Log::info('[CREAR-PEDIDO] ✅ PASO 7B: Imágenes de EPPs procesadas', [
+                Log::info('[CREAR-PEDIDO]  PASO 7B: Imágenes de EPPs procesadas', [
                     'pedido_id' => $pedidoId,
                     'epps_count' => count($dtoPedido->epps),
                     'tiempo_ms' => $tiempoPaso7B,
@@ -854,17 +854,17 @@ class CrearPedidoEditableController extends Controller
                 ]);
                 
                 foreach ($item['telas'] as $telaIdx => $tela) {
-                    // ✅ MEJORADO: Obtener o crear la relación de tela
+                    //  MEJORADO: Obtener o crear la relación de tela
                     $telaRelacion = $telasRelacion->get($telaIdx);
                     
                     if (!$telaRelacion) {
-                        Log::warning('[CrearPedidoEditableController] ⚠️ Tela no encontrada en índice', [
+                        Log::warning('[CrearPedidoEditableController]  Tela no encontrada en índice', [
                             'prenda_id' => $prenda->id,
                             'tela_idx' => $telaIdx,
                             'datos_tela' => $tela,
                         ]);
                         
-                        // ✅ MEJORADO: Procesar nombres de color y tela usando ColorTelaService
+                        //  MEJORADO: Procesar nombres de color y tela usando ColorTelaService
                         if (!empty($tela) && isset($tela['color']) && isset($tela['tela'])) {
                             try {
                                 // Convertir nombres a IDs
@@ -888,7 +888,7 @@ class CrearPedidoEditableController extends Controller
                                     if ($colorTelaId) {
                                         $telaRelacion = \App\Models\PrendaPedidoColorTela::find($colorTelaId);
                                         
-                                        Log::info('[CrearPedidoEditableController] ✅ Tela obtenida/creada', [
+                                        Log::info('[CrearPedidoEditableController]  Tela obtenida/creada', [
                                             'color_tela_id' => $colorTelaId,
                                             'color_id' => $colorId,
                                             'tela_id' => $telaId,
@@ -910,7 +910,7 @@ class CrearPedidoEditableController extends Controller
                                 continue;
                             }
                         } else {
-                            Log::debug('[CrearPedidoEditableController] ⚠️ Datos de tela incompletos', [
+                            Log::debug('[CrearPedidoEditableController]  Datos de tela incompletos', [
                                 'tela_data' => $tela,
                             ]);
                             continue;
@@ -919,7 +919,7 @@ class CrearPedidoEditableController extends Controller
 
                     // ==================== PROCESAR IMÁGENES DE TELA ====================
                     if (!$telaRelacion) {
-                        Log::warning('[CrearPedidoEditableController] ⚠️ No se pudo obtener/crear relación de tela');
+                        Log::warning('[CrearPedidoEditableController]  No se pudo obtener/crear relación de tela');
                         continue;
                     }
 
@@ -954,12 +954,12 @@ class CrearPedidoEditableController extends Controller
                     }
                     
                     if ($imagenesGuardadas > 0) {
-                        Log::info('[CrearPedidoEditableController] ✅ Imágenes de tela procesadas', [
+                        Log::info('[CrearPedidoEditableController]  Imágenes de tela procesadas', [
                             'tela_id' => $telaRelacion->id,
                             'cantidad_imagenes' => $imagenesGuardadas,
                         ]);
                     } else {
-                        Log::debug('[CrearPedidoEditableController] ℹ️ Sin imágenes para esta tela', [
+                        Log::debug('[CrearPedidoEditableController]  Sin imágenes para esta tela', [
                             'tela_id' => $telaRelacion->id,
                         ]);
                     }
@@ -1342,7 +1342,7 @@ class CrearPedidoEditableController extends Controller
             elseif ($info['tipo'] === 'tela') {
                 $telaIdx = $info['tela_idx'] ?? 0;
                 
-                // ✅ MEJORADO: Recargar y verificar relaciones de telas
+                //  MEJORADO: Recargar y verificar relaciones de telas
                 $telasRelacion = $prenda->coloresTelas()->get();
                 $telaRelacion = $telasRelacion->get($telaIdx);
                 
@@ -1712,7 +1712,7 @@ class CrearPedidoEditableController extends Controller
     }
 
     /**
-     * ✅ Crear estructura de carpetas para un pedido
+     *  Crear estructura de carpetas para un pedido
      * 
      * Crea:
      * - storage/app/public/pedidos/{pedido_id}/prendas/

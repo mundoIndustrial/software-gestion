@@ -104,7 +104,7 @@ class PrendaEditor {
 
         if (esReflectivo || esLogo) {
             prenda.origen = 'bodega';
-            console.log('[PrendaEditor] ✅ FORZANDO origen = "bodega" (tipo:', nombreTipo || tipoCotizacionId, ')');
+            console.log('[PrendaEditor]  FORZANDO origen = "bodega" (tipo:', nombreTipo || tipoCotizacionId, ')');
         } else {
             // Para otros tipos, mantener comportamiento normal
             prenda.origen = prenda.origen || 'confeccion';
@@ -141,7 +141,7 @@ class PrendaEditor {
         fetch(`/api/cotizaciones/${prenda.cotizacion_id}/prendas/${prenda.prenda_id}/telas-cotizacion`)
             .then(response => {
                 if (!response.ok) {
-                    console.warn('[cargarTelasDesdeCtizacion] ⚠️ Endpoint no disponible, intentando fallback');
+                    console.warn('[cargarTelasDesdeCtizacion]  Endpoint no disponible, intentando fallback');
                     throw new Error('No endpoint');
                 }
                 return response.json();
@@ -152,7 +152,7 @@ class PrendaEditor {
                 const ubicaciones = data.ubicaciones || data.data?.ubicaciones || [];
                 const descripcion = data.descripcion || data.data?.descripcion || '';
                 
-                console.log('[cargarTelasDesdeCtizacion] ✅ Datos de cotización cargados:', {
+                console.log('[cargarTelasDesdeCtizacion]  Datos de cotización cargados:', {
                     telas_count: telas.length,
                     variaciones_count: variaciones.length,
                     ubicaciones_count: ubicaciones.length,
@@ -200,7 +200,7 @@ class PrendaEditor {
                     // Asignar telas a la prenda
                     prenda.telasAgregadas = telasAgregadas;
 
-                    console.log('[cargarTelasDesdeCtizacion] ✅ Telas procesadas:', {
+                    console.log('[cargarTelasDesdeCtizacion]  Telas procesadas:', {
                         cantidad: telasAgregadas.length,
                         telas: telasAgregadas.map(t => `${t.nombre_tela} - ${t.color}`)
                     });
@@ -250,7 +250,7 @@ class PrendaEditor {
                 }
             })
             .catch(error => {
-                console.warn('[cargarTelasDesdeCtizacion] ⚠️ Error cargando datos de cotización:', error.message);
+                console.warn('[cargarTelasDesdeCtizacion]  Error cargando datos de cotización:', error.message);
                 // Continuar sin datos - no bloquear flujo
             });
     }
@@ -294,7 +294,7 @@ class PrendaEditor {
             const config = mapeoVariaciones[varKey];
             
             if (!config) {
-                console.warn(`[aplicarVariacionesReflectivo] ⚠️ Variación desconocida: ${variacion.variacion}`);
+                console.warn(`[aplicarVariacionesReflectivo]  Variación desconocida: ${variacion.variacion}`);
                 return;
             }
             
@@ -335,11 +335,11 @@ class PrendaEditor {
                             }
                         }
                         
-                        console.log(`[aplicarVariacionesReflectivo] ✅ Variación "${variacion.variacion}" completamente configurada con observación: "${variacion.observacion}"`);
+                        console.log(`[aplicarVariacionesReflectivo]  Variación "${variacion.variacion}" completamente configurada con observación: "${variacion.observacion}"`);
                     }, 50);
                     
                 } else {
-                    console.warn(`[aplicarVariacionesReflectivo] ⚠️ No se encontró checkbox para: ${config.checkbox}`);
+                    console.warn(`[aplicarVariacionesReflectivo]  No se encontró checkbox para: ${config.checkbox}`);
                 }
             }
         });
@@ -376,7 +376,7 @@ class PrendaEditor {
         
         if (html) {
             contenedorUbicaciones.innerHTML = html;
-            console.log(`[aplicarUbicacionesReflectivo] ✅ ${ubicaciones.length} ubicaciones agregadas`);
+            console.log(`[aplicarUbicacionesReflectivo]  ${ubicaciones.length} ubicaciones agregadas`);
         }
     }
 
@@ -425,7 +425,7 @@ class PrendaEditor {
             contenedorTelas.appendChild(telaHTML);
         });
 
-        console.log('[actualizarPreviewTelasCotizacion] ✅ Preview actualizado');
+        console.log('[actualizarPreviewTelasCotizacion]  Preview actualizado');
     }
     cargarPrendaEnModal(prenda, prendaIndex) {
         console.log('🔄 [CARGAR-PRENDA] Iniciando carga de prenda en modal:', {
@@ -485,7 +485,7 @@ class PrendaEditor {
             this.cargarProcesos(prendaProcesada);
             
             this.cambiarBotonAGuardarCambios();
-            console.log('✅ [CARGAR-PRENDA] Prenda cargada completamente');
+            console.log(' [CARGAR-PRENDA] Prenda cargada completamente');
             this.mostrarNotificacion('Prenda cargada para editar', 'success');
         } catch (error) {
             console.error(' [CARGAR-PRENDA] Error:', error);
@@ -560,7 +560,7 @@ class PrendaEditor {
                 
                 if (esReflectivo || esLogo) {
                     prenda.origen = 'bodega';
-                    console.log('[llenarCamposBasicos] ✅ FORZANDO origen = "bodega" (cotización: ' + (nombreTipo || tipoCotizacionId) + ')');
+                    console.log('[llenarCamposBasicos]  FORZANDO origen = "bodega" (cotización: ' + (nombreTipo || tipoCotizacionId) + ')');
                 }
             }
             
@@ -583,17 +583,17 @@ class PrendaEditor {
                 console.log('[llenarCamposBasicos] Usando prenda.origen:', origen);
             }
             // SEGUNDO: verificar de_bodega (campo de la BD)
-            // ⚠️ IMPORTANTE: Usar == para comparación flexible (1 == true, 0 == false)
+            //  IMPORTANTE: Usar == para comparación flexible (1 == true, 0 == false)
             else if (prenda.de_bodega !== undefined && prenda.de_bodega !== null) {
                 // Si de_bodega es 1, true o '1' → bodega
                 // Si de_bodega es 0, false o '0' → confeccion
                 if (prenda.de_bodega == 1 || prenda.de_bodega === true || prenda.de_bodega === '1') {
                     origen = 'bodega';
-                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=true → origen: bodega');
+                    console.log('[llenarCamposBasicos]  Usando de_bodega=true → origen: bodega');
                 } else {
                     // Cualquier otro valor falsy (0, false, '0', null) → confeccion
                     origen = 'confeccion';
-                    console.log('[llenarCamposBasicos] ✅ Usando de_bodega=false → origen: confeccion');
+                    console.log('[llenarCamposBasicos]  Usando de_bodega=false → origen: confeccion');
                 }
             }
             
@@ -626,7 +626,7 @@ class PrendaEditor {
             console.log('[llenarCamposBasicos] PASO 1: Buscando coincidencia exacta...');
             for (let opt of origenField.options) {
                 if (opt.value === origen) {
-                    console.log('[llenarCamposBasicos] ✅ PASO 1: Coincidencia exacta por VALUE:', {
+                    console.log('[llenarCamposBasicos]  PASO 1: Coincidencia exacta por VALUE:', {
                         optValue: opt.value,
                         origen: origen
                     });
@@ -643,7 +643,7 @@ class PrendaEditor {
                 for (let opt of origenField.options) {
                     const optValueNormalizado = normalizarTexto(opt.value);
                     if (optValueNormalizado === origenNormalizado) {
-                        console.log('[llenarCamposBasicos] ✅ PASO 2: Coincidencia normalizada:', {
+                        console.log('[llenarCamposBasicos]  PASO 2: Coincidencia normalizada:', {
                             optValue: opt.value,
                             origenNormalizado: origenNormalizado,
                             asignando: opt.value
@@ -663,17 +663,17 @@ class PrendaEditor {
                 
                 // Forzar con setAttribute si value no funcionó
                 if (origenField.value !== origen) {
-                    console.log('[llenarCamposBasicos] ⚠️ value no funcionó, intentando setAttribute...');
+                    console.log('[llenarCamposBasicos]  value no funcionó, intentando setAttribute...');
                     for (let i = 0; i < origenField.options.length; i++) {
                         if (origenField.options[i].value === origen) {
                             origenField.selectedIndex = i;
-                            console.log('[llenarCamposBasicos] ✅ PASO 3B: setAttribute funcionó, selectedIndex=', i);
+                            console.log('[llenarCamposBasicos]  PASO 3B: setAttribute funcionó, selectedIndex=', i);
                             encontrado = true;
                             break;
                         }
                     }
                 } else {
-                    console.log('[llenarCamposBasicos] ✅ PASO 3: Asignación directa exitosa');
+                    console.log('[llenarCamposBasicos]  PASO 3: Asignación directa exitosa');
                     encontrado = true;
                 }
             }
@@ -682,7 +682,7 @@ class PrendaEditor {
             const valorFinal = origenField.value;
             const coincide = (valorFinal === origen) || (normalizarTexto(valorFinal) === origenNormalizado);
             
-            console.log('[llenarCamposBasicos] ✅✅ VERIFICACIÓN FINAL:', {
+            console.log('[llenarCamposBasicos]  VERIFICACIÓN FINAL:', {
                 origenEsperado: origen,
                 valorEnSelect: valorFinal,
                 coincide: coincide,
@@ -698,7 +698,7 @@ class PrendaEditor {
                     opcionesDisponibles: Array.from(origenField.options).map((opt, idx) => ({idx, value: opt.value, text: opt.textContent}))
                 });
             } else {
-                console.log('🟢🟢🟢 [llenarCamposBasicos] ✅✅✅ ÉXITO: SELECT ORIGEN ESTABLECIDO CORRECTAMENTE 🟢🟢🟢', {
+                console.log('🟢🟢🟢 [llenarCamposBasicos]  ÉXITO: SELECT ORIGEN ESTABLECIDO CORRECTAMENTE 🟢🟢🟢', {
                     origenEsperado: origen,
                     valorEnSelect: valorFinal,
                     selectedIndex: origenField.selectedIndex,
@@ -710,7 +710,7 @@ class PrendaEditor {
             // Disparar evento de cambio para que se actualice la UI
             origenField.dispatchEvent(new Event('change', { bubbles: true }));
             
-            // 🔧 Forzar reflow para asegurar que el navegador renderice el cambio
+            //  Forzar reflow para asegurar que el navegador renderice el cambio
             void origenField.offsetHeight;
         } else {
             console.error('[llenarCamposBasicos] ❌ SELECT #nueva-prenda-origen-select NO encontrado en el DOM');
@@ -731,16 +731,16 @@ class PrendaEditor {
             procesosCount: prenda.procesos ? Object.keys(prenda.procesos).length : 0
         });
 
-        // 🔧 VERIFICAR/CREAR SERVICIO SI NO EXISTE (para supervisor de pedidos)
+        //  VERIFICAR/CREAR SERVICIO SI NO EXISTE (para supervisor de pedidos)
         if (!window.imagenesPrendaStorage) {
-            console.log('🔧 [CARGAR-IMAGENES] Creando imagenesPrendaStorage para supervisor de pedidos...');
+            console.log(' [CARGAR-IMAGENES] Creando imagenesPrendaStorage para supervisor de pedidos...');
             try {
                 // Verificar si ImageStorageService está disponible
                 if (typeof ImageStorageService !== 'undefined') {
                     window.imagenesPrendaStorage = new ImageStorageService(3);
-                    console.log('✅ [CARGAR-IMAGENES] imagenesPrendaStorage creado exitosamente');
+                    console.log(' [CARGAR-IMAGENES] imagenesPrendaStorage creado exitosamente');
                 } else {
-                    console.warn('⚠️ [CARGAR-IMAGENES] ImageStorageService no disponible, creando fallback manual');
+                    console.warn(' [CARGAR-IMAGENES] ImageStorageService no disponible, creando fallback manual');
                     // Crear fallback manual básico
                     window.imagenesPrendaStorage = {
                         images: [],
@@ -749,27 +749,66 @@ class PrendaEditor {
                             console.log('🧹 [CARGAR-IMAGENES] Storage limpiado (fallback)');
                         },
                         agregarImagen: function(file) {
-                            if (file instanceof File) {
-                                this.images.push({
-                                    previewUrl: URL.createObjectURL(file),
-                                    nombre: file.name,
-                                    tamaño: file.size,
-                                    file: file
-                                });
-                            }
-                        },
-                        agregarUrl: function(url, nombre = 'imagen') {
-                            this.images.push({
-                                previewUrl: url,
-                                nombre: nombre,
-                                tamaño: 0,
-                                file: null,
-                                urlDesdeDB: true
+                            //  IMPORTANTE: Retornar una Promise para mantener consistencia
+                            return new Promise((resolve, reject) => {
+                                if (!file || !file.type.startsWith('image/')) {
+                                    reject(new Error('INVALID_FILE'));
+                                    return;
+                                }
+                                
+                                if (this.images.length >= 3) {
+                                    reject(new Error('MAX_LIMIT'));
+                                    return;
+                                }
+                                
+                                if (file instanceof File) {
+                                    this.images.push({
+                                        previewUrl: URL.createObjectURL(file),
+                                        nombre: file.name,
+                                        tamaño: file.size,
+                                        file: file
+                                    });
+                                    resolve({ success: true, images: this.images });
+                                } else {
+                                    reject(new Error('INVALID_FILE'));
+                                }
                             });
+                        },
+                        agregarUrl: function(urlOImagen, nombre = 'imagen') {
+                            // Si es un objeto completo de imagen, preservar todos los campos
+                            // Si es solo una URL, crear objeto básico
+                            let imagenObj;
+                            if (typeof urlOImagen === 'string') {
+                                imagenObj = {
+                                    previewUrl: urlOImagen,
+                                    nombre: nombre,
+                                    tamaño: 0,
+                                    file: null,
+                                    urlDesdeDB: true
+                                };
+                            } else {
+                                // Es un objeto - preservar TODOS los campos
+                                imagenObj = {
+                                    id: urlOImagen.id,
+                                    prenda_foto_id: urlOImagen.prenda_foto_id,
+                                    previewUrl: urlOImagen.previewUrl || urlOImagen.url || urlOImagen.ruta,
+                                    url: urlOImagen.url,
+                                    ruta_original: urlOImagen.ruta_original,
+                                    ruta_webp: urlOImagen.ruta_webp,
+                                    nombre: urlOImagen.nombre || nombre,
+                                    tamaño: urlOImagen.tamaño || 0,
+                                    file: null,
+                                    urlDesdeDB: true
+                                };
+                            }
+                            this.images.push(imagenObj);
+                        },
+                        obtenerImagenes: function() {
+                            return this.images;
                         },
                         establecerImagenes: function(nuevasImagenes) {
                             if (!Array.isArray(nuevasImagenes)) {
-                                console.warn('⚠️ [ImageStorageService (fallback).establecerImagenes] No es un array válido');
+                                console.warn(' [ImageStorageService (fallback).establecerImagenes] No es un array válido');
                                 return;
                             }
                             
@@ -794,10 +833,10 @@ class PrendaEditor {
                             
                             // Reemplazar el array
                             this.images = imagenesNormalizadas || [];
-                            console.log('✅ [ImageStorageService (fallback).establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
+                            console.log(' [ImageStorageService (fallback).establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
                         }
                     };
-                    console.log('✅ [CARGAR-IMAGENES] Fallback manual creado');
+                    console.log(' [CARGAR-IMAGENES] Fallback manual creado');
                 }
             } catch (error) {
                 console.error('❌ [CARGAR-IMAGENES] Error creando storage:', error);
@@ -815,12 +854,12 @@ class PrendaEditor {
             
             if (primerItem instanceof File || primerItem.file instanceof File) {
                 // Formulario: archivos File
-                console.log('✅ [CARGAR-IMAGENES] Detectado: imagenes de FORMULARIO (File objects)');
+                console.log(' [CARGAR-IMAGENES] Detectado: imagenes de FORMULARIO (File objects)');
                 imagenesACargar = prenda.imagenes;
                 origen = 'formulario';
             } else if (typeof primerItem === 'string' || (primerItem && (primerItem.url || primerItem.ruta))) {
                 // BD: URLs/strings
-                console.log('✅ [CARGAR-IMAGENES] Detectado: imagenes de BD (URLs)');
+                console.log(' [CARGAR-IMAGENES] Detectado: imagenes de BD (URLs)');
                 imagenesACargar = prenda.imagenes;
                 origen = 'bd-urls';
             }
@@ -828,7 +867,7 @@ class PrendaEditor {
 
         // PRIORIDAD 1: fotos (BD alternativo)
         if (!imagenesACargar && prenda.fotos && Array.isArray(prenda.fotos) && prenda.fotos.length > 0) {
-            console.log('✅ [CARGAR-IMAGENES] Detectado: fotos de BD (alternativo)');
+            console.log(' [CARGAR-IMAGENES] Detectado: fotos de BD (alternativo)');
             imagenesACargar = prenda.fotos;
             origen = 'bd-fotos';
         }
@@ -841,7 +880,7 @@ class PrendaEditor {
             // Buscar el primer proceso que tenga imágenes
             for (const [tipoProceso, dataProceso] of Object.entries(prenda.procesos)) {
                 if (dataProceso.imagenes && Array.isArray(dataProceso.imagenes) && dataProceso.imagenes.length > 0) {
-                    console.log(`✅ [CARGAR-IMAGENES] Encontradas ${dataProceso.imagenes.length} imágenes del proceso "${tipoProceso}"`);
+                    console.log(` [CARGAR-IMAGENES] Encontradas ${dataProceso.imagenes.length} imágenes del proceso "${tipoProceso}"`);
                     imagenesACargar = dataProceso.imagenes;
                     origen = `procesos-${tipoProceso}`;
                     break;
@@ -893,13 +932,13 @@ class PrendaEditor {
                         }
                     };
                     
-                    console.log('[cargarImagenes] ✅ Imagen insertada en el DOM con evento click');
+                    console.log('[cargarImagenes]  Imagen insertada en el DOM con evento click');
                 } else {
-                    console.warn('[cargarImagenes] ⚠️ Preview no encontrado o sin imágenes');
+                    console.warn('[cargarImagenes]  Preview no encontrado o sin imágenes');
                 }
             }, 100);
             
-            console.log(`✅ [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
+            console.log(` [CARGAR-IMAGENES] ${imagenesACargar.length} imágenes cargadas desde ${origen}`);
         } else {
             console.error(' [CARGAR-IMAGENES] Aún no hay imagenesPrendaStorage disponible después del intento de creación');
         }
@@ -931,8 +970,9 @@ class PrendaEditor {
             console.log(`  [PROCESAR-IMAGEN] Imagen ${idx}: URL de BD:`, urlImagen);
             
             // Usar el método agregarUrl si existe (fallback manual) o agregar directamente
+            // Pasar el objeto completo para preservar todos los campos (id, ruta_original, etc.)
             if (window.imagenesPrendaStorage.agregarUrl) {
-                window.imagenesPrendaStorage.agregarUrl(urlImagen, `imagen_${idx}.webp`);
+                window.imagenesPrendaStorage.agregarUrl(img, `imagen_${idx}.webp`);
             } else {
                 // Método original para ImageStorageService
                 if (!window.imagenesPrendaStorage.images) {
@@ -987,7 +1027,7 @@ class PrendaEditor {
         console.log('[actualizarPreviewImagenes] 📦 Storage tiene:', window.imagenesPrendaStorage?.images?.length || 0, 'imágenes');
         
         if (window.actualizarPreviewPrenda) {
-            console.log('[actualizarPreviewImagenes] ✅ Llamando a window.actualizarPreviewPrenda()');
+            console.log('[actualizarPreviewImagenes]  Llamando a window.actualizarPreviewPrenda()');
             window.actualizarPreviewPrenda();
             return;
         }
@@ -1010,7 +1050,7 @@ class PrendaEditor {
                 contador.textContent = window.imagenesPrendaStorage.images.length;
             }
         } else {
-            console.log('[actualizarPreviewImagenes] ⚠️ No hay imágenes para mostrar');
+            console.log('[actualizarPreviewImagenes]  No hay imágenes para mostrar');
         }
     }
 
@@ -1019,7 +1059,7 @@ class PrendaEditor {
      * @private
      */
     cargarTelas(prenda) {
-        console.log('[cargarTelas] 📊 Cargando telas:', prenda.telasAgregadas);
+        console.log('[cargarTelas]  Cargando telas:', prenda.telasAgregadas);
         
         // ===== DEBUG: Ver estructura completa de prenda =====
         console.group('[cargarTelas] 🔍 ESTRUCTURA COMPLETA DE PRENDA');
@@ -1076,11 +1116,11 @@ class PrendaEditor {
                     });
                     return transformed;
                 });
-                console.log('[cargarTelas] ✅ Transformación completada:', prenda.telasAgregadas);
+                console.log('[cargarTelas]  Transformación completada:', prenda.telasAgregadas);
             } else if (prenda.variantes && Array.isArray(prenda.variantes)) {
                 // ===== EXTRAER TELAS DESDE TODAS LAS VARIANTES (solución directa) =====
                 console.log('[cargarTelas] 🔄 Extrayendo telas desde TODAS las variantes');
-                console.log('[cargarTelas] 📊 Total de variantes a procesar:', prenda.variantes.length);
+                console.log('[cargarTelas]  Total de variantes a procesar:', prenda.variantes.length);
                 
                 // Inicializar array para telas
                 const telasAgregadasTemp = [];
@@ -1131,7 +1171,7 @@ class PrendaEditor {
                             // Agregar al array de telas
                             telasAgregadasTemp.push(telaCompleta);
                             
-                            console.log(`[cargarTelas] ✅ [Tela ${telaIndex}] Agregada correctamente:`, {
+                            console.log(`[cargarTelas]  [Tela ${telaIndex}] Agregada correctamente:`, {
                                 nombre: telaCompleta.nombre_tela,
                                 color: telaCompleta.color,
                                 referencia: `"${telaCompleta.referencia}"`,
@@ -1139,7 +1179,7 @@ class PrendaEditor {
                             });
                         });
                     } else {
-                        console.log(`[cargarTelas] ⚠️ [Variante ${varianteIndex}] No tiene telas_multiples válido`);
+                        console.log(`[cargarTelas]  [Variante ${varianteIndex}] No tiene telas_multiples válido`);
                     }
                 });
                 
@@ -1147,7 +1187,7 @@ class PrendaEditor {
                 prenda.telasAgregadas = telasAgregadasTemp;
                 
                 console.log('[cargarTelas]  RESULTADO FINAL DE EXTRACCIÓN DIRECTA:');
-                console.log(`[cargarTelas] 📊 Total de telas extraídas: ${prenda.telasAgregadas.length}`);
+                console.log(`[cargarTelas]  Total de telas extraídas: ${prenda.telasAgregadas.length}`);
                 
                 // LOG FINAL: Verificar referencias extraídas
                 console.log('[cargarTelas] � RESUMEN DE REFERENCIAS EXTRAÍDAS:');
@@ -1155,11 +1195,11 @@ class PrendaEditor {
                     console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}"`);
                 });
             } else {
-                console.warn('[cargarTelas] ⚠️ No hay colores_telas ni telas_multiples para procesar');
+                console.warn('[cargarTelas]  No hay colores_telas ni telas_multiples para procesar');
                 prenda.telasAgregadas = [];
             }
         } else {
-            console.log('[cargarTelas] ℹ️ telasAgregadas ya tiene datos, no transformar');
+            console.log('[cargarTelas]  telasAgregadas ya tiene datos, no transformar');
         }
         
         // Intentar cargar desde telasAgregadas (prendas nuevas Y prendas de BD editadas)
@@ -1203,7 +1243,7 @@ class PrendaEditor {
                         variantesParaProcesar = prenda.variantes;
                         console.log('[cargarTelas] 📦 Usando variantes como array (corrección)');
                     } else {
-                        console.log('[cargarTelas] ⚠️ Estructura de variantes no reconocida, mostrando todas las propiedades:');
+                        console.log('[cargarTelas]  Estructura de variantes no reconocida, mostrando todas las propiedades:');
                         console.log('[cargarTelas] 🔍 Propiedades de variantes:', Object.keys(prenda.variantes));
                         
                         // Buscar telas_multiples en cualquier propiedad
@@ -1263,7 +1303,7 @@ class PrendaEditor {
                                             prenda.telasAgregadas[indiceOriginal].referencia = String(referencia).trim();
                                             prenda.telasAgregadas[indiceOriginal].origen = 'enriquecido_desde_variantes';
                                             
-                                            console.log(`[cargarTelas] ✅ Tela enriquecida:`, {
+                                            console.log(`[cargarTelas]  Tela enriquecida:`, {
                                                 nombre: nombre_tela,
                                                 color: color,
                                                 referencia_anterior: '""',
@@ -1272,25 +1312,25 @@ class PrendaEditor {
                                                 tela_index: telaIndex
                                             });
                                         } else {
-                                            console.log(`[cargarTelas] ⚠️ Referencia vacía en variante también para:`, {
+                                            console.log(`[cargarTelas]  Referencia vacía en variante también para:`, {
                                                 nombre: nombre_tela,
                                                 color: color,
                                                 referencia_en_variante: `"${referencia}"`
                                             });
                                         }
                                     } else {
-                                        console.log(`[cargarTelas] ℹ️ Tela ya tiene referencia:`, {
+                                        console.log(`[cargarTelas]  Tela ya tiene referencia:`, {
                                             nombre: nombre_tela,
                                             color: color,
                                             referencia_existente: `"${telaExistente.tela.referencia}"`
                                         });
                                     }
                                 } else {
-                                    console.log(`[cargarTelas] ℹ️ Tela no encontrada en existentes: ${clave}`);
+                                    console.log(`[cargarTelas]  Tela no encontrada en existentes: ${clave}`);
                                 }
                             });
                         } else {
-                            console.log(`[cargarTelas] ⚠️ [Estructura ${varianteIndex}] No tiene telas_multiples válido`);
+                            console.log(`[cargarTelas]  [Estructura ${varianteIndex}] No tiene telas_multiples válido`);
                         }
                     });
                     
@@ -1300,7 +1340,7 @@ class PrendaEditor {
                         console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" (origen: ${tela.origen || 'backend'})`);
                     });
                 } else {
-                    console.log('[cargarTelas] ⚠️ No se encontró estructura de variantes válida para procesar');
+                    console.log('[cargarTelas]  No se encontró estructura de variantes válida para procesar');
                     
                     // 🚨 SOLUCIÓN DE RESPALDO: Buscar directamente en la estructura del selector
                     console.log('[cargarTelas] 🔄 Intentando solución de respaldo directa...');
@@ -1372,7 +1412,7 @@ class PrendaEditor {
                                                     prenda.telasAgregadas[indiceOriginal].referencia = String(referencia).trim();
                                                     prenda.telasAgregadas[indiceOriginal].origen = 'enriquecido_desde_selector';
                                                     
-                                                    console.log(`[cargarTelas] ✅ [Original] Tela enriquecida:`, {
+                                                    console.log(`[cargarTelas]  [Original] Tela enriquecida:`, {
                                                         nombre: nombre_tela,
                                                         color: color,
                                                         referencia_anterior: `"${referenciaAnterior}"`,
@@ -1388,20 +1428,20 @@ class PrendaEditor {
                                                         exito: referenciaVerificada === String(referencia).trim()
                                                     });
                                                 } else {
-                                                    console.log(`[cargarTelas] ⚠️ Referencia a enriquecer está vacía: "${referencia}"`);
+                                                    console.log(`[cargarTelas]  Referencia a enriquecer está vacía: "${referencia}"`);
                                                 }
                                             } else {
-                                                console.log(`[cargarTelas] ℹ️ Tela ya tiene referencia, no se enriquece: "${telaExistente.tela.referencia}"`);
+                                                console.log(`[cargarTelas]  Tela ya tiene referencia, no se enriquece: "${telaExistente.tela.referencia}"`);
                                             }
                                         } else {
-                                            console.log(`[cargarTelas] ⚠️ No se encontró tela coincidente para clave: "${clave}"`);
+                                            console.log(`[cargarTelas]  No se encontró tela coincidente para clave: "${clave}"`);
                                         }
                                     });
                                 }
                             });
                         }
                     } else {
-                        console.log('[cargarTelas] ⚠️ No hay prenda original desde selector disponible');
+                        console.log('[cargarTelas]  No hay prenda original desde selector disponible');
                         
                         // ÚLTIMO RESPALDO: Buscar en cualquier propiedad que contenga "tela" o "multiple"
                         if (prenda.variantes && typeof prenda.variantes === 'object') {
@@ -1428,7 +1468,7 @@ class PrendaEditor {
                                                         prenda.telasAgregadas[index].referencia = String(tela.referencia).trim();
                                                         prenda.telasAgregadas[index].origen = 'enriquecido_ultimo_respaldo';
                                                         
-                                                        console.log(`[cargarTelas] ✅ [Último] Tela enriquecida:`, {
+                                                        console.log(`[cargarTelas]  [Último] Tela enriquecida:`, {
                                                             nombre: nombre_tela,
                                                             color: color,
                                                             referencia_anterior: '""',
@@ -1445,7 +1485,7 @@ class PrendaEditor {
                     }
                 }
             } else {
-                console.log('[cargarTelas] ℹ️ Todas las telas ya tienen referencias o no hay variantes para enriquecer');
+                console.log('[cargarTelas]  Todas las telas ya tienen referencias o no hay variantes para enriquecer');
             }
                 
             // LOG FINAL: Mostrar estado final de telasAgregadas
@@ -1486,14 +1526,14 @@ class PrendaEditor {
                 previewTemporal.style.display = 'none';
             }
             
-            // ⚠️ NO cargar imágenes de telas de BD en window.imagenesTelaStorage
+            //  NO cargar imágenes de telas de BD en window.imagenesTelaStorage
             // Las imágenes de telas existentes SOLO se muestran en la tabla (gestion-telas.js)
             // El storage debe estar limpio para AGREGAR TELAS NUEVAS
             // Esto evita que aparezcan precargadas en el input de agregar
             
             // Actualizar tabla de telas - Asignar a window.telasAgregadas para que se muestre en la tabla
             window.telasAgregadas = [...prenda.telasAgregadas];
-            console.log('[cargarTelas] ✅ window.telasAgregadas asignadas:', window.telasAgregadas);
+            console.log('[cargarTelas]  window.telasAgregadas asignadas:', window.telasAgregadas);
 
             
             // Actualizar tabla de telas
@@ -1640,7 +1680,7 @@ class PrendaEditor {
                 
                 console.log('[cargarTallasYCantidades] 📋 Tallas de cotización para pre-selección:', window.tallasDesdeCotizacion);
             } else {
-                console.log('[cargarTallasYCantidades] ⚠️ No se encontraron tallas en BD ni en procesos');
+                console.log('[cargarTallasYCantidades]  No se encontraron tallas en BD ni en procesos');
             }
         } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas disponibles:', prenda.tallas_disponibles);
@@ -1652,11 +1692,11 @@ class PrendaEditor {
                 });
             }
         } else {
-            console.log('[cargarTallasYCantidades] ⚠️ No hay tallas disponibles en la prenda');
+            console.log('[cargarTallasYCantidades]  No hay tallas disponibles en la prenda');
             return;
         }
 
-        console.log('[cargarTallasYCantidades] 📊 window.tallasRelacionales:', window.tallasRelacionales);
+        console.log('[cargarTallasYCantidades]  window.tallasRelacionales:', window.tallasRelacionales);
 
         // Renderizar tallas desde estructura relacional
         Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {
@@ -1722,7 +1762,7 @@ class PrendaEditor {
             }
         });
         
-        // ✅ AUTOMÁTICO PARA COTIZACIONES: Si vinieron tallas desde procesos de cotización, aplicarlas automáticamente
+        //  AUTOMÁTICO PARA COTIZACIONES: Si vinieron tallas desde procesos de cotización, aplicarlas automáticamente
         if (prenda.cotizacion_id && prenda.procesos && window.tallasRelacionales) {
             console.log('[cargarTallasYCantidades] 🔄 COTIZACIÓN DETECTADA: Preparando aplicación automática de tallas a procesos...');
             
@@ -1732,7 +1772,7 @@ class PrendaEditor {
                 const tallasDama = window.tallasRelacionales.DAMA || {};
                 const tallasCaballero = window.tallasRelacionales.CABALLERO || {};
                 
-                console.log('[cargarTallasYCantidades] 📊 Tallas a aplicar:', { 
+                console.log('[cargarTallasYCantidades]  Tallas a aplicar:', { 
                     dama: tallasDama, 
                     caballero: tallasCaballero 
                 });
@@ -1742,7 +1782,7 @@ class PrendaEditor {
                     const procesoData = prenda.procesos[procesoSlug];
                     
                     if (procesoData && procesoData.talla_cantidad) {
-                        console.log(`[cargarTallasYCantidades] ✅ PROCESO "${procesoSlug}" con talla_cantidad:`, procesoData.talla_cantidad);
+                        console.log(`[cargarTallasYCantidades]  PROCESO "${procesoSlug}" con talla_cantidad:`, procesoData.talla_cantidad);
                         
                         // Aplicar tallas directamente a window.tallasCantidadesProceso
                         // para cada género disponible
@@ -1768,7 +1808,7 @@ class PrendaEditor {
                 if (window.tallasSeleccionadasProceso) {
                     window.tallasSeleccionadasProceso.dama = Object.keys(tallasDama);
                     window.tallasSeleccionadasProceso.caballero = Object.keys(tallasCaballero);
-                    console.log('[cargarTallasYCantidades] ✅ Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
+                    console.log('[cargarTallasYCantidades]  Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
                 }
                 
                 // 🔴 FIX CRÍTICO: Sincronizar tallas a window.procesosSeleccionados ANTES de re-renderizar
@@ -1792,10 +1832,10 @@ class PrendaEditor {
                     console.log('[cargarTallasYCantidades] 🎨 RE-RENDERIZANDO TARJETAS CON TALLAS...');
                     window.renderizarTarjetasProcesos();
                 } else {
-                    console.warn('[cargarTallasYCantidades] ⚠️ window.renderizarTarjetasProcesos no disponible');
+                    console.warn('[cargarTallasYCantidades]  window.renderizarTarjetasProcesos no disponible');
                 }
                 
-                console.log('[cargarTallasYCantidades] ✅✅✅ TALLAS AUTOMÁTICAMENTE APLICADAS CON "done_all" ✅✅✅');
+                console.log('[cargarTallasYCantidades]  TALLAS AUTOMÁTICAMENTE APLICADAS CON "done_all" ');
             }, 600);
         }
     }
@@ -1844,15 +1884,34 @@ class PrendaEditor {
                     checkboxGenero.checked = true;
                     checkboxGenero.dispatchEvent(new Event('change', { bubbles: true }));
                 } else {
-                    console.warn(`[cargarVariaciones] ⚠️ No encontré checkbox para género: ${generoSeleccionado}`);
+                    console.warn(`[cargarVariaciones]  No encontré checkbox para género: ${generoSeleccionado}`);
                 }
             }
         }
 
         // MANGA
-        const mangaData = variantes.manga || variantes.tipo_manga || {};
-        const mangaOpcion = mangaData.opcion || mangaData.tipo_manga || mangaData.manga || '';
-        const mangaObs = mangaData.observacion || variantes.obs_manga || '';
+        // Los datos pueden venir en varios formatos:
+        // 1. variantes.manga.opcion / variantes.manga.tipo_manga (objeto)
+        // 2. variantes.tipo_manga (string directo)
+        // 3. variantes.tipo_manga_id (solo ID, sin nombre - CASO A FIJAR)
+        let mangaData = variantes.manga || {};
+        let mangaOpcion = '';
+        let mangaObs = variantes.obs_manga || '';
+        
+        // Prioridad 1: Si viene tipo_manga como string directo (caso nuevo del servidor)
+        if (typeof variantes.tipo_manga === 'string' && variantes.tipo_manga) {
+            mangaOpcion = variantes.tipo_manga;
+        }
+        // Prioridad 2: Si viene como objeto (caso antiguo)
+        else if (typeof mangaData === 'object') {
+            mangaOpcion = mangaData.opcion || mangaData.tipo_manga || mangaData.manga || '';
+        }
+        
+        // Fallback: Si solo tenemos ID pero sin nombre (no debería pasar porque lo arreglamos arriba)
+        if (!mangaOpcion && variantes.tipo_manga_id) {
+            console.warn('[cargarVariaciones] ⚠️ tipo_manga_id sin nombre - esto no debería pasar', variantes.tipo_manga_id);
+            // No hacer nada, dejar vacío para que el usuario llene
+        }
         
         if (aplicaManga && mangaOpcion) {
             aplicaManga.checked = true;
@@ -1870,12 +1929,14 @@ class PrendaEditor {
                     .replace(/ú/g, 'u');
                 
                 mangaInput.value = valorManga;
+                console.log('[cargarVariaciones] ✓ manga-input asignado:', valorManga);
                 mangaInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
             const mangaObsInput = document.getElementById('manga-obs');
             if (mangaObsInput) {
                 mangaObsInput.value = mangaObs || '';
+                console.log('[cargarVariaciones] ✓ manga-obs asignado:', mangaObs);
                 mangaObsInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
@@ -1897,9 +1958,28 @@ class PrendaEditor {
         }
 
         // BROCHE/BOTÓN
-        const brocheData = variantes.broche_boton || variantes.broche || {};
-        const brocheOpcion = brocheData.opcion || brocheData.tipo_broche || brocheData.broche || '';
-        const brocheObs = brocheData.observacion || variantes.obs_broche || '';
+        // Los datos pueden venir en varios formatos:
+        // 1. variantes.broche_boton.opcion / variantes.broche_boton.tipo_broche (objeto)
+        // 2. variantes.tipo_broche (string directo)
+        // 3. variantes.tipo_broche_id (solo ID, sin nombre - CASO A FIJAR)
+        let brocheData = variantes.broche_boton || variantes.broche || {};
+        let brocheOpcion = '';
+        let brocheObs = variantes.obs_broche || variantes.broche_boton_obs || '';
+        
+        // Prioridad 1: Si viene tipo_broche como string directo (caso nuevo del servidor)
+        if (typeof variantes.tipo_broche === 'string' && variantes.tipo_broche) {
+            brocheOpcion = variantes.tipo_broche;
+        }
+        // Prioridad 2: Si viene como objeto (caso antiguo)
+        else if (typeof brocheData === 'object') {
+            brocheOpcion = brocheData.opcion || brocheData.tipo_broche || brocheData.broche || '';
+        }
+        
+        // Fallback: Si solo tenemos ID pero sin nombre (no debería pasar porque lo arreglamos arriba)
+        if (!brocheOpcion && variantes.tipo_broche_id) {
+            console.warn('[cargarVariaciones] ⚠️ tipo_broche_id sin nombre - esto no debería pasar', variantes.tipo_broche_id);
+            // No hacer nada, dejar vacío para que el usuario llene
+        }
         
         if (aplicaBroche && (brocheOpcion || brocheObs)) {
             aplicaBroche.checked = true;
@@ -2092,7 +2172,7 @@ class PrendaEditor {
                     datos: datosProces
                 };
                 
-                console.log(`✅ [CARGAR-PROCESOS] Proceso "${tipoProceso}" cargado:`, datosProces);
+                console.log(` [CARGAR-PROCESOS] Proceso "${tipoProceso}" cargado:`, datosProces);
 
                 // Marcar checkbox del proceso
                 const checkboxProceso = document.getElementById(`checkbox-${tipoProceso}`);
@@ -2120,7 +2200,7 @@ class PrendaEditor {
             }
         });
         
-        console.log('📊 [CARGAR-PROCESOS] Procesos seleccionados finales:', window.procesosSeleccionados);
+        console.log(' [CARGAR-PROCESOS] Procesos seleccionados finales:', window.procesosSeleccionados);
 
         // Renderizar tarjetas de procesos
         if (window.renderizarTarjetasProcesos) {

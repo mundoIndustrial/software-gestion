@@ -45,7 +45,7 @@ class DesparChoParcial
         string $tipoItem,
         int $itemId,
         ?int $tallaId = null,
-        ?string $genero = null,          // ✅ Agregar género
+        ?string $genero = null,          //  Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -61,7 +61,7 @@ class DesparChoParcial
         $this->tipoItem = $tipoItem;
         $this->itemId = $itemId;
         $this->tallaId = $tallaId;
-        $this->genero = $genero;          // ✅ Agregar género
+        $this->genero = $genero;          //  Agregar género
         $this->pendienteInicial = $pendienteInicial;
         $this->parcial1 = $parcial1;
         $this->pendiente1 = $pendiente1;
@@ -85,7 +85,7 @@ class DesparChoParcial
         string $tipoItem,
         int $itemId,
         ?int $tallaId = null,
-        ?string $genero = null,          // ✅ Agregar género
+        ?string $genero = null,          //  Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -114,7 +114,7 @@ class DesparChoParcial
             $tipoItem,
             $itemId,
             $tallaId,
-            $genero,                      // ✅ Agregar género
+            $genero,                      //  Agregar género
             $pendienteInicial,
             $parcial1,
             $pendiente1,
@@ -138,7 +138,7 @@ class DesparChoParcial
         string $tipoItem,
         int $itemId,
         ?int $tallaId = null,
-        ?string $genero = null,          // ✅ Agregar género
+        ?string $genero = null,          //  Agregar género
         int $pendienteInicial = 0,
         int $parcial1 = 0,
         int $pendiente1 = 0,
@@ -158,7 +158,7 @@ class DesparChoParcial
             $tipoItem,
             $itemId,
             $tallaId,
-            $genero,                      // ✅ Agregar género
+            $genero,                      //  Agregar género
             $pendienteInicial,
             $parcial1,
             $pendiente1,

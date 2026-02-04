@@ -146,6 +146,28 @@
     " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
         <i class="fas fa-edit"></i>
     </button>
+
+    <!-- Botón Confirmar Corrección (solo si está en DEVUELTO_A_ASESORA) -->
+    @if(trim($estado) === 'DEVUELTO_A_ASESORA')
+    <button onclick="confirmarCorreccionPedido({{ $pedido->id }}, '{{ $numeroPedido }}')" title="Confirmar Corrección" style="
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+        <i class="fas fa-check"></i>
+    </button>
+    @endif
 </div>
 
 <!-- Estado -->

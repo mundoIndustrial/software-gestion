@@ -331,7 +331,7 @@ window.EppMenuHandlers = {
         console.log('🟦 [_procederAEditarEPP] Esperando 100ms para llamar a editarEPPAgregado...');
         setTimeout(() => {
             if (typeof window.editarEPPAgregado === 'function') {
-                console.log('🟥 [_procederAEditarEPP] ✅✅✅ LLAMANDO A window.editarEPPAgregado() ✅✅✅');
+                console.log('🟥 [_procederAEditarEPP]  LLAMANDO A window.editarEPPAgregado() ');
                 console.log('🟥 [_procederAEditarEPP] Con datos:', eppDataTransformado);
                 window.editarEPPAgregado(eppDataTransformado);
             } else {

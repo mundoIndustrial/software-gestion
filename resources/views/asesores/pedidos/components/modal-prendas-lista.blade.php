@@ -57,7 +57,7 @@
                                 console.log('🔥 [ONCLICK-CHECK-FUNC] Verificando si abrirEditarPrendaModal existe:', typeof window.abrirEditarPrendaModal);
                                 
                                 if (typeof window.abrirEditarPrendaModal === 'function') {
-                                    console.log('✅ [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...');
+                                    console.log(' [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...');
                                     window.abrirEditarPrendaModal(item, idx, pedidoId);
                                 } else {
                                     console.error(' [ONCLICK-ERROR] abrirEditarPrendaModal NO ES FUNCIÓN');

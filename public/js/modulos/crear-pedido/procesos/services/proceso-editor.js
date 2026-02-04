@@ -4,11 +4,11 @@
  * Responsabilidad: Gestionar la edición de procesos individuales dentro de una prenda
  * 
  * REGLAS CRÍTICAS:
- * ✅ Solo edita el proceso específico seleccionado
- * ✅ No duplica procesos
- * ✅ No afecta otras prendas ni procesos
- * ✅ Permite eliminar/agregar ubicaciones e imágenes
- * ✅ Reemplaza (no merge) ubicaciones al guardar
+ *  Solo edita el proceso específico seleccionado
+ *  No duplica procesos
+ *  No afecta otras prendas ni procesos
+ *  Permite eliminar/agregar ubicaciones e imágenes
+ *  Reemplaza (no merge) ubicaciones al guardar
  */
 
 class ProcesosEditor {
@@ -39,7 +39,7 @@ class ProcesosEditor {
      * @param {object} datosProceso - Datos del proceso desde window.procesosSeleccionados
      */
     iniciarEdicion(tipo, datosProceso) {
-        console.log('🔧 [PROCESO-EDITOR] Iniciando edición del proceso:', {
+        console.log(' [PROCESO-EDITOR] Iniciando edición del proceso:', {
             tipo,
             tieneDatos: !!datosProceso,
             datosKeys: datosProceso ? Object.keys(datosProceso) : 'N/A'
@@ -62,7 +62,7 @@ class ProcesosEditor {
         // Limpiar cambios pendientes
         this.limpiarCambios();
 
-        console.log('✅ [PROCESO-EDITOR] Edición iniciada:', {
+        console.log(' [PROCESO-EDITOR] Edición iniciada:', {
             tipo: this.procesoEnEdicion.tipo,
             procesoId: this.procesoEnEdicion.datos.id,
             ubicacionesOriginales: this.procesoOriginal.ubicaciones,
@@ -80,7 +80,7 @@ class ProcesosEditor {
      */
     registrarCambioUbicaciones(nuevasUbicaciones) {
         if (!this.procesoEnEdicion) {
-            console.warn('⚠️ [PROCESO-EDITOR] No hay proceso en edición');
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
             return;
         }
 
@@ -106,7 +106,7 @@ class ProcesosEditor {
      */
     registrarCambioImagenes(nuevasImagenes) {
         if (!this.procesoEnEdicion) {
-            console.warn('⚠️ [PROCESO-EDITOR] No hay proceso en edición');
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
             return;
         }
 
@@ -131,7 +131,7 @@ class ProcesosEditor {
      */
     registrarCambioObservaciones(nuevasObservaciones) {
         if (!this.procesoEnEdicion) {
-            console.warn('⚠️ [PROCESO-EDITOR] No hay proceso en edición');
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
             return;
         }
 
@@ -152,11 +152,11 @@ class ProcesosEditor {
      */
     registrarCambioTallas(nuevasTallas) {
         if (!this.procesoEnEdicion) {
-            console.warn('⚠️ [PROCESO-EDITOR] No hay proceso en edición');
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
             return;
         }
 
-        console.log('📊 [PROCESO-EDITOR] Registrando cambio de tallas:', {
+        console.log(' [PROCESO-EDITOR] Registrando cambio de tallas:', {
             anterior: this.cambios.tallas || this.procesoOriginal.tallas,
             nueva: nuevasTallas
         });
@@ -272,7 +272,7 @@ class ProcesosEditor {
      */
     guardarEnWindowProcesos() {
         if (!this.procesoEnEdicion) {
-            console.warn('⚠️ [PROCESO-EDITOR] No hay proceso en edición');
+            console.warn(' [PROCESO-EDITOR] No hay proceso en edición');
             return false;
         }
 
@@ -288,7 +288,7 @@ class ProcesosEditor {
                 ...this.procesoEnEdicion.datos
             };
 
-            console.log('✅ [PROCESO-EDITOR] Cambios guardados en memoria:', {
+            console.log(' [PROCESO-EDITOR] Cambios guardados en memoria:', {
                 tipo,
                 datosActualizados: window.procesosSeleccionados[tipo].datos
             });

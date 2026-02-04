@@ -4,10 +4,10 @@
  * MODELO EDITABLE DEL PEDIDO (solo vive en memoria/DOM)
  * 
  * Características:
- * ✅ Contiene File objects completos
- * ✅ Contiene previews de imágenes (data URLs)
- * ✅ Reactive (cambios en tiempo real)
- * ✅ Nunca se serializa a JSON
+ *  Contiene File objects completos
+ *  Contiene previews de imágenes (data URLs)
+ *  Reactive (cambios en tiempo real)
+ *  Nunca se serializa a JSON
  * 
  * ESTRUCTURA:
  * {

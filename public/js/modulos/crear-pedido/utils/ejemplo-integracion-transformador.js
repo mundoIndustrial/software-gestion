@@ -101,13 +101,13 @@ function integrarTransformadorEnPrendaEditor() {
                     // Asignar a window
                     window.telasAgregadas = [...telasTransformadas];
                     
-                    console.log('[cargarTelas] ✅ Transformación completada:', telasTransformadas.length);
+                    console.log('[cargarTelas]  Transformación completada:', telasTransformadas.length);
                 } else {
-                    console.warn('[cargarTelas] ⚠️ No hay variantes con telas_multiples');
+                    console.warn('[cargarTelas]  No hay variantes con telas_multiples');
                     prenda.telasAgregadas = [];
                 }
             } else {
-                console.log('[cargarTelas] ℹ️ telasAgregadas ya existen');
+                console.log('[cargarTelas]  telasAgregadas ya existen');
             }
 
             // Continuar con el flujo normal...

@@ -241,7 +241,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                     'imagenes' => $imagenes, // Array con estructura completa
                     'imagenes_tela' => $imagenesTela, // Array con estructura completa
                     'colores_telas' => $coloresTelas, // Estructura completa de coloresTelas con fotos
-                    'telas_array' => $coloresTelas, // ✅ ALIAS: telas_array para compatibilidad con factura
+                    'telas_array' => $coloresTelas, //  ALIAS: telas_array para compatibilidad con factura
                     'procesos' => $procesos, // Array con imágenes ordenadas
                     'manga' => $variantes[0]['manga'] ?? null,
                     'obs_manga' => $variantes[0]['manga_obs'] ?? null,
@@ -355,9 +355,9 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
             if ($prenda->tallas && $prenda->tallas->count() > 0) {
                 foreach ($prenda->tallas as $talla) {
                     $variantes[] = [
-                        'talla_id' => $talla->id,  // ✅ Agregar ID de la talla
+                        'talla_id' => $talla->id,  //  Agregar ID de la talla
                         'talla' => $talla->talla,
-                        'genero' => $talla->genero,  // ✅ Agregar género
+                        'genero' => $talla->genero,  //  Agregar género
                         'cantidad' => (int)$talla->cantidad,
                         'manga' => $especificaciones['manga'],
                         'manga_obs' => $especificaciones['manga_obs'],
@@ -458,7 +458,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * ✅ NUEVO: Obtener estructura completa de coloresTelas con fotos
+     *  NUEVO: Obtener estructura completa de coloresTelas con fotos
      * 
      * Retorna array de coloresTelas con toda la información:
      * - id, color_id, tela_id, referencia
@@ -627,7 +627,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
         try {
             if ($prenda->procesos && $prenda->procesos->count() > 0) {
                 foreach ($prenda->procesos as $proceso) {
-                    // ⚠️ CRÍTICO: Si está configurado para filtrar procesos PENDIENTE
+                    //  CRÍTICO: Si está configurado para filtrar procesos PENDIENTE
                     // En la vista /registros, solo mostrar procesos APROBADOS
                     if ($this->filtrarProcesosPendientes) {
                         // Solo mostrar procesos con estado APROBADO

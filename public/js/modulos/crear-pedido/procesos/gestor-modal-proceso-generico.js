@@ -128,7 +128,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         modal.style.display = 'flex';
         // ⚡ CRÍTICO: Forzar z-index MÁXIMO para que esté siempre al frente
         modal.style.zIndex = '999999999';
-        console.log('🔝 [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
+        console.log(' [MODAL-PROCESO] Z-index forzado a:', modal.style.zIndex);
 
     } catch (error) {
 
@@ -179,7 +179,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         if (window.gestorEditacionProcesos) {
             console.log('[EDICIÓN] 💾 Guardando cambios en gestorEditacionProcesos...');
             window.gestorEditacionProcesos.guardarCambiosActuales();
-            console.log('[EDICIÓN] ✅ Cambios guardados en gestorEditacionProcesos');
+            console.log('[EDICIÓN]  Cambios guardados en gestorEditacionProcesos');
         }
     }
     
@@ -200,12 +200,12 @@ window.manejarImagenProceso = function(input, indice) {
         //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
-        // ✅ CRÍTICO: Sincronizar con window.imagenesProcesoActual (usado en PATCH)
+        //  CRÍTICO: Sincronizar con window.imagenesProcesoActual (usado en PATCH)
         if (!window.imagenesProcesoActual) {
             window.imagenesProcesoActual = [null, null, null];
         }
         window.imagenesProcesoActual[indice - 1] = file;
-        console.log('[manejarImagenProceso] ✅ Imagen guardada en window.imagenesProcesoActual:', {
+        console.log('[manejarImagenProceso]  Imagen guardada en window.imagenesProcesoActual:', {
             indice: indice,
             filename: file.name,
             size: file.size,
@@ -242,12 +242,12 @@ window.eliminarImagenProceso = function(indice) {
     
     imagenesProcesoActual[indice - 1] = null;
     
-    // ✅ CRÍTICO: Sincronizar con window.imagenesProcesoActual
+    //  CRÍTICO: Sincronizar con window.imagenesProcesoActual
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual[indice - 1] = null;
     }
     
-    // ✅ NUEVO: Marcar como null en imagenesProcesoExistentes para que la imagen eliminada no se envíe
+    //  NUEVO: Marcar como null en imagenesProcesoExistentes para que la imagen eliminada no se envíe
     // Esto preserva los índices y no daña otros flujos
     let imagenesParaEnviar = [];
     if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
@@ -263,13 +263,13 @@ window.eliminarImagenProceso = function(indice) {
         });
     }
     
-    console.log('[eliminarImagenProceso] ✅ Imagen eliminada del índice:', indice);
+    console.log('[eliminarImagenProceso]  Imagen eliminada del índice:', indice);
     
-    // ✅ CRÍTICO: Registrar el cambio de imágenes en el editor de procesos
+    //  CRÍTICO: Registrar el cambio de imágenes en el editor de procesos
     // Esto asegura que cuando guarde, se envíe el cambio al backend
     if (window.procesosEditor) {
         window.procesosEditor.registrarCambioImagenes(imagenesParaEnviar);
-        console.log('[eliminarImagenProceso] ✅ Cambio de imágenes registrado en editor:', imagenesParaEnviar);
+        console.log('[eliminarImagenProceso]  Cambio de imágenes registrado en editor:', imagenesParaEnviar);
     }
     
     const input = document.getElementById(`proceso-foto-input-${indice}`);
@@ -465,14 +465,14 @@ window.aplicarProcesoParaTodasTallas = function() {
         caballero: tallasPrendaArrays.caballero
     };
     
-    // ✅ IMPORTANTE: Copiar TODAS las cantidades de la prenda al proceso
+    //  IMPORTANTE: Copiar TODAS las cantidades de la prenda al proceso
     // Esto hace que "Aplicar para todas" asigne las cantidades completas de la prenda
     window.tallasCantidadesProceso = {
         dama: { ...tallasPrendaConCantidades.dama } || {},
         caballero: { ...tallasPrendaConCantidades.caballero } || {}
     };
     
-    console.log('✅ [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
+    console.log(' [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
         tallasCantidadesProceso: window.tallasCantidadesProceso,
         tallasSeleccionadas: window.tallasSeleccionadasProceso
     });
@@ -556,7 +556,7 @@ function mostrarModalAdvertenciaTallas() {
     
     document.body.appendChild(modal);
     
-    console.log('[🔍 MODAL-PROCESO-GENERICO] ✅ appendChild ejecutado');
+    console.log('[🔍 MODAL-PROCESO-GENERICO]  appendChild ejecutado');
     console.log('[🔍 MODAL-PROCESO-GENERICO] z-index después:', window.getComputedStyle(modal).zIndex);
     console.log('[🔍 MODAL-PROCESO-GENERICO] display:', window.getComputedStyle(modal).display);
     console.log('[🔍 MODAL-PROCESO-GENERICO] posición en DOM:', Array.from(document.body.children).indexOf(modal));
@@ -566,10 +566,10 @@ function mostrarModalAdvertenciaTallas() {
     // Forzar z-index máximo para asegurar que esté encima de todo
     setTimeout(() => {
         modal.style.setProperty('z-index', '9999999999', 'important');
-        console.log('[🔝 MODAL-PROCESO] Z-index forzado en apertura:', window.getComputedStyle(modal).zIndex);
+        console.log('[ MODAL-PROCESO] Z-index forzado en apertura:', window.getComputedStyle(modal).zIndex);
     }, 10);
     
-    console.log('[🔍 MODAL-PROCESO-GENERICO] ✅ Modal visible, display=flex')
+    console.log('[🔍 MODAL-PROCESO-GENERICO]  Modal visible, display=flex')
 }
 
 // Cerrar modal de advertencia
@@ -658,7 +658,7 @@ window.abrirEditorTallasEspecificas = function() {
                     const infoDiv = document.createElement('div');
                     infoDiv.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-left: 2.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 4px;';
                     infoDiv.innerHTML = `
-                        <strong style="color: #dc2626;">⚠️ Ya asignadas:</strong><br>
+                        <strong style="color: #dc2626;"> Ya asignadas:</strong><br>
                         ${procesosDetalle.map(p => `${p.nombre}: <strong>${p.cantidad}</strong>`).join('<br>')}
                     `;
                     label.appendChild(infoDiv);
@@ -722,7 +722,7 @@ window.abrirEditorTallasEspecificas = function() {
                     const infoDiv = document.createElement('div');
                     infoDiv.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-left: 2.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 4px;';
                     infoDiv.innerHTML = `
-                        <strong style="color: #dc2626;">⚠️ Ya asignadas:</strong><br>
+                        <strong style="color: #dc2626;"> Ya asignadas:</strong><br>
                         ${procesosDetalle.map(p => `${p.nombre}: <strong>${p.cantidad}</strong>`).join('<br>')}
                     `;
                     label.appendChild(infoDiv);
@@ -759,8 +759,8 @@ window.abrirEditorTallasEspecificas = function() {
     
     // Aplicar z-index forzado
     modalEditor.style.zIndex = nuevoZIndexEditor.toString();
-    console.log('✅ [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
-    console.log('✅ [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
+    console.log(' [EDITOR-TALLAS] Z-index FORZADO a:', modalEditor.style.zIndex);
+    console.log(' [EDITOR-TALLAS] Z-index VERIFICADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
     
     // Verificar contexto de apilamiento
     console.log('📌 [EDITOR-TALLAS] CONTEXTO DE APILAMIENTO:');
@@ -851,7 +851,7 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
     
     contenido.innerHTML = `
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-            <div style="font-size: 2rem; color: #dc2626;">⚠️</div>
+            <div style="font-size: 2rem; color: #dc2626;"></div>
             <div>
                 <h2 style="margin: 0; color: #1f2937; font-size: 1.2rem;">Límite excedido</h2>
                 <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.9rem;">No hay suficientes unidades</p>
@@ -869,7 +869,7 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
         
         <div style="background: #f3f4f6; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
             <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.75rem;">
-                📊 Desglose de asignaciones:
+                 Desglose de asignaciones:
             </div>
             ${procesosDetalle.length > 0 ? `
                 ${procesosHTML}
@@ -920,10 +920,10 @@ function mostrarModalAdvertenciaLimiteExcedido(talla, generoKey, cantidadTotal, 
     // Forzar z-index dinámicamente para asegurar que se aplique
     setTimeout(() => {
         modal.style.setProperty('z-index', '9999999999', 'important');
-        console.log('[🔝 MODAL-PROCESO] Z-index forzado dinámicamente:', window.getComputedStyle(modal).zIndex);
+        console.log('[ MODAL-PROCESO] Z-index forzado dinámicamente:', window.getComputedStyle(modal).zIndex);
     }, 10);
     
-    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] ✅ appendChild ejecutado');
+    console.log('[🔍 MODAL-ADVERTENCIA-LIMITE]  appendChild ejecutado');
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] z-index computed:', window.getComputedStyle(modal).zIndex);
     console.log('[🔍 MODAL-ADVERTENCIA-LIMITE] Todas las capas:', {
         modal_z: window.getComputedStyle(modal).zIndex,
@@ -969,7 +969,7 @@ window.actualizarCantidadTallaProceso = function(input) {
     
     // VALIDACIÓN: Solo permitir que NO supere la cantidad total de la prenda
     if (cantidad > cantidadDisponibleEnPrenda) {
-        console.warn(`⚠️ [actualizarCantidadTallaProceso] Cantidad ${cantidad} supera disponible en PRENDA ${cantidadDisponibleEnPrenda}`);
+        console.warn(` [actualizarCantidadTallaProceso] Cantidad ${cantidad} supera disponible en PRENDA ${cantidadDisponibleEnPrenda}`);
         
         // Mostrar error INLINE en rojo debajo del input
         input.style.borderColor = '#dc2626';
@@ -993,7 +993,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 label.parentNode.insertBefore(wrapper, label);
                 // Meter label dentro del wrapper
                 wrapper.appendChild(label);
-                console.log('✅ [ERROR-CSS] Wrapper CREADO y label MOVIDO dentro');
+                console.log(' [ERROR-CSS] Wrapper CREADO y label MOVIDO dentro');
             }
         }
         
@@ -1006,7 +1006,7 @@ window.actualizarCantidadTallaProceso = function(input) {
             errorDiv.style.cssText = 'color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; padding: 0 0.5rem; width: 100%; display: block;';
             if (wrapper) {
                 wrapper.appendChild(errorDiv);
-                console.log('✅ [ERROR-CSS] ErrorDiv CREADO dentro del wrapper');
+                console.log(' [ERROR-CSS] ErrorDiv CREADO dentro del wrapper');
             }
         }
         
@@ -1018,7 +1018,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         errorDiv.textContent = `❌ Máximo: ${cantidadDisponibleEnPrenda} unidades`;
         errorDiv.style.display = 'block';
         
-        console.log('✅ [ERROR-CSS] Mensaje asignado');
+        console.log(' [ERROR-CSS] Mensaje asignado');
         
         // Limpiar el campo (dejar en 0)
         input.value = 0;
@@ -1026,7 +1026,7 @@ window.actualizarCantidadTallaProceso = function(input) {
         
         // CÓDIGO VIEJO - DESCARTAR
         /* Swal.fire({
-            title: '⚠️ Cantidad Excedida',
+            title: ' Cantidad Excedida',
             html: `<div style="text-align: left;">
                 <p><strong>Talla:</strong> ${talla} (${generoKey.toUpperCase()})</p>
                 <p><strong>Cantidad disponible en PRENDA:</strong> <span style="color: #dc2626; font-weight: bold;">${cantidadDisponibleEnPrenda}</span></p>
@@ -1042,7 +1042,7 @@ window.actualizarCantidadTallaProceso = function(input) {
             allowOutsideClick: false,
             didOpen: (modal) => {
                 // 🔍 DESPUÉS DE ABRIR
-                console.log('✅ [MODAL-CANTIDAD-EXCEDIDA] ABIERTO');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] ABIERTO');
                 
                 // Buscar elemento Swal2
                 const swalContainer = document.querySelector('.swal2-container');
@@ -1086,7 +1086,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 const zindexActual = parseInt(zindexAntes) || 9999998;
                 const nuevoZindex = Math.max(zindexActual, 2000000000);
                 
-                console.log('🔝 [MODAL-CANTIDAD-EXCEDIDA] FORZANDO Z-INDEX:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] FORZANDO Z-INDEX:');
                 console.log('   - Z-index actual (parseado):', zindexActual);
                 console.log('   - Nuevo z-index:', nuevoZindex);
                 
@@ -1099,7 +1099,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 }
                 
                 // Verificar DESPUÉS de forzar
-                console.log('✅ [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX DESPUÉS DE FORZAR:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX DESPUÉS DE FORZAR:');
                 const zindexDespues = window.getComputedStyle(swalContainer).zIndex;
                 console.log('   - Swal2 Container zIndex (style):', swalContainer.style.zIndex);
                 console.log('   - Swal2 Container zIndex (computed):', zindexDespues);
@@ -1110,7 +1110,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 document.querySelectorAll('*').forEach(el => {
                     const zIdx = window.getComputedStyle(el).zIndex;
                     if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > parseInt(nuevoZindex)) {
-                        console.warn(`   ⚠️ ELEMENTO ENCIMA: ${el.tagName}#${el.id}.${el.className} - z-index: ${zIdx}`);
+                        console.warn(`    ELEMENTO ENCIMA: ${el.tagName}#${el.id}.${el.className} - z-index: ${zIdx}`);
                     }
                 });
                 
@@ -1129,7 +1129,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 });
                 
                 if (encontradosAltos.length === 0) {
-                    console.log('   ℹ️ NO HAY ELEMENTOS CON Z-INDEX > 100000 (excepto Swal2)');
+                    console.log('    NO HAY ELEMENTOS CON Z-INDEX > 100000 (excepto Swal2)');
                 } else {
                     encontradosAltos.sort((a, b) => parseInt(b.zIndex) - parseInt(a.zIndex));
                     encontradosAltos.forEach((item, idx) => {
@@ -1190,7 +1190,7 @@ window.actualizarCantidadTallaProceso = function(input) {
     input.style.borderColor = '';
     input.style.backgroundColor = '';
     
-    console.log('✅ [actualizarCantidadTallaProceso] Actualizado en tallasCantidadesProceso:', {
+    console.log(' [actualizarCantidadTallaProceso] Actualizado en tallasCantidadesProceso:', {
         genero,
         talla,
         cantidad,
@@ -1206,7 +1206,7 @@ window.cerrarEditorTallas = function() {
         console.log('🔍 [EDITOR-TALLAS] Cerrando modal...');
         console.log('🔍 [EDITOR-TALLAS] Z-index ANTES de cerrar:', window.getComputedStyle(modal).zIndex);
         modal.style.display = 'none';
-        console.log('✅ [EDITOR-TALLAS] Modal cerrado. Display:', window.getComputedStyle(modal).display);
+        console.log(' [EDITOR-TALLAS] Modal cerrado. Display:', window.getComputedStyle(modal).display);
     }
 
 };
@@ -1237,12 +1237,12 @@ window.guardarTallasSeleccionadas = function() {
             caballero: window.tallasCantidadesProceso.caballero || {}
         };
         
-        console.log(`✅ [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoActual}":`, {
+        console.log(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoActual}":`, {
             tallas: window.procesosSeleccionados[procesoActual].datos.tallas,
             tallasCantidadesProceso: window.tallasCantidadesProceso
         });
     } else {
-        console.warn(`⚠️ [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!window.procesosSeleccionados}`);
+        console.warn(` [guardarTallasSeleccionadas] NO SE PUDO GUARDAR: procesoActual="${procesoActual}", procesosSeleccionados exists=${!!window.procesosSeleccionados}`);
     }
 
     console.log('📌 [guardarTallasSeleccionadas] ESTADO ANTES DE CERRAR MODAL:');
@@ -1257,7 +1257,7 @@ window.guardarTallasSeleccionadas = function() {
     console.log('   - Modal principal display:', window.getComputedStyle(document.getElementById('modal-proceso-generico')).display);
     
     actualizarResumenTallasProceso();
-    console.log('✅ [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
+    console.log(' [guardarTallasSeleccionadas] GUARDADO COMPLETADO');
 };
 
 // Actualizar resumen de tallas
@@ -1268,18 +1268,18 @@ window.actualizarResumenTallasProceso = function() {
     console.log('[actualizarResumenTallasProceso] 🔍 Elemento resumen encontrado?:', !!resumen);
     
     if (!resumen) {
-        console.warn('[actualizarResumenTallasProceso] ⚠️ NO SE ENCONTRÓ elemento #proceso-tallas-resumen');
+        console.warn('[actualizarResumenTallasProceso]  NO SE ENCONTRÓ elemento #proceso-tallas-resumen');
         return;
     }
     
-    console.log('[actualizarResumenTallasProceso] 📊 window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
-    console.log('[actualizarResumenTallasProceso] 📊 window.tallasCantidadesProceso:', window.tallasCantidadesProceso);
+    console.log('[actualizarResumenTallasProceso]  window.tallasSeleccionadasProceso:', window.tallasSeleccionadasProceso);
+    console.log('[actualizarResumenTallasProceso]  window.tallasCantidadesProceso:', window.tallasCantidadesProceso);
     
     const totalTallas = window.tallasSeleccionadasProceso.dama.length + window.tallasSeleccionadasProceso.caballero.length;
     console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas);
     
     if (totalTallas === 0) {
-        console.log('[actualizarResumenTallasProceso] ⚠️ No hay tallas seleccionadas, mostrando placeholder');
+        console.log('[actualizarResumenTallasProceso]  No hay tallas seleccionadas, mostrando placeholder');
         resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         return;
     }
@@ -1341,7 +1341,7 @@ window.actualizarResumenTallasProceso = function() {
     console.log('[actualizarResumenTallasProceso] 🎨 HTML preview:', html.substring(0, 200) + '...');
     
     resumen.innerHTML = html;
-    console.log('[actualizarResumenTallasProceso] ✅ HTML inyectado en DOM');
+    console.log('[actualizarResumenTallasProceso]  HTML inyectado en DOM');
     console.log('[actualizarResumenTallasProceso] 📝 innerHTML actual:', resumen.innerHTML.substring(0, 200));
 };
 
@@ -1431,7 +1431,7 @@ window.agregarProcesoAlPedido = function() {
                 // Guardar cambios en window.procesosSeleccionados
                 window.procesosEditor.guardarEnWindowProcesos();
                 
-                console.log('✅ [EDICIÓN] Cambios registrados y guardados en window.procesosSeleccionados');
+                console.log(' [EDICIÓN] Cambios registrados y guardados en window.procesosSeleccionados');
             }
             
             // También mantener buffer para compatibilidad
@@ -1446,7 +1446,7 @@ window.agregarProcesoAlPedido = function() {
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);
         
-        // ✅ CRÍTICO: Renderizar SOLO en modo EDICIÓN
+        //  CRÍTICO: Renderizar SOLO en modo EDICIÓN
         // En modo CREATE (agregar nuevo proceso), no hay tarjetas que renderizar
         if (modoActual === 'editar' && window.renderizarTarjetasProcesos) {
             // Pequeño delay para garantizar que el modal se ha cerrado y el DOM está actualizado
@@ -1459,19 +1459,19 @@ window.agregarProcesoAlPedido = function() {
                     const container = document.getElementById('contenedor-tarjetas-procesos');
                     if (container) {
                         const tarjetas = container.querySelectorAll('[data-tipo-proceso]');
-                        console.log(`✅ [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
+                        console.log(` [agregarProcesoAlPedido-VERIFY] Tarjetas renderizadas: ${tarjetas.length}`);
                         if (tarjetas.length === 0) {
-                            console.warn(' [agregarProcesoAlPedido-VERIFY] ⚠️ NO se encontraron tarjetas. Re-renderizando...');
+                            console.warn(' [agregarProcesoAlPedido-VERIFY]  NO se encontraron tarjetas. Re-renderizando...');
                             window.renderizarTarjetasProcesos();
                         }
                     }
                 }, 100);
             }, 50);
         } else if (modoActual === 'crear') {
-            console.log('✅ [agregarProcesoAlPedido] Modo CREATE: Proceso guardado en window.procesosSeleccionados');
-            console.log('✅ [agregarProcesoAlPedido] Actualizando visualización de procesos en modal...');
+            console.log(' [agregarProcesoAlPedido] Modo CREATE: Proceso guardado en window.procesosSeleccionados');
+            console.log(' [agregarProcesoAlPedido] Actualizando visualización de procesos en modal...');
             
-            // ✅ IMPORTANTE: En modo CREATE, también renderizar para mostrar el nuevo proceso
+            //  IMPORTANTE: En modo CREATE, también renderizar para mostrar el nuevo proceso
             if (window.renderizarTarjetasProcesos) {
                 setTimeout(() => {
                     console.log(' [agregarProcesoAlPedido] Llamando renderizarTarjetasProcesos() en modo CREATE...');
@@ -1507,7 +1507,7 @@ window.aplicarCambiosProcesosDesdeBuffer = function() {
             datos: cambiosProceso
         };
         
-        console.log('[APLICAR-BUFFER] ✅ Cambios aplicados a procesosSeleccionados');
+        console.log('[APLICAR-BUFFER]  Cambios aplicados a procesosSeleccionados');
         
         // Limpiar buffer
         cambiosProceso = null;

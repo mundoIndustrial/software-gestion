@@ -97,7 +97,7 @@ class PedidosRealtimeRefresh {
     setupEchoConnection() {
         // Verificar si Echo está disponible
         if (!window.Echo) {
-            console.warn('⚠️ [PedidosRealtime] Laravel Echo no está disponible, usando solo polling');
+            console.warn(' [PedidosRealtime] Laravel Echo no está disponible, usando solo polling');
             return;
         }
 
@@ -105,7 +105,7 @@ class PedidosRealtimeRefresh {
         const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
 
         if (!userId) {
-            console.warn('⚠️ [PedidosRealtime] User ID no encontrado, no se puede suscribir a canales');
+            console.warn(' [PedidosRealtime] User ID no encontrado, no se puede suscribir a canales');
             return;
         }
 
@@ -134,7 +134,7 @@ class PedidosRealtimeRefresh {
                 });
 
             this.usingWebSockets = true;
-            if (this.debug) console.log('✅ [PedidosRealtime] Conexión WebSocket establecida - SIN POLLING');
+            if (this.debug) console.log(' [PedidosRealtime] Conexión WebSocket establecida - SIN POLLING');
 
         } catch (error) {
             console.error('❌ [PedidosRealtime] Error configurando WebSocket:', error);
@@ -320,7 +320,7 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        if (this.debug) console.log(`🔄 [PedidosRealtime] ✅ Iniciando monitoreo`);
+        if (this.debug) console.log(`🔄 [PedidosRealtime]  Iniciando monitoreo`);
         this.isRunning = true;
         
         // Solo iniciar polling si WebSockets no está disponible
@@ -513,7 +513,7 @@ class PedidosRealtimeRefresh {
         // Verificar nuevos pedidos
         if (pedidosNuevos.length !== this.pedidosAnterior.size) {
             if (this.debug) {
-                console.log('📊 [PedidosRealtime] Cantidad cambió:', this.pedidosAnterior.size, '->', pedidosNuevos.length);
+                console.log(' [PedidosRealtime] Cantidad cambió:', this.pedidosAnterior.size, '->', pedidosNuevos.length);
             }
             hayCambios = true;
         }

@@ -726,6 +726,116 @@ class AsesoresController extends Controller
     }
 
     /**
+     * Confirmar corrección de pedido - Cambiar de DEVUELTO_A_ASESORA a PENDIENTE_SUPERVISOR
+     */
+    public function confirmarCorreccion(Request $request, $id)
+    {
+        \Log::info('[confirmarCorreccion] Iniciando confirmación de corrección', [
+            'pedido_id' => $id,
+            'usuario_id' => auth()->id(),
+            'usuario_nombre' => auth()->user()->name ?? 'Desconocido',
+        ]);
+
+        try {
+            // Buscar el pedido
+            $pedido = PedidoProduccion::where('id', (int)$id)
+                ->orWhere('numero_pedido', (int)$id)
+                ->first();
+            
+            if (!$pedido) {
+                \Log::warning('[confirmarCorreccion] Pedido no encontrado', [
+                    'pedido_id' => $id,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            // Verificar que el pedido esté en estado DEVUELTO_A_ASESORA
+            if (trim($pedido->estado) !== 'DEVUELTO_A_ASESORA') {
+                \Log::warning('[confirmarCorreccion] Intento de confirmar pedido que no está en DEVUELTO_A_ASESORA', [
+                    'pedido_id' => $pedido->id,
+                    'estado_actual' => $pedido->estado,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pedido no está en estado "Devuelto a Asesora". Estado actual: ' . $pedido->estado,
+                ], 422);
+            }
+
+            // Cambiar estado a PENDIENTE_SUPERVISOR
+            $pedido->estado = 'PENDIENTE_SUPERVISOR';
+            
+            // Limpiar datos de revisión
+            $pedido->motivo_revision = null;
+            $pedido->fecha_revision = null;
+            $pedido->usuario_revision = null;
+
+            $pedido->save();
+
+            // Refrescar el modelo
+            $pedido->refresh();
+
+            // Registrar novedad
+            $separador = str_repeat('=', 50);
+            $usuario = auth()->user();
+            $nombreUsuario = $usuario ? $usuario->name : 'Sistema';
+            
+            $novedad = "CONFIRMACIÓN DE CORRECCIÓN DE PEDIDO:\n";
+            $novedad .= $separador . "\n";
+            $novedad .= "Fecha de confirmación: " . \Carbon\Carbon::now('UTC')->format('Y-m-d H:i:s') . "\n";
+            $novedad .= "Usuario que confirma: " . $nombreUsuario . "\n";
+            $novedad .= "Estado anterior: DEVUELTO_A_ASESORA\n";
+            $novedad .= "Estado nuevo: PENDIENTE_SUPERVISOR\n";
+            $novedad .= $separador . "\n";
+            $novedad .= "El pedido ha sido corregido y está listo para supervisión.\n";
+
+            // Append a las novedades existentes
+            if ($pedido->novedades) {
+                $pedido->novedades = $pedido->novedades . "\n" . $novedad;
+            } else {
+                $pedido->novedades = $novedad;
+            }
+
+            $pedido->save();
+
+            // Log de éxito
+            \Log::info('[confirmarCorreccion] Corrección confirmada exitosamente', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'usuario_id' => auth()->id(),
+                'nuevo_estado' => $pedido->estado,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Corrección confirmada. El pedido ha sido enviado a supervisión.',
+                'data' => [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado' => $pedido->estado,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[confirmarCorreccion] Error al confirmar corrección', [
+                'pedido_id' => $id,
+                'usuario_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar corrección: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar inventario de telas
      */
     public function inventarioTelas()
@@ -741,7 +851,7 @@ class AsesoresController extends Controller
      */
     public function obtenerDatosFactura($id)
     {
-        \Log::warning('⚠️⚠️⚠️ [CONTROLLER-FACTURA] ENDPOINT LLAMADO ⚠️⚠️⚠️', ['pedido_id' => $id]);
+        \Log::warning(' [CONTROLLER-FACTURA] ENDPOINT LLAMADO ', ['pedido_id' => $id]);
         
         try {
             // 🔍 LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
@@ -799,7 +909,22 @@ class AsesoresController extends Controller
                 }
             }
             
-            \Log::info('✅ [CONTROLLER-FACTURA] Datos de factura obtenidos exitosamente');
+            \Log::info(' [CONTROLLER-FACTURA] Datos de factura obtenidos exitosamente');
+            
+            // 🔍 LOG CRÍTICO: Verificar que las imágenes tienen IDs
+            if (!empty($datos['prendas'])) {
+                $primeraPrend = $datos['prendas'][0];
+                if (!empty($primeraPrend['imagenes'])) {
+                    \Log::info('[CONTROLLER-FACTURA-IMAGENES-VERIFICACION] IMÁGENES DE PRIMERA PRENDA:', [
+                        'prenda_nombre' => $primeraPrend['nombre'] ?? 'N/A',
+                        'cantidad_imagenes' => count($primeraPrend['imagenes']),
+                        'primerImagen_estructura' => $primeraPrend['imagenes'][0] ?? 'NO_EXISTE',
+                        'primerImagen_id' => $primeraPrend['imagenes'][0]['id'] ?? 'NO_TIENE_ID',
+                        'primerImagen_ruta_original' => $primeraPrend['imagenes'][0]['ruta_original'] ?? 'NO_TIENE_RUTA_ORIGINAL',
+                        'primerImagen_ruta_webp' => $primeraPrend['imagenes'][0]['ruta_webp'] ?? 'NO_TIENE_RUTA_WEBP',
+                    ]);
+                }
+            }
             
             // 🔍 LOG FINAL: Verificar estructura exacta antes de retornar
             \Log::info('[CONTROLLER-FACTURA-JSON-RESPONSE] Estructura JSON final que se envía', [

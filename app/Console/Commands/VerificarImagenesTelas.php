@@ -86,7 +86,7 @@ class VerificarImagenesTelas extends Command
                     $rutaCompleta = "public/{$foto->ruta_webp}";
                     if (Storage::exists($rutaCompleta)) {
                         $tamaño = Storage::size($rutaCompleta);
-                        $this->line("│  │  │  ✅ En disco ({$tamaño} bytes)");
+                        $this->line("│  │  │   En disco ({$tamaño} bytes)");
                         $imagenesEnDisco++;
                     } else {
                         $this->error("│  │  │  ❌ NO en disco");
@@ -106,14 +106,14 @@ class VerificarImagenesTelas extends Command
 ╚════════════════════════════════════════════════════════════╝
         ");
 
-        $this->line("📊 Total de telas (color-tela): {$totalTelas}");
+        $this->line(" Total de telas (color-tela): {$totalTelas}");
         $this->line("📸 Total de imágenes en BD: {$totalImagenes}");
         $this->line(" Total de imágenes en disco: {$imagenesEnDisco}");
 
         if ($totalImagenes === $imagenesEnDisco) {
-            $this->info("✅ TODAS las imágenes están en disco");
+            $this->info(" TODAS las imágenes están en disco");
         } else {
-            $this->warn("⚠️ Imágenes desincronizadas (BD: {$totalImagenes}, Disco: {$imagenesEnDisco})");
+            $this->warn(" Imágenes desincronizadas (BD: {$totalImagenes}, Disco: {$imagenesEnDisco})");
         }
 
         // Verificar carpeta

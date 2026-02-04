@@ -18,7 +18,7 @@ class TestSecuenciaCartera extends Command
         $numeroPedidos = (int) $this->argument('pedidos');
         
         $this->info("🚀 Probando secuencia de números de pedido en Cartera");
-        $this->info("📊 Pedidos a aprobar: {$numeroPedidos}");
+        $this->info(" Pedidos a aprobar: {$numeroPedidos}");
         $this->info("⏰ " . date('Y-m-d H:i:s'));
         
         try {
@@ -35,7 +35,7 @@ class TestSecuenciaCartera extends Command
                 ]);
                 
                 $pedidosCreados[] = $pedido;
-                $this->line("  ✅ Pedido #{$pedido->id} creado");
+                $this->line("   Pedido #{$pedido->id} creado");
             }
             
             // Aprobar pedidos concurrentemente
@@ -76,7 +76,7 @@ class TestSecuenciaCartera extends Command
                     $pedido->update(['numero_pedido' => $numero]);
                     $numerosGenerados[] = $numero;
                     
-                    $this->line("  ✅ Pedido #{$pedido->id} → número {$numero}");
+                    $this->line("   Pedido #{$pedido->id} → número {$numero}");
                     
                 } catch (\Exception $e) {
                     $this->error("  ❌ Error aprobando pedido #{$pedido->id}: " . $e->getMessage());
@@ -91,7 +91,7 @@ class TestSecuenciaCartera extends Command
             $duracion = $endTime - $startTime;
             
             // Verificar resultados
-            $this->line("\n📊 RESULTADOS DE SECUENCIA:");
+            $this->line("\n RESULTADOS DE SECUENCIA:");
             $this->line("Pedidos aprobados: " . count($numerosGenerados));
             $this->line("Duración: " . round($duracion, 3) . "s");
             $this->line("Números generados: " . implode(', ', $numerosGenerados));
@@ -101,7 +101,7 @@ class TestSecuenciaCartera extends Command
             $esperado = range($numerosGenerados[0] ?? 1, $numerosGenerados[0] + count($numerosGenerados) - 1);
             
             if ($numerosGenerados === $esperado) {
-                $this->info("✅ Secuencia correcta y sin duplicados");
+                $this->info(" Secuencia correcta y sin duplicados");
             } else {
                 $this->error("🚨 ¡SECUENCIA INCORRECTA O DUPLICADOS!");
                 $this->error("Esperado: " . implode(', ', $esperado));
@@ -151,7 +151,7 @@ class TestSecuenciaCartera extends Command
             // Buscar duplicados
             $numerosUnicos = array_unique($numeros);
             if (count($numeros) === count($numerosUnicos)) {
-                $this->info("✅ Sin números duplicados");
+                $this->info(" Sin números duplicados");
             } else {
                 $this->error("🚨 ¡NÚMEROS DUPLICADOS!");
             }

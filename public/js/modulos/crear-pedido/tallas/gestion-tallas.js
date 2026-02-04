@@ -105,7 +105,7 @@ window.guardarCantidadTalla = function(genero, talla, cantidad) {
     }
     
     // Log del estado actual de todas las tallas
-    console.log('[gestion-tallas] 📊 Estado actual de tallasRelacionales:', window.tallasRelacionales);
+    console.log('[gestion-tallas]  Estado actual de tallasRelacionales:', window.tallasRelacionales);
 };
 
 /**
@@ -201,7 +201,7 @@ window.mostrarTallasDisponibles = function(tipo) {
                 btn.style.color = 'white';
 
             }
-            console.log('[gestion-tallas] 📊 Tallas actuales del modal:', window.tallasRelacionales[window.generoActualModal]);
+            console.log('[gestion-tallas]  Tallas actuales del modal:', window.tallasRelacionales[window.generoActualModal]);
         };
         
         grid.appendChild(btn);
@@ -623,11 +623,11 @@ window.crearTarjetaGenero = function(genero) {
         const input = document.createElement('input');
         input.type = 'number';
         input.min = '0';
-        input.value = cantidad;  // ✅ Cargar la cantidad (puede ser 0)
-        input.data = { talla, cantidad };  // ✅ Guardar datos para referencia
+        input.value = cantidad;  //  Cargar la cantidad (puede ser 0)
+        input.data = { talla, cantidad };  //  Guardar datos para referencia
         input.style.cssText = 'padding: 0.5rem; border: 2px solid #0066cc; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.9rem;';
         input.onchange = () => {
-            console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  // ✅ Logging
+            console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
             actualizarTotalPrendas();
         };

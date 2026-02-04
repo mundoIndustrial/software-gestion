@@ -34,14 +34,14 @@ return new class extends Migration
                 }
                 
                 if ($tamanioColumn) {
-                    \Log::info('🔧 Renombrando columna corrupta', ['columna_actual' => $tamanioColumn]);
+                    \Log::info(' Renombrando columna corrupta', ['columna_actual' => $tamanioColumn]);
                     // Usar backticks para escapar caracteres especiales
                     DB::statement("ALTER TABLE `prenda_tela_fotos_cot` CHANGE COLUMN `$tamanioColumn` `tamaño` INT NULL COMMENT 'Tamaño del archivo en bytes'");
-                    \Log::info('✅ Columna renombrada a tamaño correctamente');
+                    \Log::info(' Columna renombrada a tamaño correctamente');
                 } elseif (in_array('tamaño', $columnNames)) {
-                    \Log::info('✅ Columna tamaño ya existe y está correcta');
+                    \Log::info(' Columna tamaño ya existe y está correcta');
                 } else {
-                    \Log::warning('⚠️ Columna tamaño no encontrada en ninguna forma');
+                    \Log::warning(' Columna tamaño no encontrada en ninguna forma');
                 }
                 
             } catch (\Exception $e) {
@@ -49,7 +49,7 @@ return new class extends Migration
                 throw $e;
             }
         } else {
-            \Log::warning('⚠️ Tabla prenda_tela_fotos_cot no existe. Se saltará esta migración.');
+            \Log::warning(' Tabla prenda_tela_fotos_cot no existe. Se saltará esta migración.');
         }
     }
 

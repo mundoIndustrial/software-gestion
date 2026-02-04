@@ -122,8 +122,8 @@ class ItemAPIService {
         try {
             console.debug('[validarPedido] INICIO');
             console.log('[validarPedido] 📦 Datos recibidos:', pedidoData);
-            console.log('[validarPedido] 📊 Prendas:', pedidoData.prendas?.length || 0);
-            console.log('[validarPedido] 📊 EPPs:', pedidoData.epps?.length || 0);
+            console.log('[validarPedido]  Prendas:', pedidoData.prendas?.length || 0);
+            console.log('[validarPedido]  EPPs:', pedidoData.epps?.length || 0);
             
             // PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
             const jsonString = JSON.stringify(pedidoData);
@@ -684,7 +684,7 @@ class ItemAPIService {
                             const promise = this.convertirImagenDeCotizacionAFile(imgConRuta, `prendas[${prendaIdx}][imagenes][${imgIdx}]`, prendaData.imagenes, estructura.archivosMap, item.uid);
                             conversionPromises.push(promise);
                         } else {
-                            console.warn(`[extraerFiles] ⚠️ Imagen de prenda[${imgIdx}] no se procesará:`, {
+                            console.warn(`[extraerFiles]  Imagen de prenda[${imgIdx}] no se procesará:`, {
                                 tipo: typeof img,
                                 es_file: img instanceof File,
                                 tiene_ruta: !!img.ruta,
@@ -694,7 +694,7 @@ class ItemAPIService {
                         }
                     });
                 } else {
-                    console.warn(`[extraerFiles] ⚠️ No hay imágenes de prenda o no es array:`, {
+                    console.warn(`[extraerFiles]  No hay imágenes de prenda o no es array:`, {
                         imagenes: item.imagenes,
                         tipo: typeof item.imagenes,
                         es_array: Array.isArray(item.imagenes)
@@ -760,7 +760,7 @@ class ItemAPIService {
                                 estructura.archivosMap[formdataKey] = img;
                                 console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][imagenes][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
                             } else if (img && (typeof img === 'string' || (typeof img === 'object' && (img.ruta || img.url)))) {
-                                // ✅ CRÍTICO: Convertir URLs de cotización a File objects
+                                //  CRÍTICO: Convertir URLs de cotización a File objects
                                 const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
                                 const promise = this.convertirImagenDeCotizacionAFile(img, formdataKey, prendaData.procesos[procesoKey], estructura.archivosMap, item.uid);
                                 
@@ -875,7 +875,7 @@ class ItemAPIService {
         if (conversionPromises.length > 0) {
             console.log(`[extraerFilesDelPedido] 🔄 Esperando ${conversionPromises.length} conversiones de imágenes...`);
             await Promise.all(conversionPromises);
-            console.log(`[extraerFilesDelPedido] ✅ Todas las conversiones completadas`);
+            console.log(`[extraerFilesDelPedido]  Todas las conversiones completadas`);
         }
 
         // Contar archivos extraídos
@@ -898,7 +898,7 @@ class ItemAPIService {
             totalArchivos += epp.imagenes.length;
         });
 
-        console.log('[extraerFilesDelPedido] ✅ EXTRACCIÓN COMPLETADA:', {
+        console.log('[extraerFilesDelPedido]  EXTRACCIÓN COMPLETADA:', {
             prendas: estructura.prendas.length,
             epps: estructura.epps.length,
             archivos_totales: totalArchivos,
@@ -1062,7 +1062,7 @@ class ItemAPIService {
             });
             archivosMap[formdataKey] = file;
 
-            console.log(`[convertirImagenDeCotizacionAFile] ✅ Imagen convertida:`, {
+            console.log(`[convertirImagenDeCotizacionAFile]  Imagen convertida:`, {
                 fileName,
                 fileSize: file.size,
                 fileType: file.type,

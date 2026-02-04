@@ -42,12 +42,12 @@ class ImagenPedidoService
         string $tipo,
         ?string $subtipo = null
     ): string {
-        // ✅ Validar que sea UploadedFile
+        //  Validar que sea UploadedFile
         if (!$file instanceof UploadedFile) {
             throw new \InvalidArgumentException('Archivo debe ser instancia de UploadedFile');
         }
         
-        // ✅ Validar que el archivo sea válido
+        //  Validar que el archivo sea válido
         if (!$file->isValid()) {
             $errorMsg = $file->getErrorMessage();
             Log::warning('[ImagenPedidoService] Archivo inválido', [
@@ -58,13 +58,13 @@ class ImagenPedidoService
             throw new \RuntimeException('Archivo inválido: ' . $errorMsg);
         }
         
-        // ✅ Validar tipo
+        //  Validar tipo
         $tiposValidos = ['prendas', 'telas', 'procesos', 'epp'];
         if (!in_array($tipo, $tiposValidos)) {
             throw new \InvalidArgumentException("Tipo inválido. Válidos: " . implode(', ', $tiposValidos));
         }
         
-        // ✅ Construir ruta
+        //  Construir ruta
         $rutaBase = sprintf('%s/%d/%s', self::BASE_PATH, $pedidoId, $tipo);
         if ($subtipo) {
             // Sanitizar subtipo
@@ -72,7 +72,7 @@ class ImagenPedidoService
             $rutaBase .= '/' . $subtipo;
         }
         
-        // ✅ Crear directorio si no existe
+        //  Crear directorio si no existe
         try {
             if (!Storage::disk(self::DISK)->exists($rutaBase)) {
                 Storage::disk(self::DISK)->makeDirectory($rutaBase, 0755, true);
@@ -88,7 +88,7 @@ class ImagenPedidoService
             throw new \RuntimeException('No se pudo crear directorio: ' . $e->getMessage());
         }
         
-        // ✅ Guardar archivo
+        //  Guardar archivo
         try {
             $ruta = $file->store($rutaBase, self::DISK);
             

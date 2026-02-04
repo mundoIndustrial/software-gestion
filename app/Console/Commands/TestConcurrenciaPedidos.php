@@ -19,7 +19,7 @@ class TestConcurrenciaPedidos extends Command
         $numeroRondas = (int) $this->argument('rondas');
         
         $this->info("🚀 Iniciando prueba de concurrencia");
-        $this->info("📊 Usuarios: {$numeroUsuarios}");
+        $this->info(" Usuarios: {$numeroUsuarios}");
         $this->info("🔄 Rondas: {$numeroRondas}");
         $this->info("⏰ " . date('Y-m-d H:i:s'));
         
@@ -39,7 +39,7 @@ class TestConcurrenciaPedidos extends Command
                 $totalPedidos += $resultados['pedidos'];
                 $totalErrores += $resultados['errores'];
                 
-                $this->info("   ✅ Pedidos creados: {$resultados['pedidos']}");
+                $this->info("    Pedidos creados: {$resultados['pedidos']}");
                 $this->info("   ❌ Errores: {$resultados['errores']}");
                 $this->info("   ⏱️  Duración: {$resultados['duracion']}s");
                 
@@ -75,7 +75,7 @@ class TestConcurrenciaPedidos extends Command
         $startTime = microtime(true);
         
         if ($usuarios->count() < $numeroUsuarios) {
-            $this->warn("⚠️  Solo hay {$usuarios->count()} usuarios disponibles");
+            $this->warn("  Solo hay {$usuarios->count()} usuarios disponibles");
             $numeroUsuarios = $usuarios->count();
         }
         
@@ -115,7 +115,7 @@ class TestConcurrenciaPedidos extends Command
                     'ronda' => $ronda
                 ];
                 
-                $this->line("     ✅ Pedido #{$pedido->id} - Usuario {$index}");
+                $this->line("      Pedido #{$pedido->id} - Usuario {$index}");
                 
             } catch (\Exception $e) {
                 $errores++;
@@ -145,7 +145,7 @@ class TestConcurrenciaPedidos extends Command
     private function verificarIntegridad(array $pedidos, int $ronda): void
     {
         if (empty($pedidos)) {
-            $this->warn("   ⚠️  Sin pedidos para verificar");
+            $this->warn("     Sin pedidos para verificar");
             return;
         }
         
@@ -161,7 +161,7 @@ class TestConcurrenciaPedidos extends Command
                 'duplicados' => array_diff_assoc($ids, $idsUnicos)
             ]);
         } else {
-            $this->info("   ✅ IDs únicos verificadas");
+            $this->info("    IDs únicos verificadas");
         }
         
         // Verificar que numero_pedido sea null
@@ -169,7 +169,7 @@ class TestConcurrenciaPedidos extends Command
         if (!empty($numerosNoNulos)) {
             $this->error("   🚨 ¡NÚMEROS DE PEDIDO NO DEBEN SER NULOS!");
         } else {
-            $this->info("   ✅ números de pedido correctos (null)");
+            $this->info("    números de pedido correctos (null)");
         }
         
         // Verificar secuencia de IDs
@@ -183,15 +183,15 @@ class TestConcurrenciaPedidos extends Command
                 'recibido' => $ids
             ]);
         } else {
-            $this->info("   ✅ Secuencia de IDs correcta");
+            $this->info("    Secuencia de IDs correcta");
         }
         
-        $this->line("   📊 Rango IDs: " . min($ids) . " - " . max($ids));
+        $this->line("    Rango IDs: " . min($ids) . " - " . max($ids));
     }
     
     private function mostrarResultadosFinales(int $totalPedidos, int $totalErrores, float $duracionTotal): void
     {
-        $this->line("\n📊 RESULTADOS FINALES");
+        $this->line("\n RESULTADOS FINALES");
         $this->line("==================");
         
         $this->line("Pedidos creados: {$totalPedidos}");
@@ -200,7 +200,7 @@ class TestConcurrenciaPedidos extends Command
         $this->line("Promedio por pedido: " . round($duracionTotal / max($totalPedidos, 1), 3) . "s");
         
         if ($totalErrores === 0) {
-            $this->info("\n✅ PRUEBA EXITOSA - Sin errores de concurrencia");
+            $this->info("\n PRUEBA EXITOSA - Sin errores de concurrencia");
         } else {
             $this->error("\n❌ PRUEBA CON ERRORES - Revisar logs");
         }
@@ -250,7 +250,7 @@ class TestConcurrenciaPedidos extends Command
                 $this->error("  ID {$dup->id}: {$dup->count} veces");
             }
         } else {
-            $this->info("✅ Sin IDs duplicados en BD");
+            $this->info(" Sin IDs duplicados en BD");
         }
     }
 }

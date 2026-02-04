@@ -62,7 +62,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
             // ===== PASO 1: GENERAR NÚMERO DE PEDIDO =====
             $numeroPedido = $this->generarNumeroPedido();
             
-            Log::info('✅ [CrearPedidoCompletoHandler] Número de pedido generado', [
+            Log::info(' [CrearPedidoCompletoHandler] Número de pedido generado', [
                 'numero_pedido' => $numeroPedido,
             ]);
 
@@ -78,7 +78,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
             /** @var PedidoProduccion $pedido */
             $pedido = $this->commandBus->execute($crearPedidoCmd);
             
-            Log::info('✅ [CrearPedidoCompletoHandler] Pedido base creado', [
+            Log::info(' [CrearPedidoCompletoHandler] Pedido base creado', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
@@ -108,7 +108,7 @@ class CrearPedidoCompletoHandler implements CommandHandler
                     
                     $prendasCreadas[] = $prenda;
                     
-                    Log::info("✅ [CrearPedidoCompletoHandler] Prenda #{$index} agregada", [
+                    Log::info(" [CrearPedidoCompletoHandler] Prenda #{$index} agregada", [
                         'prenda_id' => $prenda->id,
                         'nombre' => $prenda->nombre_prenda,
                     ]);

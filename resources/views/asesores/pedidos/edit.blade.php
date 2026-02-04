@@ -369,7 +369,7 @@
             fetch(`/api/pedidos/${pedidoId}`)
                 .then(response => response.json())
                 .then(resultado => {
-                    console.log('✅ [FACTURA-EDITABLE-EDIT] Datos obtenidos de API:', resultado);
+                    console.log(' [FACTURA-EDITABLE-EDIT] Datos obtenidos de API:', resultado);
                     
                     if (resultado.success && resultado.data && typeof generarHTMLFactura === 'function') {
                         const datos = {
@@ -406,12 +406,12 @@
                             }
                             
                             contenedor.innerHTML = htmlFactura;
-                            console.log('✅✅ [FACTURA-EDITABLE-EDIT] FACTURA RENDERIZADA EXITOSAMENTE');
+                            console.log(' [FACTURA-EDITABLE-EDIT] FACTURA RENDERIZADA EXITOSAMENTE');
                         } catch (e) {
                             console.error('❌ [FACTURA-EDITABLE-EDIT] Error al renderizar factura:', e);
                         }
                     } else {
-                        console.log('⚠️ [FACTURA-EDITABLE-EDIT] No se pudieron obtener datos o generarHTMLFactura no está disponible');
+                        console.log(' [FACTURA-EDITABLE-EDIT] No se pudieron obtener datos o generarHTMLFactura no está disponible');
                     }
                 })
                 .catch(error => {

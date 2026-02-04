@@ -1,4 +1,4 @@
-# 📊 LOGS DE DIAGNÓSTICO - CREACIÓN DE PEDIDOS
+#  LOGS DE DIAGNÓSTICO - CREACIÓN DE PEDIDOS
 
 ##  Objetivo
 Identificar cuellos de botella y latencias en la creación de pedidos en:
@@ -22,10 +22,10 @@ storage/logs/laravel.log
 ```
 
 **Componentes medidos:**
-- ✅ `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
-- ✅ `[CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados` → tiempo_ms
-- ✅ `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
-- ✅ `[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms ⚠️ **CRÍTICO**
+-  `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
+-  `[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
 
 **Log final:**
 ```
@@ -57,14 +57,14 @@ storage/logs/laravel.log
 **Pasos desglosados con microtiming:**
 
 ```
-[CREAR-PEDIDO] ✅ PASO 1: JSON decodificado → tiempo_ms: 5
-[CREAR-PEDIDO] ✅ PASO 2: Cliente obtenido/creado → tiempo_ms: 50
-[CREAR-PEDIDO] ✅ PASO 3: Pedido normalizado (DTO) → tiempo_ms: 30
-[CREAR-PEDIDO] ✅ PASO 5: Pedido base creado → tiempo_ms: 200
-[CREAR-PEDIDO] ✅ PASO 6: Carpetas creadas → tiempo_ms: 100
-[CREAR-PEDIDO] ✅ PASO 7: Imágenes mapeadas y creadas → tiempo_ms: 5000 ⚠️ CRÍTICO
-[CREAR-PEDIDO] ✅ PASO 7B: Imágenes de EPPs procesadas → tiempo_ms: 2000 ⚠️ CRÍTICO
-[CREAR-PEDIDO] ✅ PASO 8: Cálculo de cantidades → tiempo_ms: 100
+[CREAR-PEDIDO]  PASO 1: JSON decodificado → tiempo_ms: 5
+[CREAR-PEDIDO]  PASO 2: Cliente obtenido/creado → tiempo_ms: 50
+[CREAR-PEDIDO]  PASO 3: Pedido normalizado (DTO) → tiempo_ms: 30
+[CREAR-PEDIDO]  PASO 5: Pedido base creado → tiempo_ms: 200
+[CREAR-PEDIDO]  PASO 6: Carpetas creadas → tiempo_ms: 100
+[CREAR-PEDIDO]  PASO 7: Imágenes mapeadas y creadas → tiempo_ms: 5000  CRÍTICO
+[CREAR-PEDIDO]  PASO 7B: Imágenes de EPPs procesadas → tiempo_ms: 2000  CRÍTICO
+[CREAR-PEDIDO]  PASO 8: Cálculo de cantidades → tiempo_ms: 100
 ```
 
 **Log final con resumen:**
@@ -87,9 +87,9 @@ storage/logs/laravel.log
 ```
 
 **Interpretación:**
-- ⚠️ Si `paso_7_imagenes_ms` > 3000ms → **Cuello de botella en procesamiento de imágenes**
-- ⚠️ Si `paso_7b_epps_ms` > 1500ms → **Cuello de botella en EPPs**
-- ✅ Si `paso_5_pedido_base_ms` > 500ms → Problema en creación del modelo
+-  Si `paso_7_imagenes_ms` > 3000ms → **Cuello de botella en procesamiento de imágenes**
+-  Si `paso_7b_epps_ms` > 1500ms → **Cuello de botella en EPPs**
+-  Si `paso_5_pedido_base_ms` > 500ms → Problema en creación del modelo
 
 ---
 
@@ -107,7 +107,7 @@ storage/logs/laravel.log
 
 **Por cada imagen procesada:**
 ```
-[RESOLVER-IMAGENES] ✅ Imagen procesada
+[RESOLVER-IMAGENES]  Imagen procesada
 {
   "imagen_uid": "img-uuid-abc",
   "ruta": "pedidos/123/prenda/img123.webp",
@@ -117,7 +117,7 @@ storage/logs/laravel.log
 
 **Log final:**
 ```
-[RESOLVER-IMAGENES] ✅ Extracción completada
+[RESOLVER-IMAGENES]  Extracción completada
 {
   "imagenes_procesadas": 10,
   "imagenes_esperadas": 10,
@@ -144,7 +144,7 @@ storage/logs/laravel.log
   "file_size_kb": 500
 }
 
-[IMAGE-UPLOAD] ✅ Imagen guardada directamente
+[IMAGE-UPLOAD]  Imagen guardada directamente
 {
   "tiempo_total_ms": 150,
   "desglose": {
@@ -171,7 +171,7 @@ storage/logs/laravel.log
   "timestamp": "2026-01-29 21:30:45"
 }
 
-[MAPEO-IMAGENES] ✅ Mapeo UID→Ruta completado
+[MAPEO-IMAGENES]  Mapeo UID→Ruta completado
 {
   "imagenes_mapeadas": 15,
   "tiempo_resolver_ms": 2000
@@ -198,7 +198,7 @@ tail -f storage/logs/laravel.log | grep "CREAR-PEDIDO"
 tail -f storage/logs/laravel.log | grep "IMAGE-UPLOAD\|RESOLVER-IMAGENES\|MAPEO-IMAGENES"
 
 # Ver resumen rápido (sin debug)
-tail -100 storage/logs/laravel.log | grep "✨\|⏱️\|⚠️" | tail -20
+tail -100 storage/logs/laravel.log | grep "✨\|⏱️\|" | tail -20
 ```
 
 ### 🔴 Escenarios de Problemas Comunes
@@ -223,7 +223,7 @@ Si tiempo_total_ms > 10000ms:
 
 #### 3. **Imágenes no se guardan**
 ```
-Buscar: [RESOLVER-IMAGENES] ✅ Extracción completada
+Buscar: [RESOLVER-IMAGENES]  Extracción completada
 Si imagenes_esperadas > imagenes_procesadas:
   → Imagen superior: [RESOLVER-IMAGENES] ❌ ERROR CRÍTICO
   → Problema en FormData del frontend o archivos perdidos
@@ -231,7 +231,7 @@ Si imagenes_esperadas > imagenes_procesadas:
 
 #### 4. **Conversión WebP lenta**
 ```
-Buscar: [IMAGE-UPLOAD] ✅ Imagen guardada directamente
+Buscar: [IMAGE-UPLOAD]  Imagen guardada directamente
 Si guardado_webp_ms > 300ms (promedio):
   → Aumentar memoria PHP
   → Reducir resolución de imágenes
@@ -240,7 +240,7 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ---
 
-## 📊 Métricas de Referencia (Tiempos Esperados)
+##  Métricas de Referencia (Tiempos Esperados)
 
 | Componente | Normal | Alerta | Crítico |
 |---|---|---|---|
@@ -275,10 +275,10 @@ Si guardado_webp_ms > 300ms (promedio):
 
 ## 📝 Notas Importantes
 
-- ✅ Los logs usan prefijo `[CREAR-PEDIDO]`, `[RESOLVER-IMAGENES]`, etc. para fácil filtrado
-- ✅ Todos los tiempos están en **milisegundos (ms)**
-- ✅ Los logs incluyen "resumen" en una línea para análisis rápido
-- ⚠️ **NO dejar estos logs en producción** - aumentan overhead (2-5%)
+-  Los logs usan prefijo `[CREAR-PEDIDO]`, `[RESOLVER-IMAGENES]`, etc. para fácil filtrado
+-  Todos los tiempos están en **milisegundos (ms)**
+-  Los logs incluyen "resumen" en una línea para análisis rápido
+-  **NO dejar estos logs en producción** - aumentan overhead (2-5%)
 - 🔐 Después de debugging, considerar cambiar `Log::info()` a `Log::debug()` para reducir ruido
 
 ---

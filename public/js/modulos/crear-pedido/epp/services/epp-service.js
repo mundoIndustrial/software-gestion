@@ -35,7 +35,7 @@ class EppService {
         if (typeof abrirModalAgregarEPP === 'function') {
             abrirModalAgregarEPP(); // Función del template Blade
         } else {
-            console.warn('⚠️ [EppService] abrirModalAgregarEPP() no definida');
+            console.warn(' [EppService] abrirModalAgregarEPP() no definida');
         }
     }
 
@@ -108,12 +108,12 @@ class EppService {
         const resultados = document.getElementById('resultadosBuscadorEPP');
         if (resultados) {
             resultados.style.display = 'none';
-            console.log('[EppService] ✅ Lista de búsqueda cerrada');
+            console.log('[EppService]  Lista de búsqueda cerrada');
         }
         const inputBuscador = document.getElementById('inputBuscadorEPP');
         if (inputBuscador) {
             inputBuscador.value = '';
-            console.log('[EppService] ✅ Buscador limpiado');
+            console.log('[EppService]  Buscador limpiado');
         }
     }
 
@@ -279,7 +279,7 @@ class EppService {
             if (window.eppNotificationService) {
                 const mensaje = pedidoEppId ? 'EPP actualizado correctamente' : 'EPP agregado al pedido correctamente';
                 window.eppNotificationService.mostrarExitoModal(
-                    '✅ ' + (pedidoEppId ? 'Actualizado' : 'Agregado'),
+                    ' ' + (pedidoEppId ? 'Actualizado' : 'Agregado'),
                     mensaje
                 );
             }
@@ -319,7 +319,7 @@ class EppService {
                     cantidad: valores.cantidad,
                     observaciones: valores.observaciones
                 }).then(resultado => {
-                    console.log('[EppService] ✅ pedido_epp actualizado en BD:', resultado);
+                    console.log('[EppService]  pedido_epp actualizado en BD:', resultado);
                     
                     // Actualizar la tarjeta en el DOM
                     this.itemManager.actualizarItem(eppId, {
@@ -343,7 +343,7 @@ class EppService {
 
                     if (window.eppNotificationService) {
                         window.eppNotificationService.mostrarExito(
-                            '✅ EPP Actualizado',
+                            ' EPP Actualizado',
                             'Los cambios fueron guardados correctamente'
                         );
                     }
@@ -396,20 +396,20 @@ class EppService {
                 
                 // Agregar a GestionItemsUI si está disponible (mantiene sincronización)
                 if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPDesdeModal === 'function') {
-                    console.log('[EppService] ✅ USANDO GESTION ITEMS UI');
+                    console.log('[EppService]  USANDO GESTION ITEMS UI');
                     window.gestionItemsUI.agregarEPPDesdeModal(eppData);
                 } else {
                     // Fallback: agregar a window.itemsPedido si GestionItemsUI no está disponible
-                    console.log('[EppService] ⚠️ FALLBACK A window.itemsPedido (gestionItemsUI no disponible)');
+                    console.log('[EppService]  FALLBACK A window.itemsPedido (gestionItemsUI no disponible)');
                     if (!window.itemsPedido) {
                         window.itemsPedido = [];
                     }
                     window.itemsPedido.push(eppData);
                     console.log('[EppService] 📦 EPP agregado a window.itemsPedido. Total:', window.itemsPedido.length);
                     
-                    // ✅ TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
+                    //  TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
                     if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
-                        console.log('[EppService] ✅ TAMBIÉN agregando a gestionItemsUI.agregarEPPAlOrden');
+                        console.log('[EppService]  TAMBIÉN agregando a gestionItemsUI.agregarEPPAlOrden');
                         window.gestionItemsUI.agregarEPPAlOrden(eppData);
                     }
                 }
@@ -527,11 +527,11 @@ class EppService {
                     </div>
                 `).join('');
                 container.innerHTML = html;
-                console.log('✅ [EppService] HTML renderizado en contenedor');
+                console.log(' [EppService] HTML renderizado en contenedor');
             }
 
             container.style.display = 'block';
-            console.log('✅ [EppService] Contenedor visible:', container.style.display);
+            console.log(' [EppService] Contenedor visible:', container.style.display);
         } catch (error) {
 
             container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #dc2626;">Error al buscar EPP</div>`;
@@ -558,8 +558,8 @@ class EppService {
             }
             
             const result = await response.json();
-            console.log('✅ [EppService] Resultado JSON recibido:', result);
-            console.log('✅ [EppService] Total EPPs encontrados:', result.data?.length || 0);
+            console.log(' [EppService] Resultado JSON recibido:', result);
+            console.log(' [EppService] Total EPPs encontrados:', result.data?.length || 0);
             
             return result.data && Array.isArray(result.data) ? result.data : [];
         } catch (error) {

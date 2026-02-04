@@ -40,9 +40,9 @@ class TestProcesosAutomaticos extends Command
                 'forma_de_pago' => 'Contado'
             ]);
             
-            $this->info("✅ Pedido de prueba creado: {$pedidoPendiente->numero_pedido}");
+            $this->info(" Pedido de prueba creado: {$pedidoPendiente->numero_pedido}");
         } else {
-            $this->info("✅ Pedido encontrado: {$pedidoPendiente->numero_pedido}");
+            $this->info(" Pedido encontrado: {$pedidoPendiente->numero_pedido}");
         }
 
         // 2. Verificar si tiene prendas asociadas
@@ -51,7 +51,7 @@ class TestProcesosAutomaticos extends Command
         $prendas = PrendaPedido::where('pedido_produccion_id', $pedidoPendiente->id)->get();
 
         if ($prendas->isEmpty()) {
-            $this->warn('⚠️  El pedido no tiene prendas asociadas. Creando prendas de prueba...');
+            $this->warn('  El pedido no tiene prendas asociadas. Creando prendas de prueba...');
             
             // Crear prendas de prueba
             $prenda1 = PrendaPedido::create([
@@ -68,10 +68,10 @@ class TestProcesosAutomaticos extends Command
                 'de_bodega' => true
             ]);
             
-            $this->info('✅ Creadas 2 prendas de prueba');
+            $this->info(' Creadas 2 prendas de prueba');
             $prendas = PrendaPedido::where('pedido_produccion_id', $pedidoPendiente->id)->get();
         } else {
-            $this->info("✅ El pedido tiene {$prendas->count()} prendas asociadas");
+            $this->info(" El pedido tiene {$prendas->count()} prendas asociadas");
         }
 
         // 3. Probar la creación automática de procesos
@@ -81,7 +81,7 @@ class TestProcesosAutomaticos extends Command
         $resultado = $procesoService->crearProcesosParaPedido($pedidoPendiente->numero_pedido);
 
         if ($resultado['success']) {
-            $this->info('✅ Procesos creados exitosamente');
+            $this->info(' Procesos creados exitosamente');
             $this->line("   Total procesos creados: {$resultado['procesos_creados']}");
             
             if (!empty($resultado['detalles'])) {
@@ -99,7 +99,7 @@ class TestProcesosAutomaticos extends Command
         $this->info('4. Verificando procesos en la base de datos...');
         $procesosCreados = ProcesosPrenda::where('numero_pedido', $pedidoPendiente->numero_pedido)->get();
 
-        $this->line("✅ Total de procesos en BD: {$procesosCreados->count()}");
+        $this->line(" Total de procesos en BD: {$procesosCreados->count()}");
         foreach ($procesosCreados as $proceso) {
             $this->line("   - ID: {$proceso->id}, Proceso: {$proceso->proceso}, Estado: {$proceso->estado_proceso}");
             $this->line("     Fecha inicio: {$proceso->fecha_inicio}, Código: {$proceso->codigo_referencia}");
@@ -116,7 +116,7 @@ class TestProcesosAutomaticos extends Command
         $resultadoCompleto = $materialesService->cambiarEstadoPedido($pedidoPendiente->numero_pedido, 'En Ejecución');
 
         if ($resultadoCompleto['success']) {
-            $this->info('✅ Flujo completo exitoso');
+            $this->info(' Flujo completo exitoso');
             $this->line("   Mensaje: {$resultadoCompleto['message']}");
             $this->line("   Estado: {$resultadoCompleto['estado']}, Área: {$resultadoCompleto['area']}");
             $this->line("   Procesos creados: {$resultadoCompleto['procesos_creados']}");
@@ -143,7 +143,7 @@ class TestProcesosAutomaticos extends Command
             // Eliminar pedido creado
             $pedidoPendiente->delete();
             
-            $this->info('✅ Datos de prueba eliminados');
+            $this->info(' Datos de prueba eliminados');
         }
 
         $this->line('');

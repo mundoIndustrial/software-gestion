@@ -19,7 +19,7 @@
     // Función para inicializar los servicios
     function inicializarServicios() {
         if (inicializado) {
-            console.log('🔧 [INIT-STORAGE] Servicios ya inicializados, omitiendo...');
+            console.log(' [INIT-STORAGE] Servicios ya inicializados, omitiendo...');
             return;
         }
         
@@ -50,7 +50,7 @@
                 // Timeout para evitar bucles infinitos (máximo 5 segundos)
                 timeoutServicio = setTimeout(() => {
                     if (esperandoServicio) {
-                        console.warn('⚠️ [INIT-STORAGE] Timeout esperando ImageStorageService, deteniendo espera');
+                        console.warn(' [INIT-STORAGE] Timeout esperando ImageStorageService, deteniendo espera');
                         esperandoServicio = false;
                         timeoutServicio = null;
                     }
@@ -89,7 +89,7 @@
     function inicializarBuscador() {
         // Solo inicializar el buscador si hay datos de cotizaciones disponibles
         if (!window.cotizacionesData || !Array.isArray(window.cotizacionesData) || window.cotizacionesData.length === 0) {
-            console.log('ℹ️ [INIT-BUSCADOR] No hay datos de cotizaciones disponibles, omitiendo inicialización del buscador');
+            console.log(' [INIT-BUSCADOR] No hay datos de cotizaciones disponibles, omitiendo inicialización del buscador');
             return;
         }
         
@@ -103,12 +103,12 @@
         const hiddenInput = document.getElementById('cotizacion_id_editable');
         
         if (!searchInput) {
-            console.log('ℹ️ [INIT-BUSCADOR] Elemento de búsqueda no encontrado, omitiendo');
+            console.log(' [INIT-BUSCADOR] Elemento de búsqueda no encontrado, omitiendo');
             return;
         }
         
         if (!dropdown) {
-            console.log('ℹ️ [INIT-BUSCADOR] Dropdown no encontrado, omitiendo');
+            console.log(' [INIT-BUSCADOR] Dropdown no encontrado, omitiendo');
             return;
         }
         
@@ -138,7 +138,7 @@
                 cliente: cot.cliente?.nombre || cot.cliente || 'Sin cliente',
                 asesora: cot.asesor?.name || window.asesorActualNombre || 'N/A',
                 forma_pago: cot.especificaciones?.forma_pago || cot.forma_de_pago || 'N/A',
-                tipo_cotizacion: tipoNombre,  // ✅ Ya extraído correctamente
+                tipo_cotizacion: tipoNombre,  //  Ya extraído correctamente
                 estado: cot.estado || 'APROBADO_PARA_PEDIDO',
                 // Mantener datos originales para cargar después
                 original: cot
@@ -146,8 +146,8 @@
         });
 
         console.log('📋 Cotizaciones cargadas:', cotizacionesFormateadas.length);
-        console.log('🔍 DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  // ✅ Debug
-        console.log('🔍 DEBUG - Datos originales primero:', window.cotizacionesData[0]);  // ✅ Debug
+        console.log('🔍 DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  //  Debug
+        console.log('🔍 DEBUG - Datos originales primero:', window.cotizacionesData[0]);  //  Debug
         
         let cotizacionSeleccionada = null;
         
@@ -192,19 +192,19 @@
                 return;
             }
             
-            cotizaciones.forEach(cot => {  // ✅ Usar el parámetro cotizaciones, no cotizacionesFormateadas
+            cotizaciones.forEach(cot => {  //  Usar el parámetro cotizaciones, no cotizacionesFormateadas
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - ${cot.tipo_cotizacion}`;  // ✅ Incluir tipo en el dropdown
+                item.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - ${cot.tipo_cotizacion}`;  //  Incluir tipo en el dropdown
                 item.style.padding = '8px 12px';
                 item.style.cursor = 'pointer';
                 item.style.borderBottom = '1px solid #e5e7eb';
                 
                 item.addEventListener('click', function() {
                     selectedDiv.textContent = `${cot.numero_cotizacion} - ${cot.cliente}`;
-                    selectedText.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - Tipo: ${cot.tipo_cotizacion}`;  // ✅ Incluir tipo
+                    selectedText.textContent = `${cot.numero_cotizacion} - ${cot.cliente} (${cot.asesora}) - Tipo: ${cot.tipo_cotizacion}`;  //  Incluir tipo
                     
-                    // ✅ Actualizar el campo de tipo de cotización
+                    //  Actualizar el campo de tipo de cotización
                     const tipoCotElement = document.getElementById('cotizacion_tipo_text_editable');
                     if (tipoCotElement) {
                         tipoCotElement.textContent = cot.tipo_cotizacion;
@@ -236,7 +236,7 @@
             }
         });
         
-        console.log('✅ [INIT-BUSCADOR] Buscador de cotizaciones inicializado correctamente');
+        console.log(' [INIT-BUSCADOR] Buscador de cotizaciones inicializado correctamente');
     }
 
     // Verificar si el DOM ya está cargado

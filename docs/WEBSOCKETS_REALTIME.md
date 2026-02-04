@@ -6,11 +6,11 @@ Sistema completo de actualización en tiempo real para tabla de pedidos que util
 
 ##  Objetivos Cumplidos
 
-- ✅ **Eliminar polling constante** - Solo se actualiza cuando hay cambios reales
-- ✅ **WebSockets prioritarios** - Conexión instantánea cuando está disponible
-- ✅ **Fallback transparente** - Si WebSocket falla, usa polling automáticamente
-- ✅ **Mantener lógica existente** - Sin eliminar código, solo refactorización
-- ✅ **Experiencia fluida** - Sin recargas completas, actualizaciones parciales
+-  **Eliminar polling constante** - Solo se actualiza cuando hay cambios reales
+-  **WebSockets prioritarios** - Conexión instantánea cuando está disponible
+-  **Fallback transparente** - Si WebSocket falla, usa polling automáticamente
+-  **Mantener lógica existente** - Sin eliminar código, solo refactorización
+-  **Experiencia fluida** - Sin recargas completas, actualizaciones parciales
 
 ## 🏗️ Arquitectura
 
@@ -53,7 +53,7 @@ Sistema completo de actualización en tiempo real para tabla de pedidos que util
   - Actualización individual de filas para WebSocket
   - Detección de actividad y visibilidad
 
-## 📊 Flujo de Actualización
+##  Flujo de Actualización
 
 ### Flujo WebSocket (Ideal)
 ```
@@ -76,7 +76,7 @@ Sistema completo de actualización en tiempo real para tabla de pedidos que util
 6. Muestra indicador de modo fallback
 ```
 
-## 🔧 Configuración
+##  Configuración
 
 ### 1. Variables de Entorno (.env)
 ```env
@@ -145,7 +145,7 @@ curl -i -N -H "Connection: Upgrade" \
 ### Logs Importantes
 ```javascript
 // Conexión exitosa
-✅ [PedidosRealtime] WebSocket conectado
+ [PedidosRealtime] WebSocket conectado
 
 // Fallback activado
 🔄 [PedidosRealtime] Fallback a polling activado
@@ -187,17 +187,17 @@ curl -i -N -H "Connection: Upgrade" \
 ## 🔄 Compatibilidad
 
 ### Backward Compatibility
-- ✅ Sistema antiguo de polling sigue funcionando
-- ✅ Sin cambios en URLs existentes
-- ✅ Mismos endpoints de API
-- ✅ Estructura de datos idéntica
+-  Sistema antiguo de polling sigue funcionando
+-  Sin cambios en URLs existentes
+-  Mismos endpoints de API
+-  Estructura de datos idéntica
 
 ### Browser Support
-- ✅ Chrome 16+
-- ✅ Firefox 11+
-- ✅ Safari 7+
-- ✅ Edge 12+
-- ⚠️ IE 11 (sin WebSockets, usa fallback)
+-  Chrome 16+
+-  Firefox 11+
+-  Safari 7+
+-  Edge 12+
+-  IE 11 (sin WebSockets, usa fallback)
 
 ## 📝 Ejemplos de Uso
 

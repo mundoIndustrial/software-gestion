@@ -101,7 +101,7 @@
             
             // Datos de prendas Y epps - unificados en items
             prendas: [],
-            items: [],  // ✅ AGREGADO: array unificado con prendas + epps
+            items: [],  //  AGREGADO: array unificado con prendas + epps
             epps: [],
             fotos_nuevas: {},
             
@@ -121,20 +121,20 @@
 
             prendas.forEach((prenda, index) => {
                 const prendaParaEnviar = {
-                    tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
+                    tipo: 'prenda',  //  AGREGADO: identificador de tipo
                     nombre_producto: prenda.nombre_producto || '',
                     descripcion: prenda.descripcion || '',
-                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  // ✅ AGREGADO: origen (bodega=1, confección=0)
+                    de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  //  AGREGADO: origen (bodega=1, confección=0)
                     genero: prenda.genero || '',
                     cantidades: prenda.cantidadesPorTalla || {},
-                    // ✅ AGREGADO: recolectar imágenes desde gestor
+                    //  AGREGADO: recolectar imágenes desde gestor
                     imagenes: fotosNuevasGestor[index] || prenda.imagenes || [],
-                    // ✅ AGREGADO: recolectar telas desde prenda
+                    //  AGREGADO: recolectar telas desde prenda
                     telas: (prenda.telasAgregadas || []).map((tela, telaIdx) => ({
                         tela: tela.tela || '',
                         color: tela.color || '',
                         referencia: tela.referencia || '',
-                        // ✅ Imágenes de tela
+                        //  Imágenes de tela
                         imagenes: telasNuevasGestor?.[index]?.[telaIdx] || tela.imagenes || []
                     }))
                 };
@@ -142,7 +142,7 @@
                 // Solo agregar si tiene cantidades
                 if (Object.keys(prendaParaEnviar.cantidades).length > 0) {
                     datos.prendas.push(prendaParaEnviar);
-                    datos.items.push(prendaParaEnviar);  // ✅ AGREGADO: también en items
+                    datos.items.push(prendaParaEnviar);  //  AGREGADO: también en items
                 }
             });
         } else {
@@ -158,25 +158,25 @@
 
                 const prenda = {
                     index: index,
-                    tipo: 'prenda',  // ✅ AGREGADO: identificador de tipo
+                    tipo: 'prenda',  //  AGREGADO: identificador de tipo
                     nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
                     descripcion: card.querySelector('.prenda-descripcion')?.value || '',
-                    de_bodega: card.querySelector(`input[name="de_bodega[${index}]"]`)?.checked ? 1 : 0,  // ✅ AGREGADO: origen
+                    de_bodega: card.querySelector(`input[name="de_bodega[${index}]"]`)?.checked ? 1 : 0,  //  AGREGADO: origen
                     genero: card.querySelector(`select[name="genero[${index}]"]`)?.value || '',
                     cantidades: {},
-                    // ✅ AGREGADO: recolectar imágenes de prenda - extrayendo File objects del input
+                    //  AGREGADO: recolectar imágenes de prenda - extrayendo File objects del input
                     imagenes: [],
-                    // ✅ AGREGADO: recolectar telas
+                    //  AGREGADO: recolectar telas
                     telas: []
                 };
 
-                // ✅ Extraer imágenes de prenda desde input file (si existen archivos en el input)
+                //  Extraer imágenes de prenda desde input file (si existen archivos en el input)
                 const inputImagenPrenda = card.querySelector(`input[type="file"][data-prenda-imagenes="${index}"]`);
                 if (inputImagenPrenda && inputImagenPrenda.files && inputImagenPrenda.files.length > 0) {
                     prenda.imagenes = Array.from(inputImagenPrenda.files);
                 }
                 
-                // ✅ Extraer telas con sus imágenes
+                //  Extraer telas con sus imágenes
                 const telasContainer = card.querySelector('.telas-container');
                 if (telasContainer) {
                     const telaElements = telasContainer.querySelectorAll('.tela-item');
@@ -188,7 +188,7 @@
                             imagenes: []
                         };
                         
-                        // ✅ Extraer imágenes de tela
+                        //  Extraer imágenes de tela
                         const inputImagenTela = telaEl.querySelector(`input[type="file"][data-tela-imagenes]`);
                         if (inputImagenTela && inputImagenTela.files && inputImagenTela.files.length > 0) {
                             tela.imagenes = Array.from(inputImagenTela.files);
@@ -212,7 +212,7 @@
                 // Solo agregar si tiene cantidades
                 if (Object.keys(prenda.cantidades).length > 0) {
                     datos.prendas.push(prenda);
-                    datos.items.push(prenda);  // ✅ AGREGADO: también en items
+                    datos.items.push(prenda);  //  AGREGADO: también en items
                 }
             });
         }
@@ -236,14 +236,14 @@
             const eppsDelPedido = window.itemsPedido.filter(item => item.tipo === 'epp');
             if (eppsDelPedido.length > 0) {
                 datos.epps = eppsDelPedido.map(epp => ({
-                    tipo: 'epp',  // ✅ AGREGADO: identificador de tipo
+                    tipo: 'epp',  //  AGREGADO: identificador de tipo
                     epp_id: epp.epp_id,
                     cantidad: epp.cantidad || 1,
                     observaciones: epp.observaciones || null,
-                    // ✅ Incluir imágenes desde el objeto EPP del itemsPedido
+                    //  Incluir imágenes desde el objeto EPP del itemsPedido
                     imagenes: epp.imagenes || []
                 }));
-                // ✅ AGREGADO: también agregar EPPs a items para procesamiento unificado
+                //  AGREGADO: también agregar EPPs a items para procesamiento unificado
                 datos.items.push(...datos.epps);
                 console.debug('[prepararDatosParaEnvio] EPPs a enviar:', datos.epps);
             }
@@ -363,7 +363,7 @@
                         });
                     }
                     
-                    // ✅ Procesos con imágenes (NUEVO)
+                    //  Procesos con imágenes (NUEVO)
                     if (item.procesos && Array.isArray(item.procesos)) {
                         item.procesos.forEach((proceso, procesoIdx) => {
                             formData.append(`items[${itemIndex}][procesos][${procesoIdx}][nombre]`, proceso.nombre || '');
@@ -416,7 +416,7 @@
                         formData.append(`epps[${eppIndex}][observaciones]`, epp.observaciones);
                     }
                     
-                    // ✅ Agregar imágenes de EPP al FormData
+                    //  Agregar imágenes de EPP al FormData
                     if (epp.imagenes && Array.isArray(epp.imagenes)) {
                         epp.imagenes.forEach((img, imgIdx) => {
                             if (img instanceof File) {

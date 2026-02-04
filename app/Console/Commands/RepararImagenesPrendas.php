@@ -68,10 +68,10 @@ class RepararImagenesPrendas extends Command
         $this->line("\n════════════════════════════════════════════════════");
 
         if ($totalProblemas === 0) {
-            $this->info("✅ DIAGNÓSTICO COMPLETADO - SIN PROBLEMAS");
+            $this->info(" DIAGNÓSTICO COMPLETADO - SIN PROBLEMAS");
         } else {
             if ($fix) {
-                $this->info("✅ REPARACIÓN COMPLETADA");
+                $this->info(" REPARACIÓN COMPLETADA");
                 $this->info(" Se ejecutaron las correcciones automáticas");
             } else {
                 $this->warn(" Se encontraron {$totalProblemas} problemas");

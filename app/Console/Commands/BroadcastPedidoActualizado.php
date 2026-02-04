@@ -57,7 +57,7 @@ class BroadcastPedidoActualizado extends Command
             // AQUÍ se ejecuta el broadcast con timeout normal (no urgente)
             PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
 
-            Log::info('✅ Broadcast PedidoActualizado enviado (background)', [
+            Log::info(' Broadcast PedidoActualizado enviado (background)', [
                 'pedido_id' => $pedidoId,
                 'asesor_id' => $asesorId,
                 'action' => $action,

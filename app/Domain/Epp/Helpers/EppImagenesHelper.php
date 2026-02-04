@@ -32,7 +32,7 @@ class EppImagenesHelper
      */
     public static function verificarTablaIgnorada(): void
     {
-        Log::debug('✅ [EPP-IMAGENES] Tabla epp_imagenes está siendo ignorada correctamente');
+        Log::debug(' [EPP-IMAGENES] Tabla epp_imagenes está siendo ignorada correctamente');
     }
 
     /**
@@ -109,7 +109,7 @@ class EppImagenesHelper
      */
     public static function logEliminarImagenPedido(int $imagenId, string $ruta): void
     {
-        Log::info('✅ [EPP-IMAGENES] Imagen de pedido_epp_imagenes eliminada', [
+        Log::info(' [EPP-IMAGENES] Imagen de pedido_epp_imagenes eliminada', [
             'imagen_id' => $imagenId,
             'ruta' => $ruta,
         ]);

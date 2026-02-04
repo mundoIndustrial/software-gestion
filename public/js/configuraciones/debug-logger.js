@@ -1,9 +1,9 @@
 /**
- * 📊 Debug Logger - Control centralizado de logs
+ *  Debug Logger - Control centralizado de logs
  * Desactiva logs pesados en producción
  */
 
-// ✅ Detectar modo: usar variable global o localStorage
+//  Detectar modo: usar variable global o localStorage
 const isProduction = !window.DEBUG_MODE && (
     document.documentElement.getAttribute('data-env') === 'production' ||
     localStorage.getItem('app-env') === 'production' ||

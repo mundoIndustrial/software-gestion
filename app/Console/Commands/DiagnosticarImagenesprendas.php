@@ -56,7 +56,7 @@ class DiagnosticarImagenesPrendas extends Command
         }
 
         $this->info("\n═════════════════════════════════════════════════");
-        $this->info("✅ DIAGNÓSTICO COMPLETADO");
+        $this->info(" DIAGNÓSTICO COMPLETADO");
         if ($reparar) {
             $this->info(" Reparaciones ejecutadas");
         }
@@ -91,8 +91,8 @@ class DiagnosticarImagenesPrendas extends Command
         $archivoWebpExiste = Storage::disk('public')->exists($rutaWebp);
         $archivoOriginalExiste = Storage::disk('public')->exists($rutaOriginal);
 
-        $this->line("   ├─ WebP existe: " . ($archivoWebpExiste ? '✅' : ''));
-        $this->line("   └─ Original existe: " . ($archivoOriginalExiste ? '✅' : ''));
+        $this->line("   ├─ WebP existe: " . ($archivoWebpExiste ? '' : ''));
+        $this->line("   └─ Original existe: " . ($archivoOriginalExiste ? '' : ''));
 
         if (!$archivoWebpExiste && !empty($rutaWebp)) {
             $problemas[] = " Archivo WebP NO EXISTE: {$rutaWebp}";

@@ -208,7 +208,7 @@
     <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
     <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
 
-    <!-- ⚠️ MESSAGE HANDLER UNIVERSAL - Para listeners de extensiones y mensajes -->
+    <!--  MESSAGE HANDLER UNIVERSAL - Para listeners de extensiones y mensajes -->
     <script src="{{ asset('js/message-handler-universal.js') }}"></script>
 
     <!-- Script crítico para prevenir flash de tema - DEBE estar ANTES de CSS -->

@@ -6,7 +6,7 @@
 class ReceiptManager {
     constructor(datosFactura, prendasIndex = null, contenedorId = null) {
         // ===== DEBUG: Verificar datos de entrada =====
-        console.group('[ReceiptManager] ✅ CONSTRUCTOR INICIADO');
+        console.group('[ReceiptManager]  CONSTRUCTOR INICIADO');
         console.log('═══════════════════════════════════════════════════════════');
         console.log('📥 PARÁMETROS RECIBIDOS EN CONSTRUCTOR:');
         console.log('  datosFactura.cliente:', datosFactura.cliente);
@@ -50,7 +50,7 @@ class ReceiptManager {
 
         this.inicializarEventos();
         this.crearSelectorPrendas();
-        console.log('✅ [ReceiptManager] Constructor completado. Recibos generados:', this.recibos.length);
+        console.log(' [ReceiptManager] Constructor completado. Recibos generados:', this.recibos.length);
         this.renderizar();
     }
 

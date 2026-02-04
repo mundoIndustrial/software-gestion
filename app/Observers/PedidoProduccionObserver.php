@@ -18,7 +18,7 @@ class PedidoProduccionObserver
      */
     public function updated(PedidoProduccion $pedido): void
     {
-        Log::info('🔢 [PedidoProduccionObserver] UPDATED method called', [
+        Log::info(' [PedidoProduccionObserver] UPDATED method called', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'estado_anterior' => $pedido->getOriginal('estado'),
@@ -243,7 +243,7 @@ class PedidoProduccionObserver
         $estadoAnterior = $pedido->getOriginal('estado');
         $estadoNuevo = $pedido->estado;
         
-        Log::info('🔢 [PedidoProduccionObserver] Detectando cambio de estado para consecutivos', [
+        Log::info(' [PedidoProduccionObserver] Detectando cambio de estado para consecutivos', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'estado_anterior' => $estadoAnterior,
@@ -255,14 +255,14 @@ class PedidoProduccionObserver
             $generado = $consecutivosService->generarConsecutivosSiAplica($pedido, $estadoAnterior, $estadoNuevo);
             
             if ($generado) {
-                Log::info('🔢 [PedidoProduccionObserver] Consecutivos generados exitosamente', [
+                Log::info(' [PedidoProduccionObserver] Consecutivos generados exitosamente', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
                 ]);
             }
             
         } catch (\Exception $e) {
-            Log::error('🔢 [PedidoProduccionObserver] Error al generar consecutivos', [
+            Log::error(' [PedidoProduccionObserver] Error al generar consecutivos', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'estado_anterior' => $estadoAnterior,

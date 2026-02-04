@@ -88,10 +88,10 @@ INSERT: {pedido_id: 3, tipo_recibo: COSTURA-BODEGA, consecutivo_actual: 2, conse
 **Método:** `private function generarConsecutivoCosturaBodega(PedidoProduccion $pedido): void`
 
 **Cambios:**
-1. ✅ Eliminó verificación temprana (`$existe`)
-2. ✅ Ahora siempre incrementa consecutivo
-3. ✅ Distingue entre CREATE vs UPDATE
-4. ✅ Logs diferenciados por acción
+1.  Eliminó verificación temprana (`$existe`)
+2.  Ahora siempre incrementa consecutivo
+3.  Distingue entre CREATE vs UPDATE
+4.  Logs diferenciados por acción
 
 **Líneas:** 314-391 (aprox.)
 
@@ -100,9 +100,9 @@ INSERT: {pedido_id: 3, tipo_recibo: COSTURA-BODEGA, consecutivo_actual: 2, conse
 ## Limpieza Realizada
 
 Se ejecutó `reset-costura-bodega.php` que:
-1. ✅ Eliminó 6 registros COSTURA-BODEGA con consecutivo_actual=0 (del seeder antiguo)
-2. ✅ Reseteó consecutivo COSTURA-BODEGA a 0 en "consecutivos_recibos"
-3. ✅ Base de datos lista para nueva aprobación
+1.  Eliminó 6 registros COSTURA-BODEGA con consecutivo_actual=0 (del seeder antiguo)
+2.  Reseteó consecutivo COSTURA-BODEGA a 0 en "consecutivos_recibos"
+3.  Base de datos lista para nueva aprobación
 
 ---
 
@@ -125,7 +125,7 @@ Se ejecutó `reset-costura-bodega.php` que:
 
 ## Validación
 
-✅ Sintaxis PHP verificada (sin errores)
-✅ Base de datos limpiada
-✅ Lógica lista para flujo real
+ Sintaxis PHP verificada (sin errores)
+ Base de datos limpiada
+ Lógica lista para flujo real
 

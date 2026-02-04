@@ -16,7 +16,7 @@
     // Función para inicializar los servicios
     function inicializarServicios() {
         if (inicializado) {
-            console.log('🔧 [INIT-STORAGE] Servicios ya inicializados, omitiendo...');
+            console.log(' [INIT-STORAGE] Servicios ya inicializados, omitiendo...');
             return;
         }
         

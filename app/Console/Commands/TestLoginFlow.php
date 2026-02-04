@@ -44,7 +44,7 @@ class TestLoginFlow extends Command
             return;
         }
         
-        $this->line("   ✅ Usuario encontrado: {$user->name} (ID: {$user->id})");
+        $this->line("    Usuario encontrado: {$user->name} (ID: {$user->id})");
         $this->line('');
 
         // Step 2: Try authentication
@@ -52,7 +52,7 @@ class TestLoginFlow extends Command
         $credentials = ['email' => $email, 'password' => $password];
         
         if (Auth::attempt($credentials)) {
-            $this->line('   ✅ Autenticación exitosa');
+            $this->line('    Autenticación exitosa');
         } else {
             $this->error('   ❌ Autenticación fallida');
             $this->line('   Posibles causas:');
@@ -76,7 +76,7 @@ class TestLoginFlow extends Command
         $authenticatedUser = Auth::user();
         
         if ($authenticatedUser) {
-            $this->line("   ✅ Usuario autenticado: {$authenticatedUser->name}");
+            $this->line("    Usuario autenticado: {$authenticatedUser->name}");
         } else {
             $this->error('   ❌ No hay usuario autenticado');
             return;
@@ -88,7 +88,7 @@ class TestLoginFlow extends Command
         $this->info('Step 4: Verificar rol del usuario');
         
         if ($authenticatedUser->hasRole('costurero')) {
-            $this->line('   ✅ Usuario tiene rol costurero');
+            $this->line('    Usuario tiene rol costurero');
         } else {
             $this->error('   ❌ Usuario NO tiene rol costurero');
         }
@@ -99,7 +99,7 @@ class TestLoginFlow extends Command
         $this->info('Step 5: Verificar middleware OperarioAccess');
         
         if ($authenticatedUser->hasAnyRole(['cortador', 'costurero'])) {
-            $this->line('   ✅ Middleware OperarioAccess permitiría acceso');
+            $this->line('    Middleware OperarioAccess permitiría acceso');
         } else {
             $this->error('   ❌ Middleware OperarioAccess rechazaría acceso');
         }
@@ -113,7 +113,7 @@ class TestLoginFlow extends Command
             $service = app(\App\Application\Operario\Services\ObtenerPedidosOperarioService::class);
             $datosOperario = $service->obtenerPedidosDelOperario($authenticatedUser);
             
-            $this->line("   ✅ Datos del operario obtenidos correctamente");
+            $this->line("    Datos del operario obtenidos correctamente");
             $this->line("      Total pedidos: " . count($datosOperario->pedidos));
             $this->line("      Tipo: {$datosOperario->tipo}");
             
@@ -123,7 +123,7 @@ class TestLoginFlow extends Command
         }
         
         $this->line('');
-        $this->line('✅ LOGIN FLOW TEST COMPLETADO EXITOSAMENTE');
+        $this->line(' LOGIN FLOW TEST COMPLETADO EXITOSAMENTE');
         $this->line('');
         
         // Logout

@@ -69,22 +69,22 @@ class PrendaCardService {
             // 4. Generar HTML completo
             console.log('[PrendaCardService.generar]  GENERANDO HTML COMPLETO...');
             const htmlCompleto = this._generarHTMLTarjeta(prenda, indice, fotoPrincipal, fotoTela, infoTela, variacionesHTML, tallasHTML, procesosHTML);
-            console.log('[PrendaCardService.generar] ✅ HTML generado, length:', htmlCompleto ? htmlCompleto.length : 0);
+            console.log('[PrendaCardService.generar]  HTML generado, length:', htmlCompleto ? htmlCompleto.length : 0);
             
             // 5. Inicializar event listeners después de un pequeño delay para asegurar que el HTML esté en el DOM
             setTimeout(() => {
-                console.log('[PrendaCardService.generar] 🔧 INICIALIZANDO EVENT LISTENERS...');
+                console.log('[PrendaCardService.generar]  INICIALIZANDO EVENT LISTENERS...');
                 if (typeof window.inicializarTarjetaReadOnly === 'function') {
                     // Buscar la tarjeta recién creada
                     const tarjetaElement = document.querySelector(`[data-prenda-index="${indice}"]`);
                     if (tarjetaElement) {
-                        console.log('[PrendaCardService.generar] ✅ Tarjeta encontrada, inicializando handlers');
+                        console.log('[PrendaCardService.generar]  Tarjeta encontrada, inicializando handlers');
                         window.inicializarTarjetaReadOnly(tarjetaElement, prenda, indice);
                     } else {
-                        console.log('[PrendaCardService.generar] ⚠️ Tarjeta no encontrada para inicializar');
+                        console.log('[PrendaCardService.generar]  Tarjeta no encontrada para inicializar');
                     }
                 } else {
-                    console.log('[PrendaCardService.generar] ⚠️ inicializarTarjetaReadOnly no disponible');
+                    console.log('[PrendaCardService.generar]  inicializarTarjetaReadOnly no disponible');
                 }
             }, 100);
             

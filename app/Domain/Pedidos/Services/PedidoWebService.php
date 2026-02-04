@@ -238,7 +238,7 @@ class PedidoWebService
      */
     private function crearVariantesPrenda(PrendaPedido $prenda, array $variaciones): void
     {
-        Log::info('[PedidoWebService] 🔧 Creando variantes', [
+        Log::info('[PedidoWebService]  Creando variantes', [
             'prenda_id' => $prenda->id,
             'variaciones' => $variaciones
         ]);
@@ -254,7 +254,7 @@ class PedidoWebService
                 'bolsillos_obs' => $variaciones['obs_bolsillos'] ?? null,
             ]);
 
-            Log::info('[PedidoWebService] ✅ Variantes creadas exitosamente', [
+            Log::info('[PedidoWebService]  Variantes creadas exitosamente', [
                 'prenda_id' => $prenda->id,
                 'tipo_manga_id' => $variaciones['tipo_manga_id'] ?? null,
                 'tipo_broche_boton_id' => $variaciones['tipo_broche_boton_id'] ?? null,
@@ -336,7 +336,7 @@ class PedidoWebService
                 //     $this->guardarImagenesTela($colorTela, $telaData['imagenes'], $prenda->pedido_produccion_id);
                 // }
             } else {
-                // ✅ MEJORADO: Usar ColorTelaService para obtener o crear colores/telas
+                //  MEJORADO: Usar ColorTelaService para obtener o crear colores/telas
                 $telaId = null;
                 $colorId = null;
 
@@ -368,7 +368,7 @@ class PedidoWebService
                         'tela_data' => $telaData,
                     ]);
                     
-                    // 🔧 FALLBACK: Buscar directamente en BD si el servicio falla
+                    //  FALLBACK: Buscar directamente en BD si el servicio falla
                     try {
                         if (isset($telaData['tela']) && !$telaId) {
                             $tela = TelaPrenda::where('nombre', 'like', '%' . $telaData['tela'] . '%')->first();
@@ -399,7 +399,7 @@ class PedidoWebService
                     }
                 }
 
-                // 🔧 MEJORADO: Si solo tiene color pero no tela, buscar tela con mismo nombre
+                //  MEJORADO: Si solo tiene color pero no tela, buscar tela con mismo nombre
                 Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Verificando búsqueda de tela', [
                     'colorId' => $colorId,
                     'telaId' => $telaId,

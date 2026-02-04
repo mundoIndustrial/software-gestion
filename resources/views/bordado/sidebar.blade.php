@@ -151,7 +151,7 @@
         });
 
         // Log de clases CSS encontradas
-        console.log('📊 [DOM-LOADED] Clases CSS verificadas:');
+        console.log(' [DOM-LOADED] Clases CSS verificadas:');
         console.log('  - .sidebar:', document.querySelectorAll('.sidebar').length);
         console.log('  - .nav-item:', document.querySelectorAll('.nav-item').length);
         console.log('  - .nav-submenu:', document.querySelectorAll('.nav-submenu').length);
@@ -211,7 +211,7 @@
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                console.log('🔔 [SIDEBAR-MONITOR] Cambio de clase detectado en:', mutation.target.id || mutation.target.className);
+                console.log(' [SIDEBAR-MONITOR] Cambio de clase detectado en:', mutation.target.id || mutation.target.className);
                 console.log('  - Nuevas clases:', mutation.target.className);
             }
         });

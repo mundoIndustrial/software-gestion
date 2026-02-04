@@ -30,14 +30,14 @@
             window.gestorPedidoSinCotizacion.agregarPrenda();
         });
 
-        console.log('[agregador-prendas-cotizacion] ✅ Todas las prendas agregadas al gestor');
+        console.log('[agregador-prendas-cotizacion]  Todas las prendas agregadas al gestor');
         
         // Renderizar usando el renderizador de cotizaciones
         if (window.renderizarPrendasDesdeCotizacion) {
             console.log('[agregador-prendas-cotizacion]  Renderizando con renderizador de cotizaciones');
             window.renderizarPrendasDesdeCotizacion(window.gestorPedidoSinCotizacion.obtenerTodas());
         } else {
-            console.warn('[agregador-prendas-cotizacion] ⚠️ renderizador no disponible');
+            console.warn('[agregador-prendas-cotizacion]  renderizador no disponible');
         }
 
         return true;

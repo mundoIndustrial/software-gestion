@@ -12,7 +12,7 @@ export class GalleryManager {
     static async abrirGaleria(modalManager) {
         // Evitar múltiples aperturas simultáneas
         if (GalleryManager._isOpening) {
-            console.warn('[GalleryManager] ⚠️ Galería ya se está abriendo, evitando duplicado');
+            console.warn('[GalleryManager]  Galería ya se está abriendo, evitando duplicado');
             return false;
         }
         
@@ -59,7 +59,7 @@ export class GalleryManager {
                 fotosParaMostrar = [...imagenesLimpias];
             }
             
-            console.log('📊 Total imágenes a mostrar:', fotosParaMostrar.length);
+            console.log(' Total imágenes a mostrar:', fotosParaMostrar.length);
             
             // La galería siempre se abre, incluso sin imágenes
             const modalWrapper = modalManager.getModalWrapper();
@@ -118,17 +118,17 @@ export class GalleryManager {
                         }
                     }
                 } else {
-                    console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado por ID');
+                    console.log('[GalleryManager.abrirGaleria]  Botón encontrado por ID');
                 }
                 
                 if (btnCerrarFactura) {
-                    console.log('[GalleryManager.abrirGaleria] ✅ Botón encontrado, ocultando...');
+                    console.log('[GalleryManager.abrirGaleria]  Botón encontrado, ocultando...');
                     btnCerrarFactura.style.display = 'none';
                     // Guardar referencia global para poder mostrarla después
                     window.btnFacturaGlobal = btnCerrarFactura;
-                    console.log('[GalleryManager.abrirGaleria] ✅ Botón oculto. Display:', btnCerrarFactura.style.display);
+                    console.log('[GalleryManager.abrirGaleria]  Botón oculto. Display:', btnCerrarFactura.style.display);
                 } else {
-                    console.warn('[GalleryManager.abrirGaleria] ⚠️ Botón NO encontrado');
+                    console.warn('[GalleryManager.abrirGaleria]  Botón NO encontrado');
                 }
                 
                 // Renderizar galería
@@ -211,7 +211,7 @@ export class GalleryManager {
                     data-indice="${idx}"
                     data-fotos='${fotosJSON}'>
                     <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" 
-                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'>⚠️ Error al cargar imagen</div>';">
+                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;\\'> Error al cargar imagen</div>';">
                 </div>
             `;
         });

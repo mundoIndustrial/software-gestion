@@ -21,7 +21,7 @@
             return;
         }
 
-        // ✅ LIMPIAR COMPLETAMENTE el container ANTES de agregar nuevos elementos
+        //  LIMPIAR COMPLETAMENTE el container ANTES de agregar nuevos elementos
         console.log('[renderizador-cotizaciones] 🧹 Limpiando container...');
         while (container.firstChild) {
             container.removeChild(container.firstChild);
@@ -57,7 +57,7 @@
                     }
                 }
             } else {
-                console.warn('[renderizador-cotizaciones] ⚠️ generarTarjetaPrendaReadOnly no disponible, usando fallback simple');
+                console.warn('[renderizador-cotizaciones]  generarTarjetaPrendaReadOnly no disponible, usando fallback simple');
                 // Fallback simple si el sistema normal no está disponible
                 const tarjetaHtml = generarTarjetaSimple(prenda, index);
                 const tempDiv = document.createElement('div');
@@ -68,10 +68,10 @@
             }
         });
 
-        // ✅ Agregar el fragmento completo de una sola vez
+        //  Agregar el fragmento completo de una sola vez
         container.appendChild(fragment);
         
-        console.log('[renderizador-cotizaciones] ✅ Renderizado completado - ' + prendas.length + ' prendas renderizadas');
+        console.log('[renderizador-cotizaciones]  Renderizado completado - ' + prendas.length + ' prendas renderizadas');
     };
 
     /**

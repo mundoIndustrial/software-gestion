@@ -648,6 +648,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // Anular pedido
     Route::post('/pedidos/{id}/anular', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'anularPedido'])->where('id', '[0-9]+')->name('pedidos.anular');
     
+    // Confirmar corrección de pedido
+    Route::post('/pedidos/{id}/confirmar-correccion', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'confirmarCorreccion'])->where('id', '[0-9]+')->name('pedidos.confirmar-correccion');
+    
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
     // ========================================
@@ -656,7 +659,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // Route::get('/borradores', [App\Http\Controllers\Api_temp\V1\OrdenController::class, 'borradores'])->name('borradores.index');
     
     // ÓRDENES - CRUD principal
-    // ⚠️ Controlador comentado: OrdenController no existe - usar RegistroOrdenController en su lugar
+    //  Controlador comentado: OrdenController no existe - usar RegistroOrdenController en su lugar
     // Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
     // Route::post('/ordenes/guardar', [App\Http\Controllers\OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
     // Route::get('/ordenes/{id}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
@@ -824,8 +827,8 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('api
         // Editar solo tallas (MERGE)
         Route::patch('/{id}/editar/tallas', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'editTallas'])->name('editar-tallas');
         
-        // ✅ NUEVA RUTA: Actualizar un proceso específico de la prenda
-        // ✅ FIX: Acepta POST también (con _method=PATCH en FormData para mejor compatibilidad)
+        //  NUEVA RUTA: Actualizar un proceso específico de la prenda
+        //  FIX: Acepta POST también (con _method=PATCH en FormData para mejor compatibilidad)
         Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->name('proceso-actualizar');
         
         // Obtener estado actual (para auditoría)
@@ -877,6 +880,7 @@ Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('superviso
     // Pedidos
     Route::get('/pedidos', [App\Http\Controllers\SupervisorAsesoresController::class, 'pedidosIndex'])->name('pedidos.index');
     Route::get('/pedidos/data', [App\Http\Controllers\SupervisorAsesoresController::class, 'pedidosData'])->name('pedidos.data');
+    Route::post('/pedidos/{id}/confirmar-correccion', [App\Http\Controllers\SupervisorAsesoresController::class, 'confirmarCorreccion'])->name('pedidos.confirmar-correccion');
     
     // Asesores
     Route::get('/asesores', [App\Http\Controllers\SupervisorAsesoresController::class, 'asesoresIndex'])->name('asesores.index');

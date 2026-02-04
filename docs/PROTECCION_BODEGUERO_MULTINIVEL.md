@@ -76,8 +76,8 @@ if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero'])) {
 **Archivo**: `resources/views/layouts/sidebar.blade.php`
 
 Bodeguero ve **SOLO** estas opciones en menú:
-- ✅ Corte Bodega
-- ✅ Costura Bodega
+-  Corte Bodega
+-  Costura Bodega
 
 **No ve**:
 - ❌ Corte (pedidos)
@@ -112,7 +112,7 @@ Bodeguero ve **SOLO** estas opciones en menú:
 ┌─────────────────────────────────────────┐
 │  VistasController::index()              │
 │  Valida: tipo === 'bodega'              │
-│  ✅ PERMITIDO                           │
+│   PERMITIDO                           │
 └────────────┬────────────────────────────┘
              │
              ▼
@@ -186,7 +186,7 @@ POST /login
   password: password
 
 # Resultado esperado:
-Location: /vistas?tipo=bodega ✅
+Location: /vistas?tipo=bodega 
 ```
 
 ### Escenario 2: Intento de Manipulación
@@ -197,7 +197,7 @@ GET /vistas?tipo=corte
 
 # Resultado esperado:
 Location: /vistas?tipo=bodega
-alert: "Solo puedes acceder a la vista de Bodega" ✅
+alert: "Solo puedes acceder a la vista de Bodega" 
 ```
 
 ### Escenario 3: Recibos Filtrados
@@ -216,7 +216,7 @@ GET /pedidos-public/1/recibos-datos
       }
     ]
   }
-] ✅
+] 
 ```
 
 ## Logs de Auditoría
@@ -241,14 +241,14 @@ GET /pedidos-public/1/recibos-datos
 
 ## Archivos Modificados
 
-1. ✅ `app/Http/Controllers/Auth/AuthenticatedSessionController.php` - Redirección
-2. ✅ `app/Http/Controllers/VistasController.php` - Validación de vistas
-3. ✅ `app/Http/Controllers/Api_temp/PedidoController.php` - Filtrado de procesos
-4. ✅ `app/Http/Middleware/OperarioAccess.php` - Incluye bodeguero
-5. ✅ `app/Http/Middleware/BodegueroRecibosProtection.php` - Protección adicional
-6. ✅ `resources/views/layouts/sidebar.blade.php` - Filtrado de menú
+1.  `app/Http/Controllers/Auth/AuthenticatedSessionController.php` - Redirección
+2.  `app/Http/Controllers/VistasController.php` - Validación de vistas
+3.  `app/Http/Controllers/Api_temp/PedidoController.php` - Filtrado de procesos
+4.  `app/Http/Middleware/OperarioAccess.php` - Incluye bodeguero
+5.  `app/Http/Middleware/BodegueroRecibosProtection.php` - Protección adicional
+6.  `resources/views/layouts/sidebar.blade.php` - Filtrado de menú
 
 ---
 
 **Implementación**: 4 de Febrero de 2026
-**Estado**: ✅ Protección Multinivel Activada
+**Estado**:  Protección Multinivel Activada

@@ -205,7 +205,7 @@ class EppApiService {
             }
 
             const resultado = await response.json();
-            console.log('[EppApiService] ✅ EPP actualizado correctamente:', resultado);
+            console.log('[EppApiService]  EPP actualizado correctamente:', resultado);
             return resultado;
         } catch (error) {
             console.error('[EppApiService] ❌ Error actualizarEPPDelPedido:', error);

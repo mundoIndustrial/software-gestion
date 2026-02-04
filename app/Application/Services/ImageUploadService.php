@@ -96,7 +96,7 @@ class ImageUploadService
         
         $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-        Log::info('[IMAGE-UPLOAD] ✅ Imagen guardada directamente', [
+        Log::info('[IMAGE-UPLOAD]  Imagen guardada directamente', [
             'pedido_id' => $pedidoId,
             'tipo' => $tipo,
             'ruta_webp' => $webpPath,

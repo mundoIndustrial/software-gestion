@@ -1,6 +1,6 @@
 # Implementación: Guardado de Despachos Parciales por Talla
 
-## ✅ Estado de Implementación
+##  Estado de Implementación
 
 La funcionalidad de guardado de despachos parciales por talla está **completamente implementada** siguiendo los requisitos especificados.
 
@@ -235,24 +235,24 @@ DesparChoParcialesModel::create() (Eloquent)
 ## Archivos Modificados
 
 ### Entidad Domain (ampliada)
-- ✅ `app/Domain/Pedidos/Despacho/Entities/DesparChoParcial.php`
+-  `app/Domain/Pedidos/Despacho/Entities/DesparChoParcial.php`
   - Agregado: campo `$tallaId`
   - Agregado: parámetro `tallaId` en constructores
   - Agregado: getter `tallaId()`
   - Actualizado: `convertirAArray()` incluye `talla_id` y `pendiente_inicial`
 
 ### Servicio de Persistencia (ampliado)
-- ✅ `app/Domain/Pedidos/Despacho/Services/DesparChoParcialesPersistenceService.php`
+-  `app/Domain/Pedidos/Despacho/Services/DesparChoParcialesPersistenceService.php`
   - Actualizado: `crearYGuardarMultiples()` pasa `tallaId` y `pendiente_inicial`
 
 ### Repositorio (ampliado)
-- ✅ `app/Infrastructure/Repositories/Pedidos/Despacho/DesparChoParcialesRepositoryImpl.php`
+-  `app/Infrastructure/Repositories/Pedidos/Despacho/DesparChoParcialesRepositoryImpl.php`
   - Actualizado: `modeloAEntidad()` incluye `tallaId`
   - Actualizado: `entidadAArray()` incluye `talla_id`
 
 ### Vistas y Rutas (sin cambios)
-- ✅ `routes/despacho.php` - Ya existe y funciona
-- ✅ `resources/views/despacho/show.blade.php` - Ya envía datos correctamente
+-  `routes/despacho.php` - Ya existe y funciona
+-  `resources/views/despacho/show.blade.php` - Ya envía datos correctamente
 
 ---
 
@@ -262,10 +262,10 @@ DesparChoParcialesModel::create() (Eloquent)
 Ubicación: `tests/Feature/DespachoParcialesTest.php`
 
 Cubre:
-1. ✅ Guardar despachos de prendas con talla
-2. ✅ Guardar despachos de EPP sin talla
-3. ✅ Validar que se guardan sin cálculos automáticos
-4. ✅ Permitir datos inconsistentes (sin validación matemática)
+1.  Guardar despachos de prendas con talla
+2.  Guardar despachos de EPP sin talla
+3.  Validar que se guardan sin cálculos automáticos
+4.  Permitir datos inconsistentes (sin validación matemática)
 
 ### Ejecutar Tests
 ```bash
@@ -347,7 +347,7 @@ CREATE TABLE despacho_parciales (
 
 ---
 
-## 📊 Ejemplo de Datos Guardados
+##  Ejemplo de Datos Guardados
 
 ```json
 {
@@ -378,17 +378,17 @@ CREATE TABLE despacho_parciales (
 
 | Requisito | Estado | Detalles |
 |-----------|--------|----------|
-| ✅ Campos NO editables (descripción, talla, cantidad) | CUMPLIDO | Solo lectura en tabla |
-| ✅ Campos editables manualmente | CUMPLIDO | 7 campos sin validación |
-| ✅ Sin validaciones matemáticas | CUMPLIDO | Solo valida negativos |
-| ✅ Sin cálculos automáticos | CUMPLIDO | Valores exactos como se digitan |
-| ✅ Sin validación de coherencia | CUMPLIDO | Permite datos inconsistentes |
-| ✅ Registro independiente por fila | CUMPLIDO | Cada fila = 1 registro |
-| ✅ NO consolida tallas | CUMPLIDO | Talla_id único por registro |
-| ✅ NO sobrescribe datos | CUMPLIDO | INSERT, no UPDATE |
-| ✅ Mapeo completo a tabla | CUMPLIDO | Todos los campos mapeados |
-| ✅ Usuario autenticado | CUMPLIDO | Auth::id() guardado |
-| ✅ Timestamp automático | CUMPLIDO | fecha_despacho + created_at |
+|  Campos NO editables (descripción, talla, cantidad) | CUMPLIDO | Solo lectura en tabla |
+|  Campos editables manualmente | CUMPLIDO | 7 campos sin validación |
+|  Sin validaciones matemáticas | CUMPLIDO | Solo valida negativos |
+|  Sin cálculos automáticos | CUMPLIDO | Valores exactos como se digitan |
+|  Sin validación de coherencia | CUMPLIDO | Permite datos inconsistentes |
+|  Registro independiente por fila | CUMPLIDO | Cada fila = 1 registro |
+|  NO consolida tallas | CUMPLIDO | Talla_id único por registro |
+|  NO sobrescribe datos | CUMPLIDO | INSERT, no UPDATE |
+|  Mapeo completo a tabla | CUMPLIDO | Todos los campos mapeados |
+|  Usuario autenticado | CUMPLIDO | Auth::id() guardado |
+|  Timestamp automático | CUMPLIDO | fecha_despacho + created_at |
 
 ---
 
@@ -420,12 +420,12 @@ CREATE TABLE despacho_parciales (
 
 ## ✨ Ventajas del Diseño
 
-✅ **Sin validaciones restrictivas** - El usuario tiene libertad total
-✅ **Persistencia simple** - Almacena exactamente lo que se ingresa
-✅ **Escalable** - Fácil agregar más parciales (parcial_4, etc.)
-✅ **Auditable** - Quién guardó y cuándo
-✅ **Transaccional** - Todo o nada
-✅ **Modulable** - Cada capa puede reusarse
+ **Sin validaciones restrictivas** - El usuario tiene libertad total
+ **Persistencia simple** - Almacena exactamente lo que se ingresa
+ **Escalable** - Fácil agregar más parciales (parcial_4, etc.)
+ **Auditable** - Quién guardó y cuándo
+ **Transaccional** - Todo o nada
+ **Modulable** - Cada capa puede reusarse
 
 ---
 

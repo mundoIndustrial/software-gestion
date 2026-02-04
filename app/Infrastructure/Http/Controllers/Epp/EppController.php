@@ -748,7 +748,7 @@ class EppController extends Controller
                 // Eliminar registro de la base de datos
                 \DB::table('pedido_epp_imagenes')->where('id', $imagenId)->delete();
                 
-                \Log::info('✅ [EppController] Imagen de PedidoEpp eliminada', [
+                \Log::info(' [EppController] Imagen de PedidoEpp eliminada', [
                     'imagen_id' => $imagenId,
                     'ruta' => $imagenPedido->ruta_web
                 ]);

@@ -76,7 +76,7 @@ window.EPPManagerLoader = (function() {
                 
                 script.onload = () => {
                     clearTimeout(timeout);
-                    console.log(`[EPPManagerLoader] ✅ ${filename}`);
+                    console.log(`[EPPManagerLoader]  ${filename}`);
                     loaded++;
                     loadNext();
                 };
@@ -123,7 +123,7 @@ window.EPPManagerLoader = (function() {
         });
         
         if (missing.length > 0) {
-            console.warn(`[EPPManagerLoader] ⚠️ Dependencias faltantes:`, missing);
+            console.warn(`[EPPManagerLoader]  Dependencias faltantes:`, missing);
             // Las dependencias pueden ser opcionales
         }
     }
@@ -179,8 +179,8 @@ window.EPPManagerLoader = (function() {
                 isLoaded = true;
                 isLoading = false;
                 
-                console.log('[EPPManagerLoader] ✅ TODOS LOS MÓDULOS CARGADOS EXITOSAMENTE');
-                console.log('[EPPManagerLoader] 📊 Tamaño cargado: ~25KB (minificado)');
+                console.log('[EPPManagerLoader]  TODOS LOS MÓDULOS CARGADOS EXITOSAMENTE');
+                console.log('[EPPManagerLoader]  Tamaño cargado: ~25KB (minificado)');
                 
                 // Disparar evento personalizado
                 const event = new CustomEvent('eppManagerLoaded', {

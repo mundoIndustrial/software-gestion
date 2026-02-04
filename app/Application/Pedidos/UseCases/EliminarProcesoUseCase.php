@@ -32,7 +32,7 @@ class EliminarProcesoUseCase
         $this->validarPositivo($id, 'ID del proceso');
         $this->validarPositivo($numeroPedido, 'Número de pedido');
 
-        // ✅ PRIMERO: Intentar en la tabla nueva (pedidos_procesos_prenda_detalles)
+        //  PRIMERO: Intentar en la tabla nueva (pedidos_procesos_prenda_detalles)
         $proceso = DB::table('pedidos_procesos_prenda_detalles as ppd')
             ->join('prendas_pedido as pp', 'ppd.prenda_pedido_id', '=', 'pp.id')
             ->select('ppd.*', 'pp.id as prenda_pedido_id')
@@ -40,7 +40,7 @@ class EliminarProcesoUseCase
             ->where('pp.pedido_produccion_id', $numeroPedido)
             ->first();
 
-        // ✅ Si no existe en tabla nueva, buscar en tabla antigua
+        //  Si no existe en tabla nueva, buscar en tabla antigua
         if (!$proceso) {
             $proceso = ProcesoPrenda::where('id', $id)
                 ->where('numero_pedido', $numeroPedido)

@@ -113,7 +113,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         return;
     }
     
-    console.log('✅ [EDITAR-PRENDA] Prenda encontrada:', {
+    console.log(' [EDITAR-PRENDA] Prenda encontrada:', {
         nombre: prenda.nombre_prenda,
         nombre_alt: prenda.nombre,
         id: prenda.id,
@@ -192,7 +192,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si coincide por ID, es suficiente (prioridad más alta)
             if (coincideId) {
-                console.log('✅ [EDITAR-PRENDA] Coincidencia por ID encontrada:', {
+                console.log(' [EDITAR-PRENDA] Coincidencia por ID encontrada:', {
                     encontrado_id: p.id,
                     encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_id: prenda.id,
@@ -204,7 +204,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si no coincide por ID, requerir coincidencia por nombre
             if (coincideNombre) {
-                console.log('✅ [EDITAR-PRENDA] Coincidencia por nombre encontrada:', {
+                console.log(' [EDITAR-PRENDA] Coincidencia por nombre encontrada:', {
                     encontrado_nombre: p.nombre || p.nombre_prenda || p.nombre_producto,
                     encontrado_nombre_prenda: p.nombre_prenda,
                     encontrado_nombre_producto: p.nombre_producto,
@@ -236,6 +236,17 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             throw new Error('Prenda no encontrada en los datos del pedido');
         }
         
+        // 🔍 DEBUG CRÍTICO: Ver exactamente qué propiedades tiene prendaCompleta del servidor
+        console.log('🔍 [EDITAR-PRENDA-ESTRUCTURA-COMPLETA] prendaCompleta del servidor tiene:', {
+            claves_principales: Object.keys(prendaCompleta),
+            tiene_imagenes: !!prendaCompleta.imagenes,
+            tiene_fotos: !!prendaCompleta.fotos,
+            imagenes_estructura: prendaCompleta.imagenes ? `Array(${prendaCompleta.imagenes.length})` : undefined,
+            fotos_estructura: prendaCompleta.fotos ? `Array(${prendaCompleta.fotos.length})` : undefined,
+            primerItemImagenes: prendaCompleta.imagenes?.[0],
+            primerItemFotos: prendaCompleta.fotos?.[0]
+        });
+        
         // 🔍 DEBUG: Verificar IDs de prendaCompleta
         console.log('🔍 [EDITAR-PRENDA] IDs en prendaCompleta:', {
             id: prendaCompleta.id,
@@ -244,7 +255,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             todosLosCampos: Object.keys(prendaCompleta)
         });
         
-        console.log('✅ [EDITAR-PRENDA] Datos del servidor recibidos:', {
+        console.log(' [EDITAR-PRENDA] Datos del servidor recibidos:', {
             tallas_dama: prendaCompleta.tallas_dama?.length || 0,
             tallas_caballero: prendaCompleta.tallas_caballero?.length || 0,
             colores_telas: prendaCompleta.colores_telas?.length || 0,
@@ -301,7 +312,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             formatoDetectado.tallas = 'antiguo'; // {tallas_dama: [{talla: "L", cantidad: 20}]}
             console.log('🔍 [DETECCIÓN] Formato de tallas detectado: ANTIGUO (arrays por género)');
         } else {
-            console.warn('⚠️ [DETECCIÓN] Formato de tallas no reconocido, usando defaults');
+            console.warn(' [DETECCIÓN] Formato de tallas no reconocido, usando defaults');
         }
         
         // DETECTAR FORMATO DE TELAS
@@ -314,7 +325,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             formatoDetectado.telas = 'antiguo'; // {colores_telas: [{id: 1, color_id: 61}]}
             console.log('🔍 [DETECCIÓN] Formato de telas detectado: ANTIGUO (colores_telas)');
         } else {
-            console.warn('⚠️ [DETECCIÓN] Formato de telas no reconocido, usando defaults');
+            console.warn(' [DETECCIÓN] Formato de telas no reconocido, usando defaults');
         }
         
         // DETECTAR FORMATO DE VARIANTES
@@ -332,10 +343,10 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 console.log('🔍 [DETECCIÓN] Formato de variantes detectado: MIXTO');
             }
         } else {
-            console.warn('⚠️ [DETECCIÓN] Formato de variantes no reconocido, usando defaults');
+            console.warn(' [DETECCIÓN] Formato de variantes no reconocido, usando defaults');
         }
         
-        console.log('📊 [DETECCIÓN] Formatos detectados:', formatoDetectado);
+        console.log(' [DETECCIÓN] Formatos detectados:', formatoDetectado);
 
         // TRANSFORMAR TELAS - Basado en detección automática
         const telasAgregadas = [];
@@ -372,9 +383,9 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                             };
                         })
                     });
-                    console.log('✅ [TELAS] Tela transformada (formato nuevo):', telasAgregadas[telasAgregadas.length - 1]);
+                    console.log(' [TELAS] Tela transformada (formato nuevo):', telasAgregadas[telasAgregadas.length - 1]);
                 } else {
-                    console.warn('⚠️ [TELAS] Estructura inválida en formato nuevo, omitiendo:', ct);
+                    console.warn(' [TELAS] Estructura inválida en formato nuevo, omitiendo:', ct);
                 }
             });
         } else if (formatoDetectado.telas === 'antiguo') {
@@ -409,9 +420,9 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                             };
                         })
                     });
-                    console.log('✅ [TELAS] Tela transformada (formato antiguo):', telasAgregadas[telasAgregadas.length - 1]);
+                    console.log(' [TELAS] Tela transformada (formato antiguo):', telasAgregadas[telasAgregadas.length - 1]);
                 } else {
-                    console.warn('⚠️ [TELAS] Estructura inválida en formato antiguo, omitiendo:', ct);
+                    console.warn(' [TELAS] Estructura inválida en formato antiguo, omitiendo:', ct);
                 }
             });
         } else {
@@ -428,15 +439,85 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             const v = prendaCompleta.variantes[0];
             console.log('🔄 [VARIANTES] Procesando formato detectado:', formatoDetectado.variantes, v);
             
+            // 🔴 FIX: Si tipo_manga_id existe pero tipo_manga está vacío, buscar el nombre
+            // Prioridad: 1. v.manga (string directo), 2. v.tipo_manga (string), 3. v.manga (objeto)
+            let nombreTipoManga = '';
+            
+            // Prioridad 1: v.manga es un string directo (formato nuevo del servidor)
+            if (typeof v.manga === 'string' && v.manga) {
+                nombreTipoManga = v.manga;
+            }
+            // Prioridad 2: v.tipo_manga es un string directo
+            else if (typeof v.tipo_manga === 'string' && v.tipo_manga) {
+                nombreTipoManga = v.tipo_manga;
+            }
+            // Prioridad 3: v.manga es un objeto con opcion/nombre
+            else if (typeof v.manga === 'object' && v.manga) {
+                nombreTipoManga = v.manga.opcion || v.manga.nombre || '';
+            }
+            
+            if ((v.tipo_manga_id || v.manga_id) && !nombreTipoManga) {
+                console.log('🔍 [VARIANTES] tipo_manga_id encontrado pero sin nombre, buscando...');
+                try {
+                    // Intentar cargar tipos de manga si está disponible la función
+                    if (typeof cargarTiposMangaDisponibles === 'function') {
+                        const tiposManga = await cargarTiposMangaDisponibles();
+                        const mangaId = v.tipo_manga_id || v.manga_id;
+                        const tipoMangaEncontrado = tiposManga.find(tm => tm.id === mangaId);
+                        if (tipoMangaEncontrado) {
+                            nombreTipoManga = tipoMangaEncontrado.nombre;
+                            console.log('✓ [VARIANTES] Nombre de manga encontrado:', nombreTipoManga);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ [VARIANTES] Error buscando nombre de manga:', error);
+                }
+            }
+            
+            // 🔴 FIX: Si tipo_broche_boton_id existe pero tipo_broche_boton está vacío, buscar el nombre
+            // Prioridad: 1. v.broche (string directo), 2. v.tipo_broche (string), 3. v.tipo_broche_boton (objeto)
+            let nombreTipoBroche = '';
+            
+            // Prioridad 1: v.broche es un string directo (formato nuevo del servidor)
+            if (typeof v.broche === 'string' && v.broche) {
+                nombreTipoBroche = v.broche;
+            }
+            // Prioridad 2: v.tipo_broche es un string directo
+            else if (typeof v.tipo_broche === 'string' && v.tipo_broche) {
+                nombreTipoBroche = v.tipo_broche;
+            }
+            // Prioridad 3: v.tipo_broche_boton es un objeto con opcion/nombre
+            else if (typeof v.tipo_broche_boton === 'object' && v.tipo_broche_boton) {
+                nombreTipoBroche = v.tipo_broche_boton.opcion || v.tipo_broche_boton.nombre || '';
+            }
+            
+            if ((v.tipo_broche_boton_id || v.broche_id || v.tipo_broche_id) && !nombreTipoBroche) {
+                console.log('🔍 [VARIANTES] tipo_broche_boton_id encontrado pero sin nombre, buscando...');
+                try {
+                    // Intentar cargar tipos de broche si está disponible la función
+                    if (typeof cargarTiposBrocheBotonDisponibles === 'function') {
+                        const tiposBroche = await cargarTiposBrocheBotonDisponibles();
+                        const brocheId = v.tipo_broche_boton_id || v.broche_id || v.tipo_broche_id;
+                        const tipoBrocheEncontrado = tiposBroche.find(tb => tb.id === brocheId);
+                        if (tipoBrocheEncontrado) {
+                            nombreTipoBroche = tipoBrocheEncontrado.nombre;
+                            console.log('✓ [VARIANTES] Nombre de broche encontrado:', nombreTipoBroche);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ [VARIANTES] Error buscando nombre de broche:', error);
+                }
+            }
+            
             // Mapeo universal que funciona con ambos formatos
             variantes = {
                 // Campos nuevos (prioridad)
-                tipo_manga: v.tipo_manga || v.manga || '',
+                tipo_manga: nombreTipoManga,
                 tipo_manga_id: v.tipo_manga_id || v.manga_id,
                 obs_manga: v.manga_obs || v.obs_manga || '',
                 tiene_bolsillos: v.tiene_bolsillos !== undefined ? v.tiene_bolsillos : (v.bolsillos || false),
                 obs_bolsillos: v.bolsillos_obs || v.obs_bolsillos || '',
-                tipo_broche: v.tipo_broche_boton || v.broche || v.tipo_broche || '',
+                tipo_broche: nombreTipoBroche,
                 tipo_broche_id: v.tipo_broche_boton_id || v.broche_id || v.tipo_broche_id,
                 obs_broche: v.broche_boton_obs || v.broche_obs || v.obs_broche || '',
                 // Campos adicionales
@@ -444,7 +525,23 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 cantidad: v.cantidad || 0
             };
             
-            console.log('✅ [VARIANTES] Variantes procesadas (formato ' + formatoDetectado.variantes + '):', variantes);
+            console.log(' [VARIANTES] Variantes procesadas (formato ' + formatoDetectado.variantes + '):', variantes);
+            console.log(' [VARIANTES-DEBUG] MANGA:', {
+                nombreTipoManga: nombreTipoManga,
+                v_manga: v.manga,
+                v_tipo_manga: v.tipo_manga,
+                v_manga_id: v.manga_id,
+                v_tipo_manga_id: v.tipo_manga_id
+            });
+            console.log(' [VARIANTES-DEBUG] BROCHE:', {
+                nombreTipoBroche: nombreTipoBroche,
+                v_broche: v.broche,
+                v_tipo_broche: v.tipo_broche,
+                v_tipo_broche_boton: v.tipo_broche_boton,
+                v_broche_id: v.broche_id,
+                v_tipo_broche_boton_id: v.tipo_broche_boton_id,
+                v_tipo_broche_id: v.tipo_broche_id
+            });
             
         } else {
             // Sin datos - defaults seguros para no romper el flujo
@@ -543,23 +640,23 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                         cantidades: cantidadesValidadas
                     };
                     
-                    console.log(`✅ [EDITAR-PRENDA] Género ${genero} procesado:`, cantidadesValidadas);
+                    console.log(` [EDITAR-PRENDA] Género ${genero} procesado:`, cantidadesValidadas);
                 } else {
-                    console.log(`ℹ️ [EDITAR-PRENDA] Género ${genero} sin tallas con cantidad > 0, omitiendo`);
+                    console.log(` [EDITAR-PRENDA] Género ${genero} sin tallas con cantidad > 0, omitiendo`);
                 }
             } else {
-                console.warn(`⚠️ [EDITAR-PRENDA] Estructura inválida para género:`, { genero, tallas });
+                console.warn(` [EDITAR-PRENDA] Estructura inválida para género:`, { genero, tallas });
             }
         });
         
         // Validación final de la estructura
         if (Object.keys(generosConTallasEstructura).length === 0) {
-            console.warn('⚠️ [EDITAR-PRENDA] No se encontraron tallas válidas en generosConTallasEstructura');
+            console.warn(' [EDITAR-PRENDA] No se encontraron tallas válidas en generosConTallasEstructura');
         } else {
-            console.log('✅ [EDITAR-PRENDA] generosConTallasEstructura final:', generosConTallasEstructura);
+            console.log(' [EDITAR-PRENDA] generosConTallasEstructura final:', generosConTallasEstructura);
         }
         
-        console.log('✅ [EDITAR-PRENDA] Tallas como array:', tallasArray);
+        console.log(' [EDITAR-PRENDA] Tallas como array:', tallasArray);
         console.log('🔍 [EDITAR-PRENDA] generosConTallasEstructura:', generosConTallasEstructura);
         console.log('🔍 [EDITAR-PRENDA] tallasPorGenero (crudo):', tallasPorGenero);
         
@@ -575,34 +672,82 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             hayImagenes: !!prendaCompleta.imagenes
         });
         
+        // 🔍 LOG CRÍTICO: Ver EXACTAMENTE qué hay en la primera imagen RAW
+        if (prendaImagenesRaw.length > 0) {
+            console.log('🖼️ [EDITAR-PRENDA-RAW-DETAIL] ESTRUCTURA DE PRIMERA IMAGEN RAW:', {
+                primerImg: prendaImagenesRaw[0],
+                claves: Object.keys(prendaImagenesRaw[0]),
+                tiene_id: prendaImagenesRaw[0].id !== undefined,
+                tiene_ruta_original: prendaImagenesRaw[0].ruta_original !== undefined,
+                tiene_ruta_webp: prendaImagenesRaw[0].ruta_webp !== undefined,
+                id_valor: prendaImagenesRaw[0].id,
+                ruta_original_valor: prendaImagenesRaw[0].ruta_original,
+                ruta_webp_valor: prendaImagenesRaw[0].ruta_webp
+            });
+        }
+        
         const prendaImagenesMapeadas = prendaImagenesRaw.map((img, idx) => {
             const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
             const urlFinal = agregarStorage(url);
+            
+            // 🔴 FIX CRÍTICO: Si no tiene ID, crear uno basado en la ruta (workaround)
+            // Esto asegura que cada imagen tiene un identificador único incluso si el servidor no lo envía
+            let imagenId = img.id;
+            if (!imagenId || imagenId === null || imagenId === undefined) {
+                // Crear un identificador basado en hash simple de la ruta
+                // Esto es temporal hasta que el backend SIEMPRE envíe IDs
+                const rutaParaHash = img.ruta_webp || img.ruta_original || img.url || url;
+                imagenId = 'hash_' + rutaParaHash.split('/').pop().replace(/\D/g, '').slice(0, 10) || idx;
+                console.warn(' [EDITAR-PRENDA-ID-WORKAROUND] Imagen sin ID, creando workaround:', {
+                    idx: idx,
+                    rutaOriginal: rutaParaHash,
+                    idGenerado: imagenId
+                });
+            }
+            
             console.log(`   [${idx}] Mapeo de imagen:`, {
                 url: url,
                 urlFinal: urlFinal,
                 tieneRutaWebp: !!img.ruta_webp,
                 tieneRutaOriginal: !!img.ruta_original,
                 tieneUrl: !!img.url,
-                imageId: img.id
+                imageId: imagenId,
+                imagePrendaFotoId: img.prenda_foto_id
             });
             return {
-                id: img.id || idx,
-                url: urlFinal,
-                ruta: urlFinal,
-                ruta_original: img.ruta_original || '',
-                ruta_webp: img.ruta_webp || '',
-                urlDesdeDB: true
+                id: imagenId,                                       // ID de prenda_fotos_pedido (o generado si no existe)
+                prenda_foto_id: img.prenda_foto_id || imagenId || idx, // Alias para prenda_fotos_pedido
+                previewUrl: urlFinal,                               // URL para preview
+                url: urlFinal,                                      // URL del accessor
+                ruta: urlFinal,                                     // Ruta alternativa
+                ruta_original: img.ruta_original || '',             // Ruta original
+                ruta_webp: img.ruta_webp || '',                     // Ruta WebP
+                nombre: img.nombre || `imagen_${idx}.webp`,         // Nombre de archivo
+                urlDesdeDB: true                                    // Indicador de BD
             };
         }).filter(img => {
             // Filtrar imágenes con URLs inválidas
             return img.url && img.url.trim() !== '';
         });
         
-        console.log('✅ [EDITAR-PRENDA-IMAGENES-MAPEADAS] Después del mapeo:', {
+        console.log(' [EDITAR-PRENDA-IMAGENES-MAPEADAS] Después del mapeo:', {
             cantidad: prendaImagenesMapeadas.length,
             datos: prendaImagenesMapeadas
         });
+        
+        // 🔍 LOG CRÍTICO: Comparar ANTES vs DESPUÉS del mapeo
+        if (prendaImagenesMapeadas.length > 0 && prendaImagenesRaw.length > 0) {
+            console.log('🖼️ [EDITAR-PRENDA-MAPEO-COMPARACION] ANTES vs DESPUÉS:', {
+                raw_tiene_id: prendaImagenesRaw[0].id !== undefined,
+                mapeada_tiene_id: prendaImagenesMapeadas[0].id !== undefined,
+                raw_id: prendaImagenesRaw[0].id,
+                mapeada_id: prendaImagenesMapeadas[0].id,
+                raw_ruta_original: prendaImagenesRaw[0].ruta_original,
+                mapeada_ruta_original: prendaImagenesMapeadas[0].ruta_original,
+                raw_claves: Object.keys(prendaImagenesRaw[0]),
+                mapeada_claves: Object.keys(prendaImagenesMapeadas[0])
+            });
+        }
         
         // Extraer nombre de prenda - Manejo robusto de múltiples formatos
         const nombrePrenda = prendaCompleta.nombre || 
@@ -617,10 +762,24 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             nombre_final: nombrePrenda
         });
 
+        // 🎬 ESTABLECER SNAPSHOT DIRECTAMENTE CON IMÁGENES CORRECTAMENTE MAPEADAS
+        // Esto asegura que el snapshot tenga id, ruta_original, ruta_webp
+        if (window.imagenesPrendaStorage) {
+            // Guardar snapshot ANTES de pasar a modal, con los IDs incluidos
+            window.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaImagenesMapeadas));
+            console.log('🎬 [EDITAR-PRENDA] SNAPSHOT ESTABLECIDO CON IMÁGENES MAPEADAS:', {
+                cantidad: prendaImagenesMapeadas.length,
+                primerImagen: prendaImagenesMapeadas[0]
+            });
+        }
+
         const prendaParaEditar = {
             nombre_prenda: nombrePrenda,
             nombre_producto: nombrePrenda,
             descripcion: prendaCompleta.descripcion || '',
+            // 🔴 CRÍTICO: Incluir imágenes MAPEADAS (con IDs) para que prendaData las tenga
+            // Esto asegura que modal-novedad-edicion.js reciba imágenes con id/ruta_original/ruta_webp
+            imagenes: prendaImagenesMapeadas,
             // 🔴 LÓGICA CORRECTA DE ORIGEN:
             // Prioridad 1: prendaCompleta.origen (si viene establecido)
             // Prioridad 2: prenda.origen (origen anterior)
@@ -693,10 +852,10 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             variantes: variantes
         };
         
-        console.log('✅ [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
+        console.log(' [EDITAR-PRENDA] Datos listos para cargar en modal:', Object.keys(prendaParaEditar));
         console.log('🔬 [EDITAR-PRENDA] Procesos para modal:', prendaParaEditar.procesos);
         console.log('🖼️ [EDITAR-PRENDA] Imágenes para modal:', prendaParaEditar.imagenes);
-        console.log('📊 [EDITAR-PRENDA] Datos de prendaCompleta:', {
+        console.log(' [EDITAR-PRENDA] Datos de prendaCompleta:', {
             nombre: prendaCompleta.nombre,
             nombre_prenda: prendaCompleta.nombre_prenda,
             descripcion: prendaCompleta.descripcion,
@@ -713,14 +872,14 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             'de_bodega_final': prendaParaEditar.de_bodega
         });
         
-        console.log('📊 [EDITAR-PRENDA] Datos finales en prendaParaEditar:', {
+        console.log(' [EDITAR-PRENDA] Datos finales en prendaParaEditar:', {
             nombre_prenda: prendaParaEditar.nombre_prenda,
             nombre_producto: prendaParaEditar.nombre_producto,
             descripcion: prendaParaEditar.descripcion,
             origen: prendaParaEditar.origen,
             de_bodega: prendaParaEditar.de_bodega
         });
-        console.log('📊 [EDITAR-PRENDA] Respuesta completa del servidor:', resultado.prenda);
+        console.log(' [EDITAR-PRENDA] Respuesta completa del servidor:', resultado.prenda);
         console.log('🏢 [EDITAR-PRENDA] de_bodega del servidor:', resultado.prenda?.de_bodega, '(1=bodega, 0=confeccion)');
         
         // Cerrar el modal de seleccionar prenda
@@ -744,7 +903,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         // Abrir modal con datos transformados
         if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
-            console.log('✅ [EDITAR-PRENDA] Abriendo modal con GestionItemsUI');
+            console.log(' [EDITAR-PRENDA] Abriendo modal con GestionItemsUI');
             
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             if (modal && modal.parentElement !== document.body) {
@@ -756,11 +915,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             window.gestionItemsUI.abrirModalAgregarPrendaNueva();
             
             if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
-                console.log('✅ [EDITAR-PRENDA] Cargando datos en modal');
+                console.log(' [EDITAR-PRENDA] Cargando datos en modal');
                 window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
             }
             
-            console.log('✅ [EDITAR-PRENDA] Modal abierto exitosamente');
+            console.log(' [EDITAR-PRENDA] Modal abierto exitosamente');
             return;
         }
         

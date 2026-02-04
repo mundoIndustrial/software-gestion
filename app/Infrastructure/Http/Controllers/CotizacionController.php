@@ -5,12 +5,14 @@ namespace App\Infrastructure\Http\Controllers;
 use App\Application\Cotizacion\Commands\AceptarCotizacionCommand;
 use App\Application\Cotizacion\Commands\CambiarEstadoCotizacionCommand;
 use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
+use App\Application\Cotizacion\Commands\CrearReflectivoCotizacionCommand;
 use App\Application\Cotizacion\Commands\EliminarCotizacionCommand;
 use App\Application\Cotizacion\Commands\SubirImagenCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CrearCotizacionDTO;
 use App\Application\Cotizacion\Handlers\Commands\AceptarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CambiarEstadoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CrearCotizacionHandler;
+use App\Application\Cotizacion\Handlers\CrearReflectivoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\EliminarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\SubirImagenCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
@@ -141,6 +143,120 @@ final class CotizacionController extends Controller
     }
 
     /**
+     * Obtener cotización para editar (JSON API)
+     * Devuelve todos los datos incluyendo imágenes
+     */
+    /**
+     * Obtener cotización reflectivo para editar (borrador)
+     * 
+     * Estructura: Múltiples reflectivos (UNO POR PRENDA) + fotos de cada uno
+     */
+    public function getReflectivoForEdit(int $id): JsonResponse
+    {
+        try {
+            Log::info(' getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
+
+            // Obtener cotización reflectivo con TODAS las relaciones de prendas
+            $cotizacion = \App\Models\Cotizacion::with([
+                'cliente',
+                'prendas.tallas',           //  Tallas de cada prenda
+                'prendas.variantes',        //  Género y variantes
+                'prendas.reflectivo.fotos', //  Reflectivo y fotos
+            ])->findOrFail($id);
+
+            Log::info(' Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
+
+            // Verificar que el usuario es propietario
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                Log::warning(' Usuario no autorizado', ['cotizacion_asesor' => $cotizacion->asesor_id, 'usuario_actual' => Auth::id()]);
+                return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+
+            // Verificar que es reflectivo y borrador
+            if ($cotizacion->es_borrador === false) {
+                Log::warning(' No es borrador', ['cotizacion_id' => $id, 'es_borrador' => $cotizacion->es_borrador]);
+                return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
+            }
+
+            //  PROCESAR PRENDAS CON SUS REFLECTIVOS Y TALLAS
+            $prendasProcesadas = [];
+            if ($cotizacion->prendas) {
+                foreach ($cotizacion->prendas as $prenda) {
+                    $reflectivo = $prenda->reflectivo->first();  //  Obtener el primer (único) reflectivo
+                    $fotos = $reflectivo?->fotos ?? [];
+                    
+                    // Procesar tallas con sus cantidades
+                    $tallas = [];
+                    $cantidades = [];
+                    if ($prenda->tallas) {
+                        foreach ($prenda->tallas as $talla) {
+                            $tallas[] = $talla->talla;
+                            $cantidades[$talla->talla] = $talla->cantidad;
+                        }
+                    }
+
+                    // Obtener género de variantes
+                    $genero = null;
+                    $variantes = null;
+                    if ($prenda->variantes) {
+                        foreach ($prenda->variantes as $variante) {
+                            if ($variante->genero_id) {
+                                $generoObj = \App\Models\GeneroPrenda::find($variante->genero_id);
+                                $genero = $generoObj ? strtolower($generoObj->nombre) : null;
+                            }
+                        }
+                        $variantes = $prenda->variantes->toArray();
+                    }
+                    
+                    Log::info(' Prenda con reflectivo', [
+                        'prenda_id' => $prenda->id,
+                        'prenda_nombre' => $prenda->nombre_producto,
+                        'tallas_count' => count($tallas),
+                        'genero' => $genero,
+                        'reflectivo_id' => $reflectivo?->id,
+                        'fotos_count' => count($fotos),
+                    ]);
+
+                    $prendasProcesadas[] = [
+                        'id' => $prenda->id,
+                        'tipo' => $prenda->nombre_producto,
+                        'descripcion' => $prenda->descripcion ?? '',
+                        'tallas' => $tallas,                    //  Array de tallas
+                        'cantidades' => $cantidades,           //  Cantidades por talla
+                        'genero' => $genero,                   //  Género (dama/caballero)
+                        'variantes' => $variantes,             //  Todas las variantes
+                        'reflectivo' => $reflectivo ? [
+                            'id' => $reflectivo->id,
+                            'descripcion' => $reflectivo->descripcion,
+                            'tipo_venta' => $reflectivo->tipo_venta,
+                            'ubicacion' => $reflectivo->ubicacion,
+                            'observaciones_generales' => $reflectivo->observaciones_generales,
+                            'fotos' => $fotos->toArray(),  //  Fotos de ESTA prenda
+                        ] : null,
+                    ];
+                }
+            }
+
+            Log::info(' CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
+                'cotizacion_id' => $cotizacion->id,
+                'prendas_count' => count($prendasProcesadas),
+                'prendas_con_reflectivo' => collect($prendasProcesadas)->filter(fn($p) => $p['reflectivo'] !== null)->count(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'cotizacion' => $cotizacion->toArray(),
+                    'prendas' => $prendasProcesadas,  //  Prendas con tallas, género y reflectivos
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CotizacionController@getReflectivoForEdit: Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Cargar cotización para edición (general)
      */
     public function getForEdit(int $id): JsonResponse
@@ -192,11 +308,10 @@ final class CotizacionController extends Controller
                 'prendas.telaFotos',
                 'prendas.tallas',
                 'prendas.variantes',
-                'prendas.variantes.genero',
-                'prendas.variantes.manga',
-                'prendas.variantes.broche',
+                'prendas.reflectivo.fotos',  //  Cargar reflectivo de cada prenda con sus fotos
                 'logoCotizacion.fotos',
                 'logoCotizacion.prendas.fotos',  //  Cargar prendas técnicas con sus fotos
+                'reflectivoCotizacion.fotos',  // Mantener para compatibilidad con cotizaciones antiguas
                 'tipoCotizacion'
             ])->findOrFail($id);
 
@@ -208,9 +323,26 @@ final class CotizacionController extends Controller
             // Obtener logo si existe
             $logo = $cotizacion->logoCotizacion;
 
+            // Debug: Log reflectivo fotos per prenda
+            $prendasDebug = [];
+            if ($cotizacion->prendas) {
+                foreach ($cotizacion->prendas as $prenda) {
+                    $reflectivo = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
+                    $prendasDebug[] = [
+                        'prenda_id' => $prenda->id,
+                        'nombre' => $prenda->nombre_producto,
+                        'tiene_reflectivo' => $reflectivo ? 'Sí' : 'No',
+                        'reflectivo_id' => $reflectivo ? $reflectivo->id : null,
+                        'fotos_count' => $reflectivo && $reflectivo->fotos ? $reflectivo->fotos->count() : 0,
+                        'fotos_ids' => $reflectivo && $reflectivo->fotos ? $reflectivo->fotos->pluck('id')->toArray() : []
+                    ];
+                }
+            }
+
             Log::info('CotizacionController@showView: Cotización cargada', [
                 'cotizacion_id' => $cotizacion->id,
                 'prendas_count' => $cotizacion->prendas ? count($cotizacion->prendas) : 0,
+                'prendas_debug' => $prendasDebug,
                 'especificaciones' => $cotizacion->especificaciones,
                 'logo' => $logo ? 'Sí' : 'No',
                 'logo_prendas_tecnicas' => $logo ? $logo->prendas : null,
@@ -432,7 +564,7 @@ final class CotizacionController extends Controller
                 'cliente_id' => $clienteId,
             ]);
 
-            // Tipo de cotización: Logo (L), Combinado (PL)
+            // Tipo de cotización: Logo (L), Combinado (PL), o Reflectivo (RF)
             $tipoCotizacion = $request->input('tipo_cotizacion', 'PL');
             $logoData = $request->input('logo', []);
             
@@ -563,13 +695,15 @@ final class CotizacionController extends Controller
             $tipoCotizacionId = $cotizacion->tipo_cotizacion_id; // Mantener el actual por defecto
             
             // Mapear tipo a tipo_cotizacion_id
-            // Tipos disponibles: Prenda (P=3), Logo (L=2), Combinado (PL/PB=1)
+            // Tipos disponibles: Prenda (P=3), Logo (L=2), Combinado (PL/PB=1), Reflectivo (RF=4)
             if ($tipoCotizacionEnviado === 'P') {
                 $tipoCotizacionId = 3; // Prenda
             } elseif ($tipoCotizacionEnviado === 'PL' || $tipoCotizacionEnviado === 'PB') {
                 $tipoCotizacionId = 1; // Combinado
             } elseif ($tipoCotizacionEnviado === 'L') {
                 $tipoCotizacionId = 2; // Logo
+            } elseif ($tipoCotizacionEnviado === 'RF') {
+                $tipoCotizacionId = 4; // Reflectivo
             } else {
                 $tipoCotizacionId = 1; // Por defecto Combinado
             }
@@ -1418,16 +1552,6 @@ final class CotizacionController extends Controller
                 $logoTecnicasAgregadas = (array)$logoTecnicasAgregadas;
             }
             
-            // DEBUG: Log completo de lo recibido
-            \Log::info('🔍 DEBUG PASO 3 - Datos recibidos:', [
-                'logo_tecnicas_agregadas_raw' => $request->input('logo.tecnicas_agregadas'),
-                'logo_tecnicas_agregadas_decoded' => $logoTecnicasAgregadas,
-                'tipo_venta_paso3' => $request->input('tipo_venta_paso3'),
-                'request_all_step3' => array_filter($request->all(), function($key) {
-                    return strpos($key, 'logo') !== false || strpos($key, 'paso3') !== false;
-                }, ARRAY_FILTER_USE_KEY)
-            ]);
-            
             // El logo tiene información válida si hay técnicas agregadas con prendas
             $logoTieneInformacionValida = false;
             if (!empty($logoTecnicasAgregadas) && is_array($logoTecnicasAgregadas)) {
@@ -1437,19 +1561,7 @@ final class CotizacionController extends Controller
                         foreach ($tecnica['prendas'] as $prenda) {
                             $tieneUbicaciones = !empty($prenda['ubicaciones']);
                             $tieneTallas = !empty($prenda['talla_cantidad']);
-                            $tieneImagenes = !empty($prenda['imagenes']);
-                            
-                            // DEBUG: Log de cada prenda evaluada
-                            \Log::info('🔍 Evaluando prenda:', [
-                                'nombre_prenda' => $prenda['nombre_prenda'] ?? 'N/A',
-                                'ubicaciones' => $prenda['ubicaciones'] ?? null,
-                                'talla_cantidad' => $prenda['talla_cantidad'] ?? null,
-                                'imagenes' => $prenda['imagenes'] ?? null,
-                                'tieneUbicaciones' => $tieneUbicaciones,
-                                'tieneTallas' => $tieneTallas,
-                                'tieneImagenes' => $tieneImagenes,
-                                'condicion_final' => $tieneUbicaciones && ($tieneTallas || $tieneImagenes)
-                            ]);
+                            $tieneImagenes = !empty($prenda['imagenes_files']);
                             
                             if ($tieneUbicaciones && ($tieneTallas || $tieneImagenes)) {
                                 $logoTieneInformacionValida = true;
@@ -2019,6 +2131,471 @@ final class CotizacionController extends Controller
                 ]);
             }
 
+            // Procesar PASO 4: REFLECTIVO
+            \Log::info('🔍 DEBUG PASO 4 - ALL REQUEST INPUTS', [
+                'keys' => array_keys($request->all())
+            ]);
+            \Log::info('🔍 DEBUG PASO 4 - REFLECTIVO REQUEST', [
+                'reflectivo_data' => $request->input('reflectivo', [])
+            ]);
+            
+            // Obtener descripción y garantizar que es string (no null)
+            $reflectivoDescripcionRaw = $request->input('reflectivo.descripcion');
+            $reflectivoDescripcion = (string)($reflectivoDescripcionRaw ?? '');  // Convertir null a string vacía
+            
+            \Log::info('🔍 DEBUG PASO 4 REFLECTIVO - Inicio', [
+                'cotizacion_id' => $cotizacionId,
+                'reflectivo_descripcion_raw' => $reflectivoDescripcionRaw,
+                'reflectivo_descripcion' => $reflectivoDescripcion,
+                'reflectivo_descripcion_empty' => empty($reflectivoDescripcion),
+                'reflectivo_descripcion_type' => gettype($reflectivoDescripcion),
+                'reflectivo_descripcion_length' => strlen($reflectivoDescripcion ?? ''),
+                'reflectivo_input' => $request->input('reflectivo', ''),
+                'all_keys' => array_keys($request->all()),
+            ]);
+            
+            // Obtener ubicación desde 'ubicaciones_reflectivo' (array JSON) o 'reflectivo.ubicacion' (string legacy)
+            $ubicacionesData = $request->input('ubicaciones_reflectivo', '[]');
+            
+            \Log::info(' DEBUG storeReflectivo - Datos recibidos:', [
+                'reflectivo_descripcion' => $reflectivoDescripcion,
+                'ubicaciones_data_tipo' => gettype($ubicacionesData),
+                'ubicaciones_data_raw' => $ubicacionesData,
+                'ubicaciones_data_length' => is_string($ubicacionesData) ? strlen($ubicacionesData) : (is_array($ubicacionesData) ? count($ubicacionesData) : 0),
+                'all_request_keys' => array_keys($request->all()),
+            ]);
+            
+            if (is_string($ubicacionesData)) {
+                $ubicacionesArray = json_decode($ubicacionesData, true) ?? [];
+            } else {
+                $ubicacionesArray = (array)$ubicacionesData;
+            }
+            
+            \Log::info(' DEBUG storeReflectivo - Ubicaciones después de decode:', [
+                'ubicaciones_array' => $ubicacionesArray,
+                'ubicaciones_count' => count($ubicacionesArray),
+                'array_structure' => json_encode($ubicacionesArray),
+            ]);
+            
+            $reflectivoUbicacion = !empty($ubicacionesArray) ? json_encode($ubicacionesArray) : ($request->input('reflectivo.ubicacion', '') ?? '[]');
+            
+            \Log::info(' DEBUG storeReflectivo - Ubicación final a guardar:', [
+                'reflectivo_ubicacion' => $reflectivoUbicacion,
+                'sera_guardado' => !empty($reflectivoUbicacion),
+            ]);
+            
+            $reflectivoObservacionesGenerales = $request->input('reflectivo.observaciones_generales', []);
+            if (is_string($reflectivoObservacionesGenerales)) {
+                $reflectivoObservacionesGenerales = json_decode($reflectivoObservacionesGenerales, true) ?? [];
+            }
+            
+            // Procesar imágenes de reflectivo
+            $reflectivoArchivos = $request->file('reflectivo.imagenes') ?? [];
+            if (empty($reflectivoArchivos)) {
+                $reflectivoArchivos = $request->file('reflectivo.imagenes.0') ?? [];
+            }
+            if (empty($reflectivoArchivos)) {
+                $allFiles = $request->allFiles();
+                $reflectivoArchivos = $allFiles['reflectivo.imagenes'] ?? [];
+            }
+            if ($reflectivoArchivos instanceof \Illuminate\Http\UploadedFile) {
+                $reflectivoArchivos = [$reflectivoArchivos];
+            } elseif (!is_array($reflectivoArchivos)) {
+                $reflectivoArchivos = [];
+            }
+            
+            // Guardar reflectivo SI Y SOLO SI hay información válida (ubicaciones O descripción+imágenes)
+            // El backend intenta guardar reflectivo para CADA prenda del PASO 2
+            $prendas = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
+            
+            // 📦 Obtener datos de prendas del PASO 4 (reflectivo)
+            // Estos contienen ubicaciones específicas para cada prenda
+            $prendasReflectivoPaso4 = $request->input('prendas_reflectivo_paso4', []);
+            if (is_string($prendasReflectivoPaso4)) {
+                $prendasReflectivoPaso4 = json_decode($prendasReflectivoPaso4, true) ?? [];
+            }
+            
+            \Log::info('📦 Prendas reflectivo PASO 4 recibidas:', [
+                'count' => count($prendasReflectivoPaso4),
+                'prendasReflectivoPaso4' => json_encode($prendasReflectivoPaso4),
+            ]);
+            
+            //  VALIDAR si reflectivo tiene información escrita válida
+            // Prioridad: Si hay prendas_reflectivo_paso4, usar eso para validar
+            $tieneInfoValidaDesdeP4 = !empty($prendasReflectivoPaso4) && count($prendasReflectivoPaso4) > 0;
+            
+            // Si no hay datos en P4, validar usando los datos unificados (fallback)
+            $tieneUbicacionesReflectivo = !empty($reflectivoUbicacion) && $reflectivoUbicacion !== '[]' && $reflectivoUbicacion !== '{}';
+            $tieneDescripcionReflectivo = !empty($reflectivoDescripcion);
+            $tieneImagenesReflectivo = !empty($reflectivoArchivos) && count($reflectivoArchivos) > 0;
+            
+            $reflectivoTieneInfoValida = $tieneInfoValidaDesdeP4 || $tieneUbicacionesReflectivo || ($tieneDescripcionReflectivo && $tieneImagenesReflectivo);
+            
+            \Log::info('📦 Prendas encontradas PARA REFLECTIVO - VALIDACIÓN', [
+                'prendas_count' => $prendas->count(),
+                'tieneInfoValidaDesdeP4' => $tieneInfoValidaDesdeP4,
+                'tieneUbicacionesReflectivo' => $tieneUbicacionesReflectivo,
+                'tieneDescripcionReflectivo' => $tieneDescripcionReflectivo,
+                'tieneImagenesReflectivo' => $tieneImagenesReflectivo,
+                'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,
+            ]);
+            
+            if ($prendas->count() > 0 && $reflectivoTieneInfoValida) {
+                try {
+                    foreach ($prendas as $prenda) {
+                        \Log::info(' Guardando reflectivo para prenda', [
+                            'prenda_id' => $prenda->id,
+                            'cotizacion_id' => $cotizacionId,
+                            'descripcion' => $reflectivoDescripcion,
+                        ]);
+                        
+                        //  Cargar variaciones de la prenda desde la BD
+                        $variacionesPrenda = [];
+                        if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                            foreach ($prenda->variantes as $variante) {
+                                // Decodificar telas_multiples si es string, si no usar directamente
+                                $telasMultiples = $variante->telas_multiples;
+                                if (is_string($telasMultiples)) {
+                                    $telasMultiples = json_decode($telasMultiples, true) ?? [];
+                                } elseif (!is_array($telasMultiples)) {
+                                    $telasMultiples = [];
+                                }
+                                
+                                $variacionesPrenda[] = [
+                                    'id' => $variante->id,
+                                    'tipo_manga_id' => $variante->tipo_manga_id,
+                                    'tipo_broche_id' => $variante->tipo_broche_id,
+                                    'genero_id' => $variante->genero_id,
+                                    'color' => $variante->color,
+                                    'tiene_bolsillos' => $variante->tiene_bolsillos,
+                                    'obs_bolsillos' => $variante->obs_bolsillos,
+                                    'obs_broche' => $variante->obs_broche,
+                                    'tiene_reflectivo' => $variante->tiene_reflectivo,
+                                    'descripcion_adicional' => $variante->descripcion_adicional,
+                                    'telas_multiples' => $telasMultiples,
+                                ];
+                            }
+                        }
+                        
+                        $variacionesJson = !empty($variacionesPrenda) ? json_encode($variacionesPrenda) : null;
+                        
+                        \Log::info(' Variaciones cargadas para prenda', [
+                            'prenda_id' => $prenda->id,
+                            'variaciones_count' => count($variacionesPrenda),
+                            'variaciones_json' => $variacionesJson,
+                        ]);
+                        
+                        // Crear o actualizar reflectivo_cotizaciones para esta prenda
+                        $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::updateOrCreate(
+                            [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prenda->id,
+                            ],
+                            [
+                                'descripcion' => $reflectivoDescripcion,
+                                'observaciones_generales' => is_array($reflectivoObservacionesGenerales) ? json_encode($reflectivoObservacionesGenerales) : $reflectivoObservacionesGenerales,
+                            ]
+                        );
+                        
+                        \Log::info(' Reflectivo guardado en reflectivo_cotizacion', [
+                            'reflectivo_id' => $reflectivoCotizacion->id,
+                            'prenda_cot_id' => $prenda->id,
+                            'cotizacion_id' => $cotizacionId,
+                        ]);
+                        
+                        //  BUSCAR UBICACIONES Y DESCRIPCIÓN ESPECÍFICAS DE ESTA PRENDA desde prendas_reflectivo_paso4
+                        // Cada prenda puede tener sus propias ubicaciones y descripción
+                        $ubicacionesEspecificasPrenda = [];
+                        $descripcionEspecificaPrenda = null;
+                        
+                        foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
+                            // Comparar por nombre de prenda - usar 'tipo_prenda' (clave en el PASO 4)
+                            if (isset($prendaReflectivo['tipo_prenda']) && 
+                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto) {
+                                
+                                // Obtener ubicaciones
+                                if (!empty($prendaReflectivo['ubicaciones'])) {
+                                    $ubicacionesEspecificasPrenda = $prendaReflectivo['ubicaciones'];
+                                }
+                                
+                                // Obtener descripción si existe
+                                if (!empty($prendaReflectivo['descripcion'])) {
+                                    $descripcionEspecificaPrenda = $prendaReflectivo['descripcion'];
+                                }
+                                
+                                break;
+                            }
+                        }
+                        
+                        //  Asegurar que ubicaciones sea JSON válido
+                        $ubicacionesFinal = !empty($ubicacionesEspecificasPrenda) 
+                            ? json_encode($ubicacionesEspecificasPrenda)
+                            : json_encode([]);
+                        
+                        \Log::info(' Ubicaciones y descripción específicas para prenda:', [
+                            'prenda_nombre' => $prenda->nombre_producto,
+                            'ubicaciones_encontradas' => $ubicacionesEspecificasPrenda,
+                            'descripcion_encontrada' => $descripcionEspecificaPrenda,
+                            'ubicaciones_json' => $ubicacionesFinal,
+                        ]);
+                        
+                        // Guardar en prenda_cot_reflectivo con variaciones, ubicaciones y descripción
+                        $prendaCotReflectivo = \App\Models\PrendaCotReflectivo::updateOrCreate(
+                            [
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prenda->id,
+                            ],
+                            [
+                                'variaciones' => $variacionesJson,  // Variaciones traídas del PASO 2
+                                'ubicaciones' => $ubicacionesFinal,  // Ubicaciones específicas del reflectivo para esta prenda
+                                'descripcion' => $descripcionEspecificaPrenda,  // Descripción escrita en el paso 4
+
+                            ]
+                        );
+                        
+                        \Log::info(' Reflectivo guardado en prenda_cot_reflectivo', [
+                            'prenda_cot_reflectivo_id' => $prendaCotReflectivo->id,
+                            'cotizacion_id' => $cotizacionId,
+                            'prenda_cot_id' => $prenda->id,
+                            'variaciones_guardadas' => $variacionesJson ? 'SÍ' : 'NO',
+                            'ubicaciones' => $ubicacionesFinal,
+                        ]);
+                    }
+                    
+                    // Guardar imágenes del reflectivo (máximo 3)
+                    // Procesar imágenes desde prendas_reflectivo_paso4
+                    $ordenFoto = 1;
+                    $maxImagenes = 3;
+                    
+                    foreach ($prendas as $prenda) {
+                        $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                            ->where('prenda_cot_id', $prenda->id)
+                            ->first();
+                        
+                        if (!$reflectivoCotizacion) {
+                            continue;
+                        }
+                        
+                        // Buscar imágenes específicas de esta prenda desde prendas_reflectivo_paso4
+                        foreach ($prendasReflectivoPaso4 as $prendaReflectivo) {
+                            if (isset($prendaReflectivo['tipo_prenda']) && 
+                                $prendaReflectivo['tipo_prenda'] === $prenda->nombre_producto &&
+                                !empty($prendaReflectivo['imagenes'])) {
+                                
+                                $ordenFoto = 1;
+                                
+                                foreach ($prendaReflectivo['imagenes'] as $imagen) {
+                                    if ($ordenFoto > $maxImagenes) {
+                                        break;
+                                    }
+                                    
+                                    $rutaGuardar = null;
+                                    
+                                    //  IMPORTANTE: Solo guardar imágenes del PASO 2 que tienen ruta guardada en BD
+                                    // Las imágenes del PASO 4 (nuevas) se procesan SOLO desde FormData, NO del JSON
+                                    // El JSON contiene preview (base64) que NUNCA debe guardarse directamente
+                                    
+                                    if (isset($imagen['tipo']) && $imagen['tipo'] === 'paso2' && isset($imagen['ruta'])) {
+                                        $rutaGuardar = $imagen['ruta'];
+                                        \Log::info('📸 Reflectivo: Imagen del PASO 2 detectada', [
+                                            'prenda' => $prenda->nombre_producto,
+                                            'ruta' => $rutaGuardar,
+                                        ]);
+                                    } elseif (isset($imagen['tipo']) && $imagen['tipo'] === 'paso4') {
+                                        //  Las imágenes del PASO 4 DEBEN procesarse desde FormData (archivos)
+                                        // NO desde el JSON que contiene base64
+                                        \Log::info('📸 Reflectivo: Imagen del PASO 4 - Será procesada desde FormData', [
+                                            'prenda' => $prenda->nombre_producto,
+                                            'es_archivo' => isset($imagen['file']) ? 'SÍ' : 'NO (será procesada desde FormData)',
+                                        ]);
+                                        // NO asignar $rutaGuardar aquí - dejar que se procese desde FormData
+                                        continue;
+                                    }
+                                    
+                                    // Guardar la ruta en reflectivo_fotos_cotizacion (solo PASO 2)
+                                    if ($rutaGuardar) {
+                                        try {
+                                            $reflectivoCotizacion->fotos()->create([
+                                                'ruta_original' => $rutaGuardar,
+                                                'ruta_webp' => $rutaGuardar,
+                                                'orden' => $ordenFoto,
+                                            ]);
+                                            
+                                            \Log::info(' Reflectivo foto (PASO 2) guardada en BD', [
+                                                'reflectivo_id' => $reflectivoCotizacion->id,
+                                                'ruta' => $rutaGuardar,
+                                                'orden' => $ordenFoto,
+                                            ]);
+                                            
+                                            $ordenFoto++;
+                                        } catch (\Exception $e) {
+                                            \Log::error(' Error guardando foto de reflectivo del PASO 2', [
+                                                'reflectivo_id' => $reflectivoCotizacion->id,
+                                                'error' => $e->getMessage()
+                                            ]);
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    
+                    //  PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
+                    // Las imágenes vienen en: reflectivo[imagenes_paso4][prendaIndex][imagenIndex]
+                    
+                    // 🔍 DEBUG: Check all files in request
+                    $allFilesInRequest = $request->allFiles();
+                    \Log::debug('DEBUG - Todos los archivos en request:', $allFilesInRequest);
+                    
+                    $imagenesP4ReflectivoFiles = $request->file('reflectivo.imagenes_paso4');
+                    \Log::debug('DEBUG - imagenesP4ReflectivoFiles:', [$imagenesP4ReflectivoFiles]);
+                    
+                    $imagenesP4ReflectivoArchivos = [];
+                    if ($imagenesP4ReflectivoFiles && is_array($imagenesP4ReflectivoFiles)) {
+                        \Log::debug('DEBUG - Entrando a flatearArchivos con imagenesP4ReflectivoFiles');
+                        $this->flatearArchivos($imagenesP4ReflectivoFiles, $imagenesP4ReflectivoArchivos, 'reflectivo[imagenes_paso4]');
+                    } else {
+                        \Log::debug('DEBUG - imagenesP4ReflectivoFiles es null o no es array', ['imagenesP4ReflectivoFiles' => $imagenesP4ReflectivoFiles]);
+                    }
+                    
+                    if (count($imagenesP4ReflectivoArchivos) > 0) {
+                        
+                        foreach ($imagenesP4ReflectivoArchivos as $fieldName => $archivo) {
+                            // Coincide con patrón: reflectivo[imagenes_paso4][{prendaIndex}][{imagenIndex}]
+                            if (preg_match('/^reflectivo\[imagenes_paso4\]\[(\d+)\]\[(\d+)\]$/', $fieldName, $matches)) {
+                                $prendaIndex = (int)$matches[1];
+                                $imagenIndex = (int)$matches[2];
+                                
+                                try {
+                                    if (isset($prendasReflectivoPaso4[$prendaIndex])) {
+                                        $prendaReflectivoData = $prendasReflectivoPaso4[$prendaIndex];
+                                        $nombrePrendaBase = $prendaReflectivoData['tipo_prenda'];
+                                        
+                                        $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
+                                            ->first();
+                                        
+                                        if ($prendaCot) {
+                                            $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                                                ->where('prenda_cot_id', $prendaCot->id)
+                                                ->first();
+                                            
+                                            if ($reflectivoCotizacion) {
+                                                $ordenFoto = $reflectivoCotizacion->fotos()->count() + 1;
+                                                
+                                                if ($ordenFoto > 3) {
+                                                    continue;
+                                                }
+                                                
+                                                $rutaDirectorio = "cotizaciones/{$cotizacionId}/reflectivo";
+                                                $nombreArchivo = uniqid('img_reflectivo_') . '.' . $archivo->getClientOriginalExtension();
+                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo;
+                                                
+                                                // Guardar archivo en disco (public/storage)
+                                                $path = $archivo->store($rutaDirectorio, 'public');
+                                                
+                                                // Registrar en BD (reflectivo_fotos_cotizacion)
+                                                $reflectivoCotizacion->fotos()->create([
+                                                    'ruta_original' => $path,
+                                                    'ruta_webp' => $path,
+                                                    'orden' => $ordenFoto,
+                                                ]);
+                                                
+                                                //  LOG DETALLADO - Solo cuando se guarda correctamente
+                                                Log::info('
+╔════════════════════════════════════════════════════════════════╗
+║      IMAGEN REFLECTIVO GUARDADA CORRECTAMENTE - PASO 4       ║
+╠════════════════════════════════════════════════════════════════╣
+║ Cotización ID: ' . $cotizacionId . '
+║ Prenda: ' . $nombrePrendaBase . '
+║ Archivo: ' . $archivo->getClientOriginalName() . '
+║ Tamaño: ' . round($archivo->getSize() / 1024, 2) . ' KB
+║ Tipo: ' . $archivo->getClientMimeType() . '
+║ 
+║ ALMACENADO EN:
+║ Directorio: ' . $rutaDirectorio . '
+║ Ruta BD: ' . $path . '
+║ Orden: ' . $ordenFoto . '/3
+║ 
+║ TABLA: reflectivo_fotos_cotizacion
+║ ID Reflectivo: ' . $reflectivoCotizacion->id . '
+╚════════════════════════════════════════════════════════════════╝
+                                                ');
+                                            } else {
+                                                Log::warning(' No se encontró reflectivo_cotizacion', ['prenda' => $nombrePrendaBase]);
+                                            }
+                                        } else {
+                                            Log::warning(' No se encontró prenda en BD', ['nombre_prenda' => $nombrePrendaBase]);
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error(' Error procesando imagen reflectivo PASO 4', ['error' => $e->getMessage()]);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!empty($reflectivoArchivos)) {
+                        $ordenFoto = 1;
+                        
+                        foreach ($reflectivoArchivos as $foto) {
+                            if ($ordenFoto > $maxImagenes) {
+                                \Log::warning(' Se alcanzó el límite de 3 imágenes para reflectivo', [
+                                    'cotizacion_id' => $cotizacionId,
+                                ]);
+                                break;
+                            }
+                            
+                            if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                                // Procesar la imagen usando el servicio existente
+                                $rutaWebP = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
+                                
+                                // Guardar en reflectivo_fotos_cotizacion para cada prenda
+                                foreach ($prendas as $prenda) {
+                                    $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)
+                                        ->where('prenda_cot_id', $prenda->id)
+                                        ->first();
+                                    
+                                    if ($reflectivoCotizacion) {
+                                        $reflectivoCotizacion->fotos()->create([
+                                            'ruta_original' => $rutaWebP,
+                                            'ruta_webp' => $rutaWebP,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                        
+                                        \Log::info(' Reflectivo foto (PASO 4) guardada', [
+                                            'reflectivo_id' => $reflectivoCotizacion->id,
+                                            'ruta' => $rutaWebP,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                    }
+                                }
+                                
+                                $ordenFoto++;
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error(' Error al guardar reflectivo', [
+                        'cotizacion_id' => $cotizacionId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            } else {
+                \Log::warning(' Reflectivo NO será guardado - Validación falló', [
+                    'cotizacion_id' => $cotizacionId,
+                    'prendas_count' => $prendas->count(),
+                    'reflectivoTieneInfoValida' => $reflectivoTieneInfoValida,
+                    'tieneInfoValidaDesdeP4' => $tieneInfoValidaDesdeP4,
+                    'prendasReflectivoPaso4' => $prendasReflectivoPaso4,
+                    'reflectivoDescripcion' => $reflectivoDescripcion,
+                    'reflectivoUbicacion' => $reflectivoUbicacion,
+                    'reflectivoArchivos_count' => count($reflectivoArchivos),
+                ]);
+            }
+
             Log::info('Imágenes procesadas correctamente', ['cotizacion_id' => $cotizacionId]);
         } catch (\Exception $e) {
             Log::error('Error procesando imágenes', [
@@ -2130,6 +2707,864 @@ final class CotizacionController extends Controller
         } catch (\Exception $e) {
             Log::error('CotizacionController@subirImagen: Error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Error al subir imagen'], 500);
+        }
+    }
+
+    /**
+     * Guardar cotización tipo RF (Reflectivo)
+     * 
+     * Endpoint específico para manejar el flujo de reflectivo desde create-reflectivo.blade.php
+     */
+    public function storeReflectivo(Request $request): JsonResponse
+    {
+        try {
+            Log::info('🔵 CotizacionController@storeReflectivo - Iniciando creación de cotización RF', [
+                'cliente' => $request->input('cliente'),
+                'tipo' => $request->input('tipo'),
+                'action' => $request->input('action'),
+            ]);
+
+            // DEBUG: Log de todo lo que recibe
+            Log::info('🔍 DEBUG - Datos recibidos en storeReflectivo:', [
+                'all_inputs' => $request->all(),
+                'prendas_input' => $request->input('prendas'),
+                'prendas_type' => gettype($request->input('prendas')),
+                'prendas_strlen' => strlen($request->input('prendas') ?? ''),
+            ]);
+
+            // Validar datos básicos
+            $validated = $request->validate([
+                'cliente' => 'required|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'fecha' => 'required|date',
+                'action' => 'required|in:borrador,enviar',
+                'tipo' => 'required|in:RF',
+                'tipo_venta_reflectivo' => 'nullable|in:M,D,X',
+                'prendas' => 'nullable', // Cambiar de required|string a nullable para debug
+                'especificaciones' => 'nullable|string',
+                'descripcion_reflectivo' => 'required|string',
+                'ubicaciones_reflectivo' => 'nullable',
+                'observaciones_generales' => 'nullable',
+                'imagenes_reflectivo.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            ]);
+
+            // Verificar si prendas es string o array (debug)
+            $prendasInput = $request->input('prendas');
+            
+            // Convertir a string si viene como array (bug de FormData multipart)
+            if (is_array($prendasInput)) {
+                $prendasInput = json_encode($prendasInput);
+            }
+            
+            if (is_null($prendasInput)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas es null. Verificar envío de FormData.',
+                    'errors' => [
+                        'prendas' => ['Campo no recibido o null'],
+                        'debug_all_keys' => array_keys($request->all()),
+                    ]
+                ], 422);
+            }
+
+            if (!is_string($prendasInput)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas debe ser string JSON. Recibido: ' . gettype($prendasInput),
+                    'errors' => [
+                        'prendas' => ['Tipo incorrecto: ' . gettype($prendasInput) . ', esperado: string'],
+                    ]
+                ], 422);
+            }
+
+            if (strlen($prendasInput) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El campo prendas está vacío.',
+                    'errors' => [
+                        'prendas' => ['String vacío'],
+                    ]
+                ], 422);
+            }
+            
+            // Usar el string convertido para el resto del método
+            $validated['prendas'] = $prendasInput;
+
+            // Decodificar prendas del JSON string
+            $prendas = json_decode($validated['prendas'], true);
+            
+            Log::info(' DEBUG storeReflectivo - Prendas recibidas:', [
+                'prendas_json' => $validated['prendas'],
+                'prendas_decoded' => $prendas,
+                'prendas_count' => is_array($prendas) ? count($prendas) : 0,
+                'first_prenda' => is_array($prendas) && count($prendas) > 0 ? $prendas[0] : null,
+            ]);
+            
+            if (!is_array($prendas) || count($prendas) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prendas inválidas. Debe ser un array con al menos 1 prenda.',
+                    'errores' => ['prendas' => ['Array inválido o vacío']]
+                ], 422);
+            }
+
+            // Decodificar especificaciones del JSON string
+            $especificaciones = [];
+            if (!empty($validated['especificaciones'])) {
+                if (is_string($validated['especificaciones'])) {
+                    $especificaciones = json_decode($validated['especificaciones'], true) ?? [];
+                } elseif (is_array($validated['especificaciones'])) {
+                    $especificaciones = $validated['especificaciones'];
+                }
+            }
+            
+            // Asegurar que todas las categorías existan, incluso si están vacías
+            $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+            foreach ($categoriasRequeridas as $categoria) {
+                if (!isset($especificaciones[$categoria])) {
+                    $especificaciones[$categoria] = [];
+                }
+            }
+            
+            Log::info(' DEBUG storeReflectivo - Especificaciones recibidas:', [
+                'especificaciones_raw' => $validated['especificaciones'] ?? null,
+                'especificaciones_decoded' => $especificaciones,
+                'especificaciones_count' => count($especificaciones),
+                'especificaciones_keys' => array_keys($especificaciones),
+                'forma_pago' => $especificaciones['forma_pago'] ?? 'NO EXISTE',
+                'disponibilidad' => $especificaciones['disponibilidad'] ?? 'NO EXISTE',
+                'regimen' => $especificaciones['regimen'] ?? 'NO EXISTE',
+                'se_ha_vendido' => $especificaciones['se_ha_vendido'] ?? 'NO EXISTE',
+                'ultima_venta' => $especificaciones['ultima_venta'] ?? 'NO EXISTE',
+                'flete' => $especificaciones['flete'] ?? 'NO EXISTE',
+            ]);
+
+            DB::beginTransaction();
+
+            try {
+                // Obtener o crear cliente
+                $cliente = $this->obtenerOCrearClienteService->ejecutar($validated['cliente']);
+                Log::info(' Cliente obtenido/creado', ['cliente_id' => $cliente->id]);
+
+                // Determinar estado
+                $esBorrador = ($validated['action'] === 'borrador');
+                $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
+
+                // Generar número de cotización SIEMPRE (para poder identificar el borrador luego)
+                $usuarioId = Auth::id();
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+
+                // Crear cotización base sin prendas (tipo RF = Reflectivo)
+                $cotizacion = \App\Models\Cotizacion::create([
+                    'asesor_id' => Auth::id(),
+                    'cliente_id' => $cliente->id,
+                    'numero_cotizacion' => $numeroCotizacion,
+                    'tipo_cotizacion_id' => $this->obtenerTipoCotizacionId('RF'),
+                    'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? 'M',
+                    'fecha_inicio' => $validated['fecha'],
+                    'especificaciones' => $especificaciones,
+                    'es_borrador' => $esBorrador,
+                    'estado' => $estado,
+                    'fecha_envio' => !$esBorrador ? \Carbon\Carbon::now('America/Bogota') : null,
+                ]);
+
+                Log::info(' Cotización RF creada', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'especificaciones_guardadas' => $cotizacion->especificaciones,
+                    'especificaciones_type' => gettype($cotizacion->especificaciones),
+                    'especificaciones_count' => is_array($cotizacion->especificaciones) ? count($cotizacion->especificaciones) : 0,
+                ]);
+
+                //  PROCESAR PRENDAS Y CREAR UN REFLECTIVO POR CADA PRENDA
+                $imagenesGuardadas = [];
+                
+                Log::info('🔵 INICIANDO LOOP DE PRENDAS', [
+                    'prendas_totales' => count($prendas),
+                    'todos_campos_request' => array_keys($request->allFiles()),
+                ]);
+                
+                if (!empty($prendas)) {
+                    foreach ($prendas as $prendaIndex => $prenda) {
+                        Log::info("🔵 PROCESANDO PRENDA {$prendaIndex}", [
+                            'prenda_tipo' => $prenda['tipo'] ?? 'N/A',
+                            'prenda_es_array' => is_array($prenda),
+                        ]);
+                        
+                        // La prenda ya está decodificada como array
+                        if (is_array($prenda)) {
+                            // 1. Guardar prenda en prendas_cot
+                            // IMPORTANTE: Para cotizaciones de reflectivo INDIVIDUAL, prenda_bodega siempre es true
+                            $prendaCot = \App\Models\PrendaCot::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'nombre_producto' => $prenda['tipo'] ?? $prenda['nombre'] ?? 'Prenda',
+                                'cantidad' => 1,
+                                'descripcion' => $prenda['descripcion'] ?? '',
+                                'prenda_bodega' => true,
+                            ]);
+
+                            // 2. Guardar tallas en prenda_tallas_cot con cantidades
+                            if (!empty($prenda['tallas']) && is_array($prenda['tallas'])) {
+                                $cantidades = $prenda['cantidades'] ?? [];
+                                foreach ($prenda['tallas'] as $talla) {
+                                    $cantidad = $cantidades[$talla] ?? 1; // Usar cantidad del array, o 1 por defecto
+                                    \App\Models\PrendaTallaCot::create([
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'talla' => $talla,
+                                        'cantidad' => (int)$cantidad,
+                                    ]);
+                                }
+                                Log::info(' Tallas guardadas para prenda', [
+                                    'prenda_cot_id' => $prendaCot->id,
+                                    'tallas_count' => count($prenda['tallas']),
+                                    'tallas' => $prenda['tallas'],
+                                    'cantidades' => $cantidades
+                                ]);
+                            }
+
+                            // 2b.  GUARDAR GÉNERO EN prenda_variantes_cot SI EXISTE
+                            if (!empty($prenda['genero'])) {
+                                // Mapear valores del frontend a IDs de la tabla generos_prenda
+                                $generoId = null;
+                                if ($prenda['genero'] === 'dama') {
+                                    // Buscar género Dama en generos_prenda
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'dama')
+                                        ->value('id');
+                                } elseif ($prenda['genero'] === 'caballero') {
+                                    // Buscar género Caballero en generos_prenda
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'caballero')
+                                        ->value('id');
+                                }
+                                
+                                if ($generoId) {
+                                    // Crear o actualizar variante con el género
+                                    \App\Models\PrendaVarianteCot::updateOrCreate(
+                                        ['prenda_cot_id' => $prendaCot->id],
+                                        ['genero_id' => $generoId]
+                                    );
+                                    Log::info(' Género guardado en prenda_variantes_cot', [
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'genero' => $prenda['genero'],
+                                        'genero_id' => $generoId
+                                    ]);
+                                }
+                            }
+
+                            // 2c.  GUARDAR VARIACIONES Y UBICACIONES EN prenda_cot_reflectivo
+                            $variacionesDePrenda = $prenda['variaciones'] ?? [];
+                            if (is_string($variacionesDePrenda)) {
+                                $variacionesDePrenda = json_decode($variacionesDePrenda, true) ?? [];
+                            }
+
+                            $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
+                            if (is_string($ubicacionesDePrenda)) {
+                                $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
+                            }
+
+                            // Procesar color, tela y referencia de esta prenda
+                            $colorTelaRef = $prenda['color_tela_ref'] ?? [];
+                            if (is_string($colorTelaRef)) {
+                                $colorTelaRef = json_decode($colorTelaRef, true) ?? [];
+                            }
+
+                            // Crear registro en prenda_cot_reflectivo con variaciones, ubicaciones y color_tela_ref
+                            \App\Models\PrendaCotReflectivo::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'prenda_cot_id' => $prendaCot->id,
+                                'variaciones' => !empty($variacionesDePrenda) ? json_encode($variacionesDePrenda) : json_encode([]),
+                                'ubicaciones' => !empty($ubicacionesDePrenda) ? json_encode($ubicacionesDePrenda) : json_encode([]),
+                                'color_tela_ref' => !empty($colorTelaRef) ? json_encode($colorTelaRef) : json_encode([]),
+                            ]);
+
+                            Log::info(' PrendaCotReflectivo creado con variaciones, ubicaciones y color_tela_ref', [
+                                'prenda_cot_id' => $prendaCot->id,
+                                'variaciones_count' => count($variacionesDePrenda),
+                                'ubicaciones_count' => count($ubicacionesDePrenda),
+                                'color_tela_ref_count' => count($colorTelaRef),
+                            ]);
+
+                            // 3.  CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
+                            // Obtener ubicaciones de esta prenda
+                            $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
+                            if (is_string($ubicacionesDePrenda)) {
+                                $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
+                            }
+
+                            // Procesar observaciones (si existen para esta prenda)
+                            $observacionesDePrenda = $prenda['observaciones'] ?? [];
+                            if (is_string($observacionesDePrenda)) {
+                                $observacionesDePrenda = json_decode($observacionesDePrenda, true) ?? [];
+                            }
+
+                            // Crear reflectivo vinculado a esta prenda específica
+                            $reflectivo = \App\Models\ReflectivoCotizacion::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'prenda_cot_id' => $prendaCot->id,  //  Vinculado a la prenda
+                                'descripcion' => $validated['descripcion_reflectivo'],
+                                'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? null,
+                                'ubicacion' => json_encode($ubicacionesDePrenda),
+                                'observaciones_generales' => json_encode($observacionesDePrenda),
+                                'imagenes' => json_encode([]),
+                            ]);
+
+                            Log::info(' ReflectivoCotizacion creado para prenda', [
+                                'reflectivo_id' => $reflectivo->id,
+                                'prenda_cot_id' => $prendaCot->id,
+                                'ubicaciones_count' => count($ubicacionesDePrenda)
+                            ]);
+
+                            // 4.  PROCESAR IMÁGENES DE ESTA PRENDA ESPECÍFICA
+                            // Las imágenes vienen con el nombre: imagenes_reflectivo_prenda_{index}[] o imagenes_reflectivo_prenda_{index}
+                            $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
+                            
+                            Log::info(' BUSCANDO IMÁGENES', [
+                                'prenda_index' => $prendaIndex,
+                                'campo_esperado' => $campoImagenes,
+                                'todos_archivos' => array_keys($request->allFiles()),
+                                'has_file_sin_brackets' => $request->hasFile($campoImagenes) ? 'SÍ' : 'NO',
+                                'has_file_con_brackets' => $request->hasFile($campoImagenes . '[]') ? 'SÍ' : 'NO',
+                            ]);
+                            
+                            // Intentar obtener archivos con o sin []
+                            $archivos = $request->file($campoImagenes);
+                            if (!$archivos) {
+                                $archivos = $request->file($campoImagenes . '[]');
+                            }
+                            
+                            if ($archivos) {
+                                Log::info(' ENCONTRADAS IMÁGENES PARA PRENDA', [
+                                    'prenda_index' => $prendaIndex,
+                                    'campo' => $campoImagenes,
+                                    'cantidad' => is_array($archivos) ? count($archivos) : 1,
+                                ]);
+                                
+                                // Normalizar a array
+                                if (!is_array($archivos)) {
+                                    $archivos = [$archivos];
+                                }
+                                
+                                $orden = 1;
+                                foreach ($archivos as $archivo) {
+                                    if ($archivo && $archivo->isValid()) {
+                                        // Guardar archivo en webp
+                                        $nombreImagen = 'reflectivo_' . time() . '_' . uniqid() . '.webp';
+                                        $rutaDirectorio = "cotizaciones/{$cotizacion->id}/reflectivo";
+                                        $ruta = Storage::disk('public')->putFileAs(
+                                            $rutaDirectorio,
+                                            $archivo,
+                                            $nombreImagen
+                                        );
+                                        
+                                        // Guardar en tabla reflectivo_fotos_cotizacion vinculada a ESTE reflectivo
+                                        $foto = \App\Models\ReflectivoCotizacionFoto::create([
+                                            'reflectivo_cotizacion_id' => $reflectivo->id,
+                                            'ruta_original' => $ruta,
+                                            'ruta_webp' => $ruta,
+                                            'orden' => $orden++,
+                                        ]);
+                                        
+                                        $imagenesGuardadas[] = $foto->id;
+
+                                        Log::info('📸 Imagen guardada para prenda', [
+                                            'ruta' => $ruta,
+                                            'prenda_index' => $prendaIndex,
+                                            'prenda_cot_id' => $prendaCot->id,
+                                            'reflectivo_id' => $reflectivo->id,
+                                            'foto_id' => $foto->id,
+                                        ]);
+                                    }
+                                }
+                            } else {
+                                Log::info(' NO HAY IMÁGENES PARA ESTA PRENDA', [
+                                    'campo' => $campoImagenes,
+                                    'prenda_index' => $prendaIndex,
+                                    'todos_los_archivos' => json_encode(array_keys($request->allFiles())),
+                                ]);
+                            }
+
+                            // 5.  PROCESAR IMÁGENES DE TELA DE ESTA PRENDA ESPECÍFICA
+                            // Las imágenes de tela vienen en: prendas[prendaIndex][telas][telaIndex][fotos][]
+                            $allFiles = $request->allFiles();
+                            if (isset($allFiles['prendas']) && is_array($allFiles['prendas']) && isset($allFiles['prendas'][$prendaIndex])) {
+                                $prendaFiles = $allFiles['prendas'][$prendaIndex];
+                                
+                                if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
+                                    Log::info('  Procesando telas de prenda', [
+                                        'prenda_index' => $prendaIndex,
+                                        'telas_count' => count($prendaFiles['telas']),
+                                    ]);
+                                    
+                                    foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                                        // Obtener info de la tela desde color_tela_ref
+                                        $colorTelaRef = $prenda['color_tela_ref'] ?? [];
+                                        $telaInfo = [];
+                                        if (!empty($colorTelaRef)) {
+                                            foreach ($colorTelaRef as $ctRef) {
+                                                if (($ctRef['indice'] ?? null) === (int)$telaIndex) {
+                                                    $telaInfo = $ctRef;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Procesar fotos de tela
+                                        if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
+                                            Log::info('   Encontradas fotos de tela', [
+                                                'prenda_index' => $prendaIndex,
+                                                'tela_index' => $telaIndex,
+                                                'fotos_count' => count($telaData['fotos']),
+                                                'color' => $telaInfo['color'] ?? '',
+                                                'tela' => $telaInfo['tela'] ?? '',
+                                                'referencia' => $telaInfo['referencia'] ?? '',
+                                            ]);
+                                            
+                                            $ordenFoto = 1;
+                                            $numTelaGlobal = $telaIndex + 1; // Enumerar telas desde 1
+                                            
+                                            foreach ($telaData['fotos'] as $archivoFoto) {
+                                                if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
+                                                    try {
+                                                        // Obtener extensión del archivo
+                                                        $extension = $archivoFoto->getClientOriginalExtension();
+                                                        
+                                                        // Crear nombre enumerado: img_tela_1, img_tela_2, etc.
+                                                        $nombreArchivo = "img_tela_{$numTelaGlobal}.{$extension}";
+                                                        
+                                                        // Guardar en storage con nombre enumerado
+                                                        $rutaGuardada = $archivoFoto->storeAs(
+                                                            "cotizaciones/{$cotizacion->id}/telas",
+                                                            $nombreArchivo,
+                                                            'public'
+                                                        );
+                                                        $rutaUrl = \Storage::url($rutaGuardada);
+                                                        
+                                                        // Guardar en tabla prenda_tela_fotos_cot
+                                                        \DB::table('prenda_tela_fotos_cot')->insert([
+                                                            'prenda_cot_id' => $prendaCot->id,
+                                                            'prenda_tela_cot_id' => null,  // Sin relación específica en reflectivo
+                                                            'tela_index' => $telaIndex,
+                                                            'ruta_original' => $rutaUrl,
+                                                            'ruta_webp' => null,
+                                                            'ruta_miniatura' => null,
+                                                            'orden' => $ordenFoto,
+                                                            'ancho' => null,
+                                                            'alto' => null,
+                                                            'tamaño' => $archivoFoto->getSize(),
+                                                            'created_at' => now(),
+                                                            'updated_at' => now(),
+                                                        ]);
+                                                        
+                                                        Log::info('    Foto de tela guardada para reflectivo', [
+                                                            'prenda_id' => $prendaCot->id,
+                                                            'tela_index' => $telaIndex,
+                                                            'nombre_guardado' => $nombreArchivo,
+                                                            'ruta' => $rutaUrl,
+                                                            'referencia' => $telaInfo['referencia'] ?? '',
+                                                            'orden' => $ordenFoto,
+                                                        ]);
+                                                        
+                                                        $ordenFoto++;
+                                                        $numTelaGlobal++; // Incrementar para la siguiente foto
+                                                    } catch (\Exception $e) {
+                                                        Log::error('    Error guardando foto de tela para reflectivo', [
+                                                            'error' => $e->getMessage(),
+                                                            'archivo' => $archivoFoto->getClientOriginalName(),
+                                                        ]);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Log::warning(' PRENDA NO ES ARRAY', [
+                                'prenda_index' => $prendaIndex,
+                                'prenda_type' => gettype($prenda),
+                                'prenda_value' => $prenda,
+                            ]);
+                        }
+                    }
+                    $prendasCount = is_array($prendas) ? count($prendas) : 0;
+                    Log::info(' LOOP COMPLETADO - Prendas y reflectivos guardados', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'prendas_count' => $prendasCount,
+                        'imagenes_totales_guardadas' => count($imagenesGuardadas),
+                    ]);
+                } else {
+                    Log::warning(' NO HAY PRENDAS PARA PROCESAR');
+                }
+
+                DB::commit();
+
+                // Recargar cotización con relaciones (incluyendo fotos)
+                $cotizacionCompleta = \App\Models\Cotizacion::with([
+                    'cliente',
+                    'reflectivoCotizacion.fotos',
+                ])->findOrFail($cotizacion->id);
+
+                Log::info(' CotizacionController@storeReflectivo - Exitoso', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'estado' => $estado,
+                    'imagenes_count' => count($imagenesGuardadas),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cotización de reflectivo guardada exitosamente',
+                    'data' => [
+                        'cotizacion' => $cotizacionCompleta->toArray(),
+                        'reflectivo' => $reflectivo->toArray(),
+                    ],
+                ], 201);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error(' Error de validación', ['errores' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errores' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error(' CotizacionController@storeReflectivo: Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar cotización: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar cotización tipo RF (Reflectivo) - Para editar borradores
+     */
+    public function updateReflectivo(Request $request, int $id): JsonResponse
+    {
+        try {
+            Log::info('🔵 CotizacionController@updateReflectivo - Iniciando actualización de cotización RF', [
+                'cotizacion_id' => $id,
+                'action' => $request->input('action'),
+            ]);
+
+            $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+
+            // Validar que el usuario es propietario
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+
+            //  Decodificar JSON strings cuando vienen de FormData con _method=PUT
+            if ($request->has('prendas') && is_string($request->input('prendas'))) {
+                $request->merge(['prendas' => json_decode($request->input('prendas'), true)]);
+            }
+            if ($request->has('observaciones_generales') && is_string($request->input('observaciones_generales'))) {
+                $request->merge(['observaciones_generales' => json_decode($request->input('observaciones_generales'), true)]);
+            }
+            if ($request->has('imagenes_a_eliminar') && is_string($request->input('imagenes_a_eliminar'))) {
+                $request->merge(['imagenes_a_eliminar' => json_decode($request->input('imagenes_a_eliminar'), true)]);
+            }
+
+            // Validar datos
+            $validated = $request->validate([
+                'cliente' => 'required|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'fecha' => 'required|date',
+                'action' => 'required|in:borrador,enviar',
+                'tipo' => 'required|in:RF',
+                'tipo_venta_reflectivo' => 'nullable|in:M,D,X',
+                'prendas' => 'nullable|array|min:1',
+                'especificaciones' => 'nullable|string',
+                'descripcion_reflectivo' => 'required|string',
+                'ubicaciones_reflectivo' => 'nullable',
+                'observaciones_generales' => 'nullable',
+                'imagenes_reflectivo.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+                'imagenes_a_eliminar' => 'nullable|array',
+            ]);
+
+            DB::beginTransaction();
+
+            try {
+                // Actualizar cliente si es necesario
+                $cliente = $this->obtenerOCrearClienteService->ejecutar($validated['cliente']);
+
+                // Determinar estado
+                $esBorrador = ($validated['action'] === 'borrador');
+                $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
+
+                // Procesar especificaciones - PRESERVAR LAS EXISTENTES SI NO HAY NUEVAS
+                $especificacionesExistentes = $cotizacion->especificaciones 
+                    ? (is_string($cotizacion->especificaciones) ? json_decode($cotizacion->especificaciones, true) : $cotizacion->especificaciones)
+                    : [];
+                
+                $especificacionesArray = $especificacionesExistentes;
+                
+                if ($request->has('especificaciones')) {
+                    $especificacionesData = $validated['especificaciones'] ?? '{}';
+                    if (is_string($especificacionesData)) {
+                        $nuevasEspecificaciones = json_decode($especificacionesData, true) ?? [];
+                    } else {
+                        $nuevasEspecificaciones = is_array($especificacionesData) ? $especificacionesData : [];
+                    }
+                    
+                    Log::info(' DEBUG Especificaciones en updateReflectivo', [
+                        'especificaciones_data_recibida' => $especificacionesData,
+                        'nuevas_especificaciones_parseadas' => $nuevasEspecificaciones,
+                        'especificaciones_existentes' => $especificacionesExistentes,
+                        'es_vacio' => empty($nuevasEspecificaciones),
+                    ]);
+                    
+                    // Solo actualizar si hay especificaciones reales (no solo {} o [])
+                    if (!empty($nuevasEspecificaciones) && $nuevasEspecificaciones !== []) {
+                        // Asegurar que todas las categorías existan, incluso si están vacías
+                        $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+                        foreach ($categoriasRequeridas as $categoria) {
+                            if (!isset($nuevasEspecificaciones[$categoria])) {
+                                $nuevasEspecificaciones[$categoria] = [];
+                            }
+                        }
+                        
+                        $especificacionesArray = $nuevasEspecificaciones;
+                        Log::info(' Actualizando especificaciones con nuevos datos');
+                    } else {
+                        Log::info(' Preservando especificaciones existentes (nuevas están vacías)');
+                    }
+                }
+
+                // Actualizar cotización
+                $cotizacion->update([
+                    'cliente_id' => $cliente->id,
+                    'fecha_inicio' => $validated['fecha'],
+                    'es_borrador' => $esBorrador,
+                    'estado' => $estado,
+                    'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado(Auth::id()) : $cotizacion->numero_cotizacion,
+                    'fecha_envio' => !$esBorrador && !$cotizacion->fecha_envio ? \Carbon\Carbon::now('America/Bogota') : $cotizacion->fecha_envio,
+                    'especificaciones' => $especificacionesArray,
+                    'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $cotizacion->tipo_venta ?? 'M',
+                ]);
+
+                Log::info(' Cotización RF actualizada', ['cotizacion_id' => $cotizacion->id]);
+
+                //  ACTUALIZAR PRENDAS Y SUS REFLECTIVOS (NUEVO SISTEMA)
+                if (isset($validated['prendas']) && is_array($validated['prendas'])) {
+                    // 1.  PRESERVAR FOTOS EXISTENTES ANTES DE ELIMINAR
+                    $fotosExistentesPorPrenda = [];
+                    $prendasExistentes = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
+                        ->with('reflectivo.fotos')
+                        ->get();
+                    
+                    foreach ($prendasExistentes as $index => $prendaExistente) {
+                        $reflectivoExistente = $prendaExistente->reflectivo ? $prendaExistente->reflectivo->first() : null;
+                        if ($reflectivoExistente && $reflectivoExistente->fotos && $reflectivoExistente->fotos->count() > 0) {
+                            // Guardar las fotos con su índice de prenda
+                            $fotosExistentesPorPrenda[$index] = $reflectivoExistente->fotos->map(function($foto) {
+                                return [
+                                    'ruta_original' => $foto->ruta_original,
+                                    'ruta_webp' => $foto->ruta_webp,
+                                    'orden' => $foto->orden,
+                                ];
+                            })->toArray();
+                            
+                            Log::info(' Preservando fotos de prenda', [
+                                'prenda_index' => $index,
+                                'fotos_count' => count($fotosExistentesPorPrenda[$index])
+                            ]);
+                        }
+                    }
+                    
+                    // 2. Eliminar prendas existentes (esto también eliminará reflectivos por CASCADE)
+                    \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)->delete();
+                    
+                    // 2. Decodificar prendas si vienen como JSON string
+                    $prendasArray = $validated['prendas'];
+                    if (is_string($prendasArray)) {
+                        $prendasArray = json_decode($prendasArray, true) ?? [];
+                    }
+                    
+                    // 3. Crear nuevas prendas con sus reflectivos
+                    foreach ($prendasArray as $prendaIndex => $prenda) {
+                        // La prenda puede venir como JSON string o array
+                        if (is_string($prenda)) {
+                            $prenda = json_decode($prenda, true);
+                        }
+                        
+                        if (is_array($prenda)) {
+                            // Crear prenda
+                            // IMPORTANTE: Para cotizaciones de reflectivo INDIVIDUAL, prenda_bodega siempre es true
+                            $prendaCot = \App\Models\PrendaCot::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'nombre_producto' => $prenda['tipo'] ?? $prenda['nombre'] ?? 'Prenda',
+                                'cantidad' => 1,
+                                'descripcion' => $prenda['descripcion'] ?? '',
+                                'prenda_bodega' => true,
+                            ]);
+
+                            // Guardar tallas si existen con cantidades
+                            if (!empty($prenda['tallas']) && is_array($prenda['tallas'])) {
+                                $cantidades = $prenda['cantidades'] ?? [];
+                                foreach ($prenda['tallas'] as $talla) {
+                                    $cantidad = $cantidades[$talla] ?? 1;
+                                    \App\Models\PrendaTallaCot::create([
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'talla' => $talla,
+                                        'cantidad' => (int)$cantidad,
+                                    ]);
+                                }
+                            }
+
+                            // Guardar género si existe en prenda_variantes_cot
+                            if (!empty($prenda['genero'])) {
+                                $generoId = null;
+                                if ($prenda['genero'] === 'dama') {
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'dama')
+                                        ->value('id');
+                                } elseif ($prenda['genero'] === 'caballero') {
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'caballero')
+                                        ->value('id');
+                                }
+                                
+                                if ($generoId) {
+                                    \App\Models\PrendaVarianteCot::updateOrCreate(
+                                        ['prenda_cot_id' => $prendaCot->id],
+                                        ['genero_id' => $generoId]
+                                    );
+                                }
+                            }
+
+                            //  CREAR REFLECTIVO PARA ESTA PRENDA CON SUS UBICACIONES
+                            $ubicacionesDePrenda = $prenda['ubicaciones'] ?? [];
+                            if (is_string($ubicacionesDePrenda)) {
+                                $ubicacionesDePrenda = json_decode($ubicacionesDePrenda, true) ?? [];
+                            }
+
+                            $observacionesDePrenda = $prenda['observaciones'] ?? [];
+                            if (is_string($observacionesDePrenda)) {
+                                $observacionesDePrenda = json_decode($observacionesDePrenda, true) ?? [];
+                            }
+
+                            $reflectivo = \App\Models\ReflectivoCotizacion::create([
+                                'cotizacion_id' => $cotizacion->id,
+                                'prenda_cot_id' => $prendaCot->id,
+                                'descripcion' => $validated['descripcion_reflectivo'],
+                                'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? null,
+                                'ubicacion' => json_encode($ubicacionesDePrenda),
+                                'observaciones_generales' => json_encode($observacionesDePrenda),
+                                'imagenes' => json_encode([]),
+                            ]);
+
+                            Log::info(' Prenda y reflectivo actualizados', [
+                                'prenda_cot_id' => $prendaCot->id,
+                                'reflectivo_id' => $reflectivo->id,
+                                'ubicaciones_count' => count($ubicacionesDePrenda)
+                            ]);
+
+                            //  PROCESAR IMÁGENES DE ESTA PRENDA
+                            $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
+                            $nuevasFotosGuardadas = false;
+                            
+                            if ($request->hasFile($campoImagenes)) {
+                                // Hay nuevas fotos subidas - guardarlas
+                                $orden = 1;
+                                foreach ($request->file($campoImagenes) as $archivo) {
+                                    if ($archivo && $archivo->isValid()) {
+                                        // Guardar archivo en webp
+                                        $nombreImagen = 'reflectivo_' . time() . '_' . uniqid() . '.webp';
+                                        $rutaDirectorio = "cotizaciones/{$id}/reflectivo";
+                                        $ruta = Storage::disk('public')->putFileAs(
+                                            $rutaDirectorio,
+                                            $archivo,
+                                            $nombreImagen
+                                        );
+                                        
+                                        \App\Models\ReflectivoCotizacionFoto::create([
+                                            'reflectivo_cotizacion_id' => $reflectivo->id,
+                                            'ruta_original' => $ruta,
+                                            'ruta_webp' => $ruta,
+                                            'orden' => $orden++,
+                                        ]);
+
+                                        Log::info('📸 Nueva imagen guardada para prenda', [
+                                            'prenda_index' => $prendaIndex,
+                                            'reflectivo_id' => $reflectivo->id
+                                        ]);
+                                        $nuevasFotosGuardadas = true;
+                                    }
+                                }
+                            } elseif (isset($fotosExistentesPorPrenda[$prendaIndex])) {
+                                // No hay nuevas fotos - restaurar las fotos existentes
+                                foreach ($fotosExistentesPorPrenda[$prendaIndex] as $fotoData) {
+                                    \App\Models\ReflectivoCotizacionFoto::create([
+                                        'reflectivo_cotizacion_id' => $reflectivo->id,
+                                        'ruta_original' => $fotoData['ruta_original'],
+                                        'ruta_webp' => $fotoData['ruta_webp'],
+                                        'orden' => $fotoData['orden'],
+                                    ]);
+                                }
+                                
+                                Log::info('♻️ Fotos existentes restauradas para prenda', [
+                                    'prenda_index' => $prendaIndex,
+                                    'reflectivo_id' => $reflectivo->id,
+                                    'fotos_count' => count($fotosExistentesPorPrenda[$prendaIndex])
+                                ]);
+                            }
+                        }
+                    }
+                    Log::info(' Prendas y reflectivos actualizados', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => count($prendasArray)]);
+                }
+
+                // NOTA: Ya no usamos un reflectivo global, cada prenda tiene el suyo
+
+                DB::commit();
+
+                // Recargar cotización con relaciones actualizadas
+                $cotizacionCompleta = \App\Models\Cotizacion::with([
+                    'cliente',
+                    'prendas.reflectivo.fotos'
+                ])->findOrFail($cotizacion->id);
+
+                Log::info(' CotizacionController@updateReflectivo - Exitoso', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'prendas_count' => $cotizacionCompleta->prendas->count(),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cotización de reflectivo actualizada exitosamente',
+                    'data' => [
+                        'cotizacion' => $cotizacionCompleta->toArray(),
+                    ],
+                ], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error(' Error de validación', ['errores' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errores' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error(' CotizacionController@updateReflectivo: Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar cotización: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -2403,13 +3838,20 @@ final class CotizacionController extends Controller
                     ->delete();
             }
             
+            //  Buscar y eliminar de ReflectivoCotizacionFoto (fotos de reflectivo)
+            foreach ($rutasABuscar as $ruta) {
+                $fotosEliminadas += \App\Models\ReflectivoCotizacionFoto::where('ruta_original', $ruta)
+                    ->orWhere('ruta_webp', $ruta)
+                    ->delete();
+            }
+            
             // También buscar por ID si se proporciona
             $fotoId = $request->input('foto_id');
             if ($fotoId) {
-                $fotoEliminada = \App\Models\PrendaFotoCot::where('id', $fotoId)->delete();
+                $fotoEliminada = \App\Models\ReflectivoCotizacionFoto::where('id', $fotoId)->delete();
                 if ($fotoEliminada) {
                     $fotosEliminadas += $fotoEliminada;
-                    Log::info('Foto de prenda eliminada por ID', ['foto_id' => $fotoId]);
+                    Log::info('Foto de reflectivo eliminada por ID', ['foto_id' => $fotoId]);
                 }
             }
             

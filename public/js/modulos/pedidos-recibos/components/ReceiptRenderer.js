@@ -61,7 +61,7 @@ export class ReceiptRenderer {
             // Definir mapa de tipos de recibo
             const tipoReciboMap = {
                 'costura': 'COSTURA',
-                'costura-bodega': 'COSTURA-BODEGA',  // ✅ Corregido: usar COSTURA-BODEGA
+                'costura-bodega': 'COSTURA-BODEGA',  //  Corregido: usar COSTURA-BODEGA
                 'bordado': 'BORDADO',
                 'estampado': 'ESTAMPADO',
                 'dtf': 'DTF',
@@ -75,7 +75,7 @@ export class ReceiptRenderer {
                 tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
                 consecutivo = prendaData.recibos[tipoReciboKey];
                 
-                console.log('🔢 [ReceiptRenderer] Buscando consecutivo:', {
+                console.log(' [ReceiptRenderer] Buscando consecutivo:', {
                     tipoProceso,
                     tipoReciboKey,
                     consecutivo,
@@ -83,7 +83,7 @@ export class ReceiptRenderer {
                 });
             } else {
                 tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
-                console.log('🔢 [ReceiptRenderer] No hay datos de recibos o está vacío:', {
+                console.log(' [ReceiptRenderer] No hay datos de recibos o está vacío:', {
                     tieneRecibos: !!(prendaData && prendaData.recibos),
                     recibosKeys: prendaData?.recibos ? Object.keys(prendaData.recibos) : [],
                     recibosLength: prendaData?.recibos ? Object.keys(prendaData.recibos).length : 0
@@ -92,7 +92,7 @@ export class ReceiptRenderer {
             
             // Si no hay consecutivo, dejar vacío (no usar consecutivos de prueba)
             if (!consecutivo) {
-                console.log('🔢 [ReceiptRenderer] No hay consecutivo, dejando vacío:', {
+                console.log(' [ReceiptRenderer] No hay consecutivo, dejando vacío:', {
                     tipoProceso,
                     tipoReciboKey
                 });
@@ -111,14 +111,14 @@ export class ReceiptRenderer {
             if (pedidoNumberElement) {
                 if (consecutivo) {
                     pedidoNumberElement.textContent = '#' + consecutivo;
-                    console.log('✅ [ReceiptRenderer] Número de pedido actualizado con consecutivo:', '#' + consecutivo);
+                    console.log(' [ReceiptRenderer] Número de pedido actualizado con consecutivo:', '#' + consecutivo);
                 } else {
                     // Mantener el número de pedido original si no hay consecutivo
                     pedidoNumberElement.textContent = '#' + (prendaData?.numero_pedido || prendaData?.numero || '-');
-                    console.log('✅ [ReceiptRenderer] Número de pedido mantenido sin consecutivo');
+                    console.log(' [ReceiptRenderer] Número de pedido mantenido sin consecutivo');
                 }
             } else {
-                console.warn('⚠️ [ReceiptRenderer] Elemento #order-pedido no encontrado');
+                console.warn(' [ReceiptRenderer] Elemento #order-pedido no encontrado');
                 
                 // Intentar con .pedido-number como fallback
                 const fallbackElement = document.querySelector('.pedido-number');
@@ -126,14 +126,14 @@ export class ReceiptRenderer {
                     console.log('🔄 [ReceiptRenderer] Usando fallback .pedido-number');
                     if (consecutivo) {
                         fallbackElement.textContent = '#' + consecutivo;
-                        console.log('✅ [ReceiptRenderer] Número actualizado con fallback:', '#' + consecutivo);
+                        console.log(' [ReceiptRenderer] Número actualizado con fallback:', '#' + consecutivo);
                     }
                 } else {
                     console.error('❌ [ReceiptRenderer] Ni #order-pedido ni .pedido-number encontrados');
                 }
             }
             
-            console.log('✅ [ReceiptRenderer] Título actualizado:', 'RECIBO DE ' + nombreRecibo);
+            console.log(' [ReceiptRenderer] Título actualizado:', 'RECIBO DE ' + nombreRecibo);
         }
     }
 
@@ -160,9 +160,9 @@ export class ReceiptRenderer {
         if (clienteValue) {
             const valor = datosPedido.cliente || '-';
             clienteValue.textContent = valor;
-            console.log('✅ [ReceiptRenderer] Cliente actualizado:', valor);
+            console.log(' [ReceiptRenderer] Cliente actualizado:', valor);
         } else {
-            console.warn('⚠️ [ReceiptRenderer] Elemento #cliente-value NO encontrado');
+            console.warn(' [ReceiptRenderer] Elemento #cliente-value NO encontrado');
         }
 
         // Asesor
@@ -170,9 +170,9 @@ export class ReceiptRenderer {
         if (asesorValue) {
             const valor = datosPedido.asesor || datosPedido.asesora || '-';
             asesorValue.textContent = valor;
-            console.log('✅ [ReceiptRenderer] Asesor actualizado:', valor);
+            console.log(' [ReceiptRenderer] Asesor actualizado:', valor);
         } else {
-            console.warn('⚠️ [ReceiptRenderer] Elemento #asesora-value NO encontrado');
+            console.warn(' [ReceiptRenderer] Elemento #asesora-value NO encontrado');
         }
 
         // Forma de pago
@@ -180,9 +180,9 @@ export class ReceiptRenderer {
         if (formaPagoValue) {
             const valor = datosPedido.forma_de_pago || '-';
             formaPagoValue.textContent = valor;
-            console.log('✅ [ReceiptRenderer] Forma de pago actualizada:', valor);
+            console.log(' [ReceiptRenderer] Forma de pago actualizada:', valor);
         } else {
-            console.warn('⚠️ [ReceiptRenderer] Elemento #forma-pago-value NO encontrado');
+            console.warn(' [ReceiptRenderer] Elemento #forma-pago-value NO encontrado');
         }
 
         // Número de pedido
@@ -199,9 +199,9 @@ export class ReceiptRenderer {
                     numero = datosPedido.numero_pedido || datosPedido.numero || '';
                 }
                 pedidoNumber.textContent = '#' + numero;
-                console.log('✅ [ReceiptRenderer] Número de pedido actualizado (sin consecutivo):', '#' + numero);
+                console.log(' [ReceiptRenderer] Número de pedido actualizado (sin consecutivo):', '#' + numero);
             } else {
-                console.log('✅ [ReceiptRenderer] Número de pedido mantenido (ya tiene consecutivo):', contenidoActual);
+                console.log(' [ReceiptRenderer] Número de pedido mantenido (ya tiene consecutivo):', contenidoActual);
             }
         }
 
@@ -220,7 +220,7 @@ export class ReceiptRenderer {
     static _llenarDescripcion(prendaData, recibo, tipoProceso) {
         const descripcionText = document.getElementById('descripcion-text');
         if (!descripcionText) {
-            console.warn('⚠️ [ReceiptRenderer] Elemento #descripcion-text NO encontrado');
+            console.warn(' [ReceiptRenderer] Elemento #descripcion-text NO encontrado');
             return;
         }
 
@@ -243,15 +243,15 @@ export class ReceiptRenderer {
         if (tipoProcesoBajo === 'costura' || tipoProcesoBajo === 'costura-bodega') {
             // Usar formateador directamente
             html = Formatters.construirDescripcionCostura(prendaData);
-            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
+            console.log(' [ReceiptRenderer._llenarDescripcion] HTML de costura generado:', html);
         } else {
             // Para otros procesos
             html = Formatters.construirDescripcionProceso(prendaData, recibo);
-            console.log('✅ [ReceiptRenderer._llenarDescripcion] HTML de proceso generado:', html);
+            console.log(' [ReceiptRenderer._llenarDescripcion] HTML de proceso generado:', html);
         }
 
         descripcionText.innerHTML = html;
-        console.log('✅ [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
+        console.log(' [ReceiptRenderer._llenarDescripcion] Descripción actualizada en el DOM');
     }
 }
 

@@ -144,9 +144,9 @@ class RegistroOrdenController extends Controller
             // 🆕 Broadcast eventos con la orden actualizada y los campos reales (con manejo de errores)
             try {
                 broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
-                \Log::info("✅ Broadcast enviado exitosamente para pedido {$ordenActualizada->numero_pedido}", ['campos' => $changedFields]);
+                \Log::info(" Broadcast enviado exitosamente para pedido {$ordenActualizada->numero_pedido}", ['campos' => $changedFields]);
             } catch (\Exception $e) {
-                \Log::warning("⚠️ Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualización fue exitosa", [
+                \Log::warning(" Fallo en broadcast para pedido {$ordenActualizada->numero_pedido}, pero la actualización fue exitosa", [
                     'error' => $e->getMessage(),
                     'codigo' => $e->getCode()
                 ]);
@@ -1075,7 +1075,7 @@ class RegistroOrdenController extends Controller
                 broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
                 \Log::info('📡 Evento de broadcast enviado para nueva novedad');
             } catch (\Exception $e) {
-                \Log::warning('⚠️ Error de broadcast (no crítico)', [
+                \Log::warning(' Error de broadcast (no crítico)', [
                     'error' => $e->getMessage(),
                     'pedido' => $numeroPedido
                 ]);
