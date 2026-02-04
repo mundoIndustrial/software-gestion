@@ -1297,6 +1297,11 @@ require __DIR__.'/auth.php';
 require __DIR__.'/despacho.php';
 
 // ========================================
+// RUTAS DE BODEGA (MÓDULO NUEVO)
+// ========================================
+require __DIR__.'/bodega.php';
+
+// ========================================
 
 // ========================================
 // RUTAS WEB PARA ACTIVACIÓN DE RECIBOS (JSON)

@@ -30,6 +30,10 @@ class DashboardController extends Controller
                 return redirect()->route('asesores.dashboard');
             }
 
+            if ($roleName === 'bodeguero') {
+                return redirect()->route('bodega.pedidos');
+            }
+
             if ($roleName === 'insumos') {
                 return redirect()->route('insumos.materiales.index');
             }

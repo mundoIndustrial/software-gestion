@@ -124,9 +124,9 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
-            // Bodeguero - Dashboard de operario (mismo que cortador/costurero)
+            // Bodeguero - Gestión de pedidos en bodega
             if ($roleName === 'bodeguero') {
-                return redirect(route('operario.dashboard', absolute: false));
+                return redirect(route('bodega.pedidos', absolute: false));
             }
 
             // Costura-Reflectivo - Dashboard de operario
