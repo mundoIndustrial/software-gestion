@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Operario;
 
 use App\Http\Controllers\Controller;
 use App\Application\Operario\Services\ObtenerPedidosOperarioService;
+use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class OperarioController extends Controller
 {
     public function __construct(
         private ObtenerPedidosOperarioService $obtenerPedidosService,
+        private ObtenerPrendasRecibosService $obtenerPrendasRecibosService,
         private OperarioRepository $operarioRepository,
         private ObtenerPedidoUseCase $obtenerPedidoUseCase
     ) {
@@ -84,17 +86,21 @@ class OperarioController extends Controller
 
     /**
      * Dashboard del operario
-     * Muestra los pedidos asignados a su área
+     * Muestra las prendas con sus recibos de costura
      */
     public function dashboard(Request $request)
     {
         $usuario = Auth::user();
 
-        // Obtener pedidos del operario
+        // Obtener prendas con recibos de costura
+        $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+        
+        // También obtener los pedidos para mantener compatibilidad
         $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
 
         return view('operario.dashboard', [
             'operario' => $datosOperario,
+            'prendasConRecibos' => $prendasConRecibos,
             'usuario' => $usuario,
         ]);
     }

@@ -32,10 +32,11 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $fotos = null,                          // [ { ruta } ]
         public readonly ?array $procesos = null,                       // [ { tipo_proceso_id, ubicaciones, obs } ]
         public readonly ?array $fotosProcesosPorProceso = null,         // [ { proceso_id, imagenes: [ ruta ] } ]
+        public readonly ?array $fotosTelasProcesadas = null,            // [ indice => { ruta_original, ruta_webp } ]
         public readonly ?string $novedad = null,                       // Descripción de cambios realizados
     ) {}
 
-    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
+    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null): self
     {
         // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad)
         $tallasArray = null;
@@ -91,12 +92,14 @@ final class ActualizarPrendaCompletaDTO
         }
 
         // Parsear fotosTelas si viene como JSON string
+        // Aceptar tanto 'fotos_telas' como 'fotosTelas' (camelCase del frontend)
         $fotosTelas = null;
-        if (!empty($data['fotos_telas'])) {
-            if (is_string($data['fotos_telas'])) {
-                $fotosTelas = json_decode($data['fotos_telas'], true);
+        $fotostelasKey = !empty($data['fotos_telas']) ? 'fotos_telas' : (!empty($data['fotosTelas']) ? 'fotosTelas' : null);
+        if ($fotostelasKey && !empty($data[$fotostelasKey])) {
+            if (is_string($data[$fotostelasKey])) {
+                $fotosTelas = json_decode($data[$fotostelasKey], true);
             } else {
-                $fotosTelas = $data['fotos_telas'];
+                $fotosTelas = $data[$fotostelasKey];
             }
         }
 
@@ -165,6 +168,7 @@ final class ActualizarPrendaCompletaDTO
                 : ((!empty($imagenes)) ? $imagenes : null),
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
+            fotosTelasProcesadas: $fotosTelasProcesadas,
             novedad: $data['novedad'] ?? null,
         );
     }
