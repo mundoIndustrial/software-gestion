@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
     <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/componentes/reflectivo.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
 @endsection
