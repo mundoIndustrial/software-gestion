@@ -175,7 +175,7 @@
     
     window.tipoCotizacionGlobal = mapeoTipoCotizacion[tipoUrl] || 'PL'; // Default Prenda-Logo
     window.routes = window.routes || {};
-    window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
+    window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.store") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
 </script>
 

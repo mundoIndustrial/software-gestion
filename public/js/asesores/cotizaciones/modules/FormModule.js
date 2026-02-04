@@ -318,18 +318,11 @@ class FormModule {
         const descripcion = card.querySelector('textarea[name*="descripcion"]')?.value || '';
         const tallasInput = card.querySelector('input[name*="tallas"]')?.value || '';
 
-        formData.append(`productos[${index}][nombre_producto]`, nombre);
-        formData.append(`productos[${index}][descripcion]`, descripcion);
+        formData.append(`productos_friendly[${index}][nombre_producto]`, nombre);
+        formData.append(`productos_friendly[${index}][descripcion]`, descripcion);
 
-        // Tallas - Siempre enviar como array (vacío si no hay)
-        const tallas = tallasInput 
-            ? (typeof tallasInput === 'string' 
-                ? tallasInput.split(',').map(t => t.trim()).filter(t => t)
-                : [tallasInput])
-            : [];
-        
-        // Enviar tallas como JSON para evitar problemas con FormData
-        formData.append(`productos[${index}][tallas]`, JSON.stringify(tallas));
+        // Tallas - Enviar el JSON directamente (nuevo formato con géneros)
+        formData.append(`productos_friendly[${index}][tallas]`, tallasInput || '');
 
         // Fotos - Enviar archivos File directamente
         if (window.fotosSeleccionadas && window.fotosSeleccionadas[productoId]) {
@@ -337,7 +330,7 @@ class FormModule {
 
             fotos.forEach((foto, fotoIdx) => {
                 if (foto instanceof File) {
-                    formData.append(`productos[${index}][fotos][${fotoIdx}]`, foto, foto.name);
+                    formData.append(`productos_friendly[${index}][fotos][${fotoIdx}]`, foto, foto.name);
 
                 }
             });
@@ -360,9 +353,9 @@ class FormModule {
             const referencia = referenciaInput ? referenciaInput.value : null;
             
             // Guardar datos básicos de la tela
-            formData.append(`productos[${index}][telas][${telaIndex}][color_id]`, colorId || '');
-            formData.append(`productos[${index}][telas][${telaIndex}][tela_id]`, telaId || '');
-            formData.append(`productos[${index}][telas][${telaIndex}][referencia]`, referencia || '');
+            formData.append(`productos_friendly[${index}][telas][${telaIndex}][color_id]`, colorId || '');
+            formData.append(`productos_friendly[${index}][telas][${telaIndex}][tela_id]`, telaId || '');
+            formData.append(`productos_friendly[${index}][telas][${telaIndex}][referencia]`, referencia || '');
             
             // Agregar fotos de esta tela específica
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
@@ -370,7 +363,7 @@ class FormModule {
 
                 fotosDelaTela.forEach((foto, fotoIdx) => {
                     if (foto instanceof File) {
-                        formData.append(`productos[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
+                        formData.append(`productos_friendly[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
                     }
                 });
             }
@@ -385,7 +378,7 @@ class FormModule {
                 const campo = match[1];
                 const value = input.type === 'checkbox' ? (input.checked ? 1 : 0) : (input.value || '');
                 if (value !== '') {
-                    formData.append(`productos[${index}][variantes][${campo}]`, value);
+                    formData.append(`productos_friendly[${index}][variantes][${campo}]`, value);
                 }
             }
         });

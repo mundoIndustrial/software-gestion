@@ -785,11 +785,27 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
  * Agrega las tallas seleccionadas manteniendo separación por género
  */
 function agregarTallasSeleccionadas(btn) {
+    console.log('🔘 Botón agregar tallas seleccionadas presionado');
+    
     const container = btn.closest('.producto-section');
+    const productoCard = btn.closest('.producto-card'); // Buscar en toda la tarjeta
+    console.log('📦 Container encontrado:', !!container);
+    console.log('🃏 Producto card encontrado:', !!productoCard);
+    
     const botonesActivos = container.querySelectorAll('.talla-btn.activo');
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
     const tallasSection = container.querySelector('.tallas-section');
-    const tallasHidden = container.querySelector('.tallas-hidden');
+    const tallasHidden = productoCard.querySelector('.tallas-hidden'); // Buscar en toda la tarjeta
+    
+    console.log('🔍 Elementos encontrados:');
+    console.log('  - tallas-agregadas:', !!tallasAgregadas);
+    console.log('  - tallas-section:', !!tallasSection);
+    console.log('  - tallas-hidden (en producto-card):', !!tallasHidden, tallasHidden);
+    
+    console.log('📊 Botones activos encontrados:', botonesActivos.length);
+    botonesActivos.forEach(boton => {
+        console.log('  - Talla activa:', boton.dataset.talla, 'Género:', boton.dataset.genero);
+    });
     
     if (botonesActivos.length === 0) {
         alert('Por favor selecciona al menos una talla');
@@ -886,14 +902,43 @@ function agregarTallasSeleccionadas(btn) {
  * Actualiza el campo hidden con las tallas seleccionadas por género
  */
 function actualizarTallasHidden(container) {
+    console.log('🔄 Actualizando campo hidden de tallas');
+    console.log('📍 Container:', container);
+    
     if (!container) {
+        console.warn('❌ Container no encontrado');
         return;
     }
     
+    // Buscar el campo hidden en toda la tarjeta de producto
+    const productoCard = container.closest('.producto-card');
     const tallasAgregadas = container.querySelector('.tallas-agregadas');
-    const tallasHidden = container.querySelector('.tallas-hidden');
+    
+    // Si el campo hidden no existe, crearlo dinámicamente
+    let tallasHidden = productoCard ? productoCard.querySelector('.tallas-hidden') : null;
+    if (!tallasHidden && productoCard) {
+        console.log('🔧 Creando campo hidden dinámicamente');
+        tallasHidden = document.createElement('input');
+        tallasHidden.type = 'hidden';
+        tallasHidden.name = 'productos_friendly[][tallas]';
+        tallasHidden.className = 'tallas-hidden';
+        tallasHidden.value = '';
+        
+        // Agregarlo DESPUÉS de tallas-agregadas para que no se elimine
+        if (tallasAgregadas) {
+            tallasAgregadas.parentNode.insertBefore(tallasHidden, tallasAgregadas.nextSibling);
+        } else {
+            productoCard.appendChild(tallasHidden);
+        }
+    }
+    
+    console.log('🔍 Elementos encontrados:');
+    console.log('  - tallas-agregadas:', !!tallasAgregadas);
+    console.log('🃏 Producto card:', !!productoCard);
+    console.log('  - tallas-hidden:', !!tallasHidden, tallasHidden);
     
     if (!tallasAgregadas || !tallasHidden) {
+        console.warn('❌ No se encontraron elementos de tallas');
         return;
     }
     
@@ -913,6 +958,7 @@ function actualizarTallasHidden(container) {
     
     // Formatear como JSON para mantener estructura por género
     tallasHidden.value = JSON.stringify(tallasPorGenero);
-    console.log('Tallas guardadas por género:', tallasPorGenero);
+    console.log('✅ Tallas guardadas por género:', tallasPorGenero);
+    console.log('📝 Valor del campo hidden:', tallasHidden.value);
 }
 

@@ -480,6 +480,13 @@ final class CotizacionController extends Controller
             // Mapear productos_friendly -> prendas para compatibilidad frontend
             //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
+            Log::info(" CONTROLLER - Todos los datos recibidos", [
+                'all_keys' => array_keys($allData),
+                'productos_friendly_exists' => isset($allData['productos_friendly']),
+                'prendas_exists' => isset($allData['prendas']),
+                'productos_friendly_raw' => $allData['productos_friendly'] ?? 'NO ENVIADO'
+            ]);
+            
             $prendasRecibidas = $allData['prendas'] ?? $allData['productos_friendly'] ?? $request->input('prendas', $request->input('productos_friendly', []));
             $especificacionesRecibidas = $request->input('especificaciones', []);
             
