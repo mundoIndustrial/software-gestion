@@ -22,7 +22,6 @@ use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalWebController;
 use App\Http\Controllers\TestTelasPrendaController;
 use App\Http\Controllers\PDFPrendaController;
-use App\Http\Controllers\PDFReflectivoController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
 
@@ -687,7 +686,6 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // ========================================
     Route::get('/cotizacion/{id}/pdf/prenda', [PDFPrendaController::class, 'generate'])->name('cotizacion.pdf.prenda');
     Route::get('/cotizacion/{id}/pdf/combinada', [PDFCotizacionCombiadaController::class, 'generate'])->name('cotizacion.pdf.combinada');
-    Route::get('/cotizacion/{id}/pdf/reflectivo', [PDFReflectivoController::class, 'generate'])->name('cotizacion.pdf.reflectivo');
     Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('cotizacion.pdf.logo');
     
     // RUTA GENÉRICA - Debe ser ÚLTIMA para no shadowers las rutas específicas
@@ -705,7 +703,6 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     
     // Rutas antiguas (compatibilidad con frontend) - Aliases al nuevo controller
     Route::post('/cotizaciones/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.guardar');
-    Route::get('/cotizaciones/reflectivo/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getReflectivoForEdit'])->name('cotizaciones.reflectivo.edit');
     Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'editBorrador'])->name('cotizaciones.edit-borrador');
     Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
     Route::post('/cotizaciones/{id}/anular', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'anularCotizacion'])->name('cotizaciones.anular');
@@ -765,9 +762,7 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // ========================================
     // COTIZACIONES - Rutas protegidas (dentro del grupo asesores)
     // ========================================
-    Route::post('/cotizaciones/reflectivo/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'storeReflectivo'])->name('cotizaciones.reflectivo.guardar');
     Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
-    Route::put('/cotizaciones/reflectivo/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'updateReflectivo'])->name('cotizaciones.reflectivo.update');
 
     // ========================================
     // COTIZACIONES DE PRENDA - Solo Asesor

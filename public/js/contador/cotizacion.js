@@ -38,6 +38,31 @@ function openCotizacionModal(cotizacionId) {
             // Contenedor de prendas
             htmlPrendas += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
+            // Agregar mensaje de tipo de venta antes del primer card
+            let tipoVenta = null;
+            
+            // Verificar si es cotización de logo para obtener tipo_venta de logo_cotizaciones
+            if (data.logo_cotizacion && data.logo_cotizacion.tipo_venta) {
+                // Es cotización de logo, obtener de logo_cotizaciones
+                tipoVenta = data.logo_cotizacion.tipo_venta;
+            } else if (data.cotizacion && data.cotizacion.tipo_venta) {
+                // Es cotización normal, obtener de cotizaciones
+                tipoVenta = data.cotizacion.tipo_venta;
+            }
+            
+            if (tipoVenta) {
+                htmlPrendas += `
+                    <div style="display: inline-block; text-align: left; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px;">
+                        <span style="color: #000000; font-size: 1.1rem; font-weight: 600;">
+                            Por favor cotizar al 
+                        </span>
+                        <span style="color: #dc2626; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
+                            ${tipoVenta}
+                        </span>
+                    </div>
+                `;
+            }
+
             if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
                 data.prendas_cotizaciones.forEach((prenda, index) => {
 
@@ -69,34 +94,10 @@ function openCotizacionModal(cotizacionId) {
                             // Obtener la imagen de la tela
                             if (telaPrenda.img) {
                                 imgTela = telaPrenda.img;
-                                // Convertir ruta storage/app/public/... a ruta pública
-                                if (!imgTela.startsWith('http')) {
-                                    imgTela = '/storage/' + imgTela.replace('storage/app/public/', '');
-                                }
                             }
                         }
                     } 
-                    // Si es cotización reflectivo, buscar en prenda_cot_reflectivo.color_tela_ref
-                    else if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.color_tela_ref) {
-                        const colorTelaRef = Array.isArray(prenda.prenda_cot_reflectivo.color_tela_ref) ? prenda.prenda_cot_reflectivo.color_tela_ref[0] : prenda.prenda_cot_reflectivo.color_tela_ref;
-                        if (colorTelaRef) {
-                            telaInfo = colorTelaRef.tela || '';
-                            if (colorTelaRef.color) {
-                                telaInfo += colorTelaRef.tela ? ` | ${colorTelaRef.color}` : colorTelaRef.color;
-                            }
-                            if (colorTelaRef.referencia) {
-                                telaInfo += ` REF:${colorTelaRef.referencia}`;
-                            }
-                            // Obtener la imagen de la tela si existe en fotos
-                            if (colorTelaRef.fotos && Array.isArray(colorTelaRef.fotos) && colorTelaRef.fotos.length > 0) {
-                                imgTela = colorTelaRef.fotos[0];
-                                if (!imgTela.startsWith('http')) {
-                                    imgTela = '/storage/' + imgTela.replace('storage/app/public/', '');
-                                }
-                            }
-                        }
-                    }
-                    // Si no es logo ni reflectivo, usar telas combinadas
+                    // Si no es logo, usar telas combinadas
                     else if (prenda.telas && prenda.telas.length > 0) {
                         const tela = prenda.telas[0];
                         telaInfo = tela.nombre_tela || '';
@@ -363,51 +364,46 @@ function openCotizacionModal(cotizacionId) {
                         // Construir filas de variaciones con estructura: variacion, tipo, observacion
                         const filas = [];
                         
-                        // Si es cotización de reflectivo (tipo_cotizacion_id === 4), usar variaciones de prenda_cot_reflectivo
-                        if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.variaciones && Array.isArray(prenda.prenda_cot_reflectivo.variaciones)) {
-                            // Filtrar solo variaciones con checked: true
-                            const variacionesSeleccionadas = prenda.prenda_cot_reflectivo.variaciones.filter(v => v.checked === true || v.checked === 'true');
-                            
-                            variacionesSeleccionadas.forEach(variacion => {
-                                filas.push({
-                                    variacion: variacion.variacion || '-',
-                                    tipo: variacion.opcion || '-',
-                                    obs: variacion.observacion || ''
-                                });
-                            });
-                        } else {
-                            // Caso normal (no reflectivo)
-                            if (variante.tipo_prenda) filas.push({ variacion: 'Tipo Prenda', tipo: variante.tipo_prenda, obs: '' });
-                            if (variante.tipo_jean_pantalon) filas.push({ variacion: 'Tipo Jean/Pantalón', tipo: variante.tipo_jean_pantalon, obs: '' });
-                            
-                            // Tipo Manga
-                            if (variante.tipo_manga_id || variante.tipo_manga) {
-                                let tipo = variante.tipo_manga_nombre || variante.tipo_manga || 'Sin especificar';
-                                filas.push({ variacion: 'Tipo Manga', tipo: tipo, obs: variante.obs_manga || '' });
-                            }
-                            
-                            // Bolsillos: si tiene_bolsillos = true, mostrar en la tabla de variaciones
-                            if (variante.tiene_bolsillos !== null && variante.tiene_bolsillos) {
-                                let obs = variante.obs_bolsillos || '';
-                                filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: obs });
-                            } else if (variante.obs_bolsillos) {
-                                // Si hay observación de bolsillos pero tiene_bolsillos es false, aún mostrar la fila
-                                filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: variante.obs_bolsillos });
-                            }
-                            
-                            // Broche/Botón: mostrar en la tabla de variaciones si existe información
-                            if (variante.aplica_broche !== null && variante.aplica_broche) {
-                                let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
-                                let obs = variante.obs_broche || '';
-                                filas.push({ variacion: 'Broche', tipo: tipo, obs: obs });
-                            } else if (variante.obs_broche) {
-                                // Si hay observación de broche pero aplica_broche es false, aún mostrar la fila
-                                let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
-                                filas.push({ variacion: 'Broche', tipo: tipo, obs: variante.obs_broche });
-                            }
-                            
-                            // NO mostrar Descripción Adicional - se elimina del modal
+                        // Caso normal - mostrar variaciones normales
+                        if (variante.tipo_prenda) filas.push({ variacion: 'Tipo Prenda', tipo: variante.tipo_prenda, obs: '' });
+                        if (variante.tipo_jean_pantalon) filas.push({ variacion: 'Tipo Jean/Pantalón', tipo: variante.tipo_jean_pantalon, obs: '' });
+                        
+                        // Tipo Manga
+                        if (variante.tipo_manga_id || variante.tipo_manga) {
+                            let tipo = variante.tipo_manga_nombre || variante.tipo_manga || 'Sin especificar';
+                            filas.push({ variacion: 'Tipo Manga', tipo: tipo, obs: variante.obs_manga || '' });
                         }
+                        
+                        // Bolsillos: si tiene_bolsillos = true, mostrar en la tabla de variaciones
+                        if (variante.tiene_bolsillos !== null && variante.tiene_bolsillos) {
+                            let obs = variante.obs_bolsillos || '';
+                            filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: obs });
+                        } else if (variante.obs_bolsillos) {
+                            // Si hay observación de bolsillos pero tiene_bolsillos es false, aún mostrar la fila
+                            filas.push({ variacion: 'Bolsillos', tipo: 'Sí', obs: variante.obs_bolsillos });
+                        }
+                        
+                        // Broche/Botón: mostrar en la tabla de variaciones si existe información
+                        if (variante.aplica_broche !== null && variante.aplica_broche) {
+                            let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
+                            let obs = variante.obs_broche || '';
+                            filas.push({ variacion: 'Broche', tipo: tipo, obs: obs });
+                        } else if (variante.obs_broche) {
+                            // Si hay observación de broche pero aplica_broche es false, aún mostrar la fila
+                            let tipo = variante.tipo_broche_nombre || variante.tipo_broche || 'Sí';
+                            filas.push({ variacion: 'Broche', tipo: tipo, obs: variante.obs_broche });
+                        }
+                        
+                        // Reflectivo: mostrar en la tabla de variaciones si tiene_reflectivo = true
+                        if (variante.tiene_reflectivo !== null && variante.tiene_reflectivo) {
+                            let obs = variante.obs_reflectivo || '';
+                            filas.push({ variacion: 'Reflectivo', tipo: 'Sí', obs: obs });
+                        } else if (variante.obs_reflectivo) {
+                            // Si hay observación de reflectivo pero tiene_reflectivo es false, aún mostrar la fila
+                            filas.push({ variacion: 'Reflectivo', tipo: 'Sí', obs: variante.obs_reflectivo });
+                        }
+                        
+                        // NO mostrar Descripción Adicional - se elimina del modal
                         
                         // Renderizar filas
                         filas.forEach((fila, idx) => {
@@ -528,41 +524,6 @@ function openCotizacionModal(cotizacionId) {
                                 titulo: `${prenda.nombre_prenda || 'Prenda'} ${idx + 1}`,
                                 color: '#1e5ba8'
                             });
-                        });
-                    }
-                    
-                    // Recolectar imágenes de reflectivo
-                    if (prenda.reflectivo && prenda.reflectivo.fotos && prenda.reflectivo.fotos.length > 0) {
-                        prenda.reflectivo.fotos.forEach((foto, idx) => {
-                            if (foto.url) {
-                                imagenesParaMostrar.push({
-                                    grupo: 'Reflectivo',
-                                    url: foto.url,
-                                    titulo: `Reflectivo ${idx + 1}`,
-                                    color: '#1e5ba8'
-                                });
-                            }
-                        });
-                    }
-                    
-                    // Recolectar imágenes de tela de reflectivo (prenda_cot_reflectivo)
-                    if (data.cotizacion && data.cotizacion.tipo_cotizacion_id === 4 && prenda.prenda_cot_reflectivo && prenda.prenda_cot_reflectivo.color_tela_ref) {
-                        const colorTelaRefArray = Array.isArray(prenda.prenda_cot_reflectivo.color_tela_ref) ? prenda.prenda_cot_reflectivo.color_tela_ref : [prenda.prenda_cot_reflectivo.color_tela_ref];
-                        colorTelaRefArray.forEach((item, idx) => {
-                            if (item.fotos && Array.isArray(item.fotos) && item.fotos.length > 0) {
-                                item.fotos.forEach((foto, fotoIdx) => {
-                                    let urlFoto = foto;
-                                    if (!urlFoto.startsWith('http')) {
-                                        urlFoto = '/storage/' + urlFoto.replace('storage/app/public/', '');
-                                    }
-                                    imagenesParaMostrar.push({
-                                        grupo: 'Tela Reflectivo',
-                                        url: urlFoto,
-                                        titulo: `Tela Reflectivo ${fotoIdx + 1}`,
-                                        color: '#1e5ba8'
-                                    });
-                                });
-                            }
                         });
                     }
                     

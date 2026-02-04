@@ -35,7 +35,6 @@
             ['code' => 'todas', 'label' => 'Todas', 'icon' => 'fas fa-list', 'active' => true],
             ['code' => 'PL', 'label' => 'Combinada', 'icon' => 'fas fa-layer-group', 'active' => false],
             ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
-            ['code' => 'RF', 'label' => 'Reflectivo', 'icon' => 'fas fa-lightbulb', 'active' => false],
         ]
     ])
 
@@ -102,24 +101,6 @@
                 'cotizaciones' => $cotizacionesPrendaBordado,
                 'pageParameterName' => $pageNameCotPB ?? 'page',
                 'emptyMessage' => 'No hay cotizaciones combinadas',
-                'columns' => [
-                    ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
-                    ['key' => 'codigo', 'label' => 'Código', 'align' => 'left'],
-                    ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],
-                    ['key' => 'tipo', 'label' => 'Tipo', 'align' => 'left'],
-                    ['key' => 'estado', 'label' => 'Estado', 'align' => 'left'],
-                    ['key' => 'accion', 'label' => 'Acción', 'align' => 'center'],
-                ]
-            ])
-        </div>
-
-        <div id="seccion-rf" class="seccion-tipo" style="display: none;">
-            @include('components.cotizaciones.table', [
-                'sectionId' => 'rf',
-                'title' => 'Reflectivo',
-                'cotizaciones' => $cotizacionesReflectivo,
-                'pageParameterName' => $pageNameCotRF ?? 'page',
-                'emptyMessage' => 'No hay cotizaciones de reflectivo',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'codigo', 'label' => 'Código', 'align' => 'left'],
@@ -201,23 +182,6 @@
                 ]
             ])
         </div>
-
-        <div id="seccion-bor-rf" class="seccion-tipo" style="display: none;">
-            @include('components.cotizaciones.table', [
-                'sectionId' => 'bor-rf',
-                'title' => 'Reflectivo',
-                'cotizaciones' => $borradoresReflectivo,
-                'pageParameterName' => $pageNameBorRF ?? 'page',
-                'emptyMessage' => 'No hay borradores de reflectivo',
-                'columns' => [
-                    ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
-                    ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],
-                    ['key' => 'tipo', 'label' => 'Tipo', 'align' => 'left'],
-                    ['key' => 'estado', 'label' => 'Estado', 'align' => 'left'],
-                    ['key' => 'accion', 'label' => 'Acciones', 'align' => 'center'],
-                ]
-            ])
-        </div>
     </div>
 
 <div id="btnLimpiarFiltros" onclick="limpiarTodosFiltros()">
@@ -241,9 +205,6 @@
         if (tipo === 'PL') {
             // Para combinadas, crear menú emergente dinámico
             createPDFDropdown(cotizacionId);
-        } else if (tipo === 'RF') {
-            // Reflectivo: abrir PDF Prenda en nueva pestaña
-            abrirPDFEnPestana(cotizacionId, 'prenda');
         } else if (tipo === 'L') {
             // Logo: abrir PDF Logo en nueva pestaña
             abrirPDFEnPestana(cotizacionId, 'logo');
@@ -330,9 +291,6 @@
                 break;
             case 'prenda':
                 url = `/asesores/cotizacion/${cotizacionId}/pdf/prenda`;
-                break;
-            case 'reflectivo':
-                url = `/asesores/cotizacion/${cotizacionId}/pdf/reflectivo`;
                 break;
             case 'logo':
                 url = `/asesores/cotizacion/${cotizacionId}/pdf/logo`;

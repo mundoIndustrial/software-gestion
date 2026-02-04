@@ -75,22 +75,6 @@ class PrendaCot extends Model
     }
 
     /**
-     * Relación: Una prenda puede tener información de reflectivo (desde ReflectivoCotizacion)
-     */
-    public function reflectivo(): HasMany
-    {
-        return $this->hasMany(ReflectivoCotizacion::class, 'prenda_cot_id');
-    }
-
-    /**
-     * Relación: Una prenda puede tener información de reflectivo CON UBICACIONES (desde PrendaCotReflectivo)
-     */
-    public function prendaCotReflectivo(): HasMany
-    {
-        return $this->hasMany(PrendaCotReflectivo::class, 'prenda_cot_id');
-    }
-
-    /**
      * Relación: Una prenda puede tener múltiples técnicas de logo
      */
     public function logoCotizacionesTecnicas(): HasMany

@@ -133,46 +133,6 @@ class Cotizacion extends Model
     }
 
     /**
-     * Relación con reflectivo de cotización
-     */
-    public function reflectivo()
-    {
-        return $this->hasOne(ReflectivoCotizacion::class, 'cotizacion_id');
-    }
-
-    /**
-     * Alias para reflectivo
-     */
-    public function reflectivoCotizacion()
-    {
-        return $this->reflectivo();
-    }
-
-    /**
-     * Relación con reflectivos por prenda (PASO 4 - Reflectivos por Prenda)
-     */
-    public function reflectivoPrendas(): HasMany
-    {
-        return $this->hasMany(ReflectivoCotizacion::class, 'cotizacion_id')->whereNotNull('prenda_cot_id');
-    }
-
-    /**
-     * Relación con prendas reflectivo (tabla prenda_cot_reflectivo)
-     */
-    public function prendaCotReflectivos(): HasMany
-    {
-        return $this->hasMany(PrendaCotReflectivo::class, 'cotizacion_id');
-    }
-
-    /**
-     * Relación con fotos de logo (logo_fotos_cot)
-     */
-    public function logoFotos(): HasMany
-    {
-        return $this->hasMany(LogoFotoCot::class, 'cotizacion_id');
-    }
-
-    /**
      * Relación con historial de cambios (DEPRECATED)
      */
     public function historial()
