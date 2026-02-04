@@ -406,15 +406,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Observaciones</h3>
                     <textarea id="dObservacionesP3" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;"></textarea>
                 </div>
-                
-                <!-- TALLAS GENÉRICAS -->
-                <div id="dSeccionTallasGeneralP3" style="display: block;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades</h3>
-                    <div id="dTallaCantidadContainerP3" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                    <button type="button" id="dBtnAgregarTallaP3" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla</button>
-                </div>
             </div>
         `,
         showCancelButton: true,
@@ -423,18 +414,14 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         confirmButtonColor: '#333',
         didOpen: (modal) => {
             const selectPrenda = document.getElementById('dNombrePrendaP3');
-            const btnAgregarTalla = document.getElementById('dBtnAgregarTallaP3');
-            const tallaCantidadContainer = document.getElementById('dTallaCantidadContainerP3');
             const ubicacionesPorTecnicaDiv = document.getElementById('dUbicacionesPorTecnicaP3');
             const imagenesPorTecnicaDiv = document.getElementById('dImagenesPorTecnicaP3');
             
-            let contadorTallas = 0;
             const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
             
-            // Listener para cambio de prenda - carga las tallas, imágenes y variaciones automáticamente
+            // Listener para cambio de prenda - carga las imágenes y variaciones automáticamente
             selectPrenda.addEventListener('change', (e) => {
                 const selectedOption = e.target.options[e.target.selectedIndex];
-                const tallasJson = selectedOption.getAttribute('data-tallas');
                 const imagenesJson = selectedOption.getAttribute('data-imagenes');
                 const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
                 
@@ -456,42 +443,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 if (colores && colores.length > 0) {
                     nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
                 }
-                
-                // Limpiar tallas actuales
-                tallaCantidadContainer.innerHTML = '';
-                
-                if (tallasJson) {
-                    try {
-                        const tallas = JSON.parse(tallasJson);
-                        if (Array.isArray(tallas) && tallas.length > 0) {
-                            // Agregar una fila por cada talla de la prenda seleccionada
-                            tallas.forEach(talla => {
-                                const idTalla = 'talla-p3-' + (contadorTallas++);
-                                const fila = document.createElement('div');
-                                fila.setAttribute('data-talla-id', idTalla);
-                                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
-                                fila.innerHTML = `
-                                    <input type="text" class="dTallaInput" placeholder="Talla" value="${talla}" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;" readonly>
-                                    <input type="number" class="dCantidadInput" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                                    <button type="button" class="dBtnEliminarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
-                                `;
-                                
-                                const btnEliminar = fila.querySelector('.dBtnEliminarTalla');
-                                btnEliminar.addEventListener('click', (e) => {
-                                    e.preventDefault();
-                                    if (tallaCantidadContainer.children.length > 0) {
-                                        fila.remove();
-                                    }
-                                });
-                                
-                                tallaCantidadContainer.appendChild(fila);
-                            });
-                        }
-                    } catch (err) {
-                        console.error('Error al parsear tallas:', err);
-                    }
-                }
-                
             });
             
             // Crear inputs de ubicación por técnica, dropzones de imagen y variaciones
@@ -730,36 +681,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             // Guardar referencia global para preConfirm
             window.imagenesCompartidasP3 = imagenesCompartidas;
             
-            // Agregar talla inicial (vacía)
-            function agregarFilaTallaPaso3() {
-                const idTalla = 'talla-p3-' + (contadorTallas++);
-                const fila = document.createElement('div');
-                fila.setAttribute('data-talla-id', idTalla);
-                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
-                fila.innerHTML = `
-                    <input type="text" class="dTallaInput" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <input type="number" class="dCantidadInput" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <button type="button" class="dBtnEliminarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
-                `;
-                
-                const btnEliminar = fila.querySelector('.dBtnEliminarTalla');
-                btnEliminar.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (tallaCantidadContainer.children.length > 1) {
-                        fila.remove();
-                    }
-                });
-                
-                tallaCantidadContainer.appendChild(fila);
-            }
-            
-            if (btnAgregarTalla) {
-                btnAgregarTalla.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    agregarFilaTallaPaso3();
-                });
-            }
-            
             // Guardar referencia global para usar en preConfirm
             window.imagenesAgregadasPorTecnicaP3 = imagenesAgregadasPorTecnica;
         },
@@ -818,25 +739,11 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             
             if (!valido) return false;
             
-            // Validar tallas (opcional)
-            const tallasFilas = document.querySelectorAll('[data-talla-id]');
-            let tallas = [];
-            tallasFilas.forEach(fila => {
-                const talla = fila.querySelector('.dTallaInput').value.trim();
-                const cantidad = fila.querySelector('.dCantidadInput').value;
-                if (talla && cantidad) {
-                    tallas.push({ talla, cantidad: parseInt(cantidad) });
-                }
-            });
-            
-            // Las tallas son opcionales, no validar si están vacías
-            
-            
             return {
                 nombre_prenda: nombrePrendaCompleto,
                 observaciones: document.getElementById('dObservacionesP3').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
-                tallas: tallas,
+                tallas: [], // Siempre vacío, las tallas ya no se manejan aquí
                 variaciones_prenda: {},
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3,
                 imagenesCompartidas: window.imagenesCompartidasP3 || {}
@@ -1364,37 +1271,31 @@ function mostrarFormularioTecnicaDiferentePaso3(indice) {
 }
 
 function guardarTecnicaCombinada(datosForm, tecnicas) {
-    //  VALIDACIÓN: Verificar que hay información escrita en ubicaciones, tallas y/o imágenes
+    //  VALIDACIÓN: Verificar que hay información escrita en ubicaciones y/o imágenes
     let tieneInformacionValida = false;
     
     // Validar ubicaciones
-    const tieneUbicaciones = datosForm.ubicacionesPorTecnica && 
-                             Object.keys(datosForm.ubicacionesPorTecnica).some(key => {
-                                 const ubicaciones = datosForm.ubicacionesPorTecnica[key];
+    const tieneUbicaciones = Object.values(datosForm.ubicacionesPorTecnica).some(ubicaciones => {
                                  return Array.isArray(ubicaciones) && ubicaciones.some(u => u.trim());
                              });
     
-    // Validar tallas (opcional)
-    const tieneTallas = datosForm.tallas && datosForm.tallas.length > 0;
-    
     // Validar imágenes
     let tieneImagenes = false;
+    
+    // Revisar imágenes agregadas por técnica
     if (datosForm.imagenesAgregadas) {
-        for (let idx in datosForm.imagenesAgregadas) {
-            if (Array.isArray(datosForm.imagenesAgregadas[idx]) && 
-                datosForm.imagenesAgregadas[idx].length > 0) {
+        Object.values(datosForm.imagenesAgregadas).forEach(imagenesTecnica => {
+            if (Array.isArray(imagenesTecnica) && imagenesTecnica.length > 0) {
                 tieneImagenes = true;
-                break;
             }
-        }
+        });
     }
     
-    // La información es válida si hay ubicaciones (tallas e imágenes son opcionales)
+    // La información es válida si hay ubicaciones (imágenes son opcionales)
     tieneInformacionValida = tieneUbicaciones;
     
     console.log('🔍 VALIDACIÓN PASO 3 - Información requerida:', {
         tieneUbicaciones,
-        tieneTallas,
         tieneImagenes,
         tieneInformacionValida
     });
@@ -1414,7 +1315,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
                         </p>
                         <p style="margin: 0; font-size: 0.85rem; color: #78350f;">
                             ✓ Al menos una <strong>ubicación</strong> (ej: Pecho, Espalda)<br>
-                            ✓ <strong>Tallas</strong> Y/O <strong>Imágenes</strong>
+                            ✓ <strong>Imágenes</strong> (opcional)
                         </p>
                     </div>
                     <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #666;">
@@ -1494,7 +1395,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
             prendas: [{
                 nombre_prenda: datosForm.nombre_prenda,
                 ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
-                talla_cantidad: datosForm.tallas.map(t => ({ talla: t.talla, cantidad: t.cantidad })),
+                talla_cantidad: [], // Siempre vacío, las tallas ya no se manejan aquí
                 observaciones: datosForm.observaciones,
                 variaciones_prenda: datosForm.variaciones_prenda || {},
                 imagenes: imagenesCapturadas,  // Cambiar de imagenes_files a imagenes con metadata
@@ -2060,14 +1961,6 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                     <textarea id="dObservacionesEditarP3" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${datosPrendaActual.observaciones || ''}</textarea>
                 </div>
                 
-                <!-- TALLAS Y CANTIDADES -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades</h3>
-                    <div id="dTallaCantidadEditarP3" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                    <button type="button" id="dBtnAgregarTallaEditarP3" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla</button>
-                </div>
             </div>
         `,
         showCancelButton: true,
@@ -2078,10 +1971,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
             const ubicacionesDiv = document.getElementById('dUbicacionesEditarP3');
             const imagenesDiv = document.getElementById('dImagenesEditarP3');
             const variacionesDiv = document.getElementById('dVariacionesEditarP3');
-            const tallaCantidadContainer = document.getElementById('dTallaCantidadEditarP3');
-            const btnAgregarTalla = document.getElementById('dBtnAgregarTallaEditarP3');
             
-            let contadorTallas = 0;
             const imagenesAgregadasPorTecnicaEditar = {};
             const variacionesEditarPorTecnica = {};
             
@@ -2355,78 +2245,12 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 variacionesDiv.appendChild(divVariaciones);
             });
             
-            // TALLAS - Cargar tallas existentes
-            if (datosPrendaActual.talla_cantidad && datosPrendaActual.talla_cantidad.length > 0) {
-                datosPrendaActual.talla_cantidad.forEach(t => {
-                    const idTalla = 'talla-editar-p3-' + (contadorTallas++);
-                    const fila = document.createElement('div');
-                    fila.setAttribute('data-talla-id', idTalla);
-                    fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
-                    fila.innerHTML = `
-                        <input type="text" class="dTallaInputEditar" value="${t.talla}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                        <input type="number" class="dCantidadInputEditar" value="${t.cantidad}" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                        <button type="button" class="dBtnEliminarTallaEditar" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
-                    `;
-                    
-                    const btnEliminar = fila.querySelector('.dBtnEliminarTallaEditar');
-                    btnEliminar.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        if (tallaCantidadContainer.children.length > 1) {
-                            fila.remove();
-                        }
-                    });
-                    
-                    tallaCantidadContainer.appendChild(fila);
-                });
-            }
-            
-            // Función para agregar talla
-            function agregarFilaTallaEditar() {
-                const idTalla = 'talla-editar-p3-' + (contadorTallas++);
-                const fila = document.createElement('div');
-                fila.setAttribute('data-talla-id', idTalla);
-                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
-                fila.innerHTML = `
-                    <input type="text" class="dTallaInputEditar" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <input type="number" class="dCantidadInputEditar" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <button type="button" class="dBtnEliminarTallaEditar" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
-                `;
-                
-                const btnEliminar = fila.querySelector('.dBtnEliminarTallaEditar');
-                btnEliminar.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (tallaCantidadContainer.children.length > 1) {
-                        fila.remove();
-                    }
-                });
-                
-                tallaCantidadContainer.appendChild(fila);
-            }
-            
-            btnAgregarTalla.addEventListener('click', (e) => {
-                e.preventDefault();
-                agregarFilaTallaEditar();
-            });
-            
             // Guardar referencia global
             window.imagenesAgregadasPorTecnicaEditarP3 = imagenesAgregadasPorTecnicaEditar;
             window.variacionesEditarPorTecnicaP3 = variacionesEditarPorTecnica;
             window.tecnicasConPrendaActual = tecnicasConPrenda;
         },
         preConfirm: () => {
-            // Validar tallas
-            const tallasFilas = document.querySelectorAll('[data-talla-id]');
-            let tallas = [];
-            tallasFilas.forEach(fila => {
-                const talla = fila.querySelector('.dTallaInputEditar').value.trim();
-                const cantidad = fila.querySelector('.dCantidadInputEditar').value;
-                if (talla && cantidad) {
-                    tallas.push({ talla, cantidad: parseInt(cantidad) });
-                }
-            });
-            
-            // Las tallas son opcionales, no validar si están vacías
-            
             // Capturar ubicaciones (múltiples por técnica)
             const ubicacionesActualizadas = {};
             window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
@@ -2460,7 +2284,7 @@ function abrirModalEditarTecnicaPaso3(nombrePrenda) {
                 observaciones: document.getElementById('dObservacionesEditarP3').value.trim(),
                 ubicacionesActualizadas: ubicacionesActualizadas,
                 variacionesActualizadas: variacionesActualizadas,
-                tallas: tallas,
+                tallas: [], // Siempre vacío, las tallas ya no se manejan aquí
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaEditarP3
             };
         }
