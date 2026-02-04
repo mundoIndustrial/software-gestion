@@ -170,7 +170,6 @@
 @include('asesores.pedidos.components.modal-prendas-lista')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
-@include('asesores.pedidos.modals.modal-agregar-reflectivo')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-agregar-epp')
 
@@ -261,9 +260,6 @@
     
     <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
-    
-    <!-- Componente: Reflectivo -->
-    <script src="{{ asset('js/componentes/reflectivo.js') }}?v={{ time() }}"></script>
     
     <!-- Componente: Logo -->
     <script src="{{ asset('js/modulos/crear-pedido/logo/logo-pedido.js') }}?v={{ time() }}"></script>

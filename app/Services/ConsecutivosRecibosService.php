@@ -250,7 +250,8 @@ class ConsecutivosRecibosService
                         }
                         break;
                     case 'REFLECTIVO':
-                        if (!isset($procesosPorPedido['REFLECTIVO'])) {
+                        // REFLECTIVO solo se genera si la prenda es de bodega (de_bodega = true)
+                        if ($prenda->de_bodega && !isset($procesosPorPedido['REFLECTIVO'])) {
                             $procesosPorPedido['REFLECTIVO'] = true;
                             $tiposRecibo['REFLECTIVO'] = [
                                 'tipo_recibo' => 'REFLECTIVO',

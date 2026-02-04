@@ -17,6 +17,10 @@ export class Formatters {
         console.log('[Formatters.construirDescripcionCostura] descripcion:', prenda?.descripcion);
         console.log('[Formatters.construirDescripcionCostura] variantes:', prenda?.variantes);
         console.log('[Formatters.construirDescripcionCostura] tallas:', prenda?.tallas);
+        
+        // 🔍 DEBUG: Verificar de_bodega y procesos
+        console.log('[Formatters.construirDescripcionCostura] 🔍 de_bodega:', prenda?.de_bodega);
+        console.log('[Formatters.construirDescripcionCostura] 🔍 procesos:', prenda?.procesos);
 
         // ⭐ DEBUG: Información detallada de variantes
         if (prenda.variantes && Array.isArray(prenda.variantes)) {
@@ -98,8 +102,13 @@ export class Formatters {
             
             if (mangaTexto) {
                 mangaTexto = mangaTexto.toUpperCase();
-                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
-                console.log('[Formatters]  MANGA agregado:', mangaTexto);
+                // Agregar observaciones si existen
+                let mangaConObs = mangaTexto;
+                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
+                    mangaConObs += ` (${primerVariante.manga_obs.toUpperCase()})`;
+                }
+                partes.push(`<strong>MANGA:</strong> ${mangaConObs}`);
+                console.log('[Formatters]  MANGA agregado:', mangaConObs);
             } else {
                 console.log('[Formatters]  No hay manga en variante');
             }
@@ -200,6 +209,100 @@ export class Formatters {
             }
         } else {
             console.log('[Formatters]  No hay tallas (undefined/null)');
+        }
+
+        // 6. REFLECTIVO - Si existe un proceso reflectivo, agregarlo después de tallas
+        // SOLO si la prenda NO es de bodega (de_bodega = false)
+        console.log('[Formatters] 🔍 Verificando REFLECTIVO:', {
+            de_bodega: prenda.de_bodega,
+            no_de_bodega: !prenda.de_bodega,
+            tieneProces: !!prenda.procesos,
+            esArray: Array.isArray(prenda.procesos),
+            cantidadProcesos: prenda.procesos?.length || 0
+        });
+        
+        if (!prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
+            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida, buscando proceso...');
+            
+            // DEBUG: Ver estructura completa del proceso
+            if (prenda.procesos.length > 0) {
+                console.log('[Formatters] 🔍 Proceso completo objeto:', prenda.procesos[0]);
+                console.log('[Formatters] 🔍 Claves del proceso:', Object.keys(prenda.procesos[0]));
+            }
+            
+            const procesoReflectivo = prenda.procesos.find(p => {
+                const nombreProceso = (p.tipo_proceso || '').toLowerCase();
+                console.log('[Formatters] 🔎 Analizando proceso:', {
+                    tipo_proceso: p.tipo_proceso,
+                    nombreProceso,
+                    esReflectivo: nombreProceso === 'reflectivo'
+                });
+                return nombreProceso === 'reflectivo';
+            });
+            
+            if (procesoReflectivo) {
+                console.log('[Formatters] ✅✅ Proceso REFLECTIVO encontrado:', procesoReflectivo);
+                
+                lineas.push('');
+                lineas.push('<strong style="font-size: 13.4px;">PROCESO: REFLECTIVO</strong>');
+                
+                // Ubicaciones del reflectivo
+                let ubicacionesArray = [];
+                if (procesoReflectivo.ubicaciones) {
+                    if (typeof procesoReflectivo.ubicaciones === 'string') {
+                        try {
+                            ubicacionesArray = JSON.parse(procesoReflectivo.ubicaciones);
+                        } catch (e) {
+                            console.warn('[Formatters] Error parseando ubicaciones reflectivo:', procesoReflectivo.ubicaciones, e);
+                        }
+                    } else if (Array.isArray(procesoReflectivo.ubicaciones)) {
+                        ubicacionesArray = procesoReflectivo.ubicaciones;
+                    }
+                }
+                
+                // Crear layout en columnas para ubicaciones y observaciones
+                let ubicacionesHTML = '';
+                if (ubicacionesArray && ubicacionesArray.length > 0) {
+                    ubicacionesHTML = '<strong>UBICACIONES:</strong><br>';
+                    ubicacionesArray.forEach((ubicacion) => {
+                        ubicacionesHTML += `• ${String(ubicacion).toUpperCase()}<br>`;
+                    });
+                }
+                
+                let observacionesHTML = '';
+                if (procesoReflectivo.observaciones && procesoReflectivo.observaciones.trim()) {
+                    observacionesHTML = '<strong>OBSERVACIONES:</strong><br>';
+                    observacionesHTML += procesoReflectivo.observaciones.toUpperCase();
+                }
+                
+                // Mostrar en columnas (lado a lado)
+                if (ubicacionesHTML || observacionesHTML) {
+                    lineas.push('<div style="display: flex; gap: 30px;">');
+                    if (ubicacionesHTML) {
+                        lineas.push(`<div style="flex: 1;">${ubicacionesHTML}</div>`);
+                    }
+                    if (observacionesHTML) {
+                        lineas.push(`<div style="flex: 1;">${observacionesHTML}</div>`);
+                    }
+                    lineas.push('</div>');
+                }
+                
+                // Tallas del reflectivo
+                if (prenda.tallas && (Object.keys(prenda.tallas).length > 0)) {
+                    lineas.push('<strong>TALLAS</strong>');
+                    this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);
+                }
+                
+                console.log('[Formatters]  Proceso REFLECTIVO agregado');
+            } else {
+                console.log('[Formatters] ❌ No se encontró proceso REFLECTIVO en los procesos disponibles');
+            }
+        } else {
+            console.log('[Formatters] ❌ Condición de REFLECTIVO NO cumplida:', {
+                razon: !prenda.de_bodega ? 'de_bodega es false (correcto)' : 'de_bodega es true (NO mostrar)',
+                tieneProc: prenda.procesos ? 'sí' : 'no',
+                esArray: Array.isArray(prenda.procesos) ? 'sí' : 'no'
+            });
         }
 
         const resultado = lineas.join('<br>') || '<em>Sin información</em>';

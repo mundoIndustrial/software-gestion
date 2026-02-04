@@ -206,7 +206,16 @@
                 `;
             } else {
                 datos.prendas.forEach((prenda, prendaIdx) => {
-                    const procesos = prenda.procesos || [];
+                    // Filtrar procesos: excluir REFLECTIVO si de_bodega es false
+                    let procesos = prenda.procesos || [];
+                    procesos = procesos.filter(p => {
+                        // Si de_bodega es false, excluir REFLECTIVO
+                        if (!prenda.de_bodega && p.tipo_proceso && p.tipo_proceso.toLowerCase() === 'reflectivo') {
+                            return false;
+                        }
+                        return true;
+                    });
+                    
                     const tieneProcesos = procesos.length > 0;
                     
                     html += `
