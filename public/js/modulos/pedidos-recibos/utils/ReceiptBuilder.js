@@ -72,6 +72,12 @@ export class ReceiptBuilder {
         // PASO 2: AGREGAR PROCESOS ADICIONALES
         procesos.forEach((proc) => {
             const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
+            
+            // Filtrar: excluir REFLECTIVO si de_bodega es false
+            if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
+                return; // Skip este proceso
+            }
+            
             if (tipoProceso) {
                 // Preparar imágenes para este proceso (prenda + tela + imágenes del proceso)
                 let imagenesProceso = [];

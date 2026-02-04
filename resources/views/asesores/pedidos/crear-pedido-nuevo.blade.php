@@ -140,9 +140,6 @@
 
         </div>
 
-        <!-- COMPONENTE: Reflectivo Editable -->
-        @include('asesores.pedidos.components.reflectivo-editable')
-
         <!-- PASO 5: Botones de Acción -->
         <div class="btn-actions">
             <button type="submit" id="btn-submit" class="btn btn-primary" style="display: none; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
@@ -160,7 +157,6 @@
 @include('asesores.pedidos.modals.modal-seleccionar-prendas')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
-@include('asesores.pedidos.modals.modal-agregar-reflectivo')
 @include('asesores.pedidos.modals.modal-proceso-generico')
 @include('asesores.pedidos.modals.modal-agregar-epp')
 
@@ -271,9 +267,6 @@
     
     <!-- Wrappers delegadores para prendas -->
     <script src="{{ asset('js/componentes/prendas-wrappers.js') }}?v={{ time() }}"></script>
-    
-    <!-- Componente: Reflectivo -->
-    <script src="{{ asset('js/componentes/reflectivo.js') }}?v={{ time() }}"></script>
     
     <!-- Cargar módulos de gestión de pedidos -->
     <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>

@@ -61,181 +61,195 @@
 
             <!-- Tabla de despacho -->
             <div class="overflow-x-auto lg:overflow-visible">
-                <table class="w-full text-sm min-w-[800px] lg:min-w-full">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                <table class="w-full text-sm min-w-[800px] lg:min-w-full border-collapse">
+                    <thead class="bg-slate-50 border-b-2 border-slate-400 sticky top-0 z-50">
                         <tr>
-                            <th class="px-2 lg:px-4 py-3 text-left font-medium text-slate-700 text-xs lg:text-sm">Descripción</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Género</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Talla</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Cantidad</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 1</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 2</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm">Parcial 3</th>
+                            <th class="px-2 lg:px-4 py-3 text-left font-medium text-slate-700 text-xs lg:text-sm border-r border-slate-400">Descripción</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Género</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Talla</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Cantidad</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 1</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 2</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 3</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
                         </tr>
                     </thead>
                     <tbody id="tablaDespacho">
                         <!-- PRENDAS -->
                         @if($prendas->count() > 0)
-                            <tr class="bg-slate-50">
+                            <tr class="bg-slate-100 border-b-2 border-slate-400">
                                 <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
                                     Prendas
                                 </td>
                             </tr>
-                            @foreach($prendas as $index => $fila)
-                                <tr class="border-b border-slate-200 hover:bg-slate-50" 
-                                    data-tipo="prenda"
-                                    data-id="{{ $fila->id }}"
-                                    data-talla-id="{{ $fila->tallaId }}"
-                                    data-genero="{{ $fila->genero }}"
-                                    data-cantidad="{{ $fila->cantidadTotal }}">
-                                    
-                                    <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs">
-                                        <div class="font-semibold text-slate-900 mb-1">
-                                            {{ $fila->objetoPrenda['nombre'] ?? $fila->descripcion }}
-                                            @if(isset($fila->objetoPrenda['de_bodega']) && $fila->objetoPrenda['de_bodega'])
-                                                <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
-                                            @endif
-                                        </div>
+                            @php
+                                // Agrupar prendas por ID para merge de celdas
+                                $prendasAgrupadas = $prendas->groupBy('id');
+                            @endphp
+                            @foreach($prendasAgrupadas as $prendaId => $filasGroup)
+                                @php
+                                    $primeraFila = $filasGroup->first();
+                                    $rowSpan = $filasGroup->count();
+                                @endphp
+                                @foreach($filasGroup as $indexFila => $fila)
+                                    <tr class="border-b border-slate-400 hover:bg-slate-50" 
+                                        data-tipo="prenda"
+                                        data-id="{{ $fila->id }}"
+                                        data-talla-id="{{ $fila->tallaId }}"
+                                        data-genero="{{ $fila->genero }}"
+                                        data-cantidad="{{ $fila->cantidadTotal }}">
                                         
-                                        <!-- Tela y Color -->
-                                        @if($fila->objetoPrenda && (isset($fila->objetoPrenda['tela']) || isset($fila->objetoPrenda['color'])))
-                                            @php
-                                                $tela = $fila->objetoPrenda['tela'] ?? null;
-                                                $color = $fila->objetoPrenda['color'] ?? null;
-                                            @endphp
-                                            <div class="text-slate-900 mb-1 text-xs">
-                                                @if($tela && $color)
-                                                    <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
-                                                @elseif($tela)
-                                                    <div>• Tela: {{ $tela }}</div>
-                                                @elseif($color)
-                                                    <div>• Color: {{ $color }}</div>
-                                                @endif
-                                            </div>
-                                        @endif
-                                        
-                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['variantes']) && is_array($fila->objetoPrenda['variantes']) && count($fila->objetoPrenda['variantes']) > 0)
-                                            @php
-                                                // Obtener la primera variante para mostrar las características comunes
-                                                $primeraVariante = $fila->objetoPrenda['variantes'][0];
-                                                $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
-                                                $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
-                                                $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
-                                                $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
-                                                $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
-                                                $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
-                                            @endphp
-                                            <div class="text-slate-900 mb-1 text-xs space-y-0.5">
-                                                @if($manga)
-                                                    <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
-                                                @endif
-                                                @if($broche)
-                                                    <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
-                                                @endif
-                                                @if($bolsillos)
-                                                    <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
-                                                @endif
-                                            </div>
-                                        @endif
-                                        @if($fila->objetoPrenda && isset($fila->objetoPrenda['procesos']) && is_array($fila->objetoPrenda['procesos']) && count($fila->objetoPrenda['procesos']) > 0)
-                                            <div class="text-slate-900 mt-1 text-xs">
-                                                <div class="ml-2 mt-0.5">
-                                                    @foreach($fila->objetoPrenda['procesos'] as $proc)
-                                                        @php
-                                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
-                                                            // Si es string, intenta decodificar como JSON
-                                                            if (is_string($ubicaciones)) {
-                                                                $decoded = json_decode($ubicaciones, true);
-                                                                $ubicaciones = is_array($decoded) ? $decoded : [$ubicaciones];
-                                                            }
-                                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
-                                                        @endphp
-                                                        <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
-                                                    @endforeach
+                                        {{-- CELDA DE DESCRIPCIÓN: Solo en la primera fila del grupo --}}
+                                        @if($indexFila === 0)
+                                            <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs" rowspan="{{ $rowSpan }}">
+                                                <div class="font-semibold text-slate-900 mb-1">
+                                                    {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
+                                                    @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
+                                                        <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
+                                                    @endif
                                                 </div>
-                                            </div>
-                                        @else
-                                            <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                                
+                                                <!-- Tela y Color -->
+                                                @if($primeraFila->objetoPrenda && (isset($primeraFila->objetoPrenda['tela']) || isset($primeraFila->objetoPrenda['color'])))
+                                                    @php
+                                                        $tela = $primeraFila->objetoPrenda['tela'] ?? null;
+                                                        $color = $primeraFila->objetoPrenda['color'] ?? null;
+                                                    @endphp
+                                                    <div class="text-slate-900 mb-1 text-xs">
+                                                        @if($tela && $color)
+                                                            <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                        @elseif($tela)
+                                                            <div>• Tela: {{ $tela }}</div>
+                                                        @elseif($color)
+                                                            <div>• Color: {{ $color }}</div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0)
+                                                    @php
+                                                        // Obtener la primera variante para mostrar las características comunes
+                                                        $primeraVariante = $primeraFila->objetoPrenda['variantes'][0];
+                                                        $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
+                                                        $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
+                                                        $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
+                                                        $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
+                                                        $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
+                                                        $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
+                                                    @endphp
+                                                    <div class="text-slate-900 mb-1 text-xs space-y-0.5">
+                                                        @if($manga)
+                                                            <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                        @endif
+                                                        @if($broche)
+                                                            <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                        @endif
+                                                        @if($bolsillos)
+                                                            <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['procesos']) && is_array($primeraFila->objetoPrenda['procesos']) && count($primeraFila->objetoPrenda['procesos']) > 0)
+                                                    <div class="text-slate-900 mt-1 text-xs">
+                                                        <div class="ml-2 mt-0.5">
+                                                            @foreach($primeraFila->objetoPrenda['procesos'] as $proc)
+                                                                @php
+                                                                    $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
+                                                                    // Si es string, intenta decodificar como JSON
+                                                                    if (is_string($ubicaciones)) {
+                                                                        $decoded = json_decode($ubicaciones, true);
+                                                                        $ubicaciones = is_array($decoded) ? $decoded : [$ubicaciones];
+                                                                    }
+                                                                    $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
+                                                                @endphp
+                                                                <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                                @endif
+                                            </td>
+                                            
+                                            {{-- CELDA DE GÉNERO: Solo en la primera fila del grupo --}}
+                                            <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs" rowspan="{{ $rowSpan }}">
+                                                {{ $primeraFila->genero ?? '—' }}
+                                            </td>
                                         @endif
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs">
-                                        {{ $fila->genero ?? '—' }}
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
-                                        {{ $fila->talla }}
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
-                                        {{ $fila->cantidadTotal }}
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                </tr>
+                                        
+                                        <td class="px-2 lg:px-4 py-3 text-center text-slate-600">
+                                            {{ $fila->talla }}
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900">
+                                            {{ $fila->cantidadTotal }}
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                        
+                                        <td class="px-2 lg:px-4 py-3">
+                                            <input type="number" 
+                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
+                                                   value="0"
+                                                   placeholder="0">
+                                        </td>
+                                    </tr>
+                                @endforeach
                             @endforeach
                         @endif
 
                         <!-- EPP -->
                         @if($epps->count() > 0)
-                            <tr class="bg-slate-50">
+                            <tr class="bg-slate-100 border-b-2 border-slate-400">
                                 <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
                                     EPP
                                 </td>
                             </tr>
                             @foreach($epps as $index => $fila)
-                                <tr class="border-b border-slate-200 hover:bg-slate-50"
+                                <tr class="border-b border-slate-400 hover:bg-slate-50"
                                     data-tipo="epp"
                                     data-id="{{ $fila->id }}"
                                     data-cantidad="{{ $fila->cantidadTotal }}">
@@ -323,7 +337,7 @@
             </div>
 
             <!-- Botones de acción -->
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+            <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-400 flex justify-between items-center">
                 <div class="text-sm text-slate-600">
                     <span class="font-medium">{{ $prendas->count() + $epps->count() }}</span> ítems
                 </div>

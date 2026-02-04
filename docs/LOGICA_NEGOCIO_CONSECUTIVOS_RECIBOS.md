@@ -49,9 +49,9 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 - **Razón**: Sublimado requiere su propio proceso y control independiente
 
 ### 6. REFLECTIVO
-- **Se genera**: Si la prenda tiene proceso de tipo "REFLECTIVO"
-- **Independiente de**: `de_bodega`
-- **Razón**: El reflectivo siempre necesita recibo, sin importar el origen de la prenda
+- **Se genera**: Si la prenda tiene proceso de tipo "REFLECTIVO" **Y** `de_bodega = true`
+- **Independiente de**: N/A (Depende de `de_bodega`)
+- **Razón**: El reflectivo solo necesita recibo cuando la prenda es de bodega
 
 ##  Tabla de Decisiones
 
@@ -61,7 +61,7 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 | false | Estampado |  |  | ❌ | ❌ | ❌ | ❌ | 2 |
 | false | DTF |  | ❌ | ❌ |  | ❌ | ❌ | 2 |
 | false | Sublimado |  | ❌ | ❌ | ❌ |  | ❌ | 2 |
-| false | Bordado, Reflectivo |  | ❌ |  | ❌ | ❌ |  | 3 |
+| false | Bordado, Reflectivo |  | ❌ |  | ❌ | ❌ | ❌ | 3 |
 | false | Estampado, DTF, Sublimado |  |  | ❌ |  |  | ❌ | 4 |
 | true | Ninguno | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0 |
 | true | Estampado | ❌ |  | ❌ | ❌ | ❌ | ❌ | 1 |
@@ -194,8 +194,8 @@ Pedido #123458
 ├── Prenda 1: Camisa (de_bodega=false, procesos=ninguno)
 │   └── Consecutivos: COSTURA = 1
 └── Prenda 2: Pantalón (de_bodega=false, procesos=Reflectivo)
-    └── Consecutivos: COSTURA + REFLECTIVO = 2
-Total: 3 consecutivos
+    └── Consecutivos: COSTURA = 1 (REFLECTIVO no se genera porque de_bodega=false)
+Total: 2 consecutivos
 ```
 
 ##  Implementación Técnica
@@ -220,12 +220,13 @@ Total: 3 consecutivos
 1. **Disparador Único**: Solo por cambio a `PENDIENTE_INSUMOS`
 2. **Por Prenda**: Cada prenda genera sus propios consecutivos
 3. **COSTURA Especial**: Solo para prendas que no son de bodega
-4. **Procesos Siempre**: Los procesos siempre generan consecutivos
-5. **Procesos Independientes**: DTF, SUBLIMADO y ESTAMPADO tienen consecutivos independientes
-6. **Sin Prefijos**: Solo números secuenciales
-7. **Transaccional**: Todo o nada
-8. **Único**: No hay duplicados
-9. **Anual**: Reinicia cada año
+4. **REFLECTIVO Especial**: Solo se genera si `de_bodega = true`
+5. **Procesos Siempre**: Los demás procesos (Bordado, Estampado, DTF, Sublimado) siempre generan consecutivos
+6. **Procesos Independientes**: DTF, SUBLIMADO y ESTAMPADO tienen consecutivos independientes
+7. **Sin Prefijos**: Solo números secuenciales
+8. **Transaccional**: Todo o nada
+9. **Único**: No hay duplicados
+10. **Anual**: Reinicia cada año
 
 ## 📞 Soporte y Mantenimiento
 

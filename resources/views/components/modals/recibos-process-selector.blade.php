@@ -419,6 +419,11 @@
                 // Garantizar que tipo_proceso es STRING
                 const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
                 
+                // Filtrar: excluir REFLECTIVO si de_bodega es false
+                if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
+                    return; // Skip este proceso
+                }
+                
                 recibos.push({
                     tipo: tipoProceso,
                     nombre: `${tipoProceso}`,
