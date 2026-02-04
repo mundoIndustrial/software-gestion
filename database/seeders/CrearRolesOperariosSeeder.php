@@ -30,6 +30,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Bodeguero
+        Role::firstOrCreate(
+            ['name' => 'bodeguero'],
+            [
+                'description' => 'Operario encargado de la bodega - Visualización de recibos',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

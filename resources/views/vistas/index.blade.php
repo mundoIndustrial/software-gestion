@@ -50,7 +50,7 @@
                     <p>No se encontraron registros para mostrar.</p>
                 </div>
             @else
-                @if($tipo === 'corte')
+                @if($tipo === 'corte' || $tipo === 'bodega')
                     <div class="cards-container">
                         @php
                             $groupedRegistros = $registros->groupBy('pedido');

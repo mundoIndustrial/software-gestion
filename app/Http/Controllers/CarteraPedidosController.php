@@ -151,6 +151,9 @@ class CarteraPedidosController extends Controller
                     'aprobado_por_cartera_en' => now(),
                 ]);
                 
+                // Generar consecutivo COSTURA-BODEGA cuando CARTERA aprueba
+                $this->generarConsecutivoCosturaBodega($pedido);
+                
                 \Log::info('[CARTERA] Pedido aprobado y número generado', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido_generado' => $siguienteNumero,
@@ -303,6 +306,90 @@ class CarteraPedidosController extends Controller
                 'success' => false,
                 'message' => 'Error al obtener datos: ' . $e->getMessage()
             ], 500);
+        }
+    }
+    
+    /**
+     * Generar consecutivo COSTURA-BODEGA cuando CARTERA aprueba un pedido
+     * SIEMPRE incrementa el consecutivo (sea primera vez o no)
+     * 
+     * @param PedidoProduccion $pedido
+     * @return void
+     */
+    private function generarConsecutivoCosturaBodega(PedidoProduccion $pedido): void
+    {
+        try {
+            // Obtener el consecutivo actual de COSTURA-BODEGA
+            $consecutivoRecibo = \DB::table('consecutivos_recibos')
+                ->where('tipo_recibo', 'COSTURA-BODEGA')
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$consecutivoRecibo) {
+                \Log::warning('[CARTERA] No existe consecutivo COSTURA-BODEGA en consecutivos_recibos', [
+                    'pedido_id' => $pedido->id
+                ]);
+                return;
+            }
+            
+            // Incrementar el consecutivo
+            $nuevoConsecutivo = $consecutivoRecibo->consecutivo_actual + 1;
+            
+            // Actualizar el consecutivo en consecutivos_recibos
+            \DB::table('consecutivos_recibos')
+                ->where('tipo_recibo', 'COSTURA-BODEGA')
+                ->update([
+                    'consecutivo_actual' => $nuevoConsecutivo,
+                    'updated_at' => now()
+                ]);
+            
+            // Verificar si ya existe registro para este pedido
+            $existeRegistro = \DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->where('tipo_recibo', 'COSTURA-BODEGA')
+                ->first();
+            
+            if ($existeRegistro) {
+                // Si existe, ACTUALIZAR el consecutivo actual (incrementar)
+                \DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $existeRegistro->id)
+                    ->update([
+                        'consecutivo_actual' => $nuevoConsecutivo,
+                        'updated_at' => now()
+                    ]);
+                
+                \Log::info('[CARTERA] Consecutivo COSTURA-BODEGA actualizado (ya existía)', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'consecutivo_anterior' => $existeRegistro->consecutivo_actual,
+                    'consecutivo_nuevo' => $nuevoConsecutivo
+                ]);
+            } else {
+                // Si no existe, INSERTAR nuevo registro
+                \DB::table('consecutivos_recibos_pedidos')->insert([
+                    'pedido_produccion_id' => $pedido->id,
+                    'tipo_recibo' => 'COSTURA-BODEGA',
+                    'consecutivo_actual' => $nuevoConsecutivo,
+                    'consecutivo_inicial' => $nuevoConsecutivo,
+                    'prenda_id' => null,
+                    'activo' => 1,
+                    'notas' => 'Generado automáticamente cuando CARTERA aprobó el pedido',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                \Log::info('[CARTERA] Consecutivo COSTURA-BODEGA creado (nuevo)', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'consecutivo' => $nuevoConsecutivo
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('[CARTERA] Error al generar consecutivo COSTURA-BODEGA: ' . $e->getMessage(), [
+                'pedido_id' => $pedido->id,
+                'exception' => $e
+            ]);
         }
     }
 }

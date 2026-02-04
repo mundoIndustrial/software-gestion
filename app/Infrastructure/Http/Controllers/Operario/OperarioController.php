@@ -390,8 +390,86 @@ class OperarioController extends Controller
                 'pedido_id' => $pedidoId
             ]);
 
+            // VALIDACIÓN BODEGUERO: No puede ver recibos si pedido está en pendiente_cartera o RECHAZADO_CARTERA
+            $esBodyguero = auth()->check() && auth()->user()->hasRole('bodeguero');
+            if ($esBodyguero) {
+                $estadoPedido = strtolower($pedido->estado ?? '');
+                if ($estadoPedido === 'pendiente_cartera' || $estadoPedido === 'rechazado_cartera') {
+                    \Log::warning('[OperarioController.getPedidoData] 🔐 Bodeguero bloqueado - Pedido en estado: ' . $pedido->estado, [
+                        'numero_pedido' => $numeroPedido,
+                        'usuario_id' => auth()->id(),
+                        'estado' => $pedido->estado
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No puedes ver recibos de pedidos en estado ' . $pedido->estado
+                    ], 403);
+                }
+            }
+
+            // FILTRO BODEGUERO: Si es bodeguero, verificar que tenga recibo COSTURA-BODEGA
+            $esBodyguero = auth()->check() && auth()->user()->hasRole('bodeguero');
+            if ($esBodyguero) {
+                // Verificar si este pedido tiene un recibo COSTURA-BODEGA activo
+                $tieneCosturaBodega = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('tipo_recibo', 'COSTURA-BODEGA')
+                    ->where('activo', 1)
+                    ->exists();
+                
+                \Log::info('[OperarioController.getPedidoData] 🔐 VERIFICANDO RECIBO COSTURA-BODEGA', [
+                    'numero_pedido' => $numeroPedido,
+                    'pedido_id' => $pedidoId,
+                    'usuario_id' => auth()->id(),
+                    'tiene_costura_bodega' => $tieneCosturaBodega
+                ]);
+                
+                if (!$tieneCosturaBodega) {
+                    \Log::warning('[OperarioController.getPedidoData] 🔐 Bodeguero intenta ver pedido sin recibo COSTURA-BODEGA', [
+                        'numero_pedido' => $numeroPedido,
+                        'pedido_id' => $pedidoId,
+                        'usuario_id' => auth()->id()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este pedido no tiene recibo de COSTURA-BODEGA disponible'
+                    ], 403);
+                }
+            }
+
             $response = $this->obtenerPedidoUseCase->ejecutar($pedidoId, false);
             $responseData = $response->toArray();
+
+            // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
+            if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                \Log::info('[OperarioController.getPedidoData] 🔐 FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA', [
+                    'numero_pedido' => $numeroPedido,
+                    'usuario_id' => auth()->id()
+                ]);
+                
+                foreach ($responseData['prendas'] as &$prenda) {
+                    if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
+                        // Filtrar: solo mantener procesos 'costura-bodega'
+                        $procesosFiltrados = array_filter($prenda['procesos'], function($proceso) {
+                            // Intentar obtener el nombre del proceso desde varias claves posibles
+                            $tipoProceso = $proceso['tipo_proceso'] ?? $proceso['nombre_proceso'] ?? $proceso['nombre'] ?? '';
+                            $tipoLower = strtolower(trim($tipoProceso));
+                            
+                            \Log::debug('[OperarioController.getPedidoData] Verificando proceso para bodeguero', [
+                                'tipo_proceso' => $tipoProceso,
+                                'tipo_lower' => $tipoLower,
+                                'es_costura_bodega' => $tipoLower === 'costura-bodega' || $tipoLower === 'costurabodega'
+                            ]);
+                            
+                            return $tipoLower === 'costura-bodega' || $tipoLower === 'costurabodega';
+                        });
+                        
+                        $prenda['procesos'] = array_values($procesosFiltrados); // Reindexar array
+                    }
+                }
+            }
 
             $this->enriquecerPrendasConConsecutivos($responseData, $pedidoId);
             $this->agregarAnchoMetrajeGeneral($responseData, $pedido);
@@ -502,7 +580,8 @@ class OperarioController extends Controller
                 'BORDADO' => null,
                 'DTF' => null,
                 'SUBLIMADO' => null,
-                'REFLECTIVO' => null
+                'REFLECTIVO' => null,
+                'COSTURA-BODEGA' => null  // Nuevo: Consecutivo para costura-bodega
             ];
 
             foreach ($consecutivos as $consecutivo) {

@@ -153,6 +153,7 @@
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
+          @if(!auth()->user()->hasRole('bodeguero'))
           <li class="submenu-item">
             <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
                class="menu-link"
@@ -167,6 +168,9 @@
               <span class="menu-label">Costura</span>
             </a>
           </li>
+          @endif
+
+          @if(!auth()->user()->hasRole('cortador'))
           <li class="submenu-item">
             <a href="{{ route('vistas.index', ['tipo' => 'corte', 'origen' => 'bodega']) }}"
                class="menu-link"
@@ -181,6 +185,8 @@
               <span class="menu-label">Costura Bodega</span>
             </a>
           </li>
+          @endif
+
           <li class="submenu-item">
             <a href="{{ route('vistas.control-calidad') }}"
                class="menu-link"

@@ -29,8 +29,23 @@ class ObtenerPedidosOperarioService
         $tipoOperario = $this->obtenerTipoOperario($usuario);
         $areaOperario = $this->obtenerAreaOperario($tipoOperario);
 
-        // Obtener pedidos filtrando por procesos donde el usuario sea el encargado
-        $pedidos = $this->obtenerPedidosPorArea($areaOperario, $usuario);
+        // Para bodeguero: obtener SOLO pedidos que tengan RECIBO COSTURA-BODEGA
+        if ($tipoOperario === 'bodeguero') {
+            $pedidos = PedidoProduccion::with(['prendas'])
+                ->whereHas('consecutivosRecibos', function ($query) {
+                    $query->where('tipo_recibo', 'COSTURA-BODEGA')->where('activo', 1);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            \Log::info('[ObtenerPedidosOperarioService] Bodeguero - Obteniendo pedidos con RECIBO COSTURA-BODEGA', [
+                'usuario' => $usuario->name,
+                'total_pedidos' => $pedidos->count()
+            ]);
+        } else {
+            // Obtener pedidos filtrando por procesos donde el usuario sea el encargado
+            $pedidos = $this->obtenerPedidosPorArea($areaOperario, $usuario);
+        }
 
         // Contar estados
         $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
@@ -41,7 +56,7 @@ class ObtenerPedidosOperarioService
             nombreOperario: $usuario->name,
             tipoOperario: $tipoOperario,
             areaOperario: $areaOperario,
-            pedidos: $this->formatearPedidos($pedidos),
+            pedidos: $this->formatearPedidos($pedidos, $tipoOperario),
             totalPedidos: $pedidos->count(),
             pedidosEnProceso: $pedidosEnProceso,
             pedidosCompletados: $pedidosCompletados
@@ -144,6 +159,10 @@ class ObtenerPedidosOperarioService
             return 'costurero';
         }
 
+        if ($usuario->hasRole('bodeguero')) {
+            return 'bodeguero';
+        }
+
         return 'desconocido';
     }
 
@@ -155,6 +174,7 @@ class ObtenerPedidosOperarioService
         return match($tipoOperario) {
             'cortador' => 'Corte',
             'costurero' => 'Costura',
+            'bodeguero' => 'Bodega',
             default => 'Desconocida',
         };
     }
@@ -228,14 +248,31 @@ class ObtenerPedidosOperarioService
     /**
      * Formatear pedidos para respuesta
      */
-    private function formatearPedidos(Collection $pedidos): array
+    private function formatearPedidos(Collection $pedidos, string $tipoOperario = null): array
     {
-        return $pedidos->map(function ($pedido) {
+        return $pedidos->map(function ($pedido) use ($tipoOperario) {
+            // Validar que el pedido tenga número_pedido
+            if (!$pedido->numero_pedido) {
+                \Log::warning('[ObtenerPedidosOperarioService] Pedido sin numero_pedido', [
+                    'pedido_id' => $pedido->id,
+                    'cliente' => $pedido->cliente
+                ]);
+                return null;
+            }
+            
             $prendas = $pedido->prendas ?? collect();
-            $totalPrendas = $prendas->sum('cantidad') ?? 0;
+            
+            // Calcular total de prendas sumando cantidades de las tallas
+            $totalPrendas = 0;
+            foreach ($prendas as $prenda) {
+                if ($prenda->tallas && is_countable($prenda->tallas)) {
+                    $totalPrendas += collect($prenda->tallas)->sum('cantidad') ?? 0;
+                }
+            }
+            
             $descripcionPrendas = $prendas->pluck('nombre_prenda')->unique()->join(', ');
 
-            // Obtener fecha de inicio del proceso en el Ã¡rea
+            // Obtener fecha de inicio del proceso en el área
             $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                 ->where('estado_proceso', '!=', 'Completado')
                 ->orderBy('created_at', 'asc')
@@ -249,8 +286,8 @@ class ObtenerPedidosOperarioService
                 'descripcion' => $descripcionPrendas ?: 'Sin descripción',
                 'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
                 'cantidad' => $totalPrendas,
-                'estado' => $this->obtenerEstadoActual($pedido->numero_pedido),
-                'area' => $this->obtenerAreaActual($pedido->numero_pedido),
+                'estado' => $this->obtenerEstadoActual($pedido->numero_pedido, $tipoOperario),
+                'area' => $this->obtenerAreaActual($pedido->numero_pedido, $tipoOperario),
                 'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
                 'fecha_inicio_proceso' => $fechaInicioProceso,
                 'dia_entrega' => $pedido->dia_de_entrega ?? '-',
@@ -260,14 +297,34 @@ class ObtenerPedidosOperarioService
                 'novedades' => $pedido->novedades ?? '-',
                 'created_at' => $pedido->created_at,
             ];
-        })->values()->toArray();
+        })->filter()->values()->toArray();
     }
 
     /**
      * Obtener estado actual del proceso del pedido
      */
-    private function obtenerEstadoActual(string $numeroPedido): string
+    private function obtenerEstadoActual(string $numeroPedido, string $tipoOperario = null): string
     {
+        // Si es bodeguero, verificar recibo COSTURA-BODEGA en lugar de procesos
+        if ($tipoOperario === 'bodeguero') {
+            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            if ($pedido) {
+                $tieneCosturaBodega = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $pedido->id)
+                    ->where('tipo_recibo', 'COSTURA-BODEGA')
+                    ->where('activo', 1)
+                    ->exists();
+                
+                if ($tieneCosturaBodega) {
+                    return 'En Ejecución';
+                }
+            }
+            
+            return 'Desconocida';
+        }
+        
+        // Para otros roles, buscar procesos como antes
         // Primero buscar procesos activos (no completados)
         $procesoActivo = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->where('estado_proceso', '!=', 'Completado')
@@ -278,7 +335,7 @@ class ObtenerPedidosOperarioService
             return $procesoActivo->estado_proceso;
         }
 
-        // Si todos los procesos estÃ¡n completados, buscar el Ãºltimo completado
+        // Si todos los procesos están completados, buscar el último completado
         $procesoCompletado = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->where('estado_proceso', 'Completado')
             ->orderBy('created_at', 'desc')
@@ -292,10 +349,30 @@ class ObtenerPedidosOperarioService
     }
 
     /**
-     * Obtener Ã¡rea actual del pedido
+     * Obtener área actual del pedido
      */
     private function obtenerAreaActual(string $numeroPedido): string
     {
+        // Si es bodeguero, verificar recibo COSTURA-BODEGA en lugar de procesos
+        if (auth()->check() && auth()->user()->hasRole('bodeguero')) {
+            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            
+            if ($pedido) {
+                $tieneCosturaBodega = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $pedido->id)
+                    ->where('tipo_recibo', 'COSTURA-BODEGA')
+                    ->where('activo', 1)
+                    ->exists();
+                
+                if ($tieneCosturaBodega) {
+                    return 'EN BODEGA';
+                }
+            }
+            
+            return 'Desconocida';
+        }
+        
+        // Para otros roles, buscar procesos como antes
         $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
             ->where('estado_proceso', '!=', 'Completado')
             ->orderBy('created_at', 'asc')

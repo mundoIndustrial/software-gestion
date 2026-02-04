@@ -61,7 +61,7 @@ export class ReceiptRenderer {
             // Definir mapa de tipos de recibo
             const tipoReciboMap = {
                 'costura': 'COSTURA',
-                'costura-bodega': 'COSTURA',
+                'costura-bodega': 'COSTURA-BODEGA',  // ✅ Corregido: usar COSTURA-BODEGA
                 'bordado': 'BORDADO',
                 'estampado': 'ESTAMPADO',
                 'dtf': 'DTF',

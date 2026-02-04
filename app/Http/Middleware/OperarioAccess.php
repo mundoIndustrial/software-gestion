@@ -22,8 +22,8 @@ class OperarioAccess
 
         $usuario = auth()->user();
 
-        // Verificar si tiene rol de cortador o costurero
-        if (!$usuario->hasAnyRole(['cortador', 'costurero'])) {
+        // Verificar si tiene rol de cortador, costurero o bodeguero
+        if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero'])) {
             return redirect()->route('login')
                 ->with('error', 'No tienes acceso a esta sección');
         }
