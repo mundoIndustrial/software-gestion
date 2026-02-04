@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Bodega;
 
 use App\Http\Controllers\Controller;
-use App\Models\ReciboPrenda; // Ajusta según tu modelo
+use App\Models\ReciboPrenda;
+use App\Models\OrdenAsesor;
+use App\Models\Cliente;
+use App\Models\Prenda;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;

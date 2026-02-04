@@ -7,6 +7,25 @@ use App\Http\Controllers\Bodega\PedidosController;
  * Rutas del módulo de Bodega
  * Requiere autenticación y rol de bodeguero
  */
+// Ruta de prueba para diagnóstico (sin autenticación ni permisos)
+Route::get('/pedidos-test', function() {
+    $user = auth()->user();
+    return response()->json([
+        'mensaje' => 'Ruta de bodega funciona',
+        'autenticado' => $user ? true : false,
+        'usuario_actual' => $user ? $user->name : 'No autenticado',
+        'usuario_id' => $user ? $user->id : null,
+        'roles' => $user ? $user->getRoleNames()->toArray() : [],
+        'role_ids' => $user ? $user->roles_ids : null,
+        'role_id' => $user ? $user->role_id : null,
+        'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
+        'tiene_permiso_bodega' => $user ? $user->hasPermissionTo('view-bodega-pedidos') : false,
+    ]);
+});
+
+// Ruta temporal para acceso sin restricciones (solo para diagnóstico)
+Route::get('/pedidos-temp', [PedidosController::class, 'index']);
+
 Route::middleware(['auth', 'role:bodeguero'])->group(function () {
     
     // Gestión de Pedidos
