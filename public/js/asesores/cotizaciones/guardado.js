@@ -126,9 +126,9 @@ function tienenInformacionValida(tecnicas) {
                                Array.isArray(prenda.talla_cantidad) && 
                                prenda.talla_cantidad.length > 0;
             
-            const tieneImagenes = prenda.imagenes_files && 
-                                 Array.isArray(prenda.imagenes_files) && 
-                                 prenda.imagenes_files.length > 0;
+            const tieneImagenes = prenda.imagenes && 
+                                 Array.isArray(prenda.imagenes) && 
+                                 prenda.imagenes.length > 0;
             
             // Requiere ubicación Y (tallas O imágenes)
             return tieneUbicaciones && (tieneTallas || tieneImagenes);
