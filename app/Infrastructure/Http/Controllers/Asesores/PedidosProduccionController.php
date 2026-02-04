@@ -816,6 +816,7 @@ class PedidosProduccionController
                 'variantes' => 'nullable|json',
                 'colores_telas' => 'nullable|json',
                 'fotos_telas' => 'nullable|json',
+                'fotosTelas' => 'nullable|json', // Frontend envía en camelCase
                 'procesos' => 'nullable|json',
                 'fotos_procesos' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
@@ -824,6 +825,11 @@ class PedidosProduccionController
                 'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
                 'imagenes_a_eliminar' => 'nullable|json', // IDs de imágenes a eliminar
             ]);
+
+            // Normalizar fotosTelas: si viene en camelCase, copiar a fotos_telas (snake_case)
+            if (!empty($validated['fotosTelas']) && empty($validated['fotos_telas'])) {
+                $validated['fotos_telas'] = $validated['fotosTelas'];
+            }
 
             // Decodificar imagenes_a_eliminar si viene como JSON string
             if ($request->has('imagenes_a_eliminar') && is_string($request->input('imagenes_a_eliminar'))) {
@@ -852,6 +858,65 @@ class PedidosProduccionController
                                 $rutas = $telaFotoService->procesarFoto($imagen);
                                 $telasConImagenes[] = $rutas;
                             }
+                        }
+                    }
+                }
+            }
+
+            // NUEVO: Procesar imágenes de telas nuevas (vienen como fotos_tela[0], fotos_tela[1], etc. O fotos_tela[])
+            $fotosTelasProcesadas = []; // Array de rutas procesadas, indexado por índice
+            $telaFotoService = new \App\Domain\Pedidos\Services\TelaFotoService();
+            
+            // Opción 1: Archivos con patrón fotos_tela[N]
+            foreach ($allFiles as $key => $value) {
+                if (strpos($key, 'fotos_tela[') === 0 && strpos($key, ']') !== false) {
+                    if ($value && $value->isValid()) {
+                        try {
+                            $rutas = $telaFotoService->procesarFoto($value);
+                            // Extraer índice: fotos_tela[0] => 0
+                            preg_match('/fotos_tela\[(\d+)\]/', $key, $matches);
+                            $indice = isset($matches[1]) ? (int)$matches[1] : count($fotosTelasProcesadas);
+                            $fotosTelasProcesadas[$indice] = $rutas;
+                            Log::info('[PedidosProduccionController] Imagen de tela procesada (patrón fotos_tela[N])', [
+                                'key' => $key,
+                                'indice' => $indice,
+                                'archivo' => $value->getClientOriginalName(),
+                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A',
+                                'ruta_original' => $rutas['ruta_original'] ?? 'N/A'
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error procesando imagen de tela', [
+                                'key' => $key,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Opción 2: Archivos con clave simple 'fotos_tela' (array)
+            if ($request->hasFile('fotos_tela') && empty($fotosTelasProcesadas)) {
+                $archivosTelaDirectos = $request->file('fotos_tela');
+                if (!is_array($archivosTelaDirectos)) {
+                    $archivosTelaDirectos = [$archivosTelaDirectos];
+                }
+                
+                foreach ($archivosTelaDirectos as $indice => $archivo) {
+                    if ($archivo && $archivo->isValid()) {
+                        try {
+                            $rutas = $telaFotoService->procesarFoto($archivo);
+                            $fotosTelasProcesadas[$indice] = $rutas;
+                            Log::info('[PedidosProduccionController] Imagen de tela procesada (patrón fotos_tela[])', [
+                                'indice' => $indice,
+                                'archivo' => $archivo->getClientOriginalName(),
+                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A',
+                                'ruta_original' => $rutas['ruta_original'] ?? 'N/A'
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error procesando imagen de tela (fotos_tela[])', [
+                                'indice' => $indice,
+                                'error' => $e->getMessage()
+                            ]);
                         }
                     }
                 }
@@ -902,11 +967,13 @@ class PedidosProduccionController
                 'imagenes_procesadas' => count($imagenesGuardadas),
                 'imagenes_existentes' => count($imagenesExistentes),
                 'imagenes_a_eliminar' => $request->input('imagenes_a_eliminar') ? count((array)$request->input('imagenes_a_eliminar')) : 0,
+                'fotos_telas_procesadas' => count($fotosTelasProcesadas),
+                'fotos_telas_detalles' => $fotosTelasProcesadas,
                 'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes);
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [

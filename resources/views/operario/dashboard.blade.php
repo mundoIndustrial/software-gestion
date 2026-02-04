@@ -22,44 +22,56 @@
     <!-- Búsqueda -->
     <div class="search-section">
         <span class="material-symbols-rounded">search</span>
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Orden o Cliente...">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por # Pedido, Prenda o Cliente...">
     </div>
 
-    <!-- Mis Órdenes Section -->
+    <!-- Mis Prendas Section -->
     <div class="ordenes-section">
         <div class="section-title">
-            <span class="material-symbols-rounded">assignment</span>
-            <h3>MIS ORDENES</h3>
-            <span class="ordenes-count">{{ count($operario->pedidos) }}</span>
+            <span class="material-symbols-rounded">checkroom</span>
+            <h3>MIS PRENDAS - RECIBOS DE COSTURA</h3>
+            <span class="ordenes-count">{{ count($prendasConRecibos ?? []) }}</span>
         </div>
 
-        <!-- Filtros por tipo de pedido -->
+        <!-- Filtros por tipo de recibo para costura-reflectivo -->
         @if(auth()->user()->hasRole('costura-reflectivo'))
         <div class="filtros-badges">
-            <button class="badge-filtro badge-filtro-active" data-filtro="todos" onclick="filtrarPedidos('todos')">
+            <button class="badge-filtro badge-filtro-active" data-filtro="todos" onclick="filtrarPrendasPorRecibo('todos')">
                 <span class="material-symbols-rounded">apps</span>
                 Todos
             </button>
-            <button class="badge-filtro" data-filtro="confeccion" onclick="filtrarPedidos('confeccion')">
+            <button class="badge-filtro" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                 <span class="material-symbols-rounded">checkroom</span>
-                Confección
+                Costura
             </button>
-            <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPedidos('reflectivo')">
+            <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
                 <span class="material-symbols-rounded">auto_awesome</span>
                 Reflectivo
             </button>
         </div>
         @endif
 
-        @if(count($operario->pedidos) > 0)
+        @if(count($prendasConRecibos ?? []) > 0)
             <div class="ordenes-list" id="ordenesList">
-                @foreach($operario->pedidos as $pedido)
+                @foreach($prendasConRecibos as $prenda)
                     @php
-                        $estadoClass = getEstadoClass($pedido['estado']);
-                        // Determinar si es reflectivo o confección basándose en el área
-                        $tipoFiltro = strtolower($operario->areaOperario) === 'costura-reflectivo' ? 'reflectivo' : 'confeccion';
+                        $estadoClass = 'pendiente'; // Por defecto pendiente
+                        if ($prenda['recibos']) {
+                            $estadoClass = count($prenda['recibos']) > 0 ? 'en-proceso' : 'pendiente';
+                        }
+                        
+                        // Determinar tipo de recibo para filtro
+                        // Buscar si hay recibos de tipo REFLECTIVO (en mayúsculas)
+                        $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
+                        $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
+                        $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
                     @endphp
-                    <div class="orden-card-simple" data-numero="{{ $pedido['numero_pedido'] }}" data-cliente="{{ strtolower($pedido['cliente']) }}" data-tipo="{{ $tipoFiltro }}">
+                    <div class="orden-card-simple" 
+                         data-numero="{{ $prenda['numero_pedido'] }}" 
+                         data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
+                         data-cliente="{{ strtolower($prenda['cliente']) }}"
+                         data-tipo-recibo="{{ $esReflectivo }}">
+                        
                         <!-- Borde izquierdo coloreado -->
                         <div class="orden-border {{ $estadoClass }}"></div>
 
@@ -68,53 +80,58 @@
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
-                                        <h4 class="orden-numero">#{{ $pedido['numero_pedido'] }}</h4>
-                                        <span class="estado-badge {{ $estadoClass }}" data-estado="{{ $pedido['estado'] }}">
-                                            {{ strtoupper($pedido['estado']) }}
+                                        <h4 class="orden-numero">#{{ $prenda['numero_pedido'] }}</h4>
+                                        <span class="estado-badge {{ $estadoClass }}" data-estado="recibo-costura">
+                                            {{ $prenda['total_recibos'] }} RECIBOS
                                         </span>
                                     </div>
                                 </div>
 
                                 <div class="orden-cliente">
                                     <p class="cliente-label">CLIENTE</p>
-                                    <p class="cliente-name">{{ $pedido['cliente'] }}</p>
+                                    <p class="cliente-name">{{ $prenda['cliente'] }}</p>
                                 </div>
 
                                 <div class="orden-prendas">
-                                    <p class="prendas-label">{{ $pedido['cantidad'] }} prenda(s): {{ $pedido['descripcion'] }}</p>
+                                    <p class="prendas-label">
+                                        <strong>{{ $prenda['nombre_prenda'] }}</strong>
+                                        @if($prenda['descripcion'])
+                                            — {{ $prenda['descripcion'] }}
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <!-- Recibos de Costura -->
+                                <div class="recibos-info">
+                                    <div class="recibos-lista">
+                                        @foreach($prenda['recibos'] as $recibo)
+                                            <span class="recibo-badge recibo-{{ strtolower(str_replace('-', '_', $recibo['tipo_recibo'])) }}">
+                                                {{ $recibo['tipo_recibo'] }}
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 </div>
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons">
-                                    <!-- Botón Reportar Pendiente - NO para bodeguero -->
-                                    @if(!auth()->user()->hasRole('bodeguero'))
-                                    <button class="btn-reportar-pendiente" onclick="abrirModalReportar('{{ $pedido['numero_pedido'] }}', '{{ $pedido['cliente'] }}')">
-                                        <span class="material-symbols-rounded">warning</span>
-                                        REPORTAR PENDIENTE
+                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos({{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
+                                        <span class="material-symbols-rounded">receipt</span>
+                                        VER RECIBOS
                                     </button>
-                                    @endif
-                                    
-                                    <!-- Botón Completar Proceso - NO para bodeguero -->
-                                    @if(!auth()->user()->hasRole('bodeguero') && !(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
-                                    <button class="btn-completar-proceso" onclick="marcarProcesoCompletado('{{ $pedido['numero_pedido'] }}')">
-                                        <span class="material-symbols-rounded">check_circle</span>
-                                        COMPLETAR PROCESO
-                                    </button>
-                                    @endif
                                 </div>
                             </div>
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
                                 <div class="orden-fecha">
-                                    <span class="orden-fecha-label">FECHA INICIO</span>
-                                    <span>{{ $pedido['fecha_creacion'] }}</span>
+                                    <span class="orden-fecha-label">PEDIDO</span>
+                                    <span>#{{ $prenda['numero_pedido'] }}</span>
                                 </div>
                                 <div class="orden-fecha">
-                                    <span class="orden-fecha-label">EN {{ strtoupper($operario->areaOperario) }}</span>
-                                    <span>{{ $pedido['fecha_inicio_proceso'] }}</span>
+                                    <span class="orden-fecha-label">REGISTRO</span>
+                                    <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
                                 </div>
-                                <a href="{{ route('operario.ver-pedido', $pedido['numero_pedido']) }}" class="action-arrow">
+                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos({{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}'); return false;">
                                     <span class="material-symbols-rounded">arrow_forward</span>
                                 </a>
                             </div>
@@ -125,7 +142,7 @@
         @else
             <div class="empty-state">
                 <span class="material-symbols-rounded">inbox</span>
-                <p>No hay órdenes asignadas</p>
+                <p>No hay prendas con recibos de costura asignadas</p>
             </div>
         @endif
     </div>
@@ -454,6 +471,101 @@
         font-size: 14px;
     }
 
+    /* Recibos de Costura */
+    .recibos-info {
+        margin-top: 0.5rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .recibos-lista {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .recibo-badge {
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        border-radius: 3px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .recibo-costura {
+        background: #E3F2FD;
+        color: #1976D2;
+        border: 1px solid #90CAF9;
+    }
+
+    .recibo-costura_bodega {
+        background: #FFF3E0;
+        color: #F57C00;
+        border: 1px solid #FFB74D;
+    }
+
+    .recibo-estampado {
+        background: #F3E5F5;
+        color: #7B1FA2;
+        border: 1px solid #CE93D8;
+    }
+
+    .recibo-bordado {
+        background: #E0F2F1;
+        color: #00796B;
+        border: 1px solid #80DEEA;
+    }
+
+    .recibo-reflectivo {
+        background: #FCE4EC;
+        color: #C2185B;
+        border: 1px solid #F48FB1;
+    }
+
+    .recibo-dtf {
+        background: #E8F5E9;
+        color: #388E3C;
+        border: 1px solid #81C784;
+    }
+
+    .recibo-sublimado {
+        background: #EDE7F6;
+        color: #512DA8;
+        border: 1px solid #B39DDB;
+    }
+
+    /* Botón Ver Recibos */
+    .btn-ver-recibos {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        background: #E3F2FD;
+        color: #1976D2;
+        border: 1px solid #1976D2;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(25, 118, 210, 0.15);
+    }
+
+    .btn-ver-recibos:hover {
+        background: #BBDEFB;
+        box-shadow: 0 4px 8px rgba(25, 118, 210, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-ver-recibos .material-symbols-rounded {
+        font-size: 14px;
+    }
+
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -516,10 +628,11 @@
 
                 ordenCards.forEach(card => {
                     const numero = card.dataset.numero.toLowerCase();
+                    const prenda = card.dataset.prenda ? card.dataset.prenda.toLowerCase() : '';
                     const cliente = card.dataset.cliente.toLowerCase();
 
-                    // Mostrar si coincide con número o cliente
-                    if (numero.includes(busqueda) || cliente.includes(busqueda) || busqueda === '') {
+                    // Mostrar si coincide con número, prenda o cliente
+                    if (numero.includes(busqueda) || prenda.includes(busqueda) || cliente.includes(busqueda) || busqueda === '') {
                         card.style.display = '';
                     } else {
                         card.style.display = 'none';
@@ -528,6 +641,39 @@
             });
         }
     });
+
+    // Función para filtrar prendas por tipo de recibo
+    window.filtrarPrendasPorRecibo = function(filtro) {
+        // Actualizar estado de botones
+        document.querySelectorAll('.badge-filtro').forEach(btn => {
+            btn.classList.remove('badge-filtro-active');
+        });
+        document.querySelector(`[data-filtro="${filtro}"]`).classList.add('badge-filtro-active');
+
+        // Filtrar tarjetas
+        const ordenesList = document.getElementById('ordenesList');
+        if (!ordenesList) return;
+
+        const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
+        ordenCards.forEach(card => {
+            if (filtro === 'todos') {
+                card.style.display = '';
+            } else {
+                const tipoRecibo = card.dataset.tipoRecibo;
+                if (tipoRecibo === filtro) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+    };
+
+    // Función para abrir detalles de recibos
+    function abrirDetallesRecibos(prendaId, nombrePrenda) {
+        abrirModalExito('DETALLES DE RECIBOS', `Prenda: ${nombrePrenda}`);
+        // Aquí puedes expandir para mostrar más detalles si es necesario
+    }
 
     // Modal Reportar Pendiente
     function abrirModalReportar(numeroPedido, cliente) {

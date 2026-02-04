@@ -541,22 +541,26 @@ class ModalNovedadEdicion {
                 telasParaEnviar.forEach((tela, telaIdx) => {
                     if (tela.imagenes && tela.imagenes.length > 0) {
                         tela.imagenes.forEach((img, imgIdx) => {
-                            if (img instanceof File) {
-                                // Subir imagen a FormData
-                                formData.append(`fotos_tela[${fotoTelaFileIndex}]`, img);
+                            // 🔥 FIX: Detectar si es File directo O si es objeto con propiedad 'file'
+                            const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
+                            
+                            if (fileObject) {
+                                // ✅ NUEVA IMAGEN: Subir imagen a FormData
+                                formData.append(`fotos_tela[${fotoTelaFileIndex}]`, fileObject);
                                 
                                 // Registrar metadatos en array para backend
                                 fotosTelaArray.push({
                                     color_id: tela.color_id || null,
                                     tela_id: tela.tela_id || null,
-                                    id: img.id || null,  // ID de foto existente si está siendo actualizada
                                     orden: imgIdx + 1
+                                    // ⚠️ NO enviar 'id' para fotos nuevas - backend las creará
                                 });
                                 fotoTelaFileIndex++;
                             } else if (img.id && (img.urlDesdeDB || img.url)) {
-                                // Foto existente - preservar referencia
+                                // ✅ FOTO EXISTENTE: Preservar referencia
                                 fotosTelaArray.push({
                                     id: img.id,
+                                    prenda_pedido_colores_telas_id: tela.id,  // FK para encontrar la relación
                                     color_id: tela.color_id || null,
                                     tela_id: tela.tela_id || null,
                                     ruta_original: img.url || img.urlDesdeDB,

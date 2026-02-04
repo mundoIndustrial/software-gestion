@@ -428,15 +428,34 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->fotosTelas)) {
-            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
+            // Si viene array vacío, es intención explícita de eliminar TODO
             $prenda->fotosTelas()->delete();
             return;
         }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] actualizarFotosTelas - Iniciando', [
+            'prenda_id' => $prenda->id,
+            'cantidad_fotos' => count($dto->fotosTelas),
+            'fotos_procesadas_disponibles' => count($dto->fotosTelasProcesadas ?? []),
+            'fotos_recibidas' => $dto->fotosTelas
+        ]);
+
+        // Contar fotos nuevas encontradas (para mapear a fotosTelasProcesadas)
+        $indicePhotoNuevaEncontrada = 0;
 
         //  MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->fotosTelas as $idx => $foto) {
             $id = $foto['id'] ?? null;  // ID de foto existente
             $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
+            
+            \Log::debug('[ActualizarPrendaCompletaUseCase] Procesando foto', [
+                'indice' => $idx,
+                'foto_id' => $id,
+                'color_tela_id_recibido' => $colorTelaId,
+                'color_id' => $foto['color_id'] ?? null,
+                'tela_id' => $foto['tela_id'] ?? null,
+                'ruta_original' => $foto['ruta_original'] ?? null,
+            ]);
             
             // Manejar tanto formato simple (string) como completo (array con ruta_original y ruta_webp)
             if (is_string($foto)) {
@@ -445,6 +464,33 @@ final class ActualizarPrendaCompletaUseCase
             }
             
             $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+            $rutaWebp = null;
+            
+            // NUEVO: Si es foto nueva (sin ID) pero existe en fotosTelasProcesadas
+            // Usar contador de fotos nuevas encontradas, NO el índice absoluto
+            if (!$id && !$ruta) {
+                if (is_array($dto->fotosTelasProcesadas) && isset($dto->fotosTelasProcesadas[$indicePhotoNuevaEncontrada])) {
+                    $procesado = $dto->fotosTelasProcesadas[$indicePhotoNuevaEncontrada];
+                    $ruta = $procesado['ruta_original'] ?? null;
+                    $rutaWebp = $procesado['ruta_webp'] ?? null;
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Usando ruta procesada para foto nueva', [
+                        'indice_absoluto' => $idx,
+                        'indice_foto_nueva' => $indicePhotoNuevaEncontrada,
+                        'ruta_original' => $ruta,
+                        'ruta_webp' => $rutaWebp
+                    ]);
+                    // Incrementar contador solo si se encontró ruta
+                    if ($ruta) {
+                        $indicePhotoNuevaEncontrada++;
+                    }
+                } else {
+                    \Log::warning('[ActualizarPrendaCompletaUseCase] Foto nueva sin ruta procesada disponible', [
+                        'indice_absoluto' => $idx,
+                        'indice_foto_nueva' => $indicePhotoNuevaEncontrada,
+                        'fotos_procesadas_totales' => count($dto->fotosTelasProcesadas ?? [])
+                    ]);
+                }
+            }
             
             // Si no existe el colorTelaId pero sí vienen color_id y tela_id, buscar o crear la combinación
             if (!$colorTelaId && isset($foto['color_id']) && isset($foto['tela_id'])) {
@@ -453,15 +499,28 @@ final class ActualizarPrendaCompletaUseCase
                     $foto['color_id'],
                     $foto['tela_id']
                 );
+                \Log::info('[ActualizarPrendaCompletaUseCase] Color-Tela creada o encontrada', [
+                    'prenda_pedido_colores_telas_id' => $colorTelaId,
+                    'color_id' => $foto['color_id'],
+                    'tela_id' => $foto['tela_id']
+                ]);
             }
             
             if (!$colorTelaId || !$ruta) {
+                \Log::warning('[ActualizarPrendaCompletaUseCase] Foto ignorada (sin color_tela_id o ruta)', [
+                    'color_tela_id' => $colorTelaId,
+                    'ruta' => $ruta,
+                    'indice' => $idx
+                ]);
                 continue;
             }
             
-            $rutaWebp = is_array($foto) && isset($foto['ruta_webp']) 
-                ? $foto['ruta_webp'] 
-                : $this->generarRutaWebp($ruta);
+            // Si no se asignó rutaWebp anteriormente (foto existente con rutaWebp en metadata)
+            if (!$rutaWebp) {
+                $rutaWebp = is_array($foto) && isset($foto['ruta_webp']) 
+                    ? $foto['ruta_webp'] 
+                    : $this->generarRutaWebp($ruta);
+            }
             
             $datosFoto = [
                 'prenda_pedido_colores_telas_id' => $colorTelaId,
@@ -472,21 +531,41 @@ final class ActualizarPrendaCompletaUseCase
             
             //  UPDATE: Si viene con ID, actualizar foto existente
             if ($id) {
-                $fotoExistente = $prenda->fotosTelas()->where('id', $id)->first();
+                $fotoExistente = $prenda->fotosTelas()->where('prenda_fotos_tela_pedido.id', $id)->first();
                 if ($fotoExistente) {
                     $fotoExistente->update($datosFoto);
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Foto actualizada', [
+                        'foto_id' => $id,
+                        'color_tela_id' => $colorTelaId
+                    ]);
+                } else {
+                    \Log::warning('[ActualizarPrendaCompletaUseCase] Foto no encontrada para actualizar', [
+                        'foto_id' => $id,
+                        'color_tela_id' => $colorTelaId
+                    ]);
                 }
             }
             //  CREATE: Si NO viene con ID, crear nueva foto
             else {
                 // Verificar que no exista ya esta ruta exacta (evitar duplicados)
-                $existente = $prenda->fotosTelas()
-                    ->where('prenda_pedido_colores_telas_id', $colorTelaId)
+                $existente = \App\Models\PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId)
                     ->where('ruta_original', $ruta)
                     ->first();
                 
                 if (!$existente) {
-                    $prenda->fotosTelas()->create($datosFoto);
+                    // ⚠️ IMPORTANTE: fotosTelas es HasManyThrough, no permite create() directo
+                    // Usar PrendaFotoTelaPedido::create() directamente
+                    $fotoCreada = \App\Models\PrendaFotoTelaPedido::create($datosFoto);
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Foto creada', [
+                        'foto_id' => $fotoCreada->id,
+                        'color_tela_id' => $colorTelaId,
+                        'ruta_original' => $ruta
+                    ]);
+                } else {
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Foto duplicada, ignorada', [
+                        'color_tela_id' => $colorTelaId,
+                        'ruta_original' => $ruta
+                    ]);
                 }
             }
         }

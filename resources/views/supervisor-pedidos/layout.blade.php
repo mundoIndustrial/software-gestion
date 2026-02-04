@@ -333,13 +333,13 @@
                             <span>Configuración</span>
                         </a>
                         <div class="menu-divider"></div>
-                        <form method="POST" action="{{ route('logout') }}" id="logout-form" style="display: none;">
+                        <form method="POST" action="{{ route('logout') }}">
                             @csrf
+                            <button type="submit" class="menu-item logout" style="border: none; background: none; cursor: pointer; width: 100%; text-align: left; padding: 0.75rem 1rem;">
+                                <span class="material-symbols-rounded">logout</span>
+                                <span>Cerrar Sesión</span>
+                            </button>
                         </form>
-                        <button type="button" class="menu-item logout" onclick="document.getElementById('logout-form').submit();">
-                            <span class="material-symbols-rounded">logout</span>
-                            <span>Cerrar Sesión</span>
-                        </button>
                     </div>
                 </div>
             </div>

@@ -142,15 +142,15 @@
         </div>
 
         <div class="sidebar-footer">
-            <a href="{{ route('logout') }}" 
-               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-               class="logout-btn"
-               title="Cerrar Sesión">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="menu-label">Cerrar Sesión</span>
-            </a>
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+            <form method="POST" action="{{ route('logout') }}" style="width: 100%;">
                 @csrf
+                <button type="submit" 
+                        class="logout-btn"
+                        title="Cerrar Sesión"
+                        style="border: none; background: none; cursor: pointer; width: 100%; text-align: left; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-label">Cerrar Sesión</span>
+                </button>
             </form>
         </div>
     </aside>
