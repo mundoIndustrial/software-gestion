@@ -830,9 +830,32 @@ function recopilarDatos() {
         
         // Buscar tallas en el campo hidden que se actualiza con agregarTallasSeleccionadas()
         const tallasHidden = item.querySelector('input[name*="tallas"][type="hidden"]');
+        let tallasData = ''; // Mantener el JSON original con géneros
+        
         if (tallasHidden && tallasHidden.value) {
-            // Las tallas están separadas por comas en el campo hidden
-            tallasSeleccionadas.push(...tallasHidden.value.split(', ').filter(t => t.trim()));
+            try {
+                // Intentar parsear como JSON (nuevo formato con géneros)
+                const tallasJson = JSON.parse(tallasHidden.value);
+                if (typeof tallasJson === 'object' && tallasJson !== null) {
+                    // Mantener el JSON original con géneros para el backend
+                    tallasData = tallasHidden.value;
+                    
+                    // Para debugging y compatibilidad, también extraer las tallas simples
+                    Object.values(tallasJson).forEach(tallasGenero => {
+                        if (Array.isArray(tallasGenero)) {
+                            tallasSeleccionadas.push(...tallasGenero);
+                        }
+                    });
+                } else {
+                    // Es formato antiguo separado por comas
+                    tallasSeleccionadas.push(...tallasHidden.value.split(', ').filter(t => t.trim()));
+                    tallasData = tallasHidden.value; // Mantener el formato original
+                }
+            } catch (e) {
+                // Si no es JSON, usar formato antiguo separado por comas
+                tallasSeleccionadas.push(...tallasHidden.value.split(', ').filter(t => t.trim()));
+                tallasData = tallasHidden.value; // Mantener el formato original
+            }
         }
         
         // Alternativa: buscar botones activos directamente
@@ -1204,7 +1227,7 @@ function recopilarDatos() {
                 nombre_producto: nombre,
                 descripcion: descripcion,
                 cantidad: parseInt(cantidad) || 1,
-                tallas: tallasSeleccionadas,
+                tallas: tallasData,
                 fotos: fotos,
                 telas: telas,
                 variantes: variantes

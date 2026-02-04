@@ -119,40 +119,68 @@ class CotizacionPrendaService
                 }
                 */
 
-                // 4. Guardar tallas en prenda_tallas_cot
+                // 4. Guardar tallas en prenda_tallas_cot (solo formato antiguo) - DESACTIVADO
+                // Ahora usamos el nuevo sistema con géneros más abajo
+                /*
                 $tallas = $productoData['tallas'] ?? [];
                 // Decodificar si viene como JSON string
                 if (is_string($tallas)) {
                     $tallas = json_decode($tallas, true) ?? [];
                 }
-                if (!empty($tallas)) {
+                
+                Log::info(" DEBUG - TALLAS RECIBIDAS EN PRODUCTO", [
+                    'prenda_index' => $index,
+                    'tallas_raw' => $productoData['tallas'] ?? 'NO ENVIADO',
+                    'tallas_decoded' => $tallas,
+                    'tallas_count' => count($tallas),
+                    'tallas_type' => gettype($tallas),
+                    'producto_keys' => array_keys($productoData)
+                ]);
+                
+                // Solo procesar como tallas simples si NO es formato con géneros
+                $esFormatoConGeneros = is_array($tallas) && !empty($tallas) && !is_numeric(key($tallas));
+                if (!$esFormatoConGeneros && !empty($tallas)) {
                     foreach ($tallas as $talla) {
                         $prenda->tallas()->create([
                             'talla' => $talla,
                             'cantidad' => 1
                         ]);
                     }
-                    Log::info(" Tallas guardadas", ['cantidad' => count($tallas)]);
+                    Log::info(" Tallas guardadas (formato antiguo)", ['cantidad' => count($tallas)]);
                 }
+                */
 
                 // 4b.  GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
                 // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15] o JSON con géneros: {"dama": ["S", "M"], "caballero": ["30", "32"]}
                 $cantidades = $productoData['cantidades'] ?? [];
                 $tallasJson = $productoData['tallas'] ?? ''; // Nuevo campo con tallas separadas por género
                 
+                Log::info(" DEBUG - TALLAS POR GÉNERO RECIBIDAS", [
+                    'prenda_index' => $index,
+                    'cantidades_raw' => $cantidades,
+                    'tallas_json_raw' => $tallasJson,
+                    'cantidades_type' => gettype($cantidades),
+                    'tallas_json_type' => gettype($tallasJson)
+                ]);
+                
+                // Decodificar ambos campos si vienen como JSON
                 if (is_string($cantidades)) {
                     $cantidades = json_decode($cantidades, true) ?? [];
+                }
+                if (is_string($tallasJson)) {
+                    $tallasJson = json_decode($tallasJson, true) ?? [];
                 }
                 
                 // Procesar tallas con género si vienen en formato JSON
                 $tallasPorGenero = [];
-                if (!empty($tallasJson)) {
-                    if (is_string($tallasJson)) {
-                        $tallasPorGenero = json_decode($tallasJson, true) ?? [];
-                    } elseif (is_array($tallasJson)) {
-                        $tallasPorGenero = $tallasJson;
-                    }
+                if (!empty($tallasJson) && is_array($tallasJson)) {
+                    $tallasPorGenero = $tallasJson;
                 }
+                
+                Log::info(" DEBUG - TALLAS POR GÉNERO PROCESADAS", [
+                    'tallas_por_genero' => $tallasPorGenero,
+                    'cantidades_decoded' => $cantidades
+                ]);
                 
                 // Primero, limpiar tallas previas si existen
                 $prenda->tallas()->delete();
@@ -176,13 +204,22 @@ class CotizacionPrendaService
                                         'cantidad' => (int)$cantidad,
                                         'genero_id' => $generoId
                                     ]);
+                                    
+                                    Log::info(" Tallla guardada con género", [
+                                        'talla' => $talla,
+                                        'genero' => $genero,
+                                        'genero_id' => $generoId,
+                                        'cantidad' => $cantidad
+                                    ]);
                                 }
                             }
                         }
                     }
                     Log::info(" Tallas guardadas con género", [
                         'tallas_por_genero' => $tallasPorGenero,
-                        'cantidad_tallas' => array_sum(array_map('count', $tallasPorGenero))
+                        'cantidad_tallas' => is_array($tallasPorGenero) ? array_sum(array_map(function($item) {
+                            return is_array($item) ? count($item) : 0;
+                        }, $tallasPorGenero)) : 0
                     ]);
                 } elseif (!empty($cantidades) && is_array($cantidades)) {
                     // Guardar tallas sin género (compatibilidad con datos antiguos)
@@ -197,6 +234,11 @@ class CotizacionPrendaService
                     Log::info(" Tallas con cantidades guardadas (sin género)", [
                         'cantidad_tallas' => count($cantidades),
                         'tallas' => array_keys($cantidades)
+                    ]);
+                } else {
+                    Log::warning(" NO SE GUARDARON TALLAS - datos vacíos", [
+                        'tallas_por_genero' => $tallasPorGenero,
+                        'cantidades' => $cantidades
                     ]);
                 }
 

@@ -257,7 +257,7 @@ async function guardarCotizacion() {
                 formData.append(`prendas[${index}][nombre_producto]`, producto.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
                 formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
-                formData.append(`prendas[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                formData.append(`prendas[${index}][tallas]`, producto.tallas || '');
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
@@ -1343,7 +1343,7 @@ async function procederEnviarCotizacion() {
                 formData.append(`prendas[${index}][nombre_producto]`, producto.nombre_producto || '');
                 formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
                 formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
-                formData.append(`prendas[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                formData.append(`prendas[${index}][tallas]`, producto.tallas || '');
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
