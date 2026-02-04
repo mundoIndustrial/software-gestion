@@ -144,7 +144,7 @@
                     autoStart: true
                 });
                 
-                log('✅ Sistema inicializado correctamente');
+                log(' Sistema inicializado correctamente');
                 updateConfigInfo();
                 
             } catch (error) {
@@ -200,7 +200,7 @@
             // Enviar al sistema
             if (pedidosRealtime) {
                 pedidosRealtime.onWebSocketMessage(simulatedMessage);
-                log('✅ Mensaje simulado enviado');
+                log(' Mensaje simulado enviado');
             }
         }
 
@@ -227,11 +227,11 @@
             const status = pedidosRealtime.getStatus();
             
             // WebSocket Status
-            document.getElementById('wsStatus').textContent = status.usingWebSockets ? '✅' : '❌';
+            document.getElementById('wsStatus').textContent = status.usingWebSockets ? '' : '❌';
             
             // Fallback Status
             document.getElementById('fallbackStatus').textContent = 
-                (status.webSocketStatus && status.webSocketStatus.usingFallback) ? '✅' : '❌';
+                (status.webSocketStatus && status.webSocketStatus.usingFallback) ? '' : '❌';
             
             // Messages Count
             document.getElementById('messagesCount').textContent = messageCount;
@@ -296,7 +296,7 @@
         console.warn = function(...args) {
             originalConsoleWarn.apply(console, args);
             if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
-                log('⚠️ ' + args.join(' '));
+                log(' ' + args.join(' '));
             }
         };
 

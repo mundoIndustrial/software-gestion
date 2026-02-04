@@ -16,7 +16,7 @@ try {
         }
     }
 } catch (e) {
-    console.log('⚠️  No se pudo leer .env.development, usando localhost');
+    console.log('  No se pudo leer .env.development, usando localhost');
 }
 
 // Fallback a variable de entorno si está disponible
@@ -24,7 +24,7 @@ hmrHost = process.env.VITE_HMR_HOST || hmrHost;
 
 const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_ENV === 'production';
 
-console.log('🔧 Vite Config - HMR:', hmrHost + ':' + hmrPort);
+console.log(' Vite Config - HMR:', hmrHost + ':' + hmrPort);
 
 export default defineConfig({
     server: {

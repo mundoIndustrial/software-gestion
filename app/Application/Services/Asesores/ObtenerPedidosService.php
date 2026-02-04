@@ -13,7 +13,7 @@ class ObtenerPedidosService
      * Obtener pedidos del asesor con filtros y búsqueda - OPTIMIZADO
      * Soporta filtrado por tipo (logo, prendas, todos)
      * 
-     * ✅ OPTIMIZACIONES:
+     *  OPTIMIZACIONES:
      * - Select solo columnas necesarias
      * - Limit en procesos (máximo 3)
      * - Cache en estados
@@ -64,7 +64,7 @@ class ObtenerPedidosService
     /**
      * Obtener Pedidos del asesor - OPTIMIZADO
      * 
-     * ✅ Cambios:
+     *  Cambios:
      * - Select solo columnas necesarias
      * - Limit 3 en procesos para evitar N+1
      * - Cache en estados
@@ -165,7 +165,7 @@ class ObtenerPedidosService
     /**
      * Obtener estados únicos disponibles - CON CACHE
      * 
-     * ✅ OPTIMIZACIÓN: Cache por 1 hora para evitar full table scan
+     *  OPTIMIZACIÓN: Cache por 1 hora para evitar full table scan
      */
     public function obtenerEstados(): array
     {

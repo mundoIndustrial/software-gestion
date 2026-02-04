@@ -53,21 +53,21 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 - **Independiente de**: `de_bodega`
 - **Razón**: El reflectivo siempre necesita recibo, sin importar el origen de la prenda
 
-## 📊 Tabla de Decisiones
+##  Tabla de Decisiones
 
 | de_bodega | Procesos | COSTURA | ESTAMPADO | BORDADO | DTF | SUBLIMADO | REFLECTIVO | Total Consecutivos |
 |-----------|----------|---------|-----------|---------|-----|-----------|------------|-------------------|
-| false | Ninguno | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
-| false | Estampado | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | 2 |
-| false | DTF | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | 2 |
-| false | Sublimado | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | 2 |
-| false | Bordado, Reflectivo | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | 3 |
-| false | Estampado, DTF, Sublimado | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | 4 |
+| false | Ninguno |  | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
+| false | Estampado |  |  | ❌ | ❌ | ❌ | ❌ | 2 |
+| false | DTF |  | ❌ | ❌ |  | ❌ | ❌ | 2 |
+| false | Sublimado |  | ❌ | ❌ | ❌ |  | ❌ | 2 |
+| false | Bordado, Reflectivo |  | ❌ |  | ❌ | ❌ |  | 3 |
+| false | Estampado, DTF, Sublimado |  |  | ❌ |  |  | ❌ | 4 |
 | true | Ninguno | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0 |
-| true | Estampado | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | 1 |
-| true | DTF | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | 1 |
-| true | Sublimado | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | 1 |
-| true | Bordado, Reflectivo | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | 2 |
+| true | Estampado | ❌ |  | ❌ | ❌ | ❌ | ❌ | 1 |
+| true | DTF | ❌ | ❌ | ❌ |  | ❌ | ❌ | 1 |
+| true | Sublimado | ❌ | ❌ | ❌ | ❌ |  | ❌ | 1 |
+| true | Bordado, Reflectivo | ❌ | ❌ |  | ❌ | ❌ |  | 2 |
 
 ## 🔄 Flujo de Generación
 
@@ -198,7 +198,7 @@ Pedido #123458
 Total: 3 consecutivos
 ```
 
-## 🔧 Implementación Técnica
+##  Implementación Técnica
 
 ### Archivos Principales
 - `app/Services/ConsecutivosRecibosService.php`: Lógica principal
@@ -231,7 +231,7 @@ Total: 3 consecutivos
 
 ### Monitoreo
 - Revisar logs: `storage/logs/laravel.log`
-- Buscar: "🔢 Consecutivos"
+- Buscar: " Consecutivos"
 - Métricas: Tiempo de generación, cantidad por pedido
 
 ### Troubleshooting

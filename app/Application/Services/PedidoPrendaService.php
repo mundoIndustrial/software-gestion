@@ -297,7 +297,7 @@ class PedidoPrendaService
             $tieneBolsillos = (bool)($variacionesParsed['tiene_bolsillos'] ?? $prendaData['tiene_bolsillos'] ?? false);
             $obsBolsillos = $variacionesParsed['obs_bolsillos'] ?? $prendaData['obs_bolsillos'] ?? $prendaData['bolsillos_obs'] ?? '';
             
-            // ✅ MEJORADO: Procesar nombres de color/tela si no vienen IDs
+            //  MEJORADO: Procesar nombres de color/tela si no vienen IDs
             $colorId = $prendaData['color_id'] ?? null;
             $telaId = $prendaData['tela_id'] ?? null;
             

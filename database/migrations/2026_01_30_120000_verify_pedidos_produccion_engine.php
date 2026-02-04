@@ -28,9 +28,9 @@ return new class extends Migration
             // Convertir a InnoDB si no lo está
             DB::statement("ALTER TABLE pedidos_produccion ENGINE = InnoDB");
             
-            echo "✅ pedidos_produccion convertido a InnoDB\n";
+            echo " pedidos_produccion convertido a InnoDB\n";
         } else {
-            echo "✅ pedidos_produccion ya usa InnoDB\n";
+            echo " pedidos_produccion ya usa InnoDB\n";
         }
 
         // Verificar que AUTO_INCREMENT esté configurado correctamente
@@ -42,7 +42,7 @@ return new class extends Migration
 
         $nextId = $autoIncrement[0]->AUTO_INCREMENT ?? null;
         
-        echo "📊 Próximo AUTO_INCREMENT: $nextId\n";
+        echo " Próximo AUTO_INCREMENT: $nextId\n";
 
         // Verificar que no existan bloqueos innecesarios
         Schema::table('pedidos_produccion', function (Blueprint $table) {

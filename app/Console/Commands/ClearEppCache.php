@@ -26,7 +26,7 @@ class ClearEppCache extends Command
         $this->line('  Caché de búsquedas limpiado');
         
         $this->newLine();
-        $this->info('✅ Caché de EPP limpiado correctamente');
+        $this->info(' Caché de EPP limpiado correctamente');
         $this->line('   Las próximas consultas se ejecutarán sin caché');
     }
 }

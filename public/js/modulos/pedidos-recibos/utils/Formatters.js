@@ -71,14 +71,14 @@ export class Formatters {
             
             if (telasInfo) {
                 partes.push(`<strong>TELAS:</strong> ${telasInfo.toUpperCase()}`);
-                console.log('[Formatters] ✅ Telas múltiples agregadas:', telasInfo);
+                console.log('[Formatters]  Telas múltiples agregadas:', telasInfo);
             }
         } else if (prenda.tela && prenda.color) {
             // Fallback: si solo hay una tela
             partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
             partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
             if (prenda.ref) partes.push(`<strong>REF:</strong> ${prenda.ref.toUpperCase()}`);
-            console.log('[Formatters] ℹ️ Usando tela única (fallback)');
+            console.log('[Formatters]  Usando tela única (fallback)');
         } else if (prenda.tela) {
             partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
             if (prenda.color) partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
@@ -99,12 +99,12 @@ export class Formatters {
             if (mangaTexto) {
                 mangaTexto = mangaTexto.toUpperCase();
                 partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
-                console.log('[Formatters] ✅ MANGA agregado:', mangaTexto);
+                console.log('[Formatters]  MANGA agregado:', mangaTexto);
             } else {
-                console.log('[Formatters] ⚠️ No hay manga en variante');
+                console.log('[Formatters]  No hay manga en variante');
             }
         } else {
-            console.log('[Formatters] ⚠️ No hay variantes');
+            console.log('[Formatters]  No hay variantes');
         }
         
         if (partes.length > 0) {
@@ -131,7 +131,7 @@ export class Formatters {
             
             if (desc.trim()) {
                 lineas.push(desc);
-                console.log('[Formatters] ✅ Descripción agregada (después de limpiar)');
+                console.log('[Formatters]  Descripción agregada (después de limpiar)');
             }
         }
 
@@ -148,7 +148,7 @@ export class Formatters {
             
             if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
                 detalles.push(`• <strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
-                console.log('[Formatters] ✅ BOLSILLOS agregados');
+                console.log('[Formatters]  BOLSILLOS agregados');
             }
             
             // Buscar BROCHE/BOTÓN en broche_obs o broche_boton_obs
@@ -162,9 +162,9 @@ export class Formatters {
                 }
                 
                 detalles.push(`• <strong>${etiqueta}:</strong> ${brocheObs.toUpperCase()}`);
-                console.log('[Formatters] ✅ BROCHE/BOTÓN agregado:', etiqueta);
+                console.log('[Formatters]  BROCHE/BOTÓN agregado:', etiqueta);
             } else {
-                console.log('[Formatters] ⚠️ No hay broche_obs o broche_boton_obs');
+                console.log('[Formatters]  No hay broche_obs o broche_boton_obs');
             }
         }
         
@@ -184,22 +184,22 @@ export class Formatters {
             // Si es array, contar elementos
             if (Array.isArray(prenda.tallas)) {
                 tienesTallas = prenda.tallas.length > 0;
-                console.log('[Formatters] 📊 Tallas es ARRAY con', prenda.tallas.length, 'elementos');
+                console.log('[Formatters]  Tallas es ARRAY con', prenda.tallas.length, 'elementos');
             } else {
                 tienesTallas = Object.keys(prenda.tallas).length > 0;
-                console.log('[Formatters] 📊 Tallas es OBJETO con', Object.keys(prenda.tallas).length, 'claves');
+                console.log('[Formatters]  Tallas es OBJETO con', Object.keys(prenda.tallas).length, 'claves');
             }
             
             if (tienesTallas) {
-                console.log('[Formatters] ✅ Tallas encontradas');
+                console.log('[Formatters]  Tallas encontradas');
                 lineas.push('');
                 lineas.push('<strong>TALLAS</strong>');
                 this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);
             } else {
-                console.log('[Formatters] ⚠️ No hay tallas (vacío)');
+                console.log('[Formatters]  No hay tallas (vacío)');
             }
         } else {
-            console.log('[Formatters] ⚠️ No hay tallas (undefined/null)');
+            console.log('[Formatters]  No hay tallas (undefined/null)');
         }
 
         const resultado = lineas.join('<br>') || '<em>Sin información</em>';
@@ -350,7 +350,7 @@ export class Formatters {
             });
         }
         
-        console.log('[Formatters._agregarTallasFormato] 📊 Resultado final:', { tallasDama, tallasCalballero });
+        console.log('[Formatters._agregarTallasFormato]  Resultado final:', { tallasDama, tallasCalballero });
         
         // Renderizar DAMA
         if (Object.keys(tallasDama).length > 0) {
@@ -358,7 +358,7 @@ export class Formatters {
                 .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
                 .join(', ');
             lineas.push(`DAMA: ${tallasStr}`);
-            console.log('[Formatters._agregarTallasFormato] ✅ DAMA agregado');
+            console.log('[Formatters._agregarTallasFormato]  DAMA agregado');
         }
         
         // Renderizar CABALLERO
@@ -367,7 +367,7 @@ export class Formatters {
                 .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
                 .join(', ');
             lineas.push(`CABALLERO: ${tallasStr}`);
-            console.log('[Formatters._agregarTallasFormato] ✅ CABALLERO agregado');
+            console.log('[Formatters._agregarTallasFormato]  CABALLERO agregado');
         }
         
         console.log('[Formatters._agregarTallasFormato] 📄 Lineas después:', lineas);

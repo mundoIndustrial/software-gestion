@@ -60,7 +60,7 @@ class CrearPedidoHandler implements CommandHandler
                 'cantidad_inicial' => $command->getCantidadInicial(),
             ]);
 
-            Log::info('✅ [CrearPedidoHandler] Validaciones pasadas', []);
+            Log::info(' [CrearPedidoHandler] Validaciones pasadas', []);
 
             // Persistir en base de datos PRIMERO para obtener el ID
             $pedido = $this->pedidoModel->create([
@@ -72,7 +72,7 @@ class CrearPedidoHandler implements CommandHandler
                 'estado' => 'Pendiente',
             ]);
 
-            Log::info('✅ [CrearPedidoHandler] Pedido creado en BD', [
+            Log::info(' [CrearPedidoHandler] Pedido creado en BD', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);

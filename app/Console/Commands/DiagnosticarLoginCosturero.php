@@ -35,7 +35,7 @@ class DiagnosticarLoginCosturero extends Command
         $this->info('1️⃣  VERIFICANDO ROL COSTURERO:');
         $costureroRole = Role::where('name', 'costurero')->first();
         if ($costureroRole) {
-            $this->line("   ✅ Rol encontrado: ID={$costureroRole->id}, Name={$costureroRole->name}");
+            $this->line("    Rol encontrado: ID={$costureroRole->id}, Name={$costureroRole->name}");
             $this->line('');
         } else {
             $this->error('   ❌ Rol NO encontrado');
@@ -56,7 +56,7 @@ class DiagnosticarLoginCosturero extends Command
             
             if (in_array($costureroRole->id, $rolesIds)) {
                 $costureroUsers[] = $user;
-                $this->line("   ✅ Usuario: {$user->name} (ID: {$user->id})");
+                $this->line("    Usuario: {$user->name} (ID: {$user->id})");
                 $this->line("      Email: {$user->email}");
                 $this->line("      roles_ids (raw): " . json_encode($user->roles_ids));
                 $this->line("      roles_ids (parsed): " . json_encode($rolesIds));
@@ -64,7 +64,7 @@ class DiagnosticarLoginCosturero extends Command
         }
 
         if (empty($costureroUsers)) {
-            $this->line('   ℹ️  No hay usuarios con rol costurero');
+            $this->line('     No hay usuarios con rol costurero');
         } else {
             $this->line('   Total: ' . count($costureroUsers) . ' usuario(s) encontrado(s)');
         }
@@ -80,9 +80,9 @@ class DiagnosticarLoginCosturero extends Command
             // Recargar el usuario
             $userReloaded = User::find($user->id);
             
-            $this->line("      - hasRole('costurero'): " . ($userReloaded->hasRole('costurero') ? '✅ true' : '❌ false'));
-            $this->line("      - hasRole({$costureroRole->id}): " . ($userReloaded->hasRole($costureroRole->id) ? '✅ true' : '❌ false'));
-            $this->line("      - hasAnyRole(['costurero']): " . ($userReloaded->hasAnyRole(['costurero']) ? '✅ true' : '❌ false'));
+            $this->line("      - hasRole('costurero'): " . ($userReloaded->hasRole('costurero') ? ' true' : '❌ false'));
+            $this->line("      - hasRole({$costureroRole->id}): " . ($userReloaded->hasRole($costureroRole->id) ? ' true' : '❌ false'));
+            $this->line("      - hasAnyRole(['costurero']): " . ($userReloaded->hasAnyRole(['costurero']) ? ' true' : '❌ false'));
             
             // Obtener roles actuales
             $roles = $userReloaded->roles;
@@ -103,10 +103,10 @@ class DiagnosticarLoginCosturero extends Command
             if (!$testUser->hasAnyRole(['cortador', 'costurero'])) {
                 $this->error("   ❌ PROBLEMA: El middleware rechazaría al usuario {$testUser->name}");
             } else {
-                $this->line("   ✅ El middleware permitiría al usuario {$testUser->name}");
+                $this->line("    El middleware permitiría al usuario {$testUser->name}");
             }
         } else {
-            $this->line('   ⚠️  No hay usuarios costurero para probar');
+            $this->line('     No hay usuarios costurero para probar');
         }
 
         $this->line('');
@@ -125,7 +125,7 @@ class DiagnosticarLoginCosturero extends Command
         }
 
         $this->line('');
-        $this->line('✅ Diagnóstico completado');
+        $this->line(' Diagnóstico completado');
         $this->line('');
     }
 }

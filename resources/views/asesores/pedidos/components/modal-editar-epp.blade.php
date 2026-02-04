@@ -193,17 +193,17 @@
                 }
                 
                 const eppDelServidor = resultado.data;
-                console.log('✅ [EDITAR-EPP-ESPECIFICO] Datos del servidor recibidos:', {
+                console.log(' [EDITAR-EPP-ESPECIFICO] Datos del servidor recibidos:', {
                     nombre: eppDelServidor.nombre_completo,
                     cantidad: eppDelServidor.cantidad,
                     observaciones: eppDelServidor.observaciones
                 });
                 
                 // Usar el modal simple de edición
-                console.log('✅ [EDITAR-EPP-ESPECIFICO] Abriendo modal simple de edición');
+                console.log(' [EDITAR-EPP-ESPECIFICO] Abriendo modal simple de edición');
                 Swal.close();
                 abrirModalEditarEppForm(eppDelServidor);
-                console.log('✅ [EDITAR-EPP-ESPECIFICO] Modal abierto exitosamente');
+                console.log(' [EDITAR-EPP-ESPECIFICO] Modal abierto exitosamente');
                 
             } catch (error) {
                 console.error('❌ [EDITAR-EPP-ESPECIFICO] Error:', error.message);
@@ -378,7 +378,7 @@
     }
     
     function seleccionarEppBuscador(eppId, eppNombre, eppEppId) {
-        console.log('✅ EPP seleccionado:', { eppId, eppNombre, eppEppId });
+        console.log(' EPP seleccionado:', { eppId, eppNombre, eppEppId });
         
         // Guardar el ID del EPP seleccionado en los datos actuales
         if (window.eppEnEdicionActual) {
@@ -498,7 +498,7 @@
             }
             
             const resultado = await response.json();
-            console.log('✅ Cambios guardados con novedad:', resultado);
+            console.log(' Cambios guardados con novedad:', resultado);
             
             // Actualizar el EPP en la lista de datos sin recargar la página
             if (window.datosEdicionPedido && window.datosEdicionPedido.epps) {
@@ -509,7 +509,7 @@
                     if (cambios.eppId) {
                         window.datosEdicionPedido.epps[eppIndex].epp_id = cambios.eppId;
                     }
-                    console.log('✅ [Actualizar EPP] EPP actualizado en memoria:', window.datosEdicionPedido.epps[eppIndex]);
+                    console.log(' [Actualizar EPP] EPP actualizado en memoria:', window.datosEdicionPedido.epps[eppIndex]);
                 }
             }
             

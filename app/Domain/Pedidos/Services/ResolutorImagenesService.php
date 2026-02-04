@@ -164,7 +164,7 @@ class ResolutorImagenesService
         $tiempoProceso = round((microtime(true) - $inicioProceso) * 1000, 2);
         $tiempoTotal = round((microtime(true) - $inicioTotal) * 1000, 2);
 
-        Log::info('[RESOLVER-IMAGENES] ✅ Extracción completada', [
+        Log::info('[RESOLVER-IMAGENES]  Extracción completada', [
             'pedido_id' => $pedidoId,
             'imagenes_procesadas' => count($mapeoUidARuta),
             'imagenes_esperadas' => $totalImagenesEnDTO,
@@ -266,7 +266,7 @@ class ResolutorImagenesService
                     // Notificar al callback (para actualizar DTO u otros)
                     $registrarUID($imagenUID, $rutaFinal);
 
-                    Log::debug('[RESOLVER-IMAGENES] ✅ Imagen procesada', [
+                    Log::debug('[RESOLVER-IMAGENES]  Imagen procesada', [
                         'imagen_uid' => $imagenUID,
                         'ruta' => $rutaFinal,
                         'parent_uid' => $parentUID,
@@ -283,7 +283,7 @@ class ResolutorImagenesService
                     ]);
                 }
             } else {
-                Log::warning('[RESOLVER-IMAGENES] ⚠️ Archivo no encontrado en Request', [
+                Log::warning('[RESOLVER-IMAGENES]  Archivo no encontrado en Request', [
                     'form_key' => $formKey ?? 'N/A',
                     'imagen_uid' => $imagenUID,
                     'nombre_archivo' => $nombreArchivo,

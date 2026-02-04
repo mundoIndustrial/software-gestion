@@ -86,7 +86,7 @@ class EppModalManager {
         console.log(' [ModalManager] Elemento productoCardEPP encontrado:', !!productoCard);
         if (productoCard) {
             productoCard.style.display = 'flex';
-            console.log('✅ [ModalManager] Tarjeta de producto mostrada');
+            console.log(' [ModalManager] Tarjeta de producto mostrada');
         } else {
             console.warn(' [ModalManager] Elemento productoCardEPP NO ENCONTRADO');
         }
@@ -169,7 +169,7 @@ class EppModalManager {
                     color: #1f2937 !important; 
                     cursor: text !important;
                 `);
-                console.log(`✅ [ModalManager] Campo ${id} habilitado`);
+                console.log(` [ModalManager] Campo ${id} habilitado`);
             } else {
                 console.warn(` [ModalManager] Campo ${id} NO ENCONTRADO en el DOM`);
             }
@@ -191,7 +191,7 @@ class EppModalManager {
                 transition: all 0.3s ease;
                 opacity: 1;
             `);
-            console.log('✅ [ModalManager] Área de imágenes habilitada');
+            console.log(' [ModalManager] Área de imágenes habilitada');
         } else {
             console.warn(' [ModalManager] Área de imágenes NO ENCONTRADA en el DOM');
         }
@@ -200,7 +200,7 @@ class EppModalManager {
         console.log('[ModalManager] Buscando mensajeSelecccionarEPP, encontrado:', !!mensajeSeleccionar);
         if (mensajeSeleccionar) {
             mensajeSeleccionar.style.display = 'none';
-            console.log('✅ [ModalManager] Mensaje de selección ocultado');
+            console.log(' [ModalManager] Mensaje de selección ocultado');
         } else {
             console.warn(' [ModalManager] Mensaje de selección NO ENCONTRADO en el DOM');
         }
@@ -216,7 +216,7 @@ class EppModalManager {
         const listaImagenes = document.getElementById('listaImagenesSubidas');
         
         if (!contenedor || !listaImagenes) {
-            console.warn('⚠️ [ModalManager] Contenedor o listaImagenes no encontrados');
+            console.warn(' [ModalManager] Contenedor o listaImagenes no encontrados');
             return;
         }
         
@@ -230,13 +230,13 @@ class EppModalManager {
                     console.log(`   Imagen ${idx}:`, img);
                     const card = this._crearCardImagen(img);
                     contenedor.appendChild(card);
-                    console.log(`   ✅ Imagen ${idx} agregada al DOM`);
+                    console.log(`    Imagen ${idx} agregada al DOM`);
 
                 } catch (e) {
                     console.error(`   ❌ Error al crear card para imagen ${idx}:`, e);
                 }
             });
-            console.log(`✅ [ModalManager] ${imagenes.length} imagen(es) mostrada(s)`);
+            console.log(` [ModalManager] ${imagenes.length} imagen(es) mostrada(s)`);
 
         } else {
             // IMPORTANTE: No ocultar el contenedor cuando está vacío
@@ -257,7 +257,7 @@ class EppModalManager {
         const listaImagenes = document.getElementById('listaImagenesSubidas');
         
         if (!contenedor || !listaImagenes) {
-            console.warn('⚠️ [ModalManager] Contenedor o listaImagenes no encontrado');
+            console.warn(' [ModalManager] Contenedor o listaImagenes no encontrado');
             return;
         }
         
@@ -309,7 +309,7 @@ class EppModalManager {
         }
         
         if (card) {
-            console.log('✅ [ModalManager] Removiendo carta:', card.id);
+            console.log(' [ModalManager] Removiendo carta:', card.id);
             console.log('   Antes de remove - card.parentNode:', !!card.parentNode);
             // Asegurar que se oculte primero por si acaso
             card.style.display = 'none';
@@ -321,7 +321,7 @@ class EppModalManager {
                 }
             }, 10);
         } else {
-            console.warn('⚠️ [ModalManager] No se encontró elemento para eliminar. ImagenId buscado:', imagenId);
+            console.warn(' [ModalManager] No se encontró elemento para eliminar. ImagenId buscado:', imagenId);
         }
 
         const contenedor = document.getElementById('contenedorImagenesSubidas');
@@ -330,7 +330,7 @@ class EppModalManager {
         // IMPORTANTE: NO ocultar el contenedor cuando está vacío
         // Esto permite que el usuario pueda agregar nuevas imágenes después de eliminar
         if (contenedor && contenedor.children.length === 0) {
-            console.log('✅ [ModalManager] Contenedor vacío pero VISIBLE para agregar nuevas imágenes');
+            console.log(' [ModalManager] Contenedor vacío pero VISIBLE para agregar nuevas imágenes');
             // Asegurar que está visible para agregar nuevas
             if (listaImagenes) {
                 listaImagenes.style.display = 'block';
@@ -399,7 +399,7 @@ class EppModalManager {
         if (valores.cantidad <= 0) {
             if (window.eppNotificationService) {
                 window.eppNotificationService.mostrarValidacion(
-                    '⚠️ Cantidad Requerida',
+                    ' Cantidad Requerida',
                     'La cantidad debe ser mayor a 0'
                 );
             } else {

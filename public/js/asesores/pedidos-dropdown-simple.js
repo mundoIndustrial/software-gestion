@@ -473,7 +473,7 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
             Swal.close();
         }
         
-        console.log('📊 [abrirModalDetallePedidoDesdeAsesores] Datos recibidos:', datos);
+        console.log(' [abrirModalDetallePedidoDesdeAsesores] Datos recibidos:', datos);
         
         // Usar la misma función que en registros
         if (typeof window.abrirModalDetallePedido === 'function') {
@@ -499,7 +499,7 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
  * Abre el modal de detalle del pedido con los datos recibidos
  */
 window.abrirModalDetallePedido = function(datos) {
-    console.log('✅ [abrirModalDetallePedido] Abriendo modal con datos:', datos);
+    console.log(' [abrirModalDetallePedido] Abriendo modal con datos:', datos);
     
     // Crear o reutilizar modal
     let modal = document.getElementById('modalDetallePedidoInfo');

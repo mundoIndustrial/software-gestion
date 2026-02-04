@@ -6,9 +6,9 @@
  * Este archivo muestra cómo usar correctamente el handler universal
  * para mensajes de Chrome Extension sin generar errores.
  * 
- * ✅ Funciona correctamente con el handler universal
- * ✅ Sin "message channel closed"
- * ✅ Sin "Uncaught in promise"
+ *  Funciona correctamente con el handler universal
+ *  Sin "message channel closed"
+ *  Sin "Uncaught in promise"
  */
 
 // Verificar que el handler universal esté disponible
@@ -154,7 +154,7 @@ if (typeof UniversalMessageHandler === 'undefined') {
         }
     });
     
-    console.log('[ExtensionListener] ✅ Listener de storage configurado (ID:', storageListenerId + ')');
+    console.log('[ExtensionListener]  Listener de storage configurado (ID:', storageListenerId + ')');
     
     
     // ==================== API PUBLICA ====================
@@ -216,7 +216,7 @@ if (typeof UniversalMessageHandler === 'undefined') {
         status: () => sendStorageMessage('storage.status', {})
     };
     
-    console.log('[ExtensionListener] ✅ API disponible en window.ExtensionStorageAPI');
+    console.log('[ExtensionListener]  API disponible en window.ExtensionStorageAPI');
     
     
     // ==================== EJEMPLO DE USO ====================

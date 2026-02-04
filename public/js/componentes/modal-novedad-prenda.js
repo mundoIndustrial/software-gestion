@@ -40,10 +40,10 @@ class ModalNovedadPrenda {
         this.pedidoId = pedidoId;
         this.prendaData = prendaData;
 
-        // 🔧 CRÍTICO: Inicializar window.imagenesPrendaStorage limpio para prenda NUEVA
+        //  CRÍTICO: Inicializar window.imagenesPrendaStorage limpio para prenda NUEVA
         if (window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage.limpiar();
-            console.log('[modal-novedad-prenda] ✅ [INIT-SYNC] window.imagenesPrendaStorage limpiado para nueva prenda');
+            console.log('[modal-novedad-prenda]  [INIT-SYNC] window.imagenesPrendaStorage limpiado para nueva prenda');
         }
 
         return new Promise((resolve) => {
@@ -165,7 +165,7 @@ class ModalNovedadPrenda {
             formData.append('procesos', JSON.stringify(procesosArray)); // Usar array transformado
             formData.append('novedad', novedad);  // AGREGAR NOVEDAD
             
-            // 🔧 FIX: Obtener imágenes ACTUALIZADAS desde window.imagenesPrendaStorage (que incluye eliminaciones)
+            //  FIX: Obtener imágenes ACTUALIZADAS desde window.imagenesPrendaStorage (que incluye eliminaciones)
             // NO desde this.prendaData.imagenes que es estático
             let imagenesActuales = this.prendaData.imagenes || [];
             
@@ -173,11 +173,11 @@ class ModalNovedadPrenda {
             if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
                 const imagenesDelStorage = window.imagenesPrendaStorage.obtenerImagenes();
                 if (imagenesDelStorage && imagenesDelStorage.length > 0) {
-                    console.log('[modal-novedad-prenda] ✅ Usando imágenes del storage (incluye eliminaciones):', imagenesDelStorage.length);
+                    console.log('[modal-novedad-prenda]  Usando imágenes del storage (incluye eliminaciones):', imagenesDelStorage.length);
                     imagenesActuales = imagenesDelStorage;
                 } else if (imagenesDelStorage && imagenesDelStorage.length === 0) {
                     // El usuario eliminó todas las imágenes
-                    console.log('[modal-novedad-prenda] ⚠️ El usuario eliminó todas las imágenes');
+                    console.log('[modal-novedad-prenda]  El usuario eliminó todas las imágenes');
                     imagenesActuales = [];
                 }
             }
@@ -208,7 +208,7 @@ class ModalNovedadPrenda {
                 });
             }
             
-            console.log('[modal-novedad-prenda] 📊 Resumen de imágenes a guardar:', {
+            console.log('[modal-novedad-prenda]  Resumen de imágenes a guardar:', {
                 imagenesNuevas: imagenesNuevas.length,
                 imagenesExistentes: imagenesDB.length,
                 total: imagenesActuales.length
@@ -365,7 +365,7 @@ class ModalNovedadPrenda {
         return Object.entries(procesosObj).map(([tipoProceso, procInfo]) => {
             const datosProc = procInfo?.datos || procInfo || {};
             
-            // 🔧 FIX: Permitir procesos que tengan AMBOS:
+            //  FIX: Permitir procesos que tengan AMBOS:
             // - id (proceso existente en BD)
             // - tipo_proceso_id (tipo del proceso)
             // O procesos nuevos que tengan tipo_proceso_id asignado
@@ -380,7 +380,7 @@ class ModalNovedadPrenda {
                 estado: datosProc.estado || 'PENDIENTE'
             };
         }).filter(proc => {
-            // 🔧 ARREGLO: Filtro más permisivo
+            //  ARREGLO: Filtro más permisivo
             // Aceptar procesos que tengan:
             // 1. tipo_proceso_id válido (proceso nuevo con tipo asignado)
             // 2. O id válido (proceso existente en BD, aunque sea sin tipo_proceso_id en temp)

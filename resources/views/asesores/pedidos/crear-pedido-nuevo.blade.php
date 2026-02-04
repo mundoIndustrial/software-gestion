@@ -358,7 +358,7 @@
                 if (!tipoPedido) {
                     Swal.fire({
                         icon: 'warning',
-                        title: '⚠️ Tipo de Ítem Requerido',
+                        title: ' Tipo de Ítem Requerido',
                         text: 'Por favor selecciona un ítem primero',
                         confirmButtonText: 'Entendido',
                         confirmButtonColor: '#0066cc'

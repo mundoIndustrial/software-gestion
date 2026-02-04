@@ -510,7 +510,7 @@ class ObtenerPedidoDetalleService
                       ->orderBy('created_at', 'desc');
                 },
                 'fotos' => function ($q) {
-                    // 🔧 CAMBIO: NO incluir fotos eliminadas (deleted_at) en el modal de edición
+                    //  CAMBIO: NO incluir fotos eliminadas (deleted_at) en el modal de edición
                     $q->whereNull('deleted_at');  // Solo fotos activas
                 },
                 'fotosTelas' => function ($q) {
@@ -522,7 +522,7 @@ class ObtenerPedidoDetalleService
             ])
             ->firstOrFail();
 
-        Log::info('✅ [PRENDA-ENCONTRADA] Prenda básica cargada', [
+        Log::info(' [PRENDA-ENCONTRADA] Prenda básica cargada', [
             'prenda_id' => $prenda->id,
             'prenda_nombre' => $prenda->nombre_prenda,
             'procesos_count' => $prenda->procesos->count(),
@@ -533,7 +533,7 @@ class ObtenerPedidoDetalleService
         // Transformar prenda a estructura esperada por el frontend
         $prendaTransformada = $this->transformarPrendaParaEdicion($prenda);
 
-        Log::info('✅ [PRENDA-TRANSFORMADA] Prenda transformada completamente', [
+        Log::info(' [PRENDA-TRANSFORMADA] Prenda transformada completamente', [
             'prenda_id' => $prenda->id,
             'procesos_count' => count($prendaTransformada['procesos'] ?? []),
             'tallas_dama_count' => count($prendaTransformada['tallas_dama'] ?? []),
@@ -560,7 +560,7 @@ class ObtenerPedidoDetalleService
 
         $prendaArray = $prenda->toArray();
 
-        // 🔧 FIX: Convertir de_bodega a origen para que el frontend tenga ambos formatos
+        //  FIX: Convertir de_bodega a origen para que el frontend tenga ambos formatos
         $prendaArray['origen'] = $prendaArray['de_bodega'] == 1 ? 'bodega' : 'confeccion';
 
         // Procesos
@@ -680,8 +680,8 @@ class ObtenerPedidoDetalleService
         }
         $prendaArray['colores_telas'] = $coloresTelas;
 
-        Log::info('✅ [COLORES-TELAS-COMPLETADAS] ' . count($coloresTelas) . ' combinaciones procesadas');
-        Log::info('✅ [TRANSFORMAR-COMPLETO] Transformación finalizada exitosamente', [
+        Log::info(' [COLORES-TELAS-COMPLETADAS] ' . count($coloresTelas) . ' combinaciones procesadas');
+        Log::info(' [TRANSFORMAR-COMPLETO] Transformación finalizada exitosamente', [
             'prenda_id' => $prenda->id,
             'tallas_dama' => count($tallasDama),
             'tallas_caballero' => count($tallasCaballero),
@@ -706,7 +706,7 @@ class ObtenerPedidoDetalleService
 
         $tallasProceso = $this->construirTallasProcesoRelacional($proceso->id);
 
-        Log::info('✅ [PROCESO-CONSTRUIDO] Proceso construido', [
+        Log::info(' [PROCESO-CONSTRUIDO] Proceso construido', [
             'proceso_id' => $proceso->id,
             'tallas_count' => count($tallasProceso),
             'imagenes_count' => $proceso->imagenes->count() ?? 0

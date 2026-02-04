@@ -10,7 +10,7 @@
  * Obtiene los datos del servidor y los muestra
  */
 window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
-    console.log('[INICIO-verFacturaDelPedido] ⚠️ FUNCIÓN LLAMADA', { numeroPedido, pedidoId });
+    console.log('[INICIO-verFacturaDelPedido]  FUNCIÓN LLAMADA', { numeroPedido, pedidoId });
     
     try {
         // Mostrar spinner de carga
@@ -42,10 +42,10 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
         if (datos.prendas && datos.prendas[0]) {
             console.log('[FACTURA-DEBUG] Primera prenda:', datos.prendas[0]);
             console.log('[FACTURA-DEBUG] Variantes de primera prenda:', datos.prendas[0].variantes);
-            console.log('[FACTURA-DEBUG] ⚠️ TELAS_ARRAY en primera prenda:', datos.prendas[0].telas_array);
-            console.log('[FACTURA-DEBUG] ⚠️ TELAS_ARRAY length:', datos.prendas[0].telas_array ? datos.prendas[0].telas_array.length : 'NO EXISTE');
-            console.log('[FACTURA-DEBUG] ⚠️ TELA simple en primera prenda:', datos.prendas[0].tela);
-            console.log('[FACTURA-DEBUG] ⚠️ COLOR simple en primera prenda:', datos.prendas[0].color);
+            console.log('[FACTURA-DEBUG]  TELAS_ARRAY en primera prenda:', datos.prendas[0].telas_array);
+            console.log('[FACTURA-DEBUG]  TELAS_ARRAY length:', datos.prendas[0].telas_array ? datos.prendas[0].telas_array.length : 'NO EXISTE');
+            console.log('[FACTURA-DEBUG]  TELA simple en primera prenda:', datos.prendas[0].tela);
+            console.log('[FACTURA-DEBUG]  COLOR simple en primera prenda:', datos.prendas[0].color);
         }
         
     // Usar el modal de VISUALIZACIÓN bonito con botones de PDF e imprimir (NO el de edición)
@@ -53,7 +53,7 @@ window.verFacturaDelPedido = async function(numeroPedido, pedidoId) {
             console.log('[invoice-from-list.js] 📋 Usando crearModalFacturaDesdeListaPedidos');
             crearModalFacturaDesdeListaPedidos(datos);
         } else {
-            console.warn('[invoice-from-list.js] ⚠️ crearModalFacturaDesdeListaPedidos NO EXISTE, usando fallback abrirModalEditarPedido');
+            console.warn('[invoice-from-list.js]  crearModalFacturaDesdeListaPedidos NO EXISTE, usando fallback abrirModalEditarPedido');
             abrirModalEditarPedido(pedidoId, datos, 'ver');  // Fallback al modal simple
         }
         
@@ -197,7 +197,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             
             htmlFactura = generarHTMLFactura(datosPedido);
 
-            console.log('[GENERAR-FACTURA] ✅ HTML generado exitosamente', {
+            console.log('[GENERAR-FACTURA]  HTML generado exitosamente', {
                 htmlFactura_length: htmlFactura?.length || 0,
                 htmlFactura_vacio: !htmlFactura || htmlFactura.trim().length === 0
             });
@@ -295,6 +295,37 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     const botonesAccion = document.createElement('div');
     botonesAccion.style.cssText = 'display: flex; gap: 8px; align-items: center;';
     
+    // Botón Imprimir
+    const btnImprimir = document.createElement('button');
+    btnImprimir.id = 'print-receipt-btn';
+    btnImprimir.setAttribute('id', 'print-receipt-btn');
+    btnImprimir.innerHTML = '<span class="material-symbols-rounded" style="font-size: 20px;">print</span>';
+    btnImprimir.style.cssText = `
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+    `;
+    btnImprimir.onmouseover = () => {
+        btnImprimir.style.background = '#2563eb';
+        btnImprimir.style.transform = 'scale(1.1)';
+    };
+    btnImprimir.onmouseout = () => {
+        btnImprimir.style.background = '#3b82f6';
+        btnImprimir.style.transform = 'scale(1)';
+    };
+    btnImprimir.onclick = () => imprimirFacturaModal();
+    botonesAccion.appendChild(btnImprimir);
+    
     // Botón Cerrar
     const btnCerrar = document.createElement('button');
     btnCerrar.id = 'close-receipt-btn';
@@ -360,7 +391,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
     
     // Log de verificación
     const btnVerify = document.getElementById('close-receipt-btn');
-    console.log('[invoice-from-list.js] ✅ Modal agregado al DOM. Verificando botón:', { btnVerify, encontrado: !!btnVerify });
+    console.log('[invoice-from-list.js]  Modal agregado al DOM. Verificando botón:', { btnVerify, encontrado: !!btnVerify });
     
     // Cerrar con ESC
     document.addEventListener('keydown', (e) => {
@@ -887,5 +918,214 @@ function registrarFontSizesFacturaListaPedidos(contenedorElement) {
 // Exportar función a nivel global para acceso desde otros contextos
 window.registrarFontSizesFacturaListaPedidos = registrarFontSizesFacturaListaPedidos;
 
+/**
+ * Imprime la factura del modal actual
+ */
+function imprimirFacturaModal() {
+    const contenidoFactura = document.getElementById('modal-factura-contenido');
+    
+    if (!contenidoFactura) {
+        alert('No se encontró el contenido de la factura para imprimir');
+        return;
+    }
+    
+    // Obtener el HTML del contenido
+    const htmlParaImprimir = contenidoFactura.innerHTML;
+    
+    // Crear una nueva ventana para imprimir
+    const ventanaImpresion = window.open('', '', 'width=800,height=600');
+    
+    if (!ventanaImpresion) {
+        alert('Por favor, permite las ventanas emergentes para poder imprimir');
+        return;
+    }
+    
+    // Escribir el contenido en la nueva ventana
+    ventanaImpresion.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Factura - Impresión</title>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                
+                html, body {
+                    width: 100%;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                body {
+                    font-family: Arial, sans-serif;
+                    color: #333;
+                    line-height: 1.2;
+                    font-size: 12px;
+                }
+                
+                @page {
+                    size: A4;
+                    margin: 2mm;
+                }
+                
+                @media print {
+                    html, body {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    
+                    .contenedor-impresion {
+                        margin: 0;
+                        padding: 0;
+                        max-width: 100%;
+                        width: 100%;
+                        overflow: hidden;
+                    }
+                    
+                    table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        page-break-inside: avoid;
+                        margin: 0 !important;
+                        font-size: 11px !important;
+                    }
+                    
+                    th, td {
+                        border: 0.5px solid #999;
+                        padding: 2px 3px !important;
+                        text-align: left;
+                        font-size: 11px !important;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        line-height: 1.1;
+                    }
+                    
+                    th {
+                        background-color: #e8e8e8;
+                        font-weight: bold;
+                        padding: 2px 3px !important;
+                    }
+                    
+                    h1 { font-size: 15px !important; margin: 2px 0 !important; }
+                    h2 { font-size: 13px !important; margin: 1px 0 !important; }
+                    h3 { font-size: 11px !important; margin: 0px 0 !important; }
+                    h4 { font-size: 9px !important; margin: 0px 0 !important; }
+                    p { margin: 0 !important; line-height: 1.1; font-size: 11px !important; }
+                    
+                    img {
+                        max-width: 100% !important;
+                        height: auto !important;
+                        display: block;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    
+                    .no-print {
+                        display: none !important;
+                    }
+                    
+                    tr {
+                        page-break-inside: avoid;
+                    }
+                    
+                    div {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    
+                    span {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    
+                    br {
+                        display: none !important;
+                    }
+                }
+                
+                .contenedor-impresion {
+                    padding: 0;
+                    max-width: 100%;
+                    width: 100%;
+                    margin: 0;
+                    overflow: hidden;
+                }
+                
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 0;
+                    font-size: 12px;
+                }
+                
+                th, td {
+                    border: 0.5px solid #999;
+                    padding: 2px 3px;
+                    text-align: left;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    line-height: 1.1;
+                }
+                
+                th {
+                    background-color: #e8e8e8;
+                    font-weight: bold;
+                }
+                
+                h1 { font-size: 15px; margin: 2px 0; }
+                h2 { font-size: 13px; margin: 1px 0; }
+                h3 { font-size: 11px; margin: 0px 0; }
+                p { margin: 0; line-height: 1.1; font-size: 11px; }
+                
+                img {
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                div {
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                span {
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                br {
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="contenedor-impresion">
+                ${htmlParaImprimir}
+            </div>
+            <script>
+                // Ejecutar impresión automáticamente cuando el documento esté listo
+                window.onload = function() {
+                    window.print();
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    
+    ventanaImpresion.document.close();
+}
 
+// Exportar función a nivel global
+window.imprimirFacturaModal = imprimirFacturaModal;
 

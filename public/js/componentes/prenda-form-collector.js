@@ -69,13 +69,18 @@ class PrendaFormCollector {
 
                     return img.file;
                 }
-                // Si es un objeto con previewUrl (desde BD), PRESERVARLO para edición
+                // Si es un objeto con previewUrl (desde BD), PRESERVARLO COMPLETAMENTE para edición
                 if (img && img.previewUrl && !img.file) {
-                    // Retornar objeto con la URL para que el backend sepa que es imagen existente
+                    // IMPORTANTE: Copiar TODOS los campos para que el modal pueda acceder al ID
                     return {
+                        id: img.id,                          // ID de prenda_fotos_pedido
+                        prenda_foto_id: img.prenda_foto_id,  // Alias
                         previewUrl: img.previewUrl,
-                        urlDesdeDB: true,
-                        nombre: img.nombre
+                        url: img.url,                        // URL del accessor
+                        ruta_original: img.ruta_original,    // Ruta original
+                        ruta_webp: img.ruta_webp,            // Ruta WebP
+                        nombre: img.nombre,
+                        urlDesdeDB: true
                     };
                 }
                 // Fallback: retornar img tal cual si es File

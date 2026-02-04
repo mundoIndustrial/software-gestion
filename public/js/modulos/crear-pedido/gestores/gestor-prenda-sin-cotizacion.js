@@ -153,9 +153,9 @@ class GestorPrendaSinCotizacion {
     eliminar(index) {
         if (index >= 0 && index < this.prendas.length) {
             this.prendas.splice(index, 1);
-            console.log('[GestorPrendaSinCotizacion] ✅ Prenda eliminada del array en index:', index, '- Quedan:', this.prendas.length);
+            console.log('[GestorPrendaSinCotizacion]  Prenda eliminada del array en index:', index, '- Quedan:', this.prendas.length);
         } else {
-            console.warn('[GestorPrendaSinCotizacion] ⚠️ Índice inválido:', index);
+            console.warn('[GestorPrendaSinCotizacion]  Índice inválido:', index);
         }
     }
 
@@ -518,7 +518,7 @@ class GestorPrendaSinCotizacion {
             }
         });
 
-        console.log('[GestorPrenda] 📊 Datos formateados con imágenes eliminadas:', {
+        console.log('[GestorPrenda]  Datos formateados con imágenes eliminadas:', {
             totalPrendas: prendas.length,
             conImagenesEliminadas: Object.keys(imagenesEliminadasInfo).length,
             imagenesEliminadasInfo
@@ -558,7 +558,7 @@ class GestorPrendaSinCotizacion {
 
 // Exportar a window para uso global
 window.GestorPrendaSinCotizacion = GestorPrendaSinCotizacion;
-console.log('[gestor-prenda-sin-cotizacion.js] ✅ Clase exportada a window.GestorPrendaSinCotizacion');
+console.log('[gestor-prenda-sin-cotizacion.js]  Clase exportada a window.GestorPrendaSinCotizacion');
 
 // Instancia global
 window.gestorPrendaSinCotizacion = null;

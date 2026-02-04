@@ -54,7 +54,7 @@ class ModalCleanup {
                     // 🔴 IMPORTANTE: NO resetear origen-select en modo edición
                     // Se cargará correctamente en llenarCamposBasicos()
                     if (id === 'nueva-prenda-origen-select' && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
-                        console.log('🔴🔴🔴 [limpiarFormulario] ✅✅✅ SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) 🔴🔴🔴', {
+                        console.log('🔴🔴🔴 [limpiarFormulario]  SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) 🔴🔴🔴', {
                             prendaEditIndex: window.prendaEditIndex,
                             selectId: id,
                             valorActual: element.value,
@@ -333,6 +333,10 @@ class ModalCleanup {
     static prepararParaNueva() {
 
         
+        // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
+        // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
+        window.prendaEditIndex = null;
+        
         // Debug: Verificar si los campos de tela existen ANTES de limpiar
         const telaField = document.getElementById('nueva-prenda-tela');
         const colorField = document.getElementById('nueva-prenda-color');
@@ -340,20 +344,11 @@ class ModalCleanup {
         const telaPreview = document.getElementById('nueva-prenda-tela-preview');
         const tbody = document.getElementById('tbody-telas');
         
-
-
-
-
-
-        
         this.limpiarFormulario();
         this.limpiarStorages();
         this.limpiarCheckboxes(false); // Limpiar TODO
         this.limpiarProcesos(false); // Limpiar TODO
         this.limpiarContenedores();
-        
-        // Resetear estado de edición
-        window.prendaEditIndex = null;
         
         // Cambiar título del modal a "Agregar Prenda Nueva"
         this.actualizarTituloModal('agregar');
@@ -399,6 +394,15 @@ class ModalCleanup {
         
         this.limpiarTodo();
         this.resetearEdicion();
+        
+        // 🔥 CRÍTICO: También resetear en las instancias de clases
+        // Evita que queden restos de prendaEditIndex en diferentes ubicaciones
+        if (window.gestionItemsUI) {
+            window.gestionItemsUI.prendaEditIndex = null;
+        }
+        if (window.gestionItemsUI?.prendaEditor) {
+            window.gestionItemsUI.prendaEditor.prendaEditIndex = null;
+        }
         
         // Ocultar modal
         const modal = DOMUtils.getElement('modal-agregar-prenda-nueva');

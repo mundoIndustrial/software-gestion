@@ -95,18 +95,18 @@ class DespachoGeneradorService
                     foreach ($variantes as $variante) {
                         $talla = $variante['talla'] ?? '—';
                         $cantidad = $variante['cantidad'] ?? 0;
-                        $tallaId = $variante['talla_id'] ?? null;  // ✅ Obtener ID de la talla
-                        $genero = $variante['genero'] ?? null;  // ✅ Obtener género
+                        $tallaId = $variante['talla_id'] ?? null;  //  Obtener ID de la talla
+                        $genero = $variante['genero'] ?? null;  //  Obtener género
                         
                         $filas->push(new FilaDespachoDTO(
                             tipo: 'prenda',
                             id: $prendaEnriquecida['id'] ?? null,
-                            tallaId: $tallaId,  // ✅ Usar ID de la talla
+                            tallaId: $tallaId,  //  Usar ID de la talla
                             descripcion: "{$prendaEnriquecida['nombre_prenda']} - {$talla}",
                             cantidadTotal: (int)$cantidad,
                             talla: $talla,
-                            genero: $genero,  // ✅ Usar género de la talla
-                            objetoPrenda: $prendaEnriquecida,  // ✅ Datos completos con procesos, variantes, etc
+                            genero: $genero,  //  Usar género de la talla
+                            objetoPrenda: $prendaEnriquecida,  //  Datos completos con procesos, variantes, etc
                             objetoTalla: null,
                             objetoEpp: null,
                         ));

@@ -77,7 +77,7 @@ class EppFlujoCreacion {
             console.log('[EppFlujoCreacion] PASO 2: Subiendo imágenes para pedido', pedidoId);
 
             if (!pedidoData.epps || pedidoData.epps.length === 0) {
-                console.log('[EppFlujoCreacion] ℹ️ No hay EPPs con imágenes, saltando PASO 2');
+                console.log('[EppFlujoCreacion]  No hay EPPs con imágenes, saltando PASO 2');
                 return {
                     success: true,
                     imagenes_subidas: 0,
@@ -111,7 +111,7 @@ class EppFlujoCreacion {
             });
 
             if (totalImagenes === 0) {
-                console.log('[EppFlujoCreacion] ℹ️ No hay archivos File válidos, saltando PASO 2');
+                console.log('[EppFlujoCreacion]  No hay archivos File válidos, saltando PASO 2');
                 return {
                     success: true,
                     imagenes_subidas: 0,

@@ -50,7 +50,7 @@ class CrearProduccionPedidoUseCase
                 'cantidad_total' => 0,
             ]);
 
-            Log::info('✅ [CrearProduccionPedidoUseCase] Pedido creado en BD', [
+            Log::info(' [CrearProduccionPedidoUseCase] Pedido creado en BD', [
                 'pedido_id' => $pedidoModel->id,
                 'numero_pedido' => $pedidoModel->numero_pedido,
                 'area' => $pedidoModel->area,

@@ -1950,7 +1950,7 @@ function guardarTecnicaCombinada(datosForm) {
             });
         }
         
-        console.log(`✅ DEBUG - Telas extraídas para datosForm:`, telas);
+        console.log(` DEBUG - Telas extraídas para datosForm:`, telas);
         
         datosForm = {
             nombre_prenda: nombrePrenda,
@@ -3666,7 +3666,7 @@ function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
                             const reader = new FileReader();
                             reader.onload = (e) => {
                                 tela.imagen = e.target.result;
-                                console.log(`✅ Tela convertida a data URL para prenda ${prendaIdx}, tela ${telaIdx}`);
+                                console.log(` Tela convertida a data URL para prenda ${prendaIdx}, tela ${telaIdx}`);
                             };
                             reader.readAsDataURL(tela.archivo);
                         }

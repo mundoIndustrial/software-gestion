@@ -30,7 +30,7 @@ return new class extends Migration
             // Índice para estado (si no existe)
             if (!in_array('pedidos_produccion_estado_index', $existingIndexes)) {
                 $table->index('estado');
-                echo "✅ Creado índice: estado\n";
+                echo " Creado índice: estado\n";
             } else {
                 echo "⏭️  Índice ya existe: estado\n";
             }
@@ -38,7 +38,7 @@ return new class extends Migration
             // Índice compuesto para "mis pedidos" ordenados por fecha (si no existe)
             if (!in_array('pedidos_produccion_asesor_id_created_at_index', $existingIndexes)) {
                 $table->index(['asesor_id', 'created_at']);
-                echo "✅ Creado índice: asesor_id + created_at\n";
+                echo " Creado índice: asesor_id + created_at\n";
             } else {
                 echo "⏭️  Índice ya existe: asesor_id + created_at\n";
             }
@@ -46,7 +46,7 @@ return new class extends Migration
             // Índice para búsquedas por número de pedido (si no existe)
             if (!in_array('pedidos_produccion_numero_pedido_index', $existingIndexes)) {
                 $table->index('numero_pedido');
-                echo "✅ Creado índice: numero_pedido\n";
+                echo " Creado índice: numero_pedido\n";
             } else {
                 echo "⏭️  Índice ya existe: numero_pedido\n";
             }

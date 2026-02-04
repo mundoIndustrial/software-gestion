@@ -39,7 +39,7 @@ try {
         }
         
         if (isset($recibos['COSTURA-BODEGA'])) {
-            echo "\n✅ COSTURA-BODEGA PRESENTE en respuesta\n";
+            echo "\n COSTURA-BODEGA PRESENTE en respuesta\n";
             echo "   Valor: " . ($recibos['COSTURA-BODEGA'] !== null ? $recibos['COSTURA-BODEGA'] : "null") . "\n";
         } else {
             echo "\n✗ COSTURA-BODEGA NO en respuesta\n";

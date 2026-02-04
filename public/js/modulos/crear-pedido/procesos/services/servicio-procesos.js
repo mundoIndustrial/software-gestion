@@ -45,7 +45,7 @@ class ServicioProcesos {
             }
 
             const resultado = await response.json();
-            console.log('✅ [SERVICIO-PROCESOS] Proceso actualizado:', resultado);
+            console.log(' [SERVICIO-PROCESOS] Proceso actualizado:', resultado);
             return resultado;
 
         } catch (error) {
@@ -96,10 +96,10 @@ class ServicioProcesos {
         }
 
         if (errores.length > 0) {
-            console.warn('⚠️ [SERVICIO-PROCESOS] Algunos procesos fallaron:', errores);
+            console.warn(' [SERVICIO-PROCESOS] Algunos procesos fallaron:', errores);
         }
 
-        console.log('✅ [SERVICIO-PROCESOS] Actualización completada:', {
+        console.log(' [SERVICIO-PROCESOS] Actualización completada:', {
             exitosos: resultados.filter(r => r.éxito).length,
             fallidos: resultados.filter(r => !r.éxito).length
         });
@@ -116,7 +116,7 @@ class ServicioProcesos {
      */
     obtenerProcesosEditados() {
         if (!window.gestorEditacionProcesos) {
-            console.warn('⚠️ [SERVICIO-PROCESOS] No existe gestorEditacionProcesos global');
+            console.warn(' [SERVICIO-PROCESOS] No existe gestorEditacionProcesos global');
             return [];
         }
 

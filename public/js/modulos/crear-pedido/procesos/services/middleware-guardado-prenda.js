@@ -41,7 +41,7 @@ class MiddlewareGuardadoPrenda {
             if (procesosEditados.length > 0) {
                 console.log('🔄 [MIDDLEWARE-GUARDADO] Aplicando cambios de procesos editados...');
                 await this.aplicarCambiosProcesos(prendaId, procesosEditados);
-                console.log('✅ [MIDDLEWARE-GUARDADO] Cambios de procesos aplicados');
+                console.log(' [MIDDLEWARE-GUARDADO] Cambios de procesos aplicados');
             }
 
             // Ahora guardar la prenda normal
@@ -51,7 +51,7 @@ class MiddlewareGuardadoPrenda {
             // Limpiar registro de procesos editados
             this.limpiarProcesosEditados();
 
-            console.log('✅ [MIDDLEWARE-GUARDADO] Prenda guardada exitosamente');
+            console.log(' [MIDDLEWARE-GUARDADO] Prenda guardada exitosamente');
             return resultado;
 
         } catch (error) {
@@ -112,7 +112,7 @@ class MiddlewareGuardadoPrenda {
 
                 const resultado = await response.json();
 
-                console.log('✅ [MIDDLEWARE-GUARDADO] Proceso actualizado:', {
+                console.log(' [MIDDLEWARE-GUARDADO] Proceso actualizado:', {
                     tipo: procesoEditado.tipo,
                     respuesta: resultado
                 });
@@ -144,7 +144,7 @@ class MiddlewareGuardadoPrenda {
             throw new Error(`Error actualizando procesos: ${mensajeError}`);
         }
 
-        console.log('✅ [MIDDLEWARE-GUARDADO] Todos los procesos actualizados:', {
+        console.log(' [MIDDLEWARE-GUARDADO] Todos los procesos actualizados:', {
             exitosos: resultados.length,
             resultados
         });

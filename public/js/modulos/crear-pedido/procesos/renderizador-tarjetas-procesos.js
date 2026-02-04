@@ -49,13 +49,13 @@ window.renderizarTarjetasProcesos = function() {
         return false;
     }
     
-    // ✅ OPTIMIZACIÓN: Construir TODO el HTML en memoria ANTES de tocar el DOM
+    //  OPTIMIZACIÓN: Construir TODO el HTML en memoria ANTES de tocar el DOM
     let html = '';
     procesosConDatos.forEach(tipo => {
         html += generarTarjetaProceso(tipo, procesos[tipo].datos);
     });
 
-    // ✅ UN SOLO REFLOW: Asignar todo el HTML de una vez
+    //  UN SOLO REFLOW: Asignar todo el HTML de una vez
     container.innerHTML = html;
     
     // Añadir atributos data-tipo-proceso a las tarjetas para debugging
@@ -303,27 +303,27 @@ window.editarProcesoDesdeModal = function(tipo) {
         return;
     }
     
-    // ✅ PASO 1: Iniciar el gestor de edición (marca como "en edición")
+    //  PASO 1: Iniciar el gestor de edición (marca como "en edición")
     if (window.gestorEditacionProcesos) {
         window.gestorEditacionProcesos.iniciarEdicion(tipo, false); // false = no es nuevo
-        console.log('✅ [EDITAR-PROCESO-MODAL] Gestor de edición iniciado para:', tipo);
+        console.log(' [EDITAR-PROCESO-MODAL] Gestor de edición iniciado para:', tipo);
     }
     
-    // ✅ PASO 2: Iniciar editor de procesos (captura estado original)
+    //  PASO 2: Iniciar editor de procesos (captura estado original)
     if (window.procesosEditor) {
         const exito = window.procesosEditor.iniciarEdicion(tipo, proceso.datos);
         if (!exito) {
             console.error('❌ [EDITAR-PROCESO-MODAL] No se pudo iniciar editor de procesos');
             return;
         }
-        console.log('✅ [EDITAR-PROCESO-MODAL] Editor de procesos iniciado en modo EDICIÓN');
+        console.log(' [EDITAR-PROCESO-MODAL] Editor de procesos iniciado en modo EDICIÓN');
     }
     
-    // ✅ PASO 3: Cargar datos en el modal ANTES de abrirlo
-    console.log('📊 [EDITAR-PROCESO-MODAL] Cargando datos en modal...');
+    //  PASO 3: Cargar datos en el modal ANTES de abrirlo
+    console.log(' [EDITAR-PROCESO-MODAL] Cargando datos en modal...');
     cargarDatosProcesoEnModal(tipo, proceso.datos);
     
-    // ✅ PASO 4: Abrir modal en modo EDICIÓN
+    //  PASO 4: Abrir modal en modo EDICIÓN
     if (window.abrirModalProcesoGenerico) {
         console.log('🪟 [EDITAR-PROCESO-MODAL] Abriendo modal genérico en modo EDICIÓN');
         
@@ -337,12 +337,12 @@ window.editarProcesoDesdeModal = function(tipo) {
         
         window.abrirModalProcesoGenerico(tipo, true); // true = esEdicion
         
-        // ✅ NUEVO: Aplicar automáticamente tallas desde la prenda SI es una cotización
+        //  NUEVO: Aplicar automáticamente tallas desde la prenda SI es una cotización
         setTimeout(() => {
             // Copiar tallas de window.tallasRelacionales a window.tallasCantidadesProceso
             if (window.tallasRelacionales) {
                 console.log('[EDITAR-PROCESO-MODAL] 🔄 Sincronizando tallas desde prenda a proceso...');
-                console.log('[EDITAR-PROCESO-MODAL] 📊 window.tallasRelacionales:', window.tallasRelacionales);
+                console.log('[EDITAR-PROCESO-MODAL]  window.tallasRelacionales:', window.tallasRelacionales);
                 
                 // Inicializar si no existe
                 if (!window.tallasCantidadesProceso) {
@@ -367,14 +367,14 @@ window.editarProcesoDesdeModal = function(tipo) {
                 }
                 window.tallasSeleccionadasProceso.dama = Object.keys(window.tallasCantidadesProceso.dama || {});
                 window.tallasSeleccionadasProceso.caballero = Object.keys(window.tallasCantidadesProceso.caballero || {});
-                console.log('[EDITAR-PROCESO-MODAL] ✅ Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
+                console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
             }
             
             // Renderizar el resumen con las tallas ya aplicadas
             if (window.actualizarResumenTallasProceso && typeof window.actualizarResumenTallasProceso === 'function') {
-                console.log('[EDITAR-PROCESO-MODAL] 📊 Renderizando resumen de tallas automáticamente con "done_all"...');
+                console.log('[EDITAR-PROCESO-MODAL]  Renderizando resumen de tallas automáticamente con "done_all"...');
                 window.actualizarResumenTallasProceso();
-                console.log('[EDITAR-PROCESO-MODAL] ✅ Resumen de tallas renderizado con tallas aplicadas');
+                console.log('[EDITAR-PROCESO-MODAL]  Resumen de tallas renderizado con tallas aplicadas');
             }
         }, 200);
         
@@ -386,7 +386,7 @@ window.editarProcesoDesdeModal = function(tipo) {
             // Forzar z-index máximo para asegurar que esté encima de todo
             if (modalProceso) {
                 modalProceso.style.setProperty('z-index', '9999999999', 'important');
-                console.log('🔝 [EDITAR-PROCESO-MODAL] Z-index forzado dinámicamente:', window.getComputedStyle(modalProceso).zIndex);
+                console.log(' [EDITAR-PROCESO-MODAL] Z-index forzado dinámicamente:', window.getComputedStyle(modalProceso).zIndex);
             }
             
             console.log('🪟 [EDITAR-PROCESO-MODAL] DESPUÉS de abrirModalProcesoGenerico:');
@@ -456,13 +456,13 @@ window.editarProceso = function(tipo) {
 function cargarDatosProcesoEnModal(tipo, datos) {
     console.log('🔄 [CARGAR-DATOS-PROCESO] Cargando datos en modal para:', tipo, datos);
 
-    // ✅ CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
+    //  CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
     window.imagenesProcesoActual = [null, null, null];
     
-    // ✅ CRÍTICO: Inicializar window.imagenesProcesoExistentes para procesos editados
+    //  CRÍTICO: Inicializar window.imagenesProcesoExistentes para procesos editados
     window.imagenesProcesoExistentes = [];
     
-    // ✅ CRÍTICO: Inicializar ubicaciones si no existen
+    //  CRÍTICO: Inicializar ubicaciones si no existen
     if (!window.ubicacionesProcesoSeleccionadas) {
         window.ubicacionesProcesoSeleccionadas = [];
     }
@@ -473,7 +473,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
 
     }
     
-    // ✅ NUEVO: Mantener imágenes existentes (URLs) separadas de las nuevas (Files)
+    //  NUEVO: Mantener imágenes existentes (URLs) separadas de las nuevas (Files)
     if (!window.imagenesProcesoExistentes) {
         window.imagenesProcesoExistentes = [];
     }
@@ -484,7 +484,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     imagenes.forEach((img, idx) => {
         if (img && idx < 3) {
             const indice = idx + 1;
-            // ✅ Detectar si es URL o File (ANTES de usarlo)
+            //  Detectar si es URL o File (ANTES de usarlo)
             const isFile = img instanceof File;
             const preview = document.getElementById(`proceso-foto-preview-${indice}`);
             
@@ -500,7 +500,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                 `;
             }
             
-            // ✅ Guardar según tipo
+            //  Guardar según tipo
             if (isFile) {
                 // Es un File nuevo → guardar en imagenesProcesoActual
                 if (window.imagenesProcesoActual) {
@@ -762,7 +762,7 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
         m.style.opacity = i === indice ? '1' : '0.6';
     });
     
-    console.log('✅ [GALERIA] Navegación completada');
+    console.log(' [GALERIA] Navegación completada');
 };
 
 window.irAImagenProceso = function(indice) {
@@ -802,7 +802,7 @@ window.irAImagenProceso = function(indice) {
         m.style.opacity = i === indice ? '1' : '0.6';
     });
     
-    console.log('✅ [GALERIA] Imagen mostrada');
+    console.log(' [GALERIA] Imagen mostrada');
 };
 
 window.cerrarGaleriaImagenesProceso = function() {
@@ -810,7 +810,7 @@ window.cerrarGaleriaImagenesProceso = function() {
     const galeria = document.getElementById('galeria-proceso-modal');
     if (galeria) {
         galeria.remove();
-        console.log('✅ [GALERIA] Galería removida del DOM');
+        console.log(' [GALERIA] Galería removida del DOM');
     }
     window.imagenesGaleriaProceso = null;
 };
@@ -833,7 +833,7 @@ window.eliminarTarjetaProceso = function(tipo) {
         icon: 'warning',
         title: '¿Eliminar proceso?',
         html: `<p>Está a punto de eliminar el proceso <strong>${nombresProcesos[tipo] || tipo}</strong></p>
-               <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">⚠️ El cambio se aplicará cuando guardes los cambios de la prenda.</p>`,
+               <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;"> El cambio se aplicará cuando guardes los cambios de la prenda.</p>`,
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         confirmButtonColor: '#ef4444',
@@ -859,7 +859,7 @@ window.eliminarTarjetaProceso = function(tipo) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // ✅ NUEVO: Marcar proceso como "eliminado" en lugar de eliminarlo inmediatamente
+            //  NUEVO: Marcar proceso como "eliminado" en lugar de eliminarlo inmediatamente
             // El backend solo se eliminará cuando el usuario guarde los cambios
             marcarProcesoParaEliminar(tipo, proceso);
         }
@@ -873,7 +873,7 @@ window.eliminarTarjetaProceso = function(tipo) {
 window.procesosParaEliminarIds = new Set();
 
 /**
- * ✅ NUEVO: Marcar un proceso como "eliminado" sin enviarlo al backend inmediatamente
+ *  NUEVO: Marcar un proceso como "eliminado" sin enviarlo al backend inmediatamente
  * Se eliminará del backend cuando se guarden los cambios de la prenda
  */
 function marcarProcesoParaEliminar(tipo, proceso) {
@@ -881,10 +881,10 @@ function marcarProcesoParaEliminar(tipo, proceso) {
     console.log('🗑️ Tipo recibido:', tipo);
     console.log('🗑️ Proceso recibido:', proceso);
     
-    // ✅ NUEVO: Guardar en Set separado que NO se borra al recargar procesos
+    //  NUEVO: Guardar en Set separado que NO se borra al recargar procesos
     if (proceso.datos?.id) {
         window.procesosParaEliminarIds.add(proceso.datos.id);
-        console.log('✅ ID agregado a window.procesosParaEliminarIds:', {
+        console.log(' ID agregado a window.procesosParaEliminarIds:', {
             id: proceso.datos.id,
             procesosActuales: Array.from(window.procesosParaEliminarIds)
         });
@@ -892,7 +892,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
     
     // También marcar en el objeto local (para UI)
     proceso.marcadoParaEliminar = true;
-    console.log('✅ Proceso marcado en estado local:', proceso.marcadoParaEliminar);
+    console.log(' Proceso marcado en estado local:', proceso.marcadoParaEliminar);
     
     // ===== BÚSQUEDA EN EL DOM =====
     console.log('\n🔍 BUSCANDO TARJETA EN DOM:');
@@ -900,7 +900,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
     
     // Listar TODAS las tarjetas del DOM PRIMERO
     const allTarjetas = document.querySelectorAll('div[data-proceso-tipo]');
-    console.log(`\n📊 Tarjetas disponibles en el DOM: ${allTarjetas.length}`);
+    console.log(`\n Tarjetas disponibles en el DOM: ${allTarjetas.length}`);
     allTarjetas.forEach((t, idx) => {
         const tipo_attr = t.getAttribute('data-proceso-tipo');
         const classes = t.className;
@@ -919,7 +919,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
     tarjeta = document.querySelector(`[data-proceso-tipo="${tipo}"]`);
     if (tarjeta) {
         selectorUsado = 'data-proceso-tipo';
-        console.log('   ✅ ENCONTRADA con selector 1');
+        console.log('    ENCONTRADA con selector 1');
     }
     
     // Selector 2
@@ -928,7 +928,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
         tarjeta = document.querySelector(`[data-tipo="${tipo}"]`);
         if (tarjeta) {
             selectorUsado = 'data-tipo';
-            console.log('   ✅ ENCONTRADA con selector 2');
+            console.log('    ENCONTRADA con selector 2');
         } else {
             console.log('   ❌ No encontrada');
         }
@@ -940,7 +940,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
         tarjeta = document.querySelector(`[data-process-type="${tipo}"]`);
         if (tarjeta) {
             selectorUsado = 'data-process-type';
-            console.log('   ✅ ENCONTRADA con selector 3');
+            console.log('    ENCONTRADA con selector 3');
         } else {
             console.log('   ❌ No encontrada');
         }
@@ -948,7 +948,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
     
     // ===== MANIPULACIÓN DEL DOM =====
     if (tarjeta) {
-        console.log('\n✅ TARJETA ENCONTRADA');
+        console.log('\n TARJETA ENCONTRADA');
         console.log('   Selector usado:', selectorUsado);
         console.log('   Elemento:', tarjeta.tagName);
         console.log('   ID:', tarjeta.id || 'sin ID');
@@ -968,14 +968,14 @@ function marcarProcesoParaEliminar(tipo, proceso) {
             console.log('   Ejecutando: remove()');
             try {
                 tarjeta.remove();
-                console.log('   ✅ remove() ejecutado exitosamente');
+                console.log('    remove() ejecutado exitosamente');
                 
                 // Verificar que fue removida
                 const verificacion = document.querySelector(`[data-proceso-tipo="${tipo}"]`);
                 if (!verificacion) {
-                    console.log('   ✅ VERIFICACIÓN: Elemento removido del DOM correctamente');
+                    console.log('    VERIFICACIÓN: Elemento removido del DOM correctamente');
                 } else {
-                    console.warn('   ⚠️  VERIFICACIÓN: Elemento AÚN existe en el DOM!');
+                    console.warn('     VERIFICACIÓN: Elemento AÚN existe en el DOM!');
                     console.log('   Elemento restante:', verificacion);
                 }
             } catch (error) {
@@ -1002,7 +1002,7 @@ function marcarProcesoParaEliminar(tipo, proceso) {
 
 
 /**
- * ✅ NUEVO: Eliminar procesos marcados para eliminación del backend
+ *  NUEVO: Eliminar procesos marcados para eliminación del backend
  * Se ejecuta cuando el usuario guarda los cambios de la prenda
  */
 window.eliminarProcesossMarcadosDelBackend = async function() {
@@ -1010,18 +1010,18 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
     
     console.log('🗑️ [ELIMINAR-BACKEND] Procesos marcados para eliminar (Set):', Array.from(window.procesosParaEliminarIds || new Set()));
     
-    // ✅ NUEVO: Usar el Set que se mantiene separado y no se recarga
+    //  NUEVO: Usar el Set que se mantiene separado y no se recarga
     const idsParaEliminar = Array.from(window.procesosParaEliminarIds || new Set());
     
     if (idsParaEliminar.length === 0) {
-        console.log('✅ [ELIMINAR-BACKEND] No hay procesos marcados para eliminar');
+        console.log(' [ELIMINAR-BACKEND] No hay procesos marcados para eliminar');
         return true; // Sin errores
     }
     
     console.log(`🗑️ [ELIMINAR-BACKEND] Total de procesos a eliminar: ${idsParaEliminar.length}`);
     console.log('🗑️ [ELIMINAR-BACKEND] IDs a eliminar:', idsParaEliminar);
     
-    // ✅ Obtener el número de pedido de forma más confiable
+    //  Obtener el número de pedido de forma más confiable
     const numeroPedido = window.prendaEnEdicion?.pedidoId ||
                          window.numeroPedidoActual || 
                          document.querySelector('[data-numero-pedido]')?.getAttribute('data-numero-pedido') ||
@@ -1063,16 +1063,16 @@ window.eliminarProcesossMarcadosDelBackend = async function() {
             }
             
             const data = await response.json();
-            console.log(`✅ [ELIMINAR-BACKEND] ${nombreProceso} eliminado exitosamente`);
-            console.log(`✅ [ELIMINAR-BACKEND] Response data:`, data);
+            console.log(` [ELIMINAR-BACKEND] ${nombreProceso} eliminado exitosamente`);
+            console.log(` [ELIMINAR-BACKEND] Response data:`, data);
         }
         
         // Limpiar el Set después de eliminar exitosamente
         console.log('🗑️ [ELIMINAR-BACKEND] Limpiando Set de procesos para eliminar');
         window.procesosParaEliminarIds.clear();
-        console.log('✅ [ELIMINAR-BACKEND] Set limpiado');
+        console.log(' [ELIMINAR-BACKEND] Set limpiado');
         
-        console.log('✅ [ELIMINAR-BACKEND] ========== TODOS LOS PROCESOS ELIMINADOS CORRECTAMENTE ==========');
+        console.log(' [ELIMINAR-BACKEND] ========== TODOS LOS PROCESOS ELIMINADOS CORRECTAMENTE ==========');
         return true;
         
     } catch (error) {

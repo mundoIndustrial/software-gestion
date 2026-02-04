@@ -27,7 +27,7 @@ class CheckRole
         $requiredRoles = array_map('trim', explode(',', $roles));
         
         // LOG CRÍTICO: ¿Qué roles recibió el middleware?
-        Log::info('[MIDDLEWARE-CHECKROLE] ⚠️ PARÁMETRO ROLES RECIBIDO', [
+        Log::info('[MIDDLEWARE-CHECKROLE]  PARÁMETRO ROLES RECIBIDO', [
             'parametro_roles_string' => $roles,
             'roles_parseados' => $requiredRoles,
             'ruta' => $request->path(),
@@ -94,7 +94,7 @@ class CheckRole
         
         if (count($rolesConHerencia) > count($userRoles)) {
             $rolesHeredados = array_diff($rolesConHerencia, $userRoles);
-            Log::info('[MIDDLEWARE-CHECKROLE] 📊 JERARQUÍA DE ROLES APLICADA', [
+            Log::info('[MIDDLEWARE-CHECKROLE]  JERARQUÍA DE ROLES APLICADA', [
                 'usuario_id' => $user->id,
                 'roles_originales' => $userRoles,
                 'roles_heredados' => array_values($rolesHeredados),
@@ -105,7 +105,7 @@ class CheckRole
             ]);
             $userRoles = $rolesConHerencia; // Usar los roles con herencia para la verificación
         } else {
-            Log::debug('[MIDDLEWARE-CHECKROLE] 📊 Sin jerarquía aplicable para estos roles', [
+            Log::debug('[MIDDLEWARE-CHECKROLE]  Sin jerarquía aplicable para estos roles', [
                 'usuario_id' => $user->id,
                 'roles_del_usuario' => $userRoles
             ]);
@@ -147,7 +147,7 @@ class CheckRole
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
 
-        Log::info('✅ [MIDDLEWARE-CHECKROLE] ACCESO PERMITIDO - Autorización exitosa');
+        Log::info(' [MIDDLEWARE-CHECKROLE] ACCESO PERMITIDO - Autorización exitosa');
         return $next($request);
     }
 }

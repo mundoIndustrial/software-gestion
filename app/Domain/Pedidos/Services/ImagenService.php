@@ -53,7 +53,7 @@ class ImagenService
                 mkdir($rutaCompleta, 0755, true);
             }
             $dirTime = (microtime(true) - $dirStartTime) * 1000;
-            \Log::info('[ImagenService] ✅ Directorio listo', ['tiempo_ms' => round($dirTime, 2)]);
+            \Log::info('[ImagenService]  Directorio listo', ['tiempo_ms' => round($dirTime, 2)]);
 
             // Procesar y guardar imagen como WebP
             $processStartTime = microtime(true);
@@ -61,20 +61,20 @@ class ImagenService
             
             $imagen = Image::make($file->getRealPath());
             $makeTime = (microtime(true) - $processStartTime) * 1000;
-            \Log::info('[ImagenService] ✅ Image::make() completado', ['tiempo_ms' => round($makeTime, 2)]);
+            \Log::info('[ImagenService]  Image::make() completado', ['tiempo_ms' => round($makeTime, 2)]);
             
             $encodeStartTime = microtime(true);
             $imagen->encode('webp', 85); // Calidad 85%
             $encodeTime = (microtime(true) - $encodeStartTime) * 1000;
-            \Log::info('[ImagenService] ✅ Encode WebP completado', ['tiempo_ms' => round($encodeTime, 2)]);
+            \Log::info('[ImagenService]  Encode WebP completado', ['tiempo_ms' => round($encodeTime, 2)]);
             
             $saveStartTime = microtime(true);
             $imagen->save("{$rutaCompleta}/{$nombreArchivo}");
             $saveTime = (microtime(true) - $saveStartTime) * 1000;
-            \Log::info('[ImagenService] ✅ Save completado', ['tiempo_ms' => round($saveTime, 2)]);
+            \Log::info('[ImagenService]  Save completado', ['tiempo_ms' => round($saveTime, 2)]);
 
             $totalTime = (microtime(true) - $startTime) * 1000;
-            \Log::info('[ImagenService] ✅ Imagen guardada exitosamente', [
+            \Log::info('[ImagenService]  Imagen guardada exitosamente', [
                 'ruta' => "{$carpeta}/{$nombreArchivo}",
                 'tiempo_total_ms' => round($totalTime, 2),
                 'desglose' => [

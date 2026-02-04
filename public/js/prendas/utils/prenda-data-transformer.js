@@ -170,7 +170,7 @@ class PrendaDataTransformer {
                 color: prenda.color || 'N/A',
                 referencia: prenda.referencia || 'N/A'
             };
-            console.log('[PrendaDataTransformer.obtenerInfoTela] ✅ RESULTADO RAÍZ:', resultadoRaiz);
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  RESULTADO RAÍZ:', resultadoRaiz);
             return resultadoRaiz;
         }
 
@@ -185,11 +185,11 @@ class PrendaDataTransformer {
                 color: tela.color || 'N/A',
                 referencia: tela.referencia || 'N/A'
             };
-            console.log('[PrendaDataTransformer.obtenerInfoTela] ✅ RESULTADO AGREGADAS:', resultadoAgregadas);
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  RESULTADO AGREGADAS:', resultadoAgregadas);
             return resultadoAgregadas;
         }
 
-        console.log('[PrendaDataTransformer.obtenerInfoTela] ⚠️ NO SE ENCONTRARON DATOS DE TELA');
+        console.log('[PrendaDataTransformer.obtenerInfoTela]  NO SE ENCONTRARON DATOS DE TELA');
         return { tela: 'N/A', color: 'N/A', referencia: 'N/A' };
     }
 
@@ -271,14 +271,14 @@ class PrendaDataTransformer {
             console.log('[PrendaDataTransformer._extraerTela] 📋 primeraTela.tela:', primeraTela.tela);
             
             const nombreTela = primeraTela.tela ? primeraTela.tela.nombre : '';
-            console.log('[PrendaDataTransformer._extraerTela] ✅ Tela extraída:', nombreTela);
+            console.log('[PrendaDataTransformer._extraerTela]  Tela extraída:', nombreTela);
             return nombreTela;
         }
         
-        console.log('[PrendaDataTransformer._extraerTela] ⚠️ No hay telas, usando propiedad directa');
+        console.log('[PrendaDataTransformer._extraerTela]  No hay telas, usando propiedad directa');
         // Desde propiedad directa
         const telaDirecta = prendaRaw.tela || '';
-        console.log('[PrendaDataTransformer._extraerTela] ✅ Tela directa:', telaDirecta);
+        console.log('[PrendaDataTransformer._extraerTela]  Tela directa:', telaDirecta);
         return telaDirecta;
     }
 
@@ -298,14 +298,14 @@ class PrendaDataTransformer {
             console.log('[PrendaDataTransformer._extraerColor] 📋 primeraTela.color:', primeraTela.color);
             
             const nombreColor = primeraTela.color ? primeraTela.color.nombre : '';
-            console.log('[PrendaDataTransformer._extraerColor] ✅ Color extraído:', nombreColor);
+            console.log('[PrendaDataTransformer._extraerColor]  Color extraído:', nombreColor);
             return nombreColor;
         }
         
-        console.log('[PrendaDataTransformer._extraerColor] ⚠️ No hay telas, usando propiedad directa');
+        console.log('[PrendaDataTransformer._extraerColor]  No hay telas, usando propiedad directa');
         // Desde propiedad directa
         const colorDirecto = prendaRaw.color || '';
-        console.log('[PrendaDataTransformer._extraerColor] ✅ Color directo:', colorDirecto);
+        console.log('[PrendaDataTransformer._extraerColor]  Color directo:', colorDirecto);
         return colorDirecto;
     }
 
@@ -325,14 +325,14 @@ class PrendaDataTransformer {
             console.log('[PrendaDataTransformer._extraerReferencia] 📋 primeraTela.referencia:', primeraTela.referencia);
             
             const referencia = primeraTela.referencia || '';
-            console.log('[PrendaDataTransformer._extraerReferencia] ✅ Referencia extraída:', referencia);
+            console.log('[PrendaDataTransformer._extraerReferencia]  Referencia extraída:', referencia);
             return referencia;
         }
         
-        console.log('[PrendaDataTransformer._extraerReferencia] ⚠️ No hay telas, usando propiedades directas');
+        console.log('[PrendaDataTransformer._extraerReferencia]  No hay telas, usando propiedades directas');
         // Desde propiedad directa
         const referenciaDirecta = prendaRaw.ref || prendaRaw.referencia || '';
-        console.log('[PrendaDataTransformer._extraerReferencia] ✅ Referencia directa:', referenciaDirecta);
+        console.log('[PrendaDataTransformer._extraerReferencia]  Referencia directa:', referenciaDirecta);
         return referenciaDirecta;
     }
 
@@ -354,11 +354,11 @@ class PrendaDataTransformer {
                 fotos: tela.fotos || []
             }));
             
-            console.log('[PrendaDataTransformer._extraerTelasAgregadas] ✅ Telas formateadas:', telasFormateadas);
+            console.log('[PrendaDataTransformer._extraerTelasAgregadas]  Telas formateadas:', telasFormateadas);
             return telasFormateadas;
         }
         
-        console.log('[PrendaDataTransformer._extraerTelasAgregadas] ⚠️ No hay telas para formatear');
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas]  No hay telas para formatear');
         return [];
     }
 }

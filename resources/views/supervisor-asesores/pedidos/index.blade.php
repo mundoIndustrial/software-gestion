@@ -618,34 +618,57 @@
                         align-items: center;
                         transition: all 0.3s ease;
                         min-width: min-content;
-                        background: white;
+                        background: {{ trim($pedido->estado) === 'DEVUELTO_A_ASESORA' ? '#fefce8' : 'white' }};
                         border-radius: 6px;
                         margin-bottom: 0.75rem;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                         position: relative;
                         z-index: 1;
+                        {{ trim($pedido->estado) === 'DEVUELTO_A_ASESORA' ? 'border-left: 4px solid #eab308;' : '' }}
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
                     
                     <!-- Acciones -->
-                    <button onclick="verFacturaDelPedido('', {{ $pedido->id }})" style="
-                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                        color: white;
-                        border: none;
-                        padding: 0.5rem 0.75rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 0.75rem;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.4rem;
-                        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
-                        letter-spacing: 0.2px;
-                    " onmouseover="this.style.boxShadow='0 8px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" onmouseout="this.style.boxShadow='0 4px 6px rgba(16, 185, 129, 0.25)'; this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        <i class="fas fa-eye" style="font-size: 0.8rem;"></i> Ver
-                    </button>
+                    @if(trim($pedido->estado) === 'DEVUELTO_A_ASESORA')
+                        <button onclick="confirmarCorreccionPedido({{ $pedido->id }}, '{{ $pedido->numero_pedido }}')" style="
+                            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.75rem;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.4rem;
+                            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+                            letter-spacing: 0.2px;
+                        " onmouseover="this.style.boxShadow='0 8px 12px rgba(59, 130, 246, 0.4)'; this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)'" onmouseout="this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.25)'; this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'">
+                            <i class="fas fa-check" style="font-size: 0.8rem;"></i> Confirmar
+                        </button>
+                    @else
+                        <button onclick="verFacturaDelPedido('', {{ $pedido->id }})" style="
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.75rem;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.4rem;
+                            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+                            letter-spacing: 0.2px;
+                        " onmouseover="this.style.boxShadow='0 8px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" onmouseout="this.style.boxShadow='0 4px 6px rgba(16, 185, 129, 0.25)'; this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
+                            <i class="fas fa-eye" style="font-size: 0.8rem;"></i> Ver
+                        </button>
+                    @endif
 
                     <!-- Estado -->
                     <div>
@@ -946,6 +969,53 @@
 <!-- Modal de Detalle de Orden -->
 <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
 
+<!-- Modal de éxito para confirmación de corrección -->
+<div id="modalExitoConfirmacion" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    backdrop-filter: blur(4px);
+">
+    <div style="
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        max-width: 500px;
+        width: 90%;
+        overflow: hidden;
+        animation: slideIn 0.3s ease;
+    ">
+        <div style="
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 1rem;
+        ">
+            <span class="material-symbols-rounded" style="
+                font-size: 3rem;
+                color: white;
+            ">task_alt</span>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">¡Corrección Confirmada!</h3>
+        </div>
+        <div style="padding: 1.5rem; text-align: center;">
+            <p style="color: #6b7280; font-size: 1rem; margin: 0;">
+                Tu corrección ha sido confirmada y enviada a supervisión para su revisión.
+            </p>
+        </div>
+    </div>
+</div>
+
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
 </div>
@@ -1181,9 +1251,60 @@
         }
     });
 
+// Función confirmarCorreccionPedido - Cambiar estado de DEVUELTO_A_ASESORA a PENDIENTE_SUPERVISOR
+window.confirmarCorreccionPedido = window.confirmarCorreccionPedido || async function confirmarCorreccionPedido(pedidoId, numeroPedido) {
+    console.log('[INICIO-confirmarCorreccionPedido] FUNCIÓN LLAMADA', {pedidoId, numeroPedido});
+    
+    try {
+        const url = `/asesores/pedidos/${pedidoId}/confirmar-correccion`;
+        console.log('[ANTES-FETCH] Llamando a endpoint', {url});
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                pedido_id: pedidoId,
+                numero_pedido: numeroPedido
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al confirmar corrección: ' + response.status);
+        }
+        
+        const resultado = await response.json();
+        console.log('[CONFIRMACION-DEBUG] Respuesta del servidor:', resultado);
+        
+        if (resultado.success) {
+            // Mostrar modal de éxito
+            const modalExito = document.getElementById('modalExitoConfirmacion');
+            if (modalExito) {
+                modalExito.style.display = 'flex';
+                
+                // Cerrar modal y recargar después de 2 segundos
+                setTimeout(() => {
+                    modalExito.style.display = 'none';
+                    location.reload();
+                }, 2000);
+            } else {
+                alert('¡Corrección confirmada! El pedido ha sido enviado a supervisión.');
+                location.reload();
+            }
+        } else {
+            throw new Error(resultado.message || 'Error desconocido al confirmar corrección');
+        }
+    } catch (error) {
+        console.error('Error al confirmar corrección:', error);
+        alert('Error al confirmar corrección: ' + error.message);
+    }
+};
+
 // Función verFacturaDelPedido para supervisores (mismo que asesores)
 window.verFacturaDelPedido = window.verFacturaDelPedido || async function verFacturaDelPedido(numeroPedido, pedidoId) {
-    console.log('[INICIO-verFacturaDelPedido] ⚠️ FUNCIÓN LLAMADA', {numeroPedido, pedidoId});
+    console.log('[INICIO-verFacturaDelPedido]  FUNCIÓN LLAMADA', {numeroPedido, pedidoId});
     
     try {
         const url = `/pedidos-public/${pedidoId}/factura-datos`;

@@ -317,7 +317,7 @@ class LogoCotizacionTecnicaController extends Controller
                     // Obtener la ruta ya guardada
                     $rutaCompartida = $logosCompartidosGuardados[$clave] ?? null;
                     if (!$rutaCompartida) {
-                        Log::warning('⚠️ Logo compartido no tiene ruta guardada', [
+                        Log::warning(' Logo compartido no tiene ruta guardada', [
                             'clave' => $clave,
                             'tecnica' => $tipoLogo->nombre
                         ]);
@@ -344,7 +344,7 @@ class LogoCotizacionTecnicaController extends Controller
                             'tamaño' => $tamaño,
                         ]);
 
-                        Log::info('✅ Imagen compartida vinculada a prenda (SOLO REFERENCIA, NO DUPLICADA)', [
+                        Log::info(' Imagen compartida vinculada a prenda (SOLO REFERENCIA, NO DUPLICADA)', [
                             'foto_id' => $foto->id,
                             'prenda_id' => $prenda->id,
                             'ruta_compartida' => $rutaCompartida,

@@ -44,7 +44,7 @@ async function demoConstruirPedidoCompleto() {
         imagenes: []
     });
 
-    console.log('✅ Prenda agregada:', prenda.uid);
+    console.log(' Prenda agregada:', prenda.uid);
 
     // ========================================
     // 2️⃣ SIMULAR CARGA DE ARCHIVOS
@@ -65,7 +65,7 @@ async function demoConstruirPedidoCompleto() {
     for (const archivo of archivosPrenda) {
         await pedidoDOM.agregarImagenPrenda(0, archivo);
     }
-    console.log('✅ Imágenes de prenda agregadas:', prenda.imagenes.length);
+    console.log(' Imágenes de prenda agregadas:', prenda.imagenes.length);
 
     // ========================================
     // 3️⃣ AGREGAR TELA
@@ -86,7 +86,7 @@ async function demoConstruirPedidoCompleto() {
     
     // Agregar imagen a tela
     await pedidoDOM.agregarImagenTela(0, 0, archivoTela);
-    console.log('✅ Tela agregada con imagen');
+    console.log(' Tela agregada con imagen');
 
     // ========================================
     // 4️⃣ AGREGAR PROCESO
@@ -110,7 +110,7 @@ async function demoConstruirPedidoCompleto() {
     
     // Agregar imagen a proceso
     await pedidoDOM.agregarImagenProceso(0, 0, archivoProceso);
-    console.log('✅ Proceso agregado con imagen');
+    console.log(' Proceso agregado con imagen');
 
     // ========================================
     // 5️⃣ ESTADO ACTUAL DEL MODELO DOM
@@ -136,7 +136,7 @@ async function demoConstruirPedidoCompleto() {
     
     const pedidoBackend = BackendPedidoModel.fromDOMPedido(pedidoDOM);
     
-    console.log('✅ Convertido a Backend (sin File objects)');
+    console.log(' Convertido a Backend (sin File objects)');
     console.log('JSON serializable:', JSON.stringify(pedidoBackend, null, 2).substring(0, 500) + '...');
 
     // ========================================
@@ -147,12 +147,12 @@ async function demoConstruirPedidoCompleto() {
     
     try {
         const json = JSON.stringify(pedidoBackend);
-        console.log('✅ Backend model es 100% JSON serializable');
+        console.log(' Backend model es 100% JSON serializable');
         console.log('Tamaño JSON:', (json.length / 1024).toFixed(2), 'KB');
         
         // Verificar que NO contiene File objects
         const contieneFILE = json.includes('[object File]') || json.includes('File');
-        console.log('✅ NO contiene referencias a File objects:', !contieneFILE);
+        console.log(' NO contiene referencias a File objects:', !contieneFILE);
         
     } catch (error) {
         console.error('❌ Error al serializar:', error.message);
@@ -166,8 +166,8 @@ async function demoConstruirPedidoCompleto() {
     
     console.log('DOM Model - Prenda[0].imagenes[0]:', {
         uid: pedidoDOM.prendas[0].imagenes[0].uid,
-        file: pedidoDOM.prendas[0].imagenes[0].file instanceof File ? 'File object ✅' : 'NO FILE',
-        preview: pedidoDOM.prendas[0].imagenes[0].preview ? 'data:image... ✅' : 'NO PREVIEW',
+        file: pedidoDOM.prendas[0].imagenes[0].file instanceof File ? 'File object ' : 'NO FILE',
+        preview: pedidoDOM.prendas[0].imagenes[0].preview ? 'data:image... ' : 'NO PREVIEW',
         nombre_archivo: pedidoDOM.prendas[0].imagenes[0].nombre_archivo
     });
 
@@ -194,11 +194,11 @@ async function demoConstruirPedidoCompleto() {
             epps: []
         });
         
-        console.log('✅ PEDIDO CREADO EXITOSAMENTE');
+        console.log(' PEDIDO CREADO EXITOSAMENTE');
         console.log('ID:', resultado.pedido_id);
         console.log('Número:', resultado.numero_pedido);
         console.log('Cliente ID:', resultado.cliente_id);
-        console.log('\n✅ Imágenes guardadas en:', {
+        console.log('\n Imágenes guardadas en:', {
             prendas: `storage/pedidos/${resultado.pedido_id}/prendas/`,
             telas: `storage/pedidos/${resultado.pedido_id}/telas/`,
             procesos: `storage/pedidos/${resultado.pedido_id}/procesos/bordado/`

@@ -32,7 +32,7 @@ NAVEGADOR
 
    │
    └─→ RESPUESTA HTML → NAVEGADOR
-       Página cargada ✅
+       Página cargada 
 ```
 
 ---
@@ -51,7 +51,7 @@ NAVEGADOR
          ├─ 📏 Talla::all() 
          │  └─ ⏱️ LOG: {tiempo_ms: X}
          │
-         ├─ 📋 Cotizacion::with(['cliente', 'prendas', 'fotos', ...]) ← ⚠️ CRÍTICO
+         ├─ 📋 Cotizacion::with(['cliente', 'prendas', 'fotos', ...]) ←  CRÍTICO
          │  │   WHERE asesor_id = X
          │  │   WHERE estado IN ['APROBADA', 'APROBADO_PEDIDO']
          │  │
@@ -71,7 +71,7 @@ NAVEGADOR
 
    │
    └─→ RESPUESTA HTML → NAVEGADOR
-       Página cargada ✅
+       Página cargada 
 ```
 
 ---
@@ -90,30 +90,30 @@ NAVEGADOR (FormData)
          │
          ├─ ═══ PASO 1: JSON ═══
          │  ├─ json_decode($request->input('pedido'))
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 1: JSON decodificado {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 1: JSON decodificado {tiempo_ms: X}
          │
          ├─ ═══ PASO 2: CLIENTE ═══
          │  ├─ obtenerOCrearCliente()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 2: Cliente obtenido {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 2: Cliente obtenido {tiempo_ms: X}
          │
          ├─ ═══ PASO 3: DTO ═══
          │  ├─ PedidoNormalizadorDTO::fromFrontendJSON()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 3: Pedido normalizado {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 3: Pedido normalizado {tiempo_ms: X}
          │
          ├─ ═══ PASO 4: TRANSACCIÓN ═══
          │  └─ DB::beginTransaction()
          │
          ├─ ═══ PASO 5: PEDIDO BASE ═══
          │  ├─ $this->pedidoWebService->crearPedidoCompleto()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 5: Pedido base creado {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 5: Pedido base creado {tiempo_ms: X}
          │                                                             ↑
          │                                                    Si > 500ms = TRIGGERS
          │
          ├─ ═══ PASO 6: CARPETAS ═══
          │  ├─ crearCarpetasPedido()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 6: Carpetas creadas {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 6: Carpetas creadas {tiempo_ms: X}
          │
-         ├─ ═══ PASO 7: IMÁGENES ═══ ← ⚠️ CUELLO DE BOTELLA TÍPICO
+         ├─ ═══ PASO 7: IMÁGENES ═══ ←  CUELLO DE BOTELLA TÍPICO
          │  │
          │  └─→ MapeoImagenesService::mapearYCrearFotos()
          │       │
@@ -132,12 +132,12 @@ NAVEGADOR (FormData)
          │            │       ├─ • Carga imagen → X ms
          │            │       ├─ • Conversión WebP → X ms ← Si > 200ms = LENTO
          │            │       │
-         │            │       └─ ⏱️ LOG: [IMAGE-UPLOAD] ✅ Imagen guardada {
+         │            │       └─ ⏱️ LOG: [IMAGE-UPLOAD]  Imagen guardada {
          │            │              tiempo_total_ms: X,
          │            │              desglose: {...}
          │            │          }
          │            │
-         │            └─ ⏱️ LOG: [RESOLVER-IMAGENES] ✅ Extracción completada {
+         │            └─ ⏱️ LOG: [RESOLVER-IMAGENES]  Extracción completada {
          │                   imagenes_procesadas: X,
          │                   imagenes_esperadas: X,
          │                   diferencia: Y  ← Si > 0 = IMÁGENES PERDIDAS
@@ -145,20 +145,20 @@ NAVEGADOR (FormData)
          │
          │       └─ ⏱️ LOG: [MAPEO-IMAGENES] ✨ MAPEO COMPLETADO {tiempo_ms: X}
          │
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 7: Imágenes mapeadas {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 7: Imágenes mapeadas {tiempo_ms: X}
          │                                                              ↑
          │                                                     Si > 3000ms = PROBLEMA
          │
          ├─ ═══ PASO 7B: EPPs ═══
          │  ├─ procesarYAsignarEpps()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 7B: EPPs procesados {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 7B: EPPs procesados {tiempo_ms: X}
          │
          ├─ ═══ PASO 8: CÁLCULO Y COMMIT ═══
          │  ├─ calcularCantidadTotalPrendas()
          │  ├─ calcularCantidadTotalEpps()
          │  ├─ $pedido->update(['cantidad_total' => X])
          │  ├─ DB::commit()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO] ✅ PASO 8: Cálculo {tiempo_ms: X}
+         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 8: Cálculo {tiempo_ms: X}
          │
          └─ ⏱️ END: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
                 tiempo_total_ms: X,
@@ -180,7 +180,7 @@ NAVEGADOR (FormData)
 
    │
    └─→ RESPUESTA JSON → NAVEGADOR {success: true, pedido_id: X}
-       Pedido guardado ✅
+       Pedido guardado 
 ```
 
 ---
@@ -199,7 +199,7 @@ NAVEGADOR (FormData)
 
 ### "Mis imágenes no se guardan"
 → En el FLUJO `POST /crear`, seguir PASO 7
-→ Buscar **[RESOLVER-IMAGENES] ✅ Extracción completada**
+→ Buscar **[RESOLVER-IMAGENES]  Extracción completada**
 → Si "diferencia > 0" → Problema en FormData
 
 ---
@@ -249,18 +249,18 @@ NAVEGADOR (FormData)
 └──────────────┬──────────────────────┘
                │
                ↓
-         ✅ RESUELTO
+          RESUELTO
 ```
 
 ---
 
-## 📊 Leyenda de Símbolos
+##  Leyenda de Símbolos
 
 | Símbolo | Significa |
 |---|---|
 | `⏱️` | Medición de tiempo |
-| `✅` | Operación completada |
-| `⚠️` | Atención, posible cuello de botella |
+| `` | Operación completada |
+| `` | Atención, posible cuello de botella |
 | `🔴` | Crítico, esperar aquí |
 | `→` | Flujo de ejecución |
 | `└─` | Final de rama |
@@ -283,7 +283,7 @@ INTERPRETACIÓN:
 4. Solución: Reducir resolución o usar Queue
 
 ANTES: 8000ms
-DESPUÉS: 1500ms (✅ 5.3x más rápido)
+DESPUÉS: 1500ms ( 5.3x más rápido)
 ```
 
 ---

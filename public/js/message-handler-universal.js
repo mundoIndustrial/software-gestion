@@ -2,9 +2,9 @@
  * 📡 HANDLER UNIVERSAL DE MENSAJES v2.0
  * 
  * Handler universal para mensajes y listeners asíncronos que funciona en cualquier navegador.
- * ✅ Elimina errores "message channel closed" y "Uncaught in promise".
+ *  Elimina errores "message channel closed" y "Uncaught in promise".
  * 
- * ✅ Características:
+ *  Características:
  * - Compatible con Chrome, Firefox, Safari, Edge, Opera
  * - Siempre llama a sendResponse en listeners async
  * - Manejo seguro de errores sin promesas rechazadas
@@ -195,7 +195,7 @@
     // ==================== LISTENERS PARA CHROME ====================
     /**
      * Configurar listener para Chrome Extension
-     * ⚠️ IMPORTANTE: Siempre llamar a sendResponse, incluso en error
+     *  IMPORTANTE: Siempre llamar a sendResponse, incluso en error
      */
     function setupChromeListener() {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -268,7 +268,7 @@
                 }
             })();
             
-            // ⚠️ SOLO devolver true si hay listeners registrados
+            //  SOLO devolver true si hay listeners registrados
             // Esto previene el error "message channel closed" cuando no hay handlers
             const hasListeners = handlerState.listeners.size > 0;
             if (hasListeners) {

@@ -783,4 +783,109 @@ class SupervisorAsesoresController extends Controller
 
         return response()->json($datos);
     }
+
+    /**
+     * Confirmar corrección de un pedido - Cambiar de DEVUELTO_A_ASESORA a PENDIENTE_SUPERVISOR
+     */
+    public function confirmarCorreccion($id)
+    {
+        \Log::info('[CONFIRMAR-CORRECCION] Iniciando confirmación de corrección', [
+            'pedido_id' => $id,
+            'usuario_id' => auth()->id(),
+            'usuario_nombre' => auth()->user()->name ?? 'Desconocido',
+        ]);
+
+        try {
+            $pedido = PedidoProduccion::findOrFail($id);
+
+            // Verificar que el pedido esté en estado DEVUELTO_A_ASESORA
+            if ($pedido->estado !== 'DEVUELTO_A_ASESORA') {
+                \Log::warning('[CONFIRMAR-CORRECCION] Intento de confirmar pedido que no está en DEVUELTO_A_ASESORA', [
+                    'pedido_id' => $id,
+                    'estado_actual' => $pedido->estado,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pedido no está en estado "Devuelto a Asesora". Estado actual: ' . $pedido->estado,
+                ], 422);
+            }
+
+            // Cambiar estado a PENDIENTE_SUPERVISOR
+            $pedido->estado = 'PENDIENTE_SUPERVISOR';
+            
+            // Limpiar datos de revisión
+            $pedido->motivo_revision = null;
+            $pedido->fecha_revision = null;
+            $pedido->usuario_revision = null;
+
+            $pedido->save();
+
+            // Refrescar el modelo para evitar problemas de concurrencia
+            $pedido->refresh();
+
+            // Registrar novedad
+            $separador = str_repeat('=', 50);
+            $novedad = "CONFIRMACIÓN DE CORRECCIÓN DE PEDIDO:\n";
+            $novedad .= $separador . "\n";
+            $novedad .= "Fecha de confirmación: " . \Carbon\Carbon::now('UTC')->format('Y-m-d H:i:s') . "\n";
+            $novedad .= "Usuario que confirma: " . (auth()->user()->name ?? 'Desconocido') . "\n";
+            $novedad .= "Rol: " . (auth()->user()->rol ?? 'Desconocido') . "\n";
+            $novedad .= "Estado anterior: DEVUELTO_A_ASESORA\n";
+            $novedad .= "Estado nuevo: PENDIENTE_SUPERVISOR\n";
+            $novedad .= $separador . "\n";
+            $novedad .= "El pedido ha sido corregido y está listo para supervisión.\n";
+
+            // Append a las novedades existentes
+            if ($pedido->novedades) {
+                $pedido->novedades = $pedido->novedades . "\n" . $novedad;
+            } else {
+                $pedido->novedades = $novedad;
+            }
+
+            $pedido->save();
+
+            // Log de éxito
+            \Log::info('[CONFIRMAR-CORRECCION] Corrección confirmada exitosamente', [
+                'pedido_id' => $id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'usuario_id' => auth()->id(),
+                'nuevo_estado' => $pedido->estado,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Corrección confirmada. El pedido ha sido enviado a supervisión.',
+                'data' => [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado' => $pedido->estado,
+                ],
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('[CONFIRMAR-CORRECCION] Pedido no encontrado', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado',
+            ], 404);
+
+        } catch (\Exception $e) {
+            \Log::error('[CONFIRMAR-CORRECCION] Error al confirmar corrección', [
+                'pedido_id' => $id,
+                'usuario_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar corrección: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

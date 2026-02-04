@@ -11,7 +11,7 @@
 // VERIFICAR DISPONIBILIDAD DE SCRIPTS
 // ============================================================================
 
-console.group('🔧 Inicializando Sistema de Origen Automático de Prendas');
+console.group(' Inicializando Sistema de Origen Automático de Prendas');
 
 // Verificar que los scripts necesarios estén disponibles
 const scriptsRequeridos = {
@@ -34,7 +34,7 @@ if (!todosDisponibles) {
             console.error(`   ❌ ${nombre} NO disponible`);
         });
 } else {
-    console.info('✅ Todos los scripts están disponibles');
+    console.info(' Todos los scripts están disponibles');
 }
 
 // ============================================================================
@@ -55,9 +55,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Mostrar estado
             CotizacionPrendaConfig.mostrarEstado();
             
-            console.info('✅ Tipos de cotización cargados');
+            console.info(' Tipos de cotización cargados');
         } else {
-            console.warn('⚠️ CotizacionPrendaConfig no disponible, omitiendo inicialización');
+            console.warn(' CotizacionPrendaConfig no disponible, omitiendo inicialización');
         }
 
         // PASO 2: Extender PrendaEditor si está disponible
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (typeof PrendaEditor !== 'undefined') {
             // La extensión ya está integrada en PrendaEditor
-            console.info('✅ PrendaEditor listo para origen automático');
+            console.info(' PrendaEditor listo para origen automático');
             
             // Mensaje para desarrolladores
             console.log('%c📝 NOTA PARA DESARROLLADORES:', 'color: blue; font-weight: bold;');
@@ -73,10 +73,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.log('Uso: new PrendaEditor({ cotizacionActual: cotizacion })');
             console.log('O después de crear instancia: prendaEditor.cargarPrendasDesdeCotizacion(prendas, cotizacion)');
         } else {
-            console.warn('⚠️ PrendaEditor no disponible');
+            console.warn(' PrendaEditor no disponible');
         }
 
-        console.info('✅ Sistema de Origen Automático inicializado correctamente');
+        console.info(' Sistema de Origen Automático inicializado correctamente');
 
     } catch (error) {
         console.error('❌ Error durante inicialización:', error);
@@ -109,7 +109,7 @@ window.crearPrendaEditorConOrigenAutomatico = function(options = {}) {
         cotizacionActual: options.cotizacionActual
     });
 
-    console.info('✅ PrendaEditor creado con éxito');
+    console.info(' PrendaEditor creado con éxito');
     return prendaEditor;
 };
 
@@ -157,9 +157,9 @@ window.obtenerEstadisticasPrendas = function() {
 window.debugOrigenAutomatico = function() {
     console.group('🐛 Debug - Origen Automático');
     
-    console.log('CotizacionPrendaHandler:', typeof CotizacionPrendaHandler !== 'undefined' ? '✅' : '❌');
-    console.log('CotizacionPrendaConfig:', typeof CotizacionPrendaConfig !== 'undefined' ? '✅' : '❌');
-    console.log('PrendaEditor:', typeof PrendaEditor !== 'undefined' ? '✅' : '❌');
+    console.log('CotizacionPrendaHandler:', typeof CotizacionPrendaHandler !== 'undefined' ? '' : '❌');
+    console.log('CotizacionPrendaConfig:', typeof CotizacionPrendaConfig !== 'undefined' ? '' : '❌');
+    console.log('PrendaEditor:', typeof PrendaEditor !== 'undefined' ? '' : '❌');
     
     if (typeof CotizacionPrendaHandler !== 'undefined') {
         console.log('Tipos registrados:', CotizacionPrendaHandler.obtenerTiposBodega());
@@ -171,7 +171,7 @@ window.debugOrigenAutomatico = function() {
     }
     
     if (typeof testearOrigenAutomatico === 'function') {
-        console.log('Tests disponibles: ✅');
+        console.log('Tests disponibles: ');
     }
     
     console.groupEnd();

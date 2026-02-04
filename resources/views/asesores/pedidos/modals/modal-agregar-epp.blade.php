@@ -266,7 +266,7 @@ function filtrarEPPBuscador(valor) {
 }
 
 function mostrarProductoEPP(producto) {
-    console.log('✅ [mostrarProductoEPP] Llamado con producto:', producto);
+    console.log(' [mostrarProductoEPP] Llamado con producto:', producto);
     productoSeleccionadoEPP = producto;
     
     // Mostrar tarjeta
@@ -274,14 +274,14 @@ function mostrarProductoEPP(producto) {
     console.log(' [mostrarProductoEPP] Elemento tarjeta encontrado:', !!tarjeta);
     if (tarjeta) {
         tarjeta.style.display = 'block';
-        console.log('✅ [mostrarProductoEPP] Tarjeta visible - display:', tarjeta.style.display);
+        console.log(' [mostrarProductoEPP] Tarjeta visible - display:', tarjeta.style.display);
     }
     
     const nombreElement = document.getElementById('nombreProductoEPP');
     console.log(' [mostrarProductoEPP] Elemento nombre encontrado:', !!nombreElement);
     if (nombreElement) {
         nombreElement.value = producto.nombre_completo || producto.nombre;
-        console.log('✅ [mostrarProductoEPP] Nombre actualizado:', nombreElement.value);
+        console.log(' [mostrarProductoEPP] Nombre actualizado:', nombreElement.value);
     }
 
     // Mostrar formulario
@@ -289,21 +289,21 @@ function mostrarProductoEPP(producto) {
     console.log(' [mostrarProductoEPP] Elemento formulario encontrado:', !!formulario);
     if (formulario) {
         formulario.style.display = 'grid';
-        console.log('✅ [mostrarProductoEPP] Formulario visible - display:', formulario.style.display);
+        console.log(' [mostrarProductoEPP] Formulario visible - display:', formulario.style.display);
     }
     
     const obsContainer = document.getElementById('observacionesContainer');
     console.log(' [mostrarProductoEPP] Elemento observaciones container encontrado:', !!obsContainer);
     if (obsContainer) {
         obsContainer.style.display = 'block';
-        console.log('✅ [mostrarProductoEPP] Observaciones container visible - display:', obsContainer.style.display);
+        console.log(' [mostrarProductoEPP] Observaciones container visible - display:', obsContainer.style.display);
     }
     
     const btnAgregar = document.getElementById('btnAgregarALista');
     console.log(' [mostrarProductoEPP] Botón agregar encontrado:', !!btnAgregar);
     if (btnAgregar) {
         btnAgregar.style.display = 'flex';
-        console.log('✅ [mostrarProductoEPP] Botón agregar visible - display:', btnAgregar.style.display);
+        console.log(' [mostrarProductoEPP] Botón agregar visible - display:', btnAgregar.style.display);
     }
 
     // Habilitar campos
@@ -313,19 +313,19 @@ function mostrarProductoEPP(producto) {
     
     if (cantidadInput) {
         cantidadInput.disabled = false;
-        console.log('✅ [mostrarProductoEPP] Campo cantidad habilitado');
+        console.log(' [mostrarProductoEPP] Campo cantidad habilitado');
     }
     if (obsInput) {
         obsInput.disabled = false;
-        console.log('✅ [mostrarProductoEPP] Campo observaciones habilitado');
+        console.log(' [mostrarProductoEPP] Campo observaciones habilitado');
     }
     if (btnAgregar) {
         btnAgregar.disabled = false;
-        console.log('✅ [mostrarProductoEPP] Botón habilitado');
+        console.log(' [mostrarProductoEPP] Botón habilitado');
     }
 
     actualizarEstilosCampos();
-    console.log('✅ [mostrarProductoEPP] Completado - todos los elementos configurados');
+    console.log(' [mostrarProductoEPP] Completado - todos los elementos configurados');
 }
 
 
@@ -354,7 +354,7 @@ function agregarEPPALista() {
         imagen: productoSeleccionadoEPP.imagen
     });
 
-    console.log('✅ EPP agregado a lista:', eppAgregadosList[eppAgregadosList.length - 1]);
+    console.log(' EPP agregado a lista:', eppAgregadosList[eppAgregadosList.length - 1]);
 
     // Actualizar tabla
     renderizarTablaEPP();
@@ -363,7 +363,7 @@ function agregarEPPALista() {
     if (eppAgregadosList.length > 0) {
         const listaContainer = document.getElementById('listaEPPAgregados');
         listaContainer.style.display = 'block';
-        console.log('✅ [agregarEPPALista] Lista mostrada. Display:', listaContainer.style.display);
+        console.log(' [agregarEPPALista] Lista mostrada. Display:', listaContainer.style.display);
         document.getElementById('btnFinalizarAgregarEPP').disabled = false;
     }
 
@@ -390,7 +390,7 @@ function agregarEPPALista() {
     // Enfocar buscador para agregar otro
     document.getElementById('inputBuscadorEPP').focus();
     
-    console.log('✅ Formulario limpiado. Listo para agregar otro EPP');
+    console.log(' Formulario limpiado. Listo para agregar otro EPP');
 }
 
 function renderizarTablaEPP() {
@@ -424,7 +424,7 @@ function renderizarTablaEPP() {
         tbody.appendChild(row);
     });
     
-    console.log('✅ [renderizarTablaEPP] Completado. Filas renderizadas:', eppAgregadosList.length);
+    console.log(' [renderizarTablaEPP] Completado. Filas renderizadas:', eppAgregadosList.length);
 }
 
 function eliminarEPPDeLista(idx) {
@@ -538,7 +538,7 @@ async function guardarNuevoEPP() {
         }
 
         const nuevoEPP = resultado.data || resultado.epp;
-        console.log('✅ [guardarNuevoEPP] EPP creado exitosamente:', nuevoEPP);
+        console.log(' [guardarNuevoEPP] EPP creado exitosamente:', nuevoEPP);
 
         // Mostrar el producto inmediatamente en el formulario
         mostrarProductoEPP({
@@ -737,9 +737,9 @@ function guardarEdicionEPP() {
         window.itemsPedido[index].nombre_epp = nombre;
         window.itemsPedido[index].cantidad = parseInt(cantidad);
         window.itemsPedido[index].observaciones = observaciones || '-';
-        console.log('✅ [guardarEdicionEPP] EPP actualizado en window.itemsPedido:', window.itemsPedido[index]);
+        console.log(' [guardarEdicionEPP] EPP actualizado en window.itemsPedido:', window.itemsPedido[index]);
     } else {
-        console.warn('⚠️ [guardarEdicionEPP] No se encontró EPP en window.itemsPedido para actualizar');
+        console.warn(' [guardarEdicionEPP] No se encontró EPP en window.itemsPedido para actualizar');
     }
 
     // Actualizar visualmente en la tarjeta
@@ -749,21 +749,21 @@ function guardarEdicionEPP() {
         const titulo = tarjeta.querySelector('h4');
         if (titulo) {
             titulo.textContent = nombre;
-            console.log('✅ [guardarEdicionEPP] Nombre actualizado en tarjeta a:', nombre);
+            console.log(' [guardarEdicionEPP] Nombre actualizado en tarjeta a:', nombre);
         }
         // Buscar los párrafos que contienen cantidad y observaciones
         const paragrafos = tarjeta.querySelectorAll('p');
         // El segundo párrafo de los detalles contiene la cantidad
         if (paragrafos.length > 1) {
             paragrafos[1].textContent = cantidad;  // Actualizar cantidad
-            console.log('✅ [guardarEdicionEPP] Cantidad actualizada en tarjeta de', cantidad);
+            console.log(' [guardarEdicionEPP] Cantidad actualizada en tarjeta de', cantidad);
         }
         if (paragrafos.length > 3) {
             paragrafos[3].textContent = observaciones || '-';  // Actualizar observaciones
-            console.log('✅ [guardarEdicionEPP] Observaciones actualizadas en tarjeta');
+            console.log(' [guardarEdicionEPP] Observaciones actualizadas en tarjeta');
         }
     } else {
-        console.warn('⚠️ [guardarEdicionEPP] Tarjeta no encontrada en DOM');
+        console.warn(' [guardarEdicionEPP] Tarjeta no encontrada en DOM');
     }
 
     // Limpiar referencia
@@ -776,17 +776,17 @@ function guardarEdicionEPP() {
     
     if (btnAgregar) {
         btnAgregar.style.display = 'none';
-        console.log('✅ [guardarEdicionEPP] Botón agregar ocultado');
+        console.log(' [guardarEdicionEPP] Botón agregar ocultado');
     }
     if (btnGuardarCambios) {
         btnGuardarCambios.style.display = 'none';
         btnGuardarCambios.disabled = true;
-        console.log('✅ [guardarEdicionEPP] Botón guardar cambios ocultado');
+        console.log(' [guardarEdicionEPP] Botón guardar cambios ocultado');
     }
     if (btnFinalizar) {
         btnFinalizar.style.display = 'flex';
         btnFinalizar.disabled = true;
-        console.log('✅ [guardarEdicionEPP] Botón finalizar restaurado');
+        console.log(' [guardarEdicionEPP] Botón finalizar restaurado');
     }
     
     // Cerrar modal
@@ -806,7 +806,7 @@ function guardarEdicionEPP() {
         }
     });
     
-    console.log('✅ [guardarEdicionEPP] Edición completada');
+    console.log(' [guardarEdicionEPP] Edición completada');
 }
 
 // ====================================
@@ -849,9 +849,9 @@ function finalizarAgregarEPP() {
                 epp.observaciones,         // observaciones
                 []                         // imagenes
             );
-            console.log(`✅ [finalizarAgregarEPP] EPP agregado a tarjeta: ${epp.nombre_completo}`);
+            console.log(` [finalizarAgregarEPP] EPP agregado a tarjeta: ${epp.nombre_completo}`);
         } else {
-            console.warn('⚠️ [finalizarAgregarEPP] eppItemManager no disponible');
+            console.warn(' [finalizarAgregarEPP] eppItemManager no disponible');
         }
         
         // También guardar en window.itemsPedido para que se envíe al servidor
@@ -866,16 +866,16 @@ function finalizarAgregarEPP() {
         window.itemsPedido.push(eppData);
         console.log(`📦 [finalizarAgregarEPP] EPP guardado en window.itemsPedido:`, epp);
         
-        // ✅ CRÍTICO: También registrar en gestionItemsUI para mantener sincronizado
+        //  CRÍTICO: También registrar en gestionItemsUI para mantener sincronizado
         if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
             window.gestionItemsUI.agregarEPPAlOrden(eppData);
-            console.log(`✅ [finalizarAgregarEPP] EPP registrado en gestionItemsUI:`, epp.nombre_completo);
+            console.log(` [finalizarAgregarEPP] EPP registrado en gestionItemsUI:`, epp.nombre_completo);
         } else {
-            console.warn('⚠️ [finalizarAgregarEPP] gestionItemsUI no disponible');
+            console.warn(' [finalizarAgregarEPP] gestionItemsUI no disponible');
         }
     });
     
-    console.log('✅ [finalizarAgregarEPP] Todos los EPP han sido agregados');
+    console.log(' [finalizarAgregarEPP] Todos los EPP han sido agregados');
     console.log('📋 [finalizarAgregarEPP] window.itemsPedido actual:', window.itemsPedido);
     cerrarModalAgregarEPP();
 }
@@ -895,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Exportar función globalmente para que sea accesible desde otros scripts
 window.editarEPPAgregado = editarEPPAgregado;
 window.guardarEdicionEPP = guardarEdicionEPP;
-console.log('✅ [modal-agregar-epp] Funciones exportadas a window:', {
+console.log(' [modal-agregar-epp] Funciones exportadas a window:', {
     editarEPPAgregado: typeof window.editarEPPAgregado,
     guardarEdicionEPP: typeof window.guardarEdicionEPP
 });

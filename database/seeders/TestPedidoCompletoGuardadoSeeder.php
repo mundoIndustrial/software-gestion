@@ -301,7 +301,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
             $errores = [];
             foreach ($verificacion as $tabla => $cantidad) {
                 $esperado = $this->cantidadEsperada($tabla);
-                $icono = $cantidad > 0 ? '✅' : '';
+                $icono = $cantidad > 0 ? '' : '';
                 $estado = $cantidad >= $esperado ? 'OK' : 'FALTA';
                 
                 echo "   {$icono} {$tabla}: {$cantidad} registros [{$estado}]\n";
@@ -315,7 +315,7 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
             echo "═══════════════════════════════════════════════════════\n";
             
             if (empty($errores)) {
-                echo "✅ ¡TEST EXITOSO! TODAS LAS TABLAS TIENEN DATOS\n";
+                echo " ¡TEST EXITOSO! TODAS LAS TABLAS TIENEN DATOS\n";
                 echo "═══════════════════════════════════════════════════════\n\n";
                 echo "📦 Pedido de prueba creado: {$pedido->numero_pedido}\n";
                 echo "🔍 Ejecuta para ver detalles:\n";

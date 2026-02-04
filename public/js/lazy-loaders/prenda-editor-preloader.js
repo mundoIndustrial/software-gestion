@@ -41,7 +41,7 @@ window.PrendaEditorPreloader = (function() {
             const checkLoader = setInterval(() => {
                 if (window.PrendaEditorLoader && window.PrendaEditorLoader.load) {
                     clearInterval(checkLoader);
-                    console.log('[PrendaEditorPreloader] ✅ PrendaEditorLoader detectado, iniciando precarguía');
+                    console.log('[PrendaEditorPreloader]  PrendaEditorLoader detectado, iniciando precarguía');
                     initPreload();
                 }
             }, 100);
@@ -50,7 +50,7 @@ window.PrendaEditorPreloader = (function() {
             setTimeout(() => {
                 clearInterval(checkLoader);
                 if (!window.PrendaEditorLoader) {
-                    console.warn('[PrendaEditorPreloader] ⚠️ PrendaEditorLoader no disponible después de 10s, intentando igual');
+                    console.warn('[PrendaEditorPreloader]  PrendaEditorLoader no disponible después de 10s, intentando igual');
                 }
                 initPreload();
             }, 10000);
@@ -97,7 +97,7 @@ window.PrendaEditorPreloader = (function() {
 
         // Verificar que el loader está disponible
         if (!window.PrendaEditorLoader || !window.PrendaEditorLoader.load) {
-            console.warn('[PrendaEditorPreloader] ⚠️ PrendaEditorLoader aún no disponible, reintentando...');
+            console.warn('[PrendaEditorPreloader]  PrendaEditorLoader aún no disponible, reintentando...');
             setTimeout(performPreload, 500);
             return;
         }
@@ -123,7 +123,7 @@ window.PrendaEditorPreloader = (function() {
                 
                 // Si es un error de red, no mostrar como error crítico
                 if (error.message && error.message.includes('Failed to load')) {
-                    console.warn('[PrendaEditorPreloader] ⚠️ Error de red en precarguía (se reintentará al usar):', error.message);
+                    console.warn('[PrendaEditorPreloader]  Error de red en precarguía (se reintentará al usar):', error.message);
                     console.info('[PrendaEditorPreloader] 💡 La precarga falló pero los módulos se cargarán bajo demanda');
                 } else {
                     console.error('[PrendaEditorPreloader] ❌ Error en precarguía:', error.message);

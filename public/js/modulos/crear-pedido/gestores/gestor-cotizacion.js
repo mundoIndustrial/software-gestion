@@ -128,7 +128,7 @@ class GestorCotizacion {
      * @param {string} cliente - Nombre del cliente
      * @param {string} asesora - Nombre de la asesora
      * @param {string} formaPago - Forma de pago
-     * @param {string} tipoCotizacion - Tipo de cotización  // ✅ Agregar parámetro tipo
+     * @param {string} tipoCotizacion - Tipo de cotización  //  Agregar parámetro tipo
      */
     seleccionar(id, numero, cliente, asesora, formaPago, tipoCotizacion) {
         this.cotizacionSeleccionada = {
@@ -137,7 +137,7 @@ class GestorCotizacion {
             cliente,
             asesora,
             formaPago,
-            tipoCotizacion  // ✅ Guardar tipo
+            tipoCotizacion  //  Guardar tipo
         };
 
         // Actualizar campos del formulario
@@ -164,10 +164,10 @@ class GestorCotizacion {
         if (this.seleccionadoDiv) {
             const textDiv = this.seleccionadoDiv.querySelector('#cotizacion_selected_text_editable');
             if (textDiv) {
-                textDiv.textContent = `${numero} - ${cliente} (${asesora}) - Tipo: ${tipoCotizacion}`;  // ✅ Incluir tipo
+                textDiv.textContent = `${numero} - ${cliente} (${asesora}) - Tipo: ${tipoCotizacion}`;  //  Incluir tipo
             }
             
-            // ✅ Actualizar el campo de tipo de cotización
+            //  Actualizar el campo de tipo de cotización
             const tipoDiv = this.seleccionadoDiv.querySelector('#cotizacion_tipo_text_editable');
             if (tipoDiv) {
                 tipoDiv.textContent = tipoCotizacion;

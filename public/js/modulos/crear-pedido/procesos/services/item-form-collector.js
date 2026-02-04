@@ -22,7 +22,7 @@ class ItemFormCollector {
         // GestionItemsUI ya incluye tanto prendas como EPPs en orden correcto
         let items = [];
         
-        // ✅ Obtener todos los items (prendas + EPPs) en orden desde GestionItemsUI
+        //  Obtener todos los items (prendas + EPPs) en orden desde GestionItemsUI
         if (window.gestionItemsUI && window.gestionItemsUI.obtenerItemsOrdenados) {
             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
             items = items.concat(itemsOrdenados);
@@ -33,7 +33,7 @@ class ItemFormCollector {
             });
         }
         
-        // ✅ IMPORTANTE: NO agregar EPPs nuevamente desde window.itemsPedido
+        //  IMPORTANTE: NO agregar EPPs nuevamente desde window.itemsPedido
         // Ya están incluidos en gestionItemsUI.obtenerItemsOrdenados()
         // Esto evita la duplicación de EPPs
         

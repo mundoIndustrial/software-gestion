@@ -77,7 +77,7 @@
                 // Función para renderizar la factura
                 function renderizarFacturaEditableEnPagina() {
                     if (typeof generarHTMLFactura === 'function' && window.pedidoEdicionData?.pedido?.prendas) {
-                        console.log('✅ [FACTURA-EDITABLE] Condiciones cumplidas, renderizando...');
+                        console.log(' [FACTURA-EDITABLE] Condiciones cumplidas, renderizando...');
                         
                         const datos = {
                             numero_pedido: window.pedidoEdicionData.pedido.numero_pedido || window.pedidoEdicionId,
@@ -100,7 +100,7 @@
                             const contenedor = document.getElementById('factura-container-editable');
                             if (contenedor) {
                                 contenedor.innerHTML = htmlFactura;
-                                console.log('✅✅ [FACTURA-EDITABLE] FACTURA RENDERIZADA EXITOSAMENTE');
+                                console.log(' [FACTURA-EDITABLE] FACTURA RENDERIZADA EXITOSAMENTE');
                                 return true;
                             } else {
                                 console.log('❌ [FACTURA-EDITABLE] Contenedor no encontrado');

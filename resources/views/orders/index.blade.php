@@ -513,11 +513,11 @@
                     
                     // Convertir objeto Eloquent a objeto simple si es necesario
                     let prendaData = prenda.toJSON ? prenda.toJSON() : prenda;
-                    console.log(`[abrirModalCeldaConFormato] ✅ Después toJSON:`, prendaData);
+                    console.log(`[abrirModalCeldaConFormato]  Después toJSON:`, prendaData);
                     
                     // NORMALIZAR datos: convertir objetos a strings
                     prendaData = normalizarPrendaData(prendaData);
-                    console.log(`[abrirModalCeldaConFormato] ✅ Después normalizar:`, prendaData);
+                    console.log(`[abrirModalCeldaConFormato]  Después normalizar:`, prendaData);
                     console.log(`[abrirModalCeldaConFormato] Campos principales: nombre="${prendaData.nombre_prenda}", tela="${prendaData.tela}", color="${prendaData.color}", manga="${prendaData.manga}"`);
                     
                     // Generar HTML formateado como en el recibo
@@ -532,7 +532,7 @@
                             prendaHtml = Formatters.construirDescripcionCostura(prendaData);
                         } else {
                             // Fallback si Formatters no disponible - generar HTML simple
-                            console.log(`[abrirModalCeldaConFormato] ⚠️ Formatters no disponible, usando fallback`);
+                            console.log(`[abrirModalCeldaConFormato]  Formatters no disponible, usando fallback`);
                             prendaHtml = generarDescripcionSimple(prendaData);
                         }
                     } catch (e) {
@@ -549,7 +549,7 @@
                 });
             }
             
-            console.log('[abrirModalCeldaConFormato] ✅ HTML FINAL A MOSTRAR:', htmlContenido);
+            console.log('[abrirModalCeldaConFormato]  HTML FINAL A MOSTRAR:', htmlContenido);
             mostrarModalCeldaFormateado(titulo, htmlContenido);
         }
         
@@ -563,7 +563,7 @@
             // Título
             if (prenda.nombre_prenda) {
                 html += `<strong style="font-size: 13.4px;">PRENDA: ${prenda.nombre_prenda.toUpperCase()}</strong><br>`;
-                console.log('[generarDescripcionSimple] ✅ Nombre agregado');
+                console.log('[generarDescripcionSimple]  Nombre agregado');
             }
             
             // Atributos básicos
@@ -571,15 +571,15 @@
                 let attrs = [];
                 if (prenda.tela) {
                     attrs.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Tela:', prenda.tela);
+                    console.log('[generarDescripcionSimple]  Tela:', prenda.tela);
                 }
                 if (prenda.color) {
                     attrs.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Color:', prenda.color);
+                    console.log('[generarDescripcionSimple]  Color:', prenda.color);
                 }
                 if (prenda.manga) {
                     attrs.push(`<strong>MANGA:</strong> ${prenda.manga.toUpperCase()}`);
-                    console.log('[generarDescripcionSimple] ✅ Manga:', prenda.manga);
+                    console.log('[generarDescripcionSimple]  Manga:', prenda.manga);
                 }
                 html += attrs.join(' | ') + '<br>';
             }
@@ -587,7 +587,7 @@
             // Broche si existe
             if (prenda.broche) {
                 html += `<strong>BROCHE:</strong> ${prenda.broche}<br>`;
-                console.log('[generarDescripcionSimple] ✅ Broche:', prenda.broche);
+                console.log('[generarDescripcionSimple]  Broche:', prenda.broche);
             }
             
             // Descripción - Limpiar basura del inicio
@@ -609,13 +609,13 @@
                 
                 if (desc.trim()) {
                     html += desc + '<br>';
-                    console.log('[generarDescripcionSimple] ✅ Descripción agregada (después de limpiar)');
+                    console.log('[generarDescripcionSimple]  Descripción agregada (después de limpiar)');
                 }
             }
             
             // Tallas
             if (prenda.tallas && prenda.tallas.length > 0) {
-                console.log('[generarDescripcionSimple] 📊 Tallas encontradas:', prenda.tallas);
+                console.log('[generarDescripcionSimple]  Tallas encontradas:', prenda.tallas);
                 html += `<strong>TALLAS</strong><br>`;
                 const tallasPorGenero = {};
                 prenda.tallas.forEach(t => {
@@ -628,10 +628,10 @@
                 
                 for (let genero in tallasPorGenero) {
                     html += `${genero}: ${tallasPorGenero[genero].join(', ')}<br>`;
-                    console.log('[generarDescripcionSimple] ✅ Tallas por género - ' + genero);
+                    console.log('[generarDescripcionSimple]  Tallas por género - ' + genero);
                 }
             } else {
-                console.log('[generarDescripcionSimple] ⚠️ No hay tallas');
+                console.log('[generarDescripcionSimple]  No hay tallas');
             }
             
             console.log('[generarDescripcionSimple] 📄 OUTPUT HTML:', html);
@@ -1181,7 +1181,7 @@
                 
                 // Verificar si la función togglePrendaAccordion existe
                 if (typeof window.togglePrendaAccordion === 'function') {
-                    console.log(`[GLOBAL-CLICK] ✅ togglePrendaAccordion está disponible`);
+                    console.log(`[GLOBAL-CLICK]  togglePrendaAccordion está disponible`);
                 } else {
                     console.error(`[GLOBAL-CLICK] ❌ togglePrendaAccordion NO está disponible`);
                 }

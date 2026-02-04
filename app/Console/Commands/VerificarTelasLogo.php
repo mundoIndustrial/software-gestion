@@ -18,7 +18,7 @@ class VerificarTelasLogo extends Command
 
         $telas = LogoCotizacionTelasPrenda::all();
 
-        $this->info('📊 Total de registros: ' . $telas->count());
+        $this->info(' Total de registros: ' . $telas->count());
         $this->newLine();
 
         if ($telas->count() > 0) {
@@ -36,9 +36,9 @@ class VerificarTelasLogo extends Command
                 $this->line("    Img (RAW): {$tela->img}");
 
                 if (strpos($tela->img, '/storage/') === 0) {
-                    $this->line("    ✅ RUTA ABSOLUTA (comienza con /storage/)");
+                    $this->line("     RUTA ABSOLUTA (comienza con /storage/)");
                 } elseif (strpos($tela->img, 'storage/') === 0) {
-                    $this->line("    ⚠️ RUTA RELATIVA (comienza con storage/)");
+                    $this->line("     RUTA RELATIVA (comienza con storage/)");
                     $this->line("    → Debería ser: /{$tela->img}");
                 } else {
                     $this->line("    ❌ RUTA NO ESTÁNDAR");
@@ -56,9 +56,9 @@ class VerificarTelasLogo extends Command
                 $this->line("  img: {$row->img}");
             }
         } else {
-            $this->warn('⚠️ No hay registros en la tabla');
+            $this->warn(' No hay registros en la tabla');
         }
 
-        $this->info('✅ Script completado');
+        $this->info(' Script completado');
     }
 }

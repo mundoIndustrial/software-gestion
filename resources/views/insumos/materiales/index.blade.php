@@ -2576,7 +2576,7 @@
                 // Mostrar mensaje mejorado con información de procesos
                 let mensaje = `Pedido aprobado correctamente. Estado: En Ejecución, Área: Corte`;
                 if (data.procesos_creados > 0) {
-                    mensaje += `\n✅ Se crearon ${data.procesos_creados} procesos automáticamente`;
+                    mensaje += `\n Se crearon ${data.procesos_creados} procesos automáticamente`;
                     
                     // Mostrar detalles de procesos si están disponibles
                     if (data.detalles_procesos && data.detalles_procesos.length > 0) {

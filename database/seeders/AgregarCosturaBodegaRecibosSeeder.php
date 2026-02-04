@@ -62,7 +62,7 @@ class AgregarCosturaBodegaRecibosSeeder extends Seeder
             }
         }
 
-        \Log::info('[AgregarCosturaBodegaRecibosSeeder] ✅ Seeder completado', [
+        \Log::info('[AgregarCosturaBodegaRecibosSeeder]  Seeder completado', [
             'total_pedidos' => $pedidos->count(),
             'agregados' => $agregados,
             'ya_existentes' => $yaExisten

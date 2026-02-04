@@ -28,12 +28,12 @@ Si `supervisor_pedidos` está configurado para heredar de `asesor`:
 2. Se obtienen roles del usuario (ej: ['supervisor_pedidos'])
 3. Se aplica jerarquía → Roles efectivos: ['supervisor_pedidos', 'asesor']
 4. Se verifica contra rol requerido (asesor)
-5. ✅ Acceso permitido (porque tiene 'asesor' heredado)
+5.  Acceso permitido (porque tiene 'asesor' heredado)
 ```
 
 ---
 
-## 🔧 Cómo Configurar la Jerarquía
+##  Cómo Configurar la Jerarquía
 
 ### Archivo: `config/role-hierarchy.php`
 
@@ -102,18 +102,18 @@ tail -f storage/logs/laravel.log
 ```
 
 Buscar líneas con:
-- `[MIDDLEWARE-CHECKROLE] 📊 JERARQUÍA DE ROLES APLICADA` ← Herencia detectada
+- `[MIDDLEWARE-CHECKROLE]  JERARQUÍA DE ROLES APLICADA` ← Herencia detectada
 - `roles_heredados` ← Qué roles se heredaron
 - `roles_efectivos_totales` ← Todos los roles con los que se verifica
 
 ---
 
-## 📊 Ejemplo de Logs
+##  Ejemplo de Logs
 
 ### Escenario: Usuario `supervisor_pedidos` accede a ruta de `asesor`
 
 ```
-[2026-01-28 14:35:00] local.INFO: [MIDDLEWARE-CHECKROLE] ⚠️ PARÁMETRO ROLES RECIBIDO 
+[2026-01-28 14:35:00] local.INFO: [MIDDLEWARE-CHECKROLE]  PARÁMETRO ROLES RECIBIDO 
 {
   "parametro_roles_string":"asesor",
   "roles_parseados":["asesor"],
@@ -148,7 +148,7 @@ Buscar líneas con:
 
 ⭐ NUEVO LOG - JERARQUÍA APLICADA:
 
-[2026-01-28 14:35:00] local.INFO: [MIDDLEWARE-CHECKROLE] 📊 JERARQUÍA DE ROLES APLICADA
+[2026-01-28 14:35:00] local.INFO: [MIDDLEWARE-CHECKROLE]  JERARQUÍA DE ROLES APLICADA
 {
   "usuario_id":93,
   "roles_originales":["supervisor_pedidos"],
@@ -163,7 +163,7 @@ Buscar líneas con:
   "usuario_tiene_rol":true
 }
 
-[2026-01-28 14:35:00] local.INFO: ✅ [MIDDLEWARE-CHECKROLE] ACCESO PERMITIDO - Autorización exitosa
+[2026-01-28 14:35:00] local.INFO:  [MIDDLEWARE-CHECKROLE] ACCESO PERMITIDO - Autorización exitosa
 ```
 
 **¡Acceso permitido! 🎉**
@@ -172,19 +172,19 @@ Buscar líneas con:
 
 ##  Garantías de Seguridad
 
-✅ **No elimina código existente**
+ **No elimina código existente**
 - El middleware original funciona exactamente igual
 - Solo se extiende la lógica
 
-✅ **Compatible hacia atrás**
+ **Compatible hacia atrás**
 - Si no hay jerarquía configurada, funciona como antes
 - Las rutas no se modifican
 
-✅ **Escalable**
+ **Escalable**
 - Agregar nuevas jerarquías es solo editar `config/role-hierarchy.php`
 - Soporta jerarquías profundas y múltiples
 
-✅ **Auditable**
+ **Auditable**
 - Logs detallados muestran qué roles se heredaron y cuándo
 - Fácil debugging
 
@@ -201,7 +201,7 @@ Buscar líneas con:
 Route::get('reportes-asesor', ...)->middleware('role:asesor');
 
 // Usuario supervisor_pedidos:
-// ✅ Accede porque hereda permisos de asesor
+//  Accede porque hereda permisos de asesor
 ```
 
 ### Caso 2: Gerente ve todo del departamento
@@ -210,7 +210,7 @@ Route::get('reportes-asesor', ...)->middleware('role:asesor');
 'gerente' => ['supervisor_pedidos', 'asesor', 'operador'],
 
 // Cualquier ruta que pida supervisor_pedidos, asesor u operador:
-// ✅ Gerente accede automáticamente
+//  Gerente accede automáticamente
 ```
 
 ### Caso 3: Admin accede a todo
@@ -222,7 +222,7 @@ Route::get('reportes-asesor', ...)->middleware('role:asesor');
 
 ---
 
-## ⚠️ Limitaciones Conocidas
+##  Limitaciones Conocidas
 
 - Las jerarquías **no deben tener ciclos** (asesor → supervisor → asesor)
   - El servicio previene loops infinitos, pero la configuración debe ser lógica
@@ -231,7 +231,7 @@ Route::get('reportes-asesor', ...)->middleware('role:asesor');
 
 ---
 
-## 🔧 Cómo Escalar en el Futuro
+##  Cómo Escalar en el Futuro
 
 ### Para agregar nuevos roles heredados:
 

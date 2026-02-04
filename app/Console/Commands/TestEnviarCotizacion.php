@@ -117,7 +117,7 @@ class TestEnviarCotizacion extends Command
         }
         
         // 3. VERIFICAR NÚMEROS
-        $this->info("\n🔢 VERIFICACIÓN DE NÚMEROS:");
+        $this->info("\n VERIFICACIÓN DE NÚMEROS:");
         $cotizaciones = \App\Models\Cotizacion::whereNotNull('numero_cotizacion')
             ->orderBy('numero_cotizacion', 'desc')
             ->limit(5)

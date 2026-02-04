@@ -872,7 +872,7 @@ try {
     }
     
     const resultado = await response.json();
-    console.log('✅ Pedido creado:', resultado.pedido_id);
+    console.log(' Pedido creado:', resultado.pedido_id);
     
 } catch (error) {
     console.error(' Error:', error.message);

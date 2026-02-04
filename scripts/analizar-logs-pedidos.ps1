@@ -1,4 +1,4 @@
-# 📊 Script para Analizar Logs de Creación de Pedidos
+#  Script para Analizar Logs de Creación de Pedidos
 # Uso: .\scripts\analizar-logs-pedidos.ps1
 
 param(
@@ -8,7 +8,7 @@ param(
 )
 
 Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║     📊 ANALIZADOR DE LOGS - CREACIÓN DE PEDIDOS            ║" -ForegroundColor Cyan
+Write-Host "║      ANALIZADOR DE LOGS - CREACIÓN DE PEDIDOS            ║" -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 
 # Verificar que el archivo existe
@@ -73,7 +73,7 @@ function Show-LogEntry {
     # Mostrar resumen si existe
     $resumen = Extract-Resumen $linea
     if ($resumen) {
-        Write-Host "    📊 $resumen" -ForegroundColor White
+        Write-Host "     $resumen" -ForegroundColor White
     }
 }
 
@@ -88,7 +88,7 @@ if ($Operacion -eq "carga-inicial" -or $Operacion -eq "todas") {
             Show-LogEntry $linea
         }
     } else {
-        Write-Host "  ℹ️ No hay entradas" -ForegroundColor Gray
+        Write-Host "   No hay entradas" -ForegroundColor Gray
     }
 }
 
@@ -126,7 +126,7 @@ if ($Operacion -eq "creacion-pedido" -or $Operacion -eq "todas") {
             }
         }
     } else {
-        Write-Host "  ℹ️ No hay entradas" -ForegroundColor Gray
+        Write-Host "   No hay entradas" -ForegroundColor Gray
     }
 }
 
@@ -139,14 +139,14 @@ if ($Operacion -eq "imagenes" -or $Operacion -eq "todas") {
     if ($imagenes) {
         $contador = 0
         foreach ($linea in $imagenes) {
-            if ($linea -match '✅ Extracción completada|✨ MAPEO COMPLETADO|✅ Imagen guardada') {
+            if ($linea -match ' Extracción completada|✨ MAPEO COMPLETADO| Imagen guardada') {
                 $contador++
                 Write-Host "    $contador. " -ForegroundColor White -NoNewline
                 Show-LogEntry $linea
             }
         }
     } else {
-        Write-Host "  ℹ️ No hay entradas" -ForegroundColor Gray
+        Write-Host "   No hay entradas" -ForegroundColor Gray
     }
 }
 
@@ -168,22 +168,22 @@ if ($tiemposTotal.Count -gt 0) {
     $minimo = [math]::Round(($tiemposTotal | Measure-Object -Minimum).Minimum, 2)
     $maximo = [math]::Round(($tiemposTotal | Measure-Object -Maximum).Maximum, 2)
     
-    Write-Host "  📊 Operaciones registradas: $($tiemposTotal.Count)" -ForegroundColor White
+    Write-Host "   Operaciones registradas: $($tiemposTotal.Count)" -ForegroundColor White
     Write-Host "  ⏱️  Tiempo promedio: $promedio ms" -ForegroundColor White
     Write-Host "  🟢 Tiempo mínimo: $minimo ms" -ForegroundColor Green
     Write-Host "  🔴 Tiempo máximo: $maximo ms" -ForegroundColor Red
     
     if ($maximo -gt 5000) {
-        Write-Host "`n  ⚠️  ALERTA: Hay operaciones tardando > 5 segundos" -ForegroundColor Red
+        Write-Host "`n    ALERTA: Hay operaciones tardando > 5 segundos" -ForegroundColor Red
     }
     elseif ($promedio -gt 3000) {
-        Write-Host "`n  ⚠️  ATENCIÓN: Promedio > 3 segundos, considerar optimizar" -ForegroundColor Yellow
+        Write-Host "`n    ATENCIÓN: Promedio > 3 segundos, considerar optimizar" -ForegroundColor Yellow
     }
     else {
-        Write-Host "`n  ✅ Tiempos aceptables" -ForegroundColor Green
+        Write-Host "`n   Tiempos aceptables" -ForegroundColor Green
     }
 } else {
-    Write-Host "  ℹ️ No hay datos de tiempo" -ForegroundColor Gray
+    Write-Host "   No hay datos de tiempo" -ForegroundColor Gray
 }
 
 Write-Host "`n" -ForegroundColor Cyan

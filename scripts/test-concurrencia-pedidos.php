@@ -34,7 +34,7 @@ class ConcurrenciaTest
         $this->numeroRondas = $numeroRondas;
         
         echo "🚀 Iniciando prueba de concurrencia\n";
-        echo "📊 Usuarios: {$this->numeroUsuarios}\n";
+        echo " Usuarios: {$this->numeroUsuarios}\n";
         echo "🔄 Rondas: {$this->numeroRondas}\n";
         echo "⏰ " . date('Y-m-d H:i:s') . "\n\n";
     }
@@ -107,7 +107,7 @@ class ConcurrenciaTest
         
         $this->errores = array_merge($this->errores, $erroresRonda);
         
-        echo "   ✅ Pedidos creados: " . count($resultadosRonda) . "\n";
+        echo "    Pedidos creados: " . count($resultadosRonda) . "\n";
         echo "   ❌ Errores: " . count($erroresRonda) . "\n";
         echo "   ⏱️  Duración: " . round($duracion, 3) . "s\n\n";
         
@@ -154,7 +154,7 @@ class ConcurrenciaTest
     private function verificarIntegridad(array $pedidos, int $ronda): void
     {
         if (empty($pedidos)) {
-            echo "   ⚠️  Sin pedidos para verificar\n";
+            echo "     Sin pedidos para verificar\n";
             return;
         }
         
@@ -170,7 +170,7 @@ class ConcurrenciaTest
                 'duplicados' => array_diff_assoc($ids, $idsUnicos)
             ]);
         } else {
-            echo "   ✅ IDs únicos verificadas\n";
+            echo "    IDs únicos verificadas\n";
         }
         
         // Verificar que numero_pedido sea null
@@ -178,7 +178,7 @@ class ConcurrenciaTest
         if (!empty($numerosNoNulos)) {
             echo "   🚨 ¡NÚMEROS DE PEDIDO NO DEBEN SER NULOS!\n";
         } else {
-            echo "   ✅ números de pedido correctos (null)\n";
+            echo "    números de pedido correctos (null)\n";
         }
         
         // Verificar secuencia de IDs
@@ -192,13 +192,13 @@ class ConcurrenciaTest
                 'recibido' => $ids
             ]);
         } else {
-            echo "   ✅ Secuencia de IDs correcta\n";
+            echo "    Secuencia de IDs correcta\n";
         }
     }
     
     private function mostrarResultados(): void
     {
-        echo "\n📊 RESULTADOS FINALES\n";
+        echo "\n RESULTADOS FINALES\n";
         echo "==================\n";
         
         $totalPedidos = 0;
@@ -221,7 +221,7 @@ class ConcurrenciaTest
         echo "Promedio por pedido: " . round($totalDuracion / max($totalPedidos, 1), 3) . "s\n";
         
         if ($totalErrores === 0) {
-            echo "\n✅ PRUEBA EXITOSA - Sin errores de concurrencia\n";
+            echo "\n PRUEBA EXITOSA - Sin errores de concurrencia\n";
         } else {
             echo "\n❌ PRUEBA CON ERRORES - Revisar logs\n";
             foreach ($this->errores as $error) {
@@ -274,7 +274,7 @@ class ConcurrenciaTest
                 echo "  ID {$dup->id}: {$dup->count} veces\n";
             }
         } else {
-            echo "✅ Sin IDs duplicados en BD\n";
+            echo " Sin IDs duplicados en BD\n";
         }
     }
 }

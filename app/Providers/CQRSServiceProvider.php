@@ -137,7 +137,7 @@ class CQRSServiceProvider extends ServiceProvider
         // Marcar como booted
         $this->app->instance('cqrs.booted', true);
 
-        \Illuminate\Support\Facades\Log::info('✅ [CQRSServiceProvider] CQRS providers registrados');
+        \Illuminate\Support\Facades\Log::info(' [CQRSServiceProvider] CQRS providers registrados');
     }
 
     /**

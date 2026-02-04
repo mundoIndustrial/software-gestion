@@ -822,7 +822,13 @@ class PedidosProduccionController
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
                 'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
+                'imagenes_a_eliminar' => 'nullable|json', // IDs de imágenes a eliminar
             ]);
+
+            // Decodificar imagenes_a_eliminar si viene como JSON string
+            if ($request->has('imagenes_a_eliminar') && is_string($request->input('imagenes_a_eliminar'))) {
+                $request->merge(['imagenes_a_eliminar' => json_decode($request->input('imagenes_a_eliminar'), true)]);
+            }
 
             // Procesar imágenes de prenda (convertir a WebP)
             $imagenesGuardadas = [];
@@ -895,6 +901,7 @@ class PedidosProduccionController
                 'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
                 'imagenes_procesadas' => count($imagenesGuardadas),
                 'imagenes_existentes' => count($imagenesExistentes),
+                'imagenes_a_eliminar' => $request->input('imagenes_a_eliminar') ? count((array)$request->input('imagenes_a_eliminar')) : 0,
                 'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
             
@@ -1356,7 +1363,7 @@ class PedidosProduccionController
             Log::info('📡 [PRENDA-DATOS] Llamando al servicio...');
             $prendaData = $service->obtenerPrendaConProcesos((int)$pedidoId, (int)$prendaId);
 
-            Log::info('✅ [PRENDA-DATOS-RECIBIDOS] Datos obtenidos del servicio', [
+            Log::info(' [PRENDA-DATOS-RECIBIDOS] Datos obtenidos del servicio', [
                 'procesos_count' => count($prendaData['procesos'] ?? []),
                 'tallas_dama_count' => count($prendaData['tallas_dama'] ?? []),
                 'tallas_caballero_count' => count($prendaData['tallas_caballero'] ?? []),

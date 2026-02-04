@@ -19,7 +19,7 @@
         
         if (!window.gestorPedidoSinCotizacion) {
             window.gestorPedidoSinCotizacion = new GestorPrendaSinCotizacion();
-            console.log('[init-gestor-sin-cotizacion.js] ✅ GestorPedidoSinCotizacion instanciado');
+            console.log('[init-gestor-sin-cotizacion.js]  GestorPedidoSinCotizacion instanciado');
         }
     };
 

@@ -48,12 +48,12 @@ class GestionItemsUI {
         this.ordenItems.forEach(({ tipo, index }) => {
             if (tipo === 'prenda' && this.prendas[index]) {
                 itemsOrdenados.push(this.prendas[index]);
-                console.log('[gestionItemsUI] ✅ Agregado PRENDA index:', index);
+                console.log('[gestionItemsUI]  Agregado PRENDA index:', index);
             } else if (tipo === 'epp' && this.epps[index]) {
                 itemsOrdenados.push(this.epps[index]);
-                console.log('[gestionItemsUI] ✅ Agregado EPP index:', index);
+                console.log('[gestionItemsUI]  Agregado EPP index:', index);
             } else {
-                console.log('[gestionItemsUI] ⚠️ ITEM NO ENCONTRADO - tipo:', tipo, 'index:', index);
+                console.log('[gestionItemsUI]  ITEM NO ENCONTRADO - tipo:', tipo, 'index:', index);
             }
         });
         
@@ -157,7 +157,7 @@ class GestionItemsUI {
             }
             const resultado = await this.apiService.obtenerItems();
             this.items = resultado.items;
-            // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
+            //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
             const itemsOrdenados = this.obtenerItemsOrdenados();
             await this.renderer.actualizar(itemsOrdenados);
         } catch (error) {
@@ -177,7 +177,7 @@ class GestionItemsUI {
             const resultado = await this.apiService.agregarItem(itemData);
             if (resultado.success) {
                 this.items = resultado.items;
-                // ✅ Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
+                //  Usar obtenerItemsOrdenados() para preservar prendas y EPPs en orden
                 const itemsOrdenados = this.obtenerItemsOrdenados();
                 await this.renderer.actualizar(itemsOrdenados);
                 this.notificationService.exito('Ítem agregado correctamente');
@@ -248,10 +248,10 @@ class GestionItemsUI {
                 // Eliminar de los arrays correspondientes
                 if (tipoBuscado === 'prenda' && indiceBuscado >= 0) {
                     this.prendas.splice(indiceBuscado, 1);
-                    console.log(`[eliminarItem] ✅ Prenda eliminada del array. Quedan: ${this.prendas.length}`);
+                    console.log(`[eliminarItem]  Prenda eliminada del array. Quedan: ${this.prendas.length}`);
                 } else if (tipoBuscado === 'epp' && indiceBuscado >= 0) {
                     this.epps.splice(indiceBuscado, 1);
-                    console.log(`[eliminarItem] ✅ EPP eliminado del array. Quedan: ${this.epps.length}`);
+                    console.log(`[eliminarItem]  EPP eliminado del array. Quedan: ${this.epps.length}`);
                 }
                 
                 // Eliminar de ordenItems por posición
@@ -269,7 +269,7 @@ class GestionItemsUI {
                     }
                 });
                 
-                console.log(`[eliminarItem] ✅ ordenItems actualizado:`, JSON.stringify(this.ordenItems));
+                console.log(`[eliminarItem]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
                 
                 // 🔄 SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
                 if (tipoBuscado === 'prenda' && window.gestorPrendaSinCotizacion?.eliminar) {
@@ -296,7 +296,18 @@ class GestionItemsUI {
     }
 
     abrirModalAgregarPrendaNueva() {
+        // 🔥 FLUJO:
+        // 1. Si viene del botón "Agregar nueva prenda" → prendaEditIndex está en null
+        // 2. Si viene del botón "Editar prenda" → prendaEditIndex ya fue establecido ANTES de llamar aquí
+        
         const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+        
+        if (esEdicion) {
+            console.log('[abrirModalAgregarPrendaNueva] ✏️ EDICIÓN: Abriendo modal para editar prenda index', this.prendaEditIndex);
+        } else {
+            console.log('[abrirModalAgregarPrendaNueva] ✅ CREACIÓN: Abriendo modal para crear nueva prenda');
+        }
+        
         this.prendaEditor.abrirModal(esEdicion, this.prendaEditIndex);
     }
 
@@ -310,8 +321,22 @@ class GestionItemsUI {
                 this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
             }
             
-            // Resetear índice
-            this.prendaEditIndex = null;
+            // 🔥 IMPORTANTE: Limpiar COMPLETAMENTE el modal después de guardar una prenda
+            // Esto asegura que la próxima prenda se agregue con un formulario limpio
+            // ModalCleanup.limpiarDespuésDeGuardar() se encarga de:
+            // - Limpiar todo (inputs, storages, checkboxes, procesos, contenedores)
+            // - Resetear window.prendaEditIndex en TODAS las ubicaciones
+            // - Ocultar el modal
+            if (typeof ModalCleanup !== 'undefined') {
+                ModalCleanup.limpiarDespuésDeGuardar();
+            } else {
+                // Fallback si ModalCleanup no está disponible
+                this.prendaEditIndex = null;
+                if (this.prendaEditor) {
+                    this.prendaEditor.prendaEditIndex = null;
+                }
+                window.prendaEditIndex = null;
+            }
             
             // Intentar cerrar con window.cerrarModalPrendaNueva
             if (typeof window.cerrarModalPrendaNueva === 'function') {
@@ -346,14 +371,20 @@ class GestionItemsUI {
      */
     async agregarPrendaNueva() {
         try {
+            // 🔥 CRÍTICO: Verificar estado ANTES de hacer nada
+            console.log('[agregarPrendaNueva] 🚀 INICIO - Estado actual:');
+            console.log('[agregarPrendaNueva]   - this.prendaEditIndex:', this.prendaEditIndex);
+            console.log('[agregarPrendaNueva]   - this.prendas.length:', this.prendas.length);
+            console.log('[agregarPrendaNueva]   - ¿Es edición?:', this.prendaEditIndex !== null && this.prendaEditIndex !== undefined);
+            
             // Verificar si el servicio de notificaciones está disponible
             if (!this.notificationService) {
-                console.warn('[GestionItemsUI] ⚠️ notificationService no disponible, usando fallback');
+                console.warn('[GestionItemsUI]  notificationService no disponible, usando fallback');
                 // Crear servicio de notificaciones temporal para este caso
                 this.notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : {
-                    success: (msg) => console.log('✅', msg),
+                    success: (msg) => console.log('', msg),
                     error: (msg) => console.error('❌', msg),
-                    warning: (msg) => console.warn('⚠️', msg)
+                    warning: (msg) => console.warn('', msg)
                 };
             }
 
@@ -460,7 +491,7 @@ class GestionItemsUI {
             
             // Determinar si vamos a editar o crear nueva
             const vamosAEditar = esEdicionReal && !esNuevaDesdeCotz;
-            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? '✏️ EDITAR' : '✅ AGREGAR NUEVA');
+            console.log('[guardarPrenda] 🎯 ACCIÓN A EJECUTAR:', vamosAEditar ? '✏️ EDITAR' : ' AGREGAR NUEVA');
             
             if (vamosAEditar) {
 
@@ -499,6 +530,10 @@ class GestionItemsUI {
                     return;
                 } else {
                     // Solo en memoria - sin novedades
+                    console.log('[guardarPrenda] 💾 MODO CREACIÓN: Actualizando prenda en memoria');
+                    console.log('[guardarPrenda]   - this.prendaEditIndex:', this.prendaEditIndex);
+                    console.log('[guardarPrenda]   - this.prendas.length:', this.prendas.length);
+                    console.log('[guardarPrenda]   - ¿Existe prenda en este index?:', !!this.prendas[this.prendaEditIndex]);
 
                     if (this.prendas[this.prendaEditIndex]) {
                         // 🔥 MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
@@ -516,13 +551,24 @@ class GestionItemsUI {
                             // Actualizar directamente en memoria también
                             this.prendas[this.prendaEditIndex].imagenes = [];
                             
-                            console.log('✅ [GESTION-ITEMS] Array de imágenes actualizado a [] en memoria y en prendaData');
+                            console.log(' [GESTION-ITEMS] Array de imágenes actualizado a [] en memoria y en prendaData');
                         }
+                        
+                        // 🔴 ANTES: Estado de la prenda antes de actualizar
+                        const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
                         
                         // Actualizar prenda con los datos modificados
                         this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
                         
-                        // ✅ CRÍTICO: Renderizar inmediatamente después de actualizar
+                        // 🟢 DESPUÉS: Verificar que se actualizó
+                        const prendaActualizada = this.prendas[this.prendaEditIndex];
+                        console.log('[guardarPrenda] ✏️ PRENDA ACTUALIZADA:');
+                        console.log('[guardarPrenda]   - Nombre ANTES:', prendaAnterior.nombre_prenda);
+                        console.log('[guardarPrenda]   - Nombre DESPUÉS:', prendaActualizada.nombre_prenda);
+                        console.log('[guardarPrenda]   - Descripción ANTES:', prendaAnterior.descripcion);
+                        console.log('[guardarPrenda]   - Descripción DESPUÉS:', prendaActualizada.descripcion);
+                        
+                        //  CRÍTICO: Renderizar inmediatamente después de actualizar
                         console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');
                         if (this.renderer) {
                             const itemsOrdenados = this.obtenerItemsOrdenados();
@@ -532,12 +578,14 @@ class GestionItemsUI {
                         }
 
                         this.notificationService?.exito('Prenda actualizada correctamente');
+                    } else {
+                        console.error('[guardarPrenda] ❌ ERROR: No existe prenda en index', this.prendaEditIndex);
                     }
                     
-                    // ✅ Cerrar modal AQUÍ en modo edición
+                    //  Cerrar modal AQUÍ en modo edición
                     this.cerrarModalAgregarPrendaNueva();
                     
-                    // ✅ IMPORTANTE: Salir completamente para evitar que se agregue nueva prenda
+                    //  IMPORTANTE: Salir completamente para evitar que se agregue nueva prenda
                     return;
                 }
             } else {
@@ -583,7 +631,7 @@ class GestionItemsUI {
             console.log('[gestionItemsUI] 📤 this.epps:', this.epps.length);
             console.log('[gestionItemsUI] 📤 this.ordenItems:', JSON.stringify(this.ordenItems));
             
-            // ✅ Solo en modo CREACIÓN: renderizar
+            //  Solo en modo CREACIÓN: renderizar
             // En modo EDICIÓN ya salimos arriba con return
             if (this.renderer) {
                 const itemsOrdenados = this.obtenerItemsOrdenados();

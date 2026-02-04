@@ -533,7 +533,7 @@
                 return;
             }
 
-            console.log('✅ TOP-NAV PROTECTOR ACTIVADO');
+            console.log(' TOP-NAV PROTECTOR ACTIVADO');
 
             // Función agresiva para restaurar el nav
             function forceNavVisible() {
@@ -576,12 +576,12 @@
             setInterval(() => {
                 const computed = window.getComputedStyle(topNav);
                 if (computed.display === 'none' || computed.visibility === 'hidden') {
-                    console.log('⚠️ NAV OCULTADO - RESTAURANDO');
+                    console.log(' NAV OCULTADO - RESTAURANDO');
                     forceNavVisible();
                 }
             }, 200);
 
-            console.log('✅ Protecciones instaladas');
+            console.log(' Protecciones instaladas');
         });
 
         // ===== FUNCIÓN PARA LIMPIAR PARÁMETROS VACÍOS =====

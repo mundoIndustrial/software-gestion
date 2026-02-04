@@ -366,7 +366,7 @@
         function mostrarModalCotizacionRequerida() {
             Swal.fire({
                 icon: 'warning',
-                title: '⚠️ Cotización Requerida',
+                title: ' Cotización Requerida',
                 text: 'Por favor selecciona una cotización antes de agregar ítems al pedido',
                 confirmButtonText: 'Entendido',
                 confirmButtonColor: '#3b82f6',
@@ -387,19 +387,19 @@
                 console.log('🟢 [btn-agregar-prenda] Clic detectado');
                 
                 if (!verificarCotizacionSeleccionada()) {
-                    console.log('⚠️ [btn-agregar-prenda] No hay cotización seleccionada');
+                    console.log(' [btn-agregar-prenda] No hay cotización seleccionada');
                     mostrarModalCotizacionRequerida();
                     return;
                 }
                 
-                console.log('✅ [btn-agregar-prenda] Cotización seleccionada, abriendo selector de prendas');
+                console.log(' [btn-agregar-prenda] Cotización seleccionada, abriendo selector de prendas');
                 if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
                     // Obtener la cotización seleccionada (usar la variable correcta)
                     const cotizacionSeleccionada = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
                     console.log('🔍 [btn-agregar-prenda] Variable cotizacionSeleccionada:', cotizacionSeleccionada);
                     
                     if (cotizacionSeleccionada && cotizacionSeleccionada.id) {
-                        console.log('✅ [btn-agregar-prenda] ID de cotización encontrado:', cotizacionSeleccionada.id);
+                        console.log(' [btn-agregar-prenda] ID de cotización encontrado:', cotizacionSeleccionada.id);
                         window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
                     } else {
                         console.error('❌ [btn-agregar-prenda] No hay cotización seleccionada o no tiene ID');
@@ -422,9 +422,9 @@
                     });
                 }
             });
-            console.log('✅ [btn-agregar-prenda] Event listener agregado correctamente');
+            console.log(' [btn-agregar-prenda] Event listener agregado correctamente');
         } else {
-            console.warn('⚠️ [btn-agregar-prenda] Botón no encontrado');
+            console.warn(' [btn-agregar-prenda] Botón no encontrado');
         }
         
         // Manejar clic en el botón de agregar EPP
@@ -433,7 +433,7 @@
             btnAgregarEPP.addEventListener('click', function() {
                 console.log('🟢 [btn-agregar-epp] Clic detectado');
                 
-                console.log('✅ [btn-agregar-epp] Abriendo modal EPP (no requiere cotización)');
+                console.log(' [btn-agregar-epp] Abriendo modal EPP (no requiere cotización)');
                 if (typeof window.abrirModalAgregarEPP === 'function') {
                     window.abrirModalAgregarEPP();
                 } else {
@@ -447,9 +447,9 @@
                     });
                 }
             });
-            console.log('✅ [btn-agregar-epp] Event listener agregado correctamente');
+            console.log(' [btn-agregar-epp] Event listener agregado correctamente');
         } else {
-            console.warn('⚠️ [btn-agregar-epp] Botón no encontrado');
+            console.warn(' [btn-agregar-epp] Botón no encontrado');
         }
     });
 </script>
@@ -488,7 +488,7 @@
                     }
                 }, 500);
                 
-                console.log('✅ [LOADING] Loading overlay ocultado');
+                console.log(' [LOADING] Loading overlay ocultado');
             }
         }, 300);
     }

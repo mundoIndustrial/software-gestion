@@ -13,11 +13,11 @@ class FixLogoCotizacionTelasRuta extends Command
 
     public function handle()
     {
-        $this->info('🔧 Corrigiendo rutas en logo_cotizacion_telas_prenda...');
+        $this->info(' Corrigiendo rutas en logo_cotizacion_telas_prenda...');
 
         $telas = LogoCotizacionTelasPrenda::whereNotNull('img')->get();
         
-        $this->info("📊 Total de registros con imagen: " . $telas->count());
+        $this->info(" Total de registros con imagen: " . $telas->count());
 
         $actualizado = 0;
         foreach ($telas as $tela) {
@@ -27,14 +27,14 @@ class FixLogoCotizacionTelasRuta extends Command
                 
                 $tela->update(['img' => $rutaCorregida]);
                 
-                $this->line("  ✅ ID {$tela->id}: {$tela->img} → {$rutaCorregida}");
+                $this->line("   ID {$tela->id}: {$tela->img} → {$rutaCorregida}");
                 $actualizado++;
             } else {
-                $this->line("  ℹ️ ID {$tela->id}: Ya tiene ruta correcta o está vacío");
+                $this->line("   ID {$tela->id}: Ya tiene ruta correcta o está vacío");
             }
         }
 
-        $this->info("\n✅ Actualización completada");
+        $this->info("\n Actualización completada");
         $this->info("   Registros actualizados: {$actualizado}");
     }
 }

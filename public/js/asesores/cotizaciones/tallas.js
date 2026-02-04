@@ -802,7 +802,7 @@ function agregarTallasSeleccionadas(btn) {
     console.log('  - tallas-section:', !!tallasSection);
     console.log('  - tallas-hidden (en producto-card):', !!tallasHidden, tallasHidden);
     
-    console.log('📊 Botones activos encontrados:', botonesActivos.length);
+    console.log(' Botones activos encontrados:', botonesActivos.length);
     botonesActivos.forEach(boton => {
         console.log('  - Talla activa:', boton.dataset.talla, 'Género:', boton.dataset.genero);
     });
@@ -917,7 +917,7 @@ function actualizarTallasHidden(container) {
     // Si el campo hidden no existe, crearlo dinámicamente
     let tallasHidden = productoCard ? productoCard.querySelector('.tallas-hidden') : null;
     if (!tallasHidden && productoCard) {
-        console.log('🔧 Creando campo hidden dinámicamente');
+        console.log(' Creando campo hidden dinámicamente');
         tallasHidden = document.createElement('input');
         tallasHidden.type = 'hidden';
         tallasHidden.name = 'productos_friendly[][tallas]';
@@ -958,7 +958,7 @@ function actualizarTallasHidden(container) {
     
     // Formatear como JSON para mantener estructura por género
     tallasHidden.value = JSON.stringify(tallasPorGenero);
-    console.log('✅ Tallas guardadas por género:', tallasPorGenero);
+    console.log(' Tallas guardadas por género:', tallasPorGenero);
     console.log('📝 Valor del campo hidden:', tallasHidden.value);
 }
 

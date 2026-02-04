@@ -521,11 +521,11 @@ class PedidoProduccionRepository
                 
                 // Construir prenda formateada CON TODAS LAS ESPECIFICACIONES
                 $prendasFormato = [
-                    'id' => $prenda->id, // ✅ AGREGAR ID de la prenda
-                    'prenda_pedido_id' => $prenda->id, // ✅ AGREGAR prenda_pedido_id (alias del id)
+                    'id' => $prenda->id, //  AGREGAR ID de la prenda
+                    'prenda_pedido_id' => $prenda->id, //  AGREGAR prenda_pedido_id (alias del id)
                     'nombre' => $prenda->nombre_prenda,
                     'descripcion' => $prenda->descripcion,
-                    'de_bodega' => (bool)($prenda->de_bodega ?? false), // ✅ AGREGAR de_bodega para mostrar indicador
+                    'de_bodega' => (bool)($prenda->de_bodega ?? false), //  AGREGAR de_bodega para mostrar indicador
                     'imagen' => $foto ? ($foto->url ?? $foto->ruta_webp) : null,
                     'imagen_tela' => !empty($fotoTelas) ? $fotoTelas[0] : null,
                     'imagenes' => $fotosPrend,
@@ -868,11 +868,11 @@ class PedidoProduccionRepository
             \Log::info('[RECIBOS] Tallas cargadas para prenda ' . $prendaIndex, ['tallas' => $tallas]);
 
             // Procesar procesos
-            // ⚠️ CRÍTICO: Si el pedido está en estado PENDIENTE, NO incluir procesos
+            //  CRÍTICO: Si el pedido está en estado PENDIENTE, NO incluir procesos
             $procesos = [];
             
             foreach ($prenda->procesos as $proc) {
-                // ⚠️ CRÍTICO: Si está configurado para filtrar y el proceso está PENDIENTE, omitir
+                //  CRÍTICO: Si está configurado para filtrar y el proceso está PENDIENTE, omitir
                 if ($filtrarProcesosPendientes && $proc->estado === 'PENDIENTE') {
                     \Log::info('[PROCESOS-FILTRADO] Proceso en estado PENDIENTE - Omitiendo (modo: solo /registros)', [
                         'proceso_id' => $proc->id,

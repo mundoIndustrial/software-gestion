@@ -153,8 +153,8 @@ class PedidoNormalizadorDTO
                 'uid' => $tela['uid'] ?? null,
                 'tela_id' => intval($tela['tela_id'] ?? 0),
                 'color_id' => intval($tela['color_id'] ?? 0),
-                'nombre' => trim($tela['tela_nombre'] ?? $tela['tela'] ?? $tela['nombre'] ?? ''),  // ✅ CORREGIDO: buscar 'tela_nombre' primero
-                'color' => trim($tela['color_nombre'] ?? $tela['color'] ?? ''),  // ✅ CORREGIDO: buscar 'color_nombre' primero
+                'nombre' => trim($tela['tela_nombre'] ?? $tela['tela'] ?? $tela['nombre'] ?? ''),  //  CORREGIDO: buscar 'tela_nombre' primero
+                'color' => trim($tela['color_nombre'] ?? $tela['color'] ?? ''),  //  CORREGIDO: buscar 'color_nombre' primero
                 'referencia' => trim($tela['referencia'] ?? ''),
                 'imagenes' => self::normalizarImagenes($tela['imagenes'] ?? [])
             ];

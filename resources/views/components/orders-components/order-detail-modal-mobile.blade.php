@@ -573,7 +573,7 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE] ¿Es navegación de proceso?:', esNavegacionDeProc);
     
     if (esNavegacionDeProc && procesoActualSeleccionado && todasLasPrendas.length > 0) {
-        console.log('📱 [RECIBO MOBILE] ⚠️ FILTRANDO prendas para proceso:', procesoActualSeleccionado);
+        console.log('📱 [RECIBO MOBILE]  FILTRANDO prendas para proceso:', procesoActualSeleccionado);
         // Filtrar prendas que tengan el proceso seleccionado
         todasLasPrendas = todasLasPrendas.filter(function(prenda) {
             // Opción 1: Buscar en recibos
@@ -592,7 +592,7 @@ window.llenarReciboCosturaMobile = function(data) {
         });
         console.log('📱 [RECIBO MOBILE] Total prendas DESPUÉS de filtrar:', todasLasPrendas.length);
     } else {
-        console.log('📱 [RECIBO MOBILE] ✅ Primera carga - SIN filtrar, mostrando todas las prendas');
+        console.log('📱 [RECIBO MOBILE]  Primera carga - SIN filtrar, mostrando todas las prendas');
     }
     
     // LIMPIAR CONTENEDOR DE RECIBO ANTES DE RECONSTRUIR
@@ -614,7 +614,7 @@ window.llenarReciboCosturaMobile = function(data) {
     const debeUsarDescripcionPreConstruida = descripcionPrendasCompleta && descripcionPrendasCompleta.trim() !== '' && descripcionPrendasCompleta !== 'N/A' && !esNavegacionDeProc;
     
     if (debeUsarDescripcionPreConstruida) {
-        console.log('📱 [RECIBO MOBILE] 🔧 USANDO RAMA: descripcionPrendasCompleta (pre-construida)');
+        console.log('📱 [RECIBO MOBILE]  USANDO RAMA: descripcionPrendasCompleta (pre-construida)');
         
         // Limpiar espacios al inicio de cada línea
         const descripcionLimpia = descripcionPrendasCompleta
@@ -720,14 +720,14 @@ window.llenarReciboCosturaMobile = function(data) {
         
     } else if (todasLasPrendas.length > 0) {
         // FALLBACK: Generar descripción dinámica desde prendas (igual que asesores)
-        console.log('📱 [RECIBO MOBILE] 🔧 USANDO RAMA: Fallback dinámico (descripcion_prendas vacía)');
+        console.log('📱 [RECIBO MOBILE]  USANDO RAMA: Fallback dinámico (descripcion_prendas vacía)');
         console.log(' [MOBILE] Usando lógica de construcción dinámica (descripcion_prendas vacía)');
         
         const startIndex = window.prendaCarouselIndex || 0;
         const endIndex = startIndex + PRENDAS_POR_PAGINA;
         prendasActuales = todasLasPrendas.slice(startIndex, endIndex);
         
-        console.log('📱 [RECIBO MOBILE] 🔧 Fallback - prendasActuales rellenadas:', prendasActuales.length);
+        console.log('📱 [RECIBO MOBILE]  Fallback - prendasActuales rellenadas:', prendasActuales.length);
         
         // Generar descripción dinámica para cada prenda (igual que asesores)
         prendasActuales.forEach((prenda, index) => {
@@ -1024,7 +1024,7 @@ window.llenarReciboCosturaMobile = function(data) {
         console.log('🎪 Carousel no requerido - solo', totalBloques, 'bloque(s)');
     }
     
-    console.log('📱 [RECIBO MOBILE] ✅ ========== FIN llenarReciboCosturaMobile ==========');
+    console.log('📱 [RECIBO MOBILE]  ========== FIN llenarReciboCosturaMobile ==========');
 };
 </script>
 

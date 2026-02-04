@@ -47,6 +47,8 @@ final class ActualizarPrendaCompletaUseCase
             'tiene_fotos_telas' => !is_null($dto->fotosTelas),
             'tiene_fotos' => !is_null($dto->fotos),
             'tiene_tallas' => !is_null($dto->cantidadTalla),
+            'tiene_imagenes_a_eliminar' => !is_null($dto->imagenesAEliminar),
+            'cantidad_imagenes_a_eliminar' => is_array($dto->imagenesAEliminar) ? count($dto->imagenesAEliminar) : 0,
         ]);
 
         // 1. Actualizar campos bÃ¡sicos
@@ -54,7 +56,10 @@ final class ActualizarPrendaCompletaUseCase
 
         // 2. Actualizar fotos de referencia
         $this->actualizarFotos($prenda, $dto);
-
+        // 2.5. Eliminar imágenes marcadas para eliminación
+        if (!is_null($dto->imagenesAEliminar)) {
+            $this->eliminarImagenes($dto->imagenesAEliminar);
+        }
         // 3. Actualizar tallas
         $this->actualizarTallas($prenda, $dto);
 
@@ -74,9 +79,15 @@ final class ActualizarPrendaCompletaUseCase
         // CARGAR RELACIONES COMPLETAS PARA EL FRONTEND
         $prenda->refresh();
         
-        // Garantizar que procesos sea siempre un array (incluso si estÃ¡ vacÃ­o)
+        // Garantizar que procesos sea siempre un array (incluso si está vacío)
         if (!$prenda->relationLoaded('procesos')) {
             $prenda->load('procesos');
+        }
+        
+        // 🔴 FIX CRÍTICO: Cargar fotos (imágenes) para que la respuesta JSON las incluya
+        // Esto es necesario para que el frontend pueda sincronizar el snapshot después de guardar
+        if (!$prenda->relationLoaded('fotos')) {
+            $prenda->load('fotos');
         }
         
         return $prenda;
@@ -178,7 +189,7 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
 
-        // 🔧 CAMBIO CLAVE: En edición, SOLO INSERTAR fotos nuevas sin eliminar las antiguas
+        //  CAMBIO CLAVE: En edición, SOLO INSERTAR fotos nuevas sin eliminar las antiguas
         // Las fotos antiguas permanecen, solo se eliminan si el usuario las elimina manualmente
         // desde el modal de galería o si vienen explícitamente marcadas para eliminar
         
@@ -308,7 +319,7 @@ final class ActualizarPrendaCompletaUseCase
         // 🗑️ RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
         $telaIdsEnPayload = [];
         
-        // ✅ MERGE PATTERN: UPDATE o CREATE según id
+        //  MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->coloresTelas as $colorTela) {
             $colorId = $colorTela['color_id'] ?? null;
             $telaId = $colorTela['tela_id'] ?? null;
@@ -328,7 +339,7 @@ final class ActualizarPrendaCompletaUseCase
                 continue;
             }
             
-            // ✅ UPDATE: Si viene con ID, actualizar relación existente
+            //  UPDATE: Si viene con ID, actualizar relación existente
             if ($id) {
                 $colorTelaExistente = $prenda->coloresTelas()->where('id', $id)->first();
                 if ($colorTelaExistente) {
@@ -340,7 +351,7 @@ final class ActualizarPrendaCompletaUseCase
                     $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
                 }
             } 
-            // ✅ CREATE: Si NO viene con ID, crear nueva relación
+            //  CREATE: Si NO viene con ID, crear nueva relación
             else {
                 // Verificar si ya existe esta combinación
                 $existente = $prenda->coloresTelas()
@@ -422,7 +433,7 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        // ✅ MERGE PATTERN: UPDATE o CREATE según id
+        //  MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->fotosTelas as $idx => $foto) {
             $id = $foto['id'] ?? null;  // ID de foto existente
             $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? $foto['color_tela_id'] ?? null;
@@ -459,14 +470,14 @@ final class ActualizarPrendaCompletaUseCase
                 'orden' => $idx + 1,
             ];
             
-            // ✅ UPDATE: Si viene con ID, actualizar foto existente
+            //  UPDATE: Si viene con ID, actualizar foto existente
             if ($id) {
                 $fotoExistente = $prenda->fotosTelas()->where('id', $id)->first();
                 if ($fotoExistente) {
                     $fotoExistente->update($datosFoto);
                 }
             }
-            // ✅ CREATE: Si NO viene con ID, crear nueva foto
+            //  CREATE: Si NO viene con ID, crear nueva foto
             else {
                 // Verificar que no exista ya esta ruta exacta (evitar duplicados)
                 $existente = $prenda->fotosTelas()
@@ -504,7 +515,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarProcesos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // 🔧 FIX: Patrón MERGE actualizar procesos existentes
+        //  FIX: Patrón MERGE actualizar procesos existentes
         // - Si proceso tiene ID → UPDATE ubicaciones, observaciones
         // - Si proceso NO tiene ID → CREATE nuevo proceso
         // - Preservar procesos que no están en el payload (no eliminar)
@@ -554,7 +565,7 @@ final class ActualizarPrendaCompletaUseCase
                         'estado' => $proceso['estado'] ?? $procesoExistente->estado,
                     ]);
 
-                    // 🔧 ACTUALIZAR TALLAS del proceso si se proporcionan
+                    //  ACTUALIZAR TALLAS del proceso si se proporcionan
                     if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
                         // Eliminar tallas existentes del proceso
                         $procesoExistente->tallas()->delete();
@@ -593,7 +604,7 @@ final class ActualizarPrendaCompletaUseCase
                     ]);
                 }
             } else {
-                // ✅ CREAR: Nuevo proceso
+                //  CREAR: Nuevo proceso
                 \Log::info('[ActualizarPrendaCompletaUseCase] Creando nuevo proceso', [
                     'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
                     'ubicaciones' => $ubicaciones
@@ -750,7 +761,7 @@ final class ActualizarPrendaCompletaUseCase
     }
 
     /**
-     * 🔧 ACTUALIZAR TALLAS de un proceso existente
+     *  ACTUALIZAR TALLAS de un proceso existente
      * 
      * Recibe tallas en formato:
      * {
@@ -795,4 +806,98 @@ final class ActualizarPrendaCompletaUseCase
                 'error' => $e->getMessage()
             ]);
         }
-    }}
+    }
+
+    /**
+     * Eliminar imágenes de prenda marcadas para eliminación
+     * 
+     * @param array $imagenesAEliminar Array de objetos con estructura: { id, ruta_original, ruta_webp }
+     */
+    private function eliminarImagenes(array $imagenesAEliminar): void
+    {
+        if (empty($imagenesAEliminar)) {
+            return;
+        }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] Iniciando eliminación de imágenes', [
+            'cantidad' => count($imagenesAEliminar)
+        ]);
+
+        $imagenService = new \App\Domain\Pedidos\Services\ImagenService();
+        $imagenesProcesadas = 0;
+        $imagenesError = 0;
+
+        foreach ($imagenesAEliminar as $imagen) {
+            try {
+                // Extraer ID de imagen (puede venir en 'id' o 'prenda_foto_id')
+                $imagenId = $imagen['id'] ?? $imagen['prenda_foto_id'] ?? null;
+                $rutaOriginal = $imagen['ruta_original'] ?? null;
+                $rutaWebp = $imagen['ruta_webp'] ?? null;
+
+                if (!$imagenId) {
+                    \Log::warning('[ActualizarPrendaCompletaUseCase] Imagen sin ID para eliminar', [
+                        'imagen_data' => $imagen
+                    ]);
+                    continue;
+                }
+
+                // 1. Eliminar registro de BD (soft delete si está configurado)
+                $fotoPedido = \App\Models\PrendaFotoPedido::find($imagenId);
+                if ($fotoPedido) {
+                    $fotoPedido->delete(); // Usa SoftDelete automáticamente
+                    $imagenesProcesadas++;
+
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Imagen eliminada de BD', [
+                        'imagen_id' => $imagenId,
+                        'ruta_original' => $rutaOriginal
+                    ]);
+                } else {
+                    \Log::warning('[ActualizarPrendaCompletaUseCase] Imagen no encontrada en BD', [
+                        'imagen_id' => $imagenId
+                    ]);
+                    continue;
+                }
+
+                // 2. Eliminar archivos físicos de storage
+                if ($rutaOriginal) {
+                    $eliminadoOriginal = $imagenService->eliminarImagen($rutaOriginal);
+                    if ($eliminadoOriginal) {
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Archivo original eliminado', [
+                            'ruta' => $rutaOriginal
+                        ]);
+                    } else {
+                        \Log::warning('[ActualizarPrendaCompletaUseCase] No se pudo eliminar archivo original', [
+                            'ruta' => $rutaOriginal
+                        ]);
+                    }
+                }
+
+                if ($rutaWebp && $rutaWebp !== $rutaOriginal) {
+                    $eliminadoWebp = $imagenService->eliminarImagen($rutaWebp);
+                    if ($eliminadoWebp) {
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Archivo WebP eliminado', [
+                            'ruta' => $rutaWebp
+                        ]);
+                    } else {
+                        \Log::warning('[ActualizarPrendaCompletaUseCase] No se pudo eliminar archivo WebP', [
+                            'ruta' => $rutaWebp
+                        ]);
+                    }
+                }
+
+            } catch (\Exception $e) {
+                $imagenesError++;
+                \Log::error('[ActualizarPrendaCompletaUseCase] Error eliminando imagen', [
+                    'imagen_id' => $imagen['id'] ?? 'UNKNOWN',
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] Eliminación de imágenes completada', [
+            'procesadas' => $imagenesProcesadas,
+            'errores' => $imagenesError,
+            'total' => count($imagenesAEliminar)
+        ]);
+    }
+}

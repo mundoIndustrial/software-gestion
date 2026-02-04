@@ -73,7 +73,7 @@ try {
     }
     
     if ($recibos['COSTURA-BODEGA'] !== null) {
-        echo "\n✅ COSTURA-BODEGA SERÁ DEVUELTO EN EL ENDPOINT CON VALOR: " . $recibos['COSTURA-BODEGA'] . "\n";
+        echo "\n COSTURA-BODEGA SERÁ DEVUELTO EN EL ENDPOINT CON VALOR: " . $recibos['COSTURA-BODEGA'] . "\n";
     } else {
         echo "\n✗ COSTURA-BODEGA SERÁ null EN EL ENDPOINT\n";
     }

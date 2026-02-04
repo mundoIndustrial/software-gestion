@@ -12,7 +12,7 @@ console.log('='.repeat(60));
 // Esperar un poco para que todos los scripts se carguen
 setTimeout(() => {
     console.log('\n📋 ESTADO DE DEPENDENCIAS GLOBALES:');
-    console.log('  - window.PayloadNormalizer:', window.PayloadNormalizer ? '✅ EXISTE' : ' NO EXISTE');
+    console.log('  - window.PayloadNormalizer:', window.PayloadNormalizer ? ' EXISTE' : ' NO EXISTE');
     
     if (window.PayloadNormalizer) {
         console.log('\n🔍 MÉTODOS DISPONIBLES EN PayloadNormalizer:');
@@ -32,7 +32,7 @@ setTimeout(() => {
                 epps: []
             };
             const resultado = window.PayloadNormalizer.normalizar(testPedido);
-            console.log('✅ normalizar() funciona correctamente');
+            console.log(' normalizar() funciona correctamente');
             console.log('  Resultado:', resultado);
         } catch (error) {
             console.error(' ERROR en normalizar():', error.message);

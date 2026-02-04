@@ -24,7 +24,7 @@
     // 1. Verificar que el preloader existe
     if (window.PrendaEditorPreloader) {
         checks.preloaderExists = true;
-        console.log('✅ PrendaEditorPreloader disponible');
+        console.log(' PrendaEditorPreloader disponible');
     } else {
         checks.errors.push('PrendaEditorPreloader no encontrado');
         console.log('❌ PrendaEditorPreloader no encontrado');
@@ -33,7 +33,7 @@
     // 2. Verificar que el loader existe
     if (window.PrendaEditorLoader) {
         checks.loaderExists = true;
-        console.log('✅ PrendaEditorLoader disponible');
+        console.log(' PrendaEditorLoader disponible');
     } else {
         checks.errors.push('PrendaEditorLoader no encontrado');
         console.log('❌ PrendaEditorLoader no encontrado');
@@ -46,11 +46,11 @@
         
         if (availableMethods.length === requiredMethods.length) {
             checks.preloaderFunctional = true;
-            console.log(`✅ Todos los métodos disponibles (${availableMethods.join(', ')})`);
+            console.log(` Todos los métodos disponibles (${availableMethods.join(', ')})`);
         } else {
             const missing = requiredMethods.filter(m => !availableMethods.includes(m));
             checks.errors.push(`Métodos faltantes: ${missing.join(', ')}`);
-            console.log(`⚠️ Métodos faltantes: ${missing.join(', ')}`);
+            console.log(` Métodos faltantes: ${missing.join(', ')}`);
         }
     }
 
@@ -61,21 +61,21 @@
         
         if (availableMethods.length === requiredMethods.length) {
             checks.loaderFunctional = true;
-            console.log(`✅ PrendaEditorLoader funcional (${availableMethods.join(', ')})`);
+            console.log(` PrendaEditorLoader funcional (${availableMethods.join(', ')})`);
         } else {
             const missing = requiredMethods.filter(m => !availableMethods.includes(m));
             checks.warnings.push(`PrendaEditorLoader: métodos faltantes: ${missing.join(', ')}`);
-            console.log(`⚠️ PrendaEditorLoader: ${missing.join(', ')}`);
+            console.log(` PrendaEditorLoader: ${missing.join(', ')}`);
         }
     }
 
     // 5. Verificar estado de precarga
     if (checks.preloaderFunctional) {
         const status = window.PrendaEditorPreloader.getStatus();
-        console.log('\n📊 ESTADO DE PRECARGA:');
+        console.log('\n ESTADO DE PRECARGA:');
         console.log(`  ├─ Precargando: ${status.isPreloading ? '🔄 SÍ' : '❌ NO'}`);
-        console.log(`  ├─ Precargado: ${status.isPreloaded ? '✅ SÍ' : '❌ NO'}`);
-        console.log(`  ├─ Error: ${status.preloadError ? `⚠️ ${status.preloadError}` : '✓ NO'}`);
+        console.log(`  ├─ Precargado: ${status.isPreloaded ? ' SÍ' : '❌ NO'}`);
+        console.log(`  ├─ Error: ${status.preloadError ? ` ${status.preloadError}` : '✓ NO'}`);
         console.log(`  ├─ Scripts en caché: ${status.scriptCacheSize}`);
         console.log(`  ├─ Módulos en caché: ${status.moduleCacheSize}`);
         console.log(`  └─ Config:`, status.config);
@@ -87,10 +87,10 @@
 
     // 6. Verificar Swal2
     if (window.Swal) {
-        console.log('\n✅ SweetAlert2 disponible');
+        console.log('\n SweetAlert2 disponible');
     } else {
         checks.warnings.push('SweetAlert2 no encontrado (necesario para loader modal)');
-        console.log('\n⚠️ SweetAlert2 no encontrado');
+        console.log('\n SweetAlert2 no encontrado');
     }
 
     // Resumen
@@ -106,10 +106,10 @@
         checks.errors.length === 0;
 
     if (allChecksPassed) {
-        console.log('%c✅ TODAS LAS VERIFICACIONES PASARON', 'color: #27ae60; font-weight: bold; font-size: 14px;');
+        console.log('%c TODAS LAS VERIFICACIONES PASARON', 'color: #27ae60; font-weight: bold; font-size: 14px;');
         console.log('La precarguía está lista para usar. 🚀');
     } else {
-        console.log('%c⚠️ ALGUNAS VERIFICACIONES FALLARON', 'color: #e74c3c; font-weight: bold; font-size: 14px;');
+        console.log('%c ALGUNAS VERIFICACIONES FALLARON', 'color: #e74c3c; font-weight: bold; font-size: 14px;');
     }
 
     // Errores
@@ -120,7 +120,7 @@
 
     // Warnings
     if (checks.warnings.length > 0) {
-        console.log('\n%c⚠️ ADVERTENCIAS:', 'color: #f39c12; font-weight: bold;');
+        console.log('\n%c ADVERTENCIAS:', 'color: #f39c12; font-weight: bold;');
         checks.warnings.forEach(w => console.log(`   • ${w}`));
     }
 
@@ -136,7 +136,7 @@
 
     // Resultado final
     const resultClass = allChecksPassed ? 'color: #27ae60;' : 'color: #e74c3c;';
-    const resultText = allChecksPassed ? '✅ LISTO PARA USAR' : '⚠️ REVISAR ERRORES';
+    const resultText = allChecksPassed ? ' LISTO PARA USAR' : ' REVISAR ERRORES';
     console.log(`%c${resultText}`, `${resultClass} font-weight: bold; font-size: 16px;`);
     console.log('═'.repeat(60) + '\n');
 

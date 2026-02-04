@@ -96,10 +96,10 @@ window.agregarTelaNueva = async function() {
     // Validación con mensajes en rojo
     let errores = [];
     if (!color) {
-        errores.push({ campo: 'nueva-prenda-color', mensaje: '⚠️ Color es requerido' });
+        errores.push({ campo: 'nueva-prenda-color', mensaje: ' Color es requerido' });
     }
     if (!tela) {
-        errores.push({ campo: 'nueva-prenda-tela', mensaje: '⚠️ Tela es requerida' });
+        errores.push({ campo: 'nueva-prenda-tela', mensaje: ' Tela es requerida' });
     }
     // Referencia es opcional - no se valida
     
@@ -287,7 +287,7 @@ window.actualizarTablaTelas = function() {
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.warn('[actualizarTablaTelas] ⚠️ tbody-telas no encontrado');
+        console.warn('[actualizarTablaTelas]  tbody-telas no encontrado');
         return;
     }
     
@@ -310,7 +310,7 @@ window.actualizarTablaTelas = function() {
         return;
     }
 
-    // ✅ OPTIMIZACIÓN 1: Usar DocumentFragment para batch rendering
+    //  OPTIMIZACIÓN 1: Usar DocumentFragment para batch rendering
     // Esto evita un reflow por cada appendChild()
     const fragment = document.createDocumentFragment();
     
@@ -398,7 +398,7 @@ window.actualizarTablaTelas = function() {
         fragment.appendChild(tr);
     });
     
-    // ✅ UN SOLO REFLOW: Agregar todo el fragment de una vez
+    //  UN SOLO REFLOW: Agregar todo el fragment de una vez
     tbody.appendChild(fragment);
 };
 

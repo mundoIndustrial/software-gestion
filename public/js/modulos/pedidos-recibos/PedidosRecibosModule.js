@@ -269,7 +269,7 @@ window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para
 window.toggleGaleria = async function() {
     // Evitar recursión infinita
     if (window.toggleGaleria._calling) {
-        console.warn('[toggleGaleria] ⚠️ Evitando recursión infinita');
+        console.warn('[toggleGaleria]  Evitando recursión infinita');
         return;
     }
     

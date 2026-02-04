@@ -78,31 +78,31 @@ GuardarDespachoUseCase (Application)
 ## Responsabilidades por Capa
 
 ### Domain (Lógica de negocio pura)
-- ✅ Reglas de negocio
-- ✅ Validaciones del dominio
-- ✅ Entidades con identidad
-- ✅ Value Objects
-- ✅ Interfaces de repositorios (NO implementaciones)
+-  Reglas de negocio
+-  Validaciones del dominio
+-  Entidades con identidad
+-  Value Objects
+-  Interfaces de repositorios (NO implementaciones)
 
 ### Application (Orquestación)
-- ✅ Coordinar Domain Services
-- ✅ Transacciones
-- ✅ Manejo de errores
-- ✅ Logging de aplicación
+-  Coordinar Domain Services
+-  Transacciones
+-  Manejo de errores
+-  Logging de aplicación
 - ❌ Lógica de negocio
 
 ### Infrastructure (Persistencia)
-- ✅ Implementación de repositorios
-- ✅ Modelos Eloquent
-- ✅ Migraciones
-- ✅ Queries complejas
+-  Implementación de repositorios
+-  Modelos Eloquent
+-  Migraciones
+-  Queries complejas
 - ❌ Lógica de negocio
 
 ### HTTP (API)
-- ✅ Recibir requests
-- ✅ Validar input
-- ✅ Delegar a Use Cases
-- ✅ Retornar responses
+-  Recibir requests
+-  Validar input
+-  Delegar a Use Cases
+-  Retornar responses
 
 ---
 

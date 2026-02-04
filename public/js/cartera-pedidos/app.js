@@ -364,7 +364,7 @@ function renderizarTabla(pedidos) {
     const tablaPedidosBody = elById('tablaPedidosBody');
     if (!tablaPedidosBody) return;
     
-    console.log('📊 Renderizando tabla con pedidos:', pedidos.length);
+    console.log(' Renderizando tabla con pedidos:', pedidos.length);
     
     tablaPedidosBody.innerHTML = '';
     
@@ -452,7 +452,7 @@ function renderizarTabla(pedidos) {
     
     // DEBUG: Mostrar ancho calculado del contenedor
     console.log('');
-    console.log('📊 Ancho total de columnas:');
+    console.log(' Ancho total de columnas:');
     let totalWidth = 0;
     const allCells = document.querySelectorAll('.table-cell-cartera');
     allCells.forEach((cell, idx) => {

@@ -124,7 +124,7 @@ final class ActualizarPrendaPedidoUseCase
         // 🗑️ RECOPILAR IDs DE TELAS EN EL PAYLOAD PARA IDENTIFICAR CUÁLES ELIMINAR
         $telaIdsEnPayload = [];
         
-        // ✅ MERGE PATTERN: UPDATE o CREATE según id
+        //  MERGE PATTERN: UPDATE o CREATE según id
         foreach ($dto->coloresTelas as $colorTela) {
             $colorId = $colorTela['color_id'] ?? null;
             $telaId = $colorTela['tela_id'] ?? null;
@@ -134,7 +134,7 @@ final class ActualizarPrendaPedidoUseCase
                 continue;
             }
             
-            // ✅ UPDATE: Si viene con ID, actualizar relación existente
+            //  UPDATE: Si viene con ID, actualizar relación existente
             if ($id) {
                 $colorTelaExistente = $prenda->coloresTelas()->where('id', $id)->first();
                 if ($colorTelaExistente) {
@@ -145,7 +145,7 @@ final class ActualizarPrendaPedidoUseCase
                     $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
                 }
             } 
-            // ✅ CREATE: Si NO viene con ID, crear nueva relación
+            //  CREATE: Si NO viene con ID, crear nueva relación
             else {
                 // Verificar si ya existe esta combinación
                 $existente = $prenda->coloresTelas()

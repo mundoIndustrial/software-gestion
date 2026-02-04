@@ -255,13 +255,13 @@ window.actualizarPreviewPrenda = function() {
         });
         
         if (!preview) {
-            console.warn('[actualizarPreviewPrenda] ⚠️ Preview element no encontrado');
+            console.warn('[actualizarPreviewPrenda]  Preview element no encontrado');
             return;
         }
         
         // Verificar que el servicio existe
         if (!window.imagenesPrendaStorage) {
-            console.warn('[actualizarPreviewPrenda] ⚠️ imagenesPrendaStorage no disponible');
+            console.warn('[actualizarPreviewPrenda]  imagenesPrendaStorage no disponible');
             return;
         }
         
@@ -298,7 +298,7 @@ window.actualizarPreviewPrenda = function() {
         };
         
         preview.appendChild(img);
-        console.log('[actualizarPreviewPrenda] ✅ Imagen agregada al preview');
+        console.log('[actualizarPreviewPrenda]  Imagen agregada al preview');
         
         // Actualizar contador
         if (contador) {
@@ -526,7 +526,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         });
         
         if (!imagenes || imagenes.length === 0) {
-            console.warn('⚠️ No hay imágenes para mostrar');
+            console.warn(' No hay imágenes para mostrar');
             return;
         }
         
@@ -540,7 +540,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         console.log('🖼️ [mostrarGaleriaImagenesPrenda] Primera imagen src:', imagenesValidas[0]?.src);
         
         if (imagenesValidas.length === 0) {
-            console.warn('⚠️ No hay imágenes con URLs válidas');
+            console.warn(' No hay imágenes con URLs válidas');
             return;
         }
         
@@ -600,7 +600,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         const actualizarUI = () => {
             if (imagenesValidas.length === 0) {
                 modal.remove();
-                console.log('✅ Todas las imágenes fueron eliminadas, galería cerrada');
+                console.log(' Todas las imágenes fueron eliminadas, galería cerrada');
                 return;
             }
             
@@ -695,17 +695,23 @@ if (!window.mostrarGaleriaImagenesPrenda) {
                 const indiceEnOriginal = imagenes.indexOf(imagenAEliminar);
                 if (indiceEnOriginal !== -1) {
                     imagenes.splice(indiceEnOriginal, 1);
-                    console.log('✅ Imagen eliminada del array original');
+                    console.log(' Imagen eliminada del array original');
                 }
                 
-                // 🔧 IMPORTANTE: Actualizar window.imagenesPrendaStorage con el nuevo array
+                //  IMPORTANTE: Actualizar window.imagenesPrendaStorage con el nuevo array
                 if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.establecerImagenes === 'function') {
                     window.imagenesPrendaStorage.establecerImagenes(imagenes);
-                    console.log('✅ [SYNC] window.imagenesPrendaStorage actualizado con', imagenes.length, 'imágenes');
+                    console.log(' [SYNC] window.imagenesPrendaStorage actualizado con', imagenes.length, 'imágenes');
                 }
                 
                 // Actualizar UI
                 actualizarUI();
+                
+                // 🔴 FIX: También actualizar el contador del preview principal
+                if (typeof window.actualizarPreviewPrenda === 'function') {
+                    window.actualizarPreviewPrenda();
+                    console.log(' [SYNC] Preview principal actualizado - contador debería cambiar a:', imagenes.length, 'fotos');
+                }
             };
             botonesDiv.appendChild(btnConfirmarEliminar);
             
@@ -756,7 +762,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
         document.body.appendChild(modal);
         actualizarUI();
         
-        console.log('✅ Galería abierta con', imagenesValidas.length, 'imágenes');
+        console.log(' Galería abierta con', imagenesValidas.length, 'imágenes');
     };
 }
 

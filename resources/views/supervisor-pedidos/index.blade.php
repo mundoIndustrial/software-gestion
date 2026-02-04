@@ -152,7 +152,7 @@
 
                             <!-- Botón Anular (solo si está pendiente de aprobación) -->
                             @if($estado === 'PENDIENTE_SUPERVISOR')
-                            <button onclick="confirmarAnularPedido({{ $orden->id }}, '{{ $numeroPedido }}')" title="Anular Pedido" style="
+                            <button onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $numeroPedido }}')" title="Pasar a Revisión" style="
                                 background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
                                 color: white;
                                 border: none;
@@ -337,24 +337,24 @@
             <div class="header-icon">
                 <span class="material-symbols-rounded">warning</span>
             </div>
-            <h2>¿Anular Orden <span id="ordenNumero"></span>?</h2>
+            <h2>¿Pasar a Revisión Orden <span id="ordenNumero"></span>?</h2>
         </div>
 
         <div class="modal-body">
             <p class="advertencia-texto">
-                Esta acción cancelará la orden y no se podrá revertir. Por favor ingresa el motivo de la anulación.
+                Esta acción enviará la orden de vuelta a la asesora para revisión. Por favor ingresa el motivo de la revisión.
             </p>
 
             <form id="formAnulacion" onsubmit="confirmarAnulacion(event)">
                 @csrf
                 <div class="form-group">
-                    <label for="motivoAnulacion">Motivo de anulación *</label>
+                    <label for="motivoAnulacion">Motivo de la revisión *</label>
                     <textarea 
                         id="motivoAnulacion" 
                         name="motivo_anulacion" 
                         class="form-control" 
                         rows="4" 
-                        placeholder="Ej: El cliente solicitó reembolso, error en precios..."
+                        placeholder="Ej: Revisar precios, errores en especificaciones..."
                         required
                         minlength="10"
                         maxlength="500">
@@ -370,10 +370,37 @@
                     </button>
                     <button type="submit" id="btnConfirmarAnulacion" class="btn btn-danger">
                         <span class="material-symbols-rounded">delete</span>
-                        Confirmar Anulación
+                        Pasar a Revisión
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito para Pasar a Revisión -->
+<div id="modalExitoRevision" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-anulacion" style="text-align: center; max-width: 400px;">
+        <div class="modal-header">
+            <div class="header-icon" style="background: #d4edda; color: #28a745;">
+                <span class="material-symbols-rounded">check_circle</span>
+            </div>
+            <h2>¡Éxito!</h2>
+        </div>
+
+        <div class="modal-body">
+            <p style="color: #28a745; font-weight: 500; margin-bottom: 1.5rem;">
+                La orden ha sido enviada a revisión correctamente
+            </p>
+            <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                La asesora recibirá la notificación del cambio.
+            </p>
+
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn btn-success" onclick="cerrarModalExitoRevision()">
+                    Aceptar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -672,7 +699,7 @@
             console.log('[editarPedido] 🚀 Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
-            console.log(`[editarPedido] ✅ Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
+            console.log(`[editarPedido]  Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
             
             // Mostrar modal pequeño con spinner centrado
             const modalPromise = Swal.fire({
@@ -712,11 +739,11 @@
                         title: 'Cargando datos',
                         message: 'Por favor espera...',
                         onComplete: () => {
-                            console.log('[editarPedido] ✅ Módulos cargados completamente');
+                            console.log('[editarPedido]  Módulos cargados completamente');
                         }
                     });
                     etapas.modulosCargados = performance.now();
-                    console.log(`[editarPedido] ✅ Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
+                    console.log(`[editarPedido]  Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
                 } catch (error) {
                     console.error('[editarPedido] ❌ Error cargando módulos:', error);
                     Swal.close();
@@ -753,7 +780,7 @@
 
             const datos = respuesta.data || respuesta.datos;
             etapas.fetchCompleto = performance.now();
-            console.log(`[editarPedido] ✅ Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
+            console.log(`[editarPedido]  Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
             
             // Transformar datos al formato que espera abrirModalEditarPedido
             const datosTransformados = {
@@ -771,7 +798,7 @@
                 ...datos
             };
 
-            console.log('[editarPedido] 📊 Datos cargados:', {
+            console.log('[editarPedido]  Datos cargados:', {
                 id: datosTransformados.id,
                 numero: datosTransformados.numero_pedido,
                 cliente: datosTransformados.cliente,
@@ -836,22 +863,29 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Orden anulada correctamente');
+                // Cerrar modal de revisión
+                cerrarModalAnulacion();
+                // Mostrar modal de éxito
+                document.getElementById('modalExitoRevision').style.display = 'flex';
                 // Recargar notificaciones si la función existe
                 if (typeof cargarNotificacionesPendientes === 'function') {
                     cargarNotificacionesPendientes();
                 }
-                // Cerrar modal y recargar después de 1 segundo
-                cerrarModalAnulacion();
-                setTimeout(() => location.reload(), 1000);
             } else {
                 alert('Error: ' + data.message);
             }
         })
         .catch(error => {
-            alert('Error al anular la orden');
+            alert('Error al enviar la orden a revisión');
         });
     }
+
+    function cerrarModalExitoRevision() {
+        document.getElementById('modalExitoRevision').style.display = 'none';
+        // Recargar la página después de cerrar
+        setTimeout(() => location.reload(), 300);
+    }
+
 
     // Contador de caracteres
     document.getElementById('motivoAnulacion')?.addEventListener('input', function() {
@@ -869,6 +903,10 @@
 
     document.getElementById('modalAnulacion')?.addEventListener('click', function(e) {
         if (e.target === this) cerrarModalAnulacion();
+    });
+
+    document.getElementById('modalExitoRevision')?.addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalExitoRevision();
     });
 
     // Función para aprobar orden
@@ -995,19 +1033,23 @@
 @include('asesores.pedidos.modals.modal-proceso-generico')
 
 @push('scripts')
-    <!-- ✅ SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
+    <!--  SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
     <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>
     <script src="{{ asset('js/utilidades/ui-modal-service.js') }}"></script>
     <script src="{{ asset('js/utilidades/deletion-service.js') }}"></script>
     <script src="{{ asset('js/utilidades/galeria-service.js') }}"></script>
     
-    <!-- ✅ LAZY LOADERS: Cargan módulos bajo demanda (Requeridos para modal-editar-pedido) -->
+    <!--  SERVICIO DE ALMACENAMIENTO DE IMÁGENES (Requerido para agregar/eliminar imágenes) -->
+    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}"></script>
+    
+    <!--  LAZY LOADERS: Cargan módulos bajo demanda (Requeridos para modal-editar-pedido) -->
     <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/prenda-editor-loader.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
     
     <!-- Scripts para funcionalidad de asesores -->
     <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+    <script src="{{ asset('js/asesores/pedidos-modal-edit.js') }}"></script>
     <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
     <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
     <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>

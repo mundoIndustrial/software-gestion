@@ -4,12 +4,12 @@
 @section('page-title', 'Mis Pedidos')
 
 @section('extra_styles')
-    <!-- ✅ OPTIMIZADO: Solo CSS necesario para lista de pedidos -->
+    <!--  OPTIMIZADO: Solo CSS necesario para lista de pedidos -->
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/page-loading.css') }}">
     <!-- Otros CSS se cargan lazy cuando se editan prendas/EPP -->
     
-    <!-- 🔧 FIX GLOBAL: Posicionamiento de SweetAlert para modales grandes -->
+    <!--  FIX GLOBAL: Posicionamiento de SweetAlert para modales grandes -->
     <style>
         /* Permitir que SweetAlert sea scrolleable y se posicione correctamente */
         .swal2-container {
@@ -57,7 +57,7 @@
             justify-content: center !important;
             padding: 20px !important;
             overflow-y: auto !important;
-            /* 🔝 CRÍTICO: NO usar !important en z-index para permitir inline styles */
+            /*  CRÍTICO: NO usar !important en z-index para permitir inline styles */
             z-index: 99999;
         }
         
@@ -110,13 +110,13 @@
 
 @push('scripts')
 
-<!-- ✅ STORAGE WRAPPER: Protege acceso a localStorage/sessionStorage evitando errores de contexto -->
+<!--  STORAGE WRAPPER: Protege acceso a localStorage/sessionStorage evitando errores de contexto -->
 <script src="{{ asset('js/storage-wrapper.js') }}"></script>
 
-<!-- ✅ PRELOADER: Precarga en background para evitar delays en primera apertura -->
+<!--  PRELOADER: Precarga en background para evitar delays en primera apertura -->
 <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
 
-<!-- ✅ LAZY LOADERS: Cargan módulos bajo demanda -->
+<!--  LAZY LOADERS: Cargan módulos bajo demanda -->
 <script src="{{ asset('js/lazy-loaders/prenda-editor-loader.js') }}"></script>
 <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
 
@@ -354,7 +354,7 @@
     /**
      * Editar pedido - OPTIMIZADO CON LAZY LOADING
      * 
-     * ✅ CAMBIOS:
+     *  CAMBIOS:
      * - Carga módulos de edición bajo demanda (NO en la carga inicial)
      * - SIEMPRE hace fetch para obtener datos completos (modal necesita estructura completa)
      * - Tiempo: <100ms para lazy loader (cacheado), ~500ms para fetch datos
@@ -376,7 +376,7 @@
             console.log('[editarPedido] 🚀 Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
-            console.log(`[editarPedido] ✅ Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
+            console.log(`[editarPedido]  Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
             
             // Mostrar modal pequeño con spinner centrado
             const modalPromise = Swal.fire({
@@ -418,11 +418,11 @@
                         title: 'Cargando datos',
                         message: 'Por favor espera...',
                         onComplete: () => {
-                            console.log('[editarPedido] ✅ Módulos cargados completamente');
+                            console.log('[editarPedido]  Módulos cargados completamente');
                         }
                     });
                     etapas.modulosCargados = performance.now();
-                    console.log(`[editarPedido] ✅ Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
+                    console.log(`[editarPedido]  Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
                 } catch (error) {
                     console.error('[editarPedido] ❌ Error cargando módulos:', error);
                     Swal.close();
@@ -472,7 +472,7 @@
             });
             
             etapas.fetchCompleto = performance.now();
-            console.log(`[editarPedido] ✅ Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
+            console.log(`[editarPedido]  Fetch completado: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms`);
             
             // Transformar datos al formato que espera abrirModalEditarPedido
             const datosTransformados = {
@@ -490,7 +490,7 @@
                 ...datos
             };
 
-            console.log('[editarPedido] 📊 Datos cargados:', {
+            console.log('[editarPedido]  Datos cargados:', {
                 id: datosTransformados.id,
                 numero: datosTransformados.numero_pedido,
                 cliente: datosTransformados.cliente,
@@ -584,7 +584,7 @@
         UI.contenido({
             titulo: 'Registrar Novedad del Cambio',
             html: html,
-            confirmButtonText: '✅ Confirmar y Guardar',
+            confirmButtonText: ' Confirmar y Guardar',
             confirmButtonColor: '#10b981',
             showCancelButton: true
         }).then((result) => {
@@ -827,14 +827,14 @@
         });
     });
 </script>
-<!-- ✅ CORE PEDIDOS (necesario para lista) -->
+<!--  CORE PEDIDOS (necesario para lista) -->
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
 
-<!-- ✅ TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
+<!--  TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
@@ -842,7 +842,7 @@
 <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 
-<!-- ✅ ORDER TRACKING (MODULAR - necesario) -->
+<!--  ORDER TRACKING (MODULAR - necesario) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}"></script>
@@ -1195,7 +1195,7 @@
                 const tablaActual = document.querySelector('.table-scroll-container');
                 if (tablaActual) {
                     tablaActual.innerHTML = nuevoContenidoTabla.innerHTML;
-                    console.log('[asesores/pedidos] ✅ Tabla refrescada exitosamente');
+                    console.log('[asesores/pedidos]  Tabla refrescada exitosamente');
                     
                     // Mostrar notificación visual
                     mostrarNotificacionActualizacion();
@@ -1270,29 +1270,29 @@
     document.head.appendChild(style);
 
     /**
-     * 🔧 INICIALIZACIÓN DE LAZY LOADERS
+     *  INICIALIZACIÓN DE LAZY LOADERS
      * 
      * Envuelve funciones de interfaz para cargar módulos bajo demanda
      */
     document.addEventListener('DOMContentLoaded', function() {
 
-        // ✅ Inicializar PrendaEditorPreloader si está disponible
+        //  Inicializar PrendaEditorPreloader si está disponible
         if (window.PrendaEditorPreloader) {
             window.PrendaEditorPreloader.start();
         } else {
-            console.warn('[PedidosInit] ⚠️ PrendaEditorPreloader no encontrado');
+            console.warn('[PedidosInit]  PrendaEditorPreloader no encontrado');
         }
 
-        // ✅ Inicializar PrendaEditorLoader si está disponible
+        //  Inicializar PrendaEditorLoader si está disponible
         if (window.PrendaEditorLoader) {
         } else {
-            console.warn('[PedidosInit] ⚠️ PrendaEditorLoader no encontrado - revisar script de carga');
+            console.warn('[PedidosInit]  PrendaEditorLoader no encontrado - revisar script de carga');
         }
 
-        // ✅ Inicializar EPPManagerLoader si está disponible
+        //  Inicializar EPPManagerLoader si está disponible
         if (window.EPPManagerLoader) {
         } else {
-            console.warn('[PedidosInit] ⚠️ EPPManagerLoader no encontrado - revisar script de carga');
+            console.warn('[PedidosInit]  EPPManagerLoader no encontrado - revisar script de carga');
         }
 
         // 🔥 Envolver funciones de edición/creación para garantizar lazy loading
@@ -1309,7 +1309,7 @@
                 }
                 return originalAbrirEPP.apply(this, args);
             };
-            console.log('[PedidosInit] ✅ abrirModalEditarEPP envuelto para lazy loading');
+            console.log('[PedidosInit]  abrirModalEditarEPP envuelto para lazy loading');
         }
 
         // 🔥 Envolver función para agregar prenda

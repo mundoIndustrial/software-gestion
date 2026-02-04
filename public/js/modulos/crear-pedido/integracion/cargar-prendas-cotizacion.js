@@ -43,7 +43,7 @@ class CargadorPrendasCotizacion {
             console.log(data.procesos);
             
             // Análisis detallado de procesos
-            console.log('[CargadorPrendasCotizacion] 📊 ANÁLISIS DE PROCESOS:');
+            console.log('[CargadorPrendasCotizacion]  ANÁLISIS DE PROCESOS:');
             console.log('  - Tipo de data.procesos:', typeof data.procesos);
             console.log('  - ¿Es array?', Array.isArray(data.procesos));
             console.log('  - ¿Es objeto?', data.procesos && typeof data.procesos === 'object');
@@ -120,7 +120,7 @@ class CargadorPrendasCotizacion {
         console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
         console.log('[transformarDatos] 🧵 ESTRUCTURA completa de telas:', JSON.stringify(prenda.telas, null, 2));
         
-        // ✅ LÓGICA NUEVA: Verificar si hay telas desde logoCotizacionTelasPrenda
+        //  LÓGICA NUEVA: Verificar si hay telas desde logoCotizacionTelasPrenda
         // Estas vienen de la tabla logo_cotizacion_telas_prenda cuando la cotización es de tipo Logo
         let telasDesdeLogo = [];
         if (data.prenda?.logoCotizacionTelasPrenda && Array.isArray(data.prenda.logoCotizacionTelasPrenda)) {
@@ -143,7 +143,7 @@ class CargadorPrendasCotizacion {
                     nombre_tela: telaLogo.tela || 'SIN NOMBRE',
                     color: telaLogo.color || '',
                     grosor: '',
-                    referencia: telaLogo.ref || '',  // ✅ Las referencias vienen en campo "ref"
+                    referencia: telaLogo.ref || '',  //  Las referencias vienen en campo "ref"
                     composicion: '',
                     imagenes: telaLogo.img ? [{
                         ruta: telaLogo.img,  // Ya viene como /storage/... desde el backend
@@ -154,7 +154,7 @@ class CargadorPrendasCotizacion {
                 };
             });
             
-            console.log('[transformarDatos] ✅ Telas desde Logo procesadas:', telasDesdeLogo);
+            console.log('[transformarDatos]  Telas desde Logo procesadas:', telasDesdeLogo);
         }
         
         // PROcesar telas desde el backend (prioridad 1)
@@ -239,7 +239,7 @@ class CargadorPrendasCotizacion {
                         // Agregar al array de telas
                         telasAgregadasTemp.push(telaCompleta);
                         
-                        console.log(`[transformarDatos] ✅ [Tela ${telaIndex}] Agregada correctamente:`, {
+                        console.log(`[transformarDatos]  [Tela ${telaIndex}] Agregada correctamente:`, {
                             nombre: telaCompleta.nombre_tela,
                             color: telaCompleta.color,
                             referencia: `"${telaCompleta.referencia}"`,
@@ -248,7 +248,7 @@ class CargadorPrendasCotizacion {
                         });
                     });
                 } else {
-                    console.log(`[transformarDatos] ⚠️ [Variante ${varianteIndex}] No tiene telas_multiples válido`);
+                    console.log(`[transformarDatos]  [Variante ${varianteIndex}] No tiene telas_multiples válido`);
                 }
             });
             
@@ -256,17 +256,17 @@ class CargadorPrendasCotizacion {
             telasDesdeVariantes = telasAgregadasTemp;
             
             console.log('[transformarDatos]  RESULTADO FINAL DE EXTRACIÓN DIRECTA:');
-            console.log(`[transformarDatos] 📊 Total de telas extraídas: ${telasDesdeVariantes.length}`);
+            console.log(`[transformarDatos]  Total de telas extraídas: ${telasDesdeVariantes.length}`);
             
             telasDesdeVariantes.forEach((tela, idx) => {
                 console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}"`);
             });
             
         } else {
-            console.log('[transformarDatos] ⚠️ La prenda no tiene variantes array');
+            console.log('[transformarDatos]  La prenda no tiene variantes array');
         }
         
-        // ✅ COMBINACIÓN INTELIGENTE DE TELAS: Priorizar Logo > Backend > Variantes
+        //  COMBINACIÓN INTELIGENTE DE TELAS: Priorizar Logo > Backend > Variantes
         let telasFormato = [];
         
         // Si hay telas desde Logo, usarlas DIRECTAMENTE (máxima prioridad)
@@ -403,7 +403,7 @@ class CargadorPrendasCotizacion {
             numero_cotizacion: data.numero_cotizacion
         };
 
-        console.log('[CargadorPrendasCotizacion] ✅ Prenda transformada:', {
+        console.log('[CargadorPrendasCotizacion]  Prenda transformada:', {
             nombre: prendaCompleta.nombre_prenda,
             procesos_count: Object.keys(prendaCompleta.procesos).length,
             telas_count: prendaCompleta.telasAgregadas.length,
@@ -748,12 +748,12 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     console.log('[abrirSelectorPrendasCotizacion] ✓ Prenda cargada en modal para edición');
                     
                     // NUEVO: Cargar procesos automáticamente desde la prenda
-                    console.log('[abrirSelectorPrendasCotizacion] 🔧 Cargando procesos desde la cotización...');
+                    console.log('[abrirSelectorPrendasCotizacion]  Cargando procesos desde la cotización...');
                     if (prendaCompleta.procesos && Object.keys(prendaCompleta.procesos).length > 0) {
                         window.gestionItemsUI.prendaEditor.cargarProcesos(prendaCompleta);
                         console.log('[abrirSelectorPrendasCotizacion] ✓ Procesos cargados:', Object.keys(prendaCompleta.procesos));
                     } else {
-                        console.log('[abrirSelectorPrendasCotizacion] ℹ️ No hay procesos definidos para esta prenda');
+                        console.log('[abrirSelectorPrendasCotizacion]  No hay procesos definidos para esta prenda');
                     }
                 } else {
                     console.error('[abrirSelectorPrendasCotizacion] ❌ PrendaEditor no disponible');
@@ -807,5 +807,5 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
     modal.appendChild(container);
     document.body.appendChild(modal);
 
-    console.log('[abrirSelectorPrendasCotizacion] ✅ Modal abierto');
+    console.log('[abrirSelectorPrendasCotizacion]  Modal abierto');
 };

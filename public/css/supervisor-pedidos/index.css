@@ -698,22 +698,22 @@ body.dark-theme .action-menu-item:hover {
 .modal-anulacion .modal-header {
   flex-direction: column;
   text-align: center;
-  padding-top: 3rem;
+  padding-top: 5rem;
 }
 
 .header-icon {
   position: absolute;
-  top: -30px;
+  top: -35px;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   background: #fff3cd;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: #f39c12;
 }
 

@@ -8,6 +8,7 @@ class ImageStorageService {
     constructor(maxImages = 3) {
         this.maxImages = maxImages;
         this.images = []; // Array de { file, previewUrl, nombre, tamaño }
+        this.snapshotOriginal = null; // SNAPSHOT de imágenes originales (para detectar eliminaciones)
     }
 
     /**
@@ -49,15 +50,31 @@ class ImageStorageService {
     }
 
     /**
-     * 🔧 Establecer/reemplazar el array completo de imágenes
+     *  Establecer/reemplazar el array completo de imágenes
      * Usado cuando la galería elimina una imagen y necesita sincronizar el storage
      * 
      * Normaliza las imágenes para asegurar que tengan previewUrl
+     * IMPORTANTE: Preserva un snapshot existente (no lo sobrescribe)
      */
     establecerImagenes(nuevasImagenes) {
         if (!Array.isArray(nuevasImagenes)) {
-            console.warn('⚠️ [ImageStorageService.establecerImagenes] No es un array válido');
+            console.warn(' [ImageStorageService.establecerImagenes] No es un array válido');
             return;
+        }
+        
+        // CRÍTICO: Si este es el primer establecimiento de imágenes y no tenemos snapshot
+        // Guardar un snapshot para detectar eliminaciones después
+        // PERO: Si ya existe un snapshot (establecido manualmente desde prenda-editor-modal)
+        // NO sobrescribirlo - preservar el snapshot con IDs
+        if (this.snapshotOriginal === null && nuevasImagenes.length > 0) {
+            this.snapshotOriginal = JSON.parse(JSON.stringify(nuevasImagenes));
+            console.log(' [ImageStorageService] 📸 SNAPSHOT GUARDADO de', nuevasImagenes.length, 'imágenes originales');
+        } else if (this.snapshotOriginal !== null) {
+            console.log(' [ImageStorageService] ⏸️ SNAPSHOT YA EXISTE - PRESERVANDO SNAPSHOT EXISTENTE CON IDs', {
+                snapshotImagenes: this.snapshotOriginal.length,
+                nuevasImagenes: nuevasImagenes.length,
+                primerImagenSnapshot: this.snapshotOriginal[0]
+            });
         }
         
         // Limpiar URLs de imágenes que serán reemplazadas
@@ -81,7 +98,7 @@ class ImageStorageService {
         
         // Reemplazar el array
         this.images = imagenesNormalizadas || [];
-        console.log('✅ [ImageStorageService.establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
+        console.log(' [ImageStorageService.establecerImagenes] Array sincronizado y normalizado, ahora hay', this.images.length, 'imágenes');
     }
 
     /**

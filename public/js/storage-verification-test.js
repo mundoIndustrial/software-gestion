@@ -19,22 +19,22 @@
     
     function pass(name, details = '') {
         checks.passed++;
-        console.log(`✅ ${name}`);
-        if (details) console.log(`   ℹ️  ${details}`);
+        console.log(` ${name}`);
+        if (details) console.log(`     ${details}`);
         checks.results.push({ status: 'pass', name });
     }
     
     function fail(name, error) {
         checks.failed++;
         console.log(`❌ ${name}`);
-        if (error) console.log(`   ⚠️  ${error}`);
+        if (error) console.log(`     ${error}`);
         checks.results.push({ status: 'fail', name });
     }
     
     function warn(name, details) {
         checks.warnings++;
-        console.log(`⚠️  ${name}`);
-        if (details) console.log(`   ℹ️  ${details}`);
+        console.log(`  ${name}`);
+        if (details) console.log(`     ${details}`);
         checks.results.push({ status: 'warn', name });
     }
     
@@ -157,7 +157,7 @@
         }
     }
     
-    console.log('\n🔧 VERIFICANDO CONFIGURACIÓN...\n');
+    console.log('\n VERIFICANDO CONFIGURACIÓN...\n');
     
     // 11. Verificar order de carga
     try {
@@ -189,16 +189,16 @@
     }
     
     console.log('\n' + '='.repeat(50));
-    console.log(`📊 RESUMEN:`);
-    console.log(`   ✅ Pasadas: ${checks.passed}`);
+    console.log(` RESUMEN:`);
+    console.log(`    Pasadas: ${checks.passed}`);
     console.log(`   ❌ Fallidas: ${checks.failed}`);
-    console.log(`   ⚠️  Advertencias: ${checks.warnings}`);
+    console.log(`     Advertencias: ${checks.warnings}`);
     console.log('='.repeat(50) + '\n');
     
     if (checks.failed === 0) {
         console.log('🎉 ¡PERFECTO! Todo está configurado correctamente.\n');
     } else {
-        console.log('⚠️  Hay problemas que necesitan atención. Revisa los errores arriba.\n');
+        console.log('  Hay problemas que necesitan atención. Revisa los errores arriba.\n');
     }
     
     // ==================== COMANDOS DE DEBUG ====================

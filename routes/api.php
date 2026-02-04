@@ -80,7 +80,7 @@ Route::middleware('api')->group(function () {
 });
 
 // Rutas PROTECTED - Escritura (POST, PATCH, DELETE)
-// ⚠️ Usando web,auth porque necesitamos sesión + autenticación
+//  Usando web,auth porque necesitamos sesión + autenticación
 Route::withoutMiddleware(['api']) // Remover el middleware api global
     ->middleware(['web', 'auth'])
     ->group(function () {

@@ -153,7 +153,7 @@ function construirFormDataConArchivos(pedidoData) {
     }
     
     // Log para debugging
-    console.info('✅ FormData construido correctamente', {
+    console.info(' FormData construido correctamente', {
         totalArchivos: contarArchivosEnFormData(formData),
         estructura: datosLimpios
     });

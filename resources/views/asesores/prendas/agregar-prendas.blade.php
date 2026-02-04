@@ -762,19 +762,19 @@ function agregarPrenda() {
     
     // Validar campos OBLIGATORIOS
     if (!nombre) {
-        errores.push({ campo: 'nombre-prenda', mensaje: '⚠️ Tipo de prenda es requerido' });
+        errores.push({ campo: 'nombre-prenda', mensaje: ' Tipo de prenda es requerido' });
     }
     if (!color) {
-        errores.push({ campo: 'color', mensaje: '⚠️ Color es requerido' });
+        errores.push({ campo: 'color', mensaje: ' Color es requerido' });
     }
     if (!tela) {
-        errores.push({ campo: 'tela', mensaje: '⚠️ Tela es requerida' });
+        errores.push({ campo: 'tela', mensaje: ' Tela es requerida' });
     }
     
     // Validar que al menos una talla tenga cantidad
     const totalTallas = Object.values(tallas).reduce((a, b) => a + b, 0);
     if (totalTallas === 0) {
-        errores.push({ campo: 'talla-s', mensaje: '⚠️ Debe agregar al menos una talla con cantidad' });
+        errores.push({ campo: 'talla-s', mensaje: ' Debe agregar al menos una talla con cantidad' });
     }
     
     // Si hay errores, mostrarlos en rojo

@@ -253,10 +253,10 @@ class FormModule {
                         });
                     }
                 });
-                console.log('✅ Reflectivo agregado a FormData');
+                console.log(' Reflectivo agregado a FormData');
             } else {
                 formData.append('reflectivo', JSON.stringify([]));
-                console.log('⚠️ Reflectivo vacío');
+                console.log(' Reflectivo vacío');
             }
         } else {
             console.warn('❌ capturePrendasReflectivoPaso4 no es función');
@@ -273,10 +273,10 @@ class FormModule {
             
             if (logoTecnicas && logoTecnicas.length > 0) {
                 formData.append('logo_tecnicas', JSON.stringify(logoTecnicas));
-                console.log('✅ Logo técnicas agregado a FormData');
+                console.log(' Logo técnicas agregado a FormData');
             } else {
                 formData.append('logo_tecnicas', JSON.stringify([]));
-                console.log('⚠️ Logo técnicas vacío');
+                console.log(' Logo técnicas vacío');
             }
         } else {
             console.warn('❌ capturarLogotecnicasPaso3 no es función');

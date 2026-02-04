@@ -233,7 +233,7 @@ class PrendaEditorExtension {
     static mostrarReporte() {
         const stats = this.obtenerEstadisticas();
 
-        console.group('📊 Estadísticas de Prendas');
+        console.group(' Estadísticas de Prendas');
         console.table({
             'Total': stats.total,
             'Desde Cotización': stats.desdeCotizacion,

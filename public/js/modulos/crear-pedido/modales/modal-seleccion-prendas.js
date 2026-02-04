@@ -444,7 +444,7 @@ function renderizarItemsCotizacionEnDOM() {
     }
     
     if (!window.itemsPedido || window.itemsPedido.length === 0) {
-        console.warn('⚠️ No hay items para renderizar');
+        console.warn(' No hay items para renderizar');
         return;
     }
     
@@ -470,7 +470,7 @@ function renderizarItemsCotizacionEnDOM() {
         const cantidad = item.prenda?.cantidad || 0;
         const origen = item.origen === 'bodega' ? '🏪 Bodega' : '✂️ Confección';
         const procesosTexto = item.procesos && item.procesos.length > 0 ? item.procesos.join(', ') : 'Sin procesos';
-        const tipoItem = item.es_proceso ? '🔧 Proceso' : 'Prenda Base';
+        const tipoItem = item.es_proceso ? ' Proceso' : 'Prenda Base';
         
         // Información adicional de la prenda
         const descripcion = item.prenda?.variaciones?.descripcion || '';

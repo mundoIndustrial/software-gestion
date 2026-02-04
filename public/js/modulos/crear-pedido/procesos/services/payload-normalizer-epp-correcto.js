@@ -1,7 +1,7 @@
 /**
  * payload-normalizer-epp-correcto.js
  * 
- * ✅ VERSIÓN CORRECTA PARA ENVÍO DE IMÁGENES DE EPP
+ *  VERSIÓN CORRECTA PARA ENVÍO DE IMÁGENES DE EPP
  * 
  * Extrae archivos del payload y construye FormData correctamente
  * Las imágenes NO viajan en JSON, viajan en FormData como archivos reales
@@ -9,7 +9,7 @@
 
 class PayloadNormalizerEpp {
     /**
-     * ✅ Extraer File objects del payload
+     *  Extraer File objects del payload
      * Retorna un objeto limpio (sin Files) y los archivos por separado
      */
     static extraerArchivos(pedidoData) {
@@ -137,7 +137,7 @@ class PayloadNormalizerEpp {
     }
 
     /**
-     * ✅ Extraer File object de diferentes formatos
+     *  Extraer File object de diferentes formatos
      */
     static _extraerFile(img) {
         if (img instanceof File) {
@@ -152,7 +152,7 @@ class PayloadNormalizerEpp {
     }
 
     /**
-     * ✅ Construir FormData correctamente
+     *  Construir FormData correctamente
      */
     static construirFormData(pedidoLimpio, archivos) {
         const formData = new FormData();
@@ -184,7 +184,7 @@ class PayloadNormalizerEpp {
             );
         });
 
-        // 5. ✅ Agregar archivos de EPP
+        // 5.  Agregar archivos de EPP
         archivos.epps.forEach(({eppIdx, imgIdx, file, epp_id}) => {
             // Nombre único para facilitar identificación en servidor
             const ext = file.name.split('.').pop() || 'jpg';
@@ -216,7 +216,7 @@ class PayloadNormalizerEpp {
     }
 
     /**
-     * ✅ Método completo: normalizar payload y crear FormData
+     *  Método completo: normalizar payload y crear FormData
      */
     static normalizar(pedidoData) {
         const { pedidoLimpio, archivos } = this.extraerArchivos(pedidoData);
@@ -230,7 +230,7 @@ class PayloadNormalizerEpp {
     }
 
     /**
-     * ✅ Debug: verificar contenido de FormData
+     *  Debug: verificar contenido de FormData
      */
     static debugFormData(formData) {
         console.log('\n=== FormData Contents ===');

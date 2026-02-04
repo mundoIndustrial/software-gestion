@@ -29,7 +29,7 @@ class TestNumeroCotizacion extends Command
         }
         
         $ultimoNumero = $cotizaciones->first()?->numero_cotizacion ?? 'ninguno';
-        $this->info("\n🔢 Último número de cotización: {$ultimoNumero}");
+        $this->info("\n Último número de cotización: {$ultimoNumero}");
         
         // Contar borradores
         $borradores = Cotizacion::where('es_borrador', true)->count();

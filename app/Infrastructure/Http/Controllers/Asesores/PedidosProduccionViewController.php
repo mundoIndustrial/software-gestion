@@ -667,7 +667,7 @@ class PedidosProduccionViewController
         try {
             // Cargar cotización con todas las relaciones
             $cotizacion = Cotizacion::with([
-                'tipoCotizacion',  // ✅ Cargar el tipo de cotización para verificar si es Logo
+                'tipoCotizacion',  //  Cargar el tipo de cotización para verificar si es Logo
                 'prendas' => function($query) use ($prendaId) {
                     $query->where('id', $prendaId)
                         ->with([
@@ -694,7 +694,7 @@ class PedidosProduccionViewController
                                     'fotos:id,logo_cotizacion_tecnica_prenda_id,ruta_original,ruta_webp,ruta_miniatura,orden'
                                 ]);
                             },
-                            'logoCotizacionTelasPrenda' => function($q) {  // ✅ Nueva relación
+                            'logoCotizacionTelasPrenda' => function($q) {  //  Nueva relación
                                 // Cargar todas las telas/colores/referencias para esta prenda en logo
                             }
                         ]);
@@ -725,7 +725,7 @@ class PedidosProduccionViewController
             // PROCESAR TELAS
             $telasFormato = [];
             
-            // ✅ LÓGICA NUEVA: Si es cotización de tipo Logo, usar telas desde logo_cotizacion_telas_prenda
+            //  LÓGICA NUEVA: Si es cotización de tipo Logo, usar telas desde logo_cotizacion_telas_prenda
             $esLogoCotizacion = $cotizacion->tipoCotizacion && 
                                  (strtolower($cotizacion->tipoCotizacion->nombre) === 'logo' || 
                                   strtolower($cotizacion->tipoCotizacion->nombre) === 'bordado');

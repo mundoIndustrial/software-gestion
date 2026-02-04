@@ -18,7 +18,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
     // Validar que la prenda tenga variantes
     if (!prenda || !prenda.variantes) {
-        console.warn('⚠️ [transformarVariantesATelasAgregadas] La prenda no tiene variantes');
+        console.warn(' [transformarVariantesATelasAgregadas] La prenda no tiene variantes');
         return [];
     }
 
@@ -42,7 +42,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
         // Validar que la variante tenga telas_multiples
         if (!variante.telas_multiples || !Array.isArray(variante.telas_multiples)) {
-            console.log(`⚠️ [Variante ${varianteIndex}] No tiene telas_multiples o no es array`);
+            console.log(` [Variante ${varianteIndex}] No tiene telas_multiples o no es array`);
             return; // Continue con siguiente variante
         }
 
@@ -68,7 +68,7 @@ function transformarVariantesATelasAgregadas(prenda) {
             
             // Validar que tenga datos mínimos
             if (!nombre_tela || !color) {
-                console.warn(`⚠️ [Tela ${telaIndex}] Datos incompletos - requiere nombre_tela y color:`, {
+                console.warn(` [Tela ${telaIndex}] Datos incompletos - requiere nombre_tela y color:`, {
                     nombre_tela,
                     color
                 });
@@ -77,7 +77,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
             // Verificar si ya existe para evitar duplicados
             if (telasUnicas.has(claveUnica)) {
-                console.log(`ℹ️ [Tela ${telaIndex}] Tela ya existe, omitiendo: ${claveUnica}`);
+                console.log(` [Tela ${telaIndex}] Tela ya existe, omitiendo: ${claveUnica}`);
                 return; // Saltar duplicado
             }
 
@@ -92,7 +92,7 @@ function transformarVariantesATelasAgregadas(prenda) {
                 // Propiedades principales de la variante
                 nombre_tela: nombre_tela,
                 color: color,
-                referencia: referencia, // ✅ MUY IMPORTANTE
+                referencia: referencia, //  MUY IMPORTANTE
                 descripcion: descripcion,
                 
                 // Propiedades adicionales (valores por defecto)
@@ -112,7 +112,7 @@ function transformarVariantesATelasAgregadas(prenda) {
             // Agregar al array final
             telasAgregadas.push(telaTransformada);
             
-            console.log(`✅ [Tela ${telaIndex}] Tela agregada correctamente:`, {
+            console.log(` [Tela ${telaIndex}] Tela agregada correctamente:`, {
                 nombre: telaTransformada.nombre_tela,
                 color: telaTransformada.color,
                 referencia: `"${telaTransformada.referencia}"`,
@@ -124,7 +124,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
     // LOG FINAL CON REFERENCIAS
     console.log(' [transformarVariantesATelasAgregadas] TRANSFORMACIÓN COMPLETADA');
-    console.log(`📊 Total de telas agregadas: ${telasAgregadas.length}`);
+    console.log(` Total de telas agregadas: ${telasAgregadas.length}`);
     console.log('📋 ARRAY FINAL telasAgregadas con referencias:');
     
     telasAgregadas.forEach((tela, index) => {
@@ -176,7 +176,7 @@ function procesarTelasDesdeVariantes(prenda) {
         window.actualizarTablaTelas();
     }
     
-    console.log('✅ [procesarTelasDesdeVariantes] Flujo completado exitosamente');
+    console.log(' [procesarTelasDesdeVariantes] Flujo completado exitosamente');
     return prendaModificada;
 }
 

@@ -24,7 +24,7 @@
         console.error('   - Se está usando la URL sin cache busting');
         return;
     }
-    console.log('✅ window.PayloadNormalizer EXISTE');
+    console.log(' window.PayloadNormalizer EXISTE');
 
     // ========================================================================
     // 2. VERIFICAR MÉTODOS
@@ -52,7 +52,7 @@
     let todosPresentes = true;
     metodosEsperados.forEach(metodo => {
         const existe = typeof window.PayloadNormalizer[metodo] === 'function';
-        console.log(`   ${existe ? '✅' : ''} ${metodo}: ${existe ? 'FUNCIÓN' : 'NO EXISTE'}`);
+        console.log(`   ${existe ? '' : ''} ${metodo}: ${existe ? 'FUNCIÓN' : 'NO EXISTE'}`);
         if (!existe) todosPresentes = false;
     });
 
@@ -70,7 +70,7 @@
     if (window.PayloadNormalizer._initialized !== true) {
         console.warn('  Flag _initialized NO ESTÁ EN TRUE');
     } else {
-        console.log('✅ Flag _initialized = true');
+        console.log(' Flag _initialized = true');
     }
     console.log('   Versión:', window.PayloadNormalizer._version || 'Sin versión');
 
@@ -104,7 +104,7 @@
 
     try {
         const resultado = window.PayloadNormalizer.normalizar(testPedido);
-        console.log('✅ normalizar() ejecutado sin errores');
+        console.log(' normalizar() ejecutado sin errores');
         console.log('   Entrada prendas:', testPedido.prendas.length);
         console.log('   Salida prendas:', resultado.prendas.length);
         
@@ -132,7 +132,7 @@
         const formData = window.PayloadNormalizer.buildFormData(resultado, filesExtraidos);
         
         if (formData instanceof FormData) {
-            console.log('✅ buildFormData() retorna FormData válido');
+            console.log(' buildFormData() retorna FormData válido');
             console.log('   Tipo:', formData.constructor.name);
         } else {
             console.warn('  buildFormData() NO retorna FormData, retorna:', typeof formData);

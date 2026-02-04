@@ -153,7 +153,7 @@ class EppImagenManager {
                 try {
                     await this.apiService.eliminarImagen(imagenId);
                 } catch (apiError) {
-                    console.warn('⚠️ [EppImagenManager] Error al eliminar de BD, pero continuando con UI:', apiError.message);
+                    console.warn(' [EppImagenManager] Error al eliminar de BD, pero continuando con UI:', apiError.message);
                 }
             } else {
                 console.log('🗑️ [EppImagenManager] Imagen local/temporal, eliminando solo del cliente');

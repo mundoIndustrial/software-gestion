@@ -54,7 +54,7 @@ Select-String "CREAR-PEDIDO.*✨" storage/logs/laravel.log
 Select-String "IMAGE-UPLOAD|RESOLVER-IMAGENES|MAPEO-IMAGENES" storage/logs/laravel.log
 ```
 
-## 📊 Ejemplo de Log Completo
+##  Ejemplo de Log Completo
 
 ```
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA {"usuario_id":92,"timestamp":"2026-01-29 21:35:10"}
@@ -89,7 +89,7 @@ En "desglose_pasos", ¿cuál es el mayor?
 
 ### Imágenes No Se Guardan?
 ```
-Busca: [RESOLVER-IMAGENES] ✅ Extracción completada
+Busca: [RESOLVER-IMAGENES]  Extracción completada
 Si: imagenes_esperadas > imagenes_procesadas
 Entonces: Problema en FormData (frontend)
 ```
@@ -111,7 +111,7 @@ $antes[-1]
 $ahora[-1]
 ```
 
-## 🔧 Próximos Pasos Recomendados
+##  Próximos Pasos Recomendados
 
 1. **Ejecutar el proceso** 3-5 veces y promediar tiempos
 2. **Identificar el paso más lento** (> 2000ms es problema)
@@ -119,11 +119,11 @@ $ahora[-1]
 4. **Aplicar optimización** (índices DB, caché, etc.)
 5. **Comparar antes/después**
 
-## ⚠️ Notas de Producción
+##  Notas de Producción
 
-- ⚠️ Estos logs son para **desarrollo/debugging**
-- ⚠️ Después de terminar, cambiar `Log::info()` a `Log::debug()` en logs no críticos
-- ⚠️ El overhead de los logs es ~2-5% del tiempo total
+-  Estos logs son para **desarrollo/debugging**
+-  Después de terminar, cambiar `Log::info()` a `Log::debug()` en logs no críticos
+-  El overhead de los logs es ~2-5% del tiempo total
 
 ## 📞 Referencia Rápida
 

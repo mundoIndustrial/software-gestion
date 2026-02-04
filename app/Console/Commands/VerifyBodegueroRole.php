@@ -32,7 +32,7 @@ class VerifyBodegueroRole extends Command
         // 1. Verificar rol en BD
         $role = Role::where('name', 'bodeguero')->first();
         if ($role) {
-            $this->info('✅ Rol bodeguero existe en la BD');
+            $this->info(' Rol bodeguero existe en la BD');
             $this->line("   - ID: {$role->id}");
             $this->line("   - Nombre: {$role->name}");
             $this->line("   - Descripción: {$role->description}");
@@ -44,21 +44,21 @@ class VerifyBodegueroRole extends Command
         $this->newLine();
 
         // 2. Verificar middleware
-        $this->info('✅ Middleware OperarioAccess');
+        $this->info(' Middleware OperarioAccess');
         $this->line('   - Protege rutas con bodeguero✓');
         $this->line('   - Ruta: app/Http/Middleware/OperarioAccess.php');
 
         $this->newLine();
 
         // 3. Verificar servicio
-        $this->info('✅ Servicio ObtenerPedidosOperarioService');
+        $this->info(' Servicio ObtenerPedidosOperarioService');
         $this->line('   - Reconoce bodeguero como tipo de operario');
         $this->line('   - Área asignada: Bodega');
 
         $this->newLine();
 
         // 4. Verificar vista
-        $this->info('✅ Sidebar actualizado');
+        $this->info(' Sidebar actualizado');
         $this->line('   - Bodeguero ve: Corte Bodega, Costura Bodega');
 
         $this->newLine();

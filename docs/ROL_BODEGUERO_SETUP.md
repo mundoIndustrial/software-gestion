@@ -4,11 +4,11 @@
 
 Se ha configurado un nuevo rol **bodeguero** con acceso similar a cortador y costurero. El bodeguero puede:
 
-- ✅ Ver recibos de costura/bodega
-- ✅ Ver recibos de corte/bodega  
-- ✅ Acceder al dashboard de operarios
-- ✅ Ver sus pedidos asignados
-- ✅ Navegar por el módulo de recibos dinámicos
+-  Ver recibos de costura/bodega
+-  Ver recibos de corte/bodega  
+-  Acceder al dashboard de operarios
+-  Ver sus pedidos asignados
+-  Navegar por el módulo de recibos dinámicos
 
 ## Cambios Realizados
 
@@ -110,17 +110,17 @@ exit
 
 ## Notas Importantes
 
-- ⚠️ Bodeguero hereda el acceso a través del middleware `operario-access`
-- ⚠️ Los recibos se generan dinámicamente según `de_bodega` flag
-- ⚠️ El sidebar filtra opciones automáticamente según el rol
-- ⚠️ Compatible con sistema de herencia de roles si se configura en `config/role-hierarchy.php`
+-  Bodeguero hereda el acceso a través del middleware `operario-access`
+-  Los recibos se generan dinámicamente según `de_bodega` flag
+-  El sidebar filtra opciones automáticamente según el rol
+-  Compatible con sistema de herencia de roles si se configura en `config/role-hierarchy.php`
 
 ## Archivos Modificados
 
-1. `database/seeders/CrearRolesOperariosSeeder.php` ✅
-2. `app/Http/Middleware/OperarioAccess.php` ✅
-3. `app/Application/Operario/Services/ObtenerPedidosOperarioService.php` ✅
-4. `resources/views/layouts/sidebar.blade.php` ✅
+1. `database/seeders/CrearRolesOperariosSeeder.php` 
+2. `app/Http/Middleware/OperarioAccess.php` 
+3. `app/Application/Operario/Services/ObtenerPedidosOperarioService.php` 
+4. `resources/views/layouts/sidebar.blade.php` 
 
 ---
 

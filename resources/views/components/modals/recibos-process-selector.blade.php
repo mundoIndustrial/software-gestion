@@ -456,7 +456,7 @@
                     const estaActivo = !recibo.es_base && recibo.estado === 'APROBADO' && recibo.numero_recibo;
                     const puedeActivar = !recibo.es_base && recibo.estado === 'PENDIENTE';
                     
-                    // ⚠️ CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
+                    //  CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
                     const usuarioEsSupervisor = window.selectorRecibosState?.esSupervisorPedidos || window.selectorRecibosState?.esSupervisor;
                     const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor;
                     const puedeDesactivarRecibo = estaActivo && usuarioEsSupervisor;

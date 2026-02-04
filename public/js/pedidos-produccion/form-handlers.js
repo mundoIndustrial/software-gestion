@@ -976,7 +976,7 @@ class PedidoFormHandlers {
             });
 
             // Log de archivos adjuntos
-            console.info('✅ FormData construido', {
+            console.info(' FormData construido', {
                 total_archivos: contarArchivosEnFormData(formData),
                 prendas: state.prendas.length
             });

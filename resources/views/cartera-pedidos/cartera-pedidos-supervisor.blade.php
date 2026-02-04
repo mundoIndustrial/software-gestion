@@ -682,12 +682,12 @@
     // Deshabilitar funciones de supervisores que no aplican a cartera
     function cargarNotificacionesPendientes() {
         // Deshabilitado para cartera
-        console.log('ℹ️ Notificaciones deshabilitadas en cartera');
+        console.log(' Notificaciones deshabilitadas en cartera');
     }
     
     function cargarContadorOrdenesPendientes() {
         // Deshabilitado para cartera
-        console.log('ℹ️ Contador de órdenes deshabilitado en cartera');
+        console.log(' Contador de órdenes deshabilitado en cartera');
     }
 </script>
 <!-- Scripts para ver facturas (desde asesores) -->

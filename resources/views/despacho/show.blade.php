@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (despacho.pendiente_3) {
                             fila.querySelector('.pendiente-3').value = despacho.pendiente_3;
                         }
-                        console.log('✅ Fila poblada:', despacho);
+                        console.log(' Fila poblada:', despacho);
                     }
                 });
                 
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 tipo,
                 id,
                 talla_id: tallaId,
-                genero: tipo === 'prenda' ? (fila.dataset.genero || null) : null,  // ✅ Agregar género para prendas
+                genero: tipo === 'prenda' ? (fila.dataset.genero || null) : null,  //  Agregar género para prendas
                 pendiente_inicial: pendienteInicial,
                 parcial_1: parcial1,
                 pendiente_1: pendiente1,
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (data.success) {
-                console.log('✅ Despacho guardado exitosamente');
+                console.log(' Despacho guardado exitosamente');
                 
                 // Mostrar modal de éxito
                 mostrarModalExito(data);

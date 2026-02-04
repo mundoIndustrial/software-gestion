@@ -33,7 +33,7 @@ class VerificarEppImagenesIgnorada extends Command
         $this->mostrarEstadoFinal();
 
         $this->newLine();
-        $this->info('✅ Verificación completada\n');
+        $this->info(' Verificación completada\n');
     }
 
     private function verificarTablaNoExiste(): void
@@ -44,7 +44,7 @@ class VerificarEppImagenesIgnorada extends Command
 
         if ($existe) {
             $this->warn('     Tabla encontrada (inesperado)');
-            $this->warn('   📊 Si deseas usar imágenes maestras de EPP, ejecuta: php artisan make:migration');
+            $this->warn('    Si deseas usar imágenes maestras de EPP, ejecuta: php artisan make:migration');
         } else {
             $this->info('   Tabla NO existe (correcto)');
             $this->info('   Sistema ignora tabla correctamente');
@@ -61,7 +61,7 @@ class VerificarEppImagenesIgnorada extends Command
             $this->info('   Tabla EXISTS (correcto)');
             
             $count = DB::table('pedido_epp_imagenes')->count();
-            $this->info("   📊 Total de imágenes de EPP en pedidos: {$count}");
+            $this->info("    Total de imágenes de EPP en pedidos: {$count}");
             
             // Verificar estructura
             $columnas = Schema::getColumnListing('pedido_epp_imagenes');
@@ -124,9 +124,9 @@ class VerificarEppImagenesIgnorada extends Command
         $this->info('├─────────────────────────────────────────────────────────┤');
 
         foreach ($tablas as $tabla => $info) {
-            $existe = $info['existe'] ? '✅ Sí' : ' No';
+            $existe = $info['existe'] ? ' Sí' : ' No';
             $estado = $info['estado'];
-            $activa = $info['consultada'] ? '✅ Sí' : ' No';
+            $activa = $info['consultada'] ? ' Sí' : ' No';
             
             $line = sprintf('│ %-24s │ %6s │ %-8s │ %-7s │', $tabla, $existe, $estado, $activa);
             $this->info($line);
@@ -136,7 +136,7 @@ class VerificarEppImagenesIgnorada extends Command
 
         // Resumen
         $this->newLine();
-        $this->info('📊 RESUMEN:');
+        $this->info(' RESUMEN:');
         $this->line('   • epp_imagenes: NO existe, NO se consulta, IGNORADA');
         $this->line('   • pedido_epp_imagenes: Existe, se consulta, ACTIVA');
         $this->line('   • Sistema: Funcionando correctamente sin errores SQL');

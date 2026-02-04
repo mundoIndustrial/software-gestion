@@ -874,7 +874,7 @@ class CotizacionBordadoController extends Controller
                         
                         $logosCompartidosGuardados[$clave] = $rutasImagen['ruta_webp'];
                         
-                        Log::info('✅ Logo compartido guardado UNA SOLA VEZ', [
+                        Log::info(' Logo compartido guardado UNA SOLA VEZ', [
                             'clave' => $clave,
                             'ruta' => $rutasImagen['ruta_webp'],
                             'tecnicas' => implode(' + ', $tecnicasCompartidas)
@@ -888,7 +888,7 @@ class CotizacionBordadoController extends Controller
                 }
             }
             
-            Log::info('✅ TODOS los logos compartidos guardados', [
+            Log::info(' TODOS los logos compartidos guardados', [
                 'count' => count($logosCompartidosGuardados),
                 'claves' => array_keys($logosCompartidosGuardados)
             ]);
@@ -1088,7 +1088,7 @@ class CotizacionBordadoController extends Controller
                     }
                     
                     if (!$prendaTecnicaGuardada) {
-                        Log::warning("    ⚠️ No se encontró prenda técnica para vincular telas", [
+                        Log::warning("     No se encontró prenda técnica para vincular telas", [
                             'nombre_prenda' => $nombrePrenda
                         ]);
                         continue;
@@ -1096,7 +1096,7 @@ class CotizacionBordadoController extends Controller
                     
                     $prendaCotId = $prendaTecnicaGuardada->prenda_cot_id;
                     
-                    Log::info("    ✅ Prenda técnica encontrada", [
+                    Log::info("     Prenda técnica encontrada", [
                         'prenda_cot_id' => $prendaCotId,
                         'nombre' => $nombrePrenda
                     ]);
@@ -1154,7 +1154,7 @@ class CotizacionBordadoController extends Controller
                                     
                                     $rutaImagen = Storage::url($rutaGuardada);
                                     
-                                    Log::info('        ✅ Imagen guardada', [
+                                    Log::info('         Imagen guardada', [
                                         'fieldName' => $fieldName,
                                         'archivo' => $archivoTela->getClientOriginalName(),
                                         'ruta' => $rutaImagen
@@ -1179,7 +1179,7 @@ class CotizacionBordadoController extends Controller
 
                                 $procesados++;
 
-                                Log::info('        ✅ Tela guardada en BD', [
+                                Log::info('         Tela guardada en BD', [
                                     'prenda_cot_id' => $prendaCotId,
                                     'tela' => $nombreTela,
                                     'color' => $color,
@@ -1195,7 +1195,7 @@ class CotizacionBordadoController extends Controller
                 }
             }
 
-            Log::info("✅ procesarTelasDelFormulario() completado", [
+            Log::info(" procesarTelasDelFormulario() completado", [
                 'total_telas_guardadas' => $procesados
             ]);
 
@@ -1277,7 +1277,7 @@ class CotizacionBordadoController extends Controller
                     'img' => $rutaImagen,
                 ]);
 
-                Log::info('✅ Tela, Color y Ref guardados exitosamente', [
+                Log::info(' Tela, Color y Ref guardados exitosamente', [
                     'id' => $telasPrenda->id,
                     'logo_cotizacion_id' => $logoCotizacionId,
                     'prenda_cot_id' => $prendaCotId,
@@ -1407,7 +1407,7 @@ class CotizacionBordadoController extends Controller
 
             $tela->delete();
 
-            Log::info('✅ Tela eliminada correctamente', [
+            Log::info(' Tela eliminada correctamente', [
                 'id' => $telaId,
                 'cotizacion_id' => $cotizacionId
             ]);

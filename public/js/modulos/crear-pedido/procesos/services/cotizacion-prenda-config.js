@@ -129,7 +129,7 @@ class CotizacionPrendaConfig {
      * @returns {Promise<void>}
      */
     static async inicializarConRetroalimentacion() {
-        console.group('🔧 CotizacionPrendaConfig - Inicialización');
+        console.group(' CotizacionPrendaConfig - Inicialización');
 
         // Paso 1: Intentar localStorage
         if (this.inicializarDesdeStorage()) {
@@ -190,7 +190,7 @@ class CotizacionPrendaConfig {
      * Debug: Mostrar estado actual de configuración
      */
     static mostrarEstado() {
-        console.group('📊 Estado CotizacionPrendaConfig');
+        console.group(' Estado CotizacionPrendaConfig');
         console.log('Tipos registrados:', CotizacionPrendaHandler.obtenerTiposBodega());
         console.log('Configuración completa:', CotizacionPrendaHandler.TIPOS_COTIZACION_BODEGA);
         console.groupEnd();

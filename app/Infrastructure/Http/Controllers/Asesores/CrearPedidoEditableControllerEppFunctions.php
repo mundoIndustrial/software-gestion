@@ -11,7 +11,7 @@ use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
 
 /**
- * ✅ CrearPedidoEditableControllerEppCompleto.php
+ *  CrearPedidoEditableControllerEppCompleto.php
  * 
  * SOLO las funciones necesarias para procesar EPP e imágenes correctamente
  * 
@@ -20,7 +20,7 @@ use App\Models\PedidoEppImagen;
 class CrearPedidoEditableControllerEppFunctions
 {
     /**
-     * ✅ Crear estructura de carpetas para un pedido
+     *  Crear estructura de carpetas para un pedido
      * 
      * Crea:
      * - storage/app/public/pedido/{pedido_id}/prendas/
@@ -56,7 +56,7 @@ class CrearPedidoEditableControllerEppFunctions
     }
 
     /**
-     * ✅ Guardar imagen de EPP con validación
+     *  Guardar imagen de EPP con validación
      * 
      * @param $archivo - UploadedFile desde $request->file()
      * @param int $pedidoId - ID del pedido
@@ -115,7 +115,7 @@ class CrearPedidoEditableControllerEppFunctions
     }
 
     /**
-     * ✅ Guardar referencia de imagen EPP en BD
+     *  Guardar referencia de imagen EPP en BD
      * 
      * Crea registro en:
      * - Tabla: pedido_epp (si no existe)
@@ -168,7 +168,7 @@ class CrearPedidoEditableControllerEppFunctions
     }
 
     /**
-     * ✅ Procesar imágenes de EPP desde FormData
+     *  Procesar imágenes de EPP desde FormData
      * 
      * Se ejecuta después de crear el pedido
      */
@@ -283,7 +283,7 @@ class CrearPedidoEditableControllerEppFunctions
     }
 
     /**
-     * ✅ Validar que los files existan en FormData
+     *  Validar que los files existan en FormData
      */
     public function validarImagenesEpp(Request $request): bool
     {
@@ -301,7 +301,7 @@ class CrearPedidoEditableControllerEppFunctions
     }
 
     /**
-     * ✅ Obtener count total de imágenes EPP en FormData
+     *  Obtener count total de imágenes EPP en FormData
      */
     public function contarImagenesEpp(Request $request): int
     {

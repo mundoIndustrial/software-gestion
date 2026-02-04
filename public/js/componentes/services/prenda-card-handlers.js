@@ -76,7 +76,7 @@ window.PrendaCardHandlers = {
                 console.log('[PrendaCardHandlers] 📄 Content classes:', content ? content.className : 'No encontrado');
                 
                 if (content && content.classList.contains('seccion-expandible-content')) {
-                    console.log('[PrendaCardHandlers] ✅ Content válido, toggling classes');
+                    console.log('[PrendaCardHandlers]  Content válido, toggling classes');
                     
                     const wasActive = content.classList.contains('active');
                     content.classList.toggle('active');
@@ -96,16 +96,16 @@ window.PrendaCardHandlers = {
                         setTimeout(() => {
                             const computedDisplay = window.getComputedStyle(content).display;
                             if (computedDisplay === 'none') {
-                                console.log('[PrendaCardHandlers] ⚠️ CSS no funcionó, forzando display:block con JavaScript');
+                                console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:block con JavaScript');
                                 content.style.setProperty('display', 'block', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
                                     const newDisplay = window.getComputedStyle(content).display;
-                                    console.log('[PrendaCardHandlers] ✅ Después de forzar - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
+                                    console.log('[PrendaCardHandlers]  Después de forzar - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
-                                console.log('[PrendaCardHandlers] ✅ CSS funcionó - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
+                                console.log('[PrendaCardHandlers]  CSS funcionó - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
                             }
                         }, 50);
                         
@@ -118,16 +118,16 @@ window.PrendaCardHandlers = {
                         setTimeout(() => {
                             const computedDisplay = window.getComputedStyle(content).display;
                             if (computedDisplay !== 'none') {
-                                console.log('[PrendaCardHandlers] ⚠️ CSS no funcionó, forzando display:none con JavaScript');
+                                console.log('[PrendaCardHandlers]  CSS no funcionó, forzando display:none con JavaScript');
                                 content.style.setProperty('display', 'none', 'important');
                                 
                                 // Verificar después de forzar
                                 setTimeout(() => {
                                     const newDisplay = window.getComputedStyle(content).display;
-                                    console.log('[PrendaCardHandlers] ✅ Después de forzar cierre - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
+                                    console.log('[PrendaCardHandlers]  Después de forzar cierre - display:', newDisplay, 'scrollHeight:', content.scrollHeight);
                                 }, 50);
                             } else {
-                                console.log('[PrendaCardHandlers] ✅ CSS funcionó para cierre - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
+                                console.log('[PrendaCardHandlers]  CSS funcionó para cierre - display:', computedDisplay, 'scrollHeight:', content.scrollHeight);
                             }
                         }, 50);
                         
@@ -149,13 +149,13 @@ window.PrendaCardHandlers = {
                         
                         // Si scrollHeight es 0, hacer una segunda medición después de más tiempo
                         if (content.scrollHeight === 0 && isActive) {
-                            console.log('[PrendaCardHandlers] ⚠️ scrollHeight es 0, haciendo segunda medición...');
+                            console.log('[PrendaCardHandlers]  scrollHeight es 0, haciendo segunda medición...');
                             setTimeout(() => {
                                 console.log('[PrendaCardHandlers] 📏 Medición diferida - scrollHeight:', content.scrollHeight, 'clientHeight:', content.clientHeight, 'offsetHeight:', content.offsetHeight);
                                 
                                 // Forzar un reflow si es necesario
                                 if (content.scrollHeight === 0) {
-                                    console.log('[PrendaCardHandlers] 🔧 Forzando reflow...');
+                                    console.log('[PrendaCardHandlers]  Forzando reflow...');
                                     content.style.display = 'none';
                                     content.offsetHeight; // Forzar reflow
                                     content.style.display = '';
@@ -203,17 +203,17 @@ window.PrendaCardHandlers = {
                             
                             // Verificar filas de la tabla
                             const tableRows = content.querySelectorAll('table tr');
-                            console.log('[PrendaCardHandlers] 📊 Filas de tabla encontradas:', tableRows.length);
-                            console.log('[PrendaCardHandlers] 📊 Filas de tabla:', tableRows);
+                            console.log('[PrendaCardHandlers]  Filas de tabla encontradas:', tableRows.length);
+                            console.log('[PrendaCardHandlers]  Filas de tabla:', tableRows);
                             
                             // Verificar si hay tbody con datos
                             const tbody = content.querySelector('table tbody');
                             if (tbody) {
-                                console.log('[PrendaCardHandlers] 📊 TBODY encontrado:', tbody.innerHTML);
+                                console.log('[PrendaCardHandlers]  TBODY encontrado:', tbody.innerHTML);
                                 const dataRows = tbody.querySelectorAll('tr');
-                                console.log('[PrendaCardHandlers] 📊 Filas de datos en TBODY:', dataRows.length);
+                                console.log('[PrendaCardHandlers]  Filas de datos en TBODY:', dataRows.length);
                             } else {
-                                console.log('[PrendaCardHandlers] 📊 No se encontró TBODY en la tabla');
+                                console.log('[PrendaCardHandlers]  No se encontró TBODY en la tabla');
                             }
                         } else if (section === 'tallas-y-cantidades') {
                             const tallas = content.querySelectorAll('.talla-item, .talla-row');
@@ -373,7 +373,7 @@ window.PrendaCardHandlers = {
                 // Usar el método eliminarItem de GestionItemsUI que maneja correctamente la lógica
                 // (incluyendo confirmación, re-indexación y renderización)
                 if (window.gestionItemsUI) {
-                    console.log('✅ [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI.eliminarItem()');
+                    console.log(' [ELIMINAR-PRENDA] Eliminando desde gestionItemsUI.eliminarItem()');
                     window.gestionItemsUI.eliminarItem(prendaIndex);
                 }
                 

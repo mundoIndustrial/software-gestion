@@ -1,4 +1,4 @@
-# ✅ IMPLEMENTACIÓN COMPLETADA - LOGS DE DIAGNÓSTICO
+#  IMPLEMENTACIÓN COMPLETADA - LOGS DE DIAGNÓSTICO
 
 ## 📋 Resumen
 
@@ -19,7 +19,7 @@ Se han agregado **logs detallados con microtiming** en toda la cadena de creaci�
 - ⏱️ Tiempo de carga de pedidos existentes
 - ⏱️ Tiempo de carga de clientes
 - ⏱️ Tiempo de renderizado de vista
-- 📊 Resumen en una línea para comparación rápida
+-  Resumen en una línea para comparación rápida
 
 #### Método: `crearDesdeCotizacion()` (GET /crear-desde-cotizacion)
 - ⏱️ Tiempo total de carga de página
@@ -50,7 +50,7 @@ Desglose de 8 pasos:
 #### Método: `extraerYProcesarImagenes()`
 - ⏱️ Tiempo de extracción de archivos anidados
 - ⏱️ Tiempo total de procesamiento
-- ✅ Cuenta de imágenes procesadas vs esperadas
+-  Cuenta de imágenes procesadas vs esperadas
 - 🔴 Alerta si hay imágenes perdidas (FormData no llegó)
 
 #### Método: `procesarImagenesDeGrupo()`
@@ -78,11 +78,11 @@ Desglose de 8 pasos:
 - ⏱️ Tiempo de carga de imagen en memoria
 - ⏱️ Tiempo de conversión a WebP
 - ⏱️ Tiempo total
-- 📊 Información de archivo (tamaño, nombre original)
+-  Información de archivo (tamaño, nombre original)
 
 ---
 
-## 📊 Ejemplos de Logs
+##  Ejemplos de Logs
 
 ### Carga de Página
 ```
@@ -99,13 +99,13 @@ Desglose de 8 pasos:
 ### Creación de Pedido
 ```
 [2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL
-[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO] ✅ PASO 1: JSON decodificado {"tiempo_ms":5.12}
-[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO] ✅ PASO 2: Cliente obtenido/creado {"tiempo_ms":50.45}
-[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO] ✅ PASO 3: Pedido normalizado (DTO) {"tiempo_ms":30.78}
-[2026-01-29 21:36:01] local.INFO: [CREAR-PEDIDO] ✅ PASO 5: Pedido base creado {"tiempo_ms":200.12}
-[2026-01-29 21:36:01] local.INFO: [CREAR-PEDIDO] ✅ PASO 6: Carpetas creadas {"tiempo_ms":100.45}
-[2026-01-29 21:36:05] local.INFO: [CREAR-PEDIDO] ✅ PASO 7: Imágenes mapeadas {"tiempo_ms":5000.23}
-[2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO] ✅ PASO 8: Cálculo de cantidades {"tiempo_ms":100.56}
+[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 1: JSON decodificado {"tiempo_ms":5.12}
+[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 2: Cliente obtenido/creado {"tiempo_ms":50.45}
+[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 3: Pedido normalizado (DTO) {"tiempo_ms":30.78}
+[2026-01-29 21:36:01] local.INFO: [CREAR-PEDIDO]  PASO 5: Pedido base creado {"tiempo_ms":200.12}
+[2026-01-29 21:36:01] local.INFO: [CREAR-PEDIDO]  PASO 6: Carpetas creadas {"tiempo_ms":100.45}
+[2026-01-29 21:36:05] local.INFO: [CREAR-PEDIDO]  PASO 7: Imágenes mapeadas {"tiempo_ms":5000.23}
+[2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO]  PASO 8: Cálculo de cantidades {"tiempo_ms":100.56}
 [2026-01-29 21:36:06] local.INFO: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
   "tiempo_total_ms": 7500.12,
   "desglose_pasos": {
@@ -174,7 +174,7 @@ Buscar en logs: `[CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA`
 - Si `paso_5_pedido_base_ms > 500` → Problema en triggers/validación de BD
 
 ### Si imágenes no se guardan
-Buscar en logs: `[RESOLVER-IMAGENES] ✅ Extracción completada`
+Buscar en logs: `[RESOLVER-IMAGENES]  Extracción completada`
 - Si `diferencia > 0` → Imágenes perdidas en FormData
 - Ver logs de `[IMAGE-UPLOAD]` para ver si hay errores
 
@@ -199,7 +199,7 @@ Buscar en logs: `[RESOLVER-IMAGENES] ✅ Extracción completada`
 
 ---
 
-## ✅ Checklist de Implementación
+##  Checklist de Implementación
 
 - [x] Logs en `crearNuevo()`
 - [x] Logs en `crearDesdeCotizacion()`
@@ -226,7 +226,7 @@ Todos los logs siguen este patrón:
 
 **Ejemplo:**
 ```
-[CREAR-PEDIDO] ✅ PASO 5: Pedido base creado {
+[CREAR-PEDIDO]  PASO 5: Pedido base creado {
   "pedido_id": 123,
   "numero_pedido": "PED-2026-001",
   "tiempo_ms": 250.45
@@ -235,9 +235,9 @@ Todos los logs siguen este patrón:
 
 ---
 
-## 🔧 Configuración de Producción
+##  Configuración de Producción
 
-⚠️ **Para producción:**
+ **Para producción:**
 1. Cambiar `Log::info()` a `Log::debug()` en logs menos críticos
 2. Aumentar frecuencia de rotación de logs
 3. Considerar enviar logs a servicio externo (LogChannel)
@@ -246,4 +246,4 @@ Todos los logs siguen este patrón:
 
 **Implementado:** 29 de Enero, 2026  
 **Versión:** 1.0  
-**Estado:** ✅ Listo para usar
+**Estado:**  Listo para usar
