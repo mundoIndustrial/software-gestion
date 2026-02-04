@@ -33,13 +33,33 @@
             <span class="ordenes-count">{{ count($operario->pedidos) }}</span>
         </div>
 
+        <!-- Filtros por tipo de pedido -->
+        @if(auth()->user()->hasRole('costura-reflectivo'))
+        <div class="filtros-badges">
+            <button class="badge-filtro badge-filtro-active" data-filtro="todos" onclick="filtrarPedidos('todos')">
+                <span class="material-symbols-rounded">apps</span>
+                Todos
+            </button>
+            <button class="badge-filtro" data-filtro="confeccion" onclick="filtrarPedidos('confeccion')">
+                <span class="material-symbols-rounded">checkroom</span>
+                Confección
+            </button>
+            <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPedidos('reflectivo')">
+                <span class="material-symbols-rounded">auto_awesome</span>
+                Reflectivo
+            </button>
+        </div>
+        @endif
+
         @if(count($operario->pedidos) > 0)
             <div class="ordenes-list" id="ordenesList">
                 @foreach($operario->pedidos as $pedido)
                     @php
                         $estadoClass = getEstadoClass($pedido['estado']);
+                        // Determinar si es reflectivo o confección basándose en el área
+                        $tipoFiltro = strtolower($operario->areaOperario) === 'costura-reflectivo' ? 'reflectivo' : 'confeccion';
                     @endphp
-                    <div class="orden-card-simple" data-numero="{{ $pedido['numero_pedido'] }}" data-cliente="{{ strtolower($pedido['cliente']) }}">
+                    <div class="orden-card-simple" data-numero="{{ $pedido['numero_pedido'] }}" data-cliente="{{ strtolower($pedido['cliente']) }}" data-tipo="{{ $tipoFiltro }}">
                         <!-- Borde izquierdo coloreado -->
                         <div class="orden-border {{ $estadoClass }}"></div>
 
@@ -901,6 +921,54 @@
         color: white;
         font-size: 32px;
     }
+
+    /* Filtros Badges */
+    .filtros-badges {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .badge-filtro {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
+        background: #f5f5f5;
+        color: #666;
+        border: 1px solid #e0e0e0;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .badge-filtro .material-symbols-rounded {
+        font-size: 16px;
+    }
+
+    .badge-filtro:hover {
+        background: #efefef;
+        border-color: #d0d0d0;
+    }
+
+    .badge-filtro-active {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        color: white;
+        border-color: #1565c0;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+    }
+
+    .badge-filtro-active:hover {
+        background: linear-gradient(135deg, #1565c0 0%, #1565c0 100%);
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    }
 </style>
 
 <!-- Modal Éxito -->
@@ -922,6 +990,81 @@
         </div>
     </div>
 </div>
+
+<script>
+// Función para filtrar pedidos por tipo
+function filtrarPedidos(filtro) {
+    const ordenesList = document.getElementById('ordenesList');
+    const cards = ordenesList.querySelectorAll('.orden-card-simple');
+    const badges = document.querySelectorAll('.badge-filtro');
+
+    // Actualizar estado de badges
+    badges.forEach(badge => {
+        badge.classList.remove('badge-filtro-active');
+        if (badge.dataset.filtro === filtro) {
+            badge.classList.add('badge-filtro-active');
+        }
+    });
+
+    // Filtrar tarjetas
+    cards.forEach(card => {
+        const tipoCard = card.dataset.tipo;
+        
+        if (filtro === 'todos') {
+            card.style.display = 'flex';
+        } else if (filtro === tipoCard) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Actualizar contador
+    const cardosVisibles = Array.from(cards).filter(card => card.style.display !== 'none').length;
+    const ordenesCont = document.querySelector('.ordenes-count');
+    if (ordenesCont) {
+        ordenesCont.textContent = cardosVisibles;
+    }
+}
+
+// Búsqueda global (mantener funcionando con filtros)
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const ordenesList = document.getElementById('ordenesList');
+            const cards = ordenesList.querySelectorAll('.orden-card-simple');
+            let visibles = 0;
+
+            cards.forEach(card => {
+                // Si el filtro activo no es 'todos', aplicar también el filtro de tipo
+                const badgeActivo = document.querySelector('.badge-filtro-active');
+                const filtroActivo = badgeActivo ? badgeActivo.dataset.filtro : 'todos';
+                const debeVisiblePorTipo = filtroActivo === 'todos' || card.dataset.tipo === filtroActivo;
+
+                // Aplicar búsqueda
+                const numero = card.dataset.numero.toLowerCase();
+                const cliente = card.dataset.cliente;
+                const coincide = numero.includes(searchTerm) || cliente.includes(searchTerm);
+
+                if (coincide && debeVisiblePorTipo) {
+                    card.style.display = 'flex';
+                    visibles++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Actualizar contador
+            const ordenesCont = document.querySelector('.ordenes-count');
+            if (ordenesCont) {
+                ordenesCont.textContent = visibles;
+            }
+        });
+    }
+});
+</script>
 
 @endsection
 
