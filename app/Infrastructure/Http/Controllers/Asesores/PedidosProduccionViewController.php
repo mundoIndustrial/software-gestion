@@ -687,7 +687,6 @@ class PedidosProduccionViewController
                                 ]);
                             },
                             'tallas:id,prenda_cot_id,talla,cantidad',
-                            'prendaCotReflectivo:id,prenda_cot_id,ubicaciones',
                             'logoCotizacionesTecnicas' => function($q) {
                                 $q->with([
                                     'tipoLogo:id,nombre',
@@ -873,72 +872,7 @@ class PedidosProduccionViewController
                 ];
             }
 
-            // PROCESAR REFLECTIVO
-            if ($prenda->prendaCotReflectivo && count($prenda->prendaCotReflectivo) > 0) {
-                $prendaCotRef = $prenda->prendaCotReflectivo[0];
-                $ubicaciones = [];
-                
-                $ubicacionesRaw = $prendaCotRef->ubicaciones;
-                if (is_string($ubicacionesRaw)) {
-                    $ubicacionesRaw = json_decode($ubicacionesRaw, true);
-                }
-                if (is_string($ubicacionesRaw)) {
-                    $ubicacionesRaw = json_decode($ubicacionesRaw, true);
-                }
-                
-                if (is_array($ubicacionesRaw)) {
-                    foreach ($ubicacionesRaw as $ub) {
-                        if (is_array($ub)) {
-                            $ubicaciones[] = [
-                                'ubicacion' => $ub['ubicacion'] ?? '',
-                                'descripcion' => $ub['descripcion'] ?? ''
-                            ];
-                        }
-                    }
-                }
-                
-                $reflectivoCotizacion = \DB::table('reflectivo_cotizacion')
-                    ->where('prenda_cot_id', $prenda->id)
-                    ->first();
-                
-                $fotosReflectivo = [];
-                $observacionesReflectivo = '';
-                
-                if ($reflectivoCotizacion) {
-                    if ($reflectivoCotizacion->observaciones_generales) {
-                        $obsData = is_string($reflectivoCotizacion->observaciones_generales) 
-                            ? json_decode($reflectivoCotizacion->observaciones_generales, true)
-                            : $reflectivoCotizacion->observaciones_generales;
-                        $observacionesReflectivo = is_array($obsData) ? implode(', ', $obsData) : '';
-                    }
-                    
-                    $fotosData = \DB::table('reflectivo_fotos_cotizacion')
-                        ->where('reflectivo_cotizacion_id', $reflectivoCotizacion->id)
-                        ->orderBy('orden')
-                        ->get();
-                    
-                    foreach ($fotosData as $foto) {
-                        $ruta = $foto->ruta_webp ?? $foto->ruta_original;
-                        if ($ruta && !str_starts_with($ruta, '/')) {
-                            $ruta = '/storage/' . $ruta;
-                        }
-                        
-                        $fotosReflectivo[] = [
-                            'ruta' => $ruta,
-                            'ruta_webp' => $foto->ruta_webp ? '/storage/' . $foto->ruta_webp : null,
-                            'orden' => $foto->orden
-                        ];
-                    }
-                }
-                
-                $procesosFormato['reflectivo'] = [
-                    'tipo' => 'Reflectivo',
-                    'ubicaciones' => $ubicaciones,
-                    'imagenes' => $fotosReflectivo,
-                    'observaciones' => $observacionesReflectivo
-                ];
-            }
-
+            
             // PROCESAR TÉCNICAS DE LOGO (Bordado, Estampado, DTF, Sublimado, etc)
             // MODIFICADO: Procesar TODAS las técnicas, no solo la primera
             if ($prenda->logoCotizacionesTecnicas && count($prenda->logoCotizacionesTecnicas) > 0) {

@@ -203,8 +203,7 @@ CSS;
                 'variantes.broche',
                 'tallas',
                 'fotos',
-                'telaFotos',
-                'prendaCotReflectivo:id,prenda_cot_id,variaciones,ubicaciones'
+                'telaFotos'
             ])
             ->get() ?? [];
 
@@ -221,6 +220,21 @@ CSS;
         }
 
         $html = '<div class="prendas-wrapper">';
+
+        // Agregar mensaje de tipo de venta antes del primer card
+        $tipoVenta = $this->obtenerTipoVenta();
+        if ($tipoVenta) {
+            $html .= '
+                <div style="margin-bottom: 20px; padding: 10px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px; text-align: left;">
+                    <span style="color: #000000; font-size: 12px; font-weight: 600;">
+                        Por favor cotizar al 
+                    </span>
+                    <span style="color: #dc2626; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
+                        ' . htmlspecialchars($tipoVenta) . '
+                    </span>
+                </div>
+            ';
+        }
 
         foreach ($prendas as $index => $prenda) {
             $html .= $this->renderPrendaCard($prenda, $index, $tecnicasPrendas);
@@ -343,6 +357,15 @@ CSS;
             $descripciones[] = htmlspecialchars($prenda->descripcion);
         }
         
+        // Observación de reflectivo desde variantes
+        if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
+            foreach ($prenda->variantes as $variante) {
+                if ($variante->obs_reflectivo && !empty($variante->obs_reflectivo)) {
+                    $descripciones[] = htmlspecialchars($variante->obs_reflectivo);
+                }
+            }
+        }
+        
         // Ubicaciones de logo para esta prenda
         $tecnicasPrendaArray = collect($tecnicasPrendas)->filter(fn($tp) => $tp->prenda_cot_id === $prenda->id);
         
@@ -354,6 +377,16 @@ CSS;
                     $ubicacionesArray = is_array($tp->ubicaciones) ? $tp->ubicaciones : [$tp->ubicaciones];
                     $ubicacionesArray = array_map(fn($u) => is_array($u) ? $u['ubicacion'] ?? $u : $u, $ubicacionesArray);
                     $ubicacionesArray = array_filter($ubicacionesArray, fn($u) => !empty($u));
+                    
+                    // Limpiar cada ubicación: quitar corchetes y comillas
+                    $ubicacionesArray = array_map(function($ubicacion) {
+                        // Quitar corchetes al inicio y final
+                        $ubicacion = preg_replace('/^\[|\]$/', '', $ubicacion);
+                        // Quitar comillas al inicio y final
+                        $ubicacion = preg_replace('/^["\']|["\']$/', '', $ubicacion);
+                        return trim($ubicacion);
+                    }, $ubicacionesArray);
+                    
                     if (!empty($ubicacionesArray)) {
                         $ubicacionesPorTecnica[$tecnicaNombre] = $ubicacionesArray;
                     }
@@ -369,21 +402,6 @@ CSS;
             }
         }
         
-        // Descripción de reflectivo si existe
-        // NOTA: prendaCotReflectivo es HasMany, así que devuelve una colección
-        // Accedemos al primer elemento si existe
-        $prendaCotReflectivo = $prenda->prendaCotReflectivo;
-        if ($prendaCotReflectivo) {
-            // Si es una colección, obtener el primer elemento
-            $reflectivo = is_object($prendaCotReflectivo) && method_exists($prendaCotReflectivo, 'first') 
-                ? $prendaCotReflectivo->first() 
-                : $prendaCotReflectivo;
-            
-            if ($reflectivo && $reflectivo->descripcion) {
-                $descripciones[] = htmlspecialchars($reflectivo->descripcion);
-            }
-        }
-
         if (empty($descripciones)) {
             return '';
         }
@@ -496,9 +514,9 @@ CSS;
                 ];
             }
             
-            // Broche
-            if ($var->aplica_broche) {
-                $tipo = $var->broche?->nombre ?? 'Sí';
+            // Broche/Botón
+            if ($var->tipo_broche_id || $var->obs_broche) {
+                $tipo = $var->broche?->nombre ?? 'Sin especificar';
                 $filas[] = [
                     'variacion' => 'Broche/Botón',
                     'tipo' => htmlspecialchars($tipo),
@@ -568,22 +586,6 @@ CSS;
             }
         }
 
-        // Imágenes del reflectivo paso 4
-        if ($this->cotizacion->reflectivoPrendas) {
-            foreach ($this->cotizacion->reflectivoPrendas as $refPrendaItem) {
-                if ($refPrendaItem->prenda_cot_id === $prenda->id && $refPrendaItem->fotos) {
-                    foreach ($refPrendaItem->fotos as $foto) {
-                        if ($foto->ruta_webp) {
-                            $imagenesPorTipo['Reflectivo'][] = [
-                                'url' => $foto->ruta_webp,
-                                'titulo' => 'Reflectivo'
-                            ];
-                        }
-                    }
-                }
-            }
-        }
-
         // Verificar si hay al menos una imagen
         $tieneImagenes = false;
         foreach ($imagenesPorTipo as $tipoImagenes) {
@@ -601,17 +603,16 @@ CSS;
         $html = '<table class="imagenes-table">';
         $html .= '<thead>';
         $html .= '<tr>';
-        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
-        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
-        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
-        $html .= '<th style="width: 25%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Reflectivo</th>';
+        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
+        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
+        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
         $html .= '</tr>';
         $html .= '</thead>';
         $html .= '<tbody>';
         $html .= '<tr>';
 
         // Procesar cada tipo de imagen
-        foreach (['Logo', 'Tela', 'Prenda', 'Reflectivo'] as $tipo) {
+        foreach (['Logo', 'Tela', 'Prenda'] as $tipo) {
             $html .= '<td style="width: 25%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
 
             if (!empty($imagenesPorTipo[$tipo])) {
@@ -701,5 +702,22 @@ CSS;
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * Obtener el tipo de venta desde la fuente correcta
+     */
+    private function obtenerTipoVenta(): ?string
+    {
+        // Verificar si es cotización de logo para obtener tipo_venta de logo_cotizaciones
+        if ($this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->tipo_venta) {
+            // Es cotización de logo, obtener de logo_cotizaciones
+            return $this->cotizacion->logoCotizacion->tipo_venta;
+        } elseif ($this->cotizacion->tipo_venta) {
+            // Es cotización normal, obtener de cotizaciones
+            return $this->cotizacion->tipo_venta;
+        }
+        
+        return null;
     }
 }

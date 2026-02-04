@@ -202,8 +202,7 @@ CSS;
                 'variantes.broche',
                 'tallas',
                 'fotos',
-                'telaFotos',
-                'prendaCotReflectivo:id,prenda_cot_id,variaciones,ubicaciones'
+                'telaFotos'
             ])
             ->get() ?? [];
 
@@ -212,6 +211,21 @@ CSS;
         }
 
         $html = '<div class="prendas-wrapper">';
+
+        // Agregar mensaje de tipo de venta antes del primer card
+        $tipoVenta = $this->obtenerTipoVenta();
+        if ($tipoVenta) {
+            $html .= '
+                <div style="margin-bottom: 20px; padding: 10px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px; text-align: left;">
+                    <span style="color: #000000; font-size: 12px; font-weight: 600;">
+                        Por favor cotizar al 
+                    </span>
+                    <span style="color: #dc2626; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
+                        ' . htmlspecialchars($tipoVenta) . '
+                    </span>
+                </div>
+            ';
+        }
 
         foreach ($prendas as $index => $prenda) {
             $html .= $this->renderPrendaCard($prenda, $index);
@@ -255,10 +269,52 @@ CSS;
             $descripciones[] = htmlspecialchars($prenda->descripcion);
         }
         
-        // Descripción de reflectivo si existe
-        $prendaCotReflectivo = $prenda->prendaCotReflectivo()->first();
-        if ($prendaCotReflectivo && $prendaCotReflectivo->descripcion) {
-            $descripciones[] = htmlspecialchars($prendaCotReflectivo->descripcion);
+        // Observación de reflectivo desde variantes
+        if ($prenda->variantes && $prenda->variantes->isNotEmpty()) {
+            foreach ($prenda->variantes as $variante) {
+                if ($variante->obs_reflectivo && !empty($variante->obs_reflectivo)) {
+                    $descripciones[] = htmlspecialchars($variante->obs_reflectivo);
+                }
+            }
+        }
+        
+        // Ubicaciones de logo para esta prenda
+        if ($this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->tecnicasPrendas) {
+            $tecnicasPrendaArray = $this->cotizacion->logoCotizacion->tecnicasPrendas
+                ->filter(fn($tp) => $tp->prenda_cot_id === $prenda->id);
+            
+            if ($tecnicasPrendaArray->isNotEmpty()) {
+                $ubicacionesPorTecnica = [];
+                foreach ($tecnicasPrendaArray as $tp) {
+                    $tecnicaNombre = $tp->tipoLogo ? $tp->tipoLogo->nombre : 'Logo';
+                    if ($tp->ubicaciones) {
+                        $ubicacionesArray = is_array($tp->ubicaciones) ? $tp->ubicaciones : [$tp->ubicaciones];
+                        $ubicacionesArray = array_map(fn($u) => is_array($u) ? $u['ubicacion'] ?? $u : $u, $ubicacionesArray);
+                        $ubicacionesArray = array_filter($ubicacionesArray, fn($u) => !empty($u));
+                        
+                        // Limpiar cada ubicación: quitar corchetes y comillas
+                        $ubicacionesArray = array_map(function($ubicacion) {
+                            // Quitar corchetes al inicio y final
+                            $ubicacion = preg_replace('/^\[|\]$/', '', $ubicacion);
+                            // Quitar comillas al inicio y final
+                            $ubicacion = preg_replace('/^["\']|["\']$/', '', $ubicacion);
+                            return trim($ubicacion);
+                        }, $ubicacionesArray);
+                        
+                        if (!empty($ubicacionesArray)) {
+                            $ubicacionesPorTecnica[$tecnicaNombre] = $ubicacionesArray;
+                        }
+                    }
+                }
+                
+                if (!empty($ubicacionesPorTecnica)) {
+                    $ubicacionesTexto = [];
+                    foreach ($ubicacionesPorTecnica as $tecnica => $ubicaciones) {
+                        $ubicacionesTexto[] = implode(', ', $ubicaciones);
+                    }
+                    $descripciones[] = implode(', ', $ubicacionesTexto);
+                }
+            }
         }
         
         // Mostrar descripción concatenada
@@ -275,16 +331,8 @@ CSS;
 
         // Columna derecha: imágenes
         $html .= '<div class="prenda-imagenes">';
-        $html .= $this->renderImagenesVariaciones($prenda, $prendaCotReflectivo);
+        $html .= $this->renderImagenesVariaciones($prenda);
         $html .= '</div>';
-
-        $html .= '</div>';
-
-        // Ubicaciones de reflectivo si existen
-        $prendaCotReflectivo = $prenda->prendaCotReflectivo()->first();
-        if ($prendaCotReflectivo && $prendaCotReflectivo->ubicaciones) {
-            $html .= $this->renderUbicacionesReflectivo($prendaCotReflectivo->ubicaciones);
-        }
 
         $html .= '</div>';
 
@@ -389,11 +437,22 @@ CSS;
                 $html .= '</tr>';
             }
 
-            // Fila de broche
-            if ($brocheId && $obsBroche) {
+            // Fila de broche/botón
+            if ($brocheId || $obsBroche) {
                 $html .= '<tr>';
                 $html .= '<td class="var-label">Broche/Botón</td>';
-                $html .= '<td>' . htmlspecialchars($obsBroche) . '</td>';
+                
+                $brocheInfo = [];
+                // Tipo de broche
+                if ($brocheId && $var->broche && $var->broche->nombre) {
+                    $brocheInfo[] = htmlspecialchars($var->broche->nombre);
+                }
+                // Observación de broche
+                if ($obsBroche) {
+                    $brocheInfo[] = htmlspecialchars($obsBroche);
+                }
+                
+                $html .= '<td>' . implode(' - ', $brocheInfo) . '</td>';
                 $html .= '</tr>';
             }
         }
@@ -404,9 +463,9 @@ CSS;
     }
 
     /**
-     * Renderiza las imágenes de variaciones de la prenda y del reflectivo con títulos
+     * Renderiza las imágenes de variaciones de la prenda
      */
-    private function renderImagenesVariaciones($prenda, $prendaCotReflectivo = null): string
+    private function renderImagenesVariaciones($prenda): string
     {
         $html = '';
         $imagenesPrenda = $prenda->fotos ?? [];
@@ -429,33 +488,6 @@ CSS;
                         $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
                         $html .= '<div class="prenda-img-label">Img Prenda</div>';
                         $html .= '</div>';
-                    }
-                }
-            }
-        }
-
-        // Imágenes del reflectivo paso 4
-        if ($prendaCotReflectivo && $this->cotizacion->reflectivoPrendas) {
-            foreach ($this->cotizacion->reflectivoPrendas as $refPrendaItem) {
-                if ($refPrendaItem->prenda_cot_id === $prenda->id && $refPrendaItem->fotos) {
-                    foreach ($refPrendaItem->fotos as $foto) {
-                        if ($foto->ruta_webp) {
-                            $imagenUrl = public_path('storage/' . $foto->ruta_webp);
-                            
-                            if (file_exists($imagenUrl)) {
-                                $html .= '<div class="prenda-img-container">';
-                                $html .= '<div class="prenda-img">';
-                                $html .= '<img src="' . $imagenUrl . '" alt="Reflectivo">';
-                                $html .= '</div>';
-                                $html .= '<div class="prenda-img-label">Img Reflectivo</div>';
-                                $html .= '</div>';
-                            } else {
-                                $html .= '<div class="prenda-img-container">';
-                                $html .= '<div class="prenda-img-placeholder">Imagen no encontrada</div>';
-                                $html .= '<div class="prenda-img-label">Img Reflectivo</div>';
-                                $html .= '</div>';
-                            }
-                        }
                     }
                 }
             }
@@ -523,5 +555,22 @@ CSS;
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * Obtener el tipo de venta desde la fuente correcta
+     */
+    private function obtenerTipoVenta(): ?string
+    {
+        // Verificar si es cotización de logo para obtener tipo_venta de logo_cotizaciones
+        if ($this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->tipo_venta) {
+            // Es cotización de logo, obtener de logo_cotizaciones
+            return $this->cotizacion->logoCotizacion->tipo_venta;
+        } elseif ($this->cotizacion->tipo_venta) {
+            // Es cotización normal, obtener de cotizaciones
+            return $this->cotizacion->tipo_venta;
+        }
+        
+        return null;
     }
 }
