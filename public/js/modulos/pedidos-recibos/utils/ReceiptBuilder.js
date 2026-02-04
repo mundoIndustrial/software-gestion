@@ -14,10 +14,9 @@ export class ReceiptBuilder {
     static construirListaRecibos(prenda) {
         const recibos = [];
         
-        // PASO 1: AGREGAR RECIBO BASE - SOLO SI NO ES DE BODEGA
-        // Nota: Costura - Bodega nunca debe aparecer (de_bodega == 1 se filtra)
-        if (prenda.de_bodega != 1) {
-            const tipoBase = "costura";
+        // PASO 1: AGREGAR RECIBO BASE
+        const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
+        const nombreBase = prenda.de_bodega == 1 ? "Bodega" : "Costura";
             
             // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
             let tallasObj = {};
@@ -61,8 +60,8 @@ export class ReceiptBuilder {
             
             recibos.push({
                 tipo: tipoBase,
-                tipo_proceso: tipoBase,
-                nombre_proceso: tipoBase,
+                tipo_proceso: nombreBase,
+                nombre_proceso: nombreBase,
                 estado: "Pendiente",
                 es_base: true,
                 ubicaciones: [],
@@ -70,15 +69,10 @@ export class ReceiptBuilder {
                 imagenes: imagenesBase,
                 tallas: tallasObj
             });
-        }
         // PASO 2: AGREGAR PROCESOS ADICIONALES
-        // Filtrar para NO incluir "costura-bodega" nunca
-        const procesos = prenda.procesos || [];
         procesos.forEach((proc) => {
             const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
-            
-            // FILTRO: No agregar si es "costura-bodega" (nunca debe aparecer)
-            if (tipoProceso && tipoProceso.toLowerCase() !== 'costura-bodega') {
+            if (tipoProceso) {
                 // Preparar imágenes para este proceso (prenda + tela + imágenes del proceso)
                 let imagenesProceso = [];
                 
