@@ -48,6 +48,18 @@ Route::middleware(['auth', 'role:bodeguero'])->prefix('gestion-bodega')->name('g
     Route::post('/pedidos/fecha', [PedidosController::class, 'actualizarFecha'])
         ->name('actualizar-fecha');
 
+    // API para datos de factura (JSON)
+    Route::get('/pedidos/{id}/factura-datos', [PedidosController::class, 'obtenerDatosFacturaJSON'])
+        ->name('factura-datos-json');
+
+    // Guardar detalles de bodega por talla
+    Route::post('/detalles-talla/guardar', [PedidosController::class, 'guardarDetallesTalla'])
+        ->name('guardar-detalle-talla');
+    
+    // Guardar pedido completo
+    Route::post('/pedidos/{numero_pedido}/guardar-completo', [PedidosController::class, 'guardarPedidoCompleto'])
+        ->name('guardar-pedido-completo');
+
     // Exportar (opcional)
     Route::get('/pedidos/export', [PedidosController::class, 'export'])
         ->name('export');
@@ -55,6 +67,7 @@ Route::middleware(['auth', 'role:bodeguero'])->prefix('gestion-bodega')->name('g
 
 // Ruta alternativa si prefieres acceso público (para testing)
 // Descomenta solo en desarrollo
+Route::get('/bodega-api/datos-factura/{id}', [PedidosController::class, 'obtenerDatosFactura'])->name('bodega.datos-factura-public');
 /*
 Route::get('/bodega/pedidos', [PedidosController::class, 'index'])->name('bodega.pedidos');
 Route::post('/bodega/pedidos/{id}/entregar', [PedidosController::class, 'entregar'])->name('bodega.entregar');
