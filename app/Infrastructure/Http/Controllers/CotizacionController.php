@@ -161,7 +161,6 @@ final class CotizacionController extends Controller
                 'cliente',
                 'prendas.tallas',           //  Tallas de cada prenda
                 'prendas.variantes',        //  Género y variantes
-                'prendas.reflectivo.fotos', //  Reflectivo y fotos
             ])->findOrFail($id);
 
             Log::info(' Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
@@ -178,12 +177,14 @@ final class CotizacionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
             }
 
-            //  PROCESAR PRENDAS CON SUS REFLECTIVOS Y TALLAS
+            //  PROCESAR PRENDAS CON SUS VARIANTES Y TALLAS
             $prendasProcesadas = [];
             if ($cotizacion->prendas) {
                 foreach ($cotizacion->prendas as $prenda) {
-                    $reflectivo = $prenda->reflectivo->first();  //  Obtener el primer (único) reflectivo
-                    $fotos = $reflectivo?->fotos ?? [];
+                    // Obtener variante para verificar reflectivo
+                    $variante = $prenda->variantes ? $prenda->variantes->first() : null;
+                    $tieneReflectivo = $variante ? ($variante->tiene_reflectivo ?? false) : false;
+                    $fotos = []; // No hay fotos de reflectivo directo desde la prenda
                     
                     // Procesar tallas con sus cantidades
                     $tallas = [];
@@ -201,20 +202,24 @@ final class CotizacionController extends Controller
                     if ($prenda->variantes) {
                         foreach ($prenda->variantes as $variante) {
                             if ($variante->genero_id) {
-                                $generoObj = \App\Models\GeneroPrenda::find($variante->genero_id);
-                                $genero = $generoObj ? strtolower($generoObj->nombre) : null;
+                                // Si es JSON, decodificarlo
+                                $generoIds = is_string($variante->genero_id) ? json_decode($variante->genero_id, true) : $variante->genero_id;
+                                if (is_array($generoIds) && !empty($generoIds)) {
+                                    $generoObj = \App\Models\GeneroPrenda::find($generoIds[0]);
+                                    $genero = $generoObj ? strtolower($generoObj->nombre) : null;
+                                }
                             }
                         }
                         $variantes = $prenda->variantes->toArray();
                     }
                     
-                    Log::info(' Prenda con reflectivo', [
+                    Log::info(' Prenda con variante', [
                         'prenda_id' => $prenda->id,
                         'prenda_nombre' => $prenda->nombre_producto,
                         'tallas_count' => count($tallas),
                         'genero' => $genero,
-                        'reflectivo_id' => $reflectivo?->id,
-                        'fotos_count' => count($fotos),
+                        'tiene_reflectivo' => $tieneReflectivo,
+                        'variante_id' => $variante ? $variante->id : null,
                     ]);
 
                     $prendasProcesadas[] = [
@@ -225,13 +230,9 @@ final class CotizacionController extends Controller
                         'cantidades' => $cantidades,           //  Cantidades por talla
                         'genero' => $genero,                   //  Género (dama/caballero)
                         'variantes' => $variantes,             //  Todas las variantes
-                        'reflectivo' => $reflectivo ? [
-                            'id' => $reflectivo->id,
-                            'descripcion' => $reflectivo->descripcion,
-                            'tipo_venta' => $reflectivo->tipo_venta,
-                            'ubicacion' => $reflectivo->ubicacion,
-                            'observaciones_generales' => $reflectivo->observaciones_generales,
-                            'fotos' => $fotos->toArray(),  //  Fotos de ESTA prenda
+                        'reflectivo' => $tieneReflectivo ? [
+                            'tiene_reflectivo' => true,
+                            'observaciones' => $variante ? $variante->obs_reflectivo : null,
                         ] : null,
                     ];
                 }
@@ -308,10 +309,8 @@ final class CotizacionController extends Controller
                 'prendas.telaFotos',
                 'prendas.tallas',
                 'prendas.variantes',
-                'prendas.reflectivo.fotos',  //  Cargar reflectivo de cada prenda con sus fotos
                 'logoCotizacion.fotos',
                 'logoCotizacion.prendas.fotos',  //  Cargar prendas técnicas con sus fotos
-                'reflectivoCotizacion.fotos',  // Mantener para compatibilidad con cotizaciones antiguas
                 'tipoCotizacion'
             ])->findOrFail($id);
 
@@ -323,26 +322,9 @@ final class CotizacionController extends Controller
             // Obtener logo si existe
             $logo = $cotizacion->logoCotizacion;
 
-            // Debug: Log reflectivo fotos per prenda
-            $prendasDebug = [];
-            if ($cotizacion->prendas) {
-                foreach ($cotizacion->prendas as $prenda) {
-                    $reflectivo = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
-                    $prendasDebug[] = [
-                        'prenda_id' => $prenda->id,
-                        'nombre' => $prenda->nombre_producto,
-                        'tiene_reflectivo' => $reflectivo ? 'Sí' : 'No',
-                        'reflectivo_id' => $reflectivo ? $reflectivo->id : null,
-                        'fotos_count' => $reflectivo && $reflectivo->fotos ? $reflectivo->fotos->count() : 0,
-                        'fotos_ids' => $reflectivo && $reflectivo->fotos ? $reflectivo->fotos->pluck('id')->toArray() : []
-                    ];
-                }
-            }
-
             Log::info('CotizacionController@showView: Cotización cargada', [
                 'cotizacion_id' => $cotizacion->id,
                 'prendas_count' => $cotizacion->prendas ? count($cotizacion->prendas) : 0,
-                'prendas_debug' => $prendasDebug,
                 'especificaciones' => $cotizacion->especificaciones,
                 'logo' => $logo ? 'Sí' : 'No',
                 'logo_prendas_tecnicas' => $logo ? $logo->prendas : null,
@@ -1557,18 +1539,42 @@ final class CotizacionController extends Controller
             if (!empty($logoTecnicasAgregadas) && is_array($logoTecnicasAgregadas)) {
                 foreach ($logoTecnicasAgregadas as $tecnica) {
                     if (!empty($tecnica['prendas']) && is_array($tecnica['prendas'])) {
-                        // Verificar que al menos una prenda tenga ubicaciones O (tallas Y imágenes)
+                        // VERIFICACIÓN SIMPLIFICADA: Solo requiere ubicaciones Y imágenes
+                        // NO requiere tallas ni cantidades en el paso 3
                         foreach ($tecnica['prendas'] as $prenda) {
                             $tieneUbicaciones = !empty($prenda['ubicaciones']);
-                            $tieneTallas = !empty($prenda['talla_cantidad']);
-                            $tieneImagenes = !empty($prenda['imagenes_files']);
+                            $tieneImagenes = !empty($prenda['imagenes']);
                             
-                            if ($tieneUbicaciones && ($tieneTallas || $tieneImagenes)) {
+                            // Debug: Log de validación de cada prenda
+                            \Log::info('🔍 DEBUG Validación prenda logo (SIN TALLAS)', [
+                                'nombre_prenda' => $prenda['nombre_prenda'] ?? 'Sin nombre',
+                                'tieneUbicaciones' => $tieneUbicaciones,
+                                'tieneImagenes' => $tieneImagenes,
+                                'ubicaciones' => $prenda['ubicaciones'] ?? [],
+                                'imagenes_count' => isset($prenda['imagenes']) ? count($prenda['imagenes']) : 0,
+                                'condicion_final' => $tieneUbicaciones && $tieneImagenes
+                            ]);
+                            
+                            // SIMPLIFICADO: Solo requiere ubicaciones Y imágenes
+                            // NO valida tallas ni cantidades
+                            if ($tieneUbicaciones && $tieneImagenes) {
                                 $logoTieneInformacionValida = true;
                                 break 2; // Salir de ambos loops
                             }
                         }
                     }
+                }
+            }
+            
+            // VERIFICACIÓN ADICIONAL: También válido si hay archivos de imágenes reales
+            if (!$logoTieneInformacionValida) {
+                $imagenesP3Files = $request->file('logo.imagenes_paso3');
+                if ($imagenesP3Files && !empty($imagenesP3Files)) {
+                    \Log::info('🔍 DEBUG - Encontrados archivos reales de imágenes', [
+                        'imagenesP3Files_type' => gettype($imagenesP3Files),
+                        'imagenesP3Files_count' => is_array($imagenesP3Files) ? count($imagenesP3Files, COUNT_RECURSIVE) : 0
+                    ]);
+                    $logoTieneInformacionValida = true;
                 }
             }
             
