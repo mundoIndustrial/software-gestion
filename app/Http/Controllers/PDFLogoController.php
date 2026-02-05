@@ -52,6 +52,18 @@ class PDFLogoController extends Controller
                 }
             ])->findOrFail($id);
 
+            // Decodificar el campo especificaciones si viene como string con escape
+            if ($cotizacion->especificaciones && is_string($cotizacion->especificaciones)) {
+                // Si el JSON viene con escape characters (como el ejemplo), decodificarlo dos veces
+                $decoded = json_decode($cotizacion->especificaciones, true);
+                if ($decoded && is_string($decoded)) {
+                    // Segunda decodificación si es necesario
+                    $cotizacion->especificaciones = json_decode($decoded, true);
+                } else {
+                    $cotizacion->especificaciones = $decoded;
+                }
+            }
+
             // 2. Validar permisos de acceso (si es necesario)
             $this->validateAccess($cotizacion);
 
