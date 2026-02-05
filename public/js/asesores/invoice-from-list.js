@@ -888,14 +888,44 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
  * Carga el script de ReceiptManager
  */
 function cargarReceiptManager(callback) {
-    const script = document.createElement('script');
-    script.src = '/js/asesores/receipt-manager.js';
-    script.onload = callback;
-    script.onerror = () => {
-
-        mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
+    console.log('[cargarReceiptManager] Iniciando carga de módulos...');
+    
+    // Cargar el loader que expone Formatters y ReceiptRenderer a window
+    const loaderScript = document.createElement('script');
+    loaderScript.type = 'module';
+    loaderScript.src = '/js/modulos/pedidos-recibos/loader.js';
+    loaderScript.onload = () => {
+        console.log('[cargarReceiptManager] ✓ loader.js cargado');
+        
+        // Esperar un poco para asegurar que window.Formatters y window.ReceiptRenderer estén disponibles
+        setTimeout(() => {
+            console.log('[cargarReceiptManager] Verificando módulos globales...');
+            console.log('[cargarReceiptManager] window.Formatters:', typeof window.Formatters);
+            console.log('[cargarReceiptManager] window.ReceiptRenderer:', typeof window.ReceiptRenderer);
+            
+            // Cargar ReceiptManager
+            cargarReceiptManagerScript();
+        }, 100);
     };
-    document.head.appendChild(script);
+    loaderScript.onerror = () => {
+        console.warn('[cargarReceiptManager] Error cargando loader.js, intentando cargar ReceiptManager igual');
+        cargarReceiptManagerScript();
+    };
+    document.head.appendChild(loaderScript);
+
+    function cargarReceiptManagerScript() {
+        const script = document.createElement('script');
+        script.src = '/js/asesores/receipt-manager.js';
+        script.onload = () => {
+            console.log('[cargarReceiptManager] ✓ ReceiptManager.js cargado');
+            if (callback) callback();
+        };
+        script.onerror = () => {
+            console.error('[cargarReceiptManager] Error al cargar receipt-manager.js');
+            mostrarErrorNotificacion('Error', 'No se pudo cargar el gestor de recibos');
+        };
+        document.head.appendChild(script);
+    }
 }
 
 /**
