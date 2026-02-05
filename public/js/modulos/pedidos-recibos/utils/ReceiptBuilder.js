@@ -14,10 +14,13 @@ export class ReceiptBuilder {
     static construirListaRecibos(prenda) {
         const recibos = [];
         
-        // PASO 1: AGREGAR RECIBO BASE
-        const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
-        const nombreBase = prenda.de_bodega == 1 ? "Bodega" : "Costura";
-            
+        // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
+        const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+        if (!esVistaVisualizadorLogo) {
+            // PASO 1: AGREGAR RECIBO BASE
+            const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
+            const nombreBase = prenda.de_bodega == 1 ? "Bodega" : "Costura";
+                
             // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
             let tallasObj = {};
             if (prenda.tallas && typeof prenda.tallas === 'object') {
@@ -69,13 +72,24 @@ export class ReceiptBuilder {
                 imagenes: imagenesBase,
                 tallas: tallasObj
             });
+        }
         // PASO 2: AGREGAR PROCESOS ADICIONALES
+        const procesos = prenda.procesos || [];
         procesos.forEach((proc) => {
             const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
             
             // Filtrar: excluir REFLECTIVO si de_bodega es false
             if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
                 return; // Skip este proceso
+            }
+            
+            // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: Solo mostrar procesos específicos
+            if (esVistaVisualizadorLogo) {
+                // Solo mostrar procesos con tipo_proceso_id: 2 (Bordado), 3 (Estampado), 4 (DTF), 5 (Sublimado)
+                const procesosPermitidos = [2, 3, 4, 5];
+                if (!proc.tipo_proceso_id || !procesosPermitidos.includes(proc.tipo_proceso_id)) {
+                    return; // Skip este proceso
+                }
             }
             
             if (tipoProceso) {

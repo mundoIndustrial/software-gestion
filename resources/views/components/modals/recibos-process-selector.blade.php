@@ -402,16 +402,20 @@
             // PASO 1: Construir lista de recibos (BASE + ADICIONALES)
             const recibos = [];
 
-            //  RECIBO BASE - SIEMPRE PRIMERO
-            const reciboBase = {
-                tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
-                nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
-                estado: "",
-                es_base: true
-            };
-            
-            // Agregar recibo base (permite tanto costura como costura-bodega)
-            recibos.push(reciboBase);
+            // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
+            const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+            if (!esVistaVisualizadorLogo) {
+                //  RECIBO BASE - SOLO EN OTRAS VISTAS
+                const reciboBase = {
+                    tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
+                    nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
+                    estado: "",
+                    es_base: true
+                };
+                
+                // Agregar recibo base (permite tanto costura como costura-bodega)
+                recibos.push(reciboBase);
+            }
 
             //  PROCESOS ADICIONALES
             const procesos = prenda.procesos || [];
@@ -422,6 +426,16 @@
                 // Filtrar: excluir REFLECTIVO si de_bodega es false
                 if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
                     return; // Skip este proceso
+                }
+                
+                // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: Solo mostrar procesos específicos
+                const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+                if (esVistaVisualizadorLogo) {
+                    // Solo mostrar procesos con tipo_proceso_id: 2 (Bordado), 3 (Estampado), 4 (DTF), 5 (Sublimado)
+                    const procesosPermitidos = [2, 3, 4, 5];
+                    if (!proc.tipo_proceso_id || !procesosPermitidos.includes(proc.tipo_proceso_id)) {
+                        return; // Skip este proceso
+                    }
                 }
                 
                 recibos.push({

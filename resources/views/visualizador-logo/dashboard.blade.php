@@ -13,7 +13,7 @@
             <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0;">
                 <!-- Header -->
                 <div style="
-                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                     color: white;
                     padding: 1rem 1.5rem;
                     display: grid;
