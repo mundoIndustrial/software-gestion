@@ -11,10 +11,129 @@ function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
+/**
+ * Toggle menú de usuario
+ */
+function toggleUserMenu() {
+    const menu = document.getElementById('userMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+/**
+ * Cerrar menú de usuario cuando se haga click fuera
+ */
+document.addEventListener('click', function(event) {
+    const userMenu = document.getElementById('userMenu');
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    
+    if (userMenu && userMenuBtn && !userMenu.contains(event.target) && !userMenuBtn.contains(event.target)) {
+        userMenu.classList.add('hidden');
+    }
+});
+
+/**
+ * Filtrar tabla según criterios
+ */
+function filterTable() {
+    const searchInput = document.getElementById('searchInput');
+    const searchValue = (searchInput?.value || '').toLowerCase().trim();
+
+    const rows = document.querySelectorAll('.pedido-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowText = row.getAttribute('data-search') || '';
+
+        let showRow = true;
+
+        if (searchValue && !rowText.includes(searchValue)) showRow = false;
+
+        row.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
+    });
+}
+
+/**
+ * Limpiar búsqueda
+ */
+function limpiarBuscador() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+        filterTable();
+    }
+}
+
+/**
+ * Actualizar tabla sin recargar la página
+ */
+async function actualizarTabla() {
+    const btnActualizar = document.getElementById('btnActualizar');
+    if (btnActualizar) {
+        btnActualizar.disabled = true;
+        btnActualizar.innerHTML = '⏳ Actualizando...';
+    }
+
+    try {
+        const url = window.location.pathname;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+
+        const html = await response.text();
+        
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(html, 'text/html');
+        
+        const newTableBody = newDoc.getElementById('pedidosTableBody');
+        const currentTableBody = document.getElementById('pedidosTableBody');
+        
+        if (newTableBody && currentTableBody) {
+            currentTableBody.innerHTML = newTableBody.innerHTML;
+            
+            inicializarColoresDelaPagina();
+            
+            limpiarBuscador();
+            
+            mostrarToast('✓ Tabla actualizada correctamente');
+        }
+    } catch (error) {
+        console.error('Error al actualizar la tabla:', error);
+        mostrarToast('❌ Error al actualizar la tabla');
+    } finally {
+        if (btnActualizar) {
+            btnActualizar.disabled = false;
+            btnActualizar.innerHTML = '🔄 Actualizar';
+        }
+    }
+}
+
+/**
+ * Mostrar notificación Toast
+ */
+function mostrarToast(mensaje) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    if (toast && toastMessage) {
+        toastMessage.textContent = mensaje;
+        toast.classList.remove('hidden');
+        toast.style.display = 'flex';
+        
+        setTimeout(() => {
+            toast.classList.add('hidden');
+            toast.style.display = 'none';
+        }, 3000);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // ==================== ELEMENTOS DOM ====================
     const searchInput = document.getElementById('searchInput');
-    const asesorFilter = document.getElementById('asesorFilter');
 
     // ==================== INICIALIZACIÓN ====================
     initializeEventListeners();
@@ -23,34 +142,10 @@ document.addEventListener('DOMContentLoaded', function() {
      * Inicializar event listeners
      */
     function initializeEventListeners() {
-        // Filtros
+        // Filtro de búsqueda
         if (searchInput) searchInput.addEventListener('input', filterTable);
-        if (asesorFilter) asesorFilter.addEventListener('change', filterTable);
     }
 
-    /**
-     * Filtrar tabla según criterios
-     */
-    function filterTable() {
-        const searchValue = (searchInput?.value || '').toLowerCase().trim();
-        const asesorValue = (asesorFilter?.value || '').toLowerCase().trim();
-
-        const rows = document.querySelectorAll('.pedido-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            const rowText = row.getAttribute('data-search') || '';
-            const rowAsesor = (row.getAttribute('data-asesor') || '').toLowerCase();
-
-            let showRow = true;
-
-            if (searchValue && !rowText.includes(searchValue)) showRow = false;
-            if (asesorValue && rowAsesor !== asesorValue) showRow = false;
-
-            row.style.display = showRow ? '' : 'none';
-            if (showRow) visibleCount++;
-        });
-    }
 });
 
 /**
@@ -201,41 +296,41 @@ async function guardarPedidoCompleto(numeroPedido) {
  */
 
 /**
- * Abrir modal con datos de factura
+ * Abrir modal con la factura del pedido
  */
 async function abrirModalFactura(pedidoId) {
+    const modal = document.getElementById('modalFactura');
+    const contenido = document.getElementById('facturaContenido');
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
+    
     try {
-        // Obtener datos del servidor
         const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/factura-datos`, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCsrfToken(),
-            }
+            },
         });
-
+        
         if (!response.ok) {
-            throw new Error(`Error ${response.status}: No se pudieron obtener los datos`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const datosFactura = await response.json();
-
-        // Generar HTML de la factura
-        const htmlFactura = generarHTMLFactura(datosFactura);
-
-        // Mostrar en modal
-        const modalContent = document.querySelector('.modal-factura-content');
-        if (modalContent) {
-            modalContent.innerHTML = htmlFactura;
-        }
-
-        // Mostrar modal
-        const modal = document.getElementById('modalFactura');
-        if (modal) {
-            modal.style.display = 'flex';
+        const data = await response.json();
+        
+        if (data) {
+            // Generar HTML de la factura
+            const htmlFactura = generarHTMLFactura(data);
+            contenido.innerHTML = htmlFactura;
+        } else {
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error al cargar la factura</div>';
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        console.error('Error cargando factura:', error);
+        contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error: ' + error.message + '</div>';
     }
 }
 
@@ -245,66 +340,247 @@ async function abrirModalFactura(pedidoId) {
 function cerrarModalFactura() {
     const modal = document.getElementById('modalFactura');
     if (modal) {
+        modal.classList.add('hidden');
         modal.style.display = 'none';
     }
 }
 
 /**
- * Generar HTML de factura
+ * Generar HTML de la factura
  */
 function generarHTMLFactura(datos) {
-    if (!datos || !datos.prendas) {
-        return '<p class="text-red-500">No hay datos disponibles</p>';
+    if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
-    let html = `
-        <div class="p-4">
-            <h2 class="text-lg font-bold mb-4">FACTURA - PEDIDO #${datos.numero_pedido}</h2>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <p><strong>Cliente:</strong> ${datos.cliente}</p>
-                    <p><strong>Asesor:</strong> ${datos.asesor}</p>
-                </div>
-                <div>
-                    <p><strong>Fecha:</strong> ${datos.fecha_pedido}</p>
-                    <p><strong>Entrega:</strong> ${datos.fecha_entrega}</p>
-                </div>
-            </div>
+    // Generar las tarjetas de prendas
+    const prendasHTML = datos.prendas.map((prenda, idx) => {
+        // Variantes tabla
+        let variantesHTML = '';
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            // Verificar qué columnas tienen datos
+            const tieneManga = prenda.variantes.some(v => v.manga);
+            const tieneBroche = prenda.variantes.some(v => v.broche);
+            const tieneBolsillos = prenda.variantes.some(v => v.bolsillos);
             
-            <table class="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border p-2 text-left">Artículo</th>
-                        <th class="border p-2 text-center">Talla</th>
-                        <th class="border p-2 text-center">Cantidad</th>
-                        <th class="border p-2 text-center">Botón/Broche</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    datos.prendas.forEach(prenda => {
-        if (prenda.variantes && prenda.variantes.length > 0) {
-            prenda.variantes.forEach(variante => {
-                html += `
-                    <tr>
-                        <td class="border p-2">${prenda.nombre || 'N/A'}</td>
-                        <td class="border p-2 text-center">${variante.talla || '—'}</td>
-                        <td class="border p-2 text-center">${variante.cantidad || 0}</td>
-                        <td class="border p-2 text-center">${variante.broche || '—'}</td>
-                    </tr>
-                `;
-            });
+            variantesHTML = `
+                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
+                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
+                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prenda.variantes.map((var_item, varIdx) => `
+                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
+                                ${tieneManga ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
+                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                                ${tieneBroche ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
+                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                                ${tieneBolsillos ? `
+                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
+                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
+                                    </td>
+                                ` : ''}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
-    });
 
-    html += `
-                </tbody>
-            </table>
+        // Tela y color
+        let telaHTML = '';
+        if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
+            telaHTML = `
+                <div style="margin-bottom: 12px;">
+                    ${prenda.telas_array.map(tela => `
+                        <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="font-size: 11px; color: #374151;">
+                                <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
+                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
+                                ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else if (prenda.tela || prenda.color) {
+            telaHTML = `
+                <div style="margin-bottom: 12px; font-size: 11px; color: #374151;">
+                    <strong>Tela:</strong> ${prenda.tela || '—'} 
+                    ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
+                </div>
+            `;
+        }
+
+        // Procesos
+        let procesosHTML = '';
+        if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+            procesosHTML = `
+                <div style="margin-bottom: 0;">
+                    ${prenda.procesos.map(proc => `
+                        <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
+                            ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
+                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
+                                    📍 ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
+                                </div>
+                            ` : ''}
+                            ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0) ? `
+                                <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
+                                    ${[
+                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : [])
+                                    ].join(' • ')}
+                                </div>
+                            ` : ''}
+                            ${proc.observaciones ? `
+                                <div style="font-size: 10px; color: #6b7280;">
+                                    ${proc.observaciones}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
+                <!-- Header simple -->
+                <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
+                    ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
+                </div>
+                
+                <!-- Telas (movido aquí) -->
+                ${telaHTML}
+                
+                <!-- Imagen pequeña -->
+                ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
+                    <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
+                        <img src="${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                    </div>
+                ` : ''}
+                
+                <!-- Contenido compacto -->
+                <div style="${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
+                    <!-- Variantes -->
+                    ${variantesHTML}
+                    
+                    <!-- Procesos -->
+                    ${procesosHTML}
+                </div>
+                
+                <div style="clear: both;"></div>
+            </div>
+        `;
+    }).join('');
+
+    // EPPs
+    const eppsHTML = (datos.epps && datos.epps.length > 0) ? `
+        <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
+            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;">EPP (${datos.epps.length})</div>
+            <div style="padding: 12px; space-y: 8px;">
+                ${datos.epps.map(epp => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
+                            ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                        </div>
+                        <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px;">
+                            ${epp.cantidad}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    ` : '';
+
+    // Totales
+    const totalHTML = `
+        <div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">
+            <div style="font-size: 12px; margin-bottom: 8px;">
+                <strong>Total Ítems:</strong> ${datos.total_items || 0}
+            </div>
+            ${datos.valor_total ? `
+                <div style="font-size: 12px; margin-bottom: 8px;">
+                    <strong>Subtotal:</strong> $${parseFloat(datos.valor_total).toLocaleString('es-CO')}
+                </div>
+            ` : ''}
+            ${datos.total_general ? `
+                <div style="font-size: 14px; font-weight: 700; color: #1e40af; padding-top: 8px; border-top: 2px solid #d1d5db;">
+                    <strong>Total:</strong> $${parseFloat(datos.total_general).toLocaleString('es-CO')}
+                </div>
+            ` : ''}
         </div>
     `;
 
-    return html;
+    return `
+        <div>
+            <!-- Header factura -->
+            <div style="background: #1e3a8a; color: white; padding: 16px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">FACTURA DE PEDIDO</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Número</div>
+                        <div style="font-weight: 600;">${datos.numero_pedido}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Cliente</div>
+                        <div style="font-weight: 600;">${datos.cliente}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Asesora</div>
+                        <div style="font-weight: 600;">${datos.asesora || datos.asesor || 'N/A'}</div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
+                        <div style="font-weight: 600;">${datos.forma_de_pago || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
+                        <div style="font-weight: 600;">${datos.fecha || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+
+            ${datos.observaciones ? `
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
+                    <strong style="color: #92400e;">📋 Observaciones:</strong>
+                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
+                </div>
+            ` : ''}
+
+            <!-- Prendas -->
+            ${prendasHTML}
+
+            <!-- EPPs -->
+            ${eppsHTML}
+
+            <!-- Totales -->
+            ${totalHTML}
+        </div>
+    `;
 }
 
 // Inicializar cuando el DOM esté listo (solo colorear filas, sin auto-save)

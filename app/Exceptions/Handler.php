@@ -42,6 +42,13 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e): Response
     {
+        // LOG DIAGNOSTICO
+        \Log::info('[HANDLER-RENDER] Excepción capturada', [
+            'tipo_excepcion' => get_class($e),
+            'es_access_denied' => $e instanceof AccessDeniedHttpException ? 'SI' : 'NO',
+            'mensaje' => $e->getMessage(),
+        ]);
+
         // Manejar excepciones personalizadas del dominio
         if ($this->isDomainException($e)) {
             return $this->renderDomainException($request, $e);
@@ -59,8 +66,22 @@ class Handler extends ExceptionHandler
             return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
         }
 
+        // IMPORTANTE: Manejar TODOS los errores 403 (AccessDeniedHttpException)
+        // Hacer logout inmediato y redirigir a login sin renderizar
+        if ($e instanceof AccessDeniedHttpException) {
+            if (auth()->check()) {
+                // Hacer logout de forma segura
+                auth()->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+            
+            // Redirigir a login directo
+            return redirect('/login')->with('error', 'No tienes permisos para acceder. Por favor inicia sesión nuevamente.');
+        }
+
         // Si usuario no está autenticado y accede a ruta protegida, redirigir a login
-        if (!auth()->check() && ($e instanceof NotFoundHttpException || $e instanceof AccessDeniedHttpException)) {
+        if (!auth()->check() && $e instanceof NotFoundHttpException) {
             return redirect()->route('login')->with('error', 'No tienes acceso a esta página. Debes estar autenticado.');
         }
 
@@ -129,6 +150,7 @@ class Handler extends ExceptionHandler
     protected function prepareErrorData(Throwable $e): array
     {
         return [
+            'statusCode' => $this->getStatusCode($e),
             'friendlyMessage' => $this->getFriendlyMessage($e),
             'errorCode' => $this->getErrorCode($e),
             'technicalDetails' => $this->getTechnicalDetails($e),

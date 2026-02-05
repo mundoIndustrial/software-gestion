@@ -23,7 +23,21 @@ Route::get('/pedidos-test', function() {
 // Ruta temporal para acceso sin restricciones (solo para diagnóstico)
 Route::get('/pedidos-temp', [PedidosController::class, 'index']);
 
-Route::middleware(['auth', 'role:bodeguero'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
+Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('gestion-bodega.')->group(function () {
+    
+    // Ruta de diagnóstico
+    Route::get('/diagnostico', function() {
+        $user = auth()->user();
+        return response()->json([
+            'usuario_autenticado' => true,
+            'usuario_id' => $user->id,
+            'usuario_email' => $user->email,
+            'usuario_nombre' => $user->name,
+            'roles_ids_raw' => $user->roles_ids,
+            'roles_ids' => $user->roles_ids ? ($user->roles_ids) : [],
+            'roles_nombres' => $user->getRoleNames()->toArray(),
+        ], 200);
+    });
     
     // Ruta raíz - redirige a pedidos
     Route::get('/', function () {

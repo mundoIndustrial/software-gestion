@@ -53,6 +53,36 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('despacho.index', absolute: false));
             }
         }
+
+        // Verificar si tiene roles de bodega (Costura-Bodega o EPP-Bodega)
+        $costruraRole = \App\Models\Role::where('name', 'Costura-Bodega')->first();
+        $eppRole = \App\Models\Role::where('name', 'EPP-Bodega')->first();
+        
+        \Log::info('Bodega role check', [
+            'costrura_role_exists' => $costruraRole ? $costruraRole->id : 'NULL',
+            'epp_role_exists' => $eppRole ? $eppRole->id : 'NULL',
+            'user_roles_ids' => $user->roles_ids,
+        ]);
+        
+        if ($costruraRole || $eppRole) {
+            $rolesIds = is_array($user->roles_ids) 
+                ? $user->roles_ids 
+                : json_decode($user->roles_ids ?? '[]', true);
+            
+            \Log::info('Bodega role check details', [
+                'costrura_role_id' => $costruraRole ? $costruraRole->id : 'NULL',
+                'epp_role_id' => $eppRole ? $eppRole->id : 'NULL',
+                'parsed_roles_ids' => $rolesIds,
+                'has_costrura' => $costruraRole ? in_array($costruraRole->id, $rolesIds) : false,
+                'has_epp' => $eppRole ? in_array($eppRole->id, $rolesIds) : false,
+            ]);
+            
+            if (($costruraRole && in_array($costruraRole->id, $rolesIds)) || 
+                ($eppRole && in_array($eppRole->id, $rolesIds))) {
+                \Log::info('Redirecting to bodega.pedidos');
+                return redirect(route('gestion-bodega.pedidos', absolute: false));
+            }
+        }
         
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;

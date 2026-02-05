@@ -3,9 +3,11 @@
 namespace App\Infrastructure\Http\Controllers;
 
 use App\Application\Services\ImageUploadService;
+use App\Models\PedidoAuditoria;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Controlador de infraestructura para gestión de imágenes de pedidos
@@ -29,7 +31,9 @@ class ImageUploadController extends Controller
         $validator = Validator::make($request->all(), [
             'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
             'prenda_index' => 'required|integer|min:0',
-            'cotizacion_id' => 'nullable|integer'
+            'cotizacion_id' => 'nullable|integer',
+            'pedido_id' => 'nullable|integer',
+            'prenda_pedido_id' => 'nullable|integer'
         ]);
 
         if ($validator->fails()) {
@@ -43,8 +47,30 @@ class ImageUploadController extends Controller
             $file = $request->file('image');
             $prendaIndex = $request->input('prenda_index');
             $cotizacionId = $request->input('cotizacion_id');
+            $pedidoId = $request->input('pedido_id');
+            $prendaPedidoId = $request->input('prenda_pedido_id');
 
             $result = $this->imageUploadService->uploadPrendaImage($file, $prendaIndex, $cotizacionId);
+
+            // Registrar auditoría si tenemos pedido_id
+            if ($pedidoId) {
+                PedidoAuditoria::registrarCambio(
+                    $pedidoId,
+                    'AGREGADA_IMAGEN_PRENDA',
+                    auth()->id(),
+                    json_encode([
+                        'ruta_webp' => $result['ruta_webp'] ?? null,
+                        'ruta_original' => $result['ruta_original'] ?? null,
+                        'filename' => $file->getClientOriginalName()
+                    ]),
+                    null,
+                    "Imagen de prenda agregada: {$file->getClientOriginalName()}",
+                    $prendaPedidoId,
+                    null,
+                    null,
+                    $result['ruta_webp'] ?? null
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -52,7 +78,7 @@ class ImageUploadController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al subir imagen de prenda: ' . $e->getMessage());
+            Log::error('Error al subir imagen de prenda: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar la imagen: ' . $e->getMessage()
@@ -70,7 +96,9 @@ class ImageUploadController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
             'prenda_index' => 'required|integer|min:0',
             'tela_index' => 'required|integer|min:0',
-            'tela_id' => 'nullable|integer'
+            'tela_id' => 'nullable|integer',
+            'pedido_id' => 'nullable|integer',
+            'prenda_pedido_id' => 'nullable|integer'
         ]);
 
         if ($validator->fails()) {
@@ -85,8 +113,31 @@ class ImageUploadController extends Controller
             $prendaIndex = $request->input('prenda_index');
             $telaIndex = $request->input('tela_index');
             $telaId = $request->input('tela_id');
+            $pedidoId = $request->input('pedido_id');
+            $prendaPedidoId = $request->input('prenda_pedido_id');
 
             $result = $this->imageUploadService->uploadTelaImage($file, $prendaIndex, $telaIndex, $telaId);
+
+            // Registrar auditoría si tenemos pedido_id
+            if ($pedidoId) {
+                PedidoAuditoria::registrarCambio(
+                    $pedidoId,
+                    'AGREGADA_IMAGEN_PRENDA',
+                    auth()->id(),
+                    json_encode([
+                        'ruta_webp' => $result['ruta_webp'] ?? null,
+                        'ruta_original' => $result['ruta_original'] ?? null,
+                        'filename' => $file->getClientOriginalName(),
+                        'tipo' => 'tela'
+                    ]),
+                    null,
+                    "Imagen de tela agregada: {$file->getClientOriginalName()}",
+                    $prendaPedidoId,
+                    null,
+                    null,
+                    $result['ruta_webp'] ?? null
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -94,7 +145,7 @@ class ImageUploadController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al subir imagen de tela: ' . $e->getMessage());
+            Log::error('Error al subir imagen de tela: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar la imagen: ' . $e->getMessage()
@@ -187,7 +238,9 @@ class ImageUploadController extends Controller
         $validator = Validator::make($request->all(), [
             'ruta_webp' => 'required|string',
             'ruta_original' => 'nullable|string',
-            'thumbnail' => 'nullable|string'
+            'thumbnail' => 'nullable|string',
+            'pedido_id' => 'nullable|integer',
+            'prenda_pedido_id' => 'nullable|integer'
         ]);
 
         if ($validator->fails()) {
@@ -198,11 +251,34 @@ class ImageUploadController extends Controller
         }
 
         try {
+            $pedidoId = $request->input('pedido_id');
+            $prendaPedidoId = $request->input('prenda_pedido_id');
+            $rutaWebp = $request->ruta_webp;
+
             $deleted = $this->imageUploadService->deleteImage(
                 $request->ruta_webp,
                 $request->ruta_original,
                 $request->thumbnail
             );
+
+            // Registrar auditoría si tenemos pedido_id
+            if ($pedidoId) {
+                PedidoAuditoria::registrarCambio(
+                    $pedidoId,
+                    'ELIMINADA_IMAGEN_PRENDA',
+                    auth()->id(),
+                    null,
+                    json_encode([
+                        'ruta_webp' => $rutaWebp,
+                        'ruta_original' => $request->ruta_original
+                    ]),
+                    "Imagen de prenda eliminada: {$rutaWebp}",
+                    $prendaPedidoId,
+                    null,
+                    null,
+                    $rutaWebp
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -211,7 +287,7 @@ class ImageUploadController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al eliminar imagen: ' . $e->getMessage());
+            Log::error('Error al eliminar imagen: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()

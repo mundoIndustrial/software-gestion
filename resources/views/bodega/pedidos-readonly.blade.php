@@ -114,6 +114,7 @@
                     
                     <tbody id="pedidosTableBody" class="divide-y divide-slate-200">
                         @forelse($pedidosAgrupados as $numeroPedido => $items)
+                            @if(!empty($items))
                             <!-- FILA SEPARADORA DE PEDIDO -->
                             @php
                                 $primeraAsesora = $items[0]['asesor'] ?? '';
@@ -138,11 +139,11 @@
                                             <div style="font-family: 'Poppins', sans-serif;">
                                                 <span class="font-bold @if($esAnulada) text-purple-700 @else text-slate-900 @endif text-sm" style="font-family: 'Poppins', sans-serif;">PEDIDO #{!! $numeroPedido !!}</span>
                                                 <span class="ml-4 text-[11px] @if($esAnulada) text-purple-600 @else text-slate-500 @endif font-medium" style="font-family: 'Poppins', sans-serif;">
-                                                    {{ \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') }}
+                                                    {{ isset($items[0]['fecha_pedido']) ? \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') : 'N/A' }}
                                                     @if($esAnulada)
                                                         <span class="ml-2 inline-flex items-center px-2 py-1 text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider rounded-full">
                                                             ❌ Anulado 
-                                                            @if($items[0]['nombre_asesor_anulacion'])
+                                                            @if($items[0]['nombre_asesor_anulacion'] ?? false)
                                                                 por el asesor {{ $items[0]['nombre_asesor_anulacion'] }}
                                                             @endif
                                                         </span>
@@ -188,13 +189,6 @@
                                                     class="px-3 py-1.5 text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition rounded"
                                                     style="font-family: 'Poppins', sans-serif;">
                                                     👁 Ver
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    onclick="guardarPedidoCompleto('{{ $numPedidoReal }}')"
-                                                    class="px-3 py-1.5 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition rounded"
-                                                    style="font-family: 'Poppins', sans-serif;">
-                                                    💾 Guardar
                                                 </button>
                                             @endif
                                         </div>
@@ -318,6 +312,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             placeholder="Pendientes..."
                                             rows="1"
+                                            disabled
                                         >{{ $item['pendientes'] ?? '' }}</textarea>
                                     </td>
                                     
@@ -335,6 +330,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             placeholder="Notas..."
                                             rows="1"
+                                            disabled
                                         >{{ $item['observaciones'] ?? '' }}</textarea>
                                     </td>
                                     
@@ -350,45 +346,42 @@
                                             value="{{ $item['fecha_entrega'] ?? '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            @if($item['estado'] === 'Entregado')
-                                                disabled
-                                            @endif
+                                            disabled
                                         >
                                     </td>
                                     
-                                    <!-- ÁREA / ESTADO (COLUMNA GRANDE APILADA) -->
+                                    <!-- ESTADO (SOLO LECTURA - sin área) -->
                                     <td class="px-3 py-2">
                                         <div class="space-y-1.5">
-                                            <!-- SELECTOR ÁREA -->
+                                            <!-- SELECTOR ESTADO - HABILITADO -->
                                             <select
-                                                class="area-select w-full px-2 py-1.5 border-2 border-slate-400 bg-white text-slate-900 text-[13px] font-bold uppercase tracking-wide hover:bg-slate-50 transition rounded-lg cursor-pointer"
+                                                class="estado-select-readonly w-full px-2 py-1.5 border-2 border-slate-400 bg-white text-slate-900 text-[13px] font-bold uppercase tracking-wide hover:bg-slate-50 transition rounded-lg cursor-pointer"
                                                 style="font-family: 'Poppins', sans-serif; min-height: 35px; font-size: 13px; line-height: 1.4; background-color: white; color: #0f172a !important;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
-                                                data-original-area="{{ $item['area'] ?? '' }}"
-                                            >
-                                                <option value="">ÁREA</option>
-                                                <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
-                                                <option value="EPP" {{ ($item['area'] ?? null) === 'EPP' ? 'selected' : '' }}>EPP</option>
-                                            </select>
-
-                                            <!-- SELECTOR ESTADO -->
-                                            <select
-                                                class="estado-select w-full px-2 py-1.5 border-2 border-slate-400 bg-white text-slate-900 text-[13px] font-bold uppercase tracking-wide hover:bg-slate-50 transition rounded-lg cursor-pointer"
-                                                style="font-family: 'Poppins', sans-serif; min-height: 35px; font-size: 13px; line-height: 1.4; background-color: white; color: #0f172a !important;"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
+                                                data-bodega-id="{{ $item['bodega_id'] ?? '' }}"
                                                 data-original-estado="{{ $item['estado'] ?? '' }}"
                                             >
                                                 <option value="">ESTADO</option>
-                                                <option value="Pendiente" {{ ($item['estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Entregado" {{ ($item['estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Anulado" {{ ($item['estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                <option value="Pendiente">PENDIENTE</option>
+                                                <option value="Entregado">ENTREGADO</option>
                                             </select>
+                                            
+                                            <!-- BOTÓN GUARDAR -->
+                                            <button
+                                                type="button"
+                                                class="guardar-estado-btn w-full px-2 py-1.5 border-2 border-green-500 bg-green-50 text-green-700 text-[12px] font-bold uppercase tracking-wide hover:bg-green-100 transition rounded-lg cursor-pointer"
+                                                style="font-family: 'Poppins', sans-serif; font-size: 12px; line-height: 1.4;"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $item['talla'] }}"
+                                            >
+                                                💾 Guardar
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             @endforeach
+                            @endif
                         @empty
                             <tr>
                                 <td colspan="9" class="px-6 py-12 text-center">
@@ -553,6 +546,81 @@ document.addEventListener('DOMContentLoaded', function() {
         // Aplicar auto-resize cuando se carga la página (si hay contenido previo)
         textarea.addEventListener('change', function() {
             autoResizeTextarea(this);
+        });
+    });
+
+    // Manejar guardado de estado para rol Costura-Bodega / EPP-Bodega
+    document.querySelectorAll('.guardar-estado-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const numeroPedido = this.dataset.numeroPedido;
+            const talla = this.dataset.talla;
+            const estadoSelect = document.querySelector(
+                `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+            );
+            
+            if (!estadoSelect) {
+                alert('Error: No se encontró el selector de estado');
+                return;
+            }
+
+            const nuevoEstado = estadoSelect.value;
+            if (!nuevoEstado) {
+                alert('Error: Debe seleccionar un estado');
+                return;
+            }
+
+            // Obtener los datos adicionales del formulario
+            const pendientesInput = document.querySelector(
+                `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+            );
+            const observacionesInput = document.querySelector(
+                `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+            );
+            const fechaInput = document.querySelector(
+                `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+            );
+
+            const datos = {
+                numero_pedido: numeroPedido,
+                talla: talla,
+                estado_bodega: nuevoEstado,
+                pendientes: pendientesInput ? pendientesInput.value : '',
+                observaciones_bodega: observacionesInput ? observacionesInput.value : '',
+                fecha_entrega: fechaInput ? fechaInput.value : ''
+            };
+
+            // Enviar al servidor
+            fetch('/gestion-bodega/detalles-talla/guardar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar modal de éxito
+                    const modal = document.getElementById('modalExito');
+                    const mensaje = document.getElementById('modalMensajeExito');
+                    if (modal && mensaje) {
+                        mensaje.textContent = '✓ Estado guardado correctamente';
+                        modal.style.display = 'flex';
+                        document.getElementById('btnCerrarModalExito').onclick = function() {
+                            modal.style.display = 'none';
+                            // Recargar la página
+                            location.reload();
+                        };
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo guardar el estado'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar: ' + error.message);
+            });
         });
     });
 });

@@ -18,8 +18,6 @@ class ObtenerDatosRecibosService
      */
     public function obtener(int $pedidoId): array
     {
-        Log::info('[RECIBOS] Obteniendo datos para pedido: ' . $pedidoId);
-
         // Obtener el pedido (solo Pedidos tiene recibos de procesos)
         $pedido = PedidoProduccion::find($pedidoId);
 
@@ -32,16 +30,9 @@ class ObtenerDatosRecibosService
             throw new \Exception('No tienes permiso para ver este pedido', 403);
         }
 
-        Log::info('[RECIBOS] Pedido encontrado', ['numero_pedido' => $pedido->numero_pedido]);
-
         // Usar el repository para obtener datos
-        $repository = resolve(\App\Domain\Pedidos\Repositories\PedidosRepository::class);
+        $repository = resolve(\App\Domain\Pedidos\Repositories\PedidoProduccionRepository::class);
         $datos = $repository->obtenerDatosRecibos($pedidoId);
-
-        Log::info('[RECIBOS] Datos obtenidos correctamente', [
-            'prendas_count' => count($datos['prendas'] ?? []),
-            'procesos_totales' => collect($datos['prendas'] ?? [])->sum(fn($p) => count($p['procesos'] ?? [])),
-        ]);
 
         return $datos;
     }
@@ -51,8 +42,6 @@ class ObtenerDatosRecibosService
      */
     public function obtenerPorPrenda(int $pedidoId, int $prendaId): array
     {
-        Log::info('[RECIBOS-PRENDA] Obteniendo para pedido: ' . $pedidoId . ', prenda: ' . $prendaId);
-
         $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
@@ -70,11 +59,6 @@ class ObtenerDatosRecibosService
             throw new \Exception('Prenda no encontrada', 404);
         }
 
-        Log::info('[RECIBOS-PRENDA] Prenda encontrada', [
-            'prenda_id' => $prenda->id,
-            'nombre' => $prenda->nombre_prenda
-        ]);
-
         return [
             'pedido_numero' => $pedido->numero_pedido,
             'cliente' => $pedido->cliente,
@@ -91,8 +75,6 @@ class ObtenerDatosRecibosService
      */
     public function obtenerResumen(int $pedidoId): array
     {
-        Log::info('[RECIBOS-RESUMEN] Generando resumen para: ' . $pedidoId);
-
         $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
@@ -127,12 +109,6 @@ class ObtenerDatosRecibosService
             'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
         ];
 
-        Log::info('[RECIBOS-RESUMEN] Resumen generado', [
-            'total_prendas' => $totalPrendas,
-            'total_procesos' => $totalProcesos,
-            'estados' => array_keys($procesos->toArray()),
-        ]);
-
         return $resumen;
     }
 
@@ -141,8 +117,6 @@ class ObtenerDatosRecibosService
      */
     public function obtenerParaImpresion(int $pedidoId): array
     {
-        Log::info('[RECIBOS-IMPRESION] Preparando para imprimir: ' . $pedidoId);
-
         $datos = $this->obtener($pedidoId);
         $resumen = $this->obtenerResumen($pedidoId);
 
