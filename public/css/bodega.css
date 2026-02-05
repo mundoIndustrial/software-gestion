@@ -32,81 +32,99 @@ body {
     color: var(--slate-900);
 }
 
-/* ==================== TABLA CORPORATIVA ==================== */
+/* ==================== TABLA MODERNA Y AMIGABLE ==================== */
 
 table {
     border-collapse: collapse;
     width: 100%;
 }
 
-/* THEAD - Encabezado industrial */
+/* THEAD - Encabezado limpio */
 thead {
     position: sticky;
     top: 0;
     z-index: 20;
-    background-color: var(--slate-100);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 thead tr {
-    background-color: var(--slate-100);
-    border-bottom: 2px solid var(--slate-400);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
 }
 
 thead th {
-    padding: 0.875rem 1rem;
+    padding: 1rem 1rem;
     text-align: left;
-    font-size: 0.6875rem;
-    font-weight: 900;
-    color: var(--slate-900);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    border-right: 1px solid var(--slate-300);
-    background-color: var(--slate-100);
+    letter-spacing: 0.08em;
+    background: transparent;
+    border: none !important;
 }
 
 thead th:last-child {
-    border-right: none;
+    border-right: none !important;
 }
 
-/* TBODY - Filas de datos */
+/* TBODY - Filas modernas */
+tbody {
+    border-collapse: collapse !important;
+}
+
+/* Override Tailwind divide-y */
+tbody.divide-y > tr {
+    border-top: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
 tbody tr {
-    border-bottom: 1px solid var(--slate-200);
-    transition: var(--transition);
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    transition: all 0.2s ease;
+    background-color: white;
 }
 
-tbody tr:hover {
-    background-color: var(--slate-50);
+/* Hover effect mejorado */
+tbody tr:not(:has(> td[colspan])):hover {
+    background-color: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba(51, 65, 85, 0.05);
 }
 
 tbody td {
     padding: 0.875rem 1rem;
     font-size: 0.8125rem;
-    border-right: 1px solid var(--slate-200);
+    border: none !important;
     vertical-align: middle;
+    color: #334155;
 }
 
 tbody td:last-child {
-    border-right: none;
+    border-right: none !important;
 }
 
-/* FILA SEPARADORA (Pedido) */
-tbody tr:has(> td[colspan="7"]) {
-    background-color: var(--slate-200);
-    border-bottom: 1px solid var(--slate-400);
-    font-weight: 700;
+/* FILA SEPARADORA (Pedido) - Más atractiva */
+tbody tr:has(> td[colspan="9"]) {
+    background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+    border-bottom: 2px solid #cbd5e1 !important;
+    border-top: 2px solid #cbd5e1 !important;
+    font-weight: 600;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
-tbody tr:has(> td[colspan="7"]):hover {
-    background-color: var(--slate-200);
+tbody tr:has(> td[colspan="9"]):hover {
+    background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
 }
 
-tbody tr:has(> td[colspan="7"]) td {
-    padding: 1rem;
-    border-right: none;
+tbody tr:has(> td[colspan="9"]) td {
+    padding: 0.875rem 1rem;
+    border: none !important;
 }
 
-tbody tr:has(> td[colspan="7"]) .w-1 {
-    background-color: var(--slate-400);
+tbody tr:has(> td[colspan="9"]) .w-1 {
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 2px;
 }
 
 /* ==================== INPUTS Y TEXTAREA ==================== */
@@ -118,7 +136,7 @@ select {
     width: 100%;
     padding: 0.375rem 0.5rem;
     font-size: 0.6875rem;
-    font-family: 'Courier New', monospace;
+    font-family: 'Poppins', sans-serif;
     border: 2px solid var(--slate-300);
     background-color: var(--slate-50);
     color: var(--slate-900);
@@ -136,7 +154,7 @@ select:focus {
 
 textarea {
     resize: none;
-    font-family: 'Courier New', monospace;
+    font-family: 'Poppins', sans-serif;
 }
 
 textarea.observaciones-input {
@@ -482,5 +500,89 @@ button:focus-visible {
 
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--slate-500);
+}
+
+/* ==================== DROPDOWN MENÚ ACCIONES ==================== */
+
+.relative {
+    position: relative !important;
+}
+
+.acciones-dropdown {
+    position: absolute !important;
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    z-index: 9999 !important;
+    min-width: 150px !important;
+    left: 0 !important;
+    top: 100% !important;
+    margin-top: 0.25rem !important;
+}
+
+.acciones-dropdown button {
+    width: 100% !important;
+    text-align: left !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    background: white !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease !important;
+    color: inherit !important;
+    overflow: visible !important;
+}
+
+.acciones-dropdown button:last-child {
+    border-bottom: none !important;
+}
+
+.acciones-dropdown .entregar-btn {
+    color: #15803d !important;
+}
+
+.acciones-dropdown .entregar-btn:hover {
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+}
+
+.acciones-dropdown .costura-btn {
+    color: #a855f7 !important;
+}
+
+.acciones-dropdown .costura-btn:hover {
+    background-color: #f3e8ff !important;
+    color: #a855f7 !important;
+}
+
+.acciones-dropdown .pendiente-btn {
+    color: #b45309 !important;
+}
+
+.acciones-dropdown .pendiente-btn:hover {
+    background-color: #fef3c7 !important;
+    color: #b45309 !important;
+}
+
+.acciones-dropdown .epp-btn {
+    color: #1e40af !important;
+}
+
+.acciones-dropdown .epp-btn:hover {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+}
+
+.acciones-dropdown .anular-btn {
+    color: #dc2626 !important;
+}
+
+.acciones-dropdown .anular-btn:hover {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
 }
 
