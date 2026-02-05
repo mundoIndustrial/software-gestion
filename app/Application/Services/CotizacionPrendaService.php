@@ -283,6 +283,11 @@ class CotizacionPrendaService
                         $referencia = $primeraTela['referencia'] ?? null;
                     }
                     
+                    // Asegurar que color sea un string simple
+                    if (is_array($color)) {
+                        $color = implode(', ', $color);
+                    }
+                    
                     // Convertir tipo_manga_id a número si es string
                     $tipoMangaId = isset($variantes['tipo_manga_id']) ? $variantes['tipo_manga_id'] : null;
                     if (is_string($tipoMangaId) && !empty($tipoMangaId)) {
@@ -335,8 +340,9 @@ class CotizacionPrendaService
                     }
                     
                     try {
-                        $variante = $prenda->variantes()->create([
-                            'genero_id' => $generoIdAGuardar,
+                        // Validar y asegurar tipos de datos antes de guardar
+                        $datosVariante = [
+                            'genero_id' => is_array($generoIdAGuardar) ? json_encode($generoIdAGuardar) : $generoIdAGuardar,
                             'color' => $color,
                             'tipo_manga_id' => $tipoMangaId,
                             'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
@@ -347,12 +353,19 @@ class CotizacionPrendaService
                             'obs_manga' => $variantes['obs_manga'] ?? null,
                             'tiene_reflectivo' => $variantes['tiene_reflectivo'] ?? false,
                             'obs_reflectivo' => $variantes['obs_reflectivo'] ?? null,
-                            'descripcion_adicional' => $variantes['descripcion_adicional'] ?? '',
-                            'telas_multiples' => !empty($telasMultiples) ? json_encode($telasMultiples) : null,
-                            'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
-                            'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? null,
-                            'prenda_bodega' => ($variantes['prenda_bodega'] === true || $variantes['prenda_bodega'] === 'true' || $variantes['prenda_bodega'] === '1' || $variantes['prenda_bodega'] === 1) ? true : false,
+                            'telas_multiples' => !empty($telasMultiples) ? $telasMultiples : null,
+                            'descripcion_adicional' => $variantes['descripcion_adicional'] ?? null,
+                        ];
+                        
+                        Log::info('Datos de variante a guardar', [
+                            'prenda_id' => $prenda->id,
+                            'datos_variante' => $datosVariante,
+                            'color_type' => gettype($color),
+                            'genero_id_type' => gettype($generoIdAGuardar),
+                            'genero_id_final' => $datosVariante['genero_id']
                         ]);
+                        
+                        $variante = $prenda->variantes()->create($datosVariante);
                         Log::info(" Variante guardada", [
                             'variante_id' => $variante->id,
                             'genero_id' => $generoIdAGuardar,
