@@ -908,6 +908,10 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin'])->prefix
     Route::get('/cotizaciones', [App\Http\Controllers\VisualizadorLogoController::class, 'getCotizaciones'])->name('cotizaciones');
     Route::get('/cotizaciones/{id}', [App\Http\Controllers\VisualizadorLogoController::class, 'verCotizacion'])->name('cotizaciones.ver');
     
+    // Pedidos Logo
+    Route::get('/pedidos-logo', [App\Http\Controllers\VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
+    Route::get('/pedidos-logo/data', [App\Http\Controllers\VisualizadorLogoController::class, 'getPedidosLogo'])->name('pedidos-logo.data');
+    
     // Estadísticas
     Route::get('/estadisticas', [App\Http\Controllers\VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');
     

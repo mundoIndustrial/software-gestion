@@ -32,10 +32,11 @@
             <span class="menu-section-title">Pedidos</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <button class="menu-link" aria-label="Ver pedidos de bordado">
+                    <a href="{{ route('visualizador-logo.pedidos-logo') }}"
+                       class="menu-link">
                         <span class="material-symbols-rounded">edit</span>
                         <span class="menu-label">Pedidos Logo</span>
-                    </button>
+                    </a>
                 </li>
             </ul>
         </div>

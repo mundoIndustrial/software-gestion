@@ -151,6 +151,105 @@ class VisualizadorLogoController extends Controller
     }
 
     /**
+     * Mostrar vista de pedidos logo
+     */
+    public function pedidosLogo()
+    {
+        return view('visualizador-logo.pedidos-logo');
+    }
+
+    /**
+     * Obtener pedidos tipo Logo
+     */
+    public function getPedidosLogo(Request $request)
+    {
+        \Log::info(' ===== INICIO getPedidosLogo =====');
+        
+        // Usar la misma lógica que RegistroOrdenQueryController pero filtrando solo logos con recibos activos
+        $query = \App\Models\PedidoProduccion::with([
+            'cliente',
+            'asesor',
+            'cotizacion',
+            'cotizacion.tipoCotizacion',
+            'prendas',
+            'prendas.procesos' => function($q) {
+                $q->whereIn('tipo_proceso_id', [2, 3, 4, 5]) // Solo Bordado, Estampado, DTF, Sublimado
+                  ->where('estado', 'APROBADO'); // Solo procesos aprobados
+            }
+        ])
+        ->whereNotNull('numero_pedido')
+        ->select('pedidos_produccion.*')
+        ->selectRaw('(SELECT nombre FROM clientes WHERE clientes.id = pedidos_produccion.cliente_id) as cliente_nombre');
+
+        // Filtrar solo pedidos que tengan al menos un proceso APROBADO de los tipos específicos
+        $query->whereHas('prendas.procesos', function($q) {
+            $q->whereIn('tipo_proceso_id', [2, 3, 4, 5]) // Bordado, Estampado, DTF, Sublimado
+              ->where('estado', 'APROBADO'); // Al menos uno en estado APROBADO
+        });
+        
+        \Log::info(' Filtro de procesos aprobados aplicado:', [
+            'filtro' => 'prendas.procesos.tipo_proceso_id IN [2, 3, 4, 5] AND estado = APROBADO'
+        ]);
+
+        // Filtros adicionales
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('numero_pedido', 'like', "%{$search}%")
+                  ->orWhere('cliente', 'like', "%{$search}%");
+            });
+            \Log::info('🔎 Filtro de búsqueda aplicado:', ['search' => $search]);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+            \Log::info(' Filtro de estado aplicado:', ['estado' => $request->estado]);
+        }
+
+        // Ordenar por más reciente
+        $query->orderBy('created_at', 'desc');
+
+        // Paginación
+        $pedidos = $query->paginate(20);
+        
+        \Log::info(' Total de pedidos encontrados:', ['total' => $pedidos->total()]);
+        
+        // Log detallado de cada pedido con sus procesos aprobados
+        foreach ($pedidos->items() as $index => $pedido) {
+            $procesosAprobados = [];
+            
+            // Extraer procesos aprobados de cada prenda
+            foreach ($pedido->prendas as $prenda) {
+                foreach ($prenda->procesos as $proceso) {
+                    if (in_array($proceso->tipo_proceso_id, [2, 3, 4, 5]) && $proceso->estado === 'APROBADO') {
+                        $procesosAprobados[] = [
+                            'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                            'nombre_proceso' => $proceso->nombre_proceso ?? $proceso->tipo_proceso,
+                            'estado' => $proceso->estado,
+                            'numero_recibo' => $proceso->numero_recibo,
+                        ];
+                    }
+                }
+            }
+            
+            \Log::info(" Pedido #{$index}:", [
+                'id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cliente' => $pedido->cliente_nombre ?? $pedido->cliente ?? 'Sin cliente',
+                'estado' => $pedido->estado,
+                'procesos_aprobados' => $procesosAprobados,
+            ]);
+        }
+        
+        \Log::info(' ===== FIN getPedidosLogo =====');
+
+        return response()->json([
+            'success' => true,
+            'pedidos' => $pedidos
+        ]);
+    }
+
+    /**
      * Obtener estadísticas del dashboard
      */
     public function getEstadisticas()
