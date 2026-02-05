@@ -517,6 +517,51 @@ class PedidoController extends Controller
             // Convertir a array para modificar
             $responseData = $response->toArray();
             
+            // ========================================
+            // FILTRAR PRENDAS CON de_bodega = false
+            // ========================================
+            // Solo mostrar prendas que tengan de_bodega = 0 (false)
+            if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                $prendasOriginales = $responseData['prendas'];
+                $prendasFiltradas = [];
+                
+                foreach ($prendasOriginales as $prenda) {
+                    $deBodega = $prenda['de_bodega'] ?? null;
+                    
+                    // Incluir solo prendas con de_bodega = false
+                    // Comparar de varias formas para garantizar compatibilidad
+                    $debeIncluir = (!$deBodega) ? true : false;
+                    
+                    if ($debeIncluir) {
+                        $prendasFiltradas[] = $prenda;
+                    }
+                }
+                
+                \Log::info('[PedidoController] FILTRO de_bodega: Prendas filtradas', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prendas_originales' => count($prendasOriginales),
+                    'prendas_filtradas' => count($prendasFiltradas),
+                    'prendas_eliminadas' => count($prendasOriginales) - count($prendasFiltradas)
+                ]);
+                
+                $responseData['prendas'] = $prendasFiltradas;
+                
+                // Validar que después del filtrado de de_bodega haya al menos una prenda
+                if (empty($prendasFiltradas)) {
+                    \Log::info('[PedidoController] ⚠️ Todas las prendas fueron excluidas por ser de_bodega = true', [
+                        'pedido_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'usuario_id' => auth()->id()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este pedido no tienen prendas disponibles para este rol (todas las prendas son de bodega)'
+                    ], 403);
+                }
+            }
+            
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 \Log::info('[PedidoController] 🔐 FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA', [

@@ -269,6 +269,14 @@ class InsumosController extends Controller
             });
         }
         
+        // ========================================
+        // FILTRAR ÓRDENES QUE TENGAN PRENDAS CON de_bodega = false
+        // ========================================
+        // Usar whereHas para incluir solo órdenes que tengan al menos una prenda con de_bodega = false (0 en BD)
+        $baseQuery->whereHas('prendas', function($query) {
+            $query->where('de_bodega', 0);
+        });
+        
         // Siempre paginar, con o sin filtros - con relaciones optimizadas
         // Cargar relaciones necesarias para evitar N+1 queries
         $ordenes = $baseQuery->with([
@@ -277,6 +285,54 @@ class InsumosController extends Controller
                 $query->select('id', 'numero_pedido', 'nombre_material', 'recibido', 'fecha_orden', 'fecha_pedido', 'fecha_pago', 'fecha_llegada', 'fecha_despacho', 'observaciones');
             }
         ])->orderBy('numero_pedido', 'asc')->paginate(10);
+        
+        // ========================================
+        // FILTRADO POR de_bodega = false EN COLECCIONES
+        // ========================================
+        // Ahora filtrar cada orden para mostrar solo prendas con de_bodega = false
+        // (Las órdenes ya han sido filtradas para tener al menos una)
+        
+        $ordenesValidas = [];
+        $statsFiltering = [
+            'total_ordenes' => count($ordenes),
+            'total_prendas_antes' => 0,
+            'total_prendas_despues' => 0,
+            'ordenes_excluidas' => 0
+        ];
+        
+        foreach ($ordenes as $orden) {
+            $totalPrendasOrden = $orden->prendas->count();
+            $statsFiltering['total_prendas_antes'] += $totalPrendasOrden;
+            
+            if (empty($orden->prendas)) {
+                // Si no hay prendas, mostrar el pedido
+                $ordenesValidas[] = $orden;
+            } else {
+                // Filtrar prendas: solo incluir las que tienen de_bodega = false (0 en BD)
+                $prendasValidas = $orden->prendas->filter(function($prenda) {
+                    // Aceptar solo prendas con de_bodega = false/0
+                    return $prenda->de_bodega === false || $prenda->de_bodega === 0 || $prenda->de_bodega === '0';
+                });
+                
+                $statsFiltering['total_prendas_despues'] += $prendasValidas->count();
+                
+                // Si hay prendas válidas (de_bodega = false), incluir el pedido
+                if ($prendasValidas->count() > 0) {
+                    // Reemplazar la colección de prendas con solo las válidas
+                    $orden->setRelation('prendas', $prendasValidas);
+                    $ordenesValidas[] = $orden;
+                } else {
+                    // No hay prendas válidas (todas tienen de_bodega = true), excluir el pedido
+                    $statsFiltering['ordenes_excluidas']++;
+                }
+            }
+        }
+        
+        // Log del filtrado
+        \Log::info("FILTRADO DE PRENDAS por de_bodega=false:", $statsFiltering);
+        
+        // Convertir el array a una colección para mantener compatibilidad con la vista
+        $ordenes->setCollection(collect($ordenesValidas));
         
         // Preservar parámetros de búsqueda y filtro en links de paginación
         $ordenes->appends($request->query());
@@ -914,10 +970,16 @@ class InsumosController extends Controller
             // Buscar el pedido por número para obtener el ID
             $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
             
-            // Obtener las prendas del pedido usando el ID
+            // Obtener las prendas del pedido usando el ID, pero solo las que tienen de_bodega = false (0 en BD)
             $prendas = $pedido->prendas()
+                ->where('de_bodega', 0)
                 ->select('id', 'nombre_prenda', 'descripcion')
+                ->orderBy('nombre_prenda', 'asc')
                 ->get();
+            
+            \Log::info("obtenerPrendas: Pedido {$numeroPedido}, Total prendas filtradas: " . $prendas->count(), [
+                'prendas_ids' => $prendas->pluck('id')->toArray()
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -949,6 +1011,19 @@ class InsumosController extends Controller
             
             // Buscar el pedido por número para obtener el ID
             $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Validar que la prenda tenga de_bodega = false (0 en BD)
+            $prenda = \App\Models\PrendaPedido::where('id', $prendaId)
+                ->where('pedido_produccion_id', $pedido->id)
+                ->where('de_bodega', 0)
+                ->first();
+            
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada o no está permitida para este rol'
+                ], 404);
+            }
             
             // Buscar si ya existe un registro para esta prenda
             $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)
@@ -998,6 +1073,19 @@ class InsumosController extends Controller
             
             // Buscar el pedido por número para obtener el ID
             $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Validar que la prenda tenga de_bodega = false (0 en BD)
+            $prenda = \App\Models\PrendaPedido::where('id', $validated['prenda_id'])
+                ->where('pedido_produccion_id', $pedido->id)
+                ->where('de_bodega', 0)
+                ->first();
+            
+            if (!$prenda) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prenda no encontrada o no está permitida para este rol'
+                ], 403);
+            }
             
             // Buscar si ya existe un registro para esta prenda
             $anchoMetraje = \App\Models\PedidoAnchoMetraje::where('pedido_produccion_id', $pedido->id)

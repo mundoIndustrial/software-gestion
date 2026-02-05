@@ -62,6 +62,28 @@ class ReceiptManager {
     }
 
     /**
+     * Verificar si ReceiptRenderer está disponible
+     */
+    _tieneReceiptRenderer() {
+        return typeof window.ReceiptRenderer !== 'undefined' && 
+               typeof ReceiptRenderer.renderizar === 'function';
+    }
+
+    /**
+     * Crear un mock de modalManager para compatibilidad con ReceiptRenderer
+     */
+    _crearModalManager() {
+        return {
+            setState: (data) => {
+                console.log('[ReceiptManager._crearModalManager] setState llamado con:', data);
+                // Guardar en window si es necesario
+                window._receiptManagerState = { ...window._receiptManagerState, ...data };
+            },
+            state: window._receiptManagerState || {}
+        };
+    }
+
+    /**
      * Generar array de recibos desde datos del pedido
      */
     generarRecibos(datosFactura) {
@@ -72,35 +94,39 @@ class ReceiptManager {
         datosFactura.prendas.forEach((prenda, prendaIdx) => {
             console.group(`Procesando Prenda ${prendaIdx}: ${prenda.nombre}`);
             
-            // 1. Agregar recibo de COSTURA para la prenda
-            let tituloCostura = "RECIBO DE COSTURA";
-            if (prenda.de_bodega == 1) {
-                tituloCostura = "RECIBO DE COSTURA-BODEGA";
+            // LÓGICA:
+            // Si de_bodega = false (prenda normal) → Solo recibo de COSTURA, NO recibos de procesos
+            // Si de_bodega = true (prenda bodega) → Solo recibos de procesos (REFLECTIVO), NO recibo inicial costura
+            
+            const esDeBodega = prenda.de_bodega == 1 || prenda.de_bodega === true;
+            
+            // 1. Agregar recibo de COSTURA SOLO si NO es de bodega
+            if (!esDeBodega) {
+                recibos.push({
+                    numero: recibos.length + 1,
+                    prendaIndex: prendaIdx,
+                    procesoIndex: null,
+                    prenda: prenda,
+                    proceso: null,
+                    titulo: "RECIBO DE COSTURA",
+                    subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
+                });
+                
+                console.log(`✓ Agregado: "RECIBO DE COSTURA" (prenda NO es de bodega)`);
             }
 
-            recibos.push({
-                numero: recibos.length + 1,
-                prendaIndex: prendaIdx,
-                procesoIndex: null,
-                prenda: prenda,
-                proceso: null,
-                titulo: tituloCostura,
-                subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
-            });
-            
-            console.log(`✓ Agregado: "${tituloCostura}"`);
-
-            // 2. Agregar recibo para cada PROCESO de la prenda
+            // 2. Agregar recibo para cada PROCESO SOLO si ES de bodega
             console.log('Verificando procesos:');
+            console.log('  - es de bodega?', esDeBodega);
             console.log('  - prenda.procesos existe?', 'procesos' in prenda);
             console.log('  - prenda.procesos valor:', prenda.procesos);
             console.log('  - Es array?', Array.isArray(prenda.procesos));
             
-            if (prenda.procesos && Array.isArray(prenda.procesos)) {
-                console.log(`  - Procesando ${prenda.procesos.length} procesos`);
+            if (esDeBodega && prenda.procesos && Array.isArray(prenda.procesos)) {
+                console.log(`  - Procesando ${prenda.procesos.length} procesos (prenda ES de bodega)`);
                 prenda.procesos.forEach((proceso, procesoIdx) => {
-                    // Usar nombre_proceso o tipo_proceso como fallback (campos que viene del backend)
-                    const nombreProceso = proceso.nombre_proceso || proceso.tipo_proceso || proceso.nombre || 'Proceso';
+                    // Usar tipo_proceso como nombre del proceso
+                    const nombreProceso = proceso.tipo_proceso || proceso.nombre_proceso || proceso.nombre || 'Proceso';
                     console.log(`    Proceso ${procesoIdx}: "${nombreProceso}"`);
                     
                     recibos.push({
@@ -113,8 +139,10 @@ class ReceiptManager {
                         subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
                     });
                 });
+            } else if (esDeBodega) {
+                console.log('  - Sin procesos o procesos no es array (pero prenda ES de bodega)');
             } else {
-                console.log('  -  Sin procesos o procesos no es array');
+                console.log('  - Sin procesos agregados (prenda NO es de bodega)');
             }
             
             console.groupEnd();
@@ -258,10 +286,6 @@ class ReceiptManager {
         console.log('datosFactura completo:', this.datosFactura);
         console.log('═══════════════════════════════════════════════════════════');
 
-        // Actualizar contador
-        document.getElementById('receipt-number').textContent = recibo.numero;
-        document.getElementById('receipt-total').textContent = recibo.total;
-
         // Actualizar fecha
         const fechaAMostrar = this.datosFactura.fecha || this.datosFactura.fecha_creacion;
         console.log('[ReceiptManager] DEBUG FECHA:', {
@@ -269,75 +293,38 @@ class ReceiptManager {
             'datosFactura.fecha_creacion': this.datosFactura.fecha_creacion,
             'fechaAMostrar': fechaAMostrar
         });
-        this.actualizarFecha(fechaAMostrar);
 
-        // Limpiar datos antiguos de ancho/metraje
-        this.limpiarDatosAntiguos();
-
-        // Actualizar información básica
-        console.log('─────────────────────────────────────────────────────────────');
-        console.log('[ReceiptManager.renderizar] ACTUALIZANDO CAMPOS:');
-        console.log('─────────────────────────────────────────────────────────────');
-        console.log('1. ASESOR:');
-        console.log('   - datosFactura.asesor:', this.datosFactura.asesor);
+        // Generar y renderizar contenido del recibo
+        const useReceiptRenderer = this._tieneReceiptRenderer();
+        console.log('[ReceiptManager.renderizar] ✓ ReceiptRenderer disponible:', useReceiptRenderer);
         
-        // Actualizar ancho y metraje si hay datos disponibles
-        if (window.datosAnchoMetraje) {
-            console.log('[ReceiptManager] Actualizando ancho y metraje en el recibo...');
-            this.actualizarAnchoMetraje();
-        }
-        
-        console.log('   - datosFactura.asesora:', this.datosFactura.asesora);
-        const asesorElem = document.getElementById('asesora-value');
-        console.log('   - Elemento #asesora-value existe?', !!asesorElem);
-        if (asesorElem) {
-            const valorAsesor = this.datosFactura.asesor || this.datosFactura.asesora || 'N/A';
-            asesorElem.textContent = valorAsesor;
-            console.log('   - ✓ Asignado:', valorAsesor);
-            console.log('   - Contenido ahora:', asesorElem.textContent);
+        if (useReceiptRenderer) {
+            // Usar ReceiptRenderer.renderizar() para el renderizado COMPLETO (como en supervisor_pedidos)
+            const tipoProceso = recibo.proceso ? (recibo.proceso.tipo_proceso || 'costura') : 'costura';
+            console.log('[ReceiptManager.renderizar] Usando ReceiptRenderer.renderizar() para renderizado completo...');
+            
+            // Crear modalManager mock para compatibilidad
+            const modalManager = this._crearModalManager();
+            
+            // Llamar al método renderizar completo de ReceiptRenderer
+            ReceiptRenderer.renderizar(
+                modalManager,
+                recibo.prenda,
+                0,  // reciboIndice
+                tipoProceso,
+                this.datosFactura,
+                recibo.prenda.recibos || {}
+            );
         } else {
-            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
+            // Fallback: renderizado manual si ReceiptRenderer no está disponible
+            console.log('[ReceiptManager.renderizar] ⚠️ ReceiptRenderer no disponible, usando renderizado manual');
+            const contenido = this.generarContenido(recibo);
+            document.getElementById('descripcion-text').innerHTML = contenido;
         }
         
-        console.log('2. FORMA DE PAGO:');
-        console.log('   - datosFactura.forma_de_pago:', this.datosFactura.forma_de_pago);
-        const formaPagoElem = document.getElementById('forma-pago-value');
-        console.log('   - Elemento #forma-pago-value existe?', !!formaPagoElem);
-        if (formaPagoElem) {
-            const valorFormaPago = this.datosFactura.forma_de_pago || 'N/A';
-            formaPagoElem.textContent = valorFormaPago;
-            console.log('   - ✓ Asignado:', valorFormaPago);
-            console.log('   - Contenido ahora:', formaPagoElem.textContent);
-        } else {
-            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
-        }
-        
-        console.log('3. CLIENTE:');
-        console.log('   - datosFactura.cliente:', this.datosFactura.cliente);
-        const clienteElem = document.getElementById('cliente-value');
-        console.log('   - Elemento #cliente-value existe?', !!clienteElem);
-        if (clienteElem) {
-            const valorCliente = this.datosFactura.cliente || 'N/A';
-            clienteElem.textContent = valorCliente;
-            console.log('   - ✓ Asignado:', valorCliente);
-            console.log('   - Contenido ahora:', clienteElem.textContent);
-        } else {
-            console.log('   - ✗ ELEMENTO NO ENCONTRADO');
-        }
-        console.log('─────────────────────────────────────────────────────────────');
-
-        // Actualizar título (DINÁMICO)
-        document.getElementById('receipt-title').textContent = recibo.titulo;
-
-        // Actualizar número de pedido
-        document.getElementById('order-pedido').textContent = 
-            '#' + (this.datosFactura.numero_pedido || '00000');
-
-        // Generar contenido del recibo
-        const contenido = this.generarContenido(recibo);
-        
-        // Establecer el contenido
-        document.getElementById('descripcion-text').innerHTML = contenido;
+        // Actualizar contador de recibos (específico de materiales)
+        document.getElementById('receipt-number').textContent = recibo.numero;
+        document.getElementById('receipt-total').textContent = recibo.total;
         
         // Actualizar ancho y metraje específico para esta prenda
         this.actualizarAnchoMetrajePorPrenda(recibo.prenda);
@@ -513,9 +500,28 @@ class ReceiptManager {
 
     /**
      * Construir descripción dinámica para recibo de COSTURA/COSTURA-BODEGA
-     * Formato obligatorio con 5 bloques enumerados con puntos
+     * Intenta usar Formatters si está disponible, sino usa implementación local
      */
     construirDescripcionCostura(prenda) {
+        // Intentar usar Formatters.construirDescripcionCostura si está disponible
+        if (typeof Formatters !== 'undefined' && typeof Formatters.construirDescripcionCostura === 'function') {
+            console.log('[ReceiptManager.construirDescripcionCostura] ✓ Usando Formatters.construirDescripcionCostura');
+            return Formatters.construirDescripcionCostura(prenda);
+        } else if (typeof window.Formatters !== 'undefined' && typeof window.Formatters.construirDescripcionCostura === 'function') {
+            console.log('[ReceiptManager.construirDescripcionCostura] ✓ Usando window.Formatters.construirDescripcionCostura');
+            return window.Formatters.construirDescripcionCostura(prenda);
+        }
+        
+        // Fallback: usar implementación local si Formatters no está disponible
+        console.log('[ReceiptManager.construirDescripcionCostura] ⚠️ Formatters no disponible, usando implementación local');
+        return this._construirDescripcionCosturaPorDefecto(prenda);
+    }
+
+    /**
+     * Implementación local fallback para construir descripción
+     * Se usa cuando Formatters no está disponible
+     */
+    _construirDescripcionCosturaPorDefecto(prenda) {
         const lineas = [];
 
         //  Nombre de la prenda (título)
