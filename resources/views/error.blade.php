@@ -40,7 +40,7 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen flex items-center justify-center p-4" data-status="{{ $statusCode ?? 500 }}" data-error-code="{{ $errorCode ?? '' }}">
     <div class="max-w-2xl w-full bg-white rounded-lg shadow-xl overflow-hidden">
         <!-- Header -->
         <div class="bg-gradient-to-r from-red-500 to-orange-500 p-6 text-white text-center">
@@ -81,12 +81,6 @@
 
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                <button onclick="window.history.back()" 
-                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Volver atrás</span>
-                </button>
-                
                 <a href="{{ url('/') }}" 
                    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2">
                     <i class="fas fa-home"></i>
@@ -151,7 +145,39 @@
     </div>
 
     <script>
+        function handleBackButton() {
+            // Detectar error 403 de múltiples formas
+            const statusAttr = document.body.getAttribute('data-status');
+            const statusCode = statusAttr ? parseInt(statusAttr, 10) : null;
+            
+            console.log('[DEBUG-BACK-BUTTON] Status Code:', statusCode);
+            console.log('[DEBUG-BACK-BUTTON] Document Title:', document.title);
+            console.log('[DEBUG-BACK-BUTTON] Body Data-Status:', statusAttr);
+            
+            const is403Error = 
+                statusCode === 403 ||  // Principal: por data-status
+                document.title.includes('403') ||
+                document.querySelector('h1')?.textContent.includes('403') ||
+                document.body.textContent.includes('No tienes permisos para acceder');
+            
+            console.log('[DEBUG-BACK-BUTTON] Es 403?:', is403Error);
+            
+            if (is403Error) {
+                // Para error 403, siempre ir a login
+                console.log('[DEBUG-BACK-BUTTON] Redirigiendo a /login');
+                window.location.href = '/login';
+            } else {
+                // Para otros errores, retroceder en historial
+                console.log('[DEBUG-BACK-BUTTON] Retrocediendo en historial');
+                window.history.back();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('[DEBUG-ERROR-PAGE] Página de error cargada');
+            console.log('[DEBUG-ERROR-PAGE] Status Code:', document.body.getAttribute('data-status'));
+            console.log('[DEBUG-ERROR-PAGE] Error Code:', document.body.getAttribute('data-error-code'));
+            
             const toggleButton = document.getElementById('toggleDetails');
             const detailsContainer = document.getElementById('technicalDetails');
             const toggleIcon = document.getElementById('toggleIcon');

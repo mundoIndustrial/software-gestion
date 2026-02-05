@@ -57,6 +57,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Obtener el rol principal/actual (primer rol en roles_ids quando existe)
+     * Si no tiene roles_ids, retorna el role_id legacy
+     * 
+     * @return \App\Models\Role|null
+     */
+    public function getCurrentRole()
+    {
+        // Primero intentar obtener de roles_ids (nuevo sistema)
+        if (!empty($this->roles_ids) && is_array($this->roles_ids)) {
+            return Role::find($this->roles_ids[0]);
+        }
+        
+        // Si no tiene roles_ids pero tiene role_id (legacy), usar eso
+        if ($this->role_id) {
+            return Role::find($this->role_id);
+        }
+        
+        return null;
+    }
+
+    /**
      * Obtener el rol principal (primer rol en roles_ids)
      * Retorna un atributo accesible, no una relación
      *
@@ -64,11 +85,16 @@ class User extends Authenticatable
      */
     public function getRoleAttribute()
     {
-        // Retornar el primer rol de roles_ids
+        // Si tiene roles_ids, retornar el primero (nuevo sistema)
         if (!empty($this->roles_ids) && is_array($this->roles_ids)) {
             return Role::find($this->roles_ids[0]);
         }
 
+        // Si no, retornar el role_id legacy
+        if ($this->role_id) {
+            return Role::find($this->role_id);
+        }
+        
         return null;
     }
 
@@ -201,6 +227,17 @@ class User extends Authenticatable
     public function syncRoles(array $roleIds): void
     {
         $this->update(['roles_ids' => $roleIds]);
+    }
+
+    /**
+     * Obtener los nombres de los roles del usuario
+     * Compatible con Spatie\Permission API
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getRoleNames()
+    {
+        return $this->roles->pluck('name');
     }
 
     /**

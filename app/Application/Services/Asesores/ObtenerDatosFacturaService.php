@@ -25,8 +25,6 @@ class ObtenerDatosFacturaService
      */
     public function obtener(int $pedidoId): array
     {
-        Log::info('[FACTURA] Obteniendo datos para pedido: ' . $pedidoId);
-
         // Intentar obtener como Pedidos
         $pedido = PedidoProduccion::find($pedidoId);
         
@@ -64,19 +62,13 @@ class ObtenerDatosFacturaService
      */
     private function obtenerDatosPedidos(PedidoProduccion $pedido): array
     {
-        Log::info('[FACTURA] Procesando Pedidos', ['id' => $pedido->id]);
+
 
         // Usar obtenerDatosFactura() que incluye manga, broche, bolsillos con todas las observaciones
         $datos = $this->pedidoProduccionRepository->obtenerDatosFactura($pedido->id);
         
         // Agregar el ID del pedido para poder usarlo en el frontend
         $datos['id'] = $pedido->id;
-
-        Log::info('[FACTURA] Datos extraÃ­dos', [
-            'numero_pedido' => $datos['numero_pedido'],
-            'prendas_count' => count($datos['prendas']),
-            'total_items' => $datos['total_items'] ?? 0,
-        ]);
 
         return $datos;
     }
@@ -86,7 +78,7 @@ class ObtenerDatosFacturaService
      */
     private function obtenerDatosLogoPedido(LogoPedido $pedido): array
     {
-        Log::info('[FACTURA] Procesando LogoPedido', ['id' => $pedido->id]);
+
 
         // Determinar la fecha de creación
         $fechaCreacion = $pedido->created_at 
@@ -111,10 +103,10 @@ class ObtenerDatosFacturaService
             'total_items' => 0,
         ];
 
-        Log::info('[FACTURA] Datos de LogoPedido listos', [
-            'numero_pedido' => $datos['numero_pedido'],
-            'cliente' => $datos['cliente'],
-        ]);
+        // Log::info('[FACTURA] Datos de LogoPedido listos', [
+        //     'numero_pedido' => $datos['numero_pedido'],
+        //     'cliente' => $datos['cliente'],
+        // ]);
 
         return $datos;
     }
@@ -124,7 +116,7 @@ class ObtenerDatosFacturaService
      */
     public function obtenerResumen(int $pedidoId): array
     {
-        Log::info('[FACTURA-RESUMEN] Obteniendo resumen para: ' . $pedidoId);
+
 
         $pedido = PedidoProduccion::find($pedidoId);
         

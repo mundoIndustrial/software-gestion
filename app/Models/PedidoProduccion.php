@@ -217,6 +217,14 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Historial de auditoría del pedido
+     */
+    public function auditoria(): HasMany
+    {
+        return $this->hasMany(PedidoAuditoria::class, 'pedidos_produccion_id');
+    }
+
+    /**
      * Obtener descripción de prendas (concatenadas con detalles)
      * 
      * Si la orden TIENE cotización: muestra descripción completa con detalles usando template

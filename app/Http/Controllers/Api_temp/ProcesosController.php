@@ -11,9 +11,11 @@ use App\Domain\Procesos\Services\AprobarProcesoPrendaService;
 use App\Domain\Procesos\Services\RechazarProcesoPrendaService;
 use App\Domain\Procesos\Services\SubirImagenProcesoService;
 use App\DTOs\CrearProcesoPrendaDTO;
+use App\Models\PedidoAuditoria;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ProcesosController extends Controller
 {
@@ -404,6 +406,24 @@ class ProcesosController extends Controller
                 esPrincipal: $validated['es_principal'] ?? false
             );
 
+            // Registrar auditoría
+            PedidoAuditoria::registrarCambio(
+                $pedidoId,
+                'AGREGADA_IMAGEN_PROCESO',
+                auth()->id(),
+                json_encode([
+                    'ruta_archivo' => "pedidos/{$pedidoId}/procesos/{$nombreArchivo}",
+                    'nombre_original' => $nombreOriginal,
+                    'es_principal' => $validated['es_principal'] ?? false
+                ]),
+                null,
+                "Imagen de proceso agregada: {$nombreOriginal}",
+                null,
+                $procesoId,
+                $imagen->getId() ?? null,
+                "pedidos/{$pedidoId}/procesos/{$nombreArchivo}"
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Imagen subida correctamente',
@@ -411,6 +431,7 @@ class ProcesosController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error('Error al subir imagen de proceso: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al subir imagen',
