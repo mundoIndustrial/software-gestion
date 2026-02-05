@@ -29,6 +29,9 @@ class PDFCotizacionCombiadaController extends Controller
     public function generate($id, Request $request)
     {
         try {
+            // Log de inicio
+            \Log::info("Iniciando generación PDF combinada para cotización ID: {$id}");
+            
             // 1. Validar que exista la cotización
             $cotizacion = Cotizacion::with([
                 'usuario:id,name',
@@ -52,6 +55,14 @@ class PDFCotizacionCombiadaController extends Controller
                 }
             ])->findOrFail($id);
 
+            \Log::info("Cotización encontrada: " . json_encode([
+                'id' => $cotizacion->id,
+                'numero' => $cotizacion->numero_cotizacion,
+                'tipo' => $cotizacion->tipo,
+                'prendas_count' => $cotizacion->prendas?->count() ?? 0,
+                'has_logo' => !is_null($cotizacion->logoCotizacion)
+            ]));
+
             // 2. Validar permisos de acceso (si es necesario)
             $this->validateAccess($cotizacion);
 
@@ -59,16 +70,24 @@ class PDFCotizacionCombiadaController extends Controller
             $this->validateCombiadaCotizacion($cotizacion);
 
             // 4. Generar diseño HTML usando el componente
+            \Log::info("Generando diseño HTML...");
             $design = new CombiadaPdfDesign($cotizacion);
             $html = $design->build();
+            
+            \Log::info("HTML generado, longitud: " . strlen($html) . " caracteres");
 
             // 5. Generar PDF (delegar a helper)
+            \Log::info("Generando contenido PDF...");
             $pdfContent = $this->generatePdfContent($html);
+            
+            \Log::info("PDF generado, tamaño: " . strlen($pdfContent) . " bytes");
 
             // 6. Retornar descarga
+            \Log::info("Retornando descarga...");
             return $this->downloadPdf($pdfContent, $cotizacion);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Cotización no encontrada', ['cotizacion_id' => $id]);
             return response()->json([
                 'success' => false,
                 'message' => 'Cotización no encontrada'
@@ -78,8 +97,21 @@ class PDFCotizacionCombiadaController extends Controller
             \Log::error('Error al generar PDF de cotización combinada', [
                 'cotizacion_id' => $id,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // En desarrollo, mostrar error completo
+            if (app()->environment('local')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al generar PDF: ' . $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ], 500);
+            }
 
             return response()->json([
                 'success' => false,
@@ -158,12 +190,14 @@ class PDFCotizacionCombiadaController extends Controller
     {
         $filename = 'pdf_cotizacion_combinada_' . $cotizacion->numero_cotizacion . '_' . date('Y-m-d') . '.pdf';
 
-        return response()->streamDownload(
-            function () use ($pdfContent) {
-                echo $pdfContent;
-            },
-            $filename,
-            ['Content-Type' => 'application/pdf']
-        );
+        \Log::info("Iniciando descarga del PDF con nombre: {$filename}, tamaño: " . strlen($pdfContent) . " bytes");
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Content-Length', strlen($pdfContent))
+            ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+            ->header('Pragma', 'public')
+            ->header('Expires', '0');
     }
 }

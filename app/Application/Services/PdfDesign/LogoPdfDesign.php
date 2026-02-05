@@ -245,37 +245,8 @@ CSS;
                 return '<div class="prenda-card"><p>Sin información de logo</p></div>';
             }
 
-            // Telas
-            $telasHtml = '';
-            if (isset($logoCot->telasPrendas)) {
-                $telasFiltradas = [];
-                foreach ($logoCot->telasPrendas as $t) {
-                    if ($t->prenda_cot_id == $prenda->id) {
-                        $telasFiltradas[] = $t;
-                    }
-                }
-
-                if (count($telasFiltradas) > 0) {
-                    $telasHtml .= '<div class="prenda-telas">';
-                    $contador = 1;
-                    foreach ($telasFiltradas as $tela) {
-                        $telaDesc = htmlspecialchars($tela->tela ?? '');
-                        $color = htmlspecialchars($tela->color ?? '');
-                        $ref = htmlspecialchars($tela->ref ?? '');
-                        
-                        $telasHtml .= '<div class="tela-item">' . $contador . '. TELA: ' . $telaDesc;
-                        if ($color) {
-                            $telasHtml .= ' | COLOR: ' . $color;
-                        }
-                        if ($ref) {
-                            $telasHtml .= ' | REF: ' . $ref;
-                        }
-                        $telasHtml .= '</div>';
-                        $contador++;
-                    }
-                    $telasHtml .= '</div>';
-                }
-            }
+            // Telas - ELIMINADO según solicitud
+            $telasHtml = ''; // Ya no se muestran telas en PDF de logo
 
             // Tallas - obtener del primer registro técnico de la prenda (una sola vez)
             $tallasHtml = '';
@@ -316,74 +287,51 @@ CSS;
                 }
             }
 
-            // Descripción - concatenar ubicaciones del logo
-            if ($tecnicaPrenda && !empty($tecnicaPrenda->ubicaciones)) {
-                $ubicacionesData = [];
-                if (is_string($tecnicaPrenda->ubicaciones)) {
-                    $decoded = json_decode($tecnicaPrenda->ubicaciones, true, 10);
-                    if (is_array($decoded)) {
-                        $ubicacionesData = $decoded;
-                    }
-                } elseif (is_array($tecnicaPrenda->ubicaciones)) {
-                    $ubicacionesData = $tecnicaPrenda->ubicaciones;
-                }
-
-                if (!empty($ubicacionesData)) {
-                    $ubicacionesTexto = [];
-                    foreach ($ubicacionesData as $ubicacion) {
-                        if (is_array($ubicacion) && isset($ubicacion['ubicacion'])) {
-                            $ubicacionesTexto[] = htmlspecialchars($ubicacion['ubicacion']);
-                        } elseif (is_string($ubicacion)) {
-                            $ubicacionesTexto[] = htmlspecialchars($ubicacion);
-                        }
-                    }
-                    
-                    if (!empty($ubicacionesTexto)) {
-                        $descripcionHtml .= '<div class="prenda-descripcion" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; font-size: 9px; line-height: 1.4;">' . implode(', ', $ubicacionesTexto) . '</div>';
-                    }
-                }
-            }
-
-            // Variaciones - usar solo el primer registro técnico de la prenda
-            $variacionesHtml = '';
+            // Descripción - concatenar TODAS las ubicaciones de las técnicas de la prenda
+            $descripcionHtml = '';
+            $todasUbicaciones = [];
+            
             if (isset($logoCot->tecnicasPrendas)) {
-                $tecnica = null;
-                foreach ($logoCot->tecnicasPrendas as $t) {
-                    if ($t->prenda_cot_id == $prenda->id) {
-                        $tecnica = $t;
-                        break; // Solo el primero
-                    }
-                }
-
-                if ($tecnica && !empty($tecnica->variaciones_prenda)) {
-                    $variacionesHtml .= '<table class="variaciones-table"><thead><tr><th>Variación</th><th>Opción</th><th>Observación</th></tr></thead><tbody>';
-                    
-                    $variacionesData = [];
-                    if (is_string($tecnica->variaciones_prenda)) {
-                        $decoded = json_decode($tecnica->variaciones_prenda, true, 10);
-                        if (is_array($decoded)) {
-                            $variacionesData = $decoded;
+                foreach ($logoCot->tecnicasPrendas as $tecnica) {
+                    if ($tecnica->prenda_cot_id == $prenda->id && !empty($tecnica->ubicaciones)) {
+                        $ubicacionesData = [];
+                        if (is_string($tecnica->ubicaciones)) {
+                            $decoded = json_decode($tecnica->ubicaciones, true, 10);
+                            if (is_array($decoded)) {
+                                $ubicacionesData = $decoded;
+                            }
+                        } elseif (is_array($tecnica->ubicaciones)) {
+                            $ubicacionesData = $tecnica->ubicaciones;
                         }
-                    } elseif (is_array($tecnica->variaciones_prenda)) {
-                        $variacionesData = $tecnica->variaciones_prenda;
-                    }
 
-                    $contador = 0;
-                    foreach ($variacionesData as $nombreVar => $varData) {
-                        if ($contador > 50) break;
-                        if (!is_array($varData)) continue;
-                        
-                        $nombreVar = htmlspecialchars(ucfirst(str_replace('_', ' ', (string)$nombreVar)));
-                        $opcion = htmlspecialchars((string)($varData['opcion'] ?? ''));
-                        $obs = htmlspecialchars((string)($varData['observacion'] ?? ''));
-                        
-                        $variacionesHtml .= '<tr><td>' . $nombreVar . '</td><td>' . $opcion . '</td><td>' . $obs . '</td></tr>';
-                        $contador++;
+                        if (!empty($ubicacionesData)) {
+                            foreach ($ubicacionesData as $ubicacion) {
+                                if (is_array($ubicacion) && isset($ubicacion['ubicacion'])) {
+                                    $ubicacionTexto = htmlspecialchars($ubicacion['ubicacion']);
+                                    // Evitar duplicados
+                                    if (!in_array($ubicacionTexto, $todasUbicaciones)) {
+                                        $todasUbicaciones[] = $ubicacionTexto;
+                                    }
+                                } elseif (is_string($ubicacion)) {
+                                    $ubicacionTexto = htmlspecialchars($ubicacion);
+                                    // Evitar duplicados
+                                    if (!in_array($ubicacionTexto, $todasUbicaciones)) {
+                                        $todasUbicaciones[] = $ubicacionTexto;
+                                    }
+                                }
+                            }
+                        }
                     }
-                    
-                    $variacionesHtml .= '</tbody></table>';
                 }
             }
+            
+            if (!empty($todasUbicaciones)) {
+                // Concatenar todas las ubicaciones separadas por comas
+                $descripcionHtml .= '<div class="prenda-descripcion" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; font-size: 9px; line-height: 1.4;">' . implode(', ', $todasUbicaciones) . '</div>';
+            }
+
+            // Variaciones - ELIMINADO según solicitud
+            $variacionesHtml = ''; // Ya no se muestra tabla de variaciones
 
             // Imágenes
             $imagenesHtml = $this->renderImagenesLogo($prenda, $logoCot);
@@ -397,167 +345,160 @@ CSS;
     }
 
     /**
-     * Renderiza las imágenes de logo y tela
+     * Renderiza las imágenes de logo (usando base64 como en CombiadaPdfDesign)
      */
     private function renderImagenesLogo($prenda, $logoCot): string
     {
-        $imagenesPorTipo = [
-            'Logo' => [],
-            'Tela' => []
-        ];
+        try {
+            \Log::info("Iniciando renderImagenesLogo con imágenes base64");
+            
+            // Agrupar imágenes por tipo
+            $imagenesPorTipo = [
+                'Logo' => []
+            ];
 
-        // Obtener imágenes de los logos (tecnicas) - evitar duplicados por ruta
-        $rutasLogoVistas = [];
-        if (isset($logoCot->tecnicasPrendas)) {
-            foreach ($logoCot->tecnicasPrendas as $tecnica) {
-                if ($tecnica->prenda_cot_id == $prenda->id && $tecnica->fotos) {
-                    foreach ($tecnica->fotos as $foto) {
-                        // Usar el accessor url que maneja las rutas correctamente
-                        $imagenUrl = $foto->url ?? $foto->ruta_original ?? '';
-                        
-                        // Evitar duplicados
-                        if (!empty($imagenUrl) && !in_array($imagenUrl, $rutasLogoVistas)) {
-                            $rutasLogoVistas[] = $imagenUrl;
-                            $imagenesPorTipo['Logo'][] = [
-                                'url' => $imagenUrl,
-                                'titulo' => 'Logo'
-                            ];
+            // Logo de cada técnica
+            if (isset($logoCot->tecnicasPrendas)) {
+                foreach ($logoCot->tecnicasPrendas as $tp) {
+                    if ($tp->prenda_cot_id == $prenda->id && $tp->fotos && count($tp->fotos) > 0) {
+                        foreach ($tp->fotos as $foto) {
+                            if ($foto->url) {
+                                $imagenesPorTipo['Logo'][] = [
+                                    'url' => $foto->url,
+                                    'titulo' => 'Logo - ' . ($tp->tipoLogo?->nombre ?? 'Logo')
+                                ];
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Obtener imágenes de las telas
-        if (isset($logoCot->telasPrendas)) {
-            foreach ($logoCot->telasPrendas as $tela) {
-                if ($tela->prenda_cot_id == $prenda->id && !empty($tela->img)) {
-                    // Usar directamente el campo img para evitar duplicación de /storage
-                    $imagenUrl = $tela->img;
-                    $imagenesPorTipo['Tela'][] = [
-                        'url' => $imagenUrl,
-                        'titulo' => 'Tela'
-                    ];
-                    break; // Solo una tela
-                }
+            // Verificar si hay imágenes de logo
+            if (empty($imagenesPorTipo['Logo'])) {
+                return '';
             }
-        }
 
-        // Verificar si hay al menos una imagen
-        $tieneImagenes = false;
-        foreach ($imagenesPorTipo as $tipoImagenes) {
-            if (!empty($tipoImagenes)) {
-                $tieneImagenes = true;
-                break;
-            }
-        }
+            // Crear tabla solo para logo
+            $html = '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
+            $html .= '<thead>';
+            $html .= '<tr>';
+            $html .= '<th style="width: 100%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody>';
+            $html .= '<tr>';
+            $html .= '<td style="width: 100%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
 
-        if (!$tieneImagenes) {
-            return '';
-        }
+            // Mostrar logo con base64
+            if (!empty($imagenesPorTipo['Logo'])) {
+                $img = $imagenesPorTipo['Logo'][0];
+                $imagenUrl = $img['url'];
 
-        // Crear tabla horizontal con columnas por tipo
-        $html = '<div style="margin-top: 15px; border-top: 1px solid #e0e0e0; padding-top: 10px;">';
-        $html .= '<table style="width: 100%; border-collapse: collapse;">';
-        $html .= '<thead>';
-        $html .= '<tr>';
-        $html .= '<th style="width: 50%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center; font-size: 10px;">Logo</th>';
-        $html .= '<th style="width: 50%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center; font-size: 10px;">Tela</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
-        $html .= '<tr>';
-
-        // Procesar Logo
-        $html .= '<td style="width: 50%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center; min-height: 100px;">';
-        if (!empty($imagenesPorTipo['Logo'])) {
-            $img = $imagenesPorTipo['Logo'][0];
-            $imagenUrl = $img['url'];
-            
-            // Convertir ruta a formato absoluto para mPDF
-            $imagenSrc = '';
-            if (!str_starts_with($imagenUrl, 'http')) {
-                // Es una ruta relativa, normalizar y convertirla a absoluta
-                $ruta = $imagenUrl;
-                
-                // Si ya empieza con /storage, usarla directamente
-                if (str_starts_with($ruta, '/storage/')) {
-                    $rutaRelativa = ltrim($ruta, '/');
-                } else {
-                    // Si no empieza con /storage, agregarlo
-                    $rutaRelativa = 'storage/' . ltrim($ruta, '/');
+                // Convertir a URL absoluta para base64
+                if (!str_starts_with($imagenUrl, 'http')) {
+                    if (str_starts_with($imagenUrl, '/storage/')) {
+                        $imagenUrl = asset($imagenUrl);
+                    } else {
+                        $imagenUrl = asset('storage/' . ltrim($imagenUrl, '/'));
+                    }
                 }
+
+                \Log::info("Procesando imagen Logo: {$imagenUrl}");
+
+                // Convertir a base64 para mPDF
+                $base64Image = $this->convertImageToBase64($imagenUrl);
                 
-                $rutaCompleta = public_path($rutaRelativa);
-                $rutaCompleta = str_replace('/', DIRECTORY_SEPARATOR, $rutaCompleta);
-                
-                if (file_exists($rutaCompleta)) {
-                    // Para mPDF usar la ruta absoluta al archivo
-                    $imagenSrc = $rutaCompleta;
+                if ($base64Image) {
+                    // Detectar el tipo de imagen para el data URI
+                    $imageType = 'image/jpeg'; // Default
+                    if (str_ends_with(strtolower($img['url']), '.png')) {
+                        $imageType = 'image/png';
+                    } elseif (str_ends_with(strtolower($img['url']), '.webp')) {
+                        $imageType = 'image/webp';
+                    }
+                    
+                    $html .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
                 } else {
-                    $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Imagen no encontrada</div>';
+                    $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imagen</div>';
                 }
             } else {
-                // Es URL, verificar si se puede acceder
-                $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">URL no soportada en PDF</div>';
+                $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin logo</div>';
             }
-            
-            if (!empty($imagenSrc)) {
-                $html .= '<img src="' . $imagenSrc . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 100px; display: block; margin: 0 auto;">';
-            }
-        } else {
-            $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin logo</div>';
-        }
-        $html .= '</td>';
 
-        // Procesar Tela
-        $html .= '<td style="width: 50%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center; min-height: 100px;">';
-        if (!empty($imagenesPorTipo['Tela'])) {
-            $img = $imagenesPorTipo['Tela'][0];
-            $imagenUrl = $img['url'];
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+            \Log::info("renderImagenesLogo completado con imágenes base64");
+            return $html;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en renderImagenesLogo: ' . $e->getMessage(), [
+                'prenda_id' => $prenda->id ?? 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
             
-            // Convertir ruta a formato absoluto para mPDF
-            $imagenSrc = '';
-            if (!str_starts_with($imagenUrl, 'http')) {
-                // Es una ruta relativa, normalizar y convertirla a absoluta
-                $ruta = $imagenUrl;
-                
-                // Si ya empieza con /storage, usarla directamente
-                if (str_starts_with($ruta, '/storage/')) {
-                    $rutaRelativa = ltrim($ruta, '/');
-                } else {
-                    // Si no empieza con /storage, agregarlo
-                    $rutaRelativa = 'storage/' . ltrim($ruta, '/');
-                }
-                
-                $rutaCompleta = public_path($rutaRelativa);
-                $rutaCompleta = str_replace('/', DIRECTORY_SEPARATOR, $rutaCompleta);
-                
-                if (file_exists($rutaCompleta)) {
-                    // Para mPDF usar la ruta absoluta al archivo
-                    $imagenSrc = $rutaCompleta;
-                } else {
-                    $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Imagen no encontrada</div>';
+            return '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imágenes</div>';
+        }
+    }
+
+    /**
+     * Convierte una imagen URL a base64 (copiado de CombiadaPdfDesign)
+     */
+    private function convertImageToBase64($imageUrl): ?string
+    {
+        try {
+            // Obtener ruta física del archivo
+            $filePath = null;
+            if (str_starts_with($imageUrl, 'http')) {
+                // Es URL completa, extraer la ruta
+                $parsedUrl = parse_url($imageUrl);
+                if ($parsedUrl && isset($parsedUrl['path'])) {
+                    $relativePath = ltrim($parsedUrl['path'], '/');
+                    if (str_starts_with($relativePath, 'storage/')) {
+                        $filePath = storage_path(str_replace('storage/', 'app/public/', $relativePath));
+                    }
                 }
             } else {
-                // Es URL, verificar si se puede acceder
-                $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">URL no soportada en PDF</div>';
+                // Es ruta relativa
+                if (str_starts_with($imageUrl, '/storage/')) {
+                    $filePath = public_path(ltrim($imageUrl, '/'));
+                } else {
+                    $filePath = public_path('storage/' . ltrim($imageUrl, '/'));
+                }
             }
+
+            if (!$filePath) {
+                \Log::warning("No se pudo determinar la ruta física para la URL: {$imageUrl}");
+                return null;
+            }
+
+            \Log::info("Ruta física determinada para imagen: {$filePath}");
+
+            if (!file_exists($filePath)) {
+                \Log::warning("Archivo de imagen no encontrado en la ruta: {$filePath}");
+                return null;
+            }
+
+            \Log::info("Archivo encontrado, procesando conversión a base64...");
+
+            // Leer y convertir a base64
+            $imageData = file_get_contents($filePath);
+            if ($imageData === false) {
+                \Log::warning("No se pudo leer el archivo: {$filePath}");
+                return null;
+            }
+
+            $base64 = base64_encode($imageData);
+            \Log::info("Imagen convertida a base64: " . strlen($base64) . " bytes");
             
-            if (!empty($imagenSrc)) {
-                $html .= '<img src="' . $imagenSrc . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 100px; display: block; margin: 0 auto;">';
-            }
-        } else {
-            $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin tela</div>';
+            return $base64;
+
+        } catch (\Exception $e) {
+            \Log::error('Error al convertir imagen a base64: ' . $e->getMessage());
+            return null;
         }
-        $html .= '</td>';
-
-        $html .= '</tr>';
-        $html .= '</tbody>';
-        $html .= '</table>';
-        $html .= '</div>';
-
-        return $html;
     }
     /**
      * Renderiza tabla de especificaciones generales y observaciones

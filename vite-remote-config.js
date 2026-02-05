@@ -1,4 +1,4 @@
-const ip = '192.168.0.167';
+const ip = '192.168.0.240';
 export default {
   viteHmrHost: ip,
   viteHmrPort: 5173,

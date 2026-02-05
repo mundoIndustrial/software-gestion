@@ -540,108 +540,243 @@ CSS;
     }
 
     /**
+     * Renderiza imágenes lado a lado (versión simplificada para depuración)
+     */
+    private function renderImagenesSimplificado($prenda, $tecnicasPrendaArray): string
+    {
+        try {
+            \Log::info("Iniciando renderImagenesSimplificado");
+            
+            // Versión ultra simplificada sin imágenes
+            $html = '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
+            $html .= '<thead>';
+            $html .= '<tr>';
+            $html .= '<th style="background: #e8eef7; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
+            $html .= '<th style="background: #e8eef7; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
+            $html .= '<th style="background: #e8eef7; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody>';
+            $html .= '<tr>';
+            $html .= '<td style="padding: 8px; border: 1px solid #000; text-align: center;">';
+            $html .= '<div style="color: #666; font-size: 9px;">Logo disponible</div>';
+            $html .= '</td>';
+            $html .= '<td style="padding: 8px; border: 1px solid #000; text-align: center;">';
+            $html .= '<div style="color: #666; font-size: 9px;">Tela disponible</div>';
+            $html .= '</td>';
+            $html .= '<td style="padding: 8px; border: 1px solid #000; text-align: center;">';
+            $html .= '<div style="color: #666; font-size: 9px;">Prenda disponible</div>';
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+            \Log::info("renderImagenesSimplificado completado");
+            return $html;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en renderImagenesSimplificado: ' . $e->getMessage());
+            return '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imágenes</div>';
+        }
+    }
+
+    /**
      * Renderiza imágenes lado a lado
      */
     private function renderImagenes($prenda, $tecnicasPrendaArray): string
     {
-        // Agrupar imágenes por tipo
-        $imagenesPorTipo = [
-            'Logo' => [],
-            'Tela' => [],
-            'Prenda' => [],
-            'Reflectivo' => []
-        ];
+        try {
+            \Log::info("Iniciando renderImagenes con imágenes base64");
+            
+            // Agrupar imágenes por tipo
+            $imagenesPorTipo = [
+                'Logo' => [],
+                'Tela' => [],
+                'Prenda' => [],
+                'Reflectivo' => []
+            ];
 
-        // Logo de cada técnica
-        foreach ($tecnicasPrendaArray as $tp) {
-            if ($tp->fotos && count($tp->fotos) > 0) {
-                foreach ($tp->fotos as $foto) {
-                    if ($foto->url) {
-                        $imagenesPorTipo['Logo'][] = [
-                            'url' => $foto->url,
-                            'titulo' => 'Logo - ' . ($tp->tipoLogo?->nombre ?? 'Logo')
+            // Logo de cada técnica
+            foreach ($tecnicasPrendaArray as $tp) {
+                if ($tp->fotos && count($tp->fotos) > 0) {
+                    foreach ($tp->fotos as $foto) {
+                        if ($foto->url) {
+                            $imagenesPorTipo['Logo'][] = [
+                                'url' => $foto->url,
+                                'titulo' => 'Logo - ' . ($tp->tipoLogo?->nombre ?? 'Logo')
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Tela
+            if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
+                foreach ($prenda->telaFotos as $idx => $foto) {
+                    $url = $foto->url ?? $foto->ruta_webp ?? $foto->ruta_original ?? null;
+                    if ($url) {
+                        $imagenesPorTipo['Tela'][] = [
+                            'url' => $url,
+                            'titulo' => 'Tela'
                         ];
                     }
                 }
             }
-        }
 
-        // Tela
-        if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
-            foreach ($prenda->telaFotos as $idx => $foto) {
-                $imagenesPorTipo['Tela'][] = [
-                    'url' => $foto->url ?? $foto->ruta_webp,
-                    'titulo' => 'Tela'
-                ];
+            // Prenda
+            if ($prenda->fotos && count($prenda->fotos) > 0) {
+                foreach ($prenda->fotos as $idx => $foto) {
+                    $url = $foto->url ?? $foto->ruta_webp ?? $foto->ruta_original ?? null;
+                    if ($url) {
+                        $imagenesPorTipo['Prenda'][] = [
+                            'url' => $url,
+                            'titulo' => 'Prenda'
+                        ];
+                    }
+                }
             }
-        }
 
-        // Prenda
-        if ($prenda->fotos && count($prenda->fotos) > 0) {
-            foreach ($prenda->fotos as $idx => $foto) {
-                $imagenesPorTipo['Prenda'][] = [
-                    'url' => $foto->url,
-                    'titulo' => 'Prenda'
-                ];
+            // Verificar si hay al menos una imagen
+            $tieneImagenes = false;
+            foreach ($imagenesPorTipo as $tipoImagenes) {
+                if (!empty($tipoImagenes)) {
+                    $tieneImagenes = true;
+                    break;
+                }
             }
-        }
 
-        // Verificar si hay al menos una imagen
-        $tieneImagenes = false;
-        foreach ($imagenesPorTipo as $tipoImagenes) {
-            if (!empty($tipoImagenes)) {
-                $tieneImagenes = true;
-                break;
+            if (!$tieneImagenes) {
+                return '';
             }
-        }
 
-        if (!$tieneImagenes) {
-            return '';
-        }
+            // Crear tabla horizontal con columnas por tipo
+            $html = '<table class="imagenes-table">';
+            $html .= '<thead>';
+            $html .= '<tr>';
+            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
+            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
+            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody>';
+            $html .= '<tr>';
 
-        // Crear tabla horizontal con columnas por tipo
-        $html = '<table class="imagenes-table">';
-        $html .= '<thead>';
-        $html .= '<tr>';
-        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
-        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
-        $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
-        $html .= '<tr>';
+            // Procesar cada tipo de imagen
+            foreach (['Logo', 'Tela', 'Prenda'] as $tipo) {
+                $html .= '<td style="width: 25%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
 
-        // Procesar cada tipo de imagen
-        foreach (['Logo', 'Tela', 'Prenda'] as $tipo) {
-            $html .= '<td style="width: 25%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
+                if (!empty($imagenesPorTipo[$tipo])) {
+                    // Mostrar solo la primera imagen de cada tipo
+                    $img = $imagenesPorTipo[$tipo][0];
+                    $imagenUrl = $img['url'];
 
-            if (!empty($imagenesPorTipo[$tipo])) {
-                // Mostrar solo la primera imagen de cada tipo
-                $img = $imagenesPorTipo[$tipo][0];
-                $imagenUrl = $img['url'];
+                    // Convertir a URL absoluta para base64
+                    if (!str_starts_with($imagenUrl, 'http')) {
+                        if (str_starts_with($imagenUrl, '/storage/')) {
+                            $imagenUrl = asset($imagenUrl);
+                        } else {
+                            $imagenUrl = asset('storage/' . ltrim($imagenUrl, '/'));
+                        }
+                    }
 
-                if (!str_starts_with($imagenUrl, 'http')) {
-                    $ruta = str_starts_with($imagenUrl, '/storage/') ? $imagenUrl : '/storage/' . ltrim($imagenUrl, '/');
-                    $imagenUrl = public_path(ltrim($ruta, '/'));
+                    \Log::info("Procesando imagen {$tipo}: {$imagenUrl}");
+
+                    // Convertir a base64 para mPDF
+                    $base64Image = $this->convertImageToBase64($imagenUrl);
+                    
+                    if ($base64Image) {
+                        // Detectar el tipo de imagen para el data URI
+                        $imageType = 'image/jpeg'; // Default
+                        if (str_ends_with(strtolower($img['url']), '.png')) {
+                            $imageType = 'image/png';
+                        } elseif (str_ends_with(strtolower($img['url']), '.webp')) {
+                            $imageType = 'image/webp';
+                        }
+                        
+                        $html .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
+                    } else {
+                        $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imagen</div>';
+                    }
+                } else {
+                    $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin ' . strtolower($tipo) . '</div>';
                 }
 
-                if (file_exists($imagenUrl)) {
-                    $html .= '<img src="' . $imagenUrl . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
-                } else {
-                    $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Imagen no encontrada</div>';
+                $html .= '</td>';
+            }
+
+            $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+            \Log::info("renderImagenes completado con imágenes base64");
+            return $html;
+
+        } catch (\Exception $e) {
+            \Log::error('Error en renderImagenes: ' . $e->getMessage(), [
+                'prenda_id' => $prenda->id ?? 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imágenes</div>';
+        }
+    }
+
+    /**
+     * Convierte una imagen URL a base64
+     */
+    private function convertImageToBase64($imageUrl): ?string
+    {
+        try {
+            // Obtener ruta física del archivo
+            $filePath = null;
+            if (str_starts_with($imageUrl, 'http')) {
+                // Es URL completa, extraer la ruta
+                $parsedUrl = parse_url($imageUrl);
+                if ($parsedUrl && isset($parsedUrl['path'])) {
+                    $relativePath = ltrim($parsedUrl['path'], '/');
+                    if (str_starts_with($relativePath, 'storage/')) {
+                        $filePath = storage_path(str_replace('storage/', 'app/public/', $relativePath));
+                    }
                 }
             } else {
-                $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin ' . strtolower($tipo) . '</div>';
+                // Es ruta relativa
+                if (str_starts_with($imageUrl, '/storage/')) {
+                    $filePath = public_path(ltrim($imageUrl, '/'));
+                } else {
+                    $filePath = public_path('storage/' . ltrim($imageUrl, '/'));
+                }
             }
 
-            $html .= '</td>';
+            if (!$filePath) {
+                \Log::warning("No se pudo determinar la ruta física para la URL: {$imageUrl}");
+                return null;
+            }
+
+            \Log::info("Ruta física determinada para imagen: {$filePath}");
+
+            if (!file_exists($filePath)) {
+                \Log::warning("Archivo de imagen no encontrado en la ruta: {$filePath}");
+                return null;
+            }
+
+            \Log::info("Archivo encontrado, procesando conversión a base64...");
+
+            // Leer y convertir a base64
+            $imageData = file_get_contents($filePath);
+            if ($imageData === false) {
+                \Log::warning("No se pudo leer el archivo: {$filePath}");
+                return null;
+            }
+
+            $base64 = base64_encode($imageData);
+            \Log::info("Imagen convertida a base64: " . strlen($base64) . " bytes");
+            
+            return $base64;
+
+        } catch (\Exception $e) {
+            \Log::error('Error al convertir imagen a base64: ' . $e->getMessage());
+            return null;
         }
-
-        $html .= '</tr>';
-        $html .= '</tbody>';
-        $html .= '</table>';
-
-        return $html;
     }
 
     /**
