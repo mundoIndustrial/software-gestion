@@ -405,12 +405,13 @@
             // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
             const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
             
-            // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos
+            // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos y registros
             const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
-            const excluirCosturaBodega = esSupervisorPedidos && prenda.de_bodega == 1;
+            const esRegistros = window.location.pathname.includes('/registros');
+            const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
             
             if (excluirCosturaBodega) {
-                console.log('📋 [renderizarPrendasEnSelector] COSTURA-BODEGA EXCLUIDO en supervisor-pedidos para prenda:', prenda.nombre);
+                console.log('📋 [renderizarPrendasEnSelector] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
             }
             
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
@@ -457,12 +458,13 @@
 
             const idAccordion = `prenda-${prenda.id || prendaIdx}`;
             const totalRecibos = recibos.length;
+            const indicadorBodega = prenda.de_bodega == 1 ? ' <span style="color: #ef4444; font-size: 12px; font-weight: 600; margin-left: 8px;">(SE SACA DE BODEGA)</span>' : '';
 
             html += `
                 <div class="prenda-accordion">
                     <div class="prenda-header" onclick="togglePrendaAccordion(this, '${idAccordion}')">
                         <div style="flex: 1;">
-                            <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}</p>
+                            <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}</p>
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
                         <div class="prenda-chevron">▼</div>
