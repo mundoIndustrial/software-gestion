@@ -338,10 +338,68 @@ function previousImageMobile() {
 </script>
 
 <script>
+// Función para cargar recibos dinámicamente cuando se navega entre procesos
+window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
+    try {
+        console.log('🔄 [CARGAR DINAMICO] ========== INICIANDO ==========');
+        console.log('🔄 [CARGAR DINAMICO] Datos:', { pedidoId, tipoProceso });
+        console.log('🔄 [CARGAR DINAMICO] Índice actual:', window.procesoCarouselIndex);
+        console.log('🔄 [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
+        
+        // Hacer fetch a la API para obtener datos actualizados
+        const url = `/api/operario/pedido/${pedidoId}`;
+        console.log('🔄 [CARGAR DINAMICO] URL API:', url);
+        
+        const response = await fetch(url);
+        
+        console.log('🔄 [CARGAR DINAMICO] Respuesta HTTP:', {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type')
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error en API: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        console.log('🔄 [CARGAR DINAMICO] JSON recibido:', {
+            success: result.success,
+            tieneData: !!result.data,
+            dataKeys: result.data ? Object.keys(result.data).slice(0, 10) : null
+        });
+        
+        if (result.success && result.data) {
+            console.log('✅ [CARGAR DINAMICO] Datos válidos obtenidos');
+            console.log('✅ [CARGAR DINAMICO] Data.prendas:', result.data.prendas?.length);
+            
+            // Resetear prendaCarouselIndex para que muestre desde el principio
+            window.prendaCarouselIndex = 0;
+            
+            console.log('✅ [CARGAR DINAMICO] Llamando a llenarReciboCosturaMobile...');
+            
+            // Llenar con los nuevos datos
+            window.llenarReciboCosturaMobile(result.data);
+            
+            console.log('✅ [CARGAR DINAMICO] llenarReciboCosturaMobile completado');
+        } else {
+            throw new Error('Respuesta inválida de la API: ' + JSON.stringify(result));
+        }
+    } catch (error) {
+        console.error('❌ [CARGAR DINAMICO] Error:', error);
+        console.error('❌ [CARGAR DINAMICO] Stack:', error.stack);
+        alert('Error al cargar el recibo: ' + error.message);
+    }
+};
+
 // Función para llenar el recibo móvil
 window.llenarReciboCosturaMobile = function(data) {
     console.log('📱 [RECIBO MOBILE] 🚀 ========== INICIANDO llenarReciboCosturaMobile ==========');
     console.log('📱 [RECIBO MOBILE] Datos recibidos:', data);
+    console.log('📱 [RECIBO MOBILE] procesoCarouselIndex ACTUAL:', window.procesoCarouselIndex);
+    console.log('📱 [RECIBO MOBILE] todosProcesosDisponibles ACTUAL:', window.todosProcesosDisponibles);
     
     // ===== NAVEGACIÓN DE PROCESOS =====
     // Inicializar índice de proceso si no existe
@@ -354,6 +412,8 @@ window.llenarReciboCosturaMobile = function(data) {
     // Obtener lista de procesos únicos del pedido
     // Buscar en recibos primero, luego en procesos
     const todosProcesos = [];
+    const userRole = document.getElementById('factura-container-mobile')?.getAttribute('data-user-role');
+    
     if (data.prendas && Array.isArray(data.prendas)) {
         data.prendas.forEach(function(prenda) {
             // Opción 1: Usar recibos (si existen)
@@ -376,11 +436,29 @@ window.llenarReciboCosturaMobile = function(data) {
         });
     }
     
-    console.log(' Procesos encontrados:', todosProcesos);
-    console.log(' Data prendas:', data.prendas);
+    // Filtrar procesos según el rol del usuario
+    let procesosFiltrados = todosProcesos;
+    console.log('🔍 [FILTRO PROCESOS] Rol del usuario:', userRole);
+    console.log('🔍 [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
+    
+    if (userRole === 'costura-reflectivo') {
+        // Para costura-reflectivo, mostrar COSTURA y REFLECTIVO en ese orden
+        const tieneCostu = todosProcesos.includes('COSTURA');
+        const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
+        procesosFiltrados = [];
+        if (tieneCostu) procesosFiltrados.push('COSTURA');
+        if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
+        
+        console.log('🔍 [FILTRO PROCESOS] tieneCostu:', tieneCostu);
+        console.log('🔍 [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
+    }
+    
+    console.log('🔍 [FILTRO PROCESOS] Procesos filtrados FINAL:', procesosFiltrados);
+    console.log('🔍 [FILTRO PROCESOS] Índice actual (procesoCarouselIndex):', window.procesoCarouselIndex);
+    console.log('🔍 [FILTRO PROCESOS] Proceso que se debe mostrar:', procesosFiltrados[window.procesoCarouselIndex || 0]);
     
     // Mostrar navegación de procesos si hay al menos 1 proceso
-    if (todosProcesos.length >= 1) {
+    if (procesosFiltrados.length >= 1) {
         const processNavContainer = document.getElementById('process-navigation-mobile');
         if (processNavContainer) {
             processNavContainer.innerHTML = '';
@@ -391,7 +469,11 @@ window.llenarReciboCosturaMobile = function(data) {
             processNavContainer.style.flexDirection = 'row';
             
             const procesoActualIndex = window.procesoCarouselIndex || 0;
-            const procesoActual = todosProcesos[procesoActualIndex] || '';
+            const procesoActual = procesosFiltrados[procesoActualIndex] || '';
+            
+            console.log('📱 [NAVEGACION] procesoActualIndex:', procesoActualIndex);
+            console.log('📱 [NAVEGACION] procesoActual:', procesoActual);
+            console.log('📱 [NAVEGACION] procesosFiltrados.length:', procesosFiltrados.length);
             
             // Botón anterior de procesos
             if (procesoActualIndex > 0) {
@@ -416,8 +498,13 @@ window.llenarReciboCosturaMobile = function(data) {
                     this.style.boxShadow = 'none';
                 };
                 prevProcBtn.onclick = function() {
+                    console.log('🔘 [CLICK BOTÓN] ANTERIOR presionado');
                     window.procesoCarouselIndex = Math.max(0, window.procesoCarouselIndex - 1);
-                    window.llenarReciboCosturaMobile(data);
+                    const nuevoProceso = procesosFiltrados[window.procesoCarouselIndex];
+                    console.log('🔘 [CLICK BOTÓN] Nuevo índice:', window.procesoCarouselIndex);
+                    console.log('🔘 [CLICK BOTÓN] Nuevo proceso:', nuevoProceso);
+                    // Recargar datos dinámicamente para el nuevo proceso
+                    cargarReciboDinamico(data.pedido_id, nuevoProceso);
                 };
                 processNavContainer.appendChild(prevProcBtn);
             }
@@ -432,43 +519,50 @@ window.llenarReciboCosturaMobile = function(data) {
             processIndicator.style.fontWeight = 'bold';
             processIndicator.style.whiteSpace = 'nowrap';
             processIndicator.style.textAlign = 'center';
-            processIndicator.textContent = (procesoActualIndex + 1) + '/' + todosProcesos.length;
+            processIndicator.textContent = (procesoActualIndex + 1) + '/' + procesosFiltrados.length;
             processNavContainer.appendChild(processIndicator);
             
-            // Botón siguiente de procesos - SIEMPRE MOSTRAR (aunque sea el último)
-            const nextProcBtn = document.createElement('button');
-            nextProcBtn.style.background = '#EF5350';
-            nextProcBtn.style.border = 'none';
-            nextProcBtn.style.color = 'white';
-            nextProcBtn.style.cursor = procesoActualIndex < todosProcesos.length - 1 ? 'pointer' : 'not-allowed';
-            nextProcBtn.style.padding = '6px 8px';
-            nextProcBtn.style.borderRadius = '4px';
-            nextProcBtn.style.fontSize = '12px';
-            nextProcBtn.style.fontWeight = '600';
-            nextProcBtn.style.transition = 'all 0.2s ease';
-            nextProcBtn.style.opacity = procesoActualIndex < todosProcesos.length - 1 ? '1' : '0.5';
-            nextProcBtn.title = 'Proceso siguiente';
-            nextProcBtn.innerHTML = '<span style="font-size: 16px;">▶</span>';
-            nextProcBtn.onmouseover = function() {
-                if (procesoActualIndex < todosProcesos.length - 1) {
-                    this.style.transform = 'scale(1.1)';
-                    this.style.boxShadow = '0 2px 8px rgba(239, 83, 80, 0.3)';
-                }
-            };
-            nextProcBtn.onmouseout = function() {
-                this.style.transform = 'scale(1)';
-                this.style.boxShadow = 'none';
-            };
-            nextProcBtn.onclick = function() {
-                if (procesoActualIndex < todosProcesos.length - 1) {
-                    window.procesoCarouselIndex = Math.min(todosProcesos.length - 1, window.procesoCarouselIndex + 1);
-                    window.llenarReciboCosturaMobile(data);
-                }
-            };
-            processNavContainer.appendChild(nextProcBtn);
+            // Botón siguiente de procesos - SOLO SI HAY MÁS DE UN PROCESO
+            if (procesosFiltrados.length > 1) {
+                const nextProcBtn = document.createElement('button');
+                nextProcBtn.style.background = '#EF5350';
+                nextProcBtn.style.border = 'none';
+                nextProcBtn.style.color = 'white';
+                nextProcBtn.style.cursor = procesoActualIndex < procesosFiltrados.length - 1 ? 'pointer' : 'not-allowed';
+                nextProcBtn.style.padding = '6px 8px';
+                nextProcBtn.style.borderRadius = '4px';
+                nextProcBtn.style.fontSize = '12px';
+                nextProcBtn.style.fontWeight = '600';
+                nextProcBtn.style.transition = 'all 0.2s ease';
+                nextProcBtn.style.opacity = procesoActualIndex < procesosFiltrados.length - 1 ? '1' : '0.5';
+                nextProcBtn.title = 'Proceso siguiente';
+                nextProcBtn.innerHTML = '<span style="font-size: 16px;">▶</span>';
+                nextProcBtn.onmouseover = function() {
+                    if (procesoActualIndex < procesosFiltrados.length - 1) {
+                        this.style.transform = 'scale(1.1)';
+                        this.style.boxShadow = '0 2px 8px rgba(239, 83, 80, 0.3)';
+                    }
+                };
+                nextProcBtn.onmouseout = function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = 'none';
+                };
+                nextProcBtn.onclick = function() {
+                    console.log('🔘 [CLICK BOTÓN] SIGUIENTE presionado');
+                    if (procesoActualIndex < procesosFiltrados.length - 1) {
+                        window.procesoCarouselIndex = Math.min(procesosFiltrados.length - 1, window.procesoCarouselIndex + 1);
+                        const nuevoProceso = procesosFiltrados[window.procesoCarouselIndex];
+                        console.log('🔘 [CLICK BOTÓN] Nuevo índice:', window.procesoCarouselIndex);
+                        console.log('🔘 [CLICK BOTÓN] Nuevo proceso:', nuevoProceso);
+                        // Recargar datos dinámicamente para el nuevo proceso
+                        cargarReciboDinamico(data.pedido_id, nuevoProceso);
+                    }
+                };
+                processNavContainer.appendChild(nextProcBtn);
+            }
             
             // Guardar procesos en variable global para usar en filtrado posterior
-            window.todosProcesosDisponibles = todosProcesos;
+            window.todosProcesosDisponibles = procesosFiltrados;
             window.procesoActualSeleccionado = procesoActual;
         }
     } else {
@@ -924,10 +1018,59 @@ window.llenarReciboCosturaMobile = function(data) {
         // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
         const numeroPedidoElement = document.getElementById('mobile-numero-pedido');
         if (numeroPedidoElement && data.prendas && data.prendas.length > 0) {
-            const prenda = data.prendas[0];
-            if (prenda.recibos && prenda.recibos[procesoActualSeleccionado]) {
-                const consecutivo = prenda.recibos[procesoActualSeleccionado];
-                numeroPedidoElement.textContent = '#' + consecutivo;
+            // Buscar el primer recibo que coincida con el proceso actual
+            let reciboBuscado = null;
+            
+            console.log('🔢 [NUMERO RECIBO] Buscando recibo para proceso:', procesoActualSeleccionado);
+            console.log('🔢 [NUMERO RECIBO] Total prendas:', data.prendas.length);
+            
+            for (let i = 0; i < data.prendas.length; i++) {
+                const prenda = data.prendas[i];
+                
+                console.log('🔢 [NUMERO RECIBO] Prenda', i, ':', prenda.nombre, '- Tiene recibos?:', !!prenda.recibos);
+                
+                // Los recibos pueden ser: { 'COSTURA': 3, 'REFLECTIVO': 4 } o { 'COSTURA': {...}, 'REFLECTIVO': {...} }
+                if (prenda.recibos && typeof prenda.recibos === 'object' && !Array.isArray(prenda.recibos)) {
+                    // Acceder al recibo del proceso actual - probar diferentes variantes de capitalización
+                    let reciboProceso = prenda.recibos[procesoActualSeleccionado];
+                    
+                    // Si no encuentra con el nombre exacto, buscar case-insensitive
+                    if (!reciboProceso) {
+                        const procesoBuscado = procesoActualSeleccionado.toUpperCase();
+                        for (const [key, value] of Object.entries(prenda.recibos)) {
+                            if (key.toUpperCase() === procesoBuscado && value !== null && value !== undefined) {
+                                reciboProceso = value;
+                                console.log('🔢 [NUMERO RECIBO] Encontrado con match case-insensitive:', key, '→', procesoBuscado);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    console.log('🔢 [NUMERO RECIBO] reciboProceso para', procesoActualSeleccionado + ':', reciboProceso);
+                    console.log('🔢 [NUMERO RECIBO] Tipo de reciboProceso:', typeof reciboProceso);
+                    
+                    if (reciboProceso) {
+                        // El recibo puede ser un número directo o un objeto con consecutivo_actual
+                        let numeroRecibo = null;
+                        if (typeof reciboProceso === 'number') {
+                            numeroRecibo = reciboProceso;
+                        } else if (typeof reciboProceso === 'object' && reciboProceso.consecutivo_actual) {
+                            numeroRecibo = reciboProceso.consecutivo_actual;
+                        }
+                        
+                        if (numeroRecibo !== null && numeroRecibo !== undefined) {
+                            numeroPedidoElement.textContent = '#' + numeroRecibo;
+                            console.log('✅ [NUMERO RECIBO ACTUALIZADO]', procesoActualSeleccionado, '→ #' + numeroRecibo);
+                            reciboBuscado = reciboProceso;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Si no encontró recibo específico, mantener el numero inicial
+            if (!reciboBuscado) {
+                console.log('⚠️ [NUMERO RECIBO] No se encontró recibo para', procesoActualSeleccionado);
             }
         }
     }

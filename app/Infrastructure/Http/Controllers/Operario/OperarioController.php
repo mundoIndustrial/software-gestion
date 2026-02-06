@@ -124,14 +124,25 @@ class OperarioController extends Controller
      */
     public function verPedido($numeroPedido)
     {
+        \Log::info('[OperarioController] 📄 INICIO verPedido', [
+            'numero_pedido' => $numeroPedido
+        ]);
+
         $usuario = Auth::user();
-        $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
+        
+        // Búsqueda directa en BD - sin filtro de usuario
+        $pedidoDB = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)
+            ->with('prendas')
+            ->first();
 
-        // Buscar el pedido específico
-        $pedido = collect($datosOperario->pedidos)
-            ->firstWhere('numero_pedido', $numeroPedido);
+        \Log::info('[OperarioController] Búsqueda directa en BD', [
+            'numero_pedido' => $numeroPedido,
+            'encontrado_en_bd' => !!$pedidoDB,
+            'pedido_id' => $pedidoDB->id ?? null
+        ]);
 
-        if (!$pedido) {
+        if (!$pedidoDB) {
+            \Log::warning('[OperarioController] ❌ Pedido no encontrado en BD');
             return redirect()->route('operario.dashboard')
                 ->with('error', 'Pedido no encontrado');
         }
@@ -139,9 +150,42 @@ class OperarioController extends Controller
         // Obtener fotos relacionadas del pedido
         $fotos = $this->obtenerFotosPedido($numeroPedido);
 
+        // Obtener número de recibo COSTURA para operarios
+        $numeroReciboCostura = null;
+        $reciboCostura = \App\Models\ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+            ->where('tipo_recibo', 'COSTURA')
+            ->where('activo', 1)
+            ->first();
+        
+        if ($reciboCostura) {
+            $numeroReciboCostura = $reciboCostura->consecutivo_actual;
+        }
+
+        \Log::info('[OperarioController] ✅ Renderizando ver-pedido', [
+            'numero_pedido' => $numeroPedido,
+            'total_fotos' => count($fotos),
+            'numero_recibo_costura' => $numeroReciboCostura
+        ]);
+
         return view('operario.ver-pedido', [
-            'operario' => $datosOperario,
-            'pedido' => $pedido,
+            'operario' => null, // No necesitamos datos del servicio
+            'pedido' => [
+                'numero_pedido' => $pedidoDB->numero_pedido,
+                'numero_recibo_costura' => $numeroReciboCostura,
+                'cliente' => $pedidoDB->cliente,
+                'asesor' => $pedidoDB->asesor_id ? $pedidoDB->asesor_id : 'N/A',
+                'asesora' => $pedidoDB->asesor_id ? $pedidoDB->asesor_id : 'N/A',
+                'forma_de_pago' => $pedidoDB->forma_de_pago ?? 'N/A',
+                'forma_pago' => $pedidoDB->forma_de_pago ?? 'N/A',
+                'estado' => $pedidoDB->estado ?? 'Pendiente',
+                'area' => 'Operarios',
+                'fecha_creacion' => $pedidoDB->created_at ? $pedidoDB->created_at->format('d/m/Y') : date('d/m/Y'),
+                'fecha_estimada' => $pedidoDB->fecha_estimada ? $pedidoDB->fecha_estimada->format('d/m/Y') : null,
+                'descripcion' => $pedidoDB->descripcion ?? 'N/A',
+                'descripcion_prendas' => $pedidoDB->descripcion ?? 'N/A',
+                'cantidad' => $pedidoDB->total_prendas ?? 0,
+                'novedades' => $pedidoDB->novedades ?? 'Sin novedades',
+            ],
             'usuario' => $usuario,
             'fotos' => $fotos,
         ]);
@@ -235,6 +279,74 @@ class OperarioController extends Controller
         $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
 
         return response()->json($datosOperario->toArray());
+    }
+
+    /**
+     * API: Obtener datos del pedido para el modal móvil de operarios
+     * Endpoint: /api/operario/pedido/{numeroPedido}
+     */
+    public function obtenerDatosRecibosOperario($numeroPedido)
+    {
+        try {
+            \Log::info('[OperarioController] 🚀 INICIO obtenerDatosRecibosOperario', [
+                'numero_pedido' => $numeroPedido,
+                'tipo_numeroPedido' => gettype($numeroPedido)
+            ]);
+
+            $usuario = Auth::user();
+            \Log::info('[OperarioController] Usuario autenticado', [
+                'usuario_id' => $usuario->id ?? null,
+                'usuario_name' => $usuario->name ?? null
+            ]);
+
+            // Obtener el pedido
+            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+            \Log::info('[OperarioController] Búsqueda de pedido', [
+                'numero_pedido' => $numeroPedido,
+                'encontrado' => !!$pedido,
+                'pedido_id' => $pedido->id ?? null
+            ]);
+
+            if (!$pedido) {
+                \Log::warning('[OperarioController] ❌ Pedido no encontrado', [
+                    'numero_pedido' => $numeroPedido
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => "Pedido {$numeroPedido} no encontrado"
+                ], 404);
+            }
+
+            \Log::info('[OperarioController] Llamando ObtenerPedidoUseCase');
+            
+            // Usar ObtenerPedidoUseCase para obtener todos los datos
+            $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedido->id, false);
+
+            \Log::info('[OperarioController] ✅ Datos obtenidos del UseCase');
+
+            // Convertir a array
+            $responseData = $datosPedido->toArray();
+
+            \Log::info('[OperarioController] ✅ Respuesta enviada', [
+                'keys' => array_keys($responseData),
+                'tiene_prendas' => isset($responseData['prendas']),
+                'total_prendas' => count($responseData['prendas'] ?? [])
+            ]);
+
+            return response()->json($responseData);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] ❌ ERROR en obtenerDatosRecibosOperario', [
+                'numero_pedido' => $numeroPedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos del pedido: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

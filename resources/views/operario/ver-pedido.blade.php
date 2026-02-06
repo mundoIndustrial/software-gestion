@@ -34,7 +34,8 @@
                 <div id="factura-container-mobile" 
                      style="display: none; width: 100%; display: flex; justify-content: center;"
                      data-numero-pedido="{{ $pedido['numero_pedido'] }}"
-                     data-version="v2">
+                     data-version="v2"
+                     data-user-role="{{ auth()->user()->roles->pluck('name')->first() }}">
                     @include('components.orders-components.order-detail-modal-mobile')
                 </div>
             </div>
@@ -979,6 +980,20 @@
             return;
         }
         
+        // ACTUALIZAR CONTADOR DE FOTOS EN EL BADGE
+        const tabFotosBtn = document.querySelector('.tab-btn[onclick="cambiarTab(\'fotos\')"]');
+        if (tabFotosBtn && fotos && fotos.length > 0) {
+            // Encontrar el span con el contador y actualizarlo
+            const contador = tabFotosBtn.querySelector('.tab-foto-contador');
+            if (contador) {
+                contador.textContent = fotos.length;
+            } else {
+                // Si no existe, buscar el texto y reemplazarlo
+                tabFotosBtn.innerHTML = tabFotosBtn.innerHTML.replace(/FOTOS \(\d+\)/, `FOTOS (${fotos.length})`);
+            }
+            console.log('📸 [CONTADOR ACTUALIZADO]', fotos.length, 'fotos');
+        }
+        
         // Limpiar contenido actual
         fotosGrid.innerHTML = '';
         
@@ -1191,40 +1206,69 @@
     // Generar imagen al cargar la página - Ejecutar inmediatamente
     // Esperar un poco para asegurar que el DOM esté listo
     setTimeout(function() {
+        console.log('🎬 [VER-PEDIDO] ===== INICIALIZANDO PÁGINA =====');
+        
         llenarDatosModal();
         const containerMobile = document.getElementById('factura-container-mobile');
+        
+        console.log('🔎 Buscando containerMobile:', {
+            existe: !!containerMobile,
+            elemento: containerMobile,
+            totalIds: document.querySelectorAll('[id]').length
+        });
+        
         if (!containerMobile) {
-            console.log(' IDs en el documento:', document.querySelectorAll('[id]').length);
+            console.error('❌ ERROR: No se encontró #factura-container-mobile');
+            console.log('📋 IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
             return;
         }
         
         // Mostrar el contenedor
+        console.log('📦 Mostrando containerMobile');
         containerMobile.style.display = 'block';
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
+        console.log('📌 Número de pedido del dataset:', numeroPedido);
+        
         if (!numeroPedido) {
+            console.error('❌ ERROR: numeroPedido no encontrado en dataset');
             return;
         }
         
         // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
         // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
         const apiUrl = '/api/operario/pedido/' + numeroPedido;
-        console.log(' URL API (nuevo endpoint operario):', apiUrl);
+        console.log('🌐 URL API (nuevo endpoint operario):', apiUrl);
         
+        console.log('🚀 Iniciando fetch a:', apiUrl);
         fetch(apiUrl)
             .then(function(response) {
+                console.log('📨 Respuesta del servidor:', {
+                    ok: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    contentType: response.headers.get('content-type')
+                });
+                
                 if (!response.ok) {
+                    console.error('❌ ERROR: Status no OK:', response.status);
                     throw new Error('API error: ' + response.status);
                 }
                 return response.json();
             })
             .then(function(response) {
+                console.log('📦 Datos JSON recibidos:', response);
+                console.log('✅ ¿Tiene success?', response.success);
+                console.log('✅ ¿Tiene data?', !!response.data);
+                
                 // El endpoint retorna {success: true, data: {...}}
                 if (!response.success || !response.data) {
+                    console.error('❌ ERROR: Respuesta inválida');
                     throw new Error('Respuesta inválida del API');
                 }
 
                 const data = response.data;
+                console.log('✅ Datos válidos:', data);
                 
                 // Procesar prendas para construir descripción formateada
                 let descripcionFormateada = '';
@@ -1283,18 +1327,31 @@
                     });
                 }
 
+                // Extraer el consecutivo de recibo COSTURA para operarios costura-reflectivo
+                let numeroReciboCostura = null;
+                const userRole = document.querySelector('[data-user-role]')?.getAttribute('data-user-role');
+                
+                // Obtener del blade (inyectado por el controlador)
+                numeroReciboCostura = '{{ $pedido["numero_recibo_costura"] ?? null }}';
+                
+                console.log('🔢 [NUMERO RECIBO COSTURA]', numeroReciboCostura, 'tipo:', typeof numeroReciboCostura);
+
                 // Construir objeto para llenarReciboCosturaMobile con la misma estructura
                 const pedidoData = {
                     fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],
                     asesora: data.asesor || 'N/A',
                     formaPago: data.forma_de_pago || 'N/A',
                     cliente: data.cliente || 'N/A',
-                    numeroPedido: data.numero_pedido || numeroPedido,
+                    numeroPedido: (numeroReciboCostura && numeroReciboCostura !== 'null' && numeroReciboCostura !== '') ? numeroReciboCostura : (data.numero_pedido || numeroPedido),
                     encargado: 'Operario',
                     prendasEntregadas: data.total_prendas + '/' + data.total_prendas,
                     descripcion: descripcionFormateada,
-                    prendas: data.prendas || []
+                    prendas: data.prendas || [],
+                    numeroReciboCostura: numeroReciboCostura  // Agregar para referencia
                 };
+
+                // Resetear índice del carrusel para empezar desde el primer proceso
+                window.procesoCarouselIndex = 0;
 
                 if (window.llenarReciboCosturaMobile) {
                     window.llenarReciboCosturaMobile(pedidoData);
@@ -1351,11 +1408,16 @@
                 
                 // Eliminar duplicados usando Set
                 const fotosUnicas = Array.from(new Set(todasLasFotos));
+                console.log('📸 Fotos cargadas:', fotosUnicas.length);
                 llenarFotos(fotosUnicas);
 
             })
             .catch(function(error) {
-
+                console.error('❌ ERROR en fetch/then:', {
+                    mensaje: error.message,
+                    stack: error.stack,
+                    error: error
+                });
             });
     }, 500);
 

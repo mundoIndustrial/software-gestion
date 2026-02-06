@@ -145,6 +145,26 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene muchos procesos de producción (costura, reflectivo, etc.)
+     * 
+     * Accede a procesos_prenda a través de pedidos_produccion
+     * PrendaPedido → PedidoProduccion → ProcesoPrenda
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function procesosPrenda(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            ProcesoPrenda::class,           // Modelo destino
+            PedidoProduccion::class,        // Modelo intermedio
+            'id',                            // FK en PedidoProduccion (local key)
+            'numero_pedido',                 // FK en ProcesoPrenda
+            'pedido_produccion_id',          // Local key en PrendaPedido
+            'numero_pedido'                  // Local key en PedidoProduccion
+        );
+    }
+
+    /**
      * Relación: Una prenda tiene muchas tallas (nueva tabla relacional)
      * 
      * Reemplaza el JSON cantidad_talla con datos normalizados
