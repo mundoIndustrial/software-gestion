@@ -3,6 +3,25 @@
  * Gestiona la navegación y visualización de recibos dinámicos
  * Reutiliza la estructura y estilos del order-detail-modal.blade.php
  */
+
+// Variable para almacenar Formatters cuando se cargue el módulo
+let FormattersCostura = null;
+
+// Función para cargar Formatters de manera asíncrona
+async function cargarFormattersCostura() {
+    if (FormattersCostura) return;
+    
+    try {
+        // Intentar cargar el módulo ES6 de Formatters
+        const moduloFormatters = await import('/js/modulos/pedidos-recibos/utils/Formatters.js');
+        FormattersCostura = moduloFormatters.Formatters;
+        console.log('[ReceiptManager] Formatters cargado exitosamente:', FormattersCostura);
+    } catch (error) {
+        console.warn('[ReceiptManager] No se pudo cargar Formatters:', error);
+        FormattersCostura = null;
+    }
+}
+
 class ReceiptManager {
     constructor(datosFactura, prendasIndex = null, contenedorId = null) {
         // ===== DEBUG: Verificar datos de entrada =====
@@ -41,17 +60,22 @@ class ReceiptManager {
         this.recibos = prendasIndex !== null ? this.filtrarRecibosDePrend(todosRecibos, prendasIndex) : todosRecibos;
         this.indexActual = 0;
 
-
-
         if (prendasIndex !== null) {
 
         }
 
-
         this.inicializarEventos();
         this.crearSelectorPrendas();
         console.log(' [ReceiptManager] Constructor completado. Recibos generados:', this.recibos.length);
-        this.renderizar();
+        
+        // IMPORTANTE: Esperar a que Formatters cargue ANTES de renderizar
+        cargarFormattersCostura().then(() => {
+            console.log('[ReceiptManager] Formatters cargado. Procediendo a renderizar...');
+            this.renderizar();
+        }).catch(err => {
+            console.warn('[ReceiptManager] Error al cargar Formatters, usando fallback:', err);
+            this.renderizar();
+        });
     }
 
     /**
@@ -95,12 +119,22 @@ class ReceiptManager {
             console.log('  - prenda.procesos existe?', 'procesos' in prenda);
             console.log('  - prenda.procesos valor:', prenda.procesos);
             console.log('  - Es array?', Array.isArray(prenda.procesos));
+            console.log('  - de_bodega:', prenda.de_bodega);
             
             if (prenda.procesos && Array.isArray(prenda.procesos)) {
                 console.log(`  - Procesando ${prenda.procesos.length} procesos`);
                 prenda.procesos.forEach((proceso, procesoIdx) => {
                     // Usar nombre_proceso o tipo_proceso como fallback (campos que viene del backend)
                     const nombreProceso = proceso.nombre_proceso || proceso.tipo_proceso || proceso.nombre || 'Proceso';
+                    const esReflectivo = (nombreProceso.toLowerCase() === 'reflectivo');
+                    
+                    // FILTRO: No crear recibo separado para Reflectivo cuando de_bodega = false
+                    // (El Reflectivo ya aparece dentro de la descripción de costura)
+                    if (esReflectivo && !prenda.de_bodega) {
+                        console.log(`    Proceso ${procesoIdx}: "${nombreProceso}" - ⏭️ IGNORADO (Reflectivo con de_bodega=false)`);
+                        return; // Skip este proceso
+                    }
+                    
                     console.log(`    Proceso ${procesoIdx}: "${nombreProceso}"`);
                     
                     recibos.push({
@@ -513,267 +547,36 @@ class ReceiptManager {
 
     /**
      * Construir descripción dinámica para recibo de COSTURA/COSTURA-BODEGA
-     * Formato obligatorio con 5 bloques enumerados con puntos
+     * REUTILIZA Formatters.construirDescripcionCostura() de pedidos-recibos
      */
     construirDescripcionCostura(prenda) {
-        const lineas = [];
-
-        //  Nombre de la prenda (título)
-        if (prenda.nombre) {
-            const numeroPrenda = prenda.numero || 1;
-            lineas.push(`<strong style="font-size: 12px;">PRENDA ${numeroPrenda}: ${prenda.nombre.toUpperCase()}</strong>`);
+        // Usar Formatters (debe estar disponible en este punto)
+        if (FormattersCostura && typeof FormattersCostura.construirDescripcionCostura === 'function') {
+            console.log('[ReceiptManager.construirDescripcionCostura] Usando Formatters.construirDescripcionCostura');
+            return FormattersCostura.construirDescripcionCostura(prenda);
         }
-
-        //  Línea técnica (una sola línea)
-        const lineaTecnica = this.armarLineaTecnica(prenda);
-        if (lineaTecnica) {
-            lineas.push(lineaTecnica);
-        }
-
-        //  Descripción base de la prenda (si existe) - SIN ETIQUETA
-        if (prenda.descripcion && prenda.descripcion.trim()) {
-            lineas.push(prenda.descripcion.toUpperCase());
-        }
-
-        // 4️⃣ Detalles técnicos enumerados con puntos (sin asteriscos) - SIN ETIQUETA
-        const detallesTecnicos = this.armarDetallesTecnicos(prenda);
-        if (detallesTecnicos.length > 0) {
-            detallesTecnicos.forEach((detalle) => {
-                lineas.push(`• ${detalle}`);
-            });
-        }
-
-        // 5️⃣ Tallas (bloque final)
-        const tallasBloques = this.armarTallasBloques(prenda);
-        if (tallasBloques.length > 0) {
-            lineas.push('');
-            lineas.push('<strong>TALLAS</strong>');
-            tallasBloques.forEach(bloque => {
-                lineas.push(bloque);
-            });
-        }
-
-        return lineas.join('<br>') || '<em>Sin información</em>';
-    }
-
-    /**
-     * Armar línea técnica: TELA: ... | COLOR: ... | REF: ... | MANGA: ...
-     */
-    armarLineaTecnica(prenda) {
-        const partes = [];
-
-        if (prenda.tela) {
-            partes.push(`<strong>TELA:</strong> ${prenda.tela.toUpperCase()}`);
-        }
-
-        if (prenda.color) {
-            partes.push(`<strong>COLOR:</strong> ${prenda.color.toUpperCase()}`);
-        }
-
-        if (prenda.ref || prenda.referencia) {
-            const ref = prenda.ref || prenda.referencia;
-            partes.push(`<strong>REF:</strong> ${ref.toUpperCase()}`);
-        }
-
-        // Manga (de variantes, sin repetir por talla)
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            const primerVariante = prenda.variantes[0];
-            if (primerVariante.manga) {
-                let mangaTexto = primerVariante.manga.toUpperCase();
-                if (primerVariante.manga_obs && primerVariante.manga_obs.trim()) {
-                    mangaTexto += ` (${primerVariante.manga_obs.toUpperCase()})`;
-                }
-                partes.push(`<strong>MANGA:</strong> ${mangaTexto}`);
-            }
-        }
-
-        return partes.length > 0 ? partes.join(' | ') : null;
-    }
-
-    /**
-     * Armar detalles técnicos enumerados (sin asteriscos)
-     * Reglas:
-     * - Mostrar BOLSILLOS solo si existe
-     * - Mostrar BOTÓN o BROCHE una sola vez
-     * - No repetir por talla
-     * - Si no hay observaciones, no mostrar el ítem
-     */
-    armarDetallesTecnicos(prenda) {
-        const detalles = [];
-
-        if (!prenda.variantes || !Array.isArray(prenda.variantes) || prenda.variantes.length === 0) {
-            return detalles;
-        }
-
-        // Tomar primer variante para obtener datos únicos (no repetir por talla)
-        const primerVariante = prenda.variantes[0];
-
-        // BOLSILLOS - mostrar si tiene observaciones (independiente del booleano tiene_bolsillos)
-        if (primerVariante.bolsillos_obs && primerVariante.bolsillos_obs.trim()) {
-            detalles.push(`<strong>BOLSILLOS:</strong> ${primerVariante.bolsillos_obs.toUpperCase()}`);
-        }
-
-        // BROCHE/BOTÓN - usar el nombre del tipo que ya viene del backend
-        if (primerVariante.broche_obs && primerVariante.broche_obs.trim()) {
-            let etiqueta = 'BROCHE/BOTÓN';
-            
-            // El backend ya carga primerVariante.broche con el nombre del tipo
-            if (primerVariante.broche) {
-                etiqueta = primerVariante.broche.toUpperCase();
-            }
-            
-            detalles.push(`<strong>${etiqueta}:</strong> ${primerVariante.broche_obs.toUpperCase()}`);
-        }
-
-        return detalles;
-    }
-
-    /**
-     * Armar bloques de tallas
-     * Formato: 
-     *   DAMA: S: 10, M: 20
-     *   CABALLERO: M: 10
-     * Orden: DAMA → CABALLERO
-     */
-    armarTallasBloques(prenda) {
-        const bloques = [];
-
-        if (!prenda.tallas || Object.keys(prenda.tallas).length === 0) {
-            return bloques;
-        }
-
-        // Separar tallas por género si existe esa información
-        const tallasDama = {};
-        const tallasCalballero = {};
         
-        // Procesar tallas - pueden venir ANIDADAS: {"dama": {"L": 30, "S": 20}}
-        Object.entries(prenda.tallas).forEach(([key, value]) => {
-            //  Si value es un OBJETO (anidado: {"L": 30, "S": 20})
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                // Desanidar: {"dama": {"L": 30}} → tallasDama["L"] = 30
-                const genero = key.toLowerCase();
-                Object.entries(value).forEach(([talla, cantidad]) => {
-                    if (genero === 'dama') {
-                        tallasDama[talla] = cantidad;
-                    } else if (genero === 'caballero') {
-                        tallasCalballero[talla] = cantidad;
-                    }
-                });
-
-            } 
-            //  Si value es un NÚMERO (aplanado: "dama-L" → 30)
-            else if (typeof value === 'number' || typeof value === 'string') {
-                // Aplanado: "dama-L" → 30
-                if (key.includes('-')) {
-                    const [genero, talla] = key.split('-');
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[talla] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[talla] = value;
-                    }
-                } else {
-                    // Si no tiene '-', usar género de prenda
-                    const genero = prenda.genero || 'dama';
-                    if (genero.toLowerCase() === 'dama') {
-                        tallasDama[key] = value;
-                    } else if (genero.toLowerCase() === 'caballero') {
-                        tallasCalballero[key] = value;
-                    }
-                }
-
-            } else {
-
-            }
-        });
-
-        // Construir bloques
-        if (Object.keys(tallasDama).length > 0) {
-            const tallasStr = Object.entries(tallasDama)
-                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
-                .join(', ');
-            bloques.push(`DAMA: ${tallasStr}`);
-        }
-
-        if (Object.keys(tallasCalballero).length > 0) {
-            const tallasStr = Object.entries(tallasCalballero)
-                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
-                .join(', ');
-            bloques.push(`CABALLERO: ${tallasStr}`);
-        }
-
-        return bloques;
+        // Si Formatters no está disponible, mostrar error
+        console.error('[ReceiptManager.construirDescripcionCostura] ❌ Formatters no disponible');
+        return '<em style="color: red;">Error: No se pudo cargar el formateador de descripciones</em>';
     }
 
-    /**
-     * Formato fallback sin enumeración (para otros tipos de costura)
-     */
-    contenidoCosturaSinFormato(prenda) {
-        let html = `<strong>${prenda.nombre.toUpperCase()}</strong><br><br>`;
 
-        if (prenda.color) {
-            html += `<strong>Color:</strong> ${prenda.color.toUpperCase()}<br>`;
-        }
-
-        if (prenda.tela) {
-            html += `<strong>Tela:</strong> ${prenda.tela.toUpperCase()}<br>`;
-        }
-
-        if (prenda.origen) {
-            const origenTexto = prenda.origen.toLowerCase() === 'bodega' ? 'BODEGA' : 'CONFECCIÓN';
-            html += `<strong>Origen:</strong> ${origenTexto}<br>`;
-        }
-
-        if (prenda.tallas) {
-            html += `<br><strong>TALLAS:</strong><br>`;
-            const tallasArr = [];
-            Object.entries(prenda.tallas).forEach(([talla, cant]) => {
-                tallasArr.push(`${talla}: ${cant}`);
-            });
-            html += tallasArr.join(' | ');
-        }
-
-        return html || '<em>Sin información</em>';
-    }
 
     /**
      * Generar contenido para recibo de PROCESO
+     * REUTILIZA Formatters.construirDescripcionProceso() de pedidos-recibos
      */
     contenidoProceso(proceso, prenda) {
-        // Usar nombre_proceso o tipo_proceso (campos que vienen del backend), con fallback a nombre
-        const nombreProceso = proceso.nombre_proceso || proceso.tipo_proceso || proceso.nombre || 'Proceso';
+        // Usar Formatters para procesos (debe estar disponible en este punto)
+        if (FormattersCostura && typeof FormattersCostura.construirDescripcionProceso === 'function') {
+            console.log('[ReceiptManager.contenidoProceso] Usando Formatters.construirDescripcionProceso');
+            return FormattersCostura.construirDescripcionProceso(prenda, proceso);
+        }
         
-        let html = `<strong>${nombreProceso.toUpperCase()}</strong><br>`;
-        html += `<em>${prenda.nombre.toUpperCase()}</em><br><br>`;
-
-        if (proceso.observaciones) {
-            html += `<strong>Observaciones:</strong> ${proceso.observaciones.toUpperCase()}<br><br>`;
-        }
-
-        if (proceso.ubicaciones && Array.isArray(proceso.ubicaciones) && proceso.ubicaciones.length > 0) {
-            html += `<strong>Ubicaciones:</strong><br>`;
-            proceso.ubicaciones.forEach(loc => {
-                html += `• ${loc.toUpperCase()}<br>`;
-            });
-            html += '<br>';
-        }
-
-        if (proceso.tallas) {
-            html += `<strong>TALLAS:</strong><br>`;
-            const tallasArr = [];
-            Object.entries(proceso.tallas).forEach(([talla, cant]) => {
-                tallasArr.push(`${talla}: ${cant}`);
-            });
-            html += tallasArr.join(' | ');
-        }
-
-        if (proceso.imagenes && proceso.imagenes.length > 0) {
-            html += `<br><br><strong>IMÁGENES DE REFERENCIA:</strong><br>`;
-            proceso.imagenes.forEach((img, idx) => {
-                html += `[Imagen ${idx + 1}] `;
-            });
-        }
-
-        return html || '<em>Sin información</em>';
+        // Si Formatters no está disponible, mostrar error
+        console.error('[ReceiptManager.contenidoProceso] ❌ Formatters no disponible');
+        return '<em style="color: red;">Error: No se pudo cargar el formateador de procesos</em>';
     }
 
     /**
