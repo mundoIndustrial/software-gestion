@@ -629,7 +629,36 @@ window.llenarReciboCosturaMobile = function(data) {
     if (formaPago) formaPago.textContent = data.formaPago || 'N/A';
     if (cliente) cliente.textContent = data.cliente || 'N/A';
     if (numeroPedido) numeroPedido.textContent = '#' + (data.numeroPedido || '');
-    if (encargado) encargado.textContent = data.encargado || '-';
+    
+    // VALIDAR CONDICIONES PARA MOSTRAR ENCARGADO
+    // Solo mostrar si:
+    // 1. Area es "costura"
+    // 2. Estado es "En Ejecución"
+    // 3. Usuario tiene rol "costura" o "costura-reflectivo"
+    // 4. El proceso tiene encargado (nombre de usuario)
+    const mostraEncargado = data.area && 
+                            data.area.toLowerCase() === 'costura' && 
+                            data.estado === 'En Ejecución' && 
+                            (userRole === 'costura' || userRole === 'costura-reflectivo') && 
+                            data.encargado && 
+                            data.encargado.trim() !== '' && 
+                            data.encargado !== '-' && 
+                            data.encargado !== 'Operario';
+    
+    if (encargado) {
+        if (mostraEncargado) {
+            encargado.textContent = data.encargado;
+            console.log('📱 [ENCARGADO] ✅ Mostrando encargado:', data.encargado);
+        } else {
+            encargado.textContent = '-';
+            console.log('📱 [ENCARGADO] ❌ No aplican las condiciones para mostrar encargado', {
+                area: data.area,
+                estado: data.estado,
+                userRole: userRole,
+                encargado: data.encargado
+            });
+        }
+    }
     if (prendasEntregadas) prendasEntregadas.textContent = data.prendasEntregadas || '0/0';
     // Función helper para convertir markdown bold *** a <strong>
     const convertMarkdownBold = (texto) => {
@@ -807,7 +836,70 @@ window.llenarReciboCosturaMobile = function(data) {
             })
             .join('<br><br>');
         
-        descripcionHTML = `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descripcionFormateada}</div>`;
+        // Reorganizar: Extraer TALLAS y ponerlas al final
+        let descSinTallas = descripcionFormateada;
+        let tallasExtraidas = '';
+        
+        // Buscar y extraer TALLAS usando regex
+        const tallasRegex = /(<strong>TALLAS?<\/strong><br>.*?)(?=<\/div>|$)/is;
+        const tallasMatch = descripcionFormateada.match(tallasRegex);
+        
+        if (tallasMatch) {
+            tallasExtraidas = tallasMatch[1].trim();
+            // Remover TALLAS de la descripción
+            descSinTallas = descripcionFormateada.replace(tallasMatch[0], '').trim();
+        }
+        
+        descripcionHTML = `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descSinTallas}</div>`;
+        
+        // 🔧 AGREGAR DATOS DE PROCESOS (Ubicaciones, Observaciones) 
+        // Incluso aunque usamos descripcionPrendasCompleta, debemos incluir datos dinámicos de procesos
+        const procStartIndex = window.prendaCarouselIndex || 0;
+        const procEndIndex = procStartIndex + PRENDAS_POR_PAGINA;
+        const prendasConProcesos = todasLasPrendas.slice(procStartIndex, procEndIndex);
+        
+        let datosProcesoHTML = '';
+        prendasConProcesos.forEach((prenda) => {
+            if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+                prenda.procesos.forEach((proceso) => {
+                    // UBICACIONES
+                    if (proceso.ubicaciones) {
+                        let ubicacionesArray = [];
+                        try {
+                            if (typeof proceso.ubicaciones === 'string') {
+                                ubicacionesArray = JSON.parse(proceso.ubicaciones);
+                            } else if (Array.isArray(proceso.ubicaciones)) {
+                                ubicacionesArray = proceso.ubicaciones;
+                            }
+                        } catch (e) {
+                            ubicacionesArray = [proceso.ubicaciones];
+                        }
+                        
+                        if (ubicacionesArray && ubicacionesArray.length > 0) {
+                            datosProcesoHTML += `<strong>UBICACIONES:</strong><br>`;
+                            ubicacionesArray.forEach(ub => {
+                                datosProcesoHTML += `• ${ub.toUpperCase()}<br>`;
+                            });
+                        }
+                    }
+                    
+                    // OBSERVACIONES
+                    if (proceso.observaciones) {
+                        datosProcesoHTML += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
+                    }
+                });
+            }
+        });
+        
+        // Combinar: Descripción base + Ubicaciones/Observaciones
+        if (datosProcesoHTML) {
+            descripcionHTML += `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin-top: 0.5rem; padding: 0; text-align: left;">${datosProcesoHTML}</div>`;
+        }
+        
+        // Mostrar TALLAS al final
+        if (tallasExtraidas) {
+            descripcionHTML += `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin-top: 0.5rem; padding: 0; text-align: left;">${tallasExtraidas}</div>`;
+        }
         
         // Actualizar total de bloques para el carousel
         window.totalBloquesPrendas = bloquesPrendas.length;
@@ -865,97 +957,56 @@ window.llenarReciboCosturaMobile = function(data) {
                 html += atributos.join(' | ') + '<br>';
             }
             
-            // 3. DESCRIPCION - Priorizar descripción completa guardada en BD
-            // SOLO mostrar en primera carga, NO cuando estamos navegando entre procesos
-            if (!esNavegacionDeProc) {
-                if (prenda.descripcion && prenda.descripcion !== '-') {
-                    // Usar la descripción completa de la BD (incluye ubicaciones del reflectivo)
-                    const descripcionCompleta = prenda.descripcion.toUpperCase();
-                    
-                    // Formatear la descripción: si tiene saltos de línea, convertirlos a <br>
-                    const descripcionFormateada = descripcionCompleta.replace(/\n/g, '<br>');
-                    
-                    html += `<strong>DESCRIPCION:</strong><br>${descripcionFormateada}<br>`;
-                } else if (prenda.descripcion_variaciones) {
-                    // Fallback: usar descripcion_variaciones si no hay descripción completa
-                    const descripcionVar = prenda.descripcion_variaciones;
-                    const partes = [];
-                    
-                    // Reflectivo
-                    const reflectivoMatch = descripcionVar.match(/Reflectivo:\s*(.+?)(?:\s*\||$)/i);
-                    if (reflectivoMatch) {
-                        partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Reflectivo:</strong> ${reflectivoMatch[1].trim().toUpperCase()}`);
-                }
-                
-                // Bolsillos
-                const bolsillosMatch = descripcionVar.match(/Bolsillos:\s*(.+?)(?:\s*\||$)/i);
-                if (bolsillosMatch) {
-                    partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Bolsillos:</strong> ${bolsillosMatch[1].trim().toUpperCase()}`);
-                }
-                
-                // Broche/Botón - SOLO si existe tipo_broche en los datos
-                if (prenda.tipo_broche) {
-                    const brocheMatch = descripcionVar.match(/Broche:\s*(.+?)(?:\s*\||$)/i);
-                    if (brocheMatch) {
-                        const tipoLabel = prenda.tipo_broche.toUpperCase();
-                        const observacion = brocheMatch[1].trim().toUpperCase();
-                        partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">${tipoLabel}:</strong> ${observacion}`);
-                    }
-                }
-                
-                if (partes.length > 0) {
-                    html += '<strong>DESCRIPCION:</strong><br>';
-                    html += partes.join('<br>') + '<br>';
-                }
-            }
-            }
-            
-            // 3.5. DATOS ESPECÍFICOS DEL PROCESO ACTUAL (si estamos navegando entre procesos)
-            if (esNavegacionDeProc && procesoActualSeleccionado && prenda.procesos && Array.isArray(prenda.procesos)) {
-                // Buscar el proceso actual en el array de procesos
-                const procesoBuscado = prenda.procesos.find(p => 
-                    p.tipo_proceso && p.tipo_proceso.toUpperCase() === procesoActualSeleccionado.toUpperCase()
-                );
-                
-                if (procesoBuscado) {
-                    // UBICACIONES
-                    if (procesoBuscado.ubicaciones) {
+            // 3. DATOS ESPECÍFICOS DEL PROCESO (Ubicaciones, Observaciones, Tallas del proceso)
+            // Mostrar para TODOS los procesos disponibles en la prenda (no solo navegación)
+            if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
+                // Si hay solo un proceso, mostrarlo directo. Si hay varios, mostrar todos en la primera carga
+                prenda.procesos.forEach((proceso, procIdx) => {
+                    // UBICACIONES del proceso
+                    if (proceso.ubicaciones) {
                         let ubicacionesArray = [];
                         try {
-                            ubicacionesArray = JSON.parse(procesoBuscado.ubicaciones);
+                            if (typeof proceso.ubicaciones === 'string') {
+                                ubicacionesArray = JSON.parse(proceso.ubicaciones);
+                            } else if (Array.isArray(proceso.ubicaciones)) {
+                                ubicacionesArray = proceso.ubicaciones;
+                            }
                         } catch (e) {
-                            ubicacionesArray = [procesoBuscado.ubicaciones];
+                            ubicacionesArray = [proceso.ubicaciones];
                         }
                         
                         if (ubicacionesArray && ubicacionesArray.length > 0) {
-                            html += `<strong>UBICACIONES:</strong> ${ubicacionesArray.join(', ').toUpperCase()}<br>`;
+                            html += `<strong>UBICACIONES:</strong><br>`;
+                            ubicacionesArray.forEach(ub => {
+                                html += `• ${ub.toUpperCase()}<br>`;
+                            });
                         }
                     }
                     
                     // OBSERVACIONES DEL PROCESO
-                    if (procesoBuscado.observaciones) {
-                        html += `<strong>OBSERVACIONES:</strong> ${procesoBuscado.observaciones.toUpperCase()}<br>`;
+                    if (proceso.observaciones) {
+                        html += `<strong>OBSERVACIONES:</strong><br>${proceso.observaciones.toUpperCase()}<br>`;
                     }
                     
-                    // TALLAS Y CANTIDADES ESPECÍFICAS DEL PROCESO
-                    if (procesoBuscado.tallas) {
+                    // TALLAS DEL PROCESO
+                    if (proceso.tallas) {
                         const tallasProc = [];
-                        if (procesoBuscado.tallas.dama && Object.keys(procesoBuscado.tallas.dama).length > 0) {
-                            Object.entries(procesoBuscado.tallas.dama).forEach(([talla, cantidad]) => {
+                        if (proceso.tallas.dama && Object.keys(proceso.tallas.dama).length > 0) {
+                            Object.entries(proceso.tallas.dama).forEach(([talla, cantidad]) => {
                                 if (cantidad > 0) {
                                     tallasProc.push(`DAMA ${talla}: ${cantidad}`);
                                 }
                             });
                         }
-                        if (procesoBuscado.tallas.caballero && Object.keys(procesoBuscado.tallas.caballero).length > 0) {
-                            Object.entries(procesoBuscado.tallas.caballero).forEach(([talla, cantidad]) => {
+                        if (proceso.tallas.caballero && Object.keys(proceso.tallas.caballero).length > 0) {
+                            Object.entries(proceso.tallas.caballero).forEach(([talla, cantidad]) => {
                                 if (cantidad > 0) {
                                     tallasProc.push(`CABALLERO ${talla}: ${cantidad}`);
                                 }
                             });
                         }
-                        if (procesoBuscado.tallas.unisex && Object.keys(procesoBuscado.tallas.unisex).length > 0) {
-                            Object.entries(procesoBuscado.tallas.unisex).forEach(([talla, cantidad]) => {
+                        if (proceso.tallas.unisex && Object.keys(proceso.tallas.unisex).length > 0) {
+                            Object.entries(proceso.tallas.unisex).forEach(([talla, cantidad]) => {
                                 if (cantidad > 0) {
                                     tallasProc.push(`UNISEX ${talla}: ${cantidad}`);
                                 }
@@ -963,25 +1014,22 @@ window.llenarReciboCosturaMobile = function(data) {
                         }
                         
                         if (tallasProc.length > 0) {
-                            html += `<strong>TALLAS DEL PROCESO:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasProc.join(', ')}</span><br>`;
+                            html += `<strong>TALLAS</strong><br><span style="color: #d32f2f; font-weight: bold;">${tallasProc.join(', ')}</span><br>`;
                         }
                     }
-                }
+                });
             }
             
-            // 4. Tallas
-            if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                const tallasFormateadas = [];
-                prenda.tallas.forEach((tallaObj) => {
-                    if (tallaObj.cantidad > 0) {
-                        tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
-                    }
-                });
-                
-                if (tallasFormateadas.length > 0) {
-                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
-                }
-            }
+            // ❌ COMENTADO: Las tallas ya se muestran en la sección de DATOS ESPECÍFICOS DEL PROCESO
+            // const tallasFormateadas = [];
+            // prenda.tallas.forEach((tallaObj) => {
+            //     if (tallaObj.cantidad > 0) {
+            //         tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
+            //     }
+            // });
+            // if (tallasFormateadas.length > 0) {
+            //     html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
+            // }
             
             descripcionHTML += `<div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
                 ${html}

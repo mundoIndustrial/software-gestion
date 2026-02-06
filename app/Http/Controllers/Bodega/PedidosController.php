@@ -10,6 +10,9 @@ use App\Models\EppBodegaDetalle;
 use App\Models\CosturaBodegaDetalle;
 use App\Models\EppBodegaAuditoria;
 use App\Models\CosturaBodegaAuditoria;
+use App\Models\BodegaNota;
+use App\Events\BodegaNotasGuardada;
+use App\Events\BodegaDetallesActualizados;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
@@ -215,7 +218,7 @@ class PedidosController extends Controller
                                         'observaciones' => $bodegaData?->observaciones_bodega ?? null,
                                         'pendientes' => $bodegaData?->pendientes ?? null,
                                         'fecha_entrega' => $bodegaData?->fecha_entrega ? Carbon::parse($bodegaData->fecha_entrega)->format('Y-m-d') : ($item->fecha_estimada_de_entrega ? Carbon::parse($item->fecha_estimada_de_entrega)->format('Y-m-d') : null),
-                                        'fecha_pedido' => $item->created_at->format('Y-m-d'),
+                                        'fecha_pedido' => $bodegaData?->fecha_pedido ? Carbon::parse($bodegaData->fecha_pedido)->format('Y-m-d') : null,
                                         'estado' => $bodegaData?->estado_bodega ?? $item->estado,
                                         'estado_pedido_produccion' => $estadoPedidoProduccion,
                                         'nombre_asesor_anulacion' => $nombreAsesor,
@@ -282,7 +285,7 @@ class PedidosController extends Controller
                                     'observaciones' => $bodegaData?->observaciones_bodega ?? null,
                                     'pendientes' => $bodegaData?->pendientes ?? null,
                                     'fecha_entrega' => $bodegaData?->fecha_entrega ? Carbon::parse($bodegaData->fecha_entrega)->format('Y-m-d') : ($item->fecha_estimada_de_entrega ? Carbon::parse($item->fecha_estimada_de_entrega)->format('Y-m-d') : null),
-                                    'fecha_pedido' => $item->created_at->format('Y-m-d'),
+                                    'fecha_pedido' => $bodegaData?->fecha_pedido ? Carbon::parse($bodegaData->fecha_pedido)->format('Y-m-d') : null,
                                     'estado' => $bodegaData?->estado_bodega ?? null,
                                     'estado_pedido_produccion' => $estadoPedidoProduccion,
                                     'nombre_asesor_anulacion' => $nombreAsesor,
@@ -589,8 +592,10 @@ class PedidosController extends Controller
                 'pendientes' => 'nullable|string',
                 'observaciones_bodega' => 'nullable|string',
                 'fecha_entrega' => 'nullable|date',
+                'fecha_pedido' => 'nullable|date',
                 'estado_bodega' => 'nullable|string|in:Pendiente,Entregado',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
+                'last_updated_at' => 'nullable|date_format:Y-m-d H:i:s', // Para optimistic locking
             ]);
 
             $usuario = auth()->user();
@@ -606,28 +611,47 @@ class PedidosController extends Controller
                 ], 404);
             }
 
-            // Determinar en qué tabla guardar según el rol
-            $datosPSGuardar = [
-                'presupuesto_produccion_id' => $pedido->id,
+            // PASO 1: GUARDAR FECHAS EN bodega_detalles_talla (compartido entre todos los roles)
+            $datosBasicos = [
                 'numero_pedido' => $validated['numero_pedido'],
                 'talla' => $validated['talla'],
             ];
 
-            $datosAActualizar = [
+            $datosActualizarBasicos = [
                 'prenda_nombre' => $validated['prenda_nombre'] ?? null,
                 'asesor' => $validated['asesor'] ?? null,
                 'empresa' => $validated['empresa'] ?? null,
                 'cantidad' => $validated['cantidad'] ?? 0,
                 'pendientes' => $validated['pendientes'] ?? null,
                 'observaciones_bodega' => $validated['observaciones_bodega'] ?? null,
-                'fecha_entrega' => $validated['fecha_entrega'] ?? null,
-                'estado_bodega' => $validated['estado_bodega'] ?? null,
+                'fecha_entrega' => $validated['fecha_entrega'] ?? null,  // Fecha compartida
+                'fecha_pedido' => $validated['fecha_pedido'] ?? null,    // Fecha compartida
                 'usuario_bodega_id' => $usuario->id,
                 'usuario_bodega_nombre' => $usuario->name,
             ];
 
+            // Guardar/actualizar en bodega_detalles_talla (siempre, todos los roles)
+            $detalleBasico = \App\Models\BodegaDetallesTalla::updateOrCreate(
+                [
+                    'pedido_produccion_id' => $pedido->id,
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'talla' => $validated['talla'],
+                ],
+                $datosActualizarBasicos
+            );
+
+            // PASO 2: GUARDAR ESTADO EN TABLA DEL ROL CORRESPONDIENTE
+            $detalle = $detalleBasico; // Por defecto usar el detalle básico
+
+            // Validar optimistic locking (conflictos de concurrencia)
+            if (!empty($validated['last_updated_at'])) {
+                $lastUpdatedAt = \Carbon\Carbon::parse($validated['last_updated_at']);
+            } else {
+                $lastUpdatedAt = null;
+            }
+
             if (in_array('EPP-Bodega', $rolesDelUsuario)) {
-                // GUARDAR EN epp_bodega_detalles (tabla específica del rol)
+                // GUARDAR ESTADO EN epp_bodega_detalles
                 $detalleAnterior = EppBodegaDetalle::where('numero_pedido', $validated['numero_pedido'])
                     ->where('talla', $validated['talla'])
                     ->first();
@@ -650,16 +674,34 @@ class PedidosController extends Controller
                     ]);
                 }
                 
+                // Guardar estado específico de EPP-Bodega
+                $datosEppEstado = [
+                    'pedido_produccion_id' => $pedido->id,
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'talla' => $validated['talla'],
+                    'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                    'asesor' => $validated['asesor'] ?? null,
+                    'empresa' => $validated['empresa'] ?? null,
+                    'cantidad' => $validated['cantidad'] ?? 0,
+                    'pendientes' => $validated['pendientes'] ?? null,
+                    'observaciones_bodega' => $validated['observaciones_bodega'] ?? null,
+                    'fecha_entrega' => $validated['fecha_entrega'] ?? null,
+                    'fecha_pedido' => $validated['fecha_pedido'] ?? null,
+                    'estado_bodega' => $estadoNuevo,
+                    'usuario_bodega_id' => $usuario->id,
+                    'usuario_bodega_nombre' => $usuario->name,
+                ];
+
                 $detalle = EppBodegaDetalle::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
                         'numero_pedido' => $validated['numero_pedido'],
                         'talla' => $validated['talla'],
                     ],
-                    $datosAActualizar
+                    $datosEppEstado
                 );
             } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
-                // GUARDAR EN costura_bodega_detalles (tabla específica del rol)
+                // GUARDAR ESTADO EN costura_bodega_detalles
                 $detalleAnterior = CosturaBodegaDetalle::where('numero_pedido', $validated['numero_pedido'])
                     ->where('talla', $validated['talla'])
                     ->first();
@@ -682,26 +724,60 @@ class PedidosController extends Controller
                     ]);
                 }
                 
+                // Guardar estado específico de Costura-Bodega
+                $datosCosturaEstado = [
+                    'pedido_produccion_id' => $pedido->id,
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'talla' => $validated['talla'],
+                    'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                    'asesor' => $validated['asesor'] ?? null,
+                    'empresa' => $validated['empresa'] ?? null,
+                    'cantidad' => $validated['cantidad'] ?? 0,
+                    'pendientes' => $validated['pendientes'] ?? null,
+                    'observaciones_bodega' => $validated['observaciones_bodega'] ?? null,
+                    'fecha_entrega' => $validated['fecha_entrega'] ?? null,
+                    'fecha_pedido' => $validated['fecha_pedido'] ?? null,
+                    'estado_bodega' => $estadoNuevo,
+                    'usuario_bodega_id' => $usuario->id,
+                    'usuario_bodega_nombre' => $usuario->name,
+                ];
+
                 $detalle = CosturaBodegaDetalle::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
                         'numero_pedido' => $validated['numero_pedido'],
                         'talla' => $validated['talla'],
                     ],
-                    $datosAActualizar
+                    $datosCosturaEstado
                 );
             } else {
-                // GUARDAR EN bodega_detalles_talla (bodeguero normal, con área)
-                $datosAActualizar['area'] = $validated['area'] ?? null;
+                // BODEGUERO: guarda estado en bodega_detalles_talla (ya guardado arriba)
+                $datosActualizarBasicos['area'] = $validated['area'] ?? null;
+                $datosActualizarBasicos['estado_bodega'] = $validated['estado_bodega'] ?? null;
+                
                 $detalle = \App\Models\BodegaDetallesTalla::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
                         'numero_pedido' => $validated['numero_pedido'],
                         'talla' => $validated['talla'],
                     ],
-                    $datosAActualizar
+                    $datosActualizarBasicos
                 );
             }
+
+            // Disparar evento para tiempo real
+            BodegaDetallesActualizados::dispatch(
+                $validated['numero_pedido'],
+                $validated['talla'],
+                [
+                    'pendientes' => $validated['pendientes'] ?? null,
+                    'observaciones_bodega' => $validated['observaciones_bodega'] ?? null,
+                    'fecha_entrega' => $validated['fecha_entrega'] ?? null,
+                    'fecha_pedido' => $validated['fecha_pedido'] ?? null,
+                    'estado_bodega' => $validated['estado_bodega'] ?? null,
+                    'area' => $validated['area'] ?? null,
+                ]
+            );
 
             return response()->json([
                 'success' => true,
@@ -845,5 +921,121 @@ class PedidosController extends Controller
         }
     }
 
+    /**
+     * Guardar una nota de bodega
+     */
+    public function guardarNota(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string',
+                'talla' => 'required|string',
+                'contenido' => 'required|string|max:5000',
+            ]);
+
+            $usuario = auth()->user();
+            $roleNames = $usuario->getRoleNames()->toArray();
+            
+            // Obtener el pedido
+            $pedido = PedidoProduccion::where('numero_pedido', $validated['numero_pedido'])->first();
+            
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            // Determinar el rol actual del usuario
+            $rolActual = 'Bodeguero';
+            if (in_array('Costura-Bodega', $roleNames)) {
+                $rolActual = 'Costura-Bodega';
+            } elseif (in_array('EPP-Bodega', $roleNames)) {
+                $rolActual = 'EPP-Bodega';
+            }
+
+            // Guardar la nota
+            $nota = BodegaNota::create([
+                'pedido_produccion_id' => $pedido->id,
+                'numero_pedido' => $validated['numero_pedido'],
+                'talla' => $validated['talla'],
+                'contenido' => $validated['contenido'],
+                'usuario_id' => $usuario->id,
+                'usuario_nombre' => $usuario->name,
+                'usuario_rol' => $rolActual,
+                'ip_address' => $request->ip(),
+            ]);
+
+            // Disparar evento para tiempo real
+            BodegaNotasGuardada::dispatch(
+                $validated['numero_pedido'],
+                $validated['talla'],
+                [
+                    'id' => $nota->id,
+                    'contenido' => $nota->contenido,
+                    'usuario_nombre' => $nota->usuario_nombre,
+                    'usuario_rol' => $nota->usuario_rol,
+                    'fecha' => $nota->created_at->format('d/m/Y'),
+                    'hora' => $nota->created_at->format('H:i:s'),
+                    'fecha_completa' => $nota->created_at->format('d/m/Y H:i:s'),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nota guardada exitosamente',
+                'data' => $nota
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en guardarNota: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la nota: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener historial de notas para un pedido y talla
+     */
+    public function obtenerNotas(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|string',
+                'talla' => 'required|string',
+            ]);
+
+            // Obtener notas ordenadas por fecha más reciente
+            $notas = BodegaNota::where('numero_pedido', $validated['numero_pedido'])
+                ->where('talla', $validated['talla'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($nota) {
+                    return [
+                        'id' => $nota->id,
+                        'contenido' => $nota->contenido,
+                        'usuario_nombre' => $nota->usuario_nombre,
+                        'usuario_rol' => $nota->usuario_rol,
+                        'fecha' => $nota->created_at->format('d/m/Y'),
+                        'hora' => $nota->created_at->format('H:i:s'),
+                        'fecha_completa' => $nota->created_at->format('d/m/Y H:i:s'),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $notas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerNotas: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las notas'
+            ], 500);
+        }
+    }
 
 }

@@ -22,6 +22,7 @@ class BodegaDetallesTalla extends Model
         'cantidad',
         'pendientes',
         'observaciones_bodega',
+        'fecha_pedido',
         'fecha_entrega',
         'estado_bodega',
         'area',
@@ -30,6 +31,7 @@ class BodegaDetallesTalla extends Model
     ];
     
     protected $dates = [
+        'fecha_pedido',
         'fecha_entrega',
         'created_at',
         'updated_at',

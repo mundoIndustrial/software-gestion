@@ -23,6 +23,7 @@ class EppBodegaDetalle extends Model
         'cantidad',
         'pendientes',
         'observaciones_bodega',
+        'fecha_pedido',
         'fecha_entrega',
         'estado_bodega',
         'usuario_bodega_id',
@@ -30,6 +31,7 @@ class EppBodegaDetalle extends Model
     ];
 
     protected $casts = [
+        'fecha_pedido' => 'datetime',
         'fecha_entrega' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
