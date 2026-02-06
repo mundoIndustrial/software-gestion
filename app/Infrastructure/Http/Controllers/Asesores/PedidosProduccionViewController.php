@@ -687,7 +687,11 @@ class PedidosProduccionViewController
                                     'genero:id,nombre'
                                 ]);
                             },
-                            'tallas:id,prenda_cot_id,talla,cantidad',
+                            'tallas' => function($q) {
+                                $q->with([
+                                    'genero:id,nombre'  // Cargar relación de género
+                                ]);
+                            },
                             'logoCotizacionesTecnicas' => function($q) {
                                 $q->with([
                                     'tipoLogo:id,nombre',
