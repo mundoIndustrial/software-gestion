@@ -542,7 +542,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/mis-pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
-    Route::get('/api/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidoJson'])->name('api.pedido');
+    Route::get('/api/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
     Route::get('/api/novedades/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerNovedades'])->name('api.novedades');
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');

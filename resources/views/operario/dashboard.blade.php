@@ -36,11 +36,7 @@
         <!-- Filtros por tipo de recibo para costura-reflectivo -->
         @if(auth()->user()->hasRole('costura-reflectivo'))
         <div class="filtros-badges">
-            <button class="badge-filtro badge-filtro-active" data-filtro="todos" onclick="filtrarPrendasPorRecibo('todos')">
-                <span class="material-symbols-rounded">apps</span>
-                Todos
-            </button>
-            <button class="badge-filtro" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
+            <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                 <span class="material-symbols-rounded">checkroom</span>
                 Costura
             </button>
@@ -61,16 +57,20 @@
                         }
                         
                         // Determinar tipo de recibo para filtro
-                        // Buscar si hay recibos de tipo REFLECTIVO (en mayúsculas)
+                        // Si ALGUNO de los recibos es REFLECTIVO, marcar la tarjeta como REFLECTIVO
                         $tiposRecibos = array_map(function($r) { return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
                         $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
                         $esReflectivo = $tieneReflectivo ? 'reflectivo' : 'costura';
+                        
+                        // Por defecto, ocultar tarjetas REFLECTIVO
+                        $displayInicial = $esReflectivo === 'reflectivo' ? 'none' : '';
                     @endphp
                     <div class="orden-card-simple" 
                          data-numero="{{ $prenda['numero_pedido'] }}" 
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
-                         data-tipo-recibo="{{ $esReflectivo }}">
+                         data-tipo-recibo="{{ $esReflectivo }}"
+                         style="display: {{ $displayInicial }}">
                         
                         <!-- Borde izquierdo coloreado -->
                         <div class="orden-border {{ $estadoClass }}"></div>
@@ -80,7 +80,11 @@
                             <div class="orden-left">
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
-                                        <h4 class="orden-numero">#{{ $prenda['numero_pedido'] }}</h4>
+                                        @if(auth()->user()->hasRole('costura-reflectivo') && isset($prenda['recibos'][0]['consecutivo_actual']))
+                                            <h4 class="orden-numero">#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</h4>
+                                        @else
+                                            <h4 class="orden-numero">#{{ $prenda['numero_pedido'] }}</h4>
+                                        @endif
                                         <span class="estado-badge {{ $estadoClass }}" data-estado="recibo-costura">
                                             {{ $prenda['total_recibos'] }} RECIBOS
                                         </span>
@@ -114,7 +118,7 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons">
-                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos({{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
+                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
                                         <span class="material-symbols-rounded">receipt</span>
                                         VER RECIBOS
                                     </button>
@@ -123,17 +127,31 @@
 
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
-                                <div class="orden-fecha">
-                                    <span class="orden-fecha-label">PEDIDO</span>
-                                    <span>#{{ $prenda['numero_pedido'] }}</span>
-                                </div>
+                                @if(auth()->user()->hasRole('costura-reflectivo') && isset($prenda['recibos'][0]['consecutivo_actual']))
+                                    {{-- Para costura-reflectivo, mostrar número del recibo --}}
+                                    <div class="orden-fecha">
+                                        <span class="orden-fecha-label">{{ $tieneReflectivo ? 'REFLECTIVO' : 'COSTURA' }}</span>
+                                        <span>#{{ $prenda['recibos'][0]['consecutivo_actual'] }}</span>
+                                    </div>
+                                @else
+                                    {{-- Para otros roles, mostrar número del pedido --}}
+                                    <div class="orden-fecha">
+                                        <span class="orden-fecha-label">PEDIDO</span>
+                                        <span>#{{ $prenda['numero_pedido'] }}</span>
+                                    </div>
+                                @endif
                                 <div class="orden-fecha">
                                     <span class="orden-fecha-label">REGISTRO</span>
                                     <span>{{ $prenda['fecha_creacion']->format('d/m/Y') }}</span>
                                 </div>
-                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos({{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}'); return false;">
+                                <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}'); return false;">
                                     <span class="material-symbols-rounded">arrow_forward</span>
                                 </a>
+                                
+                                {{-- Pie de página con número de pedido --}}
+                                <div class="orden-pedido-footer">
+                                    <small>PEDIDO #{{ $prenda['numero_pedido'] }}</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -270,6 +288,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        position: relative;
     }
 
     .orden-left {
@@ -396,6 +415,19 @@
 
     .action-arrow .material-symbols-rounded {
         font-size: 16px;
+    }
+
+    .orden-pedido-footer {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 0.65rem;
+        color: #bbb;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 2px 6px;
+        border-radius: 3px;
+        white-space: nowrap;
+        font-weight: 500;
     }
 
     /* Botón Reportar Pendiente */
@@ -622,6 +654,19 @@
         const ordenesList = document.getElementById('ordenesList');
         const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
 
+        // LOG: Mostrar todas las tarjetas y sus atributos
+        console.log('=== TARJETAS CARGADAS EN DASHBOARD ===');
+        console.log('Total de tarjetas:', ordenCards.length);
+        ordenCards.forEach((card, index) => {
+            console.log(`Tarjeta ${index + 1}:`, {
+                numero: card.dataset.numero,
+                prenda: card.dataset.prenda,
+                cliente: card.dataset.cliente,
+                'data-tipo-recibo': card.dataset.tipoRecibo
+            });
+        });
+        console.log('=====================================\n');
+
         if (searchInput) {
             searchInput.addEventListener('input', function(e) {
                 const busqueda = e.target.value.toLowerCase().trim();
@@ -644,6 +689,8 @@
 
     // Función para filtrar prendas por tipo de recibo
     window.filtrarPrendasPorRecibo = function(filtro) {
+        console.log('🔍 [FILTRO] Iniciando filtro:', filtro);
+        
         // Actualizar estado de botones
         document.querySelectorAll('.badge-filtro').forEach(btn => {
             btn.classList.remove('badge-filtro-active');
@@ -652,27 +699,81 @@
 
         // Filtrar tarjetas
         const ordenesList = document.getElementById('ordenesList');
-        if (!ordenesList) return;
+        if (!ordenesList) {
+            console.error('❌ ordenesList no encontrado');
+            return;
+        }
 
         const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
-        ordenCards.forEach(card => {
+        console.log('📊 Total de tarjetas:', ordenCards.length);
+        
+        let mostradas = 0;
+        let ocultadas = 0;
+        
+        ordenCards.forEach((card, index) => {
+            const tipoRecibo = card.dataset.tipoRecibo;
+            const numeroPedido = card.dataset.numero;
+            const nombrePrenda = card.dataset.prenda;
+            
+            console.log(`Tarjeta ${index + 1}: Pedido=${numeroPedido}, Prenda=${nombrePrenda}, data-tipo-recibo="${tipoRecibo}"`);
+            
             if (filtro === 'todos') {
                 card.style.display = '';
+                mostradas++;
             } else {
-                const tipoRecibo = card.dataset.tipoRecibo;
                 if (tipoRecibo === filtro) {
+                    console.log(`  ✓ Mostrando (coincide con filtro "${filtro}")`);
                     card.style.display = '';
+                    mostradas++;
                 } else {
+                    console.log(`  ✗ Ocultando (tipo="${tipoRecibo}" !== filtro="${filtro}")`);
                     card.style.display = 'none';
+                    ocultadas++;
                 }
             }
         });
+        
+        console.log(`✅ Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     };
 
     // Función para abrir detalles de recibos
-    function abrirDetallesRecibos(prendaId, nombrePrenda) {
-        abrirModalExito('DETALLES DE RECIBOS', `Prenda: ${nombrePrenda}`);
-        // Aquí puedes expandir para mostrar más detalles si es necesario
+    function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda) {
+        console.log('🔍 [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
+        console.log('📊 Parámetros recibidos:', {
+            numeroPedido: numeroPedido,
+            prendaId: prendaId,
+            nombrePrenda: nombrePrenda,
+            tipoNumeroPedido: typeof numeroPedido,
+            tipoPrendaId: typeof prendaId,
+            tipoNombrePrenda: typeof nombrePrenda
+        });
+        
+        // Validar que tengamos el número de pedido
+        if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
+            console.error('❌ ERROR: numeroPedido está vacío o undefined', numeroPedido);
+            alert('Error: No se pudo determinar el número de pedido');
+            return false;
+        }
+        
+        // Convertir a string si es número
+        const numeroPedidoStr = String(numeroPedido).trim();
+        console.log('📝 numeroPedido normalizado:', numeroPedidoStr);
+        
+        // Construir la URL
+        const url = '/operario/pedido/' + numeroPedidoStr;
+        console.log('🌐 URL a navegar:', url);
+        console.log('📍 Navegando a:', url);
+        
+        // Navegar
+        try {
+            console.log('⏳ Iniciando navegación...');
+            window.location.href = url;
+            console.log('✅ Navegación iniciada exitosamente');
+            return false;
+        } catch (error) {
+            console.error('❌ Error al navegar:', error);
+            return false;
+        }
     }
 
     // Modal Reportar Pendiente

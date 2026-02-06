@@ -218,7 +218,7 @@ class ConsecutivosRecibosService
                             $procesosPorPedido['BORDADO'] = true;
                             $tiposRecibo['BORDADO'] = [
                                 'tipo_recibo' => 'BORDADO',
-                                'prenda_pedido_id' => null
+                                'prenda_pedido_id' => $prenda->id
                             ];
                         }
                         break;
@@ -227,7 +227,7 @@ class ConsecutivosRecibosService
                             $procesosPorPedido['ESTAMPADO'] = true;
                             $tiposRecibo['ESTAMPADO'] = [
                                 'tipo_recibo' => 'ESTAMPADO',
-                                'prenda_pedido_id' => null
+                                'prenda_pedido_id' => $prenda->id
                             ];
                         }
                         break;
@@ -236,7 +236,7 @@ class ConsecutivosRecibosService
                             $procesosPorPedido['DTF'] = true;
                             $tiposRecibo['DTF'] = [
                                 'tipo_recibo' => 'DTF',
-                                'prenda_pedido_id' => null
+                                'prenda_pedido_id' => $prenda->id
                             ];
                         }
                         break;
@@ -245,17 +245,17 @@ class ConsecutivosRecibosService
                             $procesosPorPedido['SUBLIMADO'] = true;
                             $tiposRecibo['SUBLIMADO'] = [
                                 'tipo_recibo' => 'SUBLIMADO',
-                                'prenda_pedido_id' => null
+                                'prenda_pedido_id' => $prenda->id
                             ];
                         }
                         break;
                     case 'REFLECTIVO':
-                        // REFLECTIVO solo se genera si la prenda es de bodega (de_bodega = true)
+                        // REFLECTIVO se genera para la primera prenda de bodega
                         if ($prenda->de_bodega && !isset($procesosPorPedido['REFLECTIVO'])) {
                             $procesosPorPedido['REFLECTIVO'] = true;
                             $tiposRecibo['REFLECTIVO'] = [
                                 'tipo_recibo' => 'REFLECTIVO',
-                                'prenda_pedido_id' => null
+                                'prenda_pedido_id' => $prenda->id  // Asignar el prenda_id
                             ];
                         }
                         break;
