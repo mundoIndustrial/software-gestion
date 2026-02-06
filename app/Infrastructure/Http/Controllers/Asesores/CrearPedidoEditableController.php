@@ -121,17 +121,15 @@ class CrearPedidoEditableController extends Controller
                 $query->with([
                     'fotos', 
                     'telaFotos', 
-                    'tallas', 
+                    'tallas.genero',  // Cargar tallas con sus géneros
                     'variantes',
-                    'reflectivo.fotos',  //  Agregar fotos de reflectivo para imágenes del proceso
                     'logoCotizacionTelasPrenda' => function($q) {  //  Nueva carga para telas de logo
                         // Cargar todas las telas/colores/referencias para esta prenda en cotización de logo
                     }
                 ]);
             },
             'logoCotizacion.fotos',
-            'logoCotizacion.telasPrendas',  //  Agregar telasPrendas de la cotización de logo
-            'reflectivoCotizacion.fotos'
+            'logoCotizacion.telasPrendas'  //  Agregar telasPrendas de la cotización de logo
         ])
             ->where('asesor_id', $user->id)
             ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])

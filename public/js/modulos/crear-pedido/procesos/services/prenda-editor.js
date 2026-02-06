@@ -1620,20 +1620,8 @@ class PrendaEditor {
             console.log('[cargarTallasYCantidades] 📋 prenda.tallas:', prenda.tallas);
             console.log('[cargarTallasYCantidades] 📋 prenda.procesos:', prenda.procesos);
             
-            // Determinar género
-            let generoPrenda = 'DAMA'; // valor por defecto
-            if (prenda.genero) {
-                if (typeof prenda.genero === 'string') {
-                    generoPrenda = prenda.genero.toUpperCase();
-                } else if (prenda.genero.nombre) {
-                    generoPrenda = prenda.genero.nombre.toUpperCase();
-                }
-            }
-            console.log(`[cargarTallasYCantidades] 👤 Usando género de la prenda: ${generoPrenda}`);
-            
-            // Guardar tallas de la cotización para pre-selección (solo para cotizaciones)
+            // Inicializar estructura para tallas desde cotización
             window.tallasDesdeCotizacion = window.tallasDesdeCotizacion || {};
-            window.tallasDesdeCotizacion[generoPrenda] = new Set();
             
             let tallasEncontradas = false;
             let tallasArray = [];
@@ -1641,8 +1629,114 @@ class PrendaEditor {
             // OPCIÓN 1: Si vienen en prenda.tallas (desde BD prenda_tallas_cot)
             if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
                 console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde prenda.tallas (BD):', prenda.tallas);
-                tallasArray = prenda.tallas;
+                
+                // NUEVO: Agrupar por género si vienen con genero_id/genero relacionado
+                const tallasAgrupadas = {};
+                const generoMap = { 1: 'DAMA', 2: 'CABALLERO', 3: 'UNISEX' };
+                
+                prenda.tallas.forEach(tallaObj => {
+                    // Obtener género del objeto talla relacionado
+                    let generoKey = 'DAMA'; // Por defecto
+                    
+                    // Si viene con genero.id o genero.nombre
+                    if (tallaObj.genero && tallaObj.genero.id) {
+                        generoKey = generoMap[tallaObj.genero.id] || 'DAMA';
+                    } else if (tallaObj.genero && tallaObj.genero.nombre) {
+                        generoKey = tallaObj.genero.nombre.toUpperCase();
+                    } else if (tallaObj.genero_id) {
+                        generoKey = generoMap[tallaObj.genero_id] || 'DAMA';
+                    }
+                    
+                    // Agrupar
+                    if (!tallasAgrupadas[generoKey]) {
+                        tallasAgrupadas[generoKey] = [];
+                    }
+                    tallasAgrupadas[generoKey].push(tallaObj);
+                });
+                
+                console.log('[cargarTallasYCantidades] 📊 Tallas agrupadas por género:', tallasAgrupadas);
+                
+                // NUEVO: Detectar géneros múltiples en las variantes
+                const generosEnVariantes = new Set();
+                if (prenda.variantes) {
+                    // Si es array de variantes
+                    if (Array.isArray(prenda.variantes)) {
+                        prenda.variantes.forEach(v => {
+                            if (v.genero_id && typeof v.genero_id === 'string') {
+                                try {
+                                    const ids = JSON.parse(v.genero_id);
+                                    if (Array.isArray(ids)) {
+                                        ids.forEach(id => generosEnVariantes.add(parseInt(id)));
+                                    } else {
+                                        generosEnVariantes.add(parseInt(id));
+                                    }
+                                } catch (e) {
+                                    const id = parseInt(v.genero_id);
+                                    if (!isNaN(id)) generosEnVariantes.add(id);
+                                }
+                            }
+                        });
+                    } else if (typeof prenda.variantes === 'object') {
+                        // Si es un objeto único de variante
+                        const v = prenda.variantes;
+                        if (v.genero_id && typeof v.genero_id === 'string') {
+                            try {
+                                const ids = JSON.parse(v.genero_id);
+                                if (Array.isArray(ids)) {
+                                    ids.forEach(id => generosEnVariantes.add(parseInt(id)));
+                                } else {
+                                    generosEnVariantes.add(parseInt(id));
+                                }
+                            } catch (e) {
+                                const id = parseInt(v.genero_id);
+                                if (!isNaN(id)) generosEnVariantes.add(id);
+                            }
+                        }
+                    }
+                }
+                
+                console.log('[cargarTallasYCantidades] 👥 Géneros detectados en variantes:', Array.from(generosEnVariantes).map(id => generoMap[id]));
+                
+                // Procesar cada género encontrado EN LAS TALLAS
+                Object.entries(tallasAgrupadas).forEach(([generoKey, tallasList]) => {
+                    window.tallasDesdeCotizacion = window.tallasDesdeCotizacion || {};
+                    window.tallasDesdeCotizacion[generoKey] = new Set();
+                    
+                    tallasList.forEach(tallaObj => {
+                        const talla = tallaObj.talla;
+                        const cantidad = tallaObj.cantidad || 0;
+                        console.log(`[cargarTallasYCantidades] 📏 Agregando ${generoKey} - ${talla}: ${cantidad}`);
+                        window.tallasRelacionales[generoKey][talla] = cantidad;
+                        window.tallasDesdeCotizacion[generoKey].add(talla);
+                    });
+                });
+                
+                // NUEVO: Si hay géneros en variantes que NO tienen tallas en BD, duplicar las primeras tallas encontradas
+                if (generosEnVariantes.size > 0) {
+                    const generosConTallas = Object.keys(tallasAgrupadas);
+                    const primerGeneroConTallas = generosConTallas.length > 0 ? generosConTallas[0] : null;
+                    
+                    for (const generoId of generosEnVariantes) {
+                        const generoNombre = generoMap[generoId];
+                        
+                        // Si este género NO está en las tallas agrupadas pero SÍ en las variantes
+                        if (generoNombre && !tallasAgrupadas[generoNombre] && primerGeneroConTallas) {
+                            console.log(`[cargarTallasYCantidades] 🔄 Duplicando tallas de ${primerGeneroConTallas} a ${generoNombre} (desde variantes)`);
+                            
+                            window.tallasDesdeCotizacion[generoNombre] = new Set();
+                            
+                            // Copiar tallas del primer género con tallas
+                            Object.entries(window.tallasRelacionales[primerGeneroConTallas]).forEach(([talla, cantidad]) => {
+                                window.tallasRelacionales[generoNombre][talla] = cantidad;
+                                window.tallasDesdeCotizacion[generoNombre].add(talla);
+                                console.log(`[cargarTallasYCantidades] 📏 Duplicada ${generoNombre} - ${talla}: ${cantidad}`);
+                            });
+                        }
+                    }
+                }
+                
                 tallasEncontradas = true;
+                console.log('[cargarTallasYCantidades] 📋 Tallas de cotización FINAL para pre-selección:', window.tallasDesdeCotizacion);
             } 
             // OPCIÓN 2: Si vienen en procesos[PROCESO].talla_cantidad (desde logo_cotizacion_tecnica_prendas)
             else if (prenda.procesos && typeof prenda.procesos === 'object') {
@@ -1669,7 +1763,20 @@ class PrendaEditor {
                 }
             }
             
-            if (tallasEncontradas && tallasArray.length > 0) {
+            if (tallasEncontradas && tallasArray && tallasArray.length > 0) {
+                // Usar el género único determinado antes
+                let generoPrenda = 'DAMA'; // valor por defecto
+                if (prenda.genero) {
+                    if (typeof prenda.genero === 'string') {
+                        generoPrenda = prenda.genero.toUpperCase();
+                    } else if (prenda.genero.nombre) {
+                        generoPrenda = prenda.genero.nombre.toUpperCase();
+                    }
+                }
+                
+                window.tallasDesdeCotizacion = window.tallasDesdeCotizacion || {};
+                window.tallasDesdeCotizacion[generoPrenda] = new Set();
+                
                 tallasArray.forEach(tallaObj => {
                     const talla = tallaObj.talla;
                     const cantidad = tallaObj.cantidad || 0;
@@ -1679,7 +1786,7 @@ class PrendaEditor {
                 });
                 
                 console.log('[cargarTallasYCantidades] 📋 Tallas de cotización para pre-selección:', window.tallasDesdeCotizacion);
-            } else {
+            } else if (!tallasEncontradas) {
                 console.log('[cargarTallasYCantidades]  No se encontraron tallas en BD ni en procesos');
             }
         } else if (prenda.tallas_disponibles && Array.isArray(prenda.tallas_disponibles) && prenda.tallas_disponibles.length > 0) {
