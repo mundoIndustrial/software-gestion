@@ -16,7 +16,16 @@ export class ReceiptBuilder {
         
         // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
         const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
-        if (!esVistaVisualizadorLogo) {
+        
+        // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos
+        const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
+        const excluirCosturaBodega = esSupervisorPedidos && prenda.de_bodega == 1;
+        
+        if (excluirCosturaBodega) {
+            console.log('📋 [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO en supervisor-pedidos para prenda:', prenda.nombre);
+        }
+        
+        if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
             // PASO 1: AGREGAR RECIBO BASE
             const tipoBase = prenda.de_bodega == 1 ? "costura-bodega" : "costura";
             const nombreBase = prenda.de_bodega == 1 ? "Bodega" : "Costura";
