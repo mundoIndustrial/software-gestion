@@ -252,6 +252,9 @@ async function guardarPedidoCompleto(numeroPedido) {
             return;
         }
         
+        // DEBUG: Log de data que se envía
+        console.log('📤 ENVIANDO DETALLES:', detalles);
+        
         // Preparar URL
         const url = `/gestion-bodega/pedidos/${numeroPedido}/guardar-completo`;
         
