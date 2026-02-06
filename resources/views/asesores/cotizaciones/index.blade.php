@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-index.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="{{ asset('css/realtime-cotizaciones.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/contador/cotizacion-modal.css') }}?v={{ time() }}">
 <noscript>
     <link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}">
@@ -194,6 +195,8 @@
 <script src="{{ asset('js/asesores/cotizaciones-index.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones-anular.js') }}"></script>
 <script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/contador/cotizacion.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/contador/lightbox-imagenes.js') }}?v={{ time() }}"></script>
 
 <script>
     // Variables globales para PDF
@@ -388,6 +391,134 @@
         background-color: #f0fdf4;
         color: #10b981;
         padding-left: 20px;
+    }
+</style>
+
+<div id="cotizacionModal" class="modal fullscreen" style="display: none;">
+    <div class="modal-content" style="background: white;">
+        <div class="modal-header">
+            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
+            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cotización #</p>
+                    <p id="modalHeaderNumber" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Fecha</p>
+                    <p id="modalHeaderDate" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cliente</p>
+                    <p id="modalHeaderClient" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Asesora</p>
+                    <p id="modalHeaderAdvisor" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+            </div>
+            <button onclick="closeCotizacionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+        </div>
+        <div id="modalBody" class="modal-body" style="padding: 2rem; overflow-y: auto; background: white;"></div>
+    </div>
+</div>
+
+<div id="lightboxImagenes" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center;">
+    <button onclick="cerrarLightboxImagenes()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 10px 20px; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ×
+    </button>
+
+    <button id="lightboxAnterior" onclick="lightboxImagenAnterior()" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 15px 20px; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ‹
+    </button>
+
+    <div style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+        <img id="lightboxImagen" src="" alt="Imagen de prenda" style="max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <div id="lightboxContador" style="color: white; font-size: 1.1rem; font-weight: 600; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; backdrop-filter: blur(10px);">
+            1 / 1
+        </div>
+    </div>
+
+    <button id="lightboxSiguiente" onclick="lightboxImagenSiguiente()" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 15px 20px; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ›
+    </button>
+</div>
+
+<style>
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .modal-content {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #1e5ba8 0%, #1e40af 100%);
+        color: #ffffff;
+        border-radius: 16px 16px 0 0;
+        position: relative;
+    }
+
+    .modal-header-logo {
+        height: 70px;
+        width: auto;
+        object-fit: contain;
+        flex-shrink: 0;
+        filter: brightness(0) invert(1);
+    }
+
+    .modal.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 9999;
+    }
+
+    .modal.fullscreen .modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal.fullscreen .modal-header {
+        border-radius: 0;
+        flex-shrink: 0;
+        padding: 1.5rem 2rem;
+    }
+
+    .modal.fullscreen .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
     }
 </style>
 

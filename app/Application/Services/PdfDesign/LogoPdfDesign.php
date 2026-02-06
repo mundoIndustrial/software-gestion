@@ -378,7 +378,22 @@ CSS;
                 return '';
             }
 
-            // Crear tabla solo para logo
+            // Deduplicar por URL para soportar logos compartidos y evitar repetición
+            $imagenesDedup = [];
+            $urlsVistas = [];
+            foreach ($imagenesPorTipo['Logo'] as $img) {
+                $urlKey = $img['url'] ?? '';
+                if (!$urlKey) {
+                    continue;
+                }
+                if (in_array($urlKey, $urlsVistas, true)) {
+                    continue;
+                }
+                $urlsVistas[] = $urlKey;
+                $imagenesDedup[] = $img;
+            }
+
+            // Crear tabla para logo
             $html = '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
             $html .= '<thead>';
             $html .= '<tr>';
@@ -389,12 +404,11 @@ CSS;
             $html .= '<tr>';
             $html .= '<td style="width: 100%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
 
-            // Mostrar logo con base64
-            if (!empty($imagenesPorTipo['Logo'])) {
-                $img = $imagenesPorTipo['Logo'][0];
+            // Si es 1 solo logo: centrar en un contenedor con ancho limitado (no ocupar todo el ancho)
+            if (count($imagenesDedup) === 1) {
+                $img = $imagenesDedup[0];
                 $imagenUrl = $img['url'];
 
-                // Convertir a URL absoluta para base64
                 if (!str_starts_with($imagenUrl, 'http')) {
                     if (str_starts_with($imagenUrl, '/storage/')) {
                         $imagenUrl = asset($imagenUrl);
@@ -403,26 +417,86 @@ CSS;
                     }
                 }
 
-                \Log::info("Procesando imagen Logo: {$imagenUrl}");
+                \Log::info("Procesando imagen Logo (única): {$imagenUrl}");
 
-                // Convertir a base64 para mPDF
                 $base64Image = $this->convertImageToBase64($imagenUrl);
-                
                 if ($base64Image) {
-                    // Detectar el tipo de imagen para el data URI
-                    $imageType = 'image/jpeg'; // Default
+                    $imageType = 'image/jpeg';
                     if (str_ends_with(strtolower($img['url']), '.png')) {
                         $imageType = 'image/png';
                     } elseif (str_ends_with(strtolower($img['url']), '.webp')) {
                         $imageType = 'image/webp';
                     }
-                    
-                    $html .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
+
+                    $html .= '<div style="display: inline-block; width: 45%; min-width: 180px; max-width: 320px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px;">';
+                    $html .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 140px; display: block; margin: 0 auto;">';
+                    $html .= '<div style="margin-top: 6px; font-size: 9px; font-weight: bold; color: #333;">' . htmlspecialchars($img['titulo']) . '</div>';
+                    $html .= '</div>';
                 } else {
                     $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imagen</div>';
                 }
-            } else {
-                $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin logo</div>';
+            }
+            // Si hay varias: mostrar todas en grilla
+            else {
+                $html .= '<table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">';
+
+                $cols = 3;
+                $i = 0;
+                foreach ($imagenesDedup as $img) {
+                    if ($i % $cols === 0) {
+                        $html .= '<tr>';
+                    }
+
+                    $imagenUrl = $img['url'];
+                    if (!str_starts_with($imagenUrl, 'http')) {
+                        if (str_starts_with($imagenUrl, '/storage/')) {
+                            $imagenUrl = asset($imagenUrl);
+                        } else {
+                            $imagenUrl = asset('storage/' . ltrim($imagenUrl, '/'));
+                        }
+                    }
+
+                    \Log::info("Procesando imagen Logo (grilla): {$imagenUrl}");
+
+                    $base64Image = $this->convertImageToBase64($imagenUrl);
+                    $cell = '<td style="width: ' . floor(100 / $cols) . '%; padding: 6px; vertical-align: top; text-align: center; border: 1px solid #cbd5e1;">';
+
+                    if ($base64Image) {
+                        $imageType = 'image/jpeg';
+                        if (str_ends_with(strtolower($img['url']), '.png')) {
+                            $imageType = 'image/png';
+                        } elseif (str_ends_with(strtolower($img['url']), '.webp')) {
+                            $imageType = 'image/webp';
+                        }
+
+                        $cell .= '<div style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px;">';
+                        $cell .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
+                        $cell .= '<div style="margin-top: 6px; font-size: 8px; font-weight: bold; color: #333;">' . htmlspecialchars($img['titulo']) . '</div>';
+                        $cell .= '</div>';
+                    } else {
+                        $cell .= '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imagen</div>';
+                    }
+
+                    $cell .= '</td>';
+                    $html .= $cell;
+
+                    $i++;
+
+                    if ($i % $cols === 0) {
+                        $html .= '</tr>';
+                    }
+                }
+
+                // Completar la última fila si quedó incompleta
+                $restantes = $i % $cols;
+                if ($restantes !== 0) {
+                    for ($k = 0; $k < ($cols - $restantes); $k++) {
+                        $html .= '<td style="width: ' . floor(100 / $cols) . '%; padding: 6px; border: 1px solid #cbd5e1;"></td>';
+                    }
+                    $html .= '</tr>';
+                }
+
+                $html .= '</table>';
             }
 
             $html .= '</td>';

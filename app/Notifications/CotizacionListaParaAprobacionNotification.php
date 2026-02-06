@@ -42,7 +42,7 @@ class CotizacionListaParaAprobacionNotification extends Notification implements 
             ->line("- **Valor**: \$" . number_format($this->cotizacion->valor_total ?? 0, 2))
             ->line("- **Revisado por**: {$this->contador->name}")
             ->line("- **Fecha de Revisión**: " . $this->cotizacion->aprobada_por_contador_en?->format('d/m/Y h:i A'))
-            ->action('Aprobar o Rechazar', route('cotizaciones.show', $this->cotizacion->id))
+            ->action('Aprobar o Rechazar', route('asesores.cotizaciones.index'))
             ->line('Por favor, revise y apruebe la cotización.')
             ->salutation('Saludos cordiales,')
             ->markdown('vendor.notifications.email');
@@ -61,7 +61,7 @@ class CotizacionListaParaAprobacionNotification extends Notification implements 
             'numero_cotizacion' => $this->cotizacion->numero_cotizacion,
             'contador_nombre' => $this->contador->name,
             'estado' => 'APROBADA_CONTADOR',
-            'accion_url' => route('cotizaciones.show', $this->cotizacion->id),
+            'accion_url' => route('asesores.cotizaciones.index'),
             'accion_texto' => 'Ver Cotización',
             'prioridad' => 'normal',
         ]);

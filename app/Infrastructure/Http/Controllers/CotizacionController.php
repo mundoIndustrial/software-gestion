@@ -300,47 +300,7 @@ final class CotizacionController extends Controller
      */
     public function showView(int $id)
     {
-        try {
-            // Obtener cotización con todas sus relaciones
-            // IMPORTANTE: Cargar variantes sin eager load de genero.* para evitar filtros de NULL
-            $cotizacion = \App\Models\Cotizacion::with([
-                'cliente',
-                'prendas.fotos',
-                'prendas.telaFotos',
-                'prendas.tallas',
-                'prendas.variantes',
-                'logoCotizacion.fotos',
-                'logoCotizacion.prendas.fotos',  //  Cargar prendas técnicas con sus fotos
-                'tipoCotizacion'
-            ])->findOrFail($id);
-
-            // Verificar que el usuario es propietario
-            if ($cotizacion->asesor_id !== Auth::id()) {
-                abort(403, 'No tienes permiso para ver esta cotización');
-            }
-
-            // Obtener logo si existe
-            $logo = $cotizacion->logoCotizacion;
-
-            Log::info('CotizacionController@showView: Cotización cargada', [
-                'cotizacion_id' => $cotizacion->id,
-                'prendas_count' => $cotizacion->prendas ? count($cotizacion->prendas) : 0,
-                'especificaciones' => $cotizacion->especificaciones,
-                'logo' => $logo ? 'Sí' : 'No',
-                'logo_prendas_tecnicas' => $logo ? $logo->prendas : null,
-                'logo_observaciones_generales' => $logo ? $logo->observaciones_generales : null,
-            ]);
-
-            return view('asesores.cotizaciones.show', [
-                'cotizacion' => $cotizacion,
-                'logo' => $logo,
-            ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            abort(404, 'Cotización no encontrada');
-        } catch (\Exception $e) {
-            Log::error('CotizacionController@showView: Error', ['error' => $e->getMessage()]);
-            abort(500, 'Error al obtener la cotización');
-        }
+        abort(404);
     }
 
     /**

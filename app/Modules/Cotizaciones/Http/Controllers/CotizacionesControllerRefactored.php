@@ -76,13 +76,7 @@ class CotizacionesControllerRefactored extends Controller
      */
     public function show($id)
     {
-        $cotizacion = $this->cotizacionService->findById($id);
-
-        if (!$cotizacion || $cotizacion->user_id !== Auth::id()) {
-            abort(403, 'No tienes permiso para ver esta cotización');
-        }
-
-        return view('asesores.cotizaciones.show', compact('cotizacion'));
+        abort(404);
     }
 
     /**
