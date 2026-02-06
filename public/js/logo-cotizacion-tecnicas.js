@@ -31,6 +31,193 @@ async function cargarTiposDisponibles() {
     }
 }
 
+function configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo = 3 }) {
+    const imagenesAgregadas = [];
+
+    const actualizarPrevisualizaciones = () => {
+        if (!previewContainer) return;
+        previewContainer.innerHTML = '';
+
+        imagenesAgregadas.forEach((archivo, idx) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.createElement('div');
+                preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+
+                const btnEliminar = document.createElement('button');
+                btnEliminar.type = 'button';
+                btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
+                btnEliminar.textContent = '×';
+                btnEliminar.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    imagenesAgregadas.splice(idx, 1);
+                    actualizarPrevisualizaciones();
+                });
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+
+                preview.appendChild(img);
+                preview.appendChild(btnEliminar);
+                previewContainer.appendChild(preview);
+            };
+            reader.readAsDataURL(archivo);
+        });
+    };
+
+    const agregarImagenes = (archivos) => {
+        const imagenes = (archivos || []).filter(f => f && f.type && f.type.startsWith('image/'));
+        if (imagenes.length === 0) {
+            return;
+        }
+
+        for (const archivo of imagenes) {
+            if (imagenesAgregadas.length >= maximo) {
+                break;
+            }
+            imagenesAgregadas.push(archivo);
+        }
+
+        actualizarPrevisualizaciones();
+    };
+
+    if (dropzone && input) {
+        dropzone.addEventListener('click', () => input.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.style.background = '#e8f1ff';
+            dropzone.style.borderColor = '#1e40af';
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.style.background = '#fafafa';
+            dropzone.style.borderColor = '#ddd';
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.style.background = '#fafafa';
+            dropzone.style.borderColor = '#ddd';
+            agregarImagenes(Array.from(e.dataTransfer.files || []));
+        });
+
+        input.addEventListener('change', (e) => {
+            agregarImagenes(Array.from(e.target.files || []));
+            e.target.value = '';
+        });
+    }
+
+    return imagenesAgregadas;
+}
+
+function guardarEdicionPrenda() {
+    const listaPrendas = document.getElementById('listaPrendas');
+    const prendaDiv = listaPrendas ? listaPrendas.querySelector('.prenda-item') : null;
+
+    if (!prendaDiv) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró el formulario de edición'
+        });
+        return;
+    }
+
+    const nombreInput = prendaDiv.querySelector('.nombre_prenda');
+    const observacionesInput = prendaDiv.querySelector('.observaciones');
+    const nuevoNombre = nombreInput ? nombreInput.value.trim().toUpperCase() : '';
+    const nuevasObs = observacionesInput ? observacionesInput.value.trim() : '';
+
+    if (!nuevoNombre) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campo vacío',
+            text: 'Completa el nombre de la prenda'
+        });
+        return;
+    }
+
+    const originalNombre = window.prendaNombreOriginalEdicion || (window.datosPrendaEdicion ? window.datosPrendaEdicion.nombre_prenda : null);
+    const indices = Array.isArray(window.tecnicaIndicesEdicion) ? window.tecnicaIndicesEdicion : [];
+    const tecnicasEditData = (window.datosPrendaEdicion && window.datosPrendaEdicion.tecnicas_imagenes) ? window.datosPrendaEdicion.tecnicas_imagenes : {};
+    const logoCompartidoEnabled = !!(window.datosPrendaEdicion && window.datosPrendaEdicion.logoCompartido && window.datosPrendaEdicion.logoCompartido.enabled);
+    const logoCompartidoData = (window.datosPrendaEdicion && window.datosPrendaEdicion.logoCompartido) ? window.datosPrendaEdicion.logoCompartido : { enabled: false, items: {}, files: {} };
+
+    indices.forEach((tecnicaIndex) => {
+        const tecnica = tecnicasAgregadas[tecnicaIndex];
+        if (!tecnica || !Array.isArray(tecnica.prendas)) return;
+
+        const nombreTecnica = tecnica.tipo_logo ? tecnica.tipo_logo.nombre : null;
+        const dataTecnica = nombreTecnica ? tecnicasEditData[nombreTecnica] : null;
+
+        // Actualizar logos compartidos a nivel de técnica
+        if (logoCompartidoEnabled) {
+            tecnica.logosCompartidos = tecnica.logosCompartidos || {};
+            Object.keys(logoCompartidoData.items || {}).forEach((clave) => {
+                const file = (logoCompartidoData.files && logoCompartidoData.files[clave]) ? logoCompartidoData.files[clave] : null;
+                if (file instanceof File) {
+                    tecnica.logosCompartidos[clave] = file;
+                }
+            });
+        } else {
+            tecnica.logosCompartidos = {};
+        }
+
+        tecnica.prendas.forEach((p) => {
+            if (!p) return;
+            if (originalNombre && p.nombre_prenda !== originalNombre) return;
+
+            p.nombre_prenda = nuevoNombre;
+            p.observaciones = nuevasObs;
+            p.talla_cantidad = [];
+
+            if (dataTecnica) {
+                const ubicaciones = Array.isArray(dataTecnica.ubicaciones) ? dataTecnica.ubicaciones : [];
+                p.ubicaciones = ubicaciones;
+
+                const imgs = Array.isArray(dataTecnica.imagenes_data_urls) ? dataTecnica.imagenes_data_urls : [];
+                // Guardar como objetos {data_url} para compatibilidad con el resto del flujo
+                const imagenesPropias = imgs.map(u => ({ data_url: u }));
+
+                // Si hay logo compartido activo, agregar imágenes compartidas que correspondan a esta técnica
+                let imagenesCompartidas = [];
+                if (logoCompartidoEnabled) {
+                    Object.entries(logoCompartidoData.items || {}).forEach(([clave, item]) => {
+                        const tecnicasCompartidas = Array.isArray(item.tecnicasCompartidas) ? item.tecnicasCompartidas : [];
+                        if (nombreTecnica && tecnicasCompartidas.includes(nombreTecnica)) {
+                            const dataUrl = item.previewUrl || null;
+                            if (dataUrl) {
+                                imagenesCompartidas.push({
+                                    data_url: dataUrl,
+                                    esCompartida: true,
+                                    nombreCompartido: clave,
+                                    tecnicasCompartidas
+                                });
+                            }
+                        }
+                    });
+                }
+
+                // Reconstruir imagenes_data_urls sin duplicar
+                p.imagenes_data_urls = [...imagenesPropias, ...imagenesCompartidas];
+                p.imagenes_files = [];
+            }
+        });
+    });
+
+    // Reset flags de edición
+    window.modoEdicionPrenda = false;
+    window.datosPrendaEdicion = null;
+    window.tecnicasInfoEdicion = null;
+    window.tecnicaIndicesEdicion = null;
+    window.prendaNombreOriginalEdicion = null;
+
+    cerrarModalAgregarTecnica();
+    renderizarTecnicasAgregadas();
+}
+
 // =========================================================
 // 3. RENDERIZAR CHECKBOXES DE TÉCNICAS
 // =========================================================
@@ -105,6 +292,10 @@ function abrirModalAgregarTecnica() {
 }
 
 function abrirModalSimpleTecnica(tipo) {
+    // Resetear cualquier estado previo de técnicas combinadas
+    window.tecnicasCombinadas = null;
+    window.modoTecnicasCombinadas = null;
+
     // Obtener el nombre de la técnica
     const nombreElement = document.getElementById('tecnicaSeleccionadaNombre');
     if (nombreElement) {
@@ -131,64 +322,6 @@ function abrirModalSimpleTecnica(tipo) {
     if (modal) {
         modal.style.display = 'flex';
     }
-}
-
-// =========================================================
-// 4.2 MODAL TÉCNICAS COMBINADAS (Pregunta iguales/diferentes)
-// =========================================================
-
-function abrirModalTecnicaCombinada(tecnicas) {
-    const nombresT = tecnicas.map(t => t.nombre).join(' + ');
-    
-    Swal.fire({
-        title: 'Técnicas Combinadas',
-        html: `
-            <div style="text-align: left; margin: 15px 0;">
-                <p style="margin-bottom: 12px; font-weight: 600; color: #1e40af;">${nombresT}</p>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
-                        <input type="radio" name="opcion-tecnicas" value="iguales" checked style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
-                        <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Datos iguales</strong>
-                            <small style="color: #666; font-size: 0.8rem;">Una misma prenda para todas</small>
-                        </div>
-                    </label>
-                    <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
-                        <input type="radio" name="opcion-tecnicas" value="diferentes" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
-                        <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Datos diferentes</strong>
-                            <small style="color: #666; font-size: 0.8rem;">Cada técnica con su prenda</small>
-                        </div>
-                    </label>
-                    <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#1e40af'; this.style.backgroundColor='#f0f4ff';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='white';">
-                        <input type="radio" name="opcion-tecnicas" value="por-talla" style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;">
-                        <div>
-                            <strong style="color: #333; display: block; font-size: 0.9rem;"> Por talla</strong>
-                            <small style="color: #666; font-size: 0.8rem;">Técnicas diferentes según talla</small>
-                        </div>
-                    </label>
-                </div>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Siguiente',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#1e40af',
-        cancelButtonColor: '#6b7280'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const opcion = document.querySelector('input[name="opcion-tecnicas"]:checked').value;
-            
-            if (opcion === 'iguales') {
-                abrirModalDatosIguales(tecnicas);
-            } else if (opcion === 'diferentes') {
-                iniciarFlujoDatosDiferentes(tecnicas);
-            } else if (opcion === 'por-talla') {
-                abrirModalPrendaTecnicasPorTalla(tecnicas);
-            }
-        }
-    });
 }
 
 function abrirModalDatosIguales(tecnicas) {
@@ -225,17 +358,6 @@ function abrirModalDatosIguales(tecnicas) {
                     <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Observaciones</h3>
                     <textarea id="dObservaciones" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;"></textarea>
                 </div>
-                
-                <!-- TALLAS GENÉRICAS (Por defecto) -->
-                <div id="dSeccionTallasGeneral" style="display: block; margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Tallas y Cantidades (General)</h3>
-                    <div id="dTallaCantidadContainer" style="display: grid; gap: 8px; margin-bottom: 10px; max-height: 200px; overflow-y: auto;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                    <button type="button" id="dBtnAgregarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.9rem;">+ Agregar talla general</button>
-                </div>
-                
-                                
                 
                 <!-- LOGO COMPARTIDO (Nuevo) -->
                 <div style="margin-bottom: 25px; padding: 12px; background: #f0f7ff; border: 2px solid #dbeafe; border-radius: 6px;">
@@ -275,14 +397,13 @@ function abrirModalDatosIguales(tecnicas) {
         confirmButtonText: 'Guardar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#333',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         didOpen: (modal) => {
             const inputPrenda = document.getElementById('dNombrePrenda');
             const listaSugerencias = document.getElementById('dListaSugerencias');
-            const btnAgregarTalla = document.getElementById('dBtnAgregarTalla');
-            const tallaCantidadContainer = document.getElementById('dTallaCantidadContainer');
             const ubicacionesPorTecnicaDiv = document.getElementById('dUbicacionesPorTecnica');
             
-            let contadorTallas = 0;
             let prendasDisponibles = [];
             
             // Cargar prendas para autocomplete
@@ -322,31 +443,6 @@ function abrirModalDatosIguales(tecnicas) {
                     listaSugerencias.style.display = 'none';
                 }
             });
-            
-            // Agregar talla inicial (genérica)
-            agregarFilaTalla();
-            
-            function agregarFilaTalla() {
-                const idTalla = 'talla-' + (contadorTallas++);
-                const fila = document.createElement('div');
-                fila.setAttribute('data-talla-id', idTalla);
-                fila.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center;';
-                fila.innerHTML = `
-                    <input type="text" class="dTallaInput" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <input type="number" class="dCantidadInput" placeholder="Cantidad" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;">
-                    <button type="button" class="dBtnEliminarTalla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✕</button>
-                `;
-                
-                const btnEliminar = fila.querySelector('.dBtnEliminarTalla');
-                btnEliminar.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (tallaCantidadContainer.children.length > 1) {
-                        fila.remove();
-                    }
-                });
-                
-                tallaCantidadContainer.appendChild(fila);
-            }
             
             // Crear inputs de ubicación por técnica
             tecnicas.forEach((tecnica, idx) => {
@@ -560,14 +656,6 @@ function abrirModalDatosIguales(tecnicas) {
                 });
             }
             
-            // Listener agregar talla
-            if (btnAgregarTalla) {
-                btnAgregarTalla.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    agregarFilaTalla();
-                });
-            }
-            
             // ========================================
             // LÓGICA DE LOGO COMPARTIDO
             // ========================================
@@ -598,10 +686,21 @@ function abrirModalDatosIguales(tecnicas) {
             });
         },
         preConfirm: () => {
+            // Seguridad anti doble click
+            if (window.__guardandoTecnica) {
+                Swal.showValidationMessage('Guardando...');
+                return false;
+            }
+            window.__guardandoTecnica = true;
+            const confirmBtn = Swal.getConfirmButton();
+            if (confirmBtn) confirmBtn.disabled = true;
+
             // Validar prenda
             const nombrePrenda = document.getElementById('dNombrePrenda').value.trim().toUpperCase();
             if (!nombrePrenda) {
                 Swal.showValidationMessage('Completa el nombre de la prenda');
+                window.__guardandoTecnica = false;
+                if (confirmBtn) confirmBtn.disabled = false;
                 return false;
             }
             
@@ -629,39 +728,22 @@ function abrirModalDatosIguales(tecnicas) {
                 ubicacionesPorTecnica[idx] = ubicacionesList;
             });
             
-            if (!valido) return false;
-            
-            // Validar tallas genéricas (ya no hay tallas específicas por técnica)
-            let tallasPorTecnica = {};
-            let tallas = [];
-            
-            // Recopilar tallas genéricas
-            const tallasFilas = document.querySelectorAll('[data-talla-id]');
-            tallasFilas.forEach(fila => {
-                const talla = fila.querySelector('.dTallaInput').value.trim();
-                const cantidad = fila.querySelector('.dCantidadInput').value;
-                if (talla && cantidad) {
-                    tallas.push({ talla, cantidad: parseInt(cantidad) });
-                }
-            });
-            
-            // Validar tallas (opcional)
-            // Las tallas ya no son obligatorias
-            
-            // Todas las técnicas usan las mismas tallas genéricas
-            window.tecnicasCombinadas.forEach((tecnica, idx) => {
-                tallasPorTecnica[idx] = tallas;
-            });
+            if (!valido) {
+                window.__guardandoTecnica = false;
+                if (confirmBtn) confirmBtn.disabled = false;
+                return false;
+            }
             
             // Recopilar imágenes por técnica desde el nuevo sistema de drag and drop
             const imagenesPorTecnica = {};
             const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
             if (imagesPorTecnicaDiv) {
                 const divImagenes = imagesPorTecnicaDiv.querySelectorAll('[data-tecnica-idx]');
-                divImagenes.forEach(div => {
-                    const idx = parseInt(div.getAttribute('data-tecnica-idx'));
-                    if (div.imagenesAgregadas && div.imagenesAgregadas.length > 0) {
-                        imagenesPorTecnica[idx] = div.imagenesAgregadas;
+                divImagenes.forEach((divImagen, idx) => {
+                    const imagenesAgregadas = [];
+                    const idxTecnica = parseInt(divImagen.getAttribute('data-tecnica-idx'));
+                    if (divImagen.imagenesAgregadas && divImagen.imagenesAgregadas.length > 0) {
+                        imagenesPorTecnica[idxTecnica] = divImagen.imagenesAgregadas;
                     }
                 });
             }
@@ -676,7 +758,6 @@ function abrirModalDatosIguales(tecnicas) {
                 nombre_prenda: nombrePrenda,
                 observaciones: document.getElementById('dObservaciones').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
-                tallasPorTecnica: tallasPorTecnica,
                 imagenesPorTecnica: imagenesPorTecnica,
                 logosCompartidos: window.logosCompartidosCotizacionIndividual || {},
                 variaciones_prenda: null,
@@ -689,6 +770,16 @@ function abrirModalDatosIguales(tecnicas) {
             Swal.close();
             // Guardar después de cerrar
             guardarTecnicaCombinada(result.value);
+
+            // Liberar lock después de un tiempo razonable (guardarTecnicaCombinada usa Promises internas)
+            setTimeout(() => {
+                window.__guardandoTecnica = false;
+            }, 1500);
+        } else {
+            // Cancelado o cerrado: liberar lock y limpiar estado
+            window.__guardandoTecnica = false;
+            window.tecnicasCombinadas = null;
+            window.modoTecnicasCombinadas = null;
         }
     });
 }
@@ -1014,420 +1105,6 @@ function mostrarLogosCompartidosAgregados(logosCompartidos, tecnicasNuevas) {
     }
 }
 
-function iniciarFlujoDatosDiferentes(tecnicas) {
-    // Guardar contexto
-    window.tecnicasCombinadas = tecnicas;
-    window.modoTecnicasCombinadas = 'diferentes';
-    window.indiceActualTecnica = 0;
-    
-    mostrarFormularioTecnicaDiferente(0);
-}
-
-// =========================================================
-// 4.4 FLUJO: MISMA PRENDA, TÉCNICAS POR TALLA
-// =========================================================
-
-function abrirModalPrendaTecnicasPorTalla(tecnicas) {
-    window.tecnicasCombinadas = tecnicas;
-    window.modoTecnicasCombinadas = 'por-talla';
-    window.prendaTecnicasPorTalla = {
-        nombre: '',
-        ubicaciones: [],
-        observaciones: '',
-        tallaTecnicas: {} // { "M": [id1, id2], "L": [id3], ...}
-    };
-    
-    Swal.fire({
-        title: 'Prenda con Técnicas por Talla',
-        width: '85%',
-        maxWidth: '500px',
-        html: `
-            <div style="text-align: left; margin: 20px 0;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Nombre de prenda:</label>
-                    <input type="text" id="ptpNombrePrenda" placeholder="Ej: Camisa" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Ubicaciones:</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                        <input type="text" id="ptpUbicacionInput" placeholder="Ej: Pecho" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                        <button type="button" id="ptpBtnAgregarUbicacion" style="background: #1e40af; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
-                            <i class="fas fa-plus"></i> Ubicación
-                        </button>
-                    </div>
-                    <div id="ptpUbicaciones" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;"></div>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
-                    <textarea id="ptpObservaciones" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;"></textarea>
-                </div>
-                
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 10px;">Tallas y Técnicas:</label>
-                    <div id="ptpTallas" style="display: grid; gap: 10px; max-height: 250px; overflow-y: auto;">
-                        <!-- Se agregará dinámicamente -->
-                    </div>
-                    <button type="button" id="ptpBtnAgregarTalla" style="background: #1e40af; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: 600;">+ Agregar Talla</button>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#27ae60',
-        didOpen: (modal) => {
-            const btnAgregarUbicacion = document.getElementById('ptpBtnAgregarUbicacion');
-            const inputUbicacion = document.getElementById('ptpUbicacionInput');
-            const ubicacionesDiv = document.getElementById('ptpUbicaciones');
-            const btnAgregarTalla = document.getElementById('ptpBtnAgregarTalla');
-            const tallasDiv = document.getElementById('ptpTallas');
-            
-            // Agregar ubicación
-            if (btnAgregarUbicacion) {
-                btnAgregarUbicacion.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const ubicacion = inputUbicacion.value.trim();
-                    
-                    if (!ubicacion) {
-                        Swal.showValidationMessage('Escribe una ubicación primero');
-                        return;
-                    }
-                    
-                    const existentes = Array.from(ubicacionesDiv.querySelectorAll('[data-ubicacion]'))
-                        .map(tag => tag.getAttribute('data-ubicacion').toLowerCase());
-                    if (existentes.includes(ubicacion.toLowerCase())) {
-                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
-                        return;
-                    }
-                    
-                    const tag = document.createElement('div');
-                    tag.setAttribute('data-ubicacion', ubicacion);
-                    tag.style.cssText = 'background: #1e40af; color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; font-weight: 500;';
-                    tag.innerHTML = `
-                        ${ubicacion}
-                        <button type="button" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;">×</button>
-                    `;
-                    
-                    tag.querySelector('button').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        tag.remove();
-                        inputUbicacion.focus();
-                    });
-                    
-                    ubicacionesDiv.appendChild(tag);
-                    inputUbicacion.value = '';
-                    inputUbicacion.focus();
-                });
-            }
-            
-            // Agregar talla
-            if (btnAgregarTalla) {
-                btnAgregarTalla.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const rowTalla = document.createElement('div');
-                    rowTalla.className = 'ptp-talla-row';
-                    rowTalla.style.cssText = 'border: 1px solid #ddd; border-radius: 6px; padding: 10px; background: #f9f9f9;';
-                    rowTalla.innerHTML = `
-                        <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-end;">
-                            <div style="flex: 1;">
-                                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 3px;">Talla</label>
-                                <input type="text" class="ptp-talla" placeholder="S, M, L, XL" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                            </div>
-                            <div style="flex: 1;">
-                                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 3px;">Cantidad</label>
-                                <input type="number" class="ptp-cantidad" min="1" value="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                            </div>
-                            <button type="button" class="ptp-btn-eliminar" style="background: #d32f2f; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">×</button>
-                        </div>
-                        <div style="margin-bottom: 8px;">
-                            <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">Técnicas para esta talla:</label>
-                            <div class="ptp-tecnicas-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px;">
-                                <!-- Checkboxes se generan aquí -->
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Generar checkboxes de técnicas
-                    const checkboxesDiv = rowTalla.querySelector('.ptp-tecnicas-checkboxes');
-                    tecnicas.forEach(tecnica => {
-                        const label = document.createElement('label');
-                        label.style.cssText = 'display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;';
-                        label.innerHTML = `
-                            <input type="checkbox" class="ptp-tecnica-check" data-tecnica-id="${tecnica.id}" style="width: 16px; height: 16px; cursor: pointer;">
-                            <span style="font-size: 0.9rem; color: ${tecnica.color}; font-weight: 600;">${tecnica.nombre}</span>
-                        `;
-                        checkboxesDiv.appendChild(label);
-                    });
-                    
-                    // Botón eliminar talla
-                    rowTalla.querySelector('.ptp-btn-eliminar').addEventListener('click', () => rowTalla.remove());
-                    
-                    tallasDiv.appendChild(rowTalla);
-                });
-            }
-        },
-        preConfirm: () => {
-            const nombre = document.getElementById('ptpNombrePrenda').value.trim();
-            const observaciones = document.getElementById('ptpObservaciones').value.trim();
-            const ubicacionTags = Array.from(document.querySelectorAll('#ptpUbicaciones [data-ubicacion]'))
-                .map(tag => tag.getAttribute('data-ubicacion'));
-            const tallasRows = document.querySelectorAll('.ptp-talla-row');
-            
-            if (!nombre) {
-                Swal.showValidationMessage('El nombre de la prenda es obligatorio');
-                return false;
-            }
-            
-            if (ubicacionTags.length === 0) {
-                Swal.showValidationMessage('Debe agregar al menos una ubicación');
-                return false;
-            }
-            
-            if (tallasRows.length === 0) {
-                Swal.showValidationMessage('Debe agregar al menos una talla');
-                return false;
-            }
-            
-            const tallaTecnicas = {};
-            let tieneErrores = false;
-            
-            tallasRows.forEach(row => {
-                const talla = row.querySelector('.ptp-talla').value.trim();
-                const cantidad = parseInt(row.querySelector('.ptp-cantidad').value);
-                const tecnicasChecked = Array.from(row.querySelectorAll('.ptp-tecnica-check:checked'))
-                    .map(cb => parseInt(cb.dataset.tecnicaId));
-                
-                if (!talla) {
-                    Swal.showValidationMessage('Todas las tallas deben tener un nombre');
-                    tieneErrores = true;
-                    return;
-                }
-                
-                if (tecnicasChecked.length === 0) {
-                    Swal.showValidationMessage(`Selecciona al menos una técnica para la talla ${talla}`);
-                    tieneErrores = true;
-                    return;
-                }
-                
-                tallaTecnicas[talla] = { tecnicas: tecnicasChecked, cantidad };
-            });
-            
-            if (tieneErrores) return false;
-            
-            return { nombre, ubicaciones: ubicacionTags, observaciones, tallaTecnicas };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const datos = result.value;
-            guardarPrendaTecnicasPorTalla(datos);
-        }
-    });
-}
-
-function mostrarFormularioTecnicaDiferente(index) {
-    const tecnicas = window.tecnicasCombinadas;
-    if (index >= tecnicas.length) {
-        // Terminar y limpiar
-        window.tecnicasCombinadas = null;
-        window.modoTecnicasCombinadas = null;
-        return;
-    }
-    
-    const tecnicaActual = tecnicas[index];
-    const totalTecnicas = tecnicas.length;
-    
-    Swal.fire({
-        title: `Técnica ${index + 1} de ${totalTecnicas}`,
-        width: '85%',
-        maxWidth: '450px',
-        html: `
-            <div style="text-align: left; margin: 20px 0;">
-                <h4 style="color: #1e40af; margin-bottom: 15px;">${tecnicaActual.nombre}</h4>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Nombre de prenda:</label>
-                    <input type="text" id="modalPrendaNombre" placeholder="Ej: Camisa" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Ubicaciones:</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                        <input type="text" id="modalUbicacionInput" placeholder="Ej: Pecho" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                        <button type="button" id="btnAgregarUbicacion" style="background: #1e40af; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
-                            <i class="fas fa-plus"></i> Ubicación
-                        </button>
-                    </div>
-                    <div id="modalUbicaciones" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;">
-                        <!-- Tags de ubicación aquí -->
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
-                    <textarea id="modalObservaciones" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical;"></textarea>
-                </div>
-                
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 10px;">Tallas y Cantidades:</label>
-                    <div id="modalTallas" style="display: grid; gap: 10px; max-height: 200px; overflow-y: auto;">
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" class="modal-talla" placeholder="Ej: M" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                            <input type="number" class="modal-cantidad" min="1" value="1" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                            <button class="btn-eliminar-talla" style="background: #d32f2f; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">×</button>
-                        </div>
-                    </div>
-                    <button id="btnAgregarTallaModal" style="background: #1e40af; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%;">+ Agregar Talla</button>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: index === totalTecnicas - 1 ? 'Finalizar' : 'Siguiente',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#1e40af',
-        didOpen: (modal) => {
-            // Agregar eventos a los botones después de que se abre el modal
-            const btnAgregar = document.getElementById('btnAgregarTallaModal');
-            const modalTallas = document.getElementById('modalTallas');
-            const btnAgregarUbicacion = document.getElementById('btnAgregarUbicacion');
-            const inputUbicacion = document.getElementById('modalUbicacionInput');
-            const ubicacionesDiv = document.getElementById('modalUbicaciones');
-            
-            // Evento para agregar ubicaciones
-            if (btnAgregarUbicacion) {
-                btnAgregarUbicacion.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const ubicacion = inputUbicacion.value.trim();
-                    
-                    if (!ubicacion) {
-                        Swal.showValidationMessage('Escribe una ubicación primero');
-                        return;
-                    }
-                    
-                    // Verificar duplicados
-                    const existentes = Array.from(ubicacionesDiv.querySelectorAll('[data-ubicacion]'))
-                        .map(tag => tag.getAttribute('data-ubicacion').toLowerCase());
-                    if (existentes.includes(ubicacion.toLowerCase())) {
-                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
-                        return;
-                    }
-                    
-                    // Crear tag
-                    const tag = document.createElement('div');
-                    tag.setAttribute('data-ubicacion', ubicacion);
-                    tag.style.cssText = 'background: #1e40af; color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; font-weight: 500;';
-                    tag.innerHTML = `
-                        ${ubicacion}
-                        <button type="button" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.2)'" onmouseout="this.style.background='none'">×</button>
-                    `;
-                    
-                    tag.querySelector('button').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        tag.remove();
-                        inputUbicacion.focus();
-                    });
-                    
-                    ubicacionesDiv.appendChild(tag);
-                    inputUbicacion.value = '';
-                    inputUbicacion.focus();
-                });
-            }
-            
-            // Evento para agregar tallas
-            if (btnAgregar && modalTallas) {
-                btnAgregar.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const div = document.createElement('div');
-                    div.style.cssText = 'display: flex; gap: 8px;';
-                    div.innerHTML = `
-                        <input type="text" class="modal-talla" placeholder="Ej: M" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                        <input type="number" class="modal-cantidad" min="1" value="1" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                        <button class="btn-eliminar-talla" style="background: #d32f2f; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">×</button>
-                    `;
-                    modalTallas.appendChild(div);
-                    
-                    const btnEliminar = div.querySelector('.btn-eliminar-talla');
-                    if (btnEliminar) {
-                        btnEliminar.addEventListener('click', () => div.remove());
-                    }
-                });
-            }
-            
-            // Agregar eventos a los botones eliminar existentes
-            document.querySelectorAll('.btn-eliminar-talla').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    btn.parentElement.remove();
-                });
-            });
-        },
-        preConfirm: () => {
-            const nombre = document.getElementById('modalPrendaNombre').value.trim();
-            const observaciones = document.getElementById('modalObservaciones').value.trim();
-            
-            // Extraer ubicaciones de los tags/chips
-            const ubicacionTags = document.querySelectorAll('#modalUbicaciones [data-ubicacion]');
-            const ubicaciones = Array.from(ubicacionTags).map(tag => tag.getAttribute('data-ubicacion'));
-            
-            const tallas = [];
-            document.querySelectorAll('#modalTallas > div').forEach(row => {
-                const talla = row.querySelector('.modal-talla').value.trim();
-                const cantidad = parseInt(row.querySelector('.modal-cantidad').value) || 1;
-                if (talla) {
-                    tallas.push({ talla, cantidad });
-                }
-            });
-            
-            if (!nombre) {
-                Swal.showValidationMessage('El nombre de la prenda es obligatorio');
-                return false;
-            }
-            if (ubicaciones.length === 0) {
-                Swal.showValidationMessage('Debe agregar al menos una ubicación');
-                return false;
-            }
-            // Las tallas son opcionales, no validar si están vacías
-            
-            return { nombre, ubicaciones, observaciones, tallas };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const datos = result.value;
-            
-            // Guardar datos de esta técnica
-            if (!window.datosMultiplesTecnicas) {
-                window.datosMultiplesTecnicas = [];
-            }
-            window.datosMultiplesTecnicas[index] = {
-                tecnica: tecnicaActual,
-                datos: datos
-            };
-            
-
-
-            
-            // Verificar si es la última técnica
-            if (index === totalTecnicas - 1) {
-                // Es la última técnica, guardar todas
-
-                guardarTecnica();
-            } else {
-                // Ir a la siguiente
-
-                window.indiceActualTecnica = index + 1;
-                mostrarFormularioTecnicaDiferente(index + 1);
-            }
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-            // Cancelar flujo
-
-            window.tecnicasCombinadas = null;
-            window.modoTecnicasCombinadas = null;
-            window.datosMultiplesTecnicas = null;
-        }
-    });
-}
-
 // =========================================================
 // 5. FORMULARIO DINÁMICO DE PRENDAS EN MODAL
 // =========================================================
@@ -1490,117 +1167,19 @@ function agregarFilaPrenda() {
                     <!-- Previsualizaciones aquí -->
                 </div>
             </div>
-            
-            <!-- Tallas y Cantidades Dinámicas -->
-            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                <button type="button" onclick="agregarTallaCantidad(this)" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">+ Talla</button>
-            </div>
-            <div class="tallas-container" style="display: grid; gap: 8px;">
-                <!-- Filas de talla-cantidad aquí -->
-            </div>
         </div>
     `;
     
     container.appendChild(fila);
     
-    // Array para almacenar archivos de esta prenda
-    const imagenesAgregadas = [];
-    
-    // Setup Drag and Drop
     const dropzone = fila.querySelector(`.imagenes-dropzone-${prendasIndex}`);
     const input = fila.querySelector(`.imagen-prenda-input-${prendasIndex}`);
     const previewContainer = fila.querySelector(`.imagenes-preview-${prendasIndex}`);
-    
-    // Click en dropzone
-    dropzone.addEventListener('click', () => input.click());
-    
-    // Drag over
-    dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropzone.style.background = '#e8f1ff';
-        dropzone.style.borderColor = '#1e40af';
-    });
-    
-    dropzone.addEventListener('dragleave', () => {
-        dropzone.style.background = '#fafafa';
-        dropzone.style.borderColor = '#ddd';
-    });
-    
-    // Drop
-    dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.style.background = '#fafafa';
-        dropzone.style.borderColor = '#ddd';
-        agregarImagenesDelDropzone(Array.from(e.dataTransfer.files));
-    });
-    
-    // Cambio en input file
-    input.addEventListener('change', (e) => {
-        agregarImagenesDelDropzone(Array.from(e.target.files));
-    });
-    
-    function agregarImagenesDelDropzone(archivos) {
-        // Filtrar solo imágenes
-        const imagenes = archivos.filter(f => f.type.startsWith('image/'));
-        
-        if (imagenes.length === 0) {
-            alert('Por favor selecciona imágenes válidas');
-            return;
-        }
-        
-        // Agregar imágenes hasta el límite de 3
-        for (const archivo of imagenes) {
-            if (imagenesAgregadas.length >= 3) {
-                alert('Máximo 3 imágenes permitidas');
-                break;
-            }
-            imagenesAgregadas.push(archivo);
-        }
-        
-        // Actualizar previsualizaciones
-        actualizarPrevisualizaciones();
-    }
-    
-    function actualizarPrevisualizaciones() {
-        previewContainer.innerHTML = '';
-        
-        imagenesAgregadas.forEach((archivo, idx) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = document.createElement('div');
-                preview.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
-                
-                const btnEliminar = document.createElement('button');
-                btnEliminar.type = 'button';
-                btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
-                btnEliminar.textContent = '×';
-                btnEliminar.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    imagenesAgregadas.splice(idx, 1);
-                    actualizarPrevisualizaciones();
-                });
-                
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                
-                preview.appendChild(img);
-                preview.appendChild(btnEliminar);
-                previewContainer.appendChild(preview);
-            };
-            reader.readAsDataURL(archivo);
-        });
-    }
-    
-    // Guardar referencia al array de imágenes en el elemento
-    fila.dataset.imagenesAgregadas = JSON.stringify([]);
+    const imagenesAgregadas = configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo: 3 });
+
     Object.defineProperty(fila, 'imagenesAgregadas', {
-        get: function() { return imagenesAgregadas; },
-        set: function(val) { Object.assign(imagenesAgregadas, val); }
+        get: function() { return imagenesAgregadas; }
     });
-    
-    // Agregar una fila de talla-cantidad por defecto
-    agregarTallaCantidad(fila.querySelector('button'));
 }
 
 // =========================================================
@@ -1690,118 +1269,36 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function agregarTallaCantidad(button) {
-    // Encontrar la prenda más cercana (el div principal)
-    const prendaDiv = button.closest('div[style*="margin-bottom: 12px"]') || button.closest('div').parentElement;
-    
-    // Buscar el contenedor dentro de esa prenda
-    const container = prendaDiv ? prendaDiv.querySelector('.tallas-container') : null;
-    
-    if (!container) {
-        return;
-    }
-    
-    const filaTC = document.createElement('div');
-    filaTC.className = 'talla-cantidad-row';
-    filaTC.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 6px; align-items: flex-end;';
-    filaTC.innerHTML = `
-        <div>
-            <label style="display: block; font-weight: 600; font-size: 0.8rem; margin-bottom: 4px; color: #333;">Talla</label>
-            <input type="text" class="talla-input" placeholder="S, M, L, XL" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
-        </div>
-        <div>
-            <label style="display: block; font-weight: 600; font-size: 0.8rem; margin-bottom: 4px; color: #333;">Cantidad</label>
-            <input type="number" class="cantidad-input" min="1" value="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-        </div>
-        <button type="button" onclick="this.parentElement.remove()" style="background: none; color: #999; border: 1px solid #ddd; padding: 6px 4px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'">✕</button>
-    `;
-    
-    container.appendChild(filaTC);
-}
-
 // =========================================================
 // 6. GUARDAR TÉCNICA CON PRENDAS
 // =========================================================
 
 async function guardarTecnica() {
+    // Lock anti doble click
+    if (window.__guardandoTecnica) {
+        return;
+    }
+    window.__guardandoTecnica = true;
+    // Fallback: liberar lock aunque alguna rama sea async por Promises internas
+    setTimeout(() => {
+        window.__guardandoTecnica = false;
+    }, 1200);
+
+    // MODO EDICIÓN: actualizar prenda(s) existente(s) en tecnicasAgregadas
+    if (window.modoEdicionPrenda) {
+        guardarEdicionPrenda();
+        return;
+    }
+
     // Verificar si estamos en modo técnicas combinadas
     if (window.modoTecnicasCombinadas === 'iguales') {
 
         guardarTecnicaCombinada();
-    } else if (window.modoTecnicasCombinadas === 'diferentes') {
-
-
-        guardarTecnicasMultiples();
-    } else if (window.modoTecnicasCombinadas === 'por-talla') {
-
-        // Este modo se maneja directamente en guardarPrendaTecnicasPorTalla
-    } else {
-        // Modo simple: una única técnica
-
-        guardarTecnicaSimple();
+        return;
     }
-}
 
-function guardarPrendaTecnicasPorTalla(datos) {
-
-
-    
-    const tecnicas = window.tecnicasCombinadas;
-    
-    // Construir el objeto talla_cantidad para la prenda (compartido para todas las técnicas)
-    const tallaCantidad = {};
-    Object.keys(datos.tallaTecnicas).forEach(talla => {
-        const tallaData = datos.tallaTecnicas[talla];
-        tallaCantidad[talla] = tallaData.cantidad;
-    });
-    
-    // Obtener todas las técnicas seleccionadas (de la primera talla, ya que son iguales para todas)
-    const primerasTecnicas = datos.tallaTecnicas[Object.keys(datos.tallaTecnicas)[0]]?.tecnicas || [];
-    
-    // Crear UNA SOLA prenda con TODAS las técnicas
-    const nuevaPrenda = {
-        nombre_prenda: datos.nombre,
-        observaciones: datos.observaciones,
-        ubicaciones: datos.ubicaciones,
-        talla_cantidad: tallaCantidad
-    };
-    
-    // Para cada técnica seleccionada, crear un registro en tecnicasAgregadas apuntando a la misma prenda
-    // Esto será manejado en el backend como un grupo combinado
-    
-    // Generar un ID único para el grupo (basado en timestamp)
-    const grupoId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
-    
-    // Crear una técnica por cada técnica seleccionada, pero todas con los MISMOS datos de prenda y el MISMO grupo_combinado
-    primerasTecnicas.forEach(tecnicaId => {
-        const tipo = tecnicas.find(t => t.id === tecnicaId);
-        
-        if (!tipo) {
-
-            return;
-        }
-        
-        const nuevaTecnica = {
-            tipo_logo: tipo,
-            prendas: [nuevaPrenda],  // Misma prenda para todas las técnicas
-            es_combinada: true,
-            grupo_combinado: grupoId  // CRUCIAL: Todas las técnicas comparten el mismo grupo_combinado
-        };
-        
-
-        tecnicasAgregadas.push(nuevaTecnica);
-    });
-    
-    window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-
-    
-    // Limpiar contexto
-    window.tecnicasCombinadas = null;
-    window.modoTecnicasCombinadas = null;
-    
-    // Cerrar modal y actualizar
-    cerrarModalAgregarTecnica();
-    renderizarTecnicasAgregadas();
+    // Modo simple: una única técnica
+    guardarTecnicaSimple();
 }
 
 function guardarTecnicaSimple() {
@@ -1880,22 +1377,6 @@ function guardarTecnicaCombinada(datosForm) {
             ubicacionesPorTecnica[idx] = [ubicacion];
         });
         
-        // Obtener tallas
-        let tallas = [];
-        const tallasFilas = document.querySelectorAll('[data-talla-id]');
-        tallasFilas.forEach(fila => {
-            const talla = fila.querySelector('.dTallaInput').value.trim();
-            const cantidad = fila.querySelector('.dCantidadInput').value;
-            if (talla && cantidad) {
-                tallas.push({ talla, cantidad: parseInt(cantidad) });
-            }
-        });
-        
-        const tallasPorTecnica = {};
-        tecnicas.forEach((tecnica, idx) => {
-            tallasPorTecnica[idx] = tallas;
-        });
-        
         // Obtener imágenes
         const imagenesPorTecnica = {};
         const imagesPorTecnicaDiv = document.getElementById('dImagenesPorTecnica');
@@ -1956,7 +1437,6 @@ function guardarTecnicaCombinada(datosForm) {
             nombre_prenda: nombrePrenda,
             observaciones: document.getElementById('dObservaciones')?.value.trim() || '',
             ubicacionesPorTecnica: ubicacionesPorTecnica,
-            tallasPorTecnica: tallasPorTecnica,
             imagenesPorTecnica: imagenesPorTecnica,
             telas: telas.length > 0 ? telas : null
         };
@@ -2025,7 +1505,6 @@ function guardarTecnicaCombinada(datosForm) {
             // Para cada técnica
             tecnicas.forEach((tipo, idx) => {
                 const ubicacionesTecnica = datosForm.ubicacionesPorTecnica[idx] || [];
-                const tallasTecnica = datosForm.tallasPorTecnica[idx] || [];
                 const imagenesTecnica = imagenesProcessadas[idx] || [];
                 
                 // Agregar logos compartidos de esta técnica
@@ -2055,7 +1534,7 @@ function guardarTecnicaCombinada(datosForm) {
                         nombre_prenda: datosForm.nombre_prenda,
                         observaciones: datosForm.observaciones,
                         ubicaciones: ubicacionesTecnica,
-                        talla_cantidad: tallasTecnica,
+                        talla_cantidad: [],
                         variaciones_prenda: datosForm.variaciones_prenda || null,
                         imagenes_files: datosForm.imagenesPorTecnica[idx] || [],
                         imagenes_data_urls: todasLasImagenes,
@@ -2100,62 +1579,6 @@ function guardarTecnicaCombinada(datosForm) {
     });
 }
 
-function guardarTecnicasMultiples() {
-    const datosMultiples = window.datosMultiplesTecnicas;
-    
-
-
-    
-    if (!datosMultiples || datosMultiples.length === 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No hay datos de técnicas para guardar'
-        });
-
-        return;
-    }
-    
-
-    
-    datosMultiples.forEach((item, idx) => {
-
-        
-        if (!item || !item.tecnica) {
-
-            return;
-        }
-        
-        const nuevaTecnica = {
-            tipo_logo: item.tecnica,
-            prendas: [{
-                nombre_prenda: item.datos.nombre,
-                observaciones: item.datos.observaciones,
-                ubicaciones: item.datos.ubicaciones,
-                talla_cantidad: item.datos.tallas
-            }],
-            es_combinada: true,
-            grupo_combinado: null // El backend generará el grupo_combinado automáticamente
-        };
-        
-
-        tecnicasAgregadas.push(nuevaTecnica);
-    });
-    
-    window.tecnicasAgregadas = tecnicasAgregadas;  //  Sincronizar global
-
-
-    
-    // Limpiar contexto
-    window.tecnicasCombinadas = null;
-    window.modoTecnicasCombinadas = null;
-    window.datosMultiplesTecnicas = null;
-    
-    // Cerrar modal y actualizar
-    cerrarModalAgregarTecnica();
-    renderizarTecnicasAgregadas();
-}
-
 function extraerPrendasDelModal() {
     const prendas = [];
     const prendasRows = document.querySelectorAll('#listaPrendas > div');
@@ -2167,16 +1590,6 @@ function extraerPrendasDelModal() {
         const ubicacionesChecked = Array.from(
             fila.querySelectorAll('.ubicaciones-lista')[0]?.querySelectorAll('[data-ubicacion]') || []
         ).map(tag => tag.getAttribute('data-ubicacion'));
-        
-        // Recopilar tallas y cantidades
-        const tallaCantidadInputs = fila.querySelectorAll('.talla-cantidad-row');
-        const tallaCantidadSinFiltro = Array.from(tallaCantidadInputs).map((row) => {
-            const talla = row.querySelector('.talla-input')?.value?.trim();
-            const cantidad = row.querySelector('.cantidad-input')?.value;
-            return { talla, cantidad: parseInt(cantidad) };
-        });
-        
-        const tallaCantidad = tallaCantidadSinFiltro.filter(tc => tc.talla && tc.talla.length > 0);
         
         // Recopilar imágenes del array almacenado en la fila
         const imagenesArray = fila.imagenesAgregadas || [];
@@ -2214,7 +1627,7 @@ function extraerPrendasDelModal() {
             nombre_prenda: nombrePrenda,
             observaciones: observaciones,
             ubicaciones: ubicacionesChecked,
-            talla_cantidad: tallaCantidad,
+            talla_cantidad: [],
             imagenes_files: imagenesArray,  // Array de File objects
             variaciones_prenda: null,  // Variaciones deshabilitadas
             telas: null  // Telas deshabilitadas
@@ -2430,11 +1843,21 @@ function renderizarTecnicasAgregadas() {
                 prendasMap[nombrePrenda] = {
                     nombre_prenda: nombrePrenda,
                     observaciones: prenda.observaciones,
-                    talla_cantidad: prenda.talla_cantidad || [],
                     tecnicas: [],
-                    imagenes: []
+                    imagenes: [],
+                    _imagenesKeys: new Set()
                 };
             }
+
+            const agregarImagenDedupe = (imgObj) => {
+                const dataKey = imgObj.data || '';
+                const tecnicaKey = imgObj.tecnica || '';
+                const compartidaKey = imgObj.esCompartida ? 'C' : 'N';
+                const key = `${compartidaKey}|${tecnicaKey}|${dataKey}`;
+                if (prendasMap[nombrePrenda]._imagenesKeys.has(key)) return;
+                prendasMap[nombrePrenda]._imagenesKeys.add(key);
+                prendasMap[nombrePrenda].imagenes.push(imgObj);
+            };
             
             // Agregar técnica y sus imágenes
             prendasMap[nombrePrenda].tecnicas.push({
@@ -2442,8 +1865,10 @@ function renderizarTecnicasAgregadas() {
                 tecnicaIndex: tecnicaIndex
             });
             
-            // Procesar imágenes - SOLO LAS DE ESTA TÉCNICA (no compartidas)
-            if (prenda.imagenes_files && prenda.imagenes_files.length > 0) {
+            // Procesar imágenes - SOLO desde imagenes_files si NO hay imagenes_data_urls
+            // (en combinadas suele existir ambos, y eso causa duplicados en el card)
+            const tieneDataUrls = prenda.imagenes_data_urls && prenda.imagenes_data_urls.length > 0;
+            if (!tieneDataUrls && prenda.imagenes_files && prenda.imagenes_files.length > 0) {
                 prenda.imagenes_files.forEach(archivo => {
                     imagenesParaCargar.push({
                         archivo: archivo,
@@ -2465,7 +1890,7 @@ function renderizarTecnicasAgregadas() {
                         const claveCompartida = img.nombreCompartido || 'compartida';
                         if (!imagenesCompartidasYaProcesadas.has(claveCompartida)) {
                             imagenesCompartidasYaProcesadas.add(claveCompartida);
-                            prendasMap[nombrePrenda].imagenes.push({
+                            agregarImagenDedupe({
                                 data: img.data_url || img,
                                 tecnica: '⭐ COMPARTIDA',
                                 tecnicaColor: '#e0a853', // Dorado para imágenes compartidas
@@ -2476,7 +1901,7 @@ function renderizarTecnicasAgregadas() {
                         }
                     } else {
                         // Imágenes normales (no compartidas)
-                        prendasMap[nombrePrenda].imagenes.push({
+                        agregarImagenDedupe({
                             data: img.data_url || img,
                             tecnica: tecnica.tipo_logo.nombre,
                             tecnicaColor: tecnica.tipo_logo.color,
@@ -2493,11 +1918,20 @@ function renderizarTecnicasAgregadas() {
     imagenesParaCargar.forEach(imgData => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            prendasMap[imgData.nombrePrenda].imagenes.push({
-                data: e.target.result,
-                tecnica: imgData.tecnica,
-                tecnicaColor: imgData.tecnicaColor
-            });
+            const prendaEntry = prendasMap[imgData.nombrePrenda];
+            if (prendaEntry) {
+                const data = e.target.result;
+                const key = `N|${imgData.tecnica || ''}|${data || ''}`;
+                if (!prendaEntry._imagenesKeys.has(key)) {
+                    prendaEntry._imagenesKeys.add(key);
+                    prendaEntry.imagenes.push({
+                        data,
+                        tecnica: imgData.tecnica,
+                        tecnicaColor: imgData.tecnicaColor,
+                        esCompartida: false
+                    });
+                }
+            }
             
             // Actualizar la tarjeta si ya está renderizada
             const tarjeta = document.querySelector(`[data-prenda-nombre="${imgData.nombrePrenda}"]`);
@@ -2632,7 +2066,7 @@ function renderizarTecnicasAgregadas() {
             justify-content: center;
             transition: background 0.2s;
         " data-tecnica-indices="${datosPrenda.tecnicas.map(t => t.tecnicaIndex).join(',')}" title="Eliminar">
-            🗑️
+            <i class="fas fa-trash" style="font-size: 1rem;"></i>
         </button>`;
         headerHTML += '</div>';
         headerHTML += '</div></div>';
@@ -2683,31 +2117,6 @@ function renderizarTecnicasAgregadas() {
             });
             
             bodyHTML += '</div>';
-        }
-        
-        // TALLAS
-        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
-            bodyHTML += `
-                <div style="margin-bottom: 1.2rem;">
-                    <h6 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">
-                         Tallas:
-                    </h6>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
-                        ${datosPrenda.talla_cantidad.map(tc => `
-                            <span style="
-                                background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-                                color: white;
-                                padding: 0.5rem 1rem;
-                                border-radius: 3px;
-                                font-size: 0.9rem;
-                                font-weight: 600;
-                            ">
-                                ${tc.talla.toUpperCase()}: <strong>${tc.cantidad}</strong>
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
         }
         
         // SECCIÓN DE IMÁGENES CON INDICADOR DE TÉCNICA
@@ -2920,7 +2329,7 @@ function renderizarTecnicasAgregadas() {
             const indicesStr = e.currentTarget.getAttribute('data-tecnica-indices');
             const nombrePrenda = e.currentTarget.getAttribute('data-prenda-nombre');
             const indices = indicesStr.split(',').map(Number);
-            editarTecnicaDelGrupo(indices, nombrePrenda);
+            abrirModalEditarPrenda(indices, nombrePrenda);
         });
     });
     
@@ -2933,752 +2342,420 @@ function renderizarTecnicasAgregadas() {
     });
 }
 
-function editarTecnicaDelGrupo(tecnicaIndices, nombrePrendaFiltro = null) {
-    // tecnicaIndices es un array de índices de técnicas
+function abrirModalEditarPrenda(tecnicaIndices, nombrePrenda) {
+    // Obtener las técnicas del grupo
     const tecnicasDelGrupo = tecnicaIndices.map(idx => tecnicasAgregadas[idx]);
     
     if (tecnicasDelGrupo.length === 0) {
-
+        console.error('❌ No se encontraron las técnicas para editar');
         return;
     }
     
-
-    
-    // Agrupar por NOMBRE DE PRENDA y mantener datos de CADA TÉCNICA
-    const prendasMap = {};
-    const datosPorTecnica = {}; // Guardar datos específicos de cada técnica
-    const logosCompartidosGlobal = {}; // Guardar logos compartidos de TODAS las técnicas
+    // Buscar los datos de la prenda a editar
+    let datosPrenda = null;
+    let tecnicasInfo = [];
     
     tecnicasDelGrupo.forEach((tecnica, tecnicaIdx) => {
-        // Guardar logos compartidos si existen
-        if (tecnica.logosCompartidos && Object.keys(tecnica.logosCompartidos).length > 0) {
-            Object.assign(logosCompartidosGlobal, tecnica.logosCompartidos);
-        }
-        
         tecnica.prendas.forEach(prenda => {
-            const nombrePrenda = prenda.nombre_prenda || 'SIN NOMBRE';
-            
-            // FILTRO: Si se proporcionó nombrePrendaFiltro, solo procesar esa prenda
-            if (nombrePrendaFiltro && nombrePrenda !== nombrePrendaFiltro) {
-                return; // Saltar esta prenda
-            }
-            
-            if (!prendasMap[nombrePrenda]) {
-                prendasMap[nombrePrenda] = {
-                    nombre_prenda: prenda.nombre_prenda,
-                    observaciones: prenda.observaciones,
-                    talla_cantidad: prenda.talla_cantidad,
-                    variaciones_prenda: prenda.variaciones_prenda || {}, // Incluir variaciones
-                    telas: prenda.telas || [], // Incluir telas
-                    tecnicas: [],
-                    tecnicasData: {}, // Guardar datos por técnica
-                    logosCompartidos: logosCompartidosGlobal // Referencia a logos compartidos
+            if (prenda.nombre_prenda === nombrePrenda) {
+                if (!datosPrenda) {
+                    datosPrenda = {
+                        nombre_prenda: prenda.nombre_prenda,
+                        observaciones: prenda.observaciones || '',
+                        tecnicas_imagenes: {},
+                        logoCompartido: {
+                            enabled: false,
+                            items: {},
+                            files: {}
+                        }
+                    };
+                }
+
+                // Detectar logos compartidos por metadata dentro de imagenes_data_urls
+                const imagenesData = Array.isArray(prenda.imagenes_data_urls) ? prenda.imagenes_data_urls : [];
+                const imagenesPropias = [];
+                imagenesData.forEach(img => {
+                    const esObj = img && typeof img === 'object';
+                    const esCompartida = esObj && (img.esCompartida === true || !!img.nombreCompartido);
+                    if (esCompartida) {
+                        const clave = img.nombreCompartido || 'compartida';
+                        if (!datosPrenda.logoCompartido.items[clave]) {
+                            datosPrenda.logoCompartido.items[clave] = {
+                                tecnicasCompartidas: Array.isArray(img.tecnicasCompartidas) ? img.tecnicasCompartidas : (clave.split('-').map(t => t.trim()).filter(Boolean)),
+                                previewUrl: img.data_url || ''
+                            };
+                        }
+                        datosPrenda.logoCompartido.enabled = true;
+                    } else {
+                        const url = (esObj && img.data_url) ? img.data_url : img;
+                        if (url) imagenesPropias.push(url);
+                    }
+                });
+
+                // Si técnica tiene logosCompartidos en memoria, guardarlos para reemplazo
+                if (tecnica.logosCompartidos && Object.keys(tecnica.logosCompartidos).length > 0) {
+                    Object.keys(tecnica.logosCompartidos).forEach((clave) => {
+                        const file = tecnica.logosCompartidos[clave];
+                        if (file instanceof File) {
+                            datosPrenda.logoCompartido.files[clave] = file;
+                        }
+                        if (!datosPrenda.logoCompartido.items[clave]) {
+                            datosPrenda.logoCompartido.items[clave] = {
+                                tecnicasCompartidas: clave.split('-').map(t => t.trim()).filter(Boolean),
+                                previewUrl: ''
+                            };
+                        }
+                        datosPrenda.logoCompartido.enabled = true;
+                    });
+                }
+
+                // Almacenar imágenes por técnica (SOLO PROPIAS)
+                datosPrenda.tecnicas_imagenes[tecnica.tipo_logo.nombre] = {
+                    imagenes_data_urls: imagenesPropias,
+                    imagenes_files: prenda.imagenes_files || [],
+                    tipo_logo: tecnica.tipo_logo,
+                    tecnicaIndex: tecnicaIndices[tecnicaIdx],
+                    ubicaciones: prenda.ubicaciones || []
                 };
+                
+                tecnicasInfo.push({
+                    tecnicaIndex: tecnicaIndices[tecnicaIdx],
+                    tipo_logo: tecnica.tipo_logo,
+                    ubicaciones: prenda.ubicaciones || [],
+                    imagenes_data_urls: prenda.imagenes_data_urls || [],
+                    imagenes_files: prenda.imagenes_files || []
+                });
             }
-            
-            prendasMap[nombrePrenda].tecnicas.push(tecnica);
-            
-            // Guardar los datos específicos de esta técnica para esta prenda
-            prendasMap[nombrePrenda].tecnicasData[tecnicaIdx] = {
-                ubicaciones: prenda.ubicaciones,
-                imagenes_data_urls: prenda.imagenes_data_urls,
-                imagenes_files: prenda.imagenes_files
-            };
         });
     });
     
-    // Convertir map a array
-    const todasLasPrendas = Object.values(prendasMap);
-    
-
-    
-    // Construir HTML de las prendas
-    let prendasHTML = '<div style="max-height: 600px; overflow-y: auto;">';
-    
-    todasLasPrendas.forEach((prenda, prendaIdx) => {
-        let tallaHTML = '';
-        (prenda.talla_cantidad || []).forEach((tc, tcIdx) => {
-            tallaHTML += `
-                <div class="edit-talla-row" style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;" data-prenda-idx="${prendaIdx}" data-talla-idx="${tcIdx}">
-                    <input type="text" class="edit-talla" value="${tc.talla || ''}" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                    <input type="number" class="edit-cantidad" value="${tc.cantidad || 1}" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                    <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
-                </div>
-            `;
+    if (!datosPrenda) {
+        console.error('❌ No se encontró la prenda:', nombrePrenda);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró la prenda especificada'
         });
-        
-        // Las variaciones están deshabilitadas
-        let variacionesHTML = '';
-        
-        let imagenesHTML = '';
-        if (prenda.tecnicas && prenda.tecnicas.length > 0) {
-            const hayLogosCompartidos = prenda.logosCompartidos && Object.keys(prenda.logosCompartidos).length > 0;
-            
-            imagenesHTML = `
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;"> Imágenes por Técnica</label>
-                    <div style="display: grid; gap: 12px;">
-            `;
-            
-            // Si hay logos compartidos y más de una técnica
-            if (hayLogosCompartidos && prenda.tecnicas.length > 1) {
-                imagenesHTML += `
-                    <div style="border: 2px solid #0284c7; border-radius: 4px; padding: 12px; background: #e0f2fe;">
-                        <div style="font-weight: 600; margin-bottom: 10px; color: #0284c7; font-size: 0.95rem;">🔗 Logo Compartido para:</div>
-                `;
-                
-                // Renderizar logos compartidos
-                for (const clave in prenda.logosCompartidos) {
-                    const logoFile = prenda.logosCompartidos[clave];
-                    const tecnicasNombres = clave.split('-').map(nombre => nombre.trim()).join(' + ');
-                    
-                    // Crear URL de la imagen si es un File
-                    let imagenUrl = null;
-                    if (logoFile instanceof File) {
-                        imagenUrl = URL.createObjectURL(logoFile);
-                    } else if (typeof logoFile === 'string') {
-                        imagenUrl = logoFile;
-                    } else if (logoFile && logoFile.data_url) {
-                        imagenUrl = logoFile.data_url;
-                    }
-                    
-                    imagenesHTML += `
-                        <div style="margin-bottom: 12px; padding: 8px; background: white; border-radius: 4px;">
-                            <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                                ${imagenUrl ? `
-                                    <div style="position: relative;">
-                                        <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                        <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${clave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                                    </div>
-                                ` : `<span style="color: #999;">Logo no disponible</span>`}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                imagenesHTML += `
-                    </div>
-                `;
-            }
-            
-            // Renderizar imágenes individuales de técnicas (si no usan logo compartido)
-            prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
-                const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
-                const imagenesActuales = datosActuales.imagenes_data_urls || [];
-                
-                // Si hay logos compartidos, filtrar para mostrar solo las que no son compartidas
-                const imagenesIndividuales = hayLogosCompartidos ? 
-                    imagenesActuales.filter(img => !img.esCompartida) : 
-                    imagenesActuales;
-                
-                // Si hay logos compartidos y la técnica usa logo compartido, no mostrar esta sección
-                const usaLogoCompartido = hayLogosCompartidos && 
-                    Object.keys(prenda.logosCompartidos).some(clave => clave.includes(tecnica.tipo_logo.nombre));
-                
-                if (usaLogoCompartido && imagenesIndividuales.length === 0) {
-                    return; // No mostrar sección de imágenes si usa logo compartido
-                }
-                
-                imagenesHTML += `
-                    <div style="border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f9f9f9;">
-                        <div style="font-weight: 600; margin-bottom: 8px; color: ${tecnica.tipo_logo.color || '#333'}; font-size: 0.9rem;">${tecnica.tipo_logo.nombre}</div>
-                `;
-                
-                // Mostrar imágenes existentes (solo las individuales si hay compartidas)
-                if (imagenesIndividuales && imagenesIndividuales.length > 0) {
-                    imagenesHTML += `
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" class="edit-imagenes-container" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}">
-                            ${imagenesIndividuales.map((img, imgIdx) => `
-                                <div style="position: relative;" class="imagen-item" data-img-idx="${imgIdx}">
-                                    <img src="${typeof img === 'string' ? img : (img && img.data_url ? img.data_url : img)}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                    <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${imgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                } else {
-                    // Si no hay imagenes_data_urls pero sí hay imagenes_files, procesarlas
-                    const archivos = datosActuales.imagenes_files || [];
-                    if (archivos.length > 0) {
-                        imagenesHTML += `
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" class="edit-imagenes-container" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}">
-                        `;
-                        
-                        archivos.forEach((archivo, imgIdx) => {
-                            const urlTemp = URL.createObjectURL(archivo);
-                            imagenesHTML += `
-                                <div style="position: relative;" class="imagen-item" data-img-idx="${imgIdx}">
-                                    <img src="${urlTemp}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                    <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${imgIdx}" data-is-file="true" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                                </div>
-                            `;
-                        });
-                        
-                        imagenesHTML += `
-                            </div>
-                        `;
-                    }
-                }
-                
-                imagenesHTML += `
-                        <input type="file" class="edit-input-imagenes" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" multiple accept="image/*" style="width: 100%; padding: 6px; border: 1px dashed #0369a1; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
-                    </div>
-                `;
-            });
-            
-            imagenesHTML += `
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Construir HTML de ubicaciones por técnica
-        let ubicacionesHTML = '';
-        if (prenda.tecnicas && prenda.tecnicas.length > 0) {
-            ubicacionesHTML = `
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;"> Ubicaciones por Técnica</label>
-                    <div style="display: grid; gap: 8px;">
-            `;
-            
-            prenda.tecnicas.forEach((tecnica, tecnicaIdx) => {
-                const datosActuales = prenda.tecnicasData ? prenda.tecnicasData[tecnicaIdx] : {};
-                const ubicacionesTecnica = datosActuales.ubicaciones || []; // TODAS las ubicaciones
-                const ubicacionesJoinadas = ubicacionesTecnica.join(', '); // Mostrar todas separadas por coma
-                
-                ubicacionesHTML += `
-                    <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; background: #f0f4f8; border-radius: 4px; border-left: 3px solid ${tecnica.tipo_logo.color || '#333'};">
-                        <label style="font-weight: 600; min-width: 100px; font-size: 0.85rem; color: #333; flex-shrink: 0; padding-top: 6px;">${tecnica.tipo_logo.nombre}:</label>
-                        <textarea class="edit-ubicacion-tecnica" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" placeholder="Ej: Pecho, Espalda, Manga..." style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.85rem; resize: vertical; min-height: 40px; font-family: inherit;">${ubicacionesJoinadas}</textarea>
-                    </div>
-                `;
-            });
-            
-            ubicacionesHTML += `
-                    </div>
-                </div>
-            `;
-        }
+        return;
+    }
+    
+    // Usar el mismo modal que para agregar pero con datos existentes
+    abrirModalSimpleTecnicaConDatos(tecnicasDelGrupo[0], datosPrenda, tecnicasInfo, tecnicaIndices);
+}
 
-        prendasHTML += `
-            <div style="
-                background: #f9fafb;
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-                padding: 12px;
-                margin-bottom: 15px;
-            ">
-                <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
-                    <h4 style="margin: 0; font-size: 0.9rem;">Prenda ${prendaIdx + 1}</h4>
-                </div>
-                
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Nombre</label>
-                    <input type="text" class="edit-nombre-prenda" data-prenda-idx="${prendaIdx}" value="${prenda.nombre_prenda || ''}" placeholder="POLO, CAMISA..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
-                </div>
-                
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Observaciones</label>
-                    <textarea class="edit-observaciones-prenda" data-prenda-idx="${prendaIdx}" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; font-size: 0.85rem;">${prenda.observaciones || ''}</textarea>
-                </div>
-                
-                ${ubicacionesHTML}
-                
-                ${variacionesHTML}
-                
-                // Las telas están deshabilitadas
-                    return '';
-                
-                ${imagenesHTML}
-                
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem;">Tallas y Cantidades</label>
-                    <div class="edit-tallas-container-prenda" data-prenda-idx="${prendaIdx}" style="display: grid; gap: 8px; margin-bottom: 8px;">
-                        ${tallaHTML}
+function abrirModalSimpleTecnicaConDatos(tipo, datosPrenda, tecnicasInfo, tecnicaIndices) {
+    // Establecer modo edición
+    window.modoEdicionPrenda = true;
+    window.datosPrendaEdicion = datosPrenda;
+    window.tecnicasInfoEdicion = tecnicasInfo;
+    window.tecnicaIndicesEdicion = tecnicaIndices;
+    window.prendaNombreOriginalEdicion = datosPrenda && datosPrenda.nombre_prenda ? datosPrenda.nombre_prenda : null;
+    
+    // Actualizar el nombre de la técnica en el modal
+    const nombreElement = document.getElementById('tecnicaSeleccionadaNombre');
+    if (nombreElement) {
+        nombreElement.textContent = tipo.nombre;
+    }
+    
+    // Limpiar y cargar prendas del modal con datos existentes
+    const listaPrendas = document.getElementById('listaPrendas');
+    if (listaPrendas) {
+        listaPrendas.innerHTML = '';
+        
+        // Agregar la prenda con datos existentes
+        agregarFilaPrendaConDatos(datosPrenda);
+    }
+    
+    // Mostrar/ocultar mensaje de sin prendas
+    const noPrendasMsg = document.getElementById('noPrendasMsg');
+    if (noPrendasMsg) {
+        noPrendasMsg.style.display = 'none';
+    }
+    
+    // Mostrar el modal
+    const modal = document.getElementById('modalAgregarTecnica');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function agregarFilaPrendaConDatos(datosPrenda) {
+    const listaPrendas = document.getElementById('listaPrendas');
+    if (!listaPrendas) return;
+    
+    const prendaDiv = document.createElement('div');
+    prendaDiv.className = 'prenda-item';
+    prendaDiv.style.cssText = 'border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f9f9f9;';
+    
+    // Sección Logo Compartido (si aplica)
+    let logoCompartidoHTML = '';
+    if (datosPrenda && datosPrenda.logoCompartido && Object.keys(datosPrenda.logoCompartido.items || {}).length > 0) {
+        const filas = Object.entries(datosPrenda.logoCompartido.items).map(([clave, item]) => {
+            const tecnicasTxt = (item.tecnicasCompartidas || []).join(' + ');
+            const previewUrl = item.previewUrl || '';
+            return `
+                <div class="edit-logo-compartido-row" data-logo-clave="${clave}" style="border: 1px solid #dbeafe; background: #f0f7ff; border-radius: 6px; padding: 10px;">
+                    <div style="font-weight: 700; color: #0369a1; margin-bottom: 6px;">Logo compartido: ${tecnicasTxt}</div>
+                    <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center;">
+                        <div class="edit-logo-compartido-preview" data-logo-clave="${clave}" style="width: 110px; height: 110px; border-radius: 6px; overflow: hidden; border: 1px solid #bfdbfe; background: white; display: flex; align-items: center; justify-content: center;">
+                            ${previewUrl ? `<img src="${previewUrl}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<span style="color:#64748b; font-size:0.8rem;">Sin imagen</span>`}
+                        </div>
+                        <div>
+                            <input type="file" class="edit-input-logo-compartido" data-logo-clave="${clave}" accept="image/*" style="width: 100%; padding: 8px; border: 1px dashed #0284c7; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
+                            <div style="margin-top: 6px; color: #64748b; font-size: 0.8rem;">Reemplazar logo compartido</div>
+                        </div>
                     </div>
-                    <button type="button" class="edit-btn-agregar-talla" data-prenda-idx="${prendaIdx}" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 500; width: 100%; font-size: 0.85rem;">+ Agregar talla</button>
+                </div>
+            `;
+        }).join('');
+
+        const enabled = !!datosPrenda.logoCompartido.enabled;
+        logoCompartidoHTML = `
+            <div style="margin-bottom: 16px; padding: 12px; border: 2px solid #dbeafe; border-radius: 8px; background: #f8fbff;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom: 10px;">
+                    <input type="checkbox" id="editUsarLogoCompartido" ${enabled ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;" />
+                    <span style="font-weight:700; color:#0369a1;">Usar logo compartido</span>
+                </label>
+                <div id="editSeccionLogoCompartido" style="display: ${enabled ? 'grid' : 'none'}; gap: 10px;">
+                    ${filas}
                 </div>
             </div>
         `;
-    });
-    
-    prendasHTML += '</div>';
-    
-    Swal.fire({
-        title: `Editar ${tecnicasDelGrupo.map(t => t.tipo_logo.nombre).join(' + ')}`,
-        width: '700px',
-        html: prendasHTML,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar Cambios',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#333',
-        didOpen: (modal) => {
-            // Las telas están deshabilitadas - no procesar archivos de tela
-            
-            // Event listeners para eliminar logos compartidos
-            document.querySelectorAll('.edit-btn-eliminar-logo-compartido').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
-                    const logoClave = btn.getAttribute('data-logo-clave');
-                    
-                    // Eliminar del objeto logosCompartidos
-                    if (todasLasPrendas[prendaIdx].logosCompartidos && todasLasPrendas[prendaIdx].logosCompartidos[logoClave]) {
-                        delete todasLasPrendas[prendaIdx].logosCompartidos[logoClave];
-                    }
-                    
-                    // Obtener referencias
-                    const divLogo = btn.closest('div[style*="background: white"]');
-                    const tecnicasNombres = logoClave.split('-').map(nombre => nombre.trim()).join(' + ');
-                    
-                    // Reemplazar con input file para cargar nuevo logo
-                    divLogo.innerHTML = `
-                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                        <label style="
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border: 2px dashed #0284c7;
-                            border-radius: 4px;
-                            padding: 20px;
-                            background: #f0f7ff;
-                            cursor: pointer;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
-                            <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" accept="image/*" style="display: none;">
-                            <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
-                        </label>
-                    `;
-                    
-                    // Asignar event listener al nuevo input
-                    const nuevoInput = divLogo.querySelector('.edit-input-logo-compartido-nuevo');
-                    if (nuevoInput) {
-                        nuevoInput.addEventListener('change', (changeE) => {
-                            const file = changeE.target.files[0];
-                            if (!file) return;
-                            
-                            // Guardar el archivo en logosCompartidos
-                            todasLasPrendas[prendaIdx].logosCompartidos[logoClave] = file;
-                            
-                            // Crear URL para previsualizar
-                            const imagenUrl = URL.createObjectURL(file);
-                            
-                            // Actualizar el DOM
-                            divLogo.innerHTML = `
-                                <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                                    <div style="position: relative;">
-                                        <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                        <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                                    </div>
+    }
+
+    // Generar HTML por técnica: Ubicaciones + Imágenes
+    let tecnicasHTML = '';
+    if (datosPrenda.tecnicas_imagenes) {
+        Object.entries(datosPrenda.tecnicas_imagenes).forEach(([nombreTecnica, datosTecnica]) => {
+            const color = (datosTecnica.tipo_logo && datosTecnica.tipo_logo.color) ? datosTecnica.tipo_logo.color : '#333';
+            const imagenesTecnica = (datosTecnica.imagenes_data_urls || []).map(img => (img && typeof img === 'object' && img.data_url) ? img.data_url : img);
+            const ubicacionesTecnica = Array.isArray(datosTecnica.ubicaciones) ? datosTecnica.ubicaciones : [];
+            const ocultarImagenes = !!(datosPrenda.logoCompartido && datosPrenda.logoCompartido.enabled);
+            tecnicasHTML += `
+                <div class="tecnica-edit-block" data-tecnica="${nombreTecnica}" style="margin-bottom: 18px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white;">
+                    <div style="font-weight: 700; margin-bottom: 10px; color: ${color};">${nombreTecnica}</div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333;">Ubicaciones (${nombreTecnica})</label>
+                        <textarea class="ubicaciones-tecnica" data-tecnica="${nombreTecnica}" rows="2" placeholder="Ej: PECHO, ESPALDA, MANGA" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${ubicacionesTecnica.join(', ')}</textarea>
+                    </div>
+
+                    <div class="tecnica-imagenes-block" style="margin-bottom: 6px; display: ${ocultarImagenes ? 'none' : 'block'};">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: ${color};">Imágenes - ${nombreTecnica}</label>
+                        <div class="imagenes-preview" data-tecnica="${nombreTecnica}" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
+                            ${imagenesTecnica.map((img, idx) => `
+                                <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx}">
+                                    <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                    <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
                                 </div>
-                            `;
-                            
-                            // Re-asignar evento al nuevo botón de eliminar
-                            const nuevoBtn = divLogo.querySelector('.edit-btn-eliminar-logo-compartido');
-                            if (nuevoBtn) {
-                                nuevoBtn.click = function(e) {
-                                    e.preventDefault();
-                                    // Limpiar imagen
-                                    if (todasLasPrendas[prendaIdx].logosCompartidos) {
-                                        delete todasLasPrendas[prendaIdx].logosCompartidos[logoClave];
-                                    }
-                                    // Mostrar input nuevamente
-                                    divLogo.innerHTML = `
-                                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                                        <label style="
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: center;
-                                            border: 2px dashed #0284c7;
-                                            border-radius: 4px;
-                                            padding: 20px;
-                                            background: #f0f7ff;
-                                            cursor: pointer;
-                                            transition: all 0.2s;
-                                        " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
-                                            <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" accept="image/*" style="display: none;">
-                                            <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
-                                        </label>
-                                    `;
-                                    // Re-asignar listeners recursivamente...
-                                    // (Esto se hace automáticamente en el siguiente didOpen)
-                                };
-                                nuevoBtn.addEventListener('click', nuevoBtn.click);
-                            }
-                        });
-                    }
-                });
-            });
-            
-            // Agregar evento a botones de agregar talla
-            document.querySelectorAll('.edit-btn-agregar-talla').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const prendaIdx = btn.getAttribute('data-prenda-idx');
-                    const container = document.querySelector(`.edit-tallas-container-prenda[data-prenda-idx="${prendaIdx}"]`);
-                    
-                    const nuevaTalla = document.createElement('div');
-                    nuevaTalla.className = 'edit-talla-row';
-                    nuevaTalla.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 50px; gap: 8px; align-items: center; margin-bottom: 8px;';
-                    nuevaTalla.dataset.prendaIdx = prendaIdx;
-                    nuevaTalla.innerHTML = `
-                        <input type="text" class="edit-talla" placeholder="Talla" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                        <input type="number" class="edit-cantidad" value="1" min="1" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                        <button type="button" class="edit-btn-eliminar-talla" style="background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">✕</button>
-                    `;
-                    
-                    nuevaTalla.querySelector('.edit-btn-eliminar-talla').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        nuevaTalla.remove();
-                    });
-                    
-                    container.appendChild(nuevaTalla);
-                });
-            });
-            
-            // Eliminar imágenes existentes
-            document.querySelectorAll('.edit-btn-eliminar-img').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const prendaIdx = parseInt(btn.getAttribute('data-prenda-idx'));
-                    const tecnicaIdx = parseInt(btn.getAttribute('data-tecnica-idx'));
-                    const imgIdx = parseInt(btn.getAttribute('data-img-idx'));
-                    const isFile = btn.getAttribute('data-is-file') === 'true';
-                    const imagenItem = btn.closest('.imagen-item');
-                    
-                    // Eliminar del array
-                    if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
-                        if (isFile) {
-                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_files.splice(imgIdx, 1);
-                        } else {
-                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(imgIdx, 1);
-                        }
-                    }
-                    
-                    // Eliminar del DOM
-                    imagenItem.remove();
-                });
-            });
-            
-            // Agregar nuevas imágenes
-            document.querySelectorAll('.edit-input-imagenes').forEach(input => {
-                input.addEventListener('change', (e) => {
-                    const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
-                    const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
-                    
-                    if (tecnicaIdx === undefined || tecnicaIdx === null) {
-
-                        return;
-                    }
-                    
-                    const container = document.querySelector(`.edit-imagenes-container[data-prenda-idx="${prendaIdx}"][data-tecnica-idx="${tecnicaIdx}"]`);
-                    
-                    // Obtener cantidad actual de imágenes
-                    const imagenesActuales = todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls || [];
-                    const limitImgs = 3;
-                    
-                    const files = Array.from(e.target.files);
-                    let archivosAgregados = 0;
-                    
-                    files.forEach(file => {
-                        // Validar límite
-                        if (imagenesActuales.length + archivosAgregados >= limitImgs) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Límite de imágenes',
-                                text: `Solo se pueden adjuntar máximo ${limitImgs} imágenes por técnica. Elimina una imagen para agregar otra.`,
-                                confirmButtonText: 'OK'
-                            });
-                            return;
-                        }
-                        
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const dataUrl = event.target.result;
-                            
-                            // Agregar al array de prendas - específicamente a los datos de la técnica
-                            if (!todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls) {
-                                todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls = [];
-                            }
-                            todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.push(dataUrl);
-                            
-                            // Agregar al DOM
-                            const newImgIdx = todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.length - 1;
-                            const imagenItem = document.createElement('div');
-                            imagenItem.style.cssText = 'position: relative;';
-                            imagenItem.className = 'imagen-item';
-                            imagenItem.dataset.imgIdx = newImgIdx;
-                            imagenItem.innerHTML = `
-                                <img src="${dataUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                <button type="button" class="edit-btn-eliminar-img" data-prenda-idx="${prendaIdx}" data-tecnica-idx="${tecnicaIdx}" data-img-idx="${newImgIdx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                            `;
-                            
-                            imagenItem.querySelector('.edit-btn-eliminar-img').addEventListener('click', (deleteE) => {
-                                deleteE.preventDefault();
-                                const delIdx = parseInt(imagenItem.dataset.imgIdx);
-                                todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].imagenes_data_urls.splice(delIdx, 1);
-                                imagenItem.remove();
-                            });
-                            
-                            if (!container) {
-                                // Crear el contenedor si no existe
-                                const newContainer = document.createElement('div');
-                                newContainer.className = 'edit-imagenes-container';
-                                newContainer.dataset.prendaIdx = prendaIdx;
-                                newContainer.dataset.tecnicaIdx = tecnicaIdx;
-                                newContainer.style.cssText = 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;';
-                                newContainer.appendChild(imagenItem);
-                                
-                                const inputParent = input.closest('div');
-                                inputParent.parentElement.insertBefore(newContainer, inputParent);
-                            } else {
-                                container.appendChild(imagenItem);
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                        archivosAgregados++;
-                    });
-                    
-                    // Limpiar input
-                    e.target.value = '';
-                });
-            });
-            
-            // Botones eliminar talla existentes
-            document.querySelectorAll('.edit-btn-eliminar-talla').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    btn.closest('.edit-talla-row').remove();
-                });
-            });
-            
-            // Las telas están deshabilitadas - no hay eventos de imágenes de tela
-            
-            // Event listeners para inputs de logo compartido nuevo
-            document.querySelectorAll('.edit-input-logo-compartido-nuevo').forEach(input => {
-                input.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    const prendaIdx = parseInt(input.getAttribute('data-prenda-idx'));
-                    const logoClave = input.getAttribute('data-logo-clave');
-                    
-                    // Guardar el archivo en logosCompartidos
-                    todasLasPrendas[prendaIdx].logosCompartidos[logoClave] = file;
-                    
-                    // Crear URL para previsualizar
-                    const imagenUrl = URL.createObjectURL(file);
-                    const tecnicasNombres = logoClave.split('-').map(nombre => nombre.trim()).join(' + ');
-                    
-                    // Actualizar el DOM
-                    const container = input.closest('label').parentElement;
-                    container.innerHTML = `
-                        <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                            <div style="position: relative;">
-                                <img src="${imagenUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
-                                <button type="button" class="edit-btn-eliminar-logo-compartido" data-prenda-idx="${prendaIdx}" data-logo-clave="${logoClave}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
-                            </div>
+                            `).join('')}
                         </div>
-                    `;
-                    
-                    // Re-asignar evento al nuevo botón de eliminar
-                    const nuevoBtn = container.querySelector('.edit-btn-eliminar-logo-compartido');
-                    if (nuevoBtn) {
-                        nuevoBtn.addEventListener('click', (clickE) => {
-                            clickE.preventDefault();
-                            const prendaIdxDel = parseInt(nuevoBtn.getAttribute('data-prenda-idx'));
-                            const logoClaveDel = nuevoBtn.getAttribute('data-logo-clave');
-                            
-                            // Eliminar del objeto logosCompartidos
-                            if (todasLasPrendas[prendaIdxDel].logosCompartidos && todasLasPrendas[prendaIdxDel].logosCompartidos[logoClaveDel]) {
-                                delete todasLasPrendas[prendaIdxDel].logosCompartidos[logoClaveDel];
-                            }
-                            
-                            // Mostrar input nuevamente
-                            container.innerHTML = `
-                                <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 500;">${tecnicasNombres}</div>
-                                <label style="
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    border: 2px dashed #0284c7;
-                                    border-radius: 4px;
-                                    padding: 20px;
-                                    background: #f0f7ff;
-                                    cursor: pointer;
-                                    transition: all 0.2s;
-                                " onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f7ff'">
-                                    <input type="file" class="edit-input-logo-compartido-nuevo" data-prenda-idx="${prendaIdxDel}" data-logo-clave="${logoClaveDel}" accept="image/*" style="display: none;">
-                                    <span style="color: #0284c7; font-weight: 500;">📤 Cargar logo nuevo</span>
-                                </label>
-                            `;
-                            
-                            // Re-asignar evento al nuevo input (recursivo)
-                            const nuevoInputDel = container.querySelector('.edit-input-logo-compartido-nuevo');
-                            if (nuevoInputDel) {
-                                nuevoInputDel.addEventListener('change', arguments.callee);
-                            }
-                        });
-                    }
-                });
-            });
-        },
-        preConfirm: () => {
-            // Validar que al menos una prenda tenga nombre
-            let prendasActualizadas = {};
-            let valido = true;
-            let contadorPrendas = 0;
-            
-            // Obtener todos los índices de prendas del DOM
-            const prendaIdxs = new Set();
-            document.querySelectorAll('[data-prenda-idx]').forEach((elem) => {
-                prendaIdxs.add(elem.getAttribute('data-prenda-idx'));
-            });
-            
-
-            
-            prendaIdxs.forEach((prendaIdxStr) => {
-                const prendaIdx = parseInt(prendaIdxStr);
-                
-                const nombreInput = document.querySelector(`.edit-nombre-prenda[data-prenda-idx="${prendaIdxStr}"]`);
-                const nombrePrenda = nombreInput ? nombreInput.value.trim().toUpperCase() : '';
-                
-                if (!nombrePrenda) {
-
-                    valido = false;
-                    return;
-                }
-                
-                const observacionesInput = document.querySelector(`.edit-observaciones-prenda[data-prenda-idx="${prendaIdxStr}"]`);
-                const observaciones = observacionesInput ? observacionesInput.value.trim() : '';
-                
-                // Capturar ubicaciones por técnica y actualizar tecnicasData
-                document.querySelectorAll(`.edit-ubicacion-tecnica[data-prenda-idx="${prendaIdxStr}"]`).forEach(input => {
-                    const tecnicaIdx = parseInt(input.getAttribute('data-tecnica-idx'));
-                    const ubicacionTexto = input.value.trim();
-                    
-                    // Dividir por comas y limpiar espacios en blanco
-                    const ubicaciones = ubicacionTexto
-                        .split(',')
-                        .map(u => u.trim())
-                        .filter(u => u.length > 0);
-                    
-                    // Actualizar la ubicación en tecnicasData
-                    if (todasLasPrendas[prendaIdx].tecnicasData && todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx]) {
-                        todasLasPrendas[prendaIdx].tecnicasData[tecnicaIdx].ubicaciones = ubicaciones.length > 0 ? ubicaciones : [];
-                    }
-                });
-                
-                // Las variaciones están deshabilitadas
-                const variacionesPrenda = {};
-                
-                const nuevasTallas = [];
-                document.querySelectorAll(`.edit-talla-row[data-prenda-idx="${prendaIdxStr}"]`).forEach(row => {
-                    const tallaInput = row.querySelector('.edit-talla');
-                    const cantidadInput = row.querySelector('.edit-cantidad');
-                    const talla = tallaInput ? tallaInput.value.trim() : '';
-                    const cantidad = cantidadInput ? cantidadInput.value : '';
-                    
-                    if (talla && cantidad) {
-                        nuevasTallas.push({ talla, cantidad: parseInt(cantidad) });
-                    }
-                });
-                
-                // Las tallas son opcionales, no validar si están vacías
-                
-                prendasActualizadas[prendaIdx] = {
-                    nombre_prenda: nombrePrenda,
-                    observaciones: observaciones,
-                    talla_cantidad: nuevasTallas,
-                    variaciones_prenda: null,  // Variaciones deshabilitadas
-                    telas: todasLasPrendas[prendaIdx].telas || null,
-                    tecnicasData: todasLasPrendas[prendaIdx].tecnicasData || {}
-                };
-                
-
-                contadorPrendas++;
-            });
-            
-            if (!valido || contadorPrendas === 0) {
-                Swal.showValidationMessage('Completa todos los campos de cada prenda');
-                return false;
-            }
-            
-
-            return prendasActualizadas;
-        }
-    }).then((result) => {
-
+                        <input type="file" class="input-imagenes" data-tecnica="${nombreTecnica}" accept="image/*" multiple style="width: 100%; padding: 6px; border: 1px dashed #0369a1; border-radius: 4px; cursor: pointer; box-sizing: border-box; font-size: 0.85rem;">
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    prendaDiv.innerHTML = `
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">Nombre de la Prenda</label>
+            <input type="text" class="nombre_prenda" value="${datosPrenda.nombre_prenda || ''}" placeholder="POLO, CAMISA, PANTALÓN..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; text-transform: uppercase;">
+        </div>
         
-        if (result.isConfirmed && result.value) {
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">Observaciones</label>
+            <textarea class="observaciones" placeholder="Detalles adicionales" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${datosPrenda.observaciones || ''}</textarea>
+        </div>
+        
+        ${logoCompartidoHTML}
+        ${tecnicasHTML}
+    `;
+    
+    listaPrendas.appendChild(prendaDiv);
+    
+    // Agregar event listeners para la funcionalidad de edición
+    agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda);
+}
 
-
-
+function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
+    // Ubicaciones por técnica (textarea por técnica)
+    prendaDiv.querySelectorAll('.ubicaciones-tecnica').forEach(textarea => {
+        textarea.addEventListener('input', (e) => {
+            const tecnica = textarea.getAttribute('data-tecnica');
+            if (!tecnica || !datosPrenda.tecnicas_imagenes || !datosPrenda.tecnicas_imagenes[tecnica]) return;
+            const ubicaciones = textarea.value
+                .split(',')
+                .map(u => u.trim().toUpperCase())
+                .filter(u => u.length > 0);
+            datosPrenda.tecnicas_imagenes[tecnica].ubicaciones = ubicaciones;
+        });
+    });
+    
+    // Event listeners para imágenes por técnica
+    const inputsImagenes = prendaDiv.querySelectorAll('.input-imagenes');
+    
+    inputsImagenes.forEach(input => {
+        const nombreTecnica = input.getAttribute('data-tecnica');
+        const bloque = input.closest('.tecnica-edit-block');
+        const imagenesPreview = bloque ? bloque.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`) : null;
+        
+        input.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
             
-            // Actualizar TODAS las prendas del grupo usando índices numéricos
-            todasLasPrendas.forEach((prenda, prendaIdx) => {
-
-                
-                if (result.value[prendaIdx]) {
-
-                    prenda.nombre_prenda = result.value[prendaIdx].nombre_prenda;
-                    prenda.observaciones = result.value[prendaIdx].observaciones;
-                    prenda.talla_cantidad = result.value[prendaIdx].talla_cantidad;
-                    prenda.variaciones_prenda = result.value[prendaIdx].variaciones_prenda;
-                    prenda.telas = result.value[prendaIdx].telas;
-                    prenda.tecnicasData = result.value[prendaIdx].tecnicasData;
-
-                } else {
-
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        // Agregar imagen a la técnica correspondiente
+                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls) {
+                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls = [];
+                        }
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls.push(event.target.result);
+                        actualizarImagenesTecnica(nombreTecnica);
+                    };
+                    reader.readAsDataURL(file);
                 }
             });
             
-            // También actualizar en las técnicas del grupo original
-            tecnicasDelGrupo.forEach((tecnica, tecnicaIdx) => {
-                tecnica.prendas.forEach((prenda, prendaIdxLocal) => {
-                    const prendaActualizado = todasLasPrendas[prendaIdxLocal];
-                    if (prendaActualizado && result.value[prendaIdxLocal]) {
-
-                        prenda.nombre_prenda = prendaActualizado.nombre_prenda;
-                        prenda.observaciones = prendaActualizado.observaciones;
-                        prenda.talla_cantidad = prendaActualizado.talla_cantidad;
-                        prenda.variaciones_prenda = prendaActualizado.variaciones_prenda;
-                        prenda.telas = prendaActualizado.telas; // Actualizar telas
-                        
-                        // Obtener datos específicos de esta técnica
-                        if (prendaActualizado.tecnicasData && prendaActualizado.tecnicasData[tecnicaIdx]) {
-                            const datosEstaTecnica = prendaActualizado.tecnicasData[tecnicaIdx];
-                            prenda.ubicaciones = datosEstaTecnica.ubicaciones || [];
-                            prenda.imagenes_data_urls = datosEstaTecnica.imagenes_data_urls || [];
-                        }
+            e.target.value = '';
+        });
+        
+        function actualizarImagenesTecnica(tecnicaNombre) {
+            const datosTecnica = datosPrenda.tecnicas_imagenes[tecnicaNombre];
+            const imagenesTecnica = datosTecnica.imagenes_data_urls || [];
+            
+            const previewContainer = prendaDiv.querySelector(`.imagenes-preview[data-tecnica="${tecnicaNombre}"]`) || imagenesPreview;
+            
+            if (previewContainer) {
+                previewContainer.innerHTML = imagenesTecnica.map((img, idx) => `
+                    <div style="position: relative;" class="imagen-item" data-tecnica="${tecnicaNombre}" data-idx="${idx}">
+                        <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                        <button type="button" class="btn-eliminar-imagen" data-tecnica="${tecnicaNombre}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                    </div>
+                `).join('');
+                
+                // Agregar listeners a los nuevos botones de eliminar imagen
+                previewContainer.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const tecnica = btn.getAttribute('data-tecnica');
+                        const idx = parseInt(btn.getAttribute('data-idx'));
+                        datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls.splice(idx, 1);
+                        actualizarImagenesTecnica(tecnica);
+                    });
+                });
+            }
+        }
+        
+        // Agregar listeners iniciales para eliminar imágenes
+        const imagenesPreviewContainer = bloque ? bloque.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`) : null;
+        if (imagenesPreviewContainer) {
+            imagenesPreviewContainer.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tecnica = btn.getAttribute('data-tecnica');
+                    const idx = parseInt(btn.getAttribute('data-idx'));
+                    if (datosPrenda.tecnicas_imagenes && datosPrenda.tecnicas_imagenes[tecnica] && datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls) {
+                        datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls.splice(idx, 1);
                     }
+                    actualizarImagenesTecnica(tecnica);
                 });
             });
-            
-            // PROCESAR TELAS: Convertir File objects a data URLs
-            todasLasPrendas.forEach((prenda, prendaIdx) => {
-                if (prenda.telas && prenda.telas.length > 0) {
-                    prenda.telas.forEach((tela, telaIdx) => {
-                        if (tela.archivo && tela.archivo instanceof File && !tela.imagen) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                tela.imagen = e.target.result;
-                                console.log(` Tela convertida a data URL para prenda ${prendaIdx}, tela ${telaIdx}`);
-                            };
-                            reader.readAsDataURL(tela.archivo);
-                        }
-                    });
-                }
-            });
-
-            renderizarTecnicasAgregadas();
-        } else {
-
         }
     });
+
+    // Toggle logo compartido (oculta/muestra secciones de imágenes por técnica)
+    const chkLogoCompartido = prendaDiv.querySelector('#editUsarLogoCompartido');
+    const seccionLogoCompartido = prendaDiv.querySelector('#editSeccionLogoCompartido');
+    if (chkLogoCompartido && datosPrenda && datosPrenda.logoCompartido) {
+        chkLogoCompartido.addEventListener('change', () => {
+            datosPrenda.logoCompartido.enabled = chkLogoCompartido.checked;
+            if (seccionLogoCompartido) {
+                seccionLogoCompartido.style.display = chkLogoCompartido.checked ? 'grid' : 'none';
+            }
+            prendaDiv.querySelectorAll('.tecnica-imagenes-block').forEach(div => {
+                div.style.display = chkLogoCompartido.checked ? 'none' : 'block';
+            });
+        });
+    }
+
+    // Reemplazo de logo compartido
+    prendaDiv.querySelectorAll('.edit-input-logo-compartido').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+            if (!file) return;
+            const clave = input.getAttribute('data-logo-clave');
+            if (!clave || !datosPrenda.logoCompartido) return;
+            datosPrenda.logoCompartido.files[clave] = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const url = ev.target.result;
+                if (!datosPrenda.logoCompartido.items[clave]) {
+                    datosPrenda.logoCompartido.items[clave] = { tecnicasCompartidas: clave.split('-').map(t => t.trim()).filter(Boolean), previewUrl: url };
+                } else {
+                    datosPrenda.logoCompartido.items[clave].previewUrl = url;
+                }
+                const preview = prendaDiv.querySelector(`.edit-logo-compartido-preview[data-logo-clave="${clave}"]`);
+                if (preview) {
+                    preview.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // Precargar previews desde imagenes_files si imagenes_data_urls está vacío (caso 1 técnica / imágenes como File)
+    if (datosPrenda && datosPrenda.tecnicas_imagenes) {
+        Object.entries(datosPrenda.tecnicas_imagenes).forEach(([nombreTecnica, datosTecnica]) => {
+            if (!datosTecnica) return;
+            const tieneDataUrls = Array.isArray(datosTecnica.imagenes_data_urls) && datosTecnica.imagenes_data_urls.length > 0;
+            const files = Array.isArray(datosTecnica.imagenes_files) ? datosTecnica.imagenes_files : [];
+            if (tieneDataUrls || files.length === 0) return;
+
+            // Inicializar array
+            datosTecnica.imagenes_data_urls = [];
+
+            files.forEach((file) => {
+                if (!(file instanceof File)) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    if (!datosTecnica.imagenes_data_urls.includes(dataUrl)) {
+                        datosTecnica.imagenes_data_urls.push(dataUrl);
+                    }
+                    const preview = prendaDiv.querySelector(`.imagenes-preview[data-tecnica="${nombreTecnica}"]`);
+                    if (preview) {
+                        preview.innerHTML = datosTecnica.imagenes_data_urls.map((img, idx) => `
+                            <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx}">
+                                <img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                            </div>
+                        `).join('');
+
+                        // Re-asignar listeners eliminar
+                        preview.querySelectorAll('.btn-eliminar-imagen').forEach(btn => {
+                            btn.addEventListener('click', (clickE) => {
+                                clickE.preventDefault();
+                                const idx = parseInt(btn.getAttribute('data-idx'));
+                                datosTecnica.imagenes_data_urls.splice(idx, 1);
+                                // Re-render simple
+                                preview.innerHTML = datosTecnica.imagenes_data_urls.map((img2, idx2) => `
+                                    <div style="position: relative;" class="imagen-item" data-tecnica="${nombreTecnica}" data-idx="${idx2}">
+                                        <img src="${img2}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                                        <button type="button" class="btn-eliminar-imagen" data-tecnica="${nombreTecnica}" data-idx="${idx2}" style="position: absolute; top: 2px; right: 2px; background: rgba(255, 59, 48, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                                    </div>
+                                `).join('');
+                            });
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
+    // No hay ubicaciones compartidas; las textareas ya quedan vinculadas.
 }
 
 function eliminarTecnicaDelGrupo(tecnicaIndices) {
@@ -3955,6 +3032,13 @@ function cerrarModalAgregarTecnica() {
     if (modal) {
         modal.style.display = 'none';
     }
+
+    // Limpiar estado global para evitar que quede pegado el modo combinadas
+    window.tecnicasCombinadas = null;
+    window.modoTecnicasCombinadas = null;
+
+    // Liberar lock de guardado
+    window.__guardandoTecnica = false;
 }
 
 // =========================================================
