@@ -4,6 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    @auth
+    <meta name="user-id" content="{{ auth()->id() }}">
+    <!-- Meta tags para WebSockets/Reverb -->
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
+    @endauth
+    
     <title>@yield('title', 'Bodega')</title>
 
     <!-- Fonts -->
@@ -33,7 +44,17 @@
 <body class="bg-slate-50">
     @yield('content')
 
-    <!-- Scripts -->
+    <!-- Vite (contiene app.css y app.js críticos) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- Laravel Echo & Pusher JS cargado vía Vite en app.js (bootstrap.js) -->
+    
+    @auth
+    <!-- Echo se inicializa automáticamente vía Vite en app.js -->
+    <!-- Script de tiempo real para bodega -->
+    <script defer src="{{ asset('js/modulos/bodega/bodega-realtime.js') }}"></script>
+    @endauth
+    
     <script src="{{ asset('js/bodega-pedidos.js') }}"></script>
     @stack('scripts')
 </body>
