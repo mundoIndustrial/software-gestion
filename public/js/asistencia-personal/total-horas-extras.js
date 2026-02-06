@@ -32,20 +32,19 @@ const AsistenciaTotalHorasExtras = (() => {
     }
 
     /**
-     * Contar horas basado en la regla: 56 minutos o más = 1 hora
+     * Contar horas basado en la regla: solo horas completas cuentan
      * @param {number} minutos - Total de minutos a contar
-     * @returns {number} Horas contables (horas completas + 1 si minutos >= 56)
+     * @returns {number} Horas contables (solo horas completas)
      */
     function contarHorasPor56Minutos(minutos) {
         const horas = Math.floor(minutos / 60);
-        const mins = minutos % 60;
-        // Si los minutos >= 56, contar como 1 hora adicional
-        return mins >= 56 ? horas + 1 : horas;
+        // Ya no se cuentan minutos fraccionarios, solo horas completas
+        return horas;
     }
 
     /**
      * Calcular horas extras para una fecha y persona
-     * Nueva lógica: Contar cada bloque de trabajo por la regla de 56 minutos
+     * Nueva lógica: Contar cada bloque de trabajo por horas completas
      */
     function calcularHorasExtras(registrosDelDia, fecha, idRol = null, entrada_sabado = null, salida_sabado = null) {
         if (!registrosDelDia || registrosDelDia.length === 0) {

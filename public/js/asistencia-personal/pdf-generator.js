@@ -145,14 +145,16 @@ const PDFGenerator = (() => {
                 todasLasFechas.forEach(fecha => {
                     const horasExtras = persona.horasExtrasPorFecha[fecha] || 0;
                     if (horasExtras > 0) {
-                        row.push(horasExtras.toFixed(1));
+                        // Mostrar como entero si no tiene decimales, sino con 1 decimal
+                        row.push(Number.isInteger(horasExtras) ? horasExtras.toString() : horasExtras.toFixed(1));
                     } else {
                         row.push('-');
                     }
                 });
                 
                 // Agregar total horas
-                row.push(persona.totalHorasExtras.toFixed(1));
+                // Mostrar como entero si no tiene decimales, sino con 1 decimal
+                row.push(Number.isInteger(persona.totalHorasExtras) ? persona.totalHorasExtras.toString() : persona.totalHorasExtras.toFixed(1));
                 
                 // Obtener valor si existe
                 const inputValor = document.querySelector(`input[data-codigo-persona="${persona.codigo_persona}"]`);
@@ -180,10 +182,12 @@ const PDFGenerator = (() => {
                     totalFecha += persona.horasExtrasPorFecha[fecha] || 0;
                     totalGeneral += persona.horasExtrasPorFecha[fecha] || 0;
                 });
-                totalRow.push(totalFecha > 0 ? totalFecha.toFixed(1) : '-');
+                // Mostrar como entero si no tiene decimales, sino con 1 decimal
+                totalRow.push(totalFecha > 0 ? (Number.isInteger(totalFecha) ? totalFecha.toString() : totalFecha.toFixed(1)) : '-');
             });
             
-            totalRow.push(totalGeneral.toFixed(1));
+            // Mostrar como entero si no tiene decimales, sino con 1 decimal
+            totalRow.push(Number.isInteger(totalGeneral) ? totalGeneral.toString() : totalGeneral.toFixed(1));
             totalRow.push('-');
             
             // Tabla con diseño moderno
