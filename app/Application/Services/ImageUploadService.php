@@ -232,17 +232,37 @@ class ImageUploadService
     {
         $this->validateImage($file);
         
+        // Generar nombre único
         $filename = $this->generateUniqueFilename('prenda', $prendaIndex);
-        $paths = $this->processAndSaveImage($file, $filename, 'prendas', $tempUuid);
+        
+        // Usar UUID temporal si se proporciona, si no generar uno nuevo
+        $tempUuid = $tempUuid ?? Str::uuid()->toString();
+        
+        // Crear ImageManager con driver GD (Intervention Image v3)
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($file->getRealPath());
+        
+        // Guardar SOLO versión WebP optimizada en ruta temporal
+        $webpFilename = "{$filename}.webp";
+        $webpPath = "prendas/temp/{$tempUuid}/{$webpFilename}";
+        $encoded = $image->toWebp(self::WEBP_QUALITY);
+        Storage::disk('public')->put($webpPath, (string) $encoded);
+        
+        // Generar thumbnail
+        $thumbnail = $manager->read($file->getRealPath());
+        $thumbnail->cover(self::THUMBNAIL_SIZE, self::THUMBNAIL_SIZE);
+        $thumbnailPath = "prendas/temp/{$tempUuid}/thumbnails/{$webpFilename}";
+        $encodedThumb = $thumbnail->toWebp(self::WEBP_QUALITY);
+        Storage::disk('public')->put($thumbnailPath, (string) $encodedThumb);
 
         return [
-            'url' => Storage::url($paths['webp']),
-            'ruta_webp' => $paths['webp'],
-            'ruta_original' => $paths['original'],
-            'thumbnail' => Storage::url($paths['thumbnail']),
+            'url' => Storage::url($webpPath),
+            'ruta_webp' => $webpPath,
+            'ruta_original' => null, // Ya no guardamos original
+            'thumbnail' => Storage::url($thumbnailPath),
             'prenda_index' => $prendaIndex,
             'filename' => $filename,
-            'temp_uuid' => $paths['temp_uuid'],
+            'temp_uuid' => $tempUuid,
         ];
     }
 
@@ -261,19 +281,39 @@ class ImageUploadService
     {
         $this->validateImage($file);
         
+        // Generar nombre único
         $filename = $this->generateUniqueFilename('tela', $prendaIndex, $telaIndex);
-        $paths = $this->processAndSaveImage($file, $filename, 'telas', $tempUuid);
+        
+        // Usar UUID temporal si se proporciona, si no generar uno nuevo
+        $tempUuid = $tempUuid ?? Str::uuid()->toString();
+        
+        // Crear ImageManager con driver GD (Intervention Image v3)
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($file->getRealPath());
+        
+        // Guardar SOLO versión WebP optimizada en ruta temporal
+        $webpFilename = "{$filename}.webp";
+        $webpPath = "telas/temp/{$tempUuid}/{$webpFilename}";
+        $encoded = $image->toWebp(self::WEBP_QUALITY);
+        Storage::disk('public')->put($webpPath, (string) $encoded);
+        
+        // Generar thumbnail
+        $thumbnail = $manager->read($file->getRealPath());
+        $thumbnail->cover(self::THUMBNAIL_SIZE, self::THUMBNAIL_SIZE);
+        $thumbnailPath = "telas/temp/{$tempUuid}/thumbnails/{$webpFilename}";
+        $encodedThumb = $thumbnail->toWebp(self::WEBP_QUALITY);
+        Storage::disk('public')->put($thumbnailPath, (string) $encodedThumb);
 
         return [
-            'url' => Storage::url($paths['webp']),
-            'ruta_webp' => $paths['webp'],
-            'ruta_original' => $paths['original'],
-            'thumbnail' => Storage::url($paths['thumbnail']),
+            'url' => Storage::url($webpPath),
+            'ruta_webp' => $webpPath,
+            'ruta_original' => null, // Ya no guardamos original
+            'thumbnail' => Storage::url($thumbnailPath),
             'prenda_index' => $prendaIndex,
             'tela_index' => $telaIndex,
             'tela_id' => $telaId,
             'filename' => $filename,
-            'temp_uuid' => $paths['temp_uuid'],
+            'temp_uuid' => $tempUuid,
         ];
     }
 

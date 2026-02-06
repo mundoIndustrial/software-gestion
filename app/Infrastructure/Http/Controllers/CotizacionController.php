@@ -1336,8 +1336,12 @@ final class CotizacionController extends Controller
                                 foreach ($fotosArray as $archivoFoto) {
                                     if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
                                         try {
-                                            // Guardar en storage dentro de la carpeta de la cotización
-                                            $rutaGuardada = $archivoFoto->store("cotizaciones/{$cotizacionId}/telas", 'public');
+                                            // Usar el servicio para procesar y convertir a WebP
+                                            $rutaGuardada = $this->procesarImagenesService->procesarImagenTela(
+                                                $archivoFoto,
+                                                $cotizacionId,
+                                                $prendaModel->id
+                                            );
                                             $rutaUrl = Storage::url($rutaGuardada);
                                             
                                             // Guardar en tabla prenda_tela_fotos_cot con prenda_tela_cot_id
@@ -1345,9 +1349,9 @@ final class CotizacionController extends Controller
                                                 'prenda_cot_id' => $prendaModel->id,
                                                 'prenda_tela_cot_id' => $prendaTelaCotId,
                                                 'tela_index' => $telaIndex,
-                                                'ruta_original' => $rutaUrl,
-                                                'ruta_webp' => null,
-                                                'ruta_miniatura' => null,
+                                                'ruta_original' => null, // Ya no guardamos original
+                                                'ruta_webp' => $rutaGuardada, // Guardar ruta WebP
+                                                'ruta_miniatura' => null, // Podría generarse si se necesita
                                                 'orden' => $ordenFotosTela,
                                                 'ancho' => null,
                                                 'alto' => null,
@@ -2058,22 +2062,22 @@ final class CotizacionController extends Controller
                                                 
                                                 // Generar ruta de almacenamiento
                                                 $rutaDirectorio = "cotizaciones/{$cotizacionId}/logo";
-                                                $nombreArchivo = uniqid('img_paso3_') . '.' . $archivo->getClientOriginalExtension();
-                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo;
+                                                $nombreArchivo = uniqid('img_paso3_');
+                                                $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo . '.webp';
                                                 
-                                                // Guardar archivo en disco (public/storage)
-                                                $path = $archivo->store($rutaDirectorio, 'public');
+                                                // Usar el servicio para procesar y convertir a WebP
+                                                $path = $this->procesarImagenesService->procesarImagenLogo($archivo, $cotizacionId);
                                                 
-                                                Log::info(' Archivo de imagen guardado en disco', [
+                                                Log::info(' Imagen del PASO 3 procesada y guardada como WebP', [
                                                     'path' => $path,
                                                     'ruta_completa' => $rutaCompleta
                                                 ]);
                                                 
                                                 // Registrar en BD
                                                 $logoCotizacionTecnicaPrenda->fotos()->create([
-                                                    'ruta_original' => $path,
-                                                    'ruta_webp' => $path,
-                                                    'ruta_miniatura' => $path,
+                                                    'ruta_original' => null, // Ya no guardamos original
+                                                    'ruta_webp' => $path, // Guardar ruta WebP
+                                                    'ruta_miniatura' => $path, // Mismo archivo por ahora
                                                     'orden' => $ordenFoto,
                                                 ]);
                                                 
