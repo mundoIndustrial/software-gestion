@@ -55,10 +55,11 @@ export class PedidosRecibosModule {
      * @param {number} prendaIndex - Índice de la prenda (opcional)
      */
     async abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex = null) {
-        // VALIDACIÓN: Bloquear COSTURA-BODEGA en supervisor-pedidos
+        // VALIDACIÓN: Bloquear COSTURA-BODEGA en supervisor-pedidos y registros
         const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
-        if (esSupervisorPedidos && tipoRecibo === 'costura-bodega') {
-            console.warn('🚫 [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA en supervisor-pedidos - BLOQUEADO');
+        const esRegistros = window.location.pathname.includes('/registros');
+        if ((esSupervisorPedidos || esRegistros) && tipoRecibo === 'costura-bodega') {
+            console.warn('🚫 [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
             return;
         }
         
