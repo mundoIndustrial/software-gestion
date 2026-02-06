@@ -2260,19 +2260,41 @@ class PrendaEditor {
                     imagenes: (datosReales.imagenes || []).map(img => {
                         // Extraer URL de imagen, manejando distintos formatos
                         if (typeof img === 'string') {
-                            return img;
+                            // Si es string, validar que tenga /storage/
+                            let url = img;
+                            if (url && !url.startsWith('/')) {
+                                url = '/storage/' + url;
+                            }
+                            return url;
                         }
                         if (img instanceof File) {
                             return img;
                         }
-                        // Si es objeto, obtener la URL correcta
-                        const urlExtraida = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
-                        console.log(`    🖼️ Imagen procesada:`, {
-                            original: img,
-                            urlExtraida: urlExtraida
+                        
+                        // Si es objeto, obtener la URL correcta con prioridad
+                        // Prioridad: ruta_original > ruta > ruta_webp > url
+                        let urlExtraida = img.ruta_original || img.ruta || img.ruta_webp || img.url || '';
+                        
+                        // Validar después de seleccionar
+                        if (!urlExtraida && (img.ruta_original || img.ruta || img.ruta_webp || img.url)) {
+                            // Si la seleccionada es vacía, intentar otra
+                            urlExtraida = img.ruta || img.ruta_webp || img.url || img.ruta_original || '';
+                        }
+                        
+                        // Agregar /storage/ si es necesario
+                        if (urlExtraida && typeof urlExtraida === 'string' && !urlExtraida.startsWith('/')) {
+                            urlExtraida = '/storage/' + urlExtraida;
+                        }
+                        
+                        console.log(`    🖼️ Imagen de proceso procesada:`, {
+                            ruta_original: img.ruta_original || 'NULL',
+                            ruta: img.ruta || 'NULL',
+                            ruta_webp: img.ruta_webp || 'NULL',
+                            url: img.url || 'NULL',
+                            urlExtraida: urlExtraida || 'VACÍA'
                         });
                         return urlExtraida;
-                    })
+                    }).filter(url => url)  // Filtrar URLs vacías
                 };
                 
                 window.procesosSeleccionados[tipoProceso] = {

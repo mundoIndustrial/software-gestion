@@ -93,8 +93,28 @@ window.crearPedidoConBuilderUnificado = async function() {
             '/asesores/pedidos-editable/crear'
         );
         
+        console.log('[Builder] Response recibida:', {
+            success: response.success,
+            pedido_id: response.pedido_id,
+            tipo_pedido_id: typeof response.pedido_id,
+            numero_pedido: response.numero_pedido,
+            response_completa: response
+        });
+        
         if (response.success) {
-            window.location.href = `/asesores/pedidos-editable/${response.pedido_id}`;
+            // Asegurar que pedido_id sea un número
+            const pedidoId = response.pedido_id && typeof response.pedido_id === 'object' 
+                ? response.pedido_id.id 
+                : response.pedido_id;
+            
+            if (!pedidoId) {
+                throw new Error('No se recibió ID de pedido válido del servidor');
+            }
+            
+            console.log('[Builder] ✅ Pedido creado, navegando a:', pedidoId);
+            window.location.href = `/asesores/pedidos-editable/${pedidoId}`;
+        } else {
+            throw new Error(response.message || 'Error desconocido al crear pedido');
         }
         
     } catch (error) {
