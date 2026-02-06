@@ -8,6 +8,8 @@
  * FUNCIÓN PRINCIPAL: Actualizar todo el resumen del Paso 4
  */
 function actualizarResumenPaso4Completo() {
+    console.log('🔄 [actualizarResumenPaso4Completo] Iniciando actualización del resumen');
+    
     // 1. Actualizar información del cliente
     actualizarResumenClientePaso4();
     

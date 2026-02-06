@@ -1,5 +1,5 @@
-<!-- PASO 4: REVISAR COTIZACIÓN COMBINADA COMPLETA -->
-<div class="form-step" data-step="4">
+<!-- PASO 5: REVISAR COTIZACIÓN COMBINADA COMPLETA -->
+<div class="form-step" data-step="5">
     <div class="paso5-header">
         <h2>Revisar Cotización</h2>
         <p>Verifica que toda la información esté correcta antes de enviar</p>
@@ -30,7 +30,13 @@
         </div>
 
         <!-- CARDS DE PRENDAS CON TABLAS DINÁMICAS -->
-        <div id="resumen_prendas_cards" style="display: grid; gap: 20px; margin-bottom: 20px;"></div>
+        <div id="resumen_prendas_cards" style="display: grid; gap: 20px; margin-bottom: 20px;">
+            <!-- Mensaje inicial para depuración -->
+            <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+                <h3 style="color: #6c757d; margin: 0 0 10px 0;">📋 Cargando resumen...</h3>
+                <p style="color: #adb5bd; margin: 0;">El resumen de tu cotización aparecerá aquí</p>
+            </div>
+        </div>
 
         <!-- FALLBACK: LOGO GENERAL SI NO HAY PRENDAS -->
         <div id="resumen_logo_general_container" style="display: none;">

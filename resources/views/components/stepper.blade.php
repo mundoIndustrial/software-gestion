@@ -19,7 +19,7 @@
         
         <!-- PASO 4 (REVISAR) - Siempre visible -->
         <div class="step-line" id="step-line-4"></div>
-        <div class="step" data-step="4" onclick="if(typeof irAlPaso === 'function') irAlPaso(4)" style="cursor: pointer;">
+        <div class="step" data-step="4" onclick="navegarARevisar()" style="cursor: pointer;">
             <div class="step-number" id="step-4-number">4</div>
             <div class="step-label">REVISAR</div>
         </div>

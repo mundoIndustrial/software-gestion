@@ -16,6 +16,39 @@
     }
 
     /**
+     * Asegurar que la línea entre paso 2 y revisar se muestre correctamente para tipo prenda
+     */
+    function asegurarLineaRevisarPrenda() {
+        const tipo = window.tipoCotizacionDesdeURL || 'PB';
+        
+        if (tipo === 'P') {
+            // Para tipo prenda, asegurar que la línea step-line-4 sea visible
+            const stepLine4 = document.getElementById('step-line-4');
+            if (stepLine4) {
+                // Eliminar todos los estilos y aplicar los nuevos
+                stepLine4.removeAttribute('style');
+                stepLine4.style.cssText = `
+                    display: block !important;
+                    width: 100px !important;
+                    flex: none !important;
+                    height: 1.5px !important;
+                    background: #e0e0e0 !important;
+                    visibility: visible !important;
+                    position: relative !important;
+                `;
+                
+                // Forzar repaint
+                stepLine4.offsetHeight;
+                
+                console.log('✅ [asegurarLineaRevisarPrenda] Línea step-line-4 configurada para prenda');
+                console.log('🔍 [asegurarLineaRevisarPrenda] Estilos aplicados:', stepLine4.style.cssText);
+            } else {
+                console.error('❌ [asegurarLineaRevisarPrenda] No se encontró step-line-4');
+            }
+        }
+    }
+
+    /**
      * Configurar el stepper según el tipo de cotización
      */
     function configurarStepperPorTipo(tipo) {
@@ -25,7 +58,7 @@
         const step4 = document.getElementById('step-4');
         const stepLine3 = document.getElementById('step-line-3');
         const stepLine4 = document.getElementById('step-line-4');
-        const step5Number = document.getElementById('step-5-number');
+        const step4Number = document.getElementById('step-4-number');
         const paso3 = document.querySelector('.form-step[data-step="3"]');
         const paso4 = document.querySelector('.form-step[data-step="4"]');
 
@@ -38,8 +71,8 @@
         if (paso4) paso4.style.display = 'none';
 
         // Ajustar el número del paso revisar
-        if (step5Number) {
-            step5Number.textContent = '3'; // Para prenda: paso 3 es revisar
+        if (step4Number) {
+            step4Number.textContent = '3'; // Para prenda: paso 3 es revisar
         }
 
         // Según el tipo, mostrar los pasos necesarios
@@ -58,8 +91,8 @@
                 if (stepLine3) stepLine3.style.display = '';
                 if (paso3) paso3.style.display = '';
 
-                if (step5Number) {
-                    step5Number.textContent = '4'; // Para logo: paso 4 es revisar
+                if (step4Number) {
+                    step4Number.textContent = '4'; // Para logo: paso 4 es revisar
                 }
                 break;
 
@@ -77,13 +110,13 @@
                 if (paso4) paso4.style.display = '';
 
                 // Renombrar el paso 4 a "Reflectivo" visualmente (cambiar número a 3)
-                const step4Number = step4?.querySelector('.step-number');
+                const step4NumberElement = step4?.querySelector('.step-number');
                 const step4Label = step4?.querySelector('.step-label');
-                if (step4Number) step4Number.textContent = '3';
+                if (step4NumberElement) step4NumberElement.textContent = '3';
                 if (step4Label) step4Label.textContent = 'REFLECTIVO';
 
-                if (step5Number) {
-                    step5Number.textContent = '4'; // Para reflectivo: paso 4 es revisar
+                if (step4Number) {
+                    step4Number.textContent = '4'; // Para reflectivo: paso 4 es revisar
                 }
                 break;
 
@@ -98,8 +131,8 @@
                 if (paso3) paso3.style.display = '';
                 if (paso4) paso4.style.display = '';
 
-                if (step5Number) {
-                    step5Number.textContent = '5'; // Para combinada: paso 5 es revisar
+                if (step4Number) {
+                    step4Number.textContent = '5'; // Para combinada: paso 5 es revisar
                 }
                 break;
         }
@@ -176,7 +209,7 @@
         const btnNextPaso3 = document.querySelector('.form-step[data-step="3"] .btn-next');
         if (btnNextPaso3) {
             if (tipo === 'B') {
-                // Para logo: el siguiente va directo a revisar
+                // Para logo: el siguiente va directo a revisar (paso 5)
                 btnNextPaso3.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(5)');
                 btnNextPaso3.textContent = 'REVISAR ➜';
             }
@@ -245,7 +278,48 @@
         ajustarBotonesPaso4();
         ajustarTituloPaso5();
         patchFuncionIrAlPaso();
+        
+        // Asegurar que la línea de revisar se muestre correctamente para prenda
+        setTimeout(() => {
+            asegurarLineaRevisarPrenda();
+        }, 100);
 
         console.log(' Stepper configurado para tipo:', tipo);
     });
 })();
+    
+    /**
+     * Función para navegar al paso de revisar según el tipo de cotización
+     */
+    window.navegarARevisar = function() {
+        const tipo = window.tipoCotizacionDesdeURL || 'PB';
+        
+        let pasoRevisar;
+        switch (tipo) {
+            case 'P':
+                // Prenda: el paso de revisar es el 5
+                pasoRevisar = 5;
+                break;
+            case 'B':
+                // Logo: el paso de revisar es el 5
+                pasoRevisar = 5;
+                break;
+            case 'RF':
+                // Reflectivo: el paso de revisar es el 5
+                pasoRevisar = 5;
+                break;
+            case 'PB':
+            default:
+                // Combinada: el paso de revisar es el 5
+                pasoRevisar = 5;
+                break;
+        }
+        
+        console.log(`🔄 [navegarARevisar] Navegando al paso ${pasoRevisar} para tipo ${tipo}`);
+        
+        if (typeof window.irAlPaso === 'function') {
+            window.irAlPaso(pasoRevisar);
+        } else {
+            console.error('❌ [navegarARevisar] La función irAlPaso no está disponible');
+        }
+    };
