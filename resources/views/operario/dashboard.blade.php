@@ -47,8 +47,8 @@
         </div>
         @endif
 
-        @if(count($prendasConRecibos ?? []) > 0)
-            <div class="ordenes-list" id="ordenesList">
+        <div class="ordenes-list" id="ordenesList">
+            @if(count($prendasConRecibos ?? []) > 0)
                 @foreach($prendasConRecibos as $prenda)
                     @php
                         $estadoClass = 'pendiente'; // Por defecto pendiente
@@ -118,10 +118,21 @@
 
                                 <!-- Contenedor de Botones -->
                                 <div class="orden-buttons">
-                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
-                                        <span class="material-symbols-rounded">receipt</span>
-                                        VER RECIBOS
-                                    </button>
+                                    @if(auth()->user()->hasRole('costura-reflectivo'))
+                                        {{-- Para costura-reflectivo, crear un botón por cada tipo de recibo --}}
+                                        @foreach($prenda['recibos'] as $recibo)
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}')">
+                                                <span class="material-symbols-rounded">receipt</span>
+                                                {{ strtoupper($recibo['tipo_recibo']) }}
+                                            </button>
+                                        @endforeach
+                                    @else
+                                        {{-- Para otros operarios, un solo botón genérico --}}
+                                        <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}')">
+                                            <span class="material-symbols-rounded">receipt</span>
+                                            VER RECIBOS
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
 
@@ -156,13 +167,13 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-        @else
-            <div class="empty-state">
-                <span class="material-symbols-rounded">inbox</span>
-                <p>No hay prendas con recibos de costura asignadas</p>
-            </div>
-        @endif
+            @else
+                <div class="empty-state">
+                    <span class="material-symbols-rounded">inbox</span>
+                    <p>No hay prendas con recibos de costura asignadas</p>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -737,12 +748,13 @@
     };
 
     // Función para abrir detalles de recibos
-    function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda) {
+    function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo) {
         console.log('🔍 [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
         console.log('📊 Parámetros recibidos:', {
             numeroPedido: numeroPedido,
             prendaId: prendaId,
             nombrePrenda: nombrePrenda,
+            tipoRecibo: tipoRecibo,
             tipoNumeroPedido: typeof numeroPedido,
             tipoPrendaId: typeof prendaId,
             tipoNombrePrenda: typeof nombrePrenda
@@ -759,8 +771,13 @@
         const numeroPedidoStr = String(numeroPedido).trim();
         console.log('📝 numeroPedido normalizado:', numeroPedidoStr);
         
-        // Construir la URL
-        const url = '/operario/pedido/' + numeroPedidoStr;
+        // Construir la URL con el tipo de recibo si se proporciona
+        let url = '/operario/pedido/' + numeroPedidoStr;
+        if (tipoRecibo) {
+            url += '?tipo_recibo=' + encodeURIComponent(tipoRecibo);
+            console.log('📝 Tipo de recibo:', tipoRecibo);
+        }
+        
         console.log('🌐 URL a navegar:', url);
         console.log('📍 Navegando a:', url);
         

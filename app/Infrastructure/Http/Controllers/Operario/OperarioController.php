@@ -560,6 +560,44 @@ class OperarioController extends Controller
             $response = $this->obtenerPedidoUseCase->ejecutar($pedidoId, false);
             $responseData = $response->toArray();
 
+            // FILTRO POR TIPO DE RECIBO: Si se especifica un tipo de recibo, filtrar procesos para mostrar SOLO ese tipo
+            $tipoReciboFiltro = request('tipo_recibo', '');
+            \Log::info('[OperarioController.getPedidoData] 🔍 Verificando filtro de tipo_recibo', [
+                'numero_pedido' => $numeroPedido,
+                'tipo_recibo_solicitado' => $tipoReciboFiltro
+            ]);
+            
+            if ($tipoReciboFiltro && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                \Log::info('[OperarioController.getPedidoData] 📋 FILTRO TIPO RECIBO: Filtrando procesos - Solo ' . strtoupper($tipoReciboFiltro), [
+                    'numero_pedido' => $numeroPedido,
+                    'tipo_recibo' => $tipoReciboFiltro
+                ]);
+                
+                foreach ($responseData['prendas'] as &$prenda) {
+                    if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
+                        // Filtrar: solo mantener procesos del tipo de recibo especificado
+                        $procesosFiltrados = array_filter($prenda['procesos'], function($proceso) use ($tipoReciboFiltro) {
+                            // Obtener el tipo de recibo del proceso
+                            $tipoProcesoRecibo = $proceso['tipo_recibo'] ?? $proceso['recibo_tipo'] ?? '';
+                            $tipoLower = strtolower(trim($tipoProcesoRecibo));
+                            $filtroLower = strtolower(trim($tipoReciboFiltro));
+                            
+                            \Log::debug('[OperarioController.getPedidoData] Verificando proceso para filtro', [
+                                'tipo_recibo_proceso' => $tipoProcesoRecibo,
+                                'tipo_lower' => $tipoLower,
+                                'filtro_lower' => $filtroLower,
+                                'coincide' => $tipoLower === $filtroLower || str_replace('-', '', $tipoLower) === str_replace('-', '', $filtroLower)
+                            ]);
+                            
+                            // Comparar normalizando guiones
+                            return $tipoLower === $filtroLower || str_replace('-', '', $tipoLower) === str_replace('-', '', $filtroLower);
+                        });
+                        
+                        $prenda['procesos'] = array_values($procesosFiltrados); // Reindexar array
+                    }
+                }
+            }
+
             // FILTRO BODEGUERO: Si es bodeguero, filtrar procesos para mostrar SOLO 'costura-bodega'
             if ($esBodyguero && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 \Log::info('[OperarioController.getPedidoData] 🔐 FILTRO BODEGUERO: Filtrando procesos - Solo COSTURA-BODEGA', [
@@ -837,6 +875,84 @@ class OperarioController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener los datos del pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * DEBUG: Obtener información detallada sobre prendas con recibos
+     * Endpoint: /operario/debug/prendas-recibos
+     */
+    public function debugPrendasRecibos()
+    {
+        try {
+            $usuario = Auth::user();
+            
+            // Obtener prendas con recibos usando el servicio
+            $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+            
+            // Obtener información de la BD sin filtros
+            $todosPedidos = \App\Models\PedidoProduccion::where('area', 'costura')
+                ->select('id', 'numero_pedido', 'estado', 'area')
+                ->get();
+            
+            $receptivos = \App\Models\ConsecutivoReciboPedido::where('activo', 1)
+                ->whereIn('tipo_recibo', ['REFLECTIVO', 'COSTURA', 'COSTURA-BODEGA'])
+                ->with(['pedido:id,numero_pedido,estado', 'prenda:id,nombre_prenda'])
+                ->get();
+            
+            $detallesProcesos = \App\Models\PedidosProcesosPrendaDetalle::select('id', 'prenda_pedido_id', 'estado', 'tipo_recibo')
+                ->whereIn('estado', ['APROBADO', 'PENDIENTE'])
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'usuario' => [
+                    'id' => $usuario->id,
+                    'name' => $usuario->name,
+                    'roles' => $usuario->roles()->pluck('name')->toArray()
+                ],
+                'prendas_con_recibos_filtradas' => [
+                    'total' => $prendasConRecibos->count(),
+                    'datos' => $prendasConRecibos->map(function($p) {
+                        return [
+                            'numero_pedido' => $p['numero_pedido'],
+                            'nombre_prenda' => $p['nombre_prenda'],
+                            'total_recibos' => $p['total_recibos'],
+                            'tipos_recibos' => array_map(fn($r) => $r['tipo_recibo'], $p['recibos'])
+                        ];
+                    })->toArray()
+                ],
+                'todos_pedidos_costura' => [
+                    'total' => $todosPedidos->count(),
+                    'datos' => $todosPedidos->map(function($p) {
+                        return [
+                            'numero_pedido' => $p->numero_pedido,
+                            'estado' => $p->estado,
+                        ];
+                    })->toArray()
+                ],
+                'recibos_si_filtros' => [
+                    'total' => $receptivos->count(),
+                    'datos' => $receptivos->map(function($r) {
+                        return [
+                            'tipo_recibo' => $r->tipo_recibo,
+                            'pedido_numero' => $r->pedido?->numero_pedido,
+                            'pedido_estado' => $r->pedido?->estado,
+                            'prenda_nombre' => $r->prenda?->nombre_prenda,
+                        ];
+                    })->toArray()
+                ],
+                'detalles_procesos' => [
+                    'total' => $detallesProcesos->count(),
+                    'aprobados' => $detallesProcesos->where('estado', 'APROBADO')->count(),
+                    'pendientes' => $detallesProcesos->where('estado', 'PENDIENTE')->count(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
             ], 500);
         }
     }

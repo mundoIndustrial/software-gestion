@@ -70,6 +70,13 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::post('/detalles-talla/guardar', [PedidosController::class, 'guardarDetallesTalla'])
         ->name('guardar-detalle-talla');
     
+    // Guardar y obtener notas
+    Route::post('/notas/guardar', [PedidosController::class, 'guardarNota'])
+        ->name('guardar-nota');
+    
+    Route::post('/notas/obtener', [PedidosController::class, 'obtenerNotas'])
+        ->name('obtener-notas');
+    
     // Guardar pedido completo
     Route::post('/pedidos/{numero_pedido}/guardar-completo', [PedidosController::class, 'guardarPedidoCompleto'])
         ->name('guardar-pedido-completo');

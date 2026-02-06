@@ -35,7 +35,8 @@
                      style="display: none; width: 100%; display: flex; justify-content: center;"
                      data-numero-pedido="{{ $pedido['numero_pedido'] }}"
                      data-version="v2"
-                     data-user-role="{{ auth()->user()->roles->pluck('name')->first() }}">
+                     data-user-role="{{ auth()->user()->roles->pluck('name')->first() }}"
+                     data-tipo-recibo="{{ request('tipo_recibo', '') }}">
                     @include('components.orders-components.order-detail-modal-mobile')
                 </div>
             </div>
@@ -1228,7 +1229,9 @@
         containerMobile.style.display = 'block';
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
+        const tipoRecibo = containerMobile.dataset.tipoRecibo || '';
         console.log('📌 Número de pedido del dataset:', numeroPedido);
+        console.log('📌 Tipo de recibo del dataset:', tipoRecibo);
         
         if (!numeroPedido) {
             console.error('❌ ERROR: numeroPedido no encontrado en dataset');
@@ -1237,7 +1240,10 @@
         
         // USAR EL NUEVO ENDPOINT: /api/operario/pedido/{numeroPedido}
         // Retorna exactamente la misma estructura que /pedidos-public/{id}/recibos-datos
-        const apiUrl = '/api/operario/pedido/' + numeroPedido;
+        let apiUrl = '/api/operario/pedido/' + numeroPedido;
+        if (tipoRecibo) {
+            apiUrl += '?tipo_recibo=' + encodeURIComponent(tipoRecibo);
+        }
         console.log('🌐 URL API (nuevo endpoint operario):', apiUrl);
         
         console.log('🚀 Iniciando fetch a:', apiUrl);

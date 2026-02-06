@@ -665,7 +665,7 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         });
                     }
                     
-                    // Transformar tallas del proceso (desde la relación PedidosProcesosPrendaTalla)
+                    // Transformar tallas del proceso desde pedidos_procesos_prenda_tallas
                     $tallasTransformadas = [
                         'dama' => [],
                         'caballero' => [],
@@ -688,12 +688,14 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                         'tipo_proceso_id' => $proceso->tipo_proceso_id ?? null,
                         'descripcion' => $proceso->descripcion,
                         'ubicaciones' => $proceso->ubicaciones ?? [],
-                        'observaciones' => $proceso->observaciones,
-                        'tallas' => $tallasTransformadas,  // NUEVO: Agregar tallas transformadas
+                        'observaciones' => $proceso->observaciones ?? '',
+                        'tallas' => $tallasTransformadas,  // Tallas desde pedidos_procesos_prenda_tallas
                         'imagenes' => $imagenes, // Array ordenado con estructura completa
                         'estado' => $proceso->estado ?? 'PENDIENTE',
-                        'numero_recibo' => $proceso->numero_recibo, // Agregar número de recibo
-                        'tipo_recibo' => $proceso->tipo_recibo, // Agregar tipo de recibo
+                        'numero_recibo' => $proceso->numero_recibo,
+                        'tipo_recibo' => $proceso->tipo_recibo,
+                        'etiqueta_proceso' => $proceso->etiqueta_proceso ?? null,
+                        'notas_rechazo' => $proceso->notas_rechazo ?? null,
                     ];
                 }
             }

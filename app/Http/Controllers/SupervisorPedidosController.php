@@ -298,6 +298,7 @@ class SupervisorPedidosController extends Controller
             // Actualizar estado
             $orden->update([
                 'estado' => 'PENDIENTE_INSUMOS',
+                'area' => 'Insumos',
                 'aprobado_por_supervisor_en' => now()
             ]);
 
@@ -462,16 +463,18 @@ class SupervisorPedidosController extends Controller
                     'orden' => $orden->fresh(),
                 ]);
             } else {
-                // Para pedidos normales: estado "PENDIENTE_INSUMOS"
+                // Para pedidos normales: estado "PENDIENTE_INSUMOS" y área "Insumos"
                 $orden->update([
                     'aprobado_por_supervisor_en' => now(),
                     'estado' => 'PENDIENTE_INSUMOS',
+                    'area' => 'Insumos',
                 ]);
                 
                 \Log::info("Orden #{$orden->numero_pedido} aprobada por supervisor " . auth()->user()->name, [
                     'fecha_aprobacion' => now(),
                     'estado_anterior' => 'PENDIENTE_SUPERVISOR',
                     'estado_nuevo' => 'PENDIENTE_INSUMOS',
+                    'area' => 'Insumos',
                 ]);
 
                 return response()->json([

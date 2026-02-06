@@ -73,57 +73,79 @@ class ObtenerPrendasRecibosService
                 return [];
             }
             
-            // Filtrar por estado "En Ejecución" y área "costura"
-            if ($pedido->estado !== 'En Ejecución' || strtolower($pedido->area) !== 'costura') {
-                \Log::info('🔍 [Filtro 2] Estado o área no coinciden', [
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'estado' => $pedido->estado,
-                    'area' => $pedido->area
-                ]);
-                return [];
-            }
-            
-            // Verificar que la prenda tenga un proceso con encargado "costura-reflectivo"
-            $procesosCount = $prenda->procesosPrenda ? $prenda->procesosPrenda->count() : 0;
-            \Log::info('🔍 [Filtro 3] Verificando procesos', [
+            \Log::info('✅ [Prenda Validada]', [
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
-                'procesos_count' => $procesosCount
+                'area' => $pedido->area
             ]);
-            
-            if ($prenda->procesosPrenda) {
-                $prenda->procesosPrenda->each(function ($proc) {
-                    \Log::info('🔍 Proceso encontrado', ['encargado' => $proc->encargado]);
-                });
-            }
-            
-            $tieneProcesoCosturaReflectivo = $prenda->procesosPrenda && $prenda->procesosPrenda->contains(function ($proceso) {
-                return strtolower($proceso->encargado) === 'costura-reflectivo';
-            });
-            
-            if (!$tieneProcesoCosturaReflectivo) {
-                \Log::info('🔍 [Filtro 4] No tiene proceso costura-reflectivo', [
-                    'numero_pedido' => $pedido->numero_pedido
-                ]);
-                return [];
-            }
-            
-            \Log::info('✅ [Prenda Aprobada]', ['numero_pedido' => $pedido->numero_pedido]);
 
             // Separar recibos por tipo - crear una entrada para cada tipo
             $recibosPorTipo = $recibosDelaPrenda->groupBy('tipo_recibo');
             
             $resultados = [];
             foreach ($recibosPorTipo as $tipoRecibo => $recibosDelTipo) {
-                // Para REFLECTIVO, validar que esté APROBADO
+                // Validaciones específicas por tipo de recibo
                 if (strtoupper($tipoRecibo) === 'REFLECTIVO') {
+                    // REFLECTIVO: Área debe ser "insumos" y estado PENDIENTE_INSUMOS
+                    if (strtolower($pedido->area) !== 'insumos') {
+                        \Log::info('🔍 [Filtro REFLECTIVO] Área no es "insumos"', [
+                            'prenda_id' => $prenda->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'area_actual' => $pedido->area
+                        ]);
+                        continue; // Skip REFLECTIVO si área no es insumos
+                    }
+                    
+                    // Validar que el estado del pedido sea PENDIENTE_INSUMOS
+                    if ($pedido->estado !== 'PENDIENTE_INSUMOS') {
+                        \Log::info('🔍 [Filtro REFLECTIVO] Estado del pedido no es PENDIENTE_INSUMOS', [
+                            'prenda_id' => $prenda->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'estado_actual' => $pedido->estado
+                        ]);
+                        continue; // Skip REFLECTIVO si el pedido no está en PENDIENTE_INSUMOS
+                    }
+                    
+                    // Validar que el detalle de proceso esté APROBADO
                     $detalleAprobado = PedidosProcesosPrendaDetalle::where('prenda_pedido_id', $prenda->id)
                         ->where('estado', 'APROBADO')
                         ->first();
                     
                     if (!$detalleAprobado) {
-                        \Log::info('🔍 [Filtro REFLECTIVO] No aprobado', ['prenda_id' => $prenda->id]);
-                        continue; // Skip REFLECTIVO si no está aprobado
+                        \Log::info('🔍 [Filtro REFLECTIVO] Detalle no está APROBADO', [
+                            'prenda_id' => $prenda->id,
+                            'numero_pedido' => $pedido->numero_pedido
+                        ]);
+                        continue; // Skip REFLECTIVO si no tiene detalle APROBADO
+                    }
+                    
+                    \Log::info('✅ [REFLECTIVO VÁLIDO]', [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_id' => $prenda->id,
+                        'area' => $pedido->area,
+                        'estado' => $pedido->estado,
+                        'detalle_aprobado' => true
+                    ]);
+                } else if (strtoupper($tipoRecibo) === 'COSTURA' || strtoupper($tipoRecibo) === 'COSTURA-BODEGA') {
+                    // COSTURA: Área debe ser "costura" y estado "En Ejecución"
+                    if (strtolower($pedido->area) !== 'costura') {
+                        \Log::info('🔍 [Filtro COSTURA] Área no es "costura"', [
+                            'prenda_id' => $prenda->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'area_actual' => $pedido->area,
+                            'tipo_recibo' => $tipoRecibo
+                        ]);
+                        continue; // Skip COSTURA si área no es costura
+                    }
+                    
+                    if ($pedido->estado !== 'En Ejecución') {
+                        \Log::info('🔍 [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
+                            'prenda_id' => $prenda->id,
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'estado_actual' => $pedido->estado,
+                            'tipo_recibo' => $tipoRecibo
+                        ]);
+                        continue; // Skip COSTURA si no está en Ejecución
                     }
                 }
                 

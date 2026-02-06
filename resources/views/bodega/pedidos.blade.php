@@ -107,7 +107,8 @@
                             <th class="px-4 py-3 text-center text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-10">Cant.</th>
                             <th class="px-4 py-3 text-center text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-40">Pendientes</th>
                             <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-40">Observaciones</th>
-                            <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-20">Fecha</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-20">Fecha Pedido</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-20">Fecha Entrega</th>
                             <th class="px-4 py-3 text-center text-[11px] font-semibold text-slate-700 uppercase tracking-widest w-56">Área / Estado</th>
                         </tr>
                     </thead>
@@ -131,7 +132,7 @@
                                     style="background-color: rgba(147, 51, 234, 0.2);"
                                 @endif
                             >
-                                <td colspan="9" class="px-4 py-3" style="font-family: 'Poppins', sans-serif;">
+                                <td colspan="10" class="px-4 py-3" style="font-family: 'Poppins', sans-serif;">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div class="w-1 h-6 bg-gradient-to-b @if($esAnulada) from-purple-600 to-purple-700 @else from-blue-500 to-blue-600 @endif rounded"></div>
@@ -188,13 +189,6 @@
                                                     class="px-3 py-1.5 text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition rounded"
                                                     style="font-family: 'Poppins', sans-serif;">
                                                     👁 Ver
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    onclick="guardarPedidoCompleto('{{ $numPedidoReal }}')"
-                                                    class="px-3 py-1.5 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition rounded"
-                                                    style="font-family: 'Poppins', sans-serif;">
-                                                    💾 Guardar
                                                 </button>
                                             @endif
                                         </div>
@@ -323,19 +317,55 @@
                                     
                                     <!-- OBSERVACIONES -->
                                     <td class="px-2 py-2">
-                                        <textarea
-                                            class="observaciones-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                        <div class="flex gap-1">
+                                            <textarea
+                                                class="observaciones-input flex-1 px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
+                                                    @if($item['estado'] === 'Entregado')
+                                                        bg-blue-50
+                                                    @else
+                                                        bg-slate-50
+                                                    @endif"
+                                                style="font-family: 'Poppins', sans-serif;"
+                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-talla="{{ $item['talla'] }}"
+                                                data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
+                                                placeholder="Notas..."
+                                                rows="1"
+                                                readonly
+                                            >{{ $item['observaciones'] ?? '' }}</textarea>
+                                            @php
+                                                $nombreItem = '';
+                                                if($item['tipo'] === 'prenda') {
+                                                    $nombreItem = $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? 'Prenda';
+                                                } else {
+                                                    $nombreItem = $item['descripcion']['nombre_completo'] ?? $item['descripcion']['nombre'] ?? 'EPP';
+                                                }
+                                            @endphp
+                                            <button
+                                                type="button"
+                                                onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombreItem) }}', '{{ $item['tipo'] }}', '{{ $item['talla'] }}')"
+                                                class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold rounded transition whitespace-nowrap"
+                                                title="Ver/agregar notas"
+                                            >
+                                                💬
+                                            </button>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- FECHA PEDIDO -->
+                                    <td class="px-2 py-2">
+                                        <input
+                                            type="date"
+                                            class="fecha-pedido-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition bg-slate-50
                                                 @if($item['estado'] === 'Entregado')
                                                     bg-blue-50
-                                                @else
-                                                    bg-slate-50
                                                 @endif"
                                             style="font-family: 'Poppins', sans-serif;"
+                                            value="{{ $item['fecha_pedido'] ?? '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            placeholder="Notas..."
-                                            rows="1"
-                                        >{{ $item['observaciones'] ?? '' }}</textarea>
+                                            data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
+                                        >
                                     </td>
                                     
                                     <!-- FECHA ENTREGA -->
@@ -385,6 +415,16 @@
                                                 <option value="Entregado" {{ ($item['estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
                                                 <option value="Anulado" {{ ($item['estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                             </select>
+
+                                            <!-- BOTÓN GUARDAR -->
+                                            <button
+                                                type="button"
+                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                                class="w-full px-2 py-2 bg-green-500 hover:bg-green-600 text-white text-[12px] font-bold uppercase tracking-wide rounded-lg transition"
+                                                style="font-family: 'Poppins', sans-serif;"
+                                            >
+                                                💾 Guardar
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -502,6 +542,58 @@
     </div>
 </div>
 
+<!-- Modal de Notas -->
+<div id="modalNotas" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9998 overflow-auto" style="z-index: 9998;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 my-8">
+        <!-- Header -->
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">💬 Notas - Pedido <span id="modalNotasNumeroPedido">#</span> | <span id="modalNotasArticulo">-</span></h2>
+            <button onclick="cerrarModalNotas()" 
+                    class="text-white hover:text-slate-200 text-2xl leading-none">
+                ✕
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="px-6 py-6">
+            <!-- Historial de Notas -->
+            <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
+                <div class="flex justify-center items-center py-8">
+                    <span class="text-slate-500">⏳ Cargando notas...</span>
+                </div>
+            </div>
+            
+            <!-- Formulario para agregar nota -->
+            <div class="border-t border-slate-200 pt-6">
+                <label class="block text-sm font-bold text-slate-900 mb-3">Agregar Nueva Nota:</label>
+                <textarea
+                    id="notasNuevaContent"
+                    class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-700 outline-none transition resize-none"
+                    placeholder="Escribe tu nota aquí..."
+                    rows="4"
+                ></textarea>
+                
+                <div class="flex gap-3 mt-4">
+                    <button
+                        type="button"
+                        onclick="guardarNota()"
+                        class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition"
+                    >
+                        ✓ Guardar Nota
+                    </button>
+                    <button
+                        type="button"
+                        onclick="cerrarModalNotas()"
+                        class="flex-1 px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-lg transition"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL DE ÉXITO -->
 <div 
     id="modalExito" 
@@ -555,7 +647,407 @@ document.addEventListener('DOMContentLoaded', function() {
             autoResizeTextarea(this);
         });
     });
+
+    // Cargar notas automáticamente para items visibles en la página
+    // Se ejecuta inmediatamente después de que el script se cargue
+    (function() {
+        const observacionesInputs = document.querySelectorAll('.observaciones-input');
+        
+        // Agrupar por numero_pedido/talla para evitar duplicados
+        const pedidosACargar = new Set();
+        observacionesInputs.forEach(textarea => {
+            const numeroPedido = textarea.dataset.numeroPedido;
+            const talla = textarea.dataset.talla;
+            if (numeroPedido && talla) {
+                pedidosACargar.add(`${numeroPedido}|${talla}`);
+            }
+        });
+
+        // Cargar notas para cada combinación única
+        pedidosACargar.forEach(key => {
+            const [numeroPedido, talla] = key.split('|');
+            cargarNotas(numeroPedido, talla);
+        });
+    })();
 });
+
+/**
+ * Variables globales para el modal de notas
+ */
+let notasActualNumeroPedido = '';
+let notasActualTalla = '';
+
+/**
+ * Guardar todos los cambios de una fila por click en botón Guardar
+ */
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
+    // Obtener todos los valores de la fila
+    const pendientesInput = document.querySelector(
+        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const observacionesInput = document.querySelector(
+        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaPedidoInput = document.querySelector(
+        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaEntregaInput = document.querySelector(
+        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const areaSelect = document.querySelector(
+        `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const estadoSelect = document.querySelector(
+        `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+
+    // Validar que existan los elementos
+    if (!pendientesInput || !estadoSelect) {
+        alert('Error: No se encontraron los campos de la fila');
+        return;
+    }
+
+    // Obtener el último updated_at del textarea de observaciones
+    const lastUpdatedAt = observacionesInput?.dataset?.updatedAt || new Date().toISOString();
+
+    const datosAGuardar = {
+        numero_pedido: numeroPedido,
+        talla: talla,
+        pendientes: pendientesInput.value.trim(),
+        observaciones_bodega: observacionesInput?.value?.trim() || '',
+        fecha_pedido: fechaPedidoInput?.value || null,
+        fecha_entrega: fechaEntregaInput?.value || null,
+        area: areaSelect?.value || null,
+        estado_bodega: estadoSelect?.value || null,
+        last_updated_at: lastUpdatedAt,
+    };
+
+    // Mostrar spinner de carga
+    const textoOriginal = btnGuardar.textContent;
+    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.disabled = true;
+
+    fetch('/gestion-bodega/guardar-detalles-talla', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify(datosAGuardar)
+    })
+    .then(response => response.json())
+    .then(data => {
+        btnGuardar.textContent = textoOriginal;
+        btnGuardar.disabled = false;
+
+        if (data.success) {
+            // Mostrar toast de éxito
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            if (toast && toastMessage) {
+                toastMessage.textContent = '✓ Cambios guardados exitosamente';
+                toast.classList.remove('hidden');
+                toast.style.display = 'flex';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Actualizar el updated_at en los inputs
+            if (data.data?.updated_at) {
+                if (observacionesInput) observacionesInput.dataset.updatedAt = data.data.updated_at;
+                if (fechaPedidoInput) fechaPedidoInput.dataset.updatedAt = data.data.updated_at;
+                if (fechaEntregaInput) fechaEntregaInput.dataset.updatedAt = data.data.updated_at;
+            }
+        } else if (data.conflict) {
+            // Conflicto de edición
+            alert('⚠️ Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudieron guardar los cambios'));
+        }
+    })
+    .catch(error => {
+        btnGuardar.textContent = textoOriginal;
+        btnGuardar.disabled = false;
+        console.error('Error:', error);
+        alert('Error al guardar: ' + error.message);
+    });
+}
+
+/**
+ * Abrir modal de notas
+ */
+function abrirModalNotas(numeroPedido, talla, nombreItem, tipoItem, tallaReal) {
+    notasActualNumeroPedido = numeroPedido;
+    notasActualTalla = talla;
+    
+    const modal = document.getElementById('modalNotas');
+    if (modal) {
+        document.getElementById('modalNotasNumeroPedido').textContent = numeroPedido;
+        
+        // Mostrar nombre del artículo con talla (solo para prendas)
+        let textoArticulo = nombreItem;
+        if (tipoItem === 'prenda') {
+            textoArticulo += ` - ${tallaReal}`;
+        }
+        document.getElementById('modalNotasArticulo').textContent = textoArticulo;
+        
+        document.getElementById('notasNuevaContent').value = '';
+        modal.classList.remove('hidden');
+        
+        // Cargar historial de notas
+        cargarNotas(numeroPedido, talla);
+    }
+}
+
+/**
+ * Cerrar modal de notas
+ */
+function cerrarModalNotas() {
+    const modal = document.getElementById('modalNotas');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+/**
+ * Cargar historial de notas
+ */
+function cargarNotas(numeroPedido, talla) {
+    fetch('/gestion-bodega/notas/obtener', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify({
+            numero_pedido: numeroPedido,
+            talla: talla
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const historialDiv = document.getElementById('notasHistorial');
+        let textAreaContent = '';
+        
+        if (data.success && data.data && data.data.length > 0) {
+            let html = '<div class="space-y-4">';
+            data.data.forEach(nota => {
+                // Determinar color según rol
+                let colorRol = '#e2e8f0';
+                let bgRol = '#f1f5f9';
+                if (nota.usuario_rol === 'Bodeguero') {
+                    colorRol = '#1e40af';
+                    bgRol = '#dbeafe';
+                } else if (nota.usuario_rol === 'Costura-Bodega') {
+                    colorRol = '#7c2d12';
+                    bgRol = '#feddba';
+                } else if (nota.usuario_rol === 'EPP-Bodega') {
+                    colorRol = '#065f46';
+                    bgRol = '#d1fae5';
+                }
+                
+                html += `
+                    <div style="background-color: ${bgRol}; border-left: 4px solid ${colorRol}; padding: 12px; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color: ${colorRol}; font-size: 14px;">${nota.usuario_nombre}</strong>
+                                <span style="color: #64748b; font-size: 12px; margin-left: 10px;">
+                                    <strong>${nota.usuario_rol}</strong>
+                                </span>
+                            </div>
+                            <span style="color: #64748b; font-size: 12px;">${nota.fecha} ${nota.hora}</span>
+                        </div>
+                        <p style="margin: 0; color: #1e293b; font-size: 13px; white-space: pre-wrap;">
+                            ${nota.contenido}
+                        </p>
+                    </div>
+                `;
+                
+                // Agregar al contenido del textarea - FORMATO SIMPLIFICADO
+                textAreaContent += `${nota.usuario_nombre} - ${nota.contenido}\n`;
+            });
+            html += '</div>';
+            historialDiv.innerHTML = html;
+        } else {
+            historialDiv.innerHTML = '<p style="text-align: center; color: #94a3b8; font-size: 14px;">No hay notas aún. ¡Sé el primero en comentar!</p>';
+        }
+        
+        // Actualizar TODOS los textareas de observaciones que coincidan con este pedido/talla
+        const observacionesInputs = document.querySelectorAll(
+            `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        );
+        
+        observacionesInputs.forEach(textarea => {
+            const oldValue = textarea.value;
+            textarea.value = textAreaContent.trim();
+            
+            // Disparar eventos de cambio para que el UI se actualice
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            textarea.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Trigger auto-resize
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        });
+    })
+    .catch(error => {
+        console.error('Error al cargar notas:', error);
+        document.getElementById('notasHistorial').innerHTML = '<p style="color: #ef4444;">Error al cargar las notas</p>';
+    });
+}
+
+/**
+ * Guardar nueva nota
+ */
+function guardarNota() {
+    const contenido = document.getElementById('notasNuevaContent').value.trim();
+    
+    if (!contenido) {
+        alert('Por favor, escribe una nota antes de guardar');
+        return;
+    }
+    
+    if (contenido.length > 5000) {
+        alert('La nota no puede exceder 5000 caracteres');
+        return;
+    }
+
+    fetch('/gestion-bodega/notas/guardar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify({
+            numero_pedido: notasActualNumeroPedido,
+            talla: notasActualTalla,
+            contenido: contenido
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('notasNuevaContent').value = '';
+            // Recargar historial
+            cargarNotas(notasActualNumeroPedido, notasActualTalla);
+            
+            // Mostrar mensaje de éxito
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            if (toast && toastMessage) {
+                toastMessage.textContent = '✓ Nota guardada exitosamente';
+                toast.classList.remove('hidden');
+                toast.style.display = 'flex';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo guardar la nota'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar la nota: ' + error.message);
+    });
+}
+
+/**
+ * Escuchar cambios en tiempo real con WebSockets (Reverb/Echo)
+ */
+if (typeof window.Echo !== 'undefined') {
+    // Variables globales para los canales activos
+    let canalNotasActivo = null;
+    let canalDetallesActivo = null;
+
+    /**
+     * Función para subscribirse a cambios de notas
+     */
+    function subscribirANotas(numeroPedido, talla) {
+        // Desuscribirse del canal anterior si existe
+        if (canalNotasActivo) {
+            window.Echo.leave(`bodega-notas-${canalNotasActivo.numero}-${canalNotasActivo.talla}`);
+        }
+
+        // Subscribirse al nuevo canal
+        const nombreCanal = `bodega-notas-${numeroPedido}-${talla}`;
+        canalNotasActivo = { numero: numeroPedido, talla: talla };
+        
+        window.Echo.channel(nombreCanal)
+            .listen('nota.guardada', (event) => {
+                // Recargar notas cuando alguien guarda una nota
+                cargarNotas(numeroPedido, talla);
+            });
+    }
+
+    /**
+     * Función para subscribirse a cambios de detalles
+     */
+    function subscribirADetalles(numeroPedido, talla) {
+        // Desuscribirse del canal anterior si existe
+        if (canalDetallesActivo) {
+            window.Echo.leave(`bodega-detalles-${canalDetallesActivo.numero}-${canalDetallesActivo.talla}`);
+        }
+
+        // Subscribirse al nuevo canal
+        const nombreCanal = `bodega-detalles-${numeroPedido}-${talla}`;
+        canalDetallesActivo = { numero: numeroPedido, talla: talla };
+        
+        window.Echo.channel(nombreCanal)
+            .listen('detalle.actualizado', (event) => {
+                // Actualizar los campos del formulario
+                const fecha = document.querySelector(
+                    `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+                );
+                const fechaPedido = document.querySelector(
+                    `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+                );
+                const pendientes = document.querySelector(
+                    `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+                );
+                const observaciones = document.querySelector(
+                    `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+                );
+
+                if (event.detalles) {
+                    if (event.detalles.fecha_entrega && fecha) fecha.value = event.detalles.fecha_entrega;
+                    if (event.detalles.fecha_pedido && fechaPedido) fechaPedido.value = event.detalles.fecha_pedido;
+                    if (event.detalles.pendientes && pendientes) {
+                        pendientes.value = event.detalles.pendientes;
+                        autoResizeTextarea(pendientes);
+                    }
+                }
+            });
+    }
+
+    // Actualizar la función abrirModalNotas para subscribirse a cambios
+    const abrirModalNotasOriginal = window.abrirModalNotas;
+    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal) {
+        abrirModalNotasOriginal.call(this, numeroPedido, talla, nombreItem, tipoItem, tallaReal);
+        // Subscribirse a cambios de notas y detalles cuando abre el modal
+        subscribirANotas(numeroPedido, talla);
+        subscribirADetalles(numeroPedido, talla);
+    };
+
+    // Desuscribirse al cerrar el modal
+    const cerrarModalNotasOriginal = window.cerrarModalNotas;
+    window.cerrarModalNotas = function() {
+        cerrarModalNotasOriginal.call(this);
+        // Desuscribirse de los canales
+        if (canalNotasActivo) {
+            window.Echo.leave(`bodega-notas-${canalNotasActivo.numero}-${canalNotasActivo.talla}`);
+            canalNotasActivo = null;
+        }
+        if (canalDetallesActivo) {
+            window.Echo.leave(`bodega-detalles-${canalDetallesActivo.numero}-${canalDetallesActivo.talla}`);
+            canalDetallesActivo = null;
+        }
+    };
+}
 </script>
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endpush
