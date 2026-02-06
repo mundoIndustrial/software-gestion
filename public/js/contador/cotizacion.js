@@ -470,24 +470,43 @@ function openCotizacionModal(cotizacionId) {
                     const imagenesParaMostrar = [];
                     
                     // Recolectar imágenes de logo para esta prenda
-                    // Usar un Set para deduplicar URLs de logo
-                    const urlsLogoAgregadas = new Set();
+                    // Agrupar por URL para soportar "logo compartido" entre técnicas
+                    const logosPorUrl = new Map();
                     
                     if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas) {
                         data.logo_cotizacion.tecnicas_prendas.forEach(tp => {
                             if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                                const tecnicaNombre = (tp.tipo_logo_nombre || (tp.tipoLogo && tp.tipoLogo.nombre) || 'Logo');
                                 tp.fotos.forEach((foto, idx) => {
-                                    if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
-                                        urlsLogoAgregadas.add(foto.url);
-                                        imagenesParaMostrar.push({
-                                            grupo: 'Imagen - Logo',
+                                    if (!foto.url) return;
+
+                                    if (!logosPorUrl.has(foto.url)) {
+                                        logosPorUrl.set(foto.url, {
                                             url: foto.url,
-                                            titulo: 'Imagen - Logo',
-                                            color: '#1e5ba8'
+                                            tecnicas: new Set(),
                                         });
                                     }
+
+                                    logosPorUrl.get(foto.url).tecnicas.add(tecnicaNombre);
                                 });
                             }
+                        });
+                    }
+
+                    if (logosPorUrl.size > 0) {
+                        Array.from(logosPorUrl.values()).forEach((logo) => {
+                            const tecnicas = Array.from(logo.tecnicas).filter(Boolean);
+                            const textoTecnicas = tecnicas.join(', ');
+                            const label = tecnicas.length <= 1
+                                ? `Logo - ${textoTecnicas || 'Logo'}`
+                                : 'Logo compartido';
+
+                            imagenesParaMostrar.push({
+                                grupo: label,
+                                url: logo.url,
+                                titulo: label,
+                                color: '#1e5ba8'
+                            });
                         });
                     }
                     

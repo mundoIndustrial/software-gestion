@@ -40,7 +40,7 @@ class CotizacionEnviadaAContadorNotification extends Notification implements Sho
             ->line("- **Valor**: \$" . number_format($this->cotizacion->valor_total ?? 0, 2))
             ->line("- **Estado**: Enviada a Contador")
             ->line("- **Fecha**: " . $this->cotizacion->created_at->format('d/m/Y h:i A'))
-            ->action('Revisar Cotización', route('cotizaciones.show', $this->cotizacion->id))
+            ->action('Revisar Cotización', route('asesores.cotizaciones.index'))
             ->line('Por favor, revise la cotización en el sistema.')
             ->salutation('Saludos cordiales,')
             ->markdown('vendor.notifications.email');
@@ -58,7 +58,7 @@ class CotizacionEnviadaAContadorNotification extends Notification implements Sho
             'valor' => $this->cotizacion->valor_total,
             'asesor' => $this->asesor->name,
             'estado' => 'ENVIADA_CONTADOR',
-            'accion_url' => route('cotizaciones.show', $this->cotizacion->id),
+            'accion_url' => route('asesores.cotizaciones.index'),
             'accion_texto' => 'Ver Cotización',
             'prioridad' => 'alta',
         ]);

@@ -194,7 +194,7 @@ class ContadorController extends Controller
             
             // Permitir acceso a: contador, admin, aprobador_cotizaciones, visualizador_cotizaciones_logo
             // Verificar usando hasRole (que soporta nombre de rol o ID)
-            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones', 'visualizador_cotizaciones_logo'];
+            $allowedRoles = ['contador', 'admin', 'aprobador_cotizaciones', 'visualizador_cotizaciones_logo', 'asesor'];
             $hasAccess = false;
             
             foreach ($allowedRoles as $role) {
@@ -250,6 +250,18 @@ class ContadorController extends Controller
                     }]);
                 }
             ])->findOrFail($id);
+
+            // Si es asesor, solo permitir ver sus propias cotizaciones
+            if ($user->hasRole('asesor')) {
+                if ((int) $cotizacionModelo->asesor_id !== (int) $user->id) {
+                    \Log::warning('getCotizacionDetail - Asesor intentando ver cotización ajena', [
+                        'user_id' => $user->id,
+                        'cotizacion_id' => $id,
+                        'cotizacion_asesor_id' => $cotizacionModelo->asesor_id,
+                    ]);
+                    abort(403, 'No tienes permiso para acceder a esta cotización');
+                }
+            }
 
             \Log::info('getCotizacionDetail - Cotización ID: ' . $id);
             \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());

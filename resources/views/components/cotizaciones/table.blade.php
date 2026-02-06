@@ -97,7 +97,7 @@
                                                 <i class="fas fa-trash-alt" style="font-size: 1rem;"></i>
                                             </a>
                                         @else
-                                            <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" 
+                                            <a href="#" onclick="openCotizacionModal({{ $cot->id }}); return false;" 
                                                 title="Ver Cotización"
                                                 style="background: {{ $buttonColor }}; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);"
                                                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.4)'" 

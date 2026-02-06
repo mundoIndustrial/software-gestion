@@ -700,7 +700,6 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     Route::delete('/cotizaciones/imagenes/tela/{id}', [App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
     Route::delete('/cotizaciones/imagenes/logo/{id}', [App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController::class, 'borrarLogo'])->name('cotizaciones.imagen.borrar-logo');
     
-    Route::get('/cotizaciones/{id}/ver', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'showView'])->name('cotizaciones.show');
     Route::get('/cotizaciones/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getForEdit'])->name('cotizaciones.get-for-edit');
     Route::get('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.api');
     Route::post('/cotizaciones/{id}/imagenes', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'subirImagen'])->name('cotizaciones.subir-imagen');
