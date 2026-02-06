@@ -9,7 +9,6 @@
 
 import { PedidosRecibosModule } from './PedidosRecibosModule.js';
 import { Formatters } from './utils/Formatters.js';
-import { ReceiptRenderer } from './components/ReceiptRenderer.js';
 
 // Inicializar módulo
 const module = new PedidosRecibosModule();
@@ -17,11 +16,7 @@ const module = new PedidosRecibosModule();
 // Exponer en window para compatibilidad
 window.PedidosRecibosModule = PedidosRecibosModule;
 window.pedidosRecibosModule = module;
-window.Formatters = Formatters;
-window.ReceiptRenderer = ReceiptRenderer;
-
-console.log('[loader.js] ✓ Formatters expuesto a window');
-console.log('[loader.js] ✓ ReceiptRenderer expuesto a window');
+window.Formatters = Formatters; // ← AGREGAR FORMATTERS AL WINDOW
 
 // Exponer API pública compatibilidad con código antiguo
 window.openOrderDetailModalWithProcess = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) => {

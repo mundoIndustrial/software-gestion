@@ -98,27 +98,24 @@ class ReceiptManager {
         const recibos = [];
 
         datosFactura.prendas.forEach((prenda, prendaIdx) => {
-            // LÓGICA:
-            // Si de_bodega = false (prenda normal) → Solo recibo de COSTURA, NO recibos de procesos
-            // Si de_bodega = true (prenda bodega) → Solo recibos de procesos (REFLECTIVO), NO recibo inicial costura
-            
-            const esDeBodega = prenda.de_bodega == 1 || prenda.de_bodega === true;
-            
-            // 1. Agregar recibo de COSTURA para la prenda SOLO si NO es de bodega
-            if (!esDeBodega) {
-                recibos.push({
-                    numero: recibos.length + 1,
-                    prendaIndex: prendaIdx,
-                    procesoIndex: null,
-                    prenda: prenda,
-                    proceso: null,
-                    titulo: "RECIBO DE COSTURA",
-                    subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
-                });
+            // 1. Agregar recibo de COSTURA para la prenda
+            let tituloCostura = "RECIBO DE COSTURA";
+            if (prenda.de_bodega == 1) {
+                tituloCostura = "RECIBO DE COSTURA-BODEGA";
             }
 
-            // 2. Agregar recibo para cada PROCESO de la prenda SOLO si ES de bodega
-            if (esDeBodega && prenda.procesos && Array.isArray(prenda.procesos)) {
+            recibos.push({
+                numero: recibos.length + 1,
+                prendaIndex: prendaIdx,
+                procesoIndex: null,
+                prenda: prenda,
+                proceso: null,
+                titulo: tituloCostura,
+                subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
+            });
+
+            // 2. Agregar recibo para cada PROCESO de la prenda
+            if (prenda.procesos && Array.isArray(prenda.procesos)) {
                 prenda.procesos.forEach((proceso, procesoIdx) => {
                     recibos.push({
                         numero: recibos.length + 1,
@@ -126,7 +123,7 @@ class ReceiptManager {
                         procesoIndex: procesoIdx,
                         prenda: prenda,
                         proceso: proceso,
-                        titulo: `RECIBO DE ${proceso.tipo_proceso.toUpperCase()}`,
+                        titulo: `RECIBO DE ${proceso.nombre.toUpperCase()}`,
                         subtitulo: `PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}`
                     });
                 });
