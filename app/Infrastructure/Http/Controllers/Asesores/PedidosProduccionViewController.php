@@ -9,6 +9,7 @@ use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\GeneroPrenda;
 use App\Models\PrendaTallaCot;
+use App\Models\LogoCotizacionTecnicaPrendaFoto;
 
 /**
  * PedidosProduccionViewController
@@ -690,7 +691,7 @@ class PedidosProduccionViewController
                             'logoCotizacionesTecnicas' => function($q) {
                                 $q->with([
                                     'tipoLogo:id,nombre',
-                                    'fotos:id,logo_cotizacion_tecnica_prenda_id,ruta_original,ruta_webp,ruta_miniatura,orden'
+                                    'fotos:id,logo_cotizacion_tecnica_prenda_id,ruta_original,ruta_webp,ruta_miniatura,orden,ancho,alto,tamaño,created_at,updated_at'
                                 ]);
                             },
                             'logoCotizacionTelasPrenda' => function($q) {  //  Nueva relación
@@ -837,6 +838,29 @@ class PedidosProduccionViewController
             // PROCESAR TALLAS
             $tallasDisponibles = [];
             $tallasConCantidades = [];
+            $generosPresentes = [];  // Detectar todos los géneros presentes en variantes
+            
+            // Extraer géneros desde variantes (pueden ser múltiples en JSON)
+            if ($prenda->variantes && count($prenda->variantes) > 0) {
+                foreach ($prenda->variantes as $variante) {
+                    if ($variante->genero_id) {
+                        // genero_id puede ser JSON array o un ID simple
+                        $generosVariante = is_array($variante->genero_id) ? $variante->genero_id : [$variante->genero_id];
+                        foreach ($generosVariante as $generoId) {
+                            if (!in_array($generoId, $generosPresentes)) {
+                                $generosPresentes[] = $generoId;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            \Log::info('[OBTENER-PRENDA-COMPLETA] 🧬 GÉNEROS DETECTADOS EN VARIANTES:', [
+                'prenda_id' => $prenda->id,
+                'generos_presentes' => $generosPresentes,
+                'generos_count' => count($generosPresentes)
+            ]);
+            
             if ($prenda->tallas && count($prenda->tallas) > 0) {
                 foreach ($prenda->tallas as $tallaCot) {
                     $tallasDisponibles[] = $tallaCot->talla;
@@ -878,6 +902,14 @@ class PedidosProduccionViewController
             if ($prenda->logoCotizacionesTecnicas && count($prenda->logoCotizacionesTecnicas) > 0) {
                 // Usar los datos ya cargados en la relación (sin hacer query adicional)
                 foreach ($prenda->logoCotizacionesTecnicas as $logoTecnica) {
+                    // DEBUG: Verificar que las fotos se cargaron correctamente
+                    \Log::info('[OBTENER-PRENDA-COMPLETA] 🖼️ LogoTecnica fotos:', [
+                        'logo_tecnica_id' => $logoTecnica->id,
+                        'tiene_fotos' => !!$logoTecnica->fotos,
+                        'fotos_count' => $logoTecnica->fotos ? count($logoTecnica->fotos) : 0,
+                        'fotos_data' => $logoTecnica->fotos ? $logoTecnica->fotos->toArray() : 'NULL'
+                    ]);
+                    
                     // Obtener nombre técnico (Bordado, Estampado, DTF, Sublimado, etc)
                     $nombreTecnica = $logoTecnica->tipoLogo ? $logoTecnica->tipoLogo->nombre : 'Técnica desconocida';
                     // Generar slug desde el nombre (ej: "BORDADO" -> "bordado")
@@ -915,8 +947,25 @@ class PedidosProduccionViewController
                     
                     // Procesar fotos de la técnica (desde la relación ya cargada)
                     $fotosLogoFormato = [];
-                    if ($logoTecnica->fotos && count($logoTecnica->fotos) > 0) {
-                        foreach ($logoTecnica->fotos as $foto) {
+                    $fotosRelacion = $logoTecnica->fotos ?? null;
+                    
+                    // Si no se cargaron en eager loading, intentar cargarlas directamente
+                    if (!$fotosRelacion || ($fotosRelacion instanceof \Illuminate\Database\Eloquent\Collection && count($fotosRelacion) === 0)) {
+                        \Log::warning('[OBTENER-PRENDA-COMPLETA] ⚠️ Fotos no cargadas en eager loading, intentando fallback:', [
+                            'logo_tecnica_id' => $logoTecnica->id
+                        ]);
+                        
+                        $fotosRelacion = LogoCotizacionTecnicaPrendaFoto::where('logo_cotizacion_tecnica_prenda_id', $logoTecnica->id)
+                            ->orderBy('orden')
+                            ->get();
+                        
+                        \Log::info('[OBTENER-PRENDA-COMPLETA] 📸 Fotos cargadas con fallback:', [
+                            'fotos_count' => count($fotosRelacion)
+                        ]);
+                    }
+                    
+                    if ($fotosRelacion && count($fotosRelacion) > 0) {
+                        foreach ($fotosRelacion as $foto) {
                             $rutaOriginal = $foto->ruta_original;
                             $rutaWebp = $foto->ruta_webp;
                             $rutaMiniatura = $foto->ruta_miniatura;
@@ -986,6 +1035,7 @@ class PedidosProduccionViewController
                 'success' => true,
                 'cotizacion_id' => $cotizacionId,
                 'numero_cotizacion' => $cotizacion->numero,
+                'generosPresentes' => $generosPresentes,  // Incluir géneros para que el frontend los pre-seleccione
                 'prenda' => [
                     'id' => $prenda->id,
                     'nombre_producto' => $prenda->nombre_producto,

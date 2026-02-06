@@ -140,7 +140,7 @@
                                             <div style="font-family: 'Poppins', sans-serif;">
                                                 <span class="font-bold @if($esAnulada) text-purple-700 @else text-slate-900 @endif text-sm" style="font-family: 'Poppins', sans-serif;">PEDIDO #{!! $numeroPedido !!}</span>
                                                 <span class="ml-4 text-[11px] @if($esAnulada) text-purple-600 @else text-slate-500 @endif font-medium" style="font-family: 'Poppins', sans-serif;">
-                                                    {{ isset($items[0]['fecha_pedido']) ? \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') : 'N/A' }}
+                                                    {{ \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') }}
                                                     @if($esAnulada)
                                                         <span class="ml-2 inline-flex items-center px-2 py-1 text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider rounded-full">
                                                             ❌ Anulado 
@@ -316,6 +316,8 @@
                                             style="font-family: 'Poppins', sans-serif;"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                            data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                             placeholder="Pendientes..."
                                             rows="1"
                                             disabled
@@ -335,6 +337,8 @@
                                                 style="font-family: 'Poppins', sans-serif;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
+                                                data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                                data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                                 data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
                                                 placeholder="Notas..."
                                                 rows="1"
@@ -371,6 +375,8 @@
                                             value="{{ $item['fecha_pedido'] ?? '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                            data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                             data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
                                         >
                                     </td>
@@ -387,6 +393,8 @@
                                             value="{{ $item['fecha_entrega'] ?? '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                            data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                             data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
                                         >
                                     </td>
@@ -399,19 +407,32 @@
                                                 class="estado-select-readonly w-full px-2 py-1.5 border-2 border-slate-400 bg-white text-slate-900 text-[13px] font-bold uppercase tracking-wide hover:bg-slate-50 transition rounded-lg cursor-pointer"
                                                 style="font-family: 'Poppins', sans-serif; min-height: 35px; font-size: 13px; line-height: 1.4; background-color: white; color: #0f172a !important;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                 data-talla="{{ $item['talla'] }}"
+                                                data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                                data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
+                                                data-item-unique-id="{{ $loop->index ?? uniqid() }}"
+                                                data-asesor="{{ $item['asesor'] ?? '' }}"
+                                                data-empresa="{{ $item['empresa'] ?? '' }}"
                                                 data-bodega-id="{{ $item['bodega_id'] ?? '' }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
+                                                @php
+                                                    // DEBUG: Verificar valor de estado_bodega
+                                                    \Log::info('[SELECTOR DEBUG] Item ' . $item['numero_pedido'] . '-' . $item['talla'] . ' estado_bodega: ' . ($item['estado_bodega'] ?? 'NULL'));
+                                                @endphp
                                             >
                                                 <option value="">ESTADO</option>
-                                                <option value="Pendiente">PENDIENTE</option>
-                                                <option value="Entregado">ENTREGADO</option>
+                                                <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                                <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                @endif
                                             </select>
                                             
                                             <!-- BOTÓN GUARDAR -->
                                             <button
                                                 type="button"
-                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}', {{ $item['cantidad_total'] ?? 0 }})"
                                                 class="w-full px-2 py-2 bg-green-500 hover:bg-green-600 text-white text-[12px] font-bold uppercase tracking-wide rounded-lg transition"
                                                 style="font-family: 'Poppins', sans-serif;"
                                             >
@@ -693,6 +714,16 @@
 
 @push('scripts')
 <script>
+// Variable global para guardar el último valor seleccionado
+window.ultimoValorSeleccionado = {};
+
+// DEBUG - verificar datos que llegan a la vista
+console.log('=== DEBUG VISTA READONLY ===');
+console.log('Rol actual:', '{{ auth()->user()->getRoleNames()->first() ?? "Sin Rol"}}');
+console.log('Total items:', @json(count($pedidosAgrupados)));
+console.log('Sample item data:', @json(isset($pedidosAgrupados[6]) ? $pedidosAgrupados[6] : []));
+console.log('============================');
+
 // Variable global con el ID del usuario actual
 window.usuarioActualId = {{ auth()->user()->id }};
 
@@ -729,6 +760,52 @@ document.addEventListener('DOMContentLoaded', function() {
         if (estadoGuardado && estadoGuardado.trim() !== '') {
             select.value = estadoGuardado;
         }
+        
+        // DEBUG: Agregar listener para detectar cambios y mantener el valor
+        select.addEventListener('change', function() {
+            console.log(`[SELECTOR INIT] Cambio en selector ${this.dataset.numeroPedido}-${this.dataset.talla}:`, this.value);
+            
+            // Crear clave única con identificador único del item
+            const itemUniqueId = this.getAttribute('data-item-unique-id') || uniqid();
+            const clave = `${this.dataset.numeroPedido}-${this.dataset.talla}-${itemUniqueId}`;
+            
+            // Guardar el valor en la variable global
+            window.ultimoValorSeleccionado[clave] = this.value;
+            console.log(`[SELECTOR INIT] Valor guardado en variable global [${clave}]:`, this.value);
+            
+            // Actualizar data-original-estado para que coincida con el valor seleccionado
+            this.setAttribute('data-original-estado', this.value);
+            
+            // DEBUG: Verificar si el valor se mantiene después de un pequeño retraso
+            setTimeout(() => {
+                console.log(`[SELECTOR INIT] Verificación después de 100ms - Valor actual:`, this.value);
+            }, 100);
+        });
+        
+        // DEBUG: Monitorear si el selector se resetea globalmente
+        const selectorGlobal = document.querySelector(
+            `.estado-select-readonly[data-numero-pedido="8"][data-talla="L"]`
+        );
+        if (selectorGlobal) {
+            const globalObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        console.log(`[SELECTOR GLOBAL] Valor modificado globalmente - Nuevo valor:`, selectorGlobal.value);
+                    }
+                });
+            });
+            globalObserver.observe(selectorGlobal, { attributes: true, attributeFilter: ['value'] });
+        }
+        
+        // DEBUG: Monitorear si el selector se resetea
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                    console.log(`[SELECTOR INIT] Valor modificado externamente - Nuevo valor:`, select.value);
+                }
+            });
+        });
+        observer.observe(select, { attributes: true, attributeFilter: ['value'] });
     });
 
     // Cargar notas automáticamente para items visibles en la página
@@ -754,6 +831,8 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
 
     // Manejar guardado de estado para rol Costura-Bodega / EPP-Bodega
+    // TEMPORALMENTE COMENTADO PARA DEPURAR
+    /*
     document.querySelectorAll('.guardar-estado-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const numeroPedido = this.dataset.numeroPedido;
@@ -803,7 +882,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(datos)
             })
@@ -887,6 +967,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    });
+    */
 });
 
 /**
@@ -898,23 +980,77 @@ let notasActualTalla = '';
 /**
  * Guardar todos los cambios de una fila por click en botón Guardar
  */
-function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla, prendaNombre, cantidad) {
+    // DEBUG: Verificar estado del selector inmediatamente al iniciar la función
+    const selectorInmediato = document.querySelector(
+        `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
+    );
+    console.log(`[SELECTOR DEBUG] INICIO guardarFilaCompleta - Buscando: ${numeroPedido}|${talla}|${prendaNombre}|${cantidad}`);
+    console.log(`[SELECTOR DEBUG] INICIO guardarFilaCompleta - Valor inmediato:`, selectorInmediato?.value);
+    
     // Obtener todos los valores de la fila
     const pendientesInput = document.querySelector(
-        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
     );
     const observacionesInput = document.querySelector(
-        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
     );
     const fechaPedidoInput = document.querySelector(
-        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
     );
     const fechaEntregaInput = document.querySelector(
-        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
     );
+    
+    // DEBUG: Verificar si el selector cambia entre el inicio y la obtención
+    console.log(`[SELECTOR DEBUG] Después de obtener elementos - Valor:`, selectorInmediato?.value);
+    
     const estadoSelect = document.querySelector(
-        `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+        `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
     );
+    
+    // DEBUG: Verificar si es el mismo selector
+    console.log(`[SELECTOR DEBUG] ¿Mismo selector?`, selectorInmediato === estadoSelect);
+    console.log(`[SELECTOR DEBUG] Valor del segundo selector:`, estadoSelect?.value);
+
+    // DEBUG: Verificar valor del selector de estado
+    console.log(`[SELECTOR DEBUG] Guardando fila ${numeroPedido}-${talla}-${prendaNombre}-${cantidad}`);
+    console.log(`[SELECTOR DEBUG] estadoSelect encontrado:`, estadoSelect);
+    console.log(`[SELECTOR DEBUG] estadoSelect.value ANTES DE FORZAR:`, estadoSelect?.value);
+    
+    // SOLUCIÓN: Forzar el valor del selector si está vacío
+    if (!estadoSelect || !estadoSelect.value || estadoSelect.value.trim() === '') {
+        // Crear clave única con identificador único del item
+        const itemUniqueId = estadoSelect?.getAttribute('data-item-unique-id') || uniqid();
+        const clave = `${numeroPedido}-${talla}-${prendaNombre}-${cantidad}-${itemUniqueId}`;
+        
+        // Intentar obtener el valor guardado globalmente
+        const valorGlobal = window.ultimoValorSeleccionado[clave];
+        
+        if (valorGlobal && valorGlobal.trim() !== '') {
+            console.log(`[SELECTOR DEBUG] Forzando valor desde variable global [${clave}]:`, valorGlobal);
+            estadoSelect.value = valorGlobal;
+        } else {
+            // Intentar obtener el valor del data-original-estado
+            const valorGuardado = estadoSelect?.getAttribute('data-original-estado');
+            if (valorGuardado && valorGuardado.trim() !== '') {
+                console.log(`[SELECTOR DEBUG] Forzando valor desde data-original-estado:`, valorGuardado);
+                estadoSelect.value = valorGuardado;
+            } else {
+                console.log(`[SELECTOR DEBUG] No hay valor guardado, manteniendo vacío`);
+            }
+        }
+    }
+    
+    console.log(`[SELECTOR DEBUG] estadoSelect.value DESPUÉS DE FORZAR:`, estadoSelect?.value);
+    console.log(`[SELECTOR DEBUG] estadoSelect.selectedOptions:`, Array.from(estadoSelect?.selectedOptions || []).map(opt => ({value: opt.value, text: opt.text, selected: opt.selected})));
+
+    // DEBUG: Agregar listener para detectar cambios en el selector
+    if (estadoSelect) {
+        estadoSelect.addEventListener('change', function() {
+            console.log(`[SELECTOR DEBUG] Cambio detectado en selector ${numeroPedido}-${talla}-${prendaNombre}-${cantidad}:`, this.value);
+        });
+    }
 
     // Validar que existan los elementos
     if (!pendientesInput || !estadoSelect) {
@@ -926,8 +1062,13 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     const lastUpdatedAt = observacionesInput?.dataset?.updatedAt || new Date().toISOString();
 
     const datosAGuardar = {
+        pedido_produccion_id: estadoSelect?.getAttribute('data-pedido-produccion-id') || null,
         numero_pedido: numeroPedido,
         talla: talla,
+        cantidad: parseInt(estadoSelect?.getAttribute('data-cantidad') || '0'),
+        prenda_nombre: estadoSelect?.getAttribute('data-prenda-nombre') || null,
+        asesor: estadoSelect?.getAttribute('data-asesor') || null,
+        empresa: estadoSelect?.getAttribute('data-empresa') || null,
         pendientes: pendientesInput.value.trim(),
         observaciones_bodega: observacionesInput?.value?.trim() || '',
         fecha_pedido: fechaPedidoInput?.value || null,

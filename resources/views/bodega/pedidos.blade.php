@@ -287,7 +287,8 @@
                                     <!-- TALLA -->
                                     <td class="px-2 py-2 text-[10px] text-center text-slate-700" data-talla="{{ $item['talla'] ?? '—' }}">
                                         @if($item['tipo'] === 'epp')
-                                            {{-- EPP: no mostrar talla (es un hash interno) --}}
+                                            {{-- EPP: mostrar talla hash (necesario para tiempo real) --}}
+                                            <span class="text-xs text-slate-500 font-mono">{{ substr($item['talla'] ?? '—', 0, 8) }}</span>
                                         @else
                                             {{ $item['talla'] ?? '—' }}
                                         @endif
@@ -413,7 +414,9 @@
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
                                                 <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
                                                 <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                @endif
                                             </select>
 
                                             <!-- BOTÓN GUARDAR -->
@@ -700,6 +703,10 @@
 
 @push('scripts')
 <script>
+// PRIMER LOG - debe aparecer al principio
+console.log('*** BLOQUE SCRIPTS CARGADO ***');
+console.log('*** ROL ACTUAL: {{ auth()->user()->getRoleNames()->first() ?? "Sin Rol"}} ***');
+
 // Variable global con el ID del usuario actual
 window.usuarioActualId = {{ auth()->user()->id }};
 
@@ -971,21 +978,12 @@ function cargarNotas(numeroPedido, talla) {
                     bgRol = '#d1fae5';
                 }
                 
-                html += `
-                    <div style="background-color: ${bgRol}; border-left: 4px solid ${colorRol}; padding: 12px; border-radius: 6px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: flex-start;">
-                            <div style="flex: 1;">
-                                <strong style="color: ${colorRol}; font-size: 14px;">${nota.usuario_nombre}</strong>
-                                <span style="color: #64748b; font-size: 12px; margin-left: 10px;">
-                                    <strong>${nota.usuario_rol}</strong>
-                                </span>
-                            </div>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <span style="color: #64748b; font-size: 12px; white-space: nowrap;">${nota.fecha} ${nota.hora}</span>
-                                ${nota.usuario_id === window.usuarioActualId ? `
+                let botones = '';
+                if (nota.usuario_id === window.usuarioActualId) {
+                    botones = `
                                 <button 
                                     type="button"
-                                    onclick="editarNota(${nota.id}, '${numeroPedido}', '${talla}', \`${nota.contenido.replace(/`/g, '\\`')}\`)"
+                                    onclick="editarNota(${nota.id}, '${numeroPedido}', '${talla}', '${nota.contenido.replace(/'/g, "\\'")}')"
                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
                                     title="Editar nota"
                                 >
@@ -998,8 +996,21 @@ function cargarNotas(numeroPedido, talla) {
                                     title="Eliminar nota"
                                 >
                                     🗑️
-                                </button>
-                                ` : ''}
+                                </button>`;
+                }
+                
+                html += `
+                    <div style="background-color: ${bgRol}; border-left: 4px solid ${colorRol}; padding: 12px; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <strong style="color: ${colorRol}; font-size: 14px;">${nota.usuario_nombre}</strong>
+                                <span style="color: #64748b; font-size: 12px; margin-left: 10px;">
+                                    <strong>${nota.usuario_rol}</strong>
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span style="color: #64748b; font-size: 12px; white-space: nowrap;">${nota.fecha} ${nota.hora}</span>
+                                ${botones}
                             </div>
                         </div>
                         <p style="margin: 0; color: #1e293b; font-size: 13px; white-space: pre-wrap;">
@@ -1256,6 +1267,12 @@ function confirmarEliminarNota() {
 /**
  * Escuchar cambios en tiempo real con WebSockets (Reverb/Echo)
  */
+console.log('[Reverb] ===== VERIFICANDO WEBSOCKET =====');
+console.log('[Reverb] window.Echo:', typeof window.Echo);
+console.log('[Reverb] window.Echo disponible:', !!window.Echo);
+console.log('[Reverb] window.Pusher:', typeof window.Pusher);
+console.log('[Reverb] window.Laravel Echo:', typeof window.LaravelEcho);
+
 if (typeof window.Echo !== 'undefined') {
     // Variables globales para los canales activos
     let canalNotasActivo = null;
@@ -1285,10 +1302,16 @@ if (typeof window.Echo !== 'undefined') {
      * Función para subscribirse a cambios de detalles
      */
     function subscribirADetalles(numeroPedido, talla) {
-        if (!window.Echo) return;
+        if (!window.Echo) {
+            console.log('[Reverb] subscribirADetalles: Echo no disponible');
+            return;
+        }
+        
+        console.log(`[Reverb] subscribirADetalles: INICIANDO - pedido=${numeroPedido}, talla=${talla}`);
         
         // Desuscribirse del canal anterior si existe
         if (canalDetallesActivo) {
+            console.log(`[Reverb] subscribirADetalles: Desuscribiendo canal anterior: bodega-detalles-${canalDetallesActivo.numero}-${canalDetallesActivo.talla}`);
             window.Echo.leave(`bodega-detalles-${canalDetallesActivo.numero}-${canalDetallesActivo.talla}`);
         }
 
@@ -1296,9 +1319,14 @@ if (typeof window.Echo !== 'undefined') {
         const nombreCanal = `bodega-detalles-${numeroPedido}-${talla}`;
         canalDetallesActivo = { numero: numeroPedido, talla: talla };
         
+        console.log(`[Reverb] subscribirADetalles: Suscribiendo a canal: ${nombreCanal}`);
+        
         window.Echo.private(nombreCanal)
             .listen('detalle.actualizado', (event) => {
-                console.log('[Reverb] Detalle actualizado:', event);
+                console.log('[Reverb] ===== DETALLE ACTUALIZADO =====');
+                console.log('[Reverb] Evento completo:', event);
+                console.log('[Reverb] Número pedido:', numeroPedido);
+                console.log('[Reverb] Talla:', talla);
                 
                 // Actualizar los campos del formulario
                 const fecha = document.querySelector(
@@ -1317,43 +1345,129 @@ if (typeof window.Echo !== 'undefined') {
                     `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
                 );
 
+                console.log('[Reverb] Elementos encontrados:');
+                console.log('- fecha:', fecha);
+                console.log('- fechaPedido:', fechaPedido);
+                console.log('- pendientes:', pendientes);
+                console.log('- observaciones:', observaciones);
+                console.log('- estadoSelect:', estadoSelect);
+
                 if (event.detalles) {
+                    console.log('[Reverb] Detalles recibidos:', event.detalles);
+                    
                     // Evitar actualizar si el campo está siendo editado
                     if (event.detalles.fecha_entrega && fecha && document.activeElement !== fecha) {
+                        console.log('[Reverb] Actualizando fecha_entrega:', event.detalles.fecha_entrega);
                         fecha.value = event.detalles.fecha_entrega;
                     }
                     if (event.detalles.fecha_pedido && fechaPedido && document.activeElement !== fechaPedido) {
+                        console.log('[Reverb] Actualizando fecha_pedido:', event.detalles.fecha_pedido);
                         fechaPedido.value = event.detalles.fecha_pedido;
                     }
                     if (event.detalles.pendientes !== undefined && pendientes && document.activeElement !== pendientes) {
+                        console.log('[Reverb] Actualizando pendientes:', event.detalles.pendientes);
                         pendientes.value = event.detalles.pendientes || '';
                         autoResizeTextarea(pendientes);
                     }
                     if (event.detalles.observaciones_bodega !== undefined && observaciones && document.activeElement !== observaciones) {
+                        console.log('[Reverb] Actualizando observaciones_bodega:', event.detalles.observaciones_bodega);
                         observaciones.value = event.detalles.observaciones_bodega || '';
                         autoResizeTextarea(observaciones);
                     }
+                    
                     if (event.detalles.estado_bodega && estadoSelect && document.activeElement !== estadoSelect) {
-                        estadoSelect.value = event.detalles.estado_bodega;
-                        estadoSelect.setAttribute('data-original-estado', event.detalles.estado_bodega);
+                        console.log('[WebSocket Estado] ===== PROCESANDO ESTADO =====');
+                        console.log('[WebSocket Estado] Estado recibido:', event.detalles.estado_bodega);
+                        console.log('[WebSocket Estado] Tipo de dato:', typeof event.detalles.estado_bodega);
+                        console.log('[WebSocket Estado] Valor trim:', event.detalles.estado_bodega?.trim());
+                        console.log('[WebSocket Estado] Es null?:', event.detalles.estado_bodega === null);
+                        console.log('[WebSocket Estado] Es undefined?:', event.detalles.estado_bodega === undefined);
+                        console.log('[WebSocket Estado] Es string vacío?:', event.detalles.estado_bodega === '');
+                        console.log('[WebSocket Estado] Selector actual:', estadoSelect);
+                        console.log('[WebSocket Estado] Valor actual del selector:', estadoSelect.value);
+                        
+                        // Mostrar todas las opciones del selector
+                        console.log('[WebSocket Estado] Opciones disponibles:');
+                        const opciones = estadoSelect.querySelectorAll('option');
+                        opciones.forEach((opt, index) => {
+                            console.log(`  [${index}] value="${opt.value}" text="${opt.textContent}" selected=${opt.selected}`);
+                        });
+                        
+                        // Si el estado es null, vacío o undefined, establecer valor vacío para mostrar "ESTADO"
+                        const estadoValido = event.detalles.estado_bodega && event.detalles.estado_bodega.trim() !== '' ? event.detalles.estado_bodega : '';
+                        
+                        console.log('[WebSocket Estado] Estado validado:', estadoValido);
+                        console.log('[WebSocket Estado] Estado validado tipo:', typeof estadoValido);
+                        console.log('[WebSocket Estado] Estado validado length:', estadoValido.length);
+                        
+                        estadoSelect.value = estadoValido;
+                        estadoSelect.setAttribute('data-original-estado', estadoValido);
+                        
+                        console.log('[WebSocket Estado] Valor después de asignar:', estadoSelect.value);
+                        console.log('[WebSocket Estado] Atributo data-original-estado:', estadoSelect.getAttribute('data-original-estado'));
+                        
+                        // Actualizar el texto visible del selector
+                        const optionSeleccionada = estadoSelect.querySelector(`option[value="${estadoValido}"]`);
+                        console.log('[WebSocket Estado] Opción encontrada:', optionSeleccionada);
+                        console.log('[WebSocket Estado] Buscando option[value="' + estadoValido + '"]');
+                        
+                        if (optionSeleccionada) {
+                            console.log('[WebSocket Estado] Opción encontrada - texto:', optionSeleccionada.textContent);
+                            // Forzar actualización del texto visible
+                            estadoSelect.dispatchEvent(new Event('change'));
+                            console.log('[WebSocket Estado] Evento change disparado');
+                        } else {
+                            console.log('[WebSocket Estado] No se encontró opción para el valor:', estadoValido);
+                            console.log('[WebSocket Estado] Intentando con valor vacío para mostrar ESTADO');
+                            const optionVacia = estadoSelect.querySelector('option[value=""]');
+                            console.log('[WebSocket Estado] Opción vacía:', optionVacia);
+                            if (optionVacia) {
+                                estadoSelect.value = '';
+                                estadoSelect.dispatchEvent(new Event('change'));
+                                console.log('[WebSocket Estado] Forzado a valor vacío para mostrar ESTADO');
+                            }
+                        }
+                        console.log('[WebSocket Estado] ===== FIN PROCESAMIENTO ESTADO =====');
                     }
+                } else {
+                    console.log('[Reverb] No se recibieron detalles en el evento');
                 }
+            })
+            .error((error) => {
+                console.error(`[Reverb] Error en canal ${nombreCanal}:`, error);
+            })
+            .subscribed(() => {
+                console.log(`[Reverb] Suscrito exitosamente a canal: ${nombreCanal}`);
             });
     }
 
     // Suscribirse a todos los items visibles al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         if (window.Echo) {
+            console.log('[Reverb] ===== INICIALIZANDO WEBSOCKET =====');
+            console.log('[Reverb] Echo disponible:', !!window.Echo);
+            console.log('[Reverb] Conectado?:', window.Echo.connector?.pusher?.connection?.state);
+            
             console.log('[Reverb] Inicializando suscripciones a detalles en tiempo real...');
             const observacionesInputs = document.querySelectorAll('.observaciones-input');
-            observacionesInputs.forEach(input => {
+            console.log('[Reverb] Inputs de observaciones encontrados:', observacionesInputs.length);
+            
+            observacionesInputs.forEach((input, index) => {
                 const numeroPedido = input.dataset.numeroPedido;
                 const talla = input.dataset.talla;
+                console.log(`[Reverb] [${index}] Procesando input: pedido=${numeroPedido}, talla=${talla}`);
+                
                 if (numeroPedido && talla) {
+                    console.log(`[Reverb] [${index}] Suscribiendo a canal: bodega-detalles-${numeroPedido}-${talla}`);
                     subscribirADetalles(numeroPedido, talla);
+                } else {
+                    console.log(`[Reverb] [${index}] Saltando - datos incompletos`);
                 }
             });
-            console.log(`[Reverb] Suscrito a ${observacionesInputs.length} items`);
+            console.log(`[Reverb] ===== SUSCRIPCIÓN COMPLETADA: ${observacionesInputs.length} items =====`);
+        } else {
+            console.log('[Reverb] ===== WEBSOCKET NO DISPONIBLE =====');
+            console.log('[Reverb] window.Echo no está definido');
         }
     });
 
@@ -1418,11 +1532,72 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// DEBUG SIMPLE - debe aparecer primero
+console.log('*** SCRIPT CARGADO ***');
+console.log('*** ROL: {{ auth()->user()->getRoleNames()->first() ?? "Sin Rol"}} ***');
+
 // DEBUG: Mostrar datos precargados
 console.log('=== DATOS PRECARGADOS DE BODEGA ===');
-console.log('datosBodega:', {!! json_encode($datosBodega->toArray()) !!});
-console.log('notasBodega:', {!! json_encode($notasBodega->toArray()) !!});
+console.log('Total datosBodega:', Object.keys({!! json_encode($datosBodega->toArray()) !!}).length);
 console.log('=============================');
+
+// DEBUG: Analizar datos por rol
+console.log('=== ANÁLISIS DE DATOS POR ROL ===');
+const usuarioRol = '{{ auth()->user()->getRoleNames()->first() ?? "Sin Rol"}}';
+console.log('Rol actual:', usuarioRol);
+
+// Analizar estados disponibles
+const estadosDisponibles = [];
+const datosBodegaObj = {!! json_encode($datosBodega->toArray()) !!};
+Object.values(datosBodegaObj).forEach(item => {
+    if (item.estado_bodega) {
+        estadosDisponibles.push(item.estado_bodega);
+    }
+});
+console.log('Estados disponibles:', estadosDisponibles);
+
+// Analizar tallas
+const tallasDisponibles = [];
+Object.keys(datosBodegaObj).forEach(key => {
+    const [pedido, talla] = key.split('|');
+    tallasDisponibles.push(talla);
+});
+console.log('Tallas disponibles:', tallasDisponibles);
+console.log('=============================');
+
+// Inicializar selectores de estado manualmente (fallback cuando no hay WebSocket)
+function inicializarSelectoresEstado() {
+    const selectoresEstado = document.querySelectorAll('.estado-select');
+    console.log(`[Fallback] Inicializando ${selectoresEstado.length} selectores de estado`);
+    
+    selectoresEstado.forEach((selector, index) => {
+        const valorActual = selector.value;
+        const originalEstado = selector.getAttribute('data-original-estado');
+        
+        console.log(`[Fallback] Selector ${index}: valor=${valorActual}, original=${originalEstado}`);
+        
+        // Si no hay valor, asegurarse que muestre "ESTADO"
+        if (!valorActual || valorActual.trim() === '') {
+            selector.value = '';
+            console.log(`[Fallback] Selector ${index}: establecido a valor vacío para mostrar ESTADO`);
+        }
+        
+        // Agregar listener para cambios manuales
+        selector.addEventListener('change', function() {
+            colorearFilaPorEstado(this);
+        });
+        
+        // Colorear fila según estado actual
+        colorearFilaPorEstado(selector);
+    });
+}
+
+// Ejecutar inicialización inmediatamente
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarSelectoresEstado);
+} else {
+    inicializarSelectoresEstado();
+}
 </script>
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endpush
