@@ -97,21 +97,85 @@ class CargadorPrendasCotizacion {
                 variaciones_prenda: procesoData.variaciones_prenda || {},
                 // NUEVO: Procesar talla cantidad desde técnicas de logo
                 talla_cantidad: procesoData.talla_cantidad || {},
-                imagenes: (procesoData.imagenes || []).map(img => ({
-                    ruta: img.ruta || img,
-                    ruta_webp: img.ruta_webp || null,
-                    uid: `existing-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-                })),
+                imagenes: (procesoData.imagenes || []).map(img => {
+                    // Si img es un objeto con ruta_original/ruta_webp (de BD)
+                    if (img && typeof img === 'object' && (img.ruta_original || img.ruta_webp)) {
+                        // Prioridad: ruta_original > ruta_webp > ruta
+                        let ruta = img.ruta_original || img.ruta;
+                        let ruta_webp = img.ruta_webp;
+                        
+                        // Si ruta es null o vacía, usar ruta_webp
+                        if (!ruta && ruta_webp) {
+                            ruta = ruta_webp;
+                        }
+                        
+                        // Asegurar que las rutas tengan formato correcto
+                        if (ruta && typeof ruta === 'string' && !ruta.startsWith('/')) {
+                            ruta = '/storage/' + ruta;
+                        }
+                        if (ruta_webp && typeof ruta_webp === 'string' && !ruta_webp.startsWith('/')) {
+                            ruta_webp = '/storage/' + ruta_webp;
+                        }
+                        
+                        console.log(`[transformarDatos] 📸 Logo imagen procesada:`, {
+                            ruta_original: img.ruta_original,
+                            ruta_webp_original: img.ruta_webp,
+                            ruta_final: ruta || ruta_webp
+                        });
+                        
+                        return {
+                            ruta: ruta || ruta_webp,  // Garantizar que ruta siempre tenga valor
+                            ruta_webp: ruta_webp || ruta,  // Fallback a ruta si no hay webp
+                            uid: `existing-logo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                        };
+                    }
+                    
+                    // Fallback: si es string o estructura simple
+                    return {
+                        ruta: img.ruta || img,
+                        ruta_webp: img.ruta_webp || null,
+                        uid: `existing-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                    };
+                }).filter(img => img.ruta),  // Filtrar imágenes sin ruta válida
                 tallas: procesoData.tallas || {}
             };
         });
 
         // Preparar fotos de prenda
-        const fotosFormato = (prenda.fotos || []).map((foto, idx) => ({
-            ruta: foto.ruta || foto,
-            ruta_webp: foto.ruta_webp || null,
-            uid: `existing-foto-${Date.now()}-${idx}`
-        }));
+        const fotosFormato = (prenda.fotos || []).map((foto, idx) => {
+            // Si foto es un objeto con ruta_original/ruta_webp (de BD)
+            if (foto && typeof foto === 'object' && (foto.ruta_original || foto.ruta_webp)) {
+                // Prioridad: ruta_original > ruta_webp > ruta
+                let ruta = foto.ruta_original || foto.ruta;
+                let ruta_webp = foto.ruta_webp;
+                
+                // Si ruta es null o vacía, usar ruta_webp
+                if (!ruta && ruta_webp) {
+                    ruta = ruta_webp;
+                }
+                
+                // Asegurar que las rutas tengan formato correcto
+                if (ruta && typeof ruta === 'string' && !ruta.startsWith('/')) {
+                    ruta = '/storage/' + ruta;
+                }
+                if (ruta_webp && typeof ruta_webp === 'string' && !ruta_webp.startsWith('/')) {
+                    ruta_webp = '/storage/' + ruta_webp;
+                }
+                
+                return {
+                    ruta: ruta || ruta_webp,
+                    ruta_webp: ruta_webp || ruta,
+                    uid: `existing-foto-prenda-${idx}`
+                };
+            }
+            
+            // Fallback por si acaso
+            return {
+                ruta: foto.ruta || foto,
+                ruta_webp: foto.ruta_webp || null,
+                uid: `existing-foto-${Date.now()}-${idx}`
+            };
+        }).filter(f => f.ruta);  // Filtrar fotos sin ruta válida
         
         console.log('[transformarDatos] 📸 FOTOS RECIBIDAS DEL BACKEND:', prenda.fotos);
         console.log('[transformarDatos] 📦 FOTOS PROCESADAS:', fotosFormato);
@@ -165,8 +229,60 @@ class CargadorPrendasCotizacion {
                 nombre_tela: tela.nombre_tela,
                 color: tela.color,
                 referencia: tela.referencia,
-                imagenes_count: teleImagen.length
+                imagenes_count: teleImagen.length,
+                imagenes_data: teleImagen
             });
+            
+            // Validar que las rutas sean correctas
+            const imagenesProcesadas = teleImagen.map((img, imgIdx) => {
+                // Prioridad: ruta > ruta_webp (si ruta es null, usar ruta_webp)
+                let ruta = img.ruta;
+                let ruta_webp = img.ruta_webp;
+                
+                // Si ruta es null o vacía, usar ruta_webp
+                if (!ruta && ruta_webp) {
+                    ruta = ruta_webp;
+                }
+                
+                // Si ambas son null, intentar usar img como string (compatibilidad)
+                if (!ruta && typeof img === 'string') {
+                    ruta = img;
+                }
+                
+                // Asegurar que las rutas tengan formato correcto
+                if (ruta && typeof ruta === 'string') {
+                    // Si no comienza con /, agregar /storage/
+                    if (!ruta.startsWith('/')) {
+                        ruta = '/storage/' + ruta;
+                    }
+                }
+                if (ruta_webp && typeof ruta_webp === 'string') {
+                    if (!ruta_webp.startsWith('/')) {
+                        ruta_webp = '/storage/' + ruta_webp;
+                    }
+                }
+                
+                console.log(`[transformarDatos] 📸 Imagen tela ${idx}-${imgIdx}:`, {
+                    ruta_original: img.ruta,
+                    ruta_webp_original: img.ruta_webp,
+                    ruta_procesada: ruta,
+                    ruta_webp_procesada: ruta_webp,
+                    ruta_final: ruta || ruta_webp || 'SIN RUTA'
+                });
+                
+                // Solo devolver si tenemos AL MENOS una ruta válida
+                if (!ruta && !ruta_webp) {
+                    console.warn(`[transformarDatos] ⚠️ Imagen tela ${idx}-${imgIdx} SIN NINGUNA RUTA VÁLIDA:`, img);
+                    return null;  // Saltar imagen sin rutas
+                }
+                
+                return {
+                    ruta: ruta || ruta_webp,  // Garantizar que ruta siempre tenga valor
+                    ruta_webp: ruta_webp || ruta,  // Fallback a ruta si no hay webp
+                    uid: `existing-tela-${tela.id}-${imgIdx}`
+                };
+            }).filter(Boolean);  // Filtrar imágenes null
+            
             return {
                 id: tela.id,
                 nombre_tela: tela.nombre_tela || tela.tela?.nombre || tela.nombre || 'SIN NOMBRE',
@@ -174,11 +290,11 @@ class CargadorPrendasCotizacion {
                 grosor: tela.grosor || '',
                 referencia: tela.referencia || '',
                 composicion: tela.composicion || '',
-                imagenes: teleImagen.map((img, idx) => ({
-                    ruta: img.ruta || img,
-                    ruta_webp: img.ruta_webp || null,
-                    uid: `existing-tela-${tela.id}-${idx}`
-                }))
+                imagenes: imagenesProcesadas,
+                debug: {
+                    imagenes_count: imagenesProcesadas.length,
+                    primera_imagen_ruta: imagenesProcesadas[0]?.ruta || 'NO HAY IMAGEN'
+                }
             };
         });
         

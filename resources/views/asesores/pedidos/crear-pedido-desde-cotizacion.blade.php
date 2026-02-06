@@ -245,6 +245,9 @@
     <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/utilidades/validador-prenda.js') }}?v={{ time() }}"></script>
     
+    <!-- UTILIDADES (Diagnóstico de Rutas de Telas) -->
+    <script src="{{ asset('js/utilidades/diagnostico-rutas-telas.js') }}?v={{ time() }}"></script>
+    
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
     

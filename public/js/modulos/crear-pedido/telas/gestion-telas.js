@@ -347,23 +347,34 @@ window.actualizarTablaTelas = function() {
                     blobUrl = URL.createObjectURL(img);
                 } else if (img && img.blobUrl) {
                     blobUrl = img.blobUrl;
-                } else if (typeof img === 'string') {
+                } else if (typeof img === 'string' && img.trim()) {
                     blobUrl = img;
-                } else if (img && img.url) {
+                } else if (img && img.url && img.url.trim()) {
                     blobUrl = img.url;
-                } else if (img && img.ruta) {
+                } else if (img && img.ruta && img.ruta.trim()) {
+                    // Prioridad: ruta (viene de BD de cotizaciones)
                     blobUrl = img.ruta;
-                } else if (img && img.ruta_webp) {
+                } else if (img && img.ruta_webp && img.ruta_webp.trim()) {
+                    // Si no hay ruta, usar ruta_webp
                     blobUrl = img.ruta_webp;
-                } else if (img && img.ruta_original) {
+                } else if (img && img.ruta_original && img.ruta_original.trim()) {
                     blobUrl = img.ruta_original;
                 } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
                 } else {
+                    // DEBUG para encontrar imágenes sin ruta
+                    console.warn(`[actualizarTablaTelas] ⚠️ Imagen sin ruta válida en tela ${index}:`, img);
                     blobUrl = '';
                 }
                 
                 return { ...img, previewUrl: blobUrl };
+            });
+            
+            // DEBUG: Mostrar qué se extrajo de cada imagen
+            console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas:`, {
+                total_imagenes: imagenConBlobUrl.length,
+                primera_imagen_blob: imagenConBlobUrl[0]?.previewUrl || 'VACÍA',
+                imagenes_con_url: imagenConBlobUrl.filter(i => i.previewUrl).length
             });
             
             imagenHTML = `

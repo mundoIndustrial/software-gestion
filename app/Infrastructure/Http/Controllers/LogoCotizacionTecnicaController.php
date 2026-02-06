@@ -278,16 +278,29 @@ class LogoCotizacionTecnicaController extends Controller
                                 $grupoCombinado
                             );
 
+                            // Validar que se guardó correctamente y que tiene las rutas necesarias
+                            if (!$rutasImagen || !isset($rutasImagen['ruta_webp'])) {
+                                Log::error(' Rutas de imagen inválidas', [
+                                    'prenda_id' => $prenda->id,
+                                    'rutasImagen' => json_encode($rutasImagen)
+                                ]);
+                                throw new \Exception('Error al procesar las rutas de la imagen');
+                            }
+
+                            // Usar ruta_webp para ambas (ruta_original y ruta_webp)
+                            // Esto asegura que al menos ruta_webp siempre tenga valor
+                            $rutaFinal = $rutasImagen['ruta_webp'];
+
                             // Guardar metadata en BD
                             $foto = LogoCotizacionTecnicaPrendaFoto::create([
                                 'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
-                                'ruta_original' => $rutasImagen['ruta_webp'],
-                                'ruta_webp' => $rutasImagen['ruta_webp'],
-                                'ruta_miniatura' => $rutasImagen['ruta_webp'],
+                                'ruta_original' => $rutaFinal,  // Usar la misma ruta
+                                'ruta_webp' => $rutaFinal,      // WebP optimizado
+                                'ruta_miniatura' => $rutaFinal, // Misma para miniatura
                                 'orden' => $imagenIndex,
-                                'ancho' => $rutasImagen['ancho'],
-                                'alto' => $rutasImagen['alto'],
-                                'tamaño' => $rutasImagen['tamaño'],
+                                'ancho' => $rutasImagen['ancho'] ?? 0,
+                                'alto' => $rutasImagen['alto'] ?? 0,
+                                'tamaño' => $rutasImagen['tamaño'] ?? 0,
                             ]);
 
                             Log::info(' Imagen de prenda guardada en BD', [
@@ -332,6 +345,15 @@ class LogoCotizacionTecnicaController extends Controller
                         $alto = $dimensiones[1] ?? 0;
                         $tamaño = @filesize($imagenPath) ?? 0;
                         
+                        // Validar que rutaCompartida no sea vacío
+                        if (empty($rutaCompartida)) {
+                            Log::warning(' Ruta compartida vacía, saltando', [
+                                'clave' => $clave,
+                                'prenda_id' => $prenda->id
+                            ]);
+                            continue;
+                        }
+
                         // Crear entrada en BD apuntando a la ruta compartida
                         $foto = LogoCotizacionTecnicaPrendaFoto::create([
                             'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
