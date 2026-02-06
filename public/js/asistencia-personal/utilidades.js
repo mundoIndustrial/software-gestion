@@ -23,36 +23,33 @@ const AsistenciaUtilidades = (() => {
 
     /**
      * Calcular hora extra basado en total de minutos trabajados
-     * Para rol mixto (id=21) en sábado: hora extra desde 16:56 (8 horas 56 minutos)
+     * Cuenta solo horas completas después de la jornada laboral
      */
     function calcularHoraExtra(totalMinutos, esDiaSabado = false, idRol = null) {
-        let umbralMinutos;
         let minutosBase;
         
-        // Lógica especial para rol mixto (id 21) en sábado
+        // Determinar la jornada base según el día y rol
         if (esDiaSabado && idRol === 21) {
-            // Rol mixto en sábado: jornada de 8 horas (08:00 a 16:00)
-            umbralMinutos = (8 * 60) + 56; // 8 horas y 56 minutos = 536 minutos
+            // Rol mixto en sábado: jornada de 8 horas
             minutosBase = 8 * 60; // 8 horas = 480 minutos
         } else if (esDiaSabado) {
             // Otros roles en sábado: jornada de 4 horas
-            umbralMinutos = (4 * 60) + 56; // 4 horas y 56 minutos = 296 minutos
             minutosBase = 4 * 60; // 4 horas = 240 minutos
         } else {
             // Otros días: jornada de 8 horas
-            umbralMinutos = (8 * 60) + 56; // 8 horas y 56 minutos = 536 minutos
             minutosBase = 8 * 60; // 8 horas = 480 minutos
         }
         
-        if (totalMinutos < umbralMinutos) {
+        if (totalMinutos <= minutosBase) {
             return {
                 tieneHoraExtra: false,
                 horaExtra: '0:00:00'
             };
         }
         
+        // Calcular horas extras (solo horas completas)
         const minutosExtra = totalMinutos - minutosBase;
-        const horas = Math.floor(minutosExtra / 60);
+        const horas = Math.floor(minutosExtra / 60); // Solo horas completas
         const minutos = Math.floor(minutosExtra % 60);
         const segundos = Math.round(((minutosExtra % 1) * 60));
         

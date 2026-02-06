@@ -187,6 +187,19 @@ const AsistenciaHorasTrabajadas = (() => {
             const totalMinutos = AsistenciaUtilidades.horaAMinutos(calcResult.horasTotales);
             const horaExtraResult = AsistenciaUtilidades.calcularHoraExtra(totalMinutos, calcResult.esSabado, registro.id_rol);
             
+            // Para roles 19 y 20: verificar si realmente tiene horas extras completas (no solo minutos)
+            let tieneHorasExtrasCompletas = horaExtraResult.tieneHoraExtra;
+            let mostrarHoraExtra = horaExtraResult.horaExtra;
+            let colorHoraExtra = horaExtraResult.tieneHoraExtra ? '#27ae60' : '#6c757d';
+            
+            // Aplicar lógica estricta solo para roles 19 y 20
+            if (registro.id_rol === 19 || registro.id_rol === 20) {
+                const minutosExtra = totalMinutos - (calcResult.esSabado ? 240 : 480); // 4h sábado = 240min, 8h entre semana = 480min
+                tieneHorasExtrasCompletas = minutosExtra >= 60; // Solo si tiene al menos 1 hora completa
+                colorHoraExtra = tieneHorasExtrasCompletas ? '#27ae60' : '#6c757d';
+                mostrarHoraExtra = tieneHorasExtrasCompletas ? horaExtraResult.horaExtra : '0:00:00';
+            }
+            
             let colorEstado = '#6c757d';
             let iconoEstado = '';
             
@@ -201,8 +214,6 @@ const AsistenciaHorasTrabajadas = (() => {
                 iconoEstado = '✗';
             }
             
-            let colorHoraExtra = horaExtraResult.tieneHoraExtra ? '#27ae60' : '#6c757d';
-            
             row.setAttribute('data-persona-id', registro.codigo);
             row.setAttribute('data-persona-nombre', registro.nombre.toLowerCase());
             row.setAttribute('title', calcResult.observacion);
@@ -211,8 +222,8 @@ const AsistenciaHorasTrabajadas = (() => {
                 <td>${registro.nombre}</td>
                 <td>${registro.codigo}</td>
                 <td style="text-align: center; font-weight: 600; color: #27ae60;">${calcResult.horasTotales}</td>
-                <td style="text-align: center; font-weight: 600; color: ${colorHoraExtra};">${horaExtraResult.tieneHoraExtra ? 'Sí' : 'No'}</td>
-                <td style="text-align: center; font-weight: 600; color: ${colorHoraExtra};">${horaExtraResult.horaExtra}</td>
+                <td style="text-align: center; font-weight: 600; color: ${colorHoraExtra};">${tieneHorasExtrasCompletas ? 'Sí' : 'No'}</td>
+                <td style="text-align: center; font-weight: 600; color: ${colorHoraExtra};">${mostrarHoraExtra}</td>
                 <td style="text-align: center; font-weight: 600; color: ${colorEstado};" title="${calcResult.observacion}">
                     ${iconoEstado} ${calcResult.estado === 'incompleta_excepcion' ? 'Información Faltante' : calcResult.estado === 'completa' ? 'Completa' : calcResult.estado === 'sin_datos' ? 'Sin Datos' : 'Incompleta'}
                 </td>

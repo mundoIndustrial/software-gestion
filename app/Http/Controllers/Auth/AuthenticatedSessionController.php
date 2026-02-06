@@ -109,14 +109,14 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('registros.index', absolute: false));
             }
             
-            // Insumos - Control de insumos
+            // Insumos - Redirigir al login (no tiene acceso a asistencia personal)
             if ($roleName === 'insumos') {
-                return redirect(route('insumos.materiales.index', absolute: false));
+                return redirect('/login')->with('error', 'Su rol no tiene acceso a esta área. Por favor contacte al administrador.');
             }
 
-            // Patronista - Control de insumos (solo lectura)
+            // Patronista - Redirigir al login (no tiene acceso a asistencia personal)
             if ($roleName === 'patronista') {
-                return redirect(route('insumos.materiales.index', absolute: false));
+                return redirect('/login')->with('error', 'Su rol no tiene acceso a esta área. Por favor contacte al administrador.');
             }
 
             // Aprobador de Cotizaciones - Cotizaciones pendientes
