@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -22,7 +22,7 @@ class BodegaDetallesActualizados implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel("bodega-detalles-{$this->numeroPedido}-{$this->talla}"),
+            new PrivateChannel("bodega-detalles-{$this->numeroPedido}-{$this->talla}"),
         ];
     }
 

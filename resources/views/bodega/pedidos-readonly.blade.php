@@ -154,8 +154,8 @@
                                         </div>
                                         <div class="flex items-center space-x-3">
                                             @php
-                                                $allDelivered = collect($items)->every(fn($item) => $item['estado'] === 'Entregado');
-                                                $anyDelayed = collect($items)->some(fn($item) => $item['estado'] === 'retrasado');
+                                                $allDelivered = collect($items)->every(fn($item) => ($item['estado_bodega'] ?? null) === 'Entregado');
+                                                $anyDelayed = collect($items)->some(fn($item) => ($item['estado_bodega'] ?? null) === 'retrasado');
                                                 $tuvoCambios = collect($items)->some(fn($item) => $item['tuvo_cambios_recientes'] ?? false);
                                                 $firstItemId = $items[0]['id'] ?? null;
                                             @endphp
@@ -208,12 +208,12 @@
                                     data-numero-pedido="{{ $numeroPedido }}"
                                     data-asesor="{{ strtolower($item['asesor']) }}"
                                     data-empresa="{{ strtolower($item['empresa']) }}"
-                                    data-estado="{{ $item['estado'] }}"
+                                    data-estado="{{ $item['estado_bodega'] }}"
                                     data-tipo="{{ $item['tipo'] ?? 'prenda' }}"
                                     data-search="{{ strtolower($numeroPedido . ' ' . $item['asesor'] . ' ' . $item['empresa']) }}"
                                     @if($esAnulada)
                                         style="background-color: rgba(147, 51, 234, 0.1);"
-                                    @elseif($item['estado'] === 'Entregado')
+                                    @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
                                 >
@@ -308,7 +308,7 @@
                                     <td class="px-2 py-2">
                                         <textarea
                                             class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
-                                                @if($item['estado'] === 'Entregado')
+                                                @if($item['estado_bodega'] === 'Entregado')
                                                     bg-blue-50
                                                 @else
                                                     bg-slate-50
@@ -327,7 +327,7 @@
                                         <div class="flex gap-1">
                                             <textarea
                                                 class="observaciones-input flex-1 px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
-                                                    @if($item['estado'] === 'Entregado')
+                                                    @if($item['estado_bodega'] === 'Entregado')
                                                         bg-blue-50
                                                     @else
                                                         bg-slate-50
@@ -364,7 +364,7 @@
                                         <input
                                             type="date"
                                             class="fecha-pedido-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition bg-slate-50
-                                                @if($item['estado'] === 'Entregado')
+                                                @if($item['estado_bodega'] === 'Entregado')
                                                     bg-blue-50
                                                 @endif"
                                             style="font-family: 'Poppins', sans-serif;"
@@ -380,7 +380,7 @@
                                         <input
                                             type="date"
                                             class="fecha-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition bg-slate-50
-                                                @if($item['estado'] === 'Entregado')
+                                                @if($item['estado_bodega'] === 'Entregado')
                                                     bg-blue-50
                                                 @endif"
                                             style="font-family: 'Poppins', sans-serif;"
@@ -401,7 +401,7 @@
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
                                                 data-bodega-id="{{ $item['bodega_id'] ?? '' }}"
-                                                data-original-estado="{{ $item['estado'] ?? '' }}"
+                                                data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
                                             >
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente">PENDIENTE</option>
@@ -507,7 +507,7 @@
 </div>
 
 <!-- Toast Notification Corporativo -->
-<div id="toast" class="fixed bottom-4 right-4 px-5 py-3 bg-slate-900 text-white rounded text-sm font-bold uppercase tracking-wider hidden flex items-center space-x-3 z-50 border-2 border-slate-700">
+<div id="toast" class="fixed bottom-4 right-4 px-5 py-3 bg-slate-900 text-white rounded text-sm font-bold uppercase tracking-wider hidden flex items-center space-x-3 z-[9999] border-2 border-slate-700" style="z-index: 9999;">
     <svg class="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
     </svg>
@@ -611,10 +611,91 @@
     </div>
 </div>
 
+<!-- Modal para Editar Nota -->
+<div id="modalEditarNota" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[10000]" style="z-index: 10000;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+        <!-- Header -->
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">✏️ Editar Nota</h2>
+            <button onclick="cerrarModalEditarNota()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div class="px-6 py-6">
+            <textarea 
+                id="editarNotaContent" 
+                class="w-full px-3 py-2 border-2 border-slate-300 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded"
+                rows="6"
+                placeholder="Edita el contenido de la nota..."
+                style="font-family: 'Poppins', sans-serif; resize: vertical;"></textarea>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
+            <button 
+                type="button"
+                onclick="cerrarModalEditarNota()"
+                class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-900 text-sm font-bold rounded transition"
+            >
+                Cancelar
+            </button>
+            <button 
+                type="button"
+                onclick="guardarEdicionNota()"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded transition"
+            >
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Confirmar Eliminación -->
+<div id="modalConfirmarEliminar" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[10000]" style="z-index: 10000;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+        <!-- Header -->
+        <div class="bg-red-600 px-6 py-4 border-b border-red-300 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">🗑️ Eliminar Nota</h2>
+            <button onclick="cerrarModalConfirmarEliminar()" class="text-white hover:text-red-100 text-2xl leading-none">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div class="px-6 py-8">
+            <p class="text-slate-700 text-center font-medium mb-4">
+                ¿Estás seguro de que deseas eliminar esta nota?
+            </p>
+            <p class="text-slate-500 text-center text-sm">
+                Esta acción no se puede deshacer.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
+            <button 
+                type="button"
+                onclick="cerrarModalConfirmarEliminar()"
+                class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-900 text-sm font-bold rounded transition"
+            >
+                Cancelar
+            </button>
+            <button 
+                type="button"
+                onclick="confirmarEliminarNota()"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded transition"
+            >
+                Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
+// Variable global con el ID del usuario actual
+window.usuarioActualId = {{ auth()->user()->id }};
+
 /**
  * Auto-resize textareas para Pendientes y Observaciones
  */
@@ -639,6 +720,15 @@ document.addEventListener('DOMContentLoaded', function() {
         textarea.addEventListener('change', function() {
             autoResizeTextarea(this);
         });
+    });
+
+    // Inicializar selectores de estado con valores guardados
+    const estadoSelects = document.querySelectorAll('.estado-select-readonly');
+    estadoSelects.forEach(select => {
+        const estadoGuardado = select.getAttribute('data-original-estado');
+        if (estadoGuardado && estadoGuardado.trim() !== '') {
+            select.value = estadoGuardado;
+        }
     });
 
     // Cargar notas automáticamente para items visibles en la página
@@ -720,6 +810,19 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Actualizar el selector de estado inmediatamente con el nuevo valor
+                    if (data.data && data.data.estado_bodega) {
+                        const numeroP = datos.numero_pedido;
+                        const tallaVal = datos.talla;
+                        const estadoSelect = document.querySelector(
+                            `.estado-select-readonly[data-numero-pedido="${numeroP}"][data-talla="${tallaVal}"]`
+                        );
+                        if (estadoSelect) {
+                            estadoSelect.value = data.data.estado_bodega;
+                            estadoSelect.setAttribute('data-original-estado', data.data.estado_bodega);
+                        }
+                    }
+                    
                     // Mostrar modal de éxito
                     const modal = document.getElementById('modalExito');
                     const mensaje = document.getElementById('modalMensajeExito');
@@ -728,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         modal.style.display = 'flex';
                         document.getElementById('btnCerrarModalExito').onclick = function() {
                             modal.style.display = 'none';
-                            // Recargar la página
+                            // Recargar la página para sincronizar datos
                             location.reload();
                         };
                     }
@@ -838,7 +941,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     btnGuardar.textContent = '⏳ Guardando...';
     btnGuardar.disabled = true;
 
-    fetch('/gestion-bodega/guardar-detalles-talla', {
+    fetch('/gestion-bodega/detalles-talla/guardar', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -962,14 +1065,34 @@ function cargarNotas(numeroPedido, talla) {
                 
                 html += `
                     <div style="background-color: ${bgRol}; border-left: 4px solid ${colorRol}; padding: 12px; border-radius: 6px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: flex-start;">
+                            <div style="flex: 1;">
                                 <strong style="color: ${colorRol}; font-size: 14px;">${nota.usuario_nombre}</strong>
                                 <span style="color: #64748b; font-size: 12px; margin-left: 10px;">
                                     <strong>${nota.usuario_rol}</strong>
                                 </span>
                             </div>
-                            <span style="color: #64748b; font-size: 12px;">${nota.fecha} ${nota.hora}</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span style="color: #64748b; font-size: 12px; white-space: nowrap;">${nota.fecha} ${nota.hora}</span>
+                                ${nota.usuario_id === window.usuarioActualId ? `
+                                <button 
+                                    type="button"
+                                    onclick="editarNota(${nota.id}, '${numeroPedido}', '${talla}', \`${nota.contenido.replace(/`/g, '\\`')}\`)"
+                                    class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
+                                    title="Editar nota"
+                                >
+                                    ✏️
+                                </button>
+                                <button 
+                                    type="button"
+                                    onclick="eliminarNota(${nota.id}, '${numeroPedido}', '${talla}')"
+                                    class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
+                                    title="Eliminar nota"
+                                >
+                                    🗑️
+                                </button>
+                                ` : ''}
+                            </div>
                         </div>
                         <p style="margin: 0; color: #1e293b; font-size: 13px; white-space: pre-wrap;">
                             ${nota.contenido}
@@ -1068,6 +1191,162 @@ function guardarNota() {
 }
 
 /**
+ * Abrir modal para editar una nota
+ */
+function editarNota(notaId, numeroPedido, talla, contenidoActual) {
+    // Guardar datos globales para usar en guardarEdicionNota
+    window.editarNotaData = {
+        notaId: notaId,
+        numeroPedido: numeroPedido,
+        talla: talla
+    };
+    
+    // Rellenar el textarea del modal
+    document.getElementById('editarNotaContent').value = contenidoActual;
+    
+    // Abrir modal
+    const modal = document.getElementById('modalEditarNota');
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Cerrar modal de editar nota
+ */
+function cerrarModalEditarNota() {
+    const modal = document.getElementById('modalEditarNota');
+    modal.classList.add('hidden');
+}
+
+/**
+ * Guardar la edición de una nota
+ */
+function guardarEdicionNota() {
+    const contenido = document.getElementById('editarNotaContent').value.trim();
+    
+    if (!contenido) {
+        alert('La nota no puede estar vacía');
+        return;
+    }
+    
+    const data = window.editarNotaData;
+    const notaId = data.notaId;
+    const numeroPedido = data.numeroPedido;
+    const talla = data.talla;
+    
+    fetch(`/gestion-bodega/notas/${notaId}/actualizar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify({
+            contenido: contenido
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cerrar modal
+            cerrarModalEditarNota();
+            
+            // Recargar notas
+            cargarNotas(numeroPedido, talla);
+            
+            // Mostrar toast de éxito
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            if (toast && toastMessage) {
+                toastMessage.textContent = '✓ Nota actualizada correctamente';
+                toast.classList.remove('hidden');
+                toast.style.display = 'flex';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo actualizar la nota'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar la nota: ' + error.message);
+    });
+}
+
+/**
+ * Eliminar una nota
+ */
+function eliminarNota(notaId, numeroPedido, talla) {
+    // Guardar datos globales para usar en confirmarEliminarNota
+    window.eliminarNotaData = {
+        notaId: notaId,
+        numeroPedido: numeroPedido,
+        talla: talla
+    };
+    
+    // Abrir modal de confirmación
+    const modal = document.getElementById('modalConfirmarEliminar');
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Cerrar modal de confirmar eliminación
+ */
+function cerrarModalConfirmarEliminar() {
+    const modal = document.getElementById('modalConfirmarEliminar');
+    modal.classList.add('hidden');
+}
+
+/**
+ * Confirmar y ejecutar eliminación de nota
+ */
+function confirmarEliminarNota() {
+    const data = window.eliminarNotaData;
+    const notaId = data.notaId;
+    const numeroPedido = data.numeroPedido;
+    const talla = data.talla;
+    
+    fetch(`/gestion-bodega/notas/${notaId}/eliminar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cerrar modal
+            cerrarModalConfirmarEliminar();
+            
+            // Recargar notas
+            cargarNotas(numeroPedido, talla);
+            
+            // Mostrar toast de éxito
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            if (toast && toastMessage) {
+                toastMessage.textContent = '✓ Nota eliminada correctamente';
+                toast.classList.remove('hidden');
+                toast.style.display = 'flex';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo eliminar la nota'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar la nota: ' + error.message);
+    });
+}
+
+/**
  * Escuchar cambios en tiempo real con WebSockets (Reverb/Echo)
  */
 if (typeof window.Echo !== 'undefined') {
@@ -1099,6 +1378,8 @@ if (typeof window.Echo !== 'undefined') {
      * Función para subscribirse a cambios de detalles
      */
     function subscribirADetalles(numeroPedido, talla) {
+        if (!window.Echo) return;
+        
         // Desuscribirse del canal anterior si existe
         if (canalDetallesActivo) {
             window.Echo.leave(`bodega-detalles-${canalDetallesActivo.numero}-${canalDetallesActivo.talla}`);
@@ -1108,8 +1389,10 @@ if (typeof window.Echo !== 'undefined') {
         const nombreCanal = `bodega-detalles-${numeroPedido}-${talla}`;
         canalDetallesActivo = { numero: numeroPedido, talla: talla };
         
-        window.Echo.channel(nombreCanal)
+        window.Echo.private(nombreCanal)
             .listen('detalle.actualizado', (event) => {
+                console.log('[Reverb] Detalle actualizado:', event);
+                
                 // Actualizar los campos del formulario
                 const fecha = document.querySelector(
                     `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
@@ -1123,17 +1406,49 @@ if (typeof window.Echo !== 'undefined') {
                 const observaciones = document.querySelector(
                     `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
                 );
+                const estadoSelect = document.querySelector(
+                    `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+                );
 
                 if (event.detalles) {
-                    if (event.detalles.fecha_entrega && fecha) fecha.value = event.detalles.fecha_entrega;
-                    if (event.detalles.fecha_pedido && fechaPedido) fechaPedido.value = event.detalles.fecha_pedido;
-                    if (event.detalles.pendientes && pendientes) {
-                        pendientes.value = event.detalles.pendientes;
+                    // Evitar actualizar si el campo está siendo editado
+                    if (event.detalles.fecha_entrega && fecha && document.activeElement !== fecha) {
+                        fecha.value = event.detalles.fecha_entrega;
+                    }
+                    if (event.detalles.fecha_pedido && fechaPedido && document.activeElement !== fechaPedido) {
+                        fechaPedido.value = event.detalles.fecha_pedido;
+                    }
+                    if (event.detalles.pendientes !== undefined && pendientes && document.activeElement !== pendientes) {
+                        pendientes.value = event.detalles.pendientes || '';
                         autoResizeTextarea(pendientes);
+                    }
+                    if (event.detalles.observaciones_bodega !== undefined && observaciones && document.activeElement !== observaciones) {
+                        observaciones.value = event.detalles.observaciones_bodega || '';
+                        autoResizeTextarea(observaciones);
+                    }
+                    if (event.detalles.estado_bodega && estadoSelect && document.activeElement !== estadoSelect) {
+                        estadoSelect.value = event.detalles.estado_bodega;
+                        estadoSelect.setAttribute('data-original-estado', event.detalles.estado_bodega);
                     }
                 }
             });
     }
+
+    // Suscribirse a todos los items visibles al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.Echo) {
+            console.log('[Reverb] Inicializando suscripciones a detalles en tiempo real...');
+            const observacionesInputs = document.querySelectorAll('.observaciones-input');
+            observacionesInputs.forEach(input => {
+                const numeroPedido = input.dataset.numeroPedido;
+                const talla = input.dataset.talla;
+                if (numeroPedido && talla) {
+                    subscribirADetalles(numeroPedido, talla);
+                }
+            });
+            console.log(`[Reverb] Suscrito a ${observacionesInputs.length} items`);
+        }
+    });
 
     // Actualizar la función abrirModalNotas para subscribirse a cambios
     const abrirModalNotasOriginal = window.abrirModalNotas;

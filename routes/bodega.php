@@ -77,6 +77,13 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::post('/notas/obtener', [PedidosController::class, 'obtenerNotas'])
         ->name('obtener-notas');
     
+    // Actualizar y eliminar notas
+    Route::post('/notas/{notaId}/actualizar', [PedidosController::class, 'actualizarNota'])
+        ->name('actualizar-nota');
+    
+    Route::post('/notas/{notaId}/eliminar', [PedidosController::class, 'eliminarNota'])
+        ->name('eliminar-nota');
+    
     // Guardar pedido completo
     Route::post('/pedidos/{numero_pedido}/guardar-completo', [PedidosController::class, 'guardarPedidoCompleto'])
         ->name('guardar-pedido-completo');

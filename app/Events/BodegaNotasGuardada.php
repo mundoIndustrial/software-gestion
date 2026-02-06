@@ -3,7 +3,7 @@
 namespace App\Events;
 
 use App\Models\BodegaNota;
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -23,7 +23,7 @@ class BodegaNotasGuardada implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel("bodega-notas-{$this->numeroPedido}-{$this->talla}"),
+            new PrivateChannel("bodega-notas-{$this->numeroPedido}-{$this->talla}"),
         ];
     }
 
