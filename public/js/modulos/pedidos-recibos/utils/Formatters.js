@@ -212,17 +212,17 @@ export class Formatters {
         }
 
         // 6. REFLECTIVO - Si existe un proceso reflectivo, agregarlo después de tallas
-        // SOLO si la prenda ES de bodega (de_bodega = true)
+        // SOLO si la prenda NO es de bodega (de_bodega = false)
         console.log('[Formatters] 🔍 Verificando REFLECTIVO:', {
             de_bodega: prenda.de_bodega,
-            es_de_bodega: !!prenda.de_bodega,
+            no_de_bodega: !prenda.de_bodega,
             tieneProces: !!prenda.procesos,
             esArray: Array.isArray(prenda.procesos),
             cantidadProcesos: prenda.procesos?.length || 0
         });
         
-        if (prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
-            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida (es de bodega), buscando proceso...');
+        if (!prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
+            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida, buscando proceso...');
             
             // DEBUG: Ver estructura completa del proceso
             if (prenda.procesos.length > 0) {
