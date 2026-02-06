@@ -589,6 +589,54 @@ class PedidoController extends Controller
                 }
             }
             
+            // FILTRO INSUMOS: Si es insumos, filtrar prendas para mostrar SOLO de_bodega = false
+            $esInsumos = auth()->check() && auth()->user()->hasRole('insumos');
+            if ($esInsumos && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                \Log::info('[PedidoController] 📦 FILTRO INSUMOS: Mostrando solo prendas con de_bodega = false', [
+                    'pedido_id' => $pedido->id,
+                    'usuario_id' => auth()->id(),
+                    'total_prendas_antes' => count($responseData['prendas'])
+                ]);
+                
+                // Filtrar: solo mantener prendas con de_bodega = false
+                $prendasFiltradas = array_filter($responseData['prendas'], function($prenda) {
+                    $deBodega = $prenda['de_bodega'] ?? false;
+                    // Si de_bodega es string (tinyint from DB puede ser "0" o "1")
+                    if (is_string($deBodega)) {
+                        $deBodega = (bool)intval($deBodega);
+                    }
+                    return !$deBodega; // Mostrar solo si NO es de_bodega
+                });
+                
+                $responseData['prendas'] = array_values($prendasFiltradas); // Reindexar array
+                
+                \Log::info('[PedidoController] 📦 Prendas filtradas para insumos', [
+                    'pedido_id' => $pedido->id,
+                    'total_prendas_antes' => count($responseData['prendas'] ?? []) + count($prendasFiltradas),
+                    'total_prendas_despues' => count($prendasFiltradas),
+                    'prendas_filtradas' => array_map(function($p) {
+                        return [
+                            'nombre' => $p['nombre'] ?? 'N/A',
+                            'de_bodega' => $p['de_bodega'] ?? 'N/A'
+                        ];
+                    }, $prendasFiltradas)
+                ]);
+                
+                // Validar que insumos tenga al menos UNA prenda después del filtrado
+                if (empty($prendasFiltradas)) {
+                    \Log::warning('[PedidoController] 📦 Insumos intenta ver pedido sin prendas de_bodega=false', [
+                        'pedido_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'usuario_id' => auth()->id()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Este pedido no tiene prendas disponibles para insumos (todas son de bodega)'
+                    ], 403);
+                }
+            }
+            
             // Agregar ancho y metraje a cada prenda individual
             if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 \Log::info('[PedidoController] Agregando ancho/metraje y consecutivos a prendas', [

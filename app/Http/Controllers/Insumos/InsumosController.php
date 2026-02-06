@@ -271,12 +271,40 @@ class InsumosController extends Controller
         
         // Siempre paginar, con o sin filtros - con relaciones optimizadas
         // Cargar relaciones necesarias para evitar N+1 queries
-        $ordenes = $baseQuery->with([
-            'prendas',
+        // FILTRO ESPECIAL: Solo cargar prendas con de_bodega = false
+        $allOrdenes = $baseQuery->with([
+            'prendas' => function($query) {
+                // FILTRO: Solo prendas que NO son de bodega (de_bodega = false)
+                $query->where('de_bodega', false);
+            },
             'materiales' => function($query) {
                 $query->select('id', 'numero_pedido', 'nombre_material', 'recibido', 'fecha_orden', 'fecha_pedido', 'fecha_pago', 'fecha_llegada', 'fecha_despacho', 'observaciones');
             }
-        ])->orderBy('numero_pedido', 'asc')->paginate(10);
+        ])->orderBy('numero_pedido', 'asc')->get();
+        
+        // FILTRO: Eliminar pedidos que NO tienen prendas después del filtro
+        // Si un pedido solo tiene prendas de_bodega:true, no debe mostrarse
+        $ordenesFiltradas = $allOrdenes->filter(function($orden) {
+            return $orden->prendas && $orden->prendas->count() > 0;
+        })->values();
+        
+        // Aplicar paginación manual después del filtro
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $total = $ordenesFiltradas->count();
+        $items = $ordenesFiltradas->slice(($page - 1) * $perPage, $perPage)->values();
+        
+        // Crear paginador
+        $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => route('insumos.materiales.index'),
+                'query' => $request->query(),
+            ]
+        );
         
         // Preservar parámetros de búsqueda y filtro en links de paginación
         $ordenes->appends($request->query());

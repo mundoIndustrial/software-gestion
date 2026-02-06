@@ -215,14 +215,14 @@ export class Formatters {
         // SOLO si la prenda NO es de bodega (de_bodega = false)
         console.log('[Formatters] 🔍 Verificando REFLECTIVO:', {
             de_bodega: prenda.de_bodega,
-            no_de_bodega: !prenda.de_bodega,
+            no_es_de_bodega: !prenda.de_bodega,
             tieneProces: !!prenda.procesos,
             esArray: Array.isArray(prenda.procesos),
             cantidadProcesos: prenda.procesos?.length || 0
         });
         
         if (!prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
-            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida, buscando proceso...');
+            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida (de_bodega = false), buscando proceso...');
             
             // DEBUG: Ver estructura completa del proceso
             if (prenda.procesos.length > 0) {
