@@ -77,47 +77,50 @@ class PedidosController extends Controller
         // Estados permitidos en bodega (case-insensitive)
         $estadosPermitidos = ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'ANULADA', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
         
-        // Obtener los pedidos de producción ÚNICOS por número de pedido
-        $pedidosQuery = ReciboPrenda::with(['asesor'])
+        // Obtener TODOS los pedidos con estados permitidos
+        $todosLosPedidos = ReciboPrenda::with(['asesor'])
             ->where(function($q) use ($estadosPermitidos) {
                 foreach($estadosPermitidos as $estado) {
                     $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
                 }
             })
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('created_at', 'asc');
-
-        // Total de pedidos únicos por numero_pedido
-        $totalPedidos = $pedidosQuery->distinct('numero_pedido')->count('numero_pedido');
-
-        // Paginar - 5 pedidos por página
-        $paginaActual = $request->get('page', 1);
-        $porPagina = 5;
-        $offset = ($paginaActual - 1) * $porPagina;
-
-        // Obtener los numero_pedidos de la página actual (sin traer todos los registros)
-        $pedidosPaginados = ReciboPrenda::where(function($q) use ($estadosPermitidos) {
-                foreach($estadosPermitidos as $estado) {
-                    $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
-                }
-            })
-            ->distinct('numero_pedido')
-            ->orderBy('numero_pedido', 'asc')
-            ->skip($offset)
-            ->take($porPagina)
-            ->pluck('numero_pedido');
-
-        // Ahora obtener SOLO los pedidos de esta página
-        $pedidos = ReciboPrenda::with(['asesor'])
-            ->where(function($q) use ($estadosPermitidos) {
-                foreach($estadosPermitidos as $estado) {
-                    $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
-                }
-            })
-            ->whereIn('numero_pedido', $pedidosPaginados)
             ->orderBy('numero_pedido', 'asc')
             ->orderBy('created_at', 'asc')
             ->get();
+
+        // Filtrar por áreas permitidas según el rol
+        $pedidosFiltradosPorRol = $todosLosPedidos->filter(function($item) use ($areasPermitidas) {
+            $bdDetalles = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)->get();
+            
+            if ($bdDetalles->isEmpty()) {
+                return in_array(null, $areasPermitidas);
+            }
+            
+            foreach ($bdDetalles as $detalle) {
+                if (in_array($detalle->area, $areasPermitidas)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        })->values();
+
+        // Obtener números de pedidos ÚNICOS (filtrados por rol)
+        $numerosPedidosUnicos = $pedidosFiltradosPorRol->pluck('numero_pedido')->unique()->values();
+        
+        // Total de pedidos únicos según el rol del usuario
+        $totalPedidos = $numerosPedidosUnicos->count();
+
+        // Paginar - 1 pedido por página
+        $paginaActual = $request->get('page', 1);
+        $porPagina = 1;
+        $offset = ($paginaActual - 1) * $porPagina;
+
+        // Obtener los numero_pedidos de la página actual (filtrados por rol)
+        $pedidosPaginados = $numerosPedidosUnicos->slice($offset, $porPagina);
+
+        // Ahora obtener SOLO los pedidos de esta página
+        $pedidos = $pedidosFiltradosPorRol->whereIn('numero_pedido', $pedidosPaginados)->values();
 
         // Cargar datos básicos SIEMPRE de bodega_detalles_talla
         $datosBodegaBasicos = BodegaDetallesTalla::all()
@@ -204,30 +207,8 @@ class PedidosController extends Controller
                 })->sortByDesc('created_at')->values()->toArray();
             });
 
-        // Filtrar pedidos según el área permitida del usuario Y estado
-        // Solo mostrar pedidos que tengan al menos un item con área permitida
-        // TODOS los datos básicos están en bodega_detalles_talla
-        $pedidosConArea = $pedidos->filter(function($item) use ($areasPermitidas, $rolesDelUsuario) {
-            // SIEMPRE obtener detalles básicos de bodega_detalles_talla (independiente del rol)
-            $bdDetalles = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)->get();
-            
-            // Si no hay detalles de bodega, mostrar según permisos generales
-            if ($bdDetalles->isEmpty()) {
-                return in_array(null, $areasPermitidas);
-            }
-            
-            // Filtrar por área permitida del rol
-            foreach ($bdDetalles as $detalle) {
-                if (in_array($detalle->area, $areasPermitidas)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        });
-
-        // Agrupar solo los pedidos de la página actual
-        $pedidosAgrupados = $pedidosConArea
+        // Agrupar solo los pedidos de la página actual (ya filtrados por rol en la paginación)
+        $pedidosAgrupados = $pedidos
             ->groupBy('numero_pedido')
             ->mapWithKeys(function ($items, $numeroPedido) use ($datosBodega, $areasPermitidas, $rolesDelUsuario) {
             $itemsConTallas = [];
