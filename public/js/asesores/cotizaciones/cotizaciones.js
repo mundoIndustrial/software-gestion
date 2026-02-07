@@ -1362,29 +1362,36 @@ function recopilarDatos() {
             // Verificar si está en modo texto (si el div de texto está visible)
             const esModoTexto = textModeDiv && textModeDiv.style.display !== 'none';
             const esModoCheckbox = checkboxModeDiv && checkboxModeDiv.style.display !== 'none';
+            const checked = !!(checkboxInput && checkboxInput.checked);
+            const valorExtra = (valorInput?.value || '').trim();
             
-            if (esModoTexto) {
+            // Regla: si el checkbox está activo, el valor que se debe guardar es el input adicional
+            // (ej. "200+"). Si no hay valor, guardar 'on' para compatibilidad.
+            if (checked) {
+                observaciones_generales.push({
+                    tipo: 'checkbox',
+                    texto: texto,
+                    valor: valorExtra || 'on'
+                });
+            } else if (esModoTexto) {
                 // Modo texto: guardar objeto con tipo, texto y valor
                 observaciones_generales.push({
                     tipo: 'texto',
                     texto: texto,
-                    valor: valorInput?.value || ''
+                    valor: valorExtra
                 });
-
             } else if (esModoCheckbox) {
-                // Modo checkbox: guardar objeto con tipo, texto y valor
                 observaciones_generales.push({
                     tipo: 'checkbox',
                     texto: texto,
-                    valor: checkboxInput?.checked ? 'on' : ''
+                    valor: ''
                 });
-
             } else {
                 // Por defecto, asumir modo checkbox
                 observaciones_generales.push({
                     tipo: 'checkbox',
                     texto: texto,
-                    valor: checkboxInput?.checked ? 'on' : ''
+                    valor: ''
                 });
             }
         }

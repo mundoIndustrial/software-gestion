@@ -181,6 +181,11 @@ function guardarEdicionPrenda() {
                 // Guardar como objetos {data_url} para compatibilidad con el resto del flujo
                 const imagenesPropias = imgs.map(u => ({ data_url: u }));
 
+                // Mantener Files reales (solo imágenes nuevas agregadas en el modal)
+                // Esto es lo que el submit usa para adjuntar archivos en FormData.
+                const filesActuales = Array.isArray(dataTecnica.imagenes_files) ? dataTecnica.imagenes_files : [];
+                p.imagenes_files = filesActuales.filter(f => f instanceof File);
+
                 // Si hay logo compartido activo, agregar imágenes compartidas que correspondan a esta técnica
                 let imagenesCompartidas = [];
                 if (logoCompartidoEnabled) {
@@ -202,7 +207,6 @@ function guardarEdicionPrenda() {
 
                 // Reconstruir imagenes_data_urls sin duplicar
                 p.imagenes_data_urls = [...imagenesPropias, ...imagenesCompartidas];
-                p.imagenes_files = [];
             }
         });
     });
@@ -2611,7 +2615,27 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                         if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls) {
                             datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls = [];
                         }
-                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls.push(event.target.result);
+
+                        // Mantener también los File reales para el envío
+                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta) {
+                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta = [];
+                        }
+                        if (!datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files) {
+                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files = [];
+                        }
+
+                        const dataUrl = event.target.result;
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_data_urls.push(dataUrl);
+
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta.push({
+                            file,
+                            data_url: dataUrl
+                        });
+                        datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files =
+                            datosPrenda.tecnicas_imagenes[nombreTecnica].imagenes_files_meta
+                                .map(x => x.file)
+                                .filter(f => f instanceof File);
+
                         actualizarImagenesTecnica(nombreTecnica);
                     };
                     reader.readAsDataURL(file);
@@ -2641,7 +2665,19 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                         e.preventDefault();
                         const tecnica = btn.getAttribute('data-tecnica');
                         const idx = parseInt(btn.getAttribute('data-idx'));
-                        datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls.splice(idx, 1);
+                        const datosT = datosPrenda.tecnicas_imagenes[tecnica];
+                        const removed = (datosT.imagenes_data_urls || [])[idx];
+                        if (Array.isArray(datosT.imagenes_data_urls)) {
+                            datosT.imagenes_data_urls.splice(idx, 1);
+                        }
+
+                        // Si la imagen eliminada corresponde a un File nuevo, removerlo también
+                        if (removed && Array.isArray(datosT.imagenes_files_meta)) {
+                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removed);
+                            datosT.imagenes_files = (datosT.imagenes_files_meta || [])
+                                .map(m => m.file)
+                                .filter(f => f instanceof File);
+                        }
                         actualizarImagenesTecnica(tecnica);
                     });
                 });
@@ -2656,8 +2692,18 @@ function agregarEventListenersEdicionPrenda(prendaDiv, datosPrenda) {
                     e.preventDefault();
                     const tecnica = btn.getAttribute('data-tecnica');
                     const idx = parseInt(btn.getAttribute('data-idx'));
-                    if (datosPrenda.tecnicas_imagenes && datosPrenda.tecnicas_imagenes[tecnica] && datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls) {
-                        datosPrenda.tecnicas_imagenes[tecnica].imagenes_data_urls.splice(idx, 1);
+                    if (datosPrenda.tecnicas_imagenes && datosPrenda.tecnicas_imagenes[tecnica]) {
+                        const datosT = datosPrenda.tecnicas_imagenes[tecnica];
+                        const removed = (datosT.imagenes_data_urls || [])[idx];
+                        if (Array.isArray(datosT.imagenes_data_urls)) {
+                            datosT.imagenes_data_urls.splice(idx, 1);
+                        }
+                        if (removed && Array.isArray(datosT.imagenes_files_meta)) {
+                            datosT.imagenes_files_meta = datosT.imagenes_files_meta.filter(m => m && m.data_url !== removed);
+                            datosT.imagenes_files = (datosT.imagenes_files_meta || [])
+                                .map(m => m.file)
+                                .filter(f => f instanceof File);
+                        }
                     }
                     actualizarImagenesTecnica(tecnica);
                 });
