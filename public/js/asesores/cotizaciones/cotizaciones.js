@@ -186,7 +186,10 @@ function irAlPaso(paso) {
     if (formStep) formStep.classList.add('active');
     
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    const stepElement = document.querySelector(`.step[data-step="${paso}"]`);
+    // En el stepper visual, el botón REVISAR siempre es data-step="4",
+    // pero el contenido de revisar es el form-step data-step="5".
+    const pasoVisual = (paso === 5) ? 4 : paso;
+    const stepElement = document.querySelector(`.step[data-step="${pasoVisual}"]`);
     if (stepElement) stepElement.classList.add('active');
     
     // Si es el paso 4 (REFLECTIVO), agregar la primera prenda vacía si no existe ninguna

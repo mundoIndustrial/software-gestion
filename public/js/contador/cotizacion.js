@@ -219,23 +219,91 @@ function openCotizacionModal(cotizacionId) {
                             </div>
                     `;
 
-                    // Mostrar tallas si existen
+                    // Mostrar tallas si existen (agrupadas por género)
                     if (prenda.tallas && prenda.tallas.length > 0) {
-                        const tallasTexto = prenda.tallas.map(t => t.talla).join(', ');
-                        const textoPersonalizado = prenda.texto_personalizado_tallas ? ` ${prenda.texto_personalizado_tallas}` : '';
-                        const textoCompleto = tallasTexto + textoPersonalizado;
-                        
+                        const tallasCaballero = [];
+                        const tallasDama = [];
+                        const tallasSinGenero = [];
+
+                        prenda.tallas.forEach((t) => {
+                            if (!t) return;
+                            if (t.genero_id === 1 || t.genero_id === '1') {
+                                tallasCaballero.push(t);
+                            } else if (t.genero_id === 2 || t.genero_id === '2') {
+                                tallasDama.push(t);
+                            } else {
+                                tallasSinGenero.push(t);
+                            }
+                        });
+
+                        const formatearGrupoTallas = (arr) => {
+                            const items = (Array.isArray(arr) ? arr : [])
+                                .map(x => {
+                                    const talla = (x && x.talla) ? String(x.talla).trim() : '';
+                                    const cantidad = (x && (x.cantidad !== undefined && x.cantidad !== null)) ? x.cantidad : '';
+                                    if (!talla) return '';
+                                    return (cantidad !== '' && cantidad !== 1) ? `${talla} (${cantidad})` : talla;
+                                })
+                                .filter(Boolean);
+                            return items.join(', ');
+                        };
+
+                        const cabTxt = formatearGrupoTallas(tallasCaballero);
+                        const damaTxt = formatearGrupoTallas(tallasDama);
+                        const sinTxt = formatearGrupoTallas(tallasSinGenero);
+
+                        const parseTextoMap = (texto) => {
+                            if (!texto || typeof texto !== 'string') return {};
+                            const t = texto.trim();
+                            if (!t) return {};
+                            if (t.startsWith('{') && t.endsWith('}')) {
+                                try {
+                                    const parsed = JSON.parse(t);
+                                    if (parsed && typeof parsed === 'object') return parsed;
+                                } catch (e) {
+                                    return {};
+                                }
+                            }
+                            const matchParen = t.match(/^\((.*)\)$/);
+                            if (matchParen) return { global: matchParen[1] };
+                            return { global: t };
+                        };
+
+                        const textoMap = parseTextoMap(prenda.texto_personalizado_tallas || '');
+                        const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
+
+                        const construirLinea = (titulo, key, valorBase) => {
+                            if (!valorBase) return '';
+                            const valorParen = (textoMap && (textoMap[key] !== undefined && textoMap[key] !== null))
+                                ? String(textoMap[key])
+                                : (textoMap && textoMap.global ? String(textoMap.global) : '');
+                            return `
+                                <div style="margin-top: 0.25rem;">
+                                    <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
+                                    <span
+                                        class="tallas-genero-edit"
+                                        data-prenda-id="${prenda.id}"
+                                        data-genero-key="${key}"
+                                        data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
+                                        data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
+                                        style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
+                                        title="Doble click para editar el texto dentro de paréntesis"
+                                    >${valorBase} (${valorParen || ''})</span>
+                                </div>
+                            `;
+                        };
+
+                        const gruposHtml =
+                            construirLinea('Caballero', 'caballero', cabTxt) +
+                            construirLinea('Dama', 'dama', damaTxt) +
+                            construirLinea('Sin género', 'sin_genero', sinTxt);
+
                         htmlPrendas += `
-                            <div style="margin: 0 0 0.5rem 0;">
-                                <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas: </span>
-                                <span 
-                                    id="tallas-prenda-${prenda.id}" 
-                                    ondblclick="editarTallasPersonalizado(this, ${prenda.id}, '${tallasTexto}', '${prenda.texto_personalizado_tallas || ''}')"
-                                    style="color: #ef4444; font-weight: 700; font-size: 0.9rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; display: inline-block;"
-                                    onmouseover="this.style.backgroundColor='#fee2e2'"
-                                    onmouseout="this.style.backgroundColor='transparent'"
-                                    title="Doble click para editar"
-                                >${textoCompleto}</span>
+                            <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
+                                <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
+                                <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                    ${gruposHtml}
+                                </div>
                             </div>
                         `;
                     }
