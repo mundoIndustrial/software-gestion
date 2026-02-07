@@ -370,24 +370,32 @@ class GestionItemsUIRefactorizado {
         const totalPrendas = document.getElementById('total-prendas');
         if (totalPrendas) totalPrendas.textContent = '0';
         
-        // Limpiar checkboxes y inputs de variaciones
-        const checkboxesVariaciones = [
+        // ✅ IMPORTANTE: Limpiar TODOS los campos de variaciones incluyendo observaciones
+        const camposVariacionesCompletos = [
+            // MANGA
             'aplica-manga', 'manga-input', 'manga-obs',
+            // BOLSILLOS
             'aplica-bolsillos', 'bolsillos-obs',
+            // BROCHE
             'aplica-broche', 'broche-input', 'broche-obs',
+            // REFLECTIVO
+            'aplica-reflectivo', 'reflectivo-obs',
+            // OTROS
             'checkbox-reflectivo', 'checkbox-bordado', 'checkbox-estampado',
             'checkbox-dtf', 'checkbox-sublimado',
-            'aplica-reflectivo', 'dama', 'caballero'
+            'dama', 'caballero'
         ];
-        checkboxesVariaciones.forEach(id => {
+        
+        camposVariacionesCompletos.forEach(id => {
             const elem = document.getElementById(id);
             if (elem) {
                 if (elem.type === 'checkbox' || elem.type === 'radio') {
                     elem.checked = false;
                     if (elem._ignorarOnclick) elem._ignorarOnclick = false;
-                } else if (elem.type === 'text' || elem.type === 'select-one') {
+                } else if (elem.type === 'text' || elem.type === 'select-one' || elem.tagName === 'TEXTAREA') {
                     elem.value = '';
-                    if (elem.disabled) elem.disabled = true;
+                    elem.disabled = true;
+                    elem.style.opacity = '0.5';
                 }
             }
         });
@@ -399,7 +407,7 @@ class GestionItemsUIRefactorizado {
         window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {} };
         window.imagenesProcesoActual = [];
         
-        console.log('[limpiarFormularioPrenda] Formulario limpiado para nueva prenda');
+        console.log('[limpiarFormularioPrenda] ✅ Formulario limpiado COMPLETAMENTE incluyendo observaciones');
     }
 
     /**
@@ -516,17 +524,65 @@ class GestionItemsUIRefactorizado {
             console.log('[recolectarPrendaDelFormulario]  Usando telasCreacion en lugar de telasAgregadas');
         }
         
-        // Variaciones del formulario
-        const variaciones = {
-            genero_id: this.obtenerGeneroSeleccionado(),
-            tipo_manga: document.getElementById('manga-input')?.value,
-            tipo_broche: document.getElementById('broche-input')?.value,
-            aplica_bolsillos: document.getElementById('aplica-bolsillos')?.checked || false,
-            aplica_reflectivo: document.getElementById('aplica-reflectivo')?.checked || false
-        };
+        // Variaciones del formulario - CAPTURAR TODOS LOS CAMPOS INCLUYENDO OBSERVACIONES
+        // Usar PrendaDataBuilder si está disponible, sino construir manualmente
+        let variaciones = {};
+        
+        if (typeof PrendaDataBuilder !== 'undefined' && PrendaDataBuilder.construirVariacionesConfiguradas) {
+            // Usar el builder centralizado que captura TODO correctamente
+            variaciones = PrendaDataBuilder.construirVariacionesConfiguradas();
+            // Agregar género_id
+            variaciones.genero_id = this.obtenerGeneroSeleccionado();
+        } else {
+            // FALLBACK: construcción manual completa incluyendo observaciones
+            variaciones = {
+                genero_id: this.obtenerGeneroSeleccionado(),
+                
+                // MANGA
+                tipo_manga: document.getElementById('manga-input')?.value?.trim() || 'No aplica',
+                obs_manga: document.getElementById('manga-obs')?.value?.trim() || '',
+                aplica_manga: document.getElementById('aplica-manga')?.checked || false,
+                
+                // BOLSILLOS
+                tiene_bolsillos: document.getElementById('aplica-bolsillos')?.checked || false,
+                obs_bolsillos: document.getElementById('bolsillos-obs')?.value?.trim() || '',
+                aplica_bolsillos: document.getElementById('aplica-bolsillos')?.checked || false,
+                
+                // BROCHE/BOTÓN
+                tipo_broche: document.getElementById('broche-input')?.value?.trim() || 'No aplica',
+                obs_broche: document.getElementById('broche-obs')?.value?.trim() || '',
+                aplica_broche: document.getElementById('aplica-broche')?.checked || false,
+                
+                // REFLECTIVO
+                tiene_reflectivo: document.getElementById('aplica-reflectivo')?.checked || false,
+                obs_reflectivo: document.getElementById('reflectivo-obs')?.value?.trim() || '',
+                aplica_reflectivo: document.getElementById('aplica-reflectivo')?.checked || false
+            };
+        }
+        
+        console.log('[recolectarPrendaDelFormulario] 📝 Variaciones capturadas completamente:', variaciones);
         
         // Procesos del formulario
         const procesos = window.procesosSeleccionados || {};
+        
+        // ✅ CAPTURAR IMÁGENES desde ImageStorageService
+        // PRESERVAR los File objects para poder recrear blob URLs cuando sea necesario
+        let imagenes = [];
+        if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
+            const imagenesOriginales = window.imagenesPrendaStorage.obtenerImagenes();
+            
+            // Copiar imágenes PRESERVANDO los File objects
+            imagenes = imagenesOriginales.map(img => {
+                return {
+                    file: img.file,  // ✅ Preservar File object
+                    previewUrl: img.previewUrl,  // URL puede estar revocada, pero tenemos el file
+                    nombre: img.nombre,
+                    tamaño: img.tamaño
+                };
+            });
+            
+            console.log('[recolectarPrendaDelFormulario] 📸 Imágenes capturadas (con Files preservados):', imagenes.length);
+        }
         
         const prendaData = {
             nombre_prenda: nombre,
@@ -535,7 +591,8 @@ class GestionItemsUIRefactorizado {
             cantidad_talla: tallasRelacionales,  // w.tallasRelacionales tiene {DAMA: {...}, CABALLERO: {...}}
             telasAgregadas: telasAgregadas,
             variantes: variaciones,
-            procesos: procesos
+            procesos: procesos,
+            imagenes: imagenes  // ✅ Incluir imágenes en los datos
         };
         
         console.log('[recolectarPrendaDelFormulario]  Datos recolectados:', {
@@ -548,6 +605,8 @@ class GestionItemsUIRefactorizado {
             },
             tiene_procesos: Object.keys(procesos).length > 0,
             procesos_count: Object.keys(procesos).length,
+            tiene_imagenes: imagenes.length > 0,
+            imagenes_count: imagenes.length,
             genero: variaciones.genero_id
         });
         

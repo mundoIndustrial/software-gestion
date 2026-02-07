@@ -608,11 +608,13 @@ class PrendaEditor {
     }
 
     /**
-     * Cargar variaciones - LÓGICA COMPLETA CON NORMALIZACIÓN
+     * Cargar variaciones - LÓGICA COMPLETA CON NORMALIZACIÓN Y OBSERVACIONES
      * @private
      */
     cargarVariaciones(prenda) {
         const variantes = this.service.procesarVariaciones(prenda);
+
+        console.log('[cargarVariaciones] 🔍 Variantes cargadas:', variantes);
 
         // Establecer género
         if (variantes.genero_id) {
@@ -623,98 +625,112 @@ class PrendaEditor {
             }
         }
 
-        // MANGA - CON NORMALIZACIÓN DE ACENTOS
-        if (variantes.tipo_manga || variantes.manga?.opcion) {
-            const mangaOpcion = variantes.tipo_manga || variantes.manga?.opcion;
+        // MANGA - CON OBSERVACIONES
+        if (variantes.tipo_manga || variantes.obs_manga) {
+            console.log('[cargarVariaciones] 📝 Cargando MANGA:', { tipo: variantes.tipo_manga, obs: variantes.obs_manga });
+            
+            const mangaOpcion = variantes.tipo_manga;
             this.domAdapter.marcarVariacion('manga', true);
             
-            // NORMALIZAR: convertir a minúscula y remover acentos
-            const mangaNormalizado = this.service.normalizarValorVariacion(mangaOpcion);
-            this.domAdapter.establecerVariacionInput('manga', mangaNormalizado);
-            
-            if (variantes.obs_manga) {
-                this.domAdapter.establecerVariacionObs('manga', variantes.obs_manga);
+            if (mangaOpcion && mangaOpcion !== 'No aplica') {
+                const mangaNormalizado = this.service.normalizarValorVariacion(mangaOpcion);
+                this.domAdapter.establecerVariacionInput('manga', mangaNormalizado);
             }
             
-            // IMPORTANTE: Disparar change para habilitar campos
-            this.aplicarVariacionRefleXitaConDelay('manga', mangaOpcion, variantes.obs_manga);
+            // APLICAR CON DELAY MAYOR para asegurar que todo se procese
+            this.aplicarVariacionRefleXitaConDelay('manga', mangaOpcion, variantes.obs_manga, 100);
         }
 
-        // BOLSILLOS 
-        if (variantes.bolsillos?.opcion || variantes.obs_bolsillos) {
+        // BOLSILLOS - SOLO OBSERVACIONES
+        if (variantes.haben_bolsillos === true || variantes.tiene_bolsillos === true || variantes.obs_bolsillos) {
+            console.log('[cargarVariaciones] 📝 Cargando BOLSILLOS:', { tiene: variantes.tiene_bolsillos, obs: variantes.obs_bolsillos });
+            
             this.domAdapter.marcarVariacion('bolsillos', true);
-            if (variantes.obs_bolsillos) {
-                this.domAdapter.establecerVariacionObs('bolsillos', variantes.obs_bolsillos);
-            }
-            this.aplicarVariacionRefleXitaConDelay('bolsillos', null, variantes.obs_bolsillos);
+            
+            // BOLSILLOS solo tiene observaciones, no input
+            this.aplicarVariacionRefleXitaConDelay('bolsillos', null, variantes.obs_bolsillos, 100);
         }
 
-        // BROCHE/BOTÓN - CON NORMALIZACIÓN DE ACENTOS
-        if (variantes.tipo_broche || variantes.broche?.opcion) {
-            const brocheOpcion = variantes.tipo_broche || variantes.broche?.opcion;
+        // BROCHE/BOTÓN - CON OBSERVACIONES
+        if (variantes.tipo_broche || variantes.obs_broche) {
+            console.log('[cargarVariaciones] 📝 Cargando BROCHE:', { tipo: variantes.tipo_broche, obs: variantes.obs_broche });
+            
+            const brocheOpcion = variantes.tipo_broche;
             this.domAdapter.marcarVariacion('broche', true);
             
-            // NORMALIZAR: convertir a minúscula y remover acentos
-            const brocheNormalizado = this.service.normalizarValorVariacion(brocheOpcion);
-            this.domAdapter.establecerVariacionInput('broche', brocheNormalizado);
-            
-            if (variantes.obs_broche) {
-                this.domAdapter.establecerVariacionObs('broche', variantes.obs_broche);
+            if (brocheOpcion && brocheOpcion !== 'No aplica') {
+                const brocheNormalizado = this.service.normalizarValorVariacion(brocheOpcion);
+                this.domAdapter.establecerVariacionInput('broche', brocheNormalizado);
             }
             
-            this.aplicarVariacionRefleXitaConDelay('broche', brocheOpcion, variantes.obs_broche);
+            this.aplicarVariacionRefleXitaConDelay('broche', brocheOpcion, variantes.obs_broche, 100);
         }
 
-        // REFLECTIVO
-        if (variantes.tiene_reflectivo || variantes.obs_reflectivo) {
+        // REFLECTIVO - CON OBSERVACIONES
+        if (variantes.tiene_reflectivo === true || variantes.obs_reflectivo) {
+            console.log('[cargarVariaciones] 📝 Cargando REFLECTIVO:', { tiene: variantes.tiene_reflectivo, obs: variantes.obs_reflectivo });
+            
             this.domAdapter.marcarVariacion('reflectivo', true);
-            if (variantes.obs_reflectivo) {
-                this.domAdapter.establecerVariacionObs('reflectivo', variantes.obs_reflectivo);
-            }
+            this.aplicarVariacionRefleXitaConDelay('reflectivo', null, variantes.obs_reflectivo, 100);
         }
+
+        console.log('[cargarVariaciones] ✅ Variaciones cargadas completamente');
     }
 
     /**
      * Aplicar variación refleCtiva con delay (LÓGICA DEL ORIGINAL)
-     * Habilita campos después de marcar checkbox
+     * Habilita campos de input y observaciones después de marcar checkbox
      * @private
      */
-    aplicarVariacionRefleXitaConDelay(nombreVariacion, valor, observacion) {
+    aplicarVariacionRefleXitaConDelay(nombreVariacion, valor, observacion, delayMs = 100) {
         // Esperar a que el event handler del checkbox se ejecute y habilite los campos
         setTimeout(() => {
             const config = {
                 'manga': { input: '#manga-input', obs: '#manga-obs' },
                 'bolsillos': { input: null, obs: '#bolsillos-obs' },
-                'broche': { input: '#broche-input', obs: '#broche-obs' }
+                'broche': { input: '#broche-input', obs: '#broche-obs' },
+                'reflectivo': { input: null, obs: '#reflectivo-obs' }
             };
 
             const cfg = config[nombreVariacion];
             if (!cfg) return;
 
-            // Habilitar input si existe
+            // Habilitar input si existe y tiene valor
             if (cfg.input) {
                 const inputEl = document.querySelector(cfg.input);
                 if (inputEl) {
                     inputEl.disabled = false;
                     inputEl.style.opacity = '1';
-                    if (valor) {
+                    if (valor && valor !== 'No aplica') {
                         inputEl.value = valor;
+                        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
                     }
+                    console.log(`[aplicarVariacionRefleXitaConDelay] ✅ Input '${nombreVariacion}' habilitado`);
                 }
             }
 
-            // Habilitar y llenar observaciones
+            // IMPORTANTE: Habilitar y llenar observaciones (aplica a TODOS los tipos)
             if (cfg.obs) {
                 const obsEl = document.querySelector(cfg.obs);
                 if (obsEl) {
                     obsEl.disabled = false;
                     obsEl.style.opacity = '1';
-                    if (observacion) {
-                        obsEl.value = observacion.toUpperCase();
+                    // Remove readonly attribute if present
+                    obsEl.removeAttribute('readonly');
+                    
+                    if (observacion && observacion.trim()) {
+                        obsEl.value = observacion.trim();
+                        obsEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        console.log(`[aplicarVariacionRefleXitaConDelay] ✅ Observación '${nombreVariacion}' cargada: "${observacion.substring(0, 50)}..."`);
+                    } else {
+                        obsEl.value = '';
+                        console.log(`[aplicarVariacionRefleXitaConDelay] ℹ️ Campo observación '${nombreVariacion}' habilitado pero vacío`);
                     }
+                } else {
+                    console.warn(`[aplicarVariacionRefleXitaConDelay] ⚠️ Campo observación '${cfg.obs}' NO ENCONTRADO en el DOM`);
                 }
             }
-        }, 50); // DELAY IMPORTANTE para que se ejecute el handler del checkbox
+        }, delayMs); // DELAY CONFIGURABLE (default 100ms, suficiente para procesar eventos)
     }
 
     /**
