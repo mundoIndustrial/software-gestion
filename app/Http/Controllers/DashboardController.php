@@ -65,6 +65,10 @@ class DashboardController extends Controller
             if ($roleName === 'cartera') {
                 return redirect()->route('cartera.pedidos');
             }
+
+            if ($roleName === 'Despacho' || $roleName === 'despacho') {
+                return redirect()->route('despacho.index');
+            }
         }
 
         return view('dashboard');

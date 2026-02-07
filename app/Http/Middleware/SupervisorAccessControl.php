@@ -20,6 +20,13 @@ class SupervisorAccessControl
             return redirect('/login');
         }
 
+        $user = auth()->user();
+
+        // Bloquear acceso a despacho en rutas de supervisor/dashboard
+        if ($user && ($user->hasRole('Despacho') || $user->hasRole('despacho'))) {
+            return redirect()->route('despacho.index');
+        }
+
         // Permitir acceso a todos los usuarios autenticados
         return $next($request);
     }

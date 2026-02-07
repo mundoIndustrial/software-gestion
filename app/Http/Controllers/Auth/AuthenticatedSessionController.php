@@ -108,6 +108,11 @@ class AuthenticatedSessionController extends Controller
             if ($roleName === 'supervisor_planta') {
                 return redirect(route('registros.index', absolute: false));
             }
+
+            // Despacho - Módulo de despacho
+            if ($roleName === 'Despacho' || $roleName === 'despacho') {
+                return redirect(route('despacho.index', absolute: false));
+            }
             
             // Insumos - Redirigir al login (no tiene acceso a asistencia personal)
             if ($roleName === 'insumos') {
