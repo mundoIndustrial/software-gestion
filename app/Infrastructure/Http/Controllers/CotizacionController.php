@@ -1978,7 +1978,7 @@ final class CotizacionController extends Controller
                                                 
                                                 // Registrar en BD
                                                 $logoCotizacionTecnicaPrenda->fotos()->create([
-                                                    'ruta_original' => null, // Ya no guardamos original
+                                                    'ruta_original' => $path,
                                                     'ruta_webp' => $path, // Guardar ruta WebP
                                                     'ruta_miniatura' => $path, // Mismo archivo por ahora
                                                     'orden' => $ordenFoto,
