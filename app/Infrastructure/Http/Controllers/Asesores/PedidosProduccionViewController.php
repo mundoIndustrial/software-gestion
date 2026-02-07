@@ -82,7 +82,6 @@ class PedidosProduccionViewController
                         'variantes.genero:id,nombre'
                     ]);
                 },
-                'reflectivo',
                 'logoCotizacion'
             ])->find($cotizacionId);
 
@@ -233,16 +232,6 @@ class PedidosProduccionViewController
                 ]);
             })->toArray();
 
-            $reflectivo = null;
-            if ($cotizacionConRelaciones->reflectivo) {
-                $reflectivo = [
-                    'id' => $cotizacionConRelaciones->reflectivo->id,
-                    'tipo_reflectivo' => $cotizacionConRelaciones->reflectivo->tipo_reflectivo ?? 'N/A',
-                    'cantidad' => $cotizacionConRelaciones->reflectivo->cantidad ?? 1,
-                    'tipo' => 'reflectivo'
-                ];
-            }
-
             $logo = null;
             if ($cotizacionConRelaciones->logoCotizacion) {
                 $logo = [
@@ -255,10 +244,8 @@ class PedidosProduccionViewController
             return response()->json([
                 'error' => null,
                 'prendas' => $prendas,
-                'reflectivo' => $reflectivo,
                 'logo' => $logo,
                 'tiene_prendas' => count($prendas) > 0,
-                'tiene_reflectivo' => $reflectivo !== null,
                 'tiene_logo' => $logo !== null
             ]);
         } catch (\Exception $e) {
@@ -271,7 +258,6 @@ class PedidosProduccionViewController
             return response()->json([
                 'error' => 'Error al obtener datos de cotización: ' . $e->getMessage(),
                 'prendas' => [],
-                'reflectivo' => null,
                 'logo' => null
             ], 500);
         }
@@ -1032,6 +1018,30 @@ class PedidosProduccionViewController
                         'talla_cantidad' => $tallasFormatoProceso
                     ];
                 }
+            }
+
+            // PROCESAR REFLECTIVO
+            // Si la prenda tiene reflectivo, crear proceso de reflectivo
+            if (!empty($variantes['tiene_reflectivo']) && $variantes['tiene_reflectivo']) {
+                \Log::info('[OBTENER-PRENDA-COMPLETA] ✨ AGREGANDO PROCESO REFLECTIVO', [
+                    'prenda_id' => $prenda->id,
+                    'obs_reflectivo' => $variantes['obs_reflectivo'] ?? '',
+                ]);
+                
+                $procesosFormato['reflectivo'] = [
+                    'tipo' => 'Reflectivo',
+                    'slug' => 'reflectivo',
+                    'ubicaciones' => [
+                        [
+                            'ubicacion' => $variantes['obs_reflectivo'] ?? '',
+                            'descripcion' => ''
+                        ]
+                    ],
+                    'imagenes' => [],
+                    'observaciones' => '',
+                    'variaciones_prenda' => [],
+                    'talla_cantidad' => []
+                ];
             }
 
             // Retornar respuesta completa
