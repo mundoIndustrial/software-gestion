@@ -6,6 +6,179 @@
 // Almacenar texto personalizado de tallas por prenda
 window.tallasTextoPersonalizado = window.tallasTextoPersonalizado || {};
 
+function parseTextoPersonalizadoTallasMap(texto) {
+    if (!texto || typeof texto !== 'string') return {};
+    const t = texto.trim();
+    if (!t) return {};
+
+    if (t.startsWith('{') && t.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(t);
+            if (parsed && typeof parsed === 'object') return parsed;
+        } catch (e) {
+            return {};
+        }
+    }
+
+    const matchParen = t.match(/^\((.*)\)$/);
+    if (matchParen) {
+        return { global: matchParen[1] };
+    }
+
+    return { global: t };
+}
+
+function stringifyTextoPersonalizadoTallasMap(map) {
+    try {
+        return JSON.stringify(map || {});
+    } catch (e) {
+        return JSON.stringify({});
+    }
+}
+
+function editarTallasPersonalizadoPorGenero(element) {
+    if (!element || !(element instanceof HTMLElement)) return;
+
+    // Si ya está en modo edición, no hacer nada
+    if (element.querySelector('input')) {
+        return;
+    }
+
+    const prendaId = element.getAttribute('data-prenda-id');
+    const generoKey = element.getAttribute('data-genero-key');
+    const tallasBase = element.getAttribute('data-tallas-base') || '';
+    const textoPersonalizadoRaw = element.getAttribute('data-texto-personalizado') || '';
+
+    const map = parseTextoPersonalizadoTallasMap(textoPersonalizadoRaw);
+    const valorActual = (map && (map[generoKey] !== undefined && map[generoKey] !== null))
+        ? String(map[generoKey])
+        : (map && map.global ? String(map.global) : '');
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = valorActual;
+    input.style.cssText = `
+        width: 180px;
+        padding: 0.25rem 0.4rem;
+        font-weight: bold;
+        color: #e74c3c;
+        font-size: 0.85rem;
+        border: 2px solid #3498db;
+        border-radius: 4px;
+        font-family: inherit;
+        box-sizing: border-box;
+        background-color: #ecf0f1;
+    `;
+
+    const textoAntes = document.createElement('span');
+    textoAntes.textContent = `${tallasBase} (`;
+
+    const textoDespues = document.createElement('span');
+    textoDespues.textContent = ')';
+
+    element.innerHTML = '';
+    element.appendChild(textoAntes);
+    element.appendChild(input);
+    element.appendChild(textoDespues);
+
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    function actualizarDatasetTextoPersonalizado(prendaIdLocal, nuevoTextoRaw) {
+        const contenedor = element.closest('[data-tallas-prenda-container]') || document;
+        contenedor.querySelectorAll(`.tallas-genero-edit[data-prenda-id="${prendaIdLocal}"]`).forEach((el) => {
+            el.setAttribute('data-texto-personalizado', nuevoTextoRaw);
+        });
+    }
+
+    function renderizarFinal(valor) {
+        element.textContent = `${tallasBase} (${valor || ''})`;
+    }
+
+    function guardarCambios() {
+        const nuevoValor = (input.value || '').trim();
+        const nuevoMap = { ...(map || {}) };
+
+        nuevoMap[generoKey] = nuevoValor;
+        const rawToSave = stringifyTextoPersonalizadoTallasMap(nuevoMap);
+
+        // Guardar en memoria
+        window.tallasTextoPersonalizado[prendaId] = rawToSave;
+
+        // Renderizar en UI
+        renderizarFinal(nuevoValor);
+
+        // Actualizar dataset para las demás líneas de la misma prenda
+        actualizarDatasetTextoPersonalizado(prendaId, rawToSave);
+
+        // Guardar en la base de datos (se guarda el JSON completo)
+        fetch(`/contador/prenda/${prendaId}/texto-personalizado-tallas`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                texto_personalizado: rawToSave
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.success) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Guardado',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: (data && data.message) ? data.message : 'Error al guardar',
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            }
+        })
+        .catch(() => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al guardar en la base de datos',
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        });
+    }
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            guardarCambios();
+        } else if (e.key === 'Escape') {
+            renderizarFinal(valorActual);
+        }
+    });
+
+    input.addEventListener('blur', guardarCambios);
+}
+
+document.addEventListener('dblclick', function(e) {
+    const el = e.target && e.target.closest ? e.target.closest('.tallas-genero-edit') : null;
+    if (!el) return;
+    editarTallasPersonalizadoPorGenero(el);
+});
+
 /**
  * Habilitar edición de texto personalizado en tallas
  * @param {HTMLElement} element - Elemento contenedor de las tallas

@@ -66,7 +66,6 @@
         if (step3) step3.style.display = 'none';
         if (step4) step4.style.display = 'none';
         if (stepLine3) stepLine3.style.display = 'none';
-        if (stepLine4) stepLine4.style.display = 'none';
         if (paso3) paso3.style.display = 'none';
         if (paso4) paso4.style.display = 'none';
 
@@ -122,17 +121,18 @@
 
             case 'PB':
             default:
-                // COMBINADA: Paso 1, 2, 3 (Logo), 4 (Reflectivo), Revisar
-                console.log('  → Tipo COMBINADA: Todos los pasos');
+                // COMBINADA: Paso 1, 2, 3 (Logo), Revisar
+                // Nota: en este flujo no se usa el paso 4 (reflectivo)
+                console.log('  → Tipo COMBINADA: Pasos 1, 2, 3 y revisar');
                 if (step3) step3.style.display = '';
-                if (step4) step4.style.display = '';
                 if (stepLine3) stepLine3.style.display = '';
-                if (stepLine4) stepLine4.style.display = '';
                 if (paso3) paso3.style.display = '';
-                if (paso4) paso4.style.display = '';
+                if (step4) step4.style.display = 'none';
+                if (stepLine4) stepLine4.style.display = '';
+                if (paso4) paso4.style.display = 'none';
 
                 if (step4Number) {
-                    step4Number.textContent = '5'; // Para combinada: paso 5 es revisar
+                    step4Number.textContent = '4'; // Para combinada: revisar es el paso 4 (visual)
                 }
                 break;
         }
@@ -212,6 +212,11 @@
                 // Para logo: el siguiente va directo a revisar (paso 5)
                 btnNextPaso3.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(5)');
                 btnNextPaso3.textContent = 'REVISAR ➜';
+            } else if (tipo === 'PB') {
+                // Para combinada: el siguiente debe ir directo a revisar (paso 5)
+                // (el paso 4/reflectivo no se usa en este flujo)
+                btnNextPaso3.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(5)');
+                btnNextPaso3.textContent = 'REVISAR ➜';
             }
             // Para combinada y reflectivo, se queda con onclick="irAlPaso(4)" que es lo por defecto
         }
@@ -262,7 +267,7 @@
                 paso5Header.textContent = 'PASO 4: REVISAR COTIZACIÓN';
             } else {
                 // PB (combinada)
-                paso5Header.textContent = 'PASO 5: REVISAR COTIZACIÓN';
+                paso5Header.textContent = 'PASO 4: REVISAR COTIZACIÓN';
             }
         }
     }

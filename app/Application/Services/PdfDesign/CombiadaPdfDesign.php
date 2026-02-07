@@ -112,9 +112,9 @@ class CombiadaPdfDesign
         
         /* Imágenes lado a lado */
         .imagenes-grupo { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 10px; }
-        .imagen-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .imagen-box { border: 2px solid #1e5ba8; padding: 4px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; border-radius: 4px; }
-        .imagen-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .imagen-container { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 80px; }
+        .imagen-box { border: 2px solid #1e5ba8; padding: 4px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
+        .imagen-box img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
         .imagen-label { font-size: 8px; font-weight: bold; text-align: center; color: #333; width: 80px; word-wrap: break-word; }
         .imagen-placeholder { width: 80px; height: 80px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; text-align: center; border: 2px solid #999; flex-shrink: 0; border-radius: 4px; }
         
@@ -341,8 +341,95 @@ CSS;
      */
     private function renderPrendaTallas($prenda): string
     {
-        $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->implode(', ') : 'Sin tallas';
-        return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars($tallas) . '</div>';
+        $tallasCollection = $prenda->tallas ?? null;
+        if (!$tallasCollection || (is_object($tallasCollection) && method_exists($tallasCollection, 'isEmpty') && $tallasCollection->isEmpty())) {
+            return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars('Sin tallas') . '</div>';
+        }
+
+        $tallasCaballero = [];
+        $tallasDama = [];
+        $tallasSinGenero = [];
+
+        foreach ($tallasCollection as $t) {
+            if (!$t) continue;
+            $generoId = is_array($t) ? ($t['genero_id'] ?? null) : ($t->genero_id ?? null);
+            $talla = is_array($t) ? ($t['talla'] ?? null) : ($t->talla ?? null);
+            $cantidad = is_array($t) ? ($t['cantidad'] ?? null) : ($t->cantidad ?? null);
+            if (!$talla) continue;
+
+            $item = [
+                'talla' => (string) $talla,
+                'cantidad' => $cantidad,
+            ];
+
+            if ((string) $generoId === '1') {
+                $tallasCaballero[] = $item;
+            } elseif ((string) $generoId === '2') {
+                $tallasDama[] = $item;
+            } else {
+                $tallasSinGenero[] = $item;
+            }
+        }
+
+        $textoPersonalizadoRaw = $prenda->texto_personalizado_tallas ?? '';
+        $map = [];
+        if (is_string($textoPersonalizadoRaw)) {
+            $tt = trim($textoPersonalizadoRaw);
+            if ($tt !== '' && str_starts_with($tt, '{') && str_ends_with($tt, '}')) {
+                $decoded = json_decode($tt, true);
+                if (is_array($decoded)) {
+                    $map = $decoded;
+                }
+            } elseif ($tt !== '') {
+                // compatibilidad: texto antiguo "global" (con o sin paréntesis)
+                if (preg_match('/^\((.*)\)$/', $tt, $m)) {
+                    $map = ['global' => $m[1]];
+                } else {
+                    $map = ['global' => $tt];
+                }
+            }
+        }
+
+        $fmtGrupo = function(array $arr): string {
+            $items = [];
+            foreach ($arr as $x) {
+                $talla = trim((string) ($x['talla'] ?? ''));
+                if ($talla === '') continue;
+                $cantidad = $x['cantidad'] ?? null;
+                if ($cantidad !== null && $cantidad !== '' && (int) $cantidad !== 1) {
+                    $items[] = $talla . ' (' . (int) $cantidad . ')';
+                } else {
+                    $items[] = $talla;
+                }
+            }
+            return implode(', ', $items);
+        };
+
+        $html = '<div class="prenda-tallas">';
+        $html .= '<div><strong>TALLAS:</strong></div>';
+
+        $linea = function(string $label, string $key, array $arr) use ($fmtGrupo, $map): string {
+            $base = $fmtGrupo($arr);
+            if ($base === '') return '';
+            $paren = '';
+            if (array_key_exists($key, $map) && $map[$key] !== null) {
+                $paren = (string) $map[$key];
+            } elseif (array_key_exists('global', $map) && $map['global'] !== null) {
+                $paren = (string) $map['global'];
+            }
+            return '<div>'
+                . '<span style="color:#1e5ba8; font-weight:700;">' . htmlspecialchars($label) . ':</span> '
+                . '<span>' . htmlspecialchars($base) . ' (' . htmlspecialchars($paren) . ')</span>'
+                . '</div>';
+        };
+
+        $html .= $linea('Caballero', 'caballero', $tallasCaballero);
+        $html .= $linea('Dama', 'dama', $tallasDama);
+        $html .= $linea('Sin género', 'sin_genero', $tallasSinGenero);
+
+        $html .= '</div>';
+
+        return $html;
     }
 
     /**
@@ -610,10 +697,35 @@ CSS;
                 }
             }
 
+            // Fallback: logos adjuntados en logo_cotizacion (cuando no hay técnicas por prenda)
+            if (empty($imagenesPorTipo['Logo']) && $this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->fotos) {
+                foreach ($this->cotizacion->logoCotizacion->fotos as $foto) {
+                    if ($foto && ($foto->url ?? null)) {
+                        $imagenesPorTipo['Logo'][] = [
+                            'url' => $foto->url,
+                            'titulo' => 'Logo'
+                        ];
+                    }
+                }
+            }
+
             // Tela
             if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
                 foreach ($prenda->telaFotos as $idx => $foto) {
                     $url = $foto->url ?? $foto->ruta_webp ?? $foto->ruta_original ?? null;
+                    if ($url) {
+                        $imagenesPorTipo['Tela'][] = [
+                            'url' => $url,
+                            'titulo' => 'Tela'
+                        ];
+                    }
+                }
+            }
+
+            // Tela (imagenes de cada tela asociada)
+            if ($prenda->telas && count($prenda->telas) > 0) {
+                foreach ($prenda->telas as $tela) {
+                    $url = is_array($tela) ? ($tela['url_imagen'] ?? null) : ($tela->url_imagen ?? null);
                     if ($url) {
                         $imagenesPorTipo['Tela'][] = [
                             'url' => $url,
@@ -649,64 +761,86 @@ CSS;
                 return '';
             }
 
-            // Crear tabla horizontal con columnas por tipo
-            $html = '<table class="imagenes-table">';
-            $html .= '<thead>';
-            $html .= '<tr>';
-            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Logo</th>';
-            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Tela</th>';
-            $html .= '<th style="width: 33.33%; background: #e8eef7; font-weight: bold; padding: 8px; border: 1px solid #000; text-align: center;">Prenda</th>';
-            $html .= '</tr>';
-            $html .= '</thead>';
-            $html .= '<tbody>';
-            $html .= '<tr>';
+            // Galería única (como en el modal). IMPORTANTE: mPDF no soporta bien flex,
+            // así que usamos una tabla-grid para forzar layout horizontal.
+            // Usar un número conservador de columnas para asegurar que nunca se salga del ancho del PDF.
+            // Si se agregan más imágenes, automáticamente salta a la siguiente fila.
+            $colsPorFila = 5;
+            $html = '<table style="width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 6px; margin-top: 10px; margin-bottom: 10px;">';
+            $html .= '<tbody><tr>';
+            $colIdx = 0;
 
-            // Procesar cada tipo de imagen
+            // Unificar imágenes en un solo arreglo conservando el tipo/label
+            $imagenesFlat = [];
             foreach (['Logo', 'Tela', 'Prenda'] as $tipo) {
-                $html .= '<td style="width: 25%; padding: 8px; border: 1px solid #000; vertical-align: middle; text-align: center;">';
-
-                if (!empty($imagenesPorTipo[$tipo])) {
-                    // Mostrar solo la primera imagen de cada tipo
-                    $img = $imagenesPorTipo[$tipo][0];
-                    $imagenUrl = $img['url'];
-
-                    // Convertir a URL absoluta para base64
-                    if (!str_starts_with($imagenUrl, 'http')) {
-                        if (str_starts_with($imagenUrl, '/storage/')) {
-                            $imagenUrl = asset($imagenUrl);
-                        } else {
-                            $imagenUrl = asset('storage/' . ltrim($imagenUrl, '/'));
-                        }
-                    }
-
-                    \Log::info("Procesando imagen {$tipo}: {$imagenUrl}");
-
-                    // Convertir a base64 para mPDF
-                    $base64Image = $this->convertImageToBase64($imagenUrl);
-                    
-                    if ($base64Image) {
-                        // Detectar el tipo de imagen para el data URI
-                        $imageType = 'image/jpeg'; // Default
-                        if (str_ends_with(strtolower($img['url']), '.png')) {
-                            $imageType = 'image/png';
-                        } elseif (str_ends_with(strtolower($img['url']), '.webp')) {
-                            $imageType = 'image/webp';
-                        }
-                        
-                        $html .= '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . htmlspecialchars($img['titulo']) . '" style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto;">';
-                    } else {
-                        $html .= '<div style="color: #999; font-size: 9px; padding: 10px;">Error al cargar imagen</div>';
-                    }
-                } else {
-                    $html .= '<div style="color: #ccc; font-size: 9px; padding: 10px;">Sin ' . strtolower($tipo) . '</div>';
+                foreach (($imagenesPorTipo[$tipo] ?? []) as $img) {
+                    $imagenesFlat[] = [
+                        'tipo' => $tipo,
+                        'url' => $img['url'] ?? null,
+                        'titulo' => $img['titulo'] ?? $tipo,
+                    ];
                 }
-
-                $html .= '</td>';
             }
 
-            $html .= '</tr>';
-            $html .= '</tbody>';
-            $html .= '</table>';
+            $seen = [];
+            foreach ($imagenesFlat as $img) {
+                $rawUrl = $img['url'] ?? null;
+                if (!$rawUrl) {
+                    continue;
+                }
+
+                if (isset($seen[$rawUrl])) {
+                    continue;
+                }
+                $seen[$rawUrl] = true;
+
+                $imagenUrl = $rawUrl;
+                if (!str_starts_with($imagenUrl, 'http')) {
+                    if (str_starts_with($imagenUrl, '/storage/')) {
+                        $imagenUrl = asset($imagenUrl);
+                    } else {
+                        $imagenUrl = asset('storage/' . ltrim($imagenUrl, '/'));
+                    }
+                }
+
+                \Log::info("Procesando imagen {$img['tipo']}: {$imagenUrl}");
+
+                $base64Image = $this->convertImageToBase64($imagenUrl);
+                if (!$base64Image) {
+                    continue;
+                }
+
+                $imageType = 'image/jpeg';
+                if (is_string($rawUrl) && str_ends_with(strtolower($rawUrl), '.png')) {
+                    $imageType = 'image/png';
+                } elseif (is_string($rawUrl) && str_ends_with(strtolower($rawUrl), '.webp')) {
+                    $imageType = 'image/webp';
+                }
+
+                $label = htmlspecialchars((string) ($img['titulo'] ?? $img['tipo']));
+
+                if ($colIdx > 0 && ($colIdx % $colsPorFila) === 0) {
+                    $html .= '</tr><tr>';
+                }
+                $colIdx++;
+
+                $html .= '<td style="width: 90px; vertical-align: top;">'
+                    . '<div class="imagen-container">'
+                    // Caja fija compatible con mPDF
+                    . '<table style="border-collapse: collapse; width: 80px; height: 80px; margin: 0 auto;">'
+                    . '<tr>'
+                    . '<td style="border: 2px solid #1e5ba8; background: #f9f9f9; width: 80px; height: 80px; text-align: center; vertical-align: middle; padding: 0;">'
+                    // Forzar que nunca exceda el cuadro (mPDF respeta max-width/max-height mejor que object-fit)
+                    . '<img src="data:' . $imageType . ';base64,' . $base64Image . '" alt="' . $label . '" style="max-width: 72px; max-height: 72px; width: auto; height: auto; display: inline-block;">'
+                    . '</td>'
+                    . '</tr>'
+                    . '</table>'
+                    . '<div class="imagen-label">' . $label . '</div>'
+                    . '</div>'
+                    . '</td>';
+            }
+
+            $html .= '</tr></tbody></table>';
 
             \Log::info("renderImagenes completado con imágenes base64");
             return $html;

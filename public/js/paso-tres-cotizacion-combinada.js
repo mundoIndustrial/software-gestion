@@ -36,102 +36,12 @@ function obtenerPrendasDelPaso2() {
             if (!nombre) {
                 return; // Saltar si no hay nombre
             }
-            
-            // Obtener tallas
-            let tallas = [];
-            
-            // MÉTODO 1: Input hidden con tallas (el que se llena cuando se agregan tallas)
-            const inputTallasHidden = card.querySelector('input.tallas-hidden');
-            if (inputTallasHidden) {
-                const tallaValue = inputTallasHidden.value.trim();
-                console.log(`  - Buscando en input.tallas-hidden: "${tallaValue}"`);
-                if (tallaValue) {
-                    try {
-                        const parsed = JSON.parse(tallaValue);
-                        if (Array.isArray(parsed)) {
-                            tallas = parsed;
-                        }
-                    } catch (e) {
-                        tallas = tallaValue.split(',').map(t => t.trim()).filter(t => t);
-                    }
-                }
-            }
-            
-            // MÉTODO 2: Si el input estaba vacío, buscar en las tallas-agregadas (los chips visibles)
-            if (tallas.length === 0) {
-                const tallasAgregadas = card.querySelector('.tallas-agregadas');
-                if (tallasAgregadas) {
-                    // Buscar todos los elements que parecen ser tallas (excluir el input hidden)
-                    const tallaElements = tallasAgregadas.querySelectorAll('[class*="talla"], [data-talla], .badge, .tag, .chip');
-                    tallaElements.forEach(el => {
-                        // Excluir inputs
-                        if (el.tagName !== 'INPUT') {
-                            const talla = el.textContent.trim();
-                            if (talla && !tallas.includes(talla)) {
-                                tallas.push(talla);
-                            }
-                        }
-                    });
-                }
-            }
-            
-            // MÉTODO 3: Último recurso - buscar en cualquier elemento con clase talla
-            if (tallas.length === 0) {
-                const tallaButtons = card.querySelectorAll('.talla-btn, [data-talla], .talla-tag, .talla-chip, .badge');
-                tallaButtons.forEach(btn => {
-                    const talla = btn.textContent.trim() || btn.getAttribute('data-talla');
-                    if (talla && !talla.includes('input') && !tallas.includes(talla)) {
-                        tallas.push(talla);
-                    }
-                });
-            }
-            
+
             // Obtener género
             let genero = '';
             const selectGenero = card.querySelector('.talla-genero-select');
             if (selectGenero) {
                 genero = selectGenero.value.trim();
-            }
-            
-            // Obtener colores (pueden ser múltiples) - Buscar en las filas de telas
-            let colores = [];
-            
-            // MÉTODO 1: Buscar en filas de tabla de telas con class color-input
-            let colorInputs = card.querySelectorAll('input.color-input');
-            
-            colorInputs.forEach((input) => {
-                const color = input.value.trim();
-                if (color && !colores.includes(color)) {
-                    colores.push(color);
-                    console.log(`    - Color encontrado: "${color}"`);
-                }
-            });
-            
-            // MÉTODO 2: Si no encontró en color-input, buscar en data-tela-index rows
-            if (colores.length === 0) {
-                const telaFilas = card.querySelectorAll('tr[data-tela-index], .fila-tela');
-                console.log(`  - Filas de tela con data-tela-index encontradas: ${telaFilas.length}`);
-                
-                telaFilas.forEach((fila, telaIdx) => {
-                    const colorInput = fila.querySelector('.color-input, input[placeholder*="Color"], input[placeholder*="color"]');
-                    if (colorInput) {
-                        const color = colorInput.value.trim();
-                        if (color && !colores.includes(color)) {
-                        }
-                    }
-                });
-            }
-            
-            // MÉTODO 3: Buscar en cualquier input que tenga name variantes[color]
-            if (colores.length === 0) {
-                const colorInputsVariantes = card.querySelectorAll('input[name*="[color]"]');
-                
-                colorInputsVariantes.forEach((input) => {
-                    const color = input.value.trim();
-                    if (color && !colores.includes(color)) {
-                        colores.push(color);
-                    }
-                });
             }
             
             // Obtener imágenes de la prenda
@@ -146,70 +56,11 @@ function obtenerPrendasDelPaso2() {
                 });
             }
             console.log(`  - Imágenes finales: ${imagenes.length}`);
-            
-            // ============================================
-            // OBTENER VARIACIONES DE LA PRENDA (NUEVO)
-            // ============================================
-            let variaciones = {};
-            
-            // MANGA
-            const aplicaMangaCheckbox = card.querySelector('input[name*="aplica_manga"]');
-            const mangaInput = card.querySelector('input.manga-input');
-            const mangaObsInput = card.querySelector('input[name*="obs_manga"]');
-            
-            if (aplicaMangaCheckbox && aplicaMangaCheckbox.checked) {
-                const mangaTipo = mangaInput ? mangaInput.value.trim() : '';
-                const mangaObs = mangaObsInput ? mangaObsInput.value.trim() : '';
-                variaciones.manga = {
-                    valor: mangaTipo,
-                    observacion: mangaObs
-                };
-            }
-            
-            // BOLSILLOS
-            const aplicaBolsillosCheckbox = card.querySelector('input[name*="aplica_bolsillos"]');
-            const bolsillosObsInput = card.querySelector('input[name*="obs_bolsillos"]');
-            
-            if (aplicaBolsillosCheckbox && aplicaBolsillosCheckbox.checked) {
-                const bolsillosObs = bolsillosObsInput ? bolsillosObsInput.value.trim() : '';
-                variaciones.bolsillos = {
-                    valor: 'Sí',  // Si aplica, significa "Sí"
-                    observacion: bolsillosObs
-                };
-            }
-            
-            // BROCHE
-            const aplicaBrocheCheckbox = card.querySelector('input[name*="aplica_broche"]');
-            const brocheTipoSelect = card.querySelector('select[name*="tipo_broche_id"]');
-            const brocheObsInput = card.querySelector('input[name*="obs_broche"]');
-            
-            if (aplicaBrocheCheckbox && aplicaBrocheCheckbox.checked) {
-                const brocheTipo = brocheTipoSelect ? brocheTipoSelect.value.trim() : '';
-                let brocheValor = '';
-                
-                // Traducir ID a valor
-                if (brocheTipo === '1') {
-                    brocheValor = 'Broche';
-                } else if (brocheTipo === '2') {
-                    brocheValor = 'Botón';
-                } else {
-                    brocheValor = brocheTipo;
-                }
-                
-                const brocheObs = brocheObsInput ? brocheObsInput.value.trim() : '';
-                variaciones.broche_boton = {
-                    valor: brocheValor,
-                    observacion: brocheObs
-                };
-            }
-            
+
             prendas.push({
                 nombre: nombre,
-                tallas: tallas,
                 genero: genero,
-                colores: colores,
                 imagenes: imagenes,
-                variaciones: variaciones  // AGREGAR VARIACIONES
             });
         });
     } catch (error) {
@@ -314,16 +165,7 @@ function abrirModalSimpleTecnicaPaso3(tipo) {
     window.modoTecnicasCombinadas = 'simple';
     
     // Usar directamente el modal de SweetAlert con la técnica seleccionada
-    abrirModalTecnicaCombinada([tipo]);
-}
-
-// =========================================================
-// 5. MODAL TÉCNICAS COMBINADAS (Similar a logo-cotizacion)
-// =========================================================
-
-function abrirModalTecnicaCombinada(tecnicas) {
-    // Abrir directamente el modal de "Datos iguales" sin mostrar el selector
-    abrirModalDatosIgualesPaso3(tecnicas);
+    abrirModalDatosIgualesPaso3([tipo]);
 }
 
 function abrirModalDatosIgualesPaso3(tecnicas) {
@@ -336,25 +178,14 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
     // Crear opciones de dropdown
     let opcionesDropdown = '<option value="">-- Selecciona una prenda --</option>';
     prendasPaso2.forEach(prenda => {
-        // Construir texto para mostrar: Nombre - Género - Colores
+        // Construir texto para mostrar: Nombre - Género
         let textoOpcion = prenda.nombre;
         
         if (prenda.genero) {
             textoOpcion += ' - ' + prenda.genero;
         }
-        
-        if (prenda.colores && prenda.colores.length > 0) {
-            textoOpcion += ' - Color: ' + prenda.colores.join(' - ');
-        }
-        
-        // Almacenar en data attributes: tallas, género, colores, imágenes y variaciones
-        const dataTallas = JSON.stringify(prenda.tallas).replace(/"/g, '&quot;');
-        const dataGenero = prenda.genero || '';
-        const dataColores = JSON.stringify(prenda.colores).replace(/"/g, '&quot;');
-        const dataImagenes = JSON.stringify(prenda.imagenes || []).replace(/"/g, '&quot;');
-        const dataVariaciones = JSON.stringify(prenda.variaciones || {}).replace(/"/g, '&quot;');
-        
-        opcionesDropdown += `<option value="${prenda.nombre}" data-tallas="${dataTallas}" data-genero="${dataGenero}" data-colores="${dataColores}" data-imagenes="${dataImagenes}" data-variaciones="${dataVariaciones}">${textoOpcion}</option>`;
+
+        opcionesDropdown += `<option value="${prenda.nombre}">${textoOpcion}</option>`;
     });
     
     Swal.fire({
@@ -419,34 +250,21 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             
             const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
             
-            // Listener para cambio de prenda - carga las imágenes y variaciones automáticamente
+            // Listener para cambio de prenda - carga las imágenes automáticamente
             selectPrenda.addEventListener('change', (e) => {
                 const selectedOption = e.target.options[e.target.selectedIndex];
-                const imagenesJson = selectedOption.getAttribute('data-imagenes');
                 const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
                 
                 // Construir nombre completo IGUAL que en preConfirm
                 const genero = selectedOption.getAttribute('data-genero') || '';
-                const coloresJson = selectedOption.getAttribute('data-colores') || '[]';
-                
-                let colores = [];
-                try {
-                    colores = JSON.parse(coloresJson);
-                } catch (e) {
-                    colores = [];
-                }
                 
                 let nombrePrendaCompleto = nombrePrendaBase;
                 if (genero) {
                     nombrePrendaCompleto += ' - ' + genero;
                 }
-                if (colores && colores.length > 0) {
-                    nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
-                }
             });
             
-            // Crear inputs de ubicación por técnica, dropzones de imagen y variaciones
-            const variacionesPorTecnica = {};
+            // Crear inputs de ubicación por técnica y dropzones de imagen
             
             tecnicas.forEach((tecnica, idx) => {
                 // UBICACIÓN CON MÚLTIPLES VALORES (igual a logo individual)
@@ -469,7 +287,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 const btnAgregarUbicacion = document.createElement('button');
                 btnAgregarUbicacion.type = 'button';
                 btnAgregarUbicacion.textContent = '+ Agregar';
-                btnAgregarUbicacion.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;';
+                btnAgregarUbicacion.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;';
                 btnAgregarUbicacion.className = 'dBtnAgregarUbicacion-p3-' + idx;
                 
                 inputDiv.appendChild(inputUbicacion);
@@ -547,7 +365,15 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
                         Imágenes - ${tecnica.nombre} (Máximo 3)
                     </label>
-                    <div class="dImagenesDropzone-p3-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
+                    <div class="dImagenesDropzone-p3-${idx}" style="
+                        border: 2px dashed #ddd;
+                        border-radius: 6px;
+                        padding: 16px;
+                        text-align: center;
+                        background: #fafafa;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    ">
                         <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
                         <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
                         <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
@@ -701,24 +527,12 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             
             // Obtener género y colores del data attribute
             const genero = selectedOption.getAttribute('data-genero') || '';
-            const coloresJson = selectedOption.getAttribute('data-colores') || '[]';
             
-            let colores = [];
-            try {
-                colores = JSON.parse(coloresJson);
-            } catch (e) {
-                colores = [];
-            }
-            
-            // Construir nombre completo: Nombre - Género - Colores
+            // Construir nombre completo: Nombre - Género
             let nombrePrendaCompleto = nombrePrendaBase;
             
             if (genero) {
                 nombrePrendaCompleto += ' - ' + genero;
-            }
-            
-            if (colores && colores.length > 0) {
-                nombrePrendaCompleto += ' - Color: ' + colores.join(' - ');
             }
             
             // Validar ubicaciones (múltiples por técnica)
@@ -743,8 +557,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 nombre_prenda: nombrePrendaCompleto,
                 observaciones: document.getElementById('dObservacionesP3').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
-                tallas: [], // Siempre vacío, las tallas ya no se manejan aquí
-                variaciones_prenda: {},
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3,
                 imagenesCompartidas: window.imagenesCompartidasP3 || {}
             };
@@ -1080,7 +892,7 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
     const btnAgregarLogoCompartido = document.createElement('button');
     btnAgregarLogoCompartido.type = 'button';
     btnAgregarLogoCompartido.textContent = '+ Agregar Logo Compartido';
-    btnAgregarLogoCompartido.style.cssText = 'background: #1e40af; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; grid-column: 1 / -1;';
+    btnAgregarLogoCompartido.style.cssText = 'background: #1e40af; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600;';
     
     logosCompartidosContainer.appendChild(btnAgregarLogoCompartido);
     
@@ -1104,7 +916,7 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
         const infoDiv = document.createElement('div');
         infoDiv.style.cssText = 'flex: 1;';
         infoDiv.innerHTML = `
-            <p style="margin: 0 0 8px 0; font-weight: 600; color: #333; font-size: 0.9rem;">
+            <p style="margin: 0 0 8px 0; font-size: 0.95rem; color: #333; font-weight: 600;">
                 IMAGEN-${tecnicas.join('-')}
             </p>
             <p style="margin: 0; font-size: 0.8rem; color: #666;">
@@ -1115,7 +927,7 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
         const btnEliminar = document.createElement('button');
         btnEliminar.type = 'button';
         btnEliminar.textContent = '✕';
-        btnEliminar.style.cssText = 'background: #f44336; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: 600; flex-shrink: 0;';
+        btnEliminar.style.cssText = 'background: #f44336; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: 600;';
         btnEliminar.addEventListener('click', () => {
             delete imagenesCompartidas[clave];
             mostrarLogosCompartidosAgregados(imagenesCompartidas, []);
@@ -1136,137 +948,6 @@ function mostrarLogosCompartidosAgregados(imagenesCompartidas, tecnicasNuevas) {
     nuevoBtnAgregar.addEventListener('click', (e) => {
         e.preventDefault();
         abrirModalSeleccionarTecnicasCompartidas(window.tecnicasCombinadas, imagenesCompartidas);
-    });
-}
-
-function iniciarFlujoDatosDiferentesPaso3(tecnicas) {
-    window.tecnicasCombinadas = tecnicas;
-    window.modoTecnicasCombinadas = 'diferentes';
-    window.indiceActualTecnica = 0;
-    
-    mostrarFormularioTecnicaDiferentePaso3(0);
-}
-
-function mostrarFormularioTecnicaDiferentePaso3(indice) {
-    if (indice >= window.tecnicasCombinadas.length) {
-        renderizarTecnicasAgregadasPaso3();
-        return;
-    }
-    
-    const tecnica = window.tecnicasCombinadas[indice];
-    
-    Swal.fire({
-        title: `Datos para ${tecnica.nombre}`,
-        width: '550px',
-        html: `
-            <div style="text-align: left; padding: 20px; max-height: 70vh; overflow-y: auto;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Prenda:</label>
-                    <input type="text" id="dNombrePrendaDifP3" placeholder="POLO, CAMISA, PANTALÓN..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Ubicaciones:</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <input type="text" id="dUbicacionInputDifP3" placeholder="Ej: Pecho, Espalda, Manga" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                        <button type="button" id="dBtnAgregarUbicacionDifP3" style="background: #0066cc; color: white; border: none; padding: 10px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">+ Agregar</button>
-                    </div>
-                    <div id="dUbicacionesListDifP3" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;"></div>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Observaciones:</label>
-                    <textarea id="dObservacionesDifP3" placeholder="..." rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Siguiente',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#1e40af',
-        didOpen: (modal) => {
-            const inputUbicacionDif = document.getElementById('dUbicacionInputDifP3');
-            const btnAgregarDif = document.getElementById('dBtnAgregarUbicacionDifP3');
-            const ubicacionesListDif = document.getElementById('dUbicacionesListDifP3');
-            
-            let ubicacionesDif = [];
-            
-            btnAgregarDif.addEventListener('click', (e) => {
-                e.preventDefault();
-                const ubicacion = inputUbicacionDif.value.trim().toUpperCase();
-                
-                if (!ubicacion) {
-                    Swal.showValidationMessage('Escribe una ubicación primero');
-                    return;
-                }
-                
-                if (ubicacionesDif.includes(ubicacion)) {
-                    Swal.showValidationMessage('Esta ubicación ya fue agregada');
-                    return;
-                }
-                
-                ubicacionesDif.push(ubicacion);
-                inputUbicacionDif.value = '';
-                
-                actualizarUbicacionesListDif();
-                inputUbicacionDif.focus();
-            });
-            
-            inputUbicacionDif.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    btnAgregarDif.click();
-                }
-            });
-            
-            function actualizarUbicacionesListDif() {
-                ubicacionesListDif.innerHTML = ubicacionesDif.map((ub, i) => `
-                    <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
-                        ${ub}
-                        <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
-                    </span>
-                `).join('');
-                
-                ubicacionesListDif.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
-                        ubicacionesDif.splice(idxAEliminar, 1);
-                        actualizarUbicacionesListDif();
-                    });
-                });
-            }
-            
-            // Guardar referencia para preConfirm
-            window.ubicacionesDifActuales = ubicacionesDif;
-        },
-        preConfirm: () => {
-            const nombre = document.getElementById('dNombrePrendaDifP3').value.trim();
-            const ubicacionesDif = window.ubicacionesDifActuales || [];
-            
-            if (!nombre || ubicacionesDif.length === 0) {
-                Swal.showValidationMessage('Completa prenda y agrega al menos una ubicación');
-                return false;
-            }
-            
-            return {
-                nombre_prenda: nombre.toUpperCase(),
-                ubicaciones: ubicacionesDif,
-                observaciones: document.getElementById('dObservacionesDifP3').value.trim(),
-                variaciones_prenda: {},
-                tecnica_idx: indice
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            // Guardar datos de la técnica diferente
-            if (!window.datosDiferentesPaso3) {
-                window.datosDiferentesPaso3 = [];
-            }
-            window.datosDiferentesPaso3.push(result.value);
-            
-            // Guardar y pasar al siguiente
-            window.indiceActualTecnica++;
-            mostrarFormularioTecnicaDiferentePaso3(window.indiceActualTecnica);
-        }
     });
 }
 
@@ -1344,7 +1025,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
     
     console.log(' Técnicas únicas a procesar:', tecnicasUnicas.length);
     
-    // Guardar una prenda por técnica con sus imágenes y variaciones
+    // Guardar una prenda por técnica con sus imágenes
     tecnicasUnicas.forEach((tecnica, idx) => {
         // CAPTURAR IMÁGENES (tanto del PASO 2 como nuevas del PASO 3 como imágenes compartidas)
         const imagenesCapturadas = [];
@@ -1395,9 +1076,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
             prendas: [{
                 nombre_prenda: datosForm.nombre_prenda,
                 ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
-                talla_cantidad: [], // Siempre vacío, las tallas ya no se manejan aquí
                 observaciones: datosForm.observaciones,
-                variaciones_prenda: datosForm.variaciones_prenda || {},
                 imagenes: imagenesCapturadas,  // Cambiar de imagenes_files a imagenes con metadata
                 cantidad: 1
             }],
@@ -1467,10 +1146,8 @@ function renderizarTecnicasAgregadasPaso3() {
                 prendasMap[nombrePrenda] = {
                     nombre_prenda: nombrePrenda,
                     observaciones: prenda.observaciones,
-                    talla_cantidad: prenda.talla_cantidad || [],
                     tecnicas: [],
                     imagenes: [],
-                    variaciones_prenda: prenda.variaciones_prenda || {}
                 };
             }
             
@@ -1580,7 +1257,7 @@ function renderizarTecnicasAgregadasPaso3() {
         // Botones de acción
         headerHTML += '<div style="display: flex; gap: 0.6rem;">';
         headerHTML += `
-            <button type="button" class="btn-editar-prenda" onclick="abrirModalEditarTecnicaPaso3('${nombrePrenda}')" style="
+            <button type="button" class="btn-editar-prenda-paso3" data-prenda-nombre="${nombrePrenda}" style="
                 background: rgba(255,255,255,0.2);
                 color: white;
                 border: 1px solid rgba(255,255,255,0.3);
@@ -1685,66 +1362,6 @@ function renderizarTecnicasAgregadasPaso3() {
             bodyHTML += '</div>';
         }
         
-        // TABLA DE VARIACIONES
-        if (datosPrenda.variaciones_prenda && Object.keys(datosPrenda.variaciones_prenda).length > 0) {
-            // Obtener las variaciones de la PRIMERA técnica (son iguales para todas)
-            const variacionesUnicas = Object.values(datosPrenda.variaciones_prenda)[0] || {};
-            
-            bodyHTML += `
-                <div style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                         Variaciones:
-                    </span>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <tr style="background: #f1f5f9;">
-                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Tipo</th>
-                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Valor</th>
-                            <th style="padding: 0.6rem; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">Observación</th>
-                        </tr>
-            `;
-            
-            // Mostrar manga, bolsillos y broche_boton UNA SOLA VEZ
-            ['manga', 'bolsillos', 'broche_boton'].forEach((tipo) => {
-                const variacion = variacionesUnicas[tipo] || { valor: '-', observacion: '-' };
-                const valor = typeof variacion === 'object' ? (variacion.valor || '-') : (variacion || '-');
-                const obs = typeof variacion === 'object' ? (variacion.observacion || '-') : '-';
-                
-                bodyHTML += `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 0.6rem; color: #1e293b; font-weight: 500; font-size: 0.8rem;">${tipo === 'manga' ? '🧥 Manga' : tipo === 'bolsillos' ? '🔖 Bolsillos' : '🔘 Broche/Botón'}</td>
-                        <td style="padding: 0.6rem; color: #475569;">${valor}</td>
-                        <td style="padding: 0.6rem; color: #64748b; font-size: 0.8rem;">${obs}</td>
-                    </tr>
-                `;
-            });
-            
-            bodyHTML += `
-                    </table>
-                </div>
-            `;
-        }
-        
-        // TALLAS Y CANTIDADES
-        if (datosPrenda.talla_cantidad && datosPrenda.talla_cantidad.length > 0) {
-            bodyHTML += `
-                <div style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #64748b; display: block; margin-bottom: 0.6rem;">
-                         Tallas:
-                    </span>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-            `;
-            
-            datosPrenda.talla_cantidad.forEach(t => {
-                bodyHTML += `
-                    <span style="background: #e8f0ff; color: #1e40af; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
-                        ${t.talla} (${t.cantidad})
-                    </span>
-                `;
-            });
-            
-            bodyHTML += '</div></div>';
-        }
-        
         // OBSERVACIONES
         if (datosPrenda.observaciones) {
             bodyHTML += `
@@ -1764,6 +1381,14 @@ function renderizarTecnicasAgregadasPaso3() {
     });
     
     container.appendChild(contenedor);
+
+    // EVENT LISTENERS para editar (sin modales Swal)
+    document.querySelectorAll('.btn-editar-prenda-paso3').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            const nombrePrenda = e.currentTarget.getAttribute('data-prenda-nombre');
+            abrirModalEditarPrendaPaso3(nombrePrenda);
+        });
+    });
     
     // Procesar imágenes de forma asíncrona
     imagenesParaCargar.forEach(imgData => {
@@ -1870,474 +1495,545 @@ function renderizarTecnicasAgregadasPaso3() {
     }
 }
 
-function abrirModalEditarTecnicaPaso3(nombrePrenda) {
-    // Encontrar los datos de la prenda a editar
-    console.log('🔍 Buscando prenda:', nombrePrenda);
-    console.log('📦 tecnicasAgregadasPaso3:', window.tecnicasAgregadasPaso3);
-    
-    if (!window.tecnicasAgregadasPaso3) {
-        console.error(' No hay tecnicas agregadas');
-        return;
-    }
-    
-    let datosPrendaActual = null;
-    let tecnicasConPrenda = [];
-    
-    window.tecnicasAgregadasPaso3.forEach(tecnicaData => {
-        console.log('🔎 Revisando tecnica:', tecnicaData);
-        if (tecnicaData.prendas) {
-            tecnicaData.prendas.forEach(p => {
-                console.log('  Prenda encontrada:', p.nombre_prenda, '- Buscando:', nombrePrenda);
-            });
-            const prenda = tecnicaData.prendas.find(p => p.nombre_prenda === nombrePrenda);
-            if (prenda) {
-                console.log(' Prenda encontrada!', prenda);
-                if (!datosPrendaActual) {
-                    datosPrendaActual = prenda;
-                }
-                tecnicasConPrenda.push({
-                    tipo: tecnicaData.tipo,
-                    prenda: prenda
-                });
-            }
-        }
-    });
-    
-    if (!datosPrendaActual || tecnicasConPrenda.length === 0) {
-        console.error(' No se encontraron datos de la prenda');
-        console.log('datosPrendaActual:', datosPrendaActual);
-        console.log('tecnicasConPrenda:', tecnicasConPrenda);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se encontraron datos de la prenda. Intente nuevamente.',
-            confirmButtonColor: '#f59e0b'
-        });
-        return;
-    }
-    
-    Swal.fire({
-        title: 'Editar Prenda',
-        width: '750px',
-        maxHeight: '70vh',
-        html: `
-            <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 60vh; overflow-y: auto;">
-                
-                <!-- NOMBRE DE PRENDA (SOLO LECTURA) -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Prenda</h3>
-                    <div style="padding: 10px; background: #f5f5f5; border-radius: 4px; color: #333; font-weight: 500;">
-                        ${nombrePrenda}
-                    </div>
-                </div>
-                
-                <!-- UBICACIONES POR TÉCNICA -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Ubicaciones</h3>
-                    <div id="dUbicacionesEditarP3" style="display: grid; gap: 10px;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                </div>
-                
-                <!-- IMÁGENES -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Imágenes por Técnica</h3>
-                    <div id="dImagenesEditarP3" style="display: grid; gap: 12px;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                </div>
-                
-                <!-- VARIACIONES -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Variaciones por Técnica</h3>
-                    <div id="dVariacionesEditarP3" style="display: grid; gap: 12px;">
-                        <!-- Se agrega dinámicamente -->
-                    </div>
-                </div>
-                
-                <!-- OBSERVACIONES -->
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Observaciones</h3>
-                    <textarea id="dObservacionesEditarP3" placeholder="Detalles adicionales" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${datosPrendaActual.observaciones || ''}</textarea>
-                </div>
-                
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#333',
-        didOpen: (modal) => {
-            const ubicacionesDiv = document.getElementById('dUbicacionesEditarP3');
-            const imagenesDiv = document.getElementById('dImagenesEditarP3');
-            const variacionesDiv = document.getElementById('dVariacionesEditarP3');
-            
-            const imagenesAgregadasPorTecnicaEditar = {};
-            const variacionesEditarPorTecnica = {};
-            
-            // UBICACIONES
-            tecnicasConPrenda.forEach((tecnicaInfo, idx) => {
-                const divUbicacion = document.createElement('div');
-                divUbicacion.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px;';
-                
-                const labelUbicacion = document.createElement('label');
-                labelUbicacion.style.cssText = 'font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;';
-                const tecnicaNombreInfo = tecnicaInfo.tipo_logo ? tecnicaInfo.tipo_logo.nombre : tecnicaInfo.tipo;
-                labelUbicacion.textContent = tecnicaNombreInfo + ' - Ubicaciones';
-                
-                const inputDiv = document.createElement('div');
-                inputDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
-                
-                const inputUbicacion = document.createElement('input');
-                inputUbicacion.type = 'text';
-                inputUbicacion.className = 'dUbicacionInputEditar-p3-' + idx;
-                inputUbicacion.placeholder = 'Ej: Pecho, Espalda, Manga';
-                inputUbicacion.style.cssText = 'flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem;';
-                
-                const btnAgregarUbicacion = document.createElement('button');
-                btnAgregarUbicacion.type = 'button';
-                btnAgregarUbicacion.textContent = '+ Agregar';
-                btnAgregarUbicacion.style.cssText = 'background: #0066cc; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;';
-                btnAgregarUbicacion.className = 'dBtnAgregarUbicacionEditar-p3-' + idx;
-                
-                inputDiv.appendChild(inputUbicacion);
-                inputDiv.appendChild(btnAgregarUbicacion);
-                
-                const ubicacionesContainer = document.createElement('div');
-                ubicacionesContainer.className = 'dUbicacionesListEditar-p3-' + idx;
-                ubicacionesContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; align-content: flex-start;';
-                
-                divUbicacion.appendChild(labelUbicacion);
-                divUbicacion.appendChild(inputDiv);
-                divUbicacion.appendChild(ubicacionesContainer);
-                ubicacionesDiv.appendChild(divUbicacion);
-                
-                // Manejar agregar ubicaciones en el edit form
-                let ubicacionesEditarTecnica = [];
-                // Inicializar con ubicaciones existentes
-                if (tecnicaInfo.prenda.ubicaciones && Array.isArray(tecnicaInfo.prenda.ubicaciones)) {
-                    ubicacionesEditarTecnica = [...tecnicaInfo.prenda.ubicaciones];
-                }
-                
-                btnAgregarUbicacion.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const ubicacion = inputUbicacion.value.trim().toUpperCase();
-                    
-                    if (!ubicacion) {
-                        Swal.showValidationMessage('Escribe una ubicación primero');
-                        return;
-                    }
-                    
-                    if (ubicacionesEditarTecnica.includes(ubicacion)) {
-                        Swal.showValidationMessage('Esta ubicación ya fue agregada');
-                        return;
-                    }
-                    
-                    ubicacionesEditarTecnica.push(ubicacion);
-                    inputUbicacion.value = '';
-                    
-                    actualizarUbicacionesListEditar();
-                    inputUbicacion.focus();
-                });
-                
-                inputUbicacion.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        btnAgregarUbicacion.click();
-                    }
-                });
-                
-                function actualizarUbicacionesListEditar() {
-                    ubicacionesContainer.innerHTML = ubicacionesEditarTecnica.map((ub, i) => `
-                        <span style="background: #dbeafe; color: #0369a1; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
-                            ${ub}
-                            <button type="button" data-ubicacion-idx="${i}" style="background: none; border: none; color: #0369a1; cursor: pointer; font-weight: 700; padding: 0; margin-left: 0.25rem;">✕</button>
-                        </span>
-                    `).join('');
-                    
-                    ubicacionesContainer.querySelectorAll('button[data-ubicacion-idx]').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const idxAEliminar = parseInt(btn.getAttribute('data-ubicacion-idx'));
-                            ubicacionesEditarTecnica.splice(idxAEliminar, 1);
-                            actualizarUbicacionesListEditar();
-                        });
-                    });
-                }
-                
-                // Renderizar ubicaciones iniciales
-                actualizarUbicacionesListEditar();
-                
-                // Guardar referencia global para preConfirm
-                window['dUbicacionesEditarTecnicaP3' + idx] = ubicacionesEditarTecnica;
-                
-                // IMÁGENES - Inicializar con archivos File reales (NO convertidos a base64)
-                // Solo guardamos los File objects, no las URL de paso2
-                imagenesAgregadasPorTecnicaEditar[idx] = [];
-                if (tecnicaInfo.prenda.imagenes && Array.isArray(tecnicaInfo.prenda.imagenes)) {
-                    tecnicaInfo.prenda.imagenes.forEach(img => {
-                        // Solo agregar los archivos del PASO 3 (tienen .file como File object)
-                        if (img.tipo === 'paso3' && img.file instanceof File) {
-                            imagenesAgregadasPorTecnicaEditar[idx].push(img.file);
-                        }
-                    });
-                }
-                
-                const divImagen = document.createElement('div');
-                divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
-                divImagen.innerHTML = `
-                    <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
-                        Imágenes - ${tecnicaInfo.tipo} (Máximo 3)
-                    </label>
-                    <div class="dImagenesDropzoneEditar-p3-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
-                        <div style="margin-bottom: 6px; font-size: 1.3rem;">📁</div>
-                        <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
-                        <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
-                        <input type="file" class="dImagenInputEditar-p3-${idx}" accept="image/*" multiple style="display: none;" />
-                    </div>
-                    <div class="dImagenesPreviewEditar-p3-${idx}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-                        <!-- Previsualizaciones aquí -->
-                    </div>
-                `;
-                
-                imagenesDiv.appendChild(divImagen);
-                
-                // Setup Drag and Drop
-                const dropzone = divImagen.querySelector(`.dImagenesDropzoneEditar-p3-${idx}`);
-                const input = divImagen.querySelector(`.dImagenInputEditar-p3-${idx}`);
-                const previewContainer = divImagen.querySelector(`.dImagenesPreviewEditar-p3-${idx}`);
-                
-                function actualizarPrevisualizacionesEditar() {
-                    previewContainer.innerHTML = '';
-                    
-                    imagenesAgregadasPorTecnicaEditar[idx].forEach((archivo, imgIdx) => {
-                        let imagenSrc;
-                        
-                        if (typeof archivo === 'string') {
-                            // Es una URL - mostrar directamente (es de paso2)
-                            imagenSrc = archivo;
-                            mostrarPreview(imagenSrc, imgIdx);
-                        } else if (archivo instanceof Blob || archivo instanceof File) {
-                            // Es un File object válido - convertir a data URL SOLO para preview
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                imagenSrc = e.target.result;
-                                mostrarPreview(imagenSrc, imgIdx);
-                            };
-                            reader.readAsDataURL(archivo);
-                        }
-                    });
-                    
-                    function mostrarPreview(src, imgIdx) {
-                        const preview = document.createElement('div');
-                        preview.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
-                        
-                        const btnEliminar = document.createElement('button');
-                        btnEliminar.type = 'button';
-                        btnEliminar.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; justify-content: center;';
-                        btnEliminar.textContent = '×';
-                        btnEliminar.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            imagenesAgregadasPorTecnicaEditar[idx].splice(imgIdx, 1);
-                            actualizarPrevisualizacionesEditar();
-                        });
-                        
-                        const img = document.createElement('img');
-                        img.src = src;
-                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                        
-                        preview.appendChild(img);
-                        preview.appendChild(btnEliminar);
-                        previewContainer.appendChild(preview);
-                    }
-                }
-                
-                dropzone.addEventListener('click', () => input.click());
-                
-                dropzone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropzone.style.background = '#e8f1ff';
-                    dropzone.style.borderColor = '#1e40af';
-                });
-                
-                dropzone.addEventListener('dragleave', () => {
-                    dropzone.style.background = '#fafafa';
-                    dropzone.style.borderColor = '#ddd';
-                });
-                
-                dropzone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropzone.style.background = '#fafafa';
-                    dropzone.style.borderColor = '#ddd';
-                    agregarImagenesDropEditar(Array.from(e.dataTransfer.files));
-                });
-                
-                input.addEventListener('change', (e) => {
-                    agregarImagenesDropEditar(Array.from(e.target.files));
-                });
-                
-                function agregarImagenesDropEditar(archivos) {
-                    const imagenes = archivos.filter(f => f.type.startsWith('image/'));
-                    
-                    if (imagenes.length === 0) return;
-                    
-                    for (const archivo of imagenes) {
-                        if (imagenesAgregadasPorTecnicaEditar[idx].length >= 3) break;
-                        imagenesAgregadasPorTecnicaEditar[idx].push(archivo);
-                    }
-                    
-                    actualizarPrevisualizacionesEditar();
-                }
-                
-                // Mostrar previsualizaciones iniciales
-                actualizarPrevisualizacionesEditar();
-                
-                // VARIACIONES
-                variacionesEditarPorTecnica[idx] = {
-                    manga: {
-                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.manga?.valor) || '',
-                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.manga?.observacion) || ''
-                    },
-                    bolsillos: {
-                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.bolsillos?.valor) || '',
-                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.bolsillos?.observacion) || ''
-                    },
-                    broche_boton: {
-                        valor: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.broche_boton?.valor) || '',
-                        observacion: (tecnicaInfo.prenda.variaciones_prenda && tecnicaInfo.prenda.variaciones_prenda[tecnicaInfo.tipo]?.broche_boton?.observacion) || ''
-                    }
-                };
-                
-                const divVariaciones = document.createElement('div');
-                divVariaciones.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
-                divVariaciones.innerHTML = `
-                    <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
-                        Variaciones - ${tecnicaInfo.tipo}
-                    </label>
-                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; font-size: 0.85rem;">
-                        <thead>
-                            <tr style="background: #f3f4f6; border-bottom: 1px solid #ddd;">
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Tipo</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333; border-right: 1px solid #ddd;">Valor</th>
-                                <th style="padding: 8px; text-align: left; font-weight: 600; color: #333;">Observación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Manga</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarMangaValor-p3-${idx}" placeholder="Corta, Larga..." value="${variacionesEditarPorTecnica[idx].manga.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarMangaObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].manga.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Bolsillos</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarBolsillosValor-p3-${idx}" placeholder="Sí, No..." value="${variacionesEditarPorTecnica[idx].bolsillos.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarBolsillosObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].bolsillos.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px; color: #333; font-weight: 500; border-right: 1px solid #ddd;">Broche/Botón</td>
-                                <td style="padding: 8px; border-right: 1px solid #ddd;"><input type="text" class="dVariacionEditarBrocheValor-p3-${idx}" placeholder="Automático, Metal..." value="${variacionesEditarPorTecnica[idx].broche_boton.valor}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                                <td style="padding: 8px;"><input type="text" class="dVariacionEditarBrocheObs-p3-${idx}" placeholder="Observación..." value="${variacionesEditarPorTecnica[idx].broche_boton.observacion}" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; font-size: 0.85rem;"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                `;
-                
-                variacionesDiv.appendChild(divVariaciones);
-            });
-            
-            // Guardar referencia global
-            window.imagenesAgregadasPorTecnicaEditarP3 = imagenesAgregadasPorTecnicaEditar;
-            window.variacionesEditarPorTecnicaP3 = variacionesEditarPorTecnica;
-            window.tecnicasConPrendaActual = tecnicasConPrenda;
-        },
-        preConfirm: () => {
-            // Capturar ubicaciones (múltiples por técnica)
-            const ubicacionesActualizadas = {};
-            window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
-                const ubicacionesEditarTecnica = window['dUbicacionesEditarTecnicaP3' + idx] || [];
-                if (ubicacionesEditarTecnica.length > 0) {
-                    ubicacionesActualizadas[tecnicaInfo.tipo] = ubicacionesEditarTecnica;
-                }
-            });
-            
-            // Capturar variaciones
-            const variacionesActualizadas = {};
-            window.tecnicasConPrendaActual.forEach((tecnicaInfo, idx) => {
-                variacionesActualizadas[tecnicaInfo.tipo] = {
-                    manga: {
-                        valor: document.querySelector(`.dVariacionEditarMangaValor-p3-${idx}`)?.value.trim() || '',
-                        observacion: document.querySelector(`.dVariacionEditarMangaObs-p3-${idx}`)?.value.trim() || ''
-                    },
-                    bolsillos: {
-                        valor: document.querySelector(`.dVariacionEditarBolsillosValor-p3-${idx}`)?.value.trim() || '',
-                        observacion: document.querySelector(`.dVariacionEditarBolsillosObs-p3-${idx}`)?.value.trim() || ''
-                    },
-                    broche_boton: {
-                        valor: document.querySelector(`.dVariacionEditarBrocheValor-p3-${idx}`)?.value.trim() || '',
-                        observacion: document.querySelector(`.dVariacionEditarBrocheObs-p3-${idx}`)?.value.trim() || ''
-                    }
-                };
-            });
-            
-            return {
-                nombrePrenda: nombrePrenda,
-                observaciones: document.getElementById('dObservacionesEditarP3').value.trim(),
-                ubicacionesActualizadas: ubicacionesActualizadas,
-                variacionesActualizadas: variacionesActualizadas,
-                tallas: [], // Siempre vacío, las tallas ya no se manejan aquí
-                imagenesAgregadas: window.imagenesAgregadasPorTecnicaEditarP3
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            guardarEdiciónPaso3(result.value);
-        }
-    });
+function cerrarModalEditarPrendaPaso3() {
+    const modal = document.getElementById('modalEditarPrendaPaso3');
+    const contenido = document.getElementById('contenidoModalEditarPrendaPaso3');
+    if (contenido) contenido.innerHTML = '';
+    if (modal) modal.style.display = 'none';
+
+    window.p3EdicionContexto = null;
 }
 
-function guardarEdiciónPaso3(datosEditados) {
-    const { nombrePrenda, observaciones, ubicacionesActualizadas, variacionesActualizadas, tallas, imagenesAgregadas } = datosEditados;
-    
-    // Actualizar cada técnica que tenga esta prenda
+function abrirModalEditarPrendaPaso3(nombrePrenda) {
+    if (!window.tecnicasAgregadasPaso3 || !Array.isArray(window.tecnicasAgregadasPaso3)) {
+        return;
+    }
+
+    const tecnicasConPrenda = [];
+    let primerPrenda = null;
+
     window.tecnicasAgregadasPaso3.forEach((tecnicaData, tecnicaIndex) => {
-        if (tecnicaData.prendas) {
-            tecnicaData.prendas = tecnicaData.prendas.map(prenda => {
-                if (prenda.nombre_prenda === nombrePrenda) {
-                    // Buscar índice de esta técnica en los datos editados
-                    const tecnicaNombreBuscar = tecnicaData.tipo_logo ? tecnicaData.tipo_logo.nombre : tecnicaData.tipo;
-                    const tecnicaIdx = window.tecnicasConPrendaActual.findIndex(t => {
-                        const tNombre = t.tipo_logo ? t.tipo_logo.nombre : t.tipo;
-                        return tNombre === tecnicaNombreBuscar;
-                    });
-                    
-                    // Procesar imágenes: mantener del paso2 + agregar nuevas del paso3
-                    let imagenesActualizadas = (prenda.imagenes || []).filter(img => img.tipo !== 'paso3');
-                    
-                    // Agregar imágenes nuevas del PASO 3 (que están en imagenesAgregadas como File objects)
-                    if (tecnicaIdx >= 0 && imagenesAgregadas[tecnicaIdx] && imagenesAgregadas[tecnicaIdx].length > 0) {
-                        const nuevasImagenes = imagenesAgregadas[tecnicaIdx].map(archivo => ({
-                            file: archivo,  // Aquí está el File object
-                            tipo: 'paso3'
-                        }));
-                        imagenesActualizadas = [...imagenesActualizadas, ...nuevasImagenes];
-                    }
-                    
-                    return {
-                        ...prenda,
-                        observaciones: observaciones,
-                        ubicaciones: ubicacionesActualizadas[tecnicaNombreBuscar] || prenda.ubicaciones,
-                        variaciones_prenda: variacionesActualizadas,
-                        talla_cantidad: tallas,
-                        imagenes: imagenesActualizadas  // Array con {file, tipo} para paso3 + paso2 URLs
-                    };
+        if (!tecnicaData || !Array.isArray(tecnicaData.prendas)) return;
+        const prenda = tecnicaData.prendas.find(p => p && p.nombre_prenda === nombrePrenda);
+        if (!prenda) return;
+        if (!primerPrenda) primerPrenda = prenda;
+        tecnicasConPrenda.push({ tecnicaIndex, tecnicaData, prenda });
+    });
+
+    if (!primerPrenda || tecnicasConPrenda.length === 0) {
+        return;
+    }
+
+    const contenido = document.getElementById('contenidoModalEditarPrendaPaso3');
+    const modal = document.getElementById('modalEditarPrendaPaso3');
+    if (!contenido || !modal) {
+        return;
+    }
+
+    window.p3EdicionContexto = {
+        nombrePrenda,
+        tecnicasConPrenda,
+        ubicacionesPorTecnica: {},
+        imagenesPorTecnica: {},
+        logoCompartido: {
+            enabled: false,
+            items: {},
+            files: {}
+        }
+    };
+
+    const obsInicial = primerPrenda.observaciones || '';
+
+    // Detectar logos compartidos existentes en memoria (imagenes paso3 con nombreCompartido)
+    // Formato esperado: { file, tipo:'paso3', nombreCompartido:'IMAGEN-XXX', tecnicasCompartidas:[...] }
+    const sharedItems = {};
+    const sharedFiles = {};
+    tecnicasConPrenda.forEach((item) => {
+        const imgs = Array.isArray(item.prenda.imagenes) ? item.prenda.imagenes : [];
+        imgs.forEach((img) => {
+            if (!img || img.tipo !== 'paso3' || !img.nombreCompartido) return;
+            const clave = String(img.nombreCompartido).replace(/^IMAGEN-/, '');
+            if (!sharedItems[clave]) {
+                sharedItems[clave] = {
+                    tecnicasCompartidas: Array.isArray(img.tecnicasCompartidas)
+                        ? img.tecnicasCompartidas
+                        : String(clave).split('-').map(t => t.trim()).filter(Boolean),
+                    previewUrl: ''
+                };
+            }
+            if (img.file instanceof File) {
+                sharedFiles[clave] = img.file;
+            }
+        });
+    });
+
+    window.p3EdicionContexto.logoCompartido.items = sharedItems;
+    window.p3EdicionContexto.logoCompartido.files = sharedFiles;
+    window.p3EdicionContexto.logoCompartido.enabled = Object.keys(sharedItems).length > 0;
+
+    const tecnicasNombres = tecnicasConPrenda
+        .map((item) => (item.tecnicaData && item.tecnicaData.tipo_logo && item.tecnicaData.tipo_logo.nombre)
+            ? item.tecnicaData.tipo_logo.nombre
+            : (item.tecnicaData ? item.tecnicaData.tipo : ''))
+        .filter(Boolean);
+
+    contenido.innerHTML = `
+        <div style="margin-bottom: 14px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 0.9rem; font-weight: 700; color: #334155;">Prenda</h3>
+            <div style="padding: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 700; color: #0f172a;">${nombrePrenda}</div>
+        </div>
+
+        <div id="p3EditarUbicaciones" style="display: grid; gap: 10px; margin-bottom: 14px;"></div>
+        <div id="p3EditarImagenes" style="display: grid; gap: 10px; margin-bottom: 14px;"></div>
+
+        <div style="margin-bottom: 14px; padding: 12px; border: 1px solid #dbeafe; background: #f0f7ff; border-radius: 8px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin: 0;">
+                <input type="checkbox" id="p3UsarLogoCompartido" ${window.p3EdicionContexto.logoCompartido.enabled ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;" />
+                <span style="font-weight:800; color:#0369a1;">Usar el mismo logo en múltiples técnicas</span>
+            </label>
+            <div id="p3LogoCompartidoSection" style="margin-top: 10px; display: ${window.p3EdicionContexto.logoCompartido.enabled ? 'grid' : 'none'}; gap: 10px;">
+                <button type="button" id="p3BtnAgregarLogoCompartido" style="background:#0284c7; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; font-weight:800; width: 100%;">+ Agregar Logo Compartido</button>
+                <div id="p3LogosCompartidosContenedor" style="display: grid; gap: 10px;"></div>
+                <div id="p3AddLogoCompartidoForm" style="display:none; padding: 12px; background: white; border: 1px dashed #0284c7; border-radius: 8px;">
+                    <div style="font-weight:800; color:#0f172a; margin-bottom: 8px;">Nuevo logo compartido</div>
+                    <div style="font-weight:700; color:#334155; font-size:0.85rem; margin-bottom: 8px;">Técnicas que comparten el logo</div>
+                    <div id="p3AddLogoTecnicas" style="display:flex; flex-wrap:wrap; gap: 10px; margin-bottom: 10px;">
+                        ${tecnicasNombres.map((t) => `
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; color:#0f172a; font-size:0.85rem;">
+                                <input type="checkbox" class="p3-add-logo-tecnica" value="${t}" style="width:16px; height:16px; cursor:pointer;" />
+                                <span>${t}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <input type="file" id="p3AddLogoFile" accept="image/*" style="width:100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; cursor:pointer;" />
+                    <div style="display:flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
+                        <button type="button" id="p3AddLogoCancel" style="background:white; border:1px solid #cbd5e1; color:#0f172a; padding: 8px 12px; border-radius:6px; cursor:pointer; font-weight:800;">Cancelar</button>
+                        <button type="button" id="p3AddLogoSave" style="background:#111827; border:none; color:white; padding: 8px 12px; border-radius:6px; cursor:pointer; font-weight:900;">Agregar</button>
+                    </div>
+                    <div id="p3AddLogoError" style="display:none; margin-top: 8px; color:#b91c1c; font-weight:700; font-size:0.85rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 700; color: #334155;">Observaciones</h3>
+            <textarea id="p3EditarObservaciones" rows="3" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; resize: vertical;">${obsInicial}</textarea>
+        </div>
+    `;
+
+    const ubicacionesRoot = document.getElementById('p3EditarUbicaciones');
+    const imagenesRoot = document.getElementById('p3EditarImagenes');
+
+    // ======================================
+    // LOGO COMPARTIDO (edición)
+    // ======================================
+    const checkboxLogoCompartido = document.getElementById('p3UsarLogoCompartido');
+    const sectionLogoCompartido = document.getElementById('p3LogoCompartidoSection');
+    const contenedorLogosCompartidos = document.getElementById('p3LogosCompartidosContenedor');
+    const btnAgregarLogoCompartido = document.getElementById('p3BtnAgregarLogoCompartido');
+    const formAgregarLogoCompartido = document.getElementById('p3AddLogoCompartidoForm');
+    const btnAddLogoCancel = document.getElementById('p3AddLogoCancel');
+    const btnAddLogoSave = document.getElementById('p3AddLogoSave');
+    const inputAddLogoFile = document.getElementById('p3AddLogoFile');
+    const addLogoError = document.getElementById('p3AddLogoError');
+
+    const obtenerTecnicasSeleccionadasNuevoLogo = () => {
+        const cbs = Array.from(contenido.querySelectorAll('.p3-add-logo-tecnica'));
+        return cbs.filter(cb => cb.checked).map(cb => cb.value);
+    };
+
+    const setAddError = (msg) => {
+        if (!addLogoError) return;
+        if (!msg) {
+            addLogoError.style.display = 'none';
+            addLogoError.textContent = '';
+            return;
+        }
+        addLogoError.style.display = 'block';
+        addLogoError.textContent = msg;
+    };
+
+    const leerArchivoComoDataUrl = (file) => new Promise((resolve) => {
+        if (!(file instanceof File)) return resolve('');
+        const r = new FileReader();
+        r.onload = (e) => resolve(e.target.result);
+        r.onerror = () => resolve('');
+        r.readAsDataURL(file);
+    });
+
+    const renderizarLogosCompartidos = async () => {
+        if (!contenedorLogosCompartidos) return;
+        const items = window.p3EdicionContexto.logoCompartido.items || {};
+        contenedorLogosCompartidos.innerHTML = '';
+
+        const entries = Object.entries(items);
+        for (const [clave, item] of entries) {
+            const tecnicasTxt = Array.isArray(item.tecnicasCompartidas) ? item.tecnicasCompartidas.join(' + ') : String(clave);
+            const file = window.p3EdicionContexto.logoCompartido.files ? window.p3EdicionContexto.logoCompartido.files[clave] : null;
+            const previewUrl = item.previewUrl || (file instanceof File ? await leerArchivoComoDataUrl(file) : '');
+            if (!item.previewUrl && previewUrl) {
+                item.previewUrl = previewUrl;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'p3-logo-compartido-row';
+            row.setAttribute('data-logo-clave', clave);
+            row.style.cssText = 'border: 1px solid #bfdbfe; background: #ffffff; border-radius: 8px; padding: 12px; display: grid; gap: 10px;';
+            row.innerHTML = `
+                <div style="display:flex; justify-content: space-between; gap: 10px; align-items: flex-start;">
+                    <div style="font-weight: 900; color: #0369a1;">Logo compartido: ${tecnicasTxt}</div>
+                    <button type="button" class="p3-logo-compartido-del" data-logo-clave="${clave}" style="background: #fee2e2; color:#991b1b; border:1px solid #fecaca; padding: 6px 10px; border-radius: 6px; cursor:pointer; font-weight: 900;">Eliminar</button>
+                </div>
+                <div style="display:grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center;">
+                    <div class="p3-logo-compartido-preview" data-logo-clave="${clave}" style="width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #dbeafe; background: #f8fafc; display:flex; align-items:center; justify-content:center;">
+                        ${previewUrl ? `<img src="${previewUrl}" style="width:100%; height:100%; object-fit: cover;" />` : `<span style="color:#64748b; font-weight:800; font-size:0.8rem;">Sin imagen</span>`}
+                    </div>
+                    <div>
+                        <input type="file" class="p3-logo-compartido-file" data-logo-clave="${clave}" accept="image/*" style="width:100%; padding: 10px; border: 1px dashed #0284c7; border-radius: 6px; cursor:pointer; box-sizing:border-box;" />
+                        <div style="margin-top: 6px; color:#64748b; font-size:0.8rem; font-weight:700;">Reemplazar logo compartido</div>
+                    </div>
+                </div>
+            `;
+
+            contenedorLogosCompartidos.appendChild(row);
+        }
+
+        // bind delete
+        contenedorLogosCompartidos.querySelectorAll('.p3-logo-compartido-del').forEach((b) => {
+            b.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const clave = b.getAttribute('data-logo-clave');
+                if (!clave) return;
+                if (window.p3EdicionContexto.logoCompartido.items) {
+                    delete window.p3EdicionContexto.logoCompartido.items[clave];
                 }
-                return prenda;
+                if (window.p3EdicionContexto.logoCompartido.files) {
+                    delete window.p3EdicionContexto.logoCompartido.files[clave];
+                }
+                if (Object.keys(window.p3EdicionContexto.logoCompartido.items || {}).length === 0) {
+                    window.p3EdicionContexto.logoCompartido.enabled = false;
+                    if (checkboxLogoCompartido) checkboxLogoCompartido.checked = false;
+                    if (sectionLogoCompartido) sectionLogoCompartido.style.display = 'none';
+                }
+                renderizarLogosCompartidos();
+            });
+        });
+
+        // bind replace file
+        contenedorLogosCompartidos.querySelectorAll('.p3-logo-compartido-file').forEach((inp) => {
+            inp.addEventListener('change', async (ev) => {
+                const clave = inp.getAttribute('data-logo-clave');
+                const file = (ev.target.files && ev.target.files[0]) ? ev.target.files[0] : null;
+                if (!clave || !(file instanceof File)) return;
+                window.p3EdicionContexto.logoCompartido.files[clave] = file;
+                const preview = await leerArchivoComoDataUrl(file);
+                if (window.p3EdicionContexto.logoCompartido.items[clave]) {
+                    window.p3EdicionContexto.logoCompartido.items[clave].previewUrl = preview;
+                }
+                renderizarLogosCompartidos();
+                ev.target.value = '';
+            });
+        });
+    };
+
+    if (checkboxLogoCompartido && sectionLogoCompartido) {
+        checkboxLogoCompartido.addEventListener('change', () => {
+            const enabled = !!checkboxLogoCompartido.checked;
+            window.p3EdicionContexto.logoCompartido.enabled = enabled;
+            sectionLogoCompartido.style.display = enabled ? 'grid' : 'none';
+
+            if (!enabled) {
+                window.p3EdicionContexto.logoCompartido.items = {};
+                window.p3EdicionContexto.logoCompartido.files = {};
+                if (formAgregarLogoCompartido) formAgregarLogoCompartido.style.display = 'none';
+            }
+            renderizarLogosCompartidos();
+        });
+    }
+
+    if (btnAgregarLogoCompartido && formAgregarLogoCompartido) {
+        btnAgregarLogoCompartido.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            setAddError('');
+            formAgregarLogoCompartido.style.display = 'block';
+        });
+    }
+
+    if (btnAddLogoCancel && formAgregarLogoCompartido) {
+        btnAddLogoCancel.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            setAddError('');
+            formAgregarLogoCompartido.style.display = 'none';
+            if (inputAddLogoFile) inputAddLogoFile.value = '';
+            contenido.querySelectorAll('.p3-add-logo-tecnica').forEach(cb => cb.checked = false);
+        });
+    }
+
+    if (btnAddLogoSave) {
+        btnAddLogoSave.addEventListener('click', async (ev) => {
+            ev.preventDefault();
+            setAddError('');
+            const tecnicasSel = obtenerTecnicasSeleccionadasNuevoLogo();
+            const file = inputAddLogoFile && inputAddLogoFile.files ? inputAddLogoFile.files[0] : null;
+            if (tecnicasSel.length < 2) {
+                setAddError('Selecciona mínimo 2 técnicas para compartir el logo');
+                return;
+            }
+            if (!(file instanceof File)) {
+                setAddError('Selecciona una imagen para el logo compartido');
+                return;
+            }
+
+            const clave = tecnicasSel.join('-');
+            const preview = await leerArchivoComoDataUrl(file);
+            window.p3EdicionContexto.logoCompartido.enabled = true;
+            window.p3EdicionContexto.logoCompartido.items[clave] = {
+                tecnicasCompartidas: tecnicasSel,
+                previewUrl: preview
+            };
+            window.p3EdicionContexto.logoCompartido.files[clave] = file;
+
+            if (checkboxLogoCompartido) checkboxLogoCompartido.checked = true;
+            if (sectionLogoCompartido) sectionLogoCompartido.style.display = 'grid';
+
+            formAgregarLogoCompartido.style.display = 'none';
+            if (inputAddLogoFile) inputAddLogoFile.value = '';
+            contenido.querySelectorAll('.p3-add-logo-tecnica').forEach(cb => cb.checked = false);
+            renderizarLogosCompartidos();
+        });
+    }
+
+    renderizarLogosCompartidos();
+
+    tecnicasConPrenda.forEach((item, idx) => {
+        const tecnicaNombre = (item.tecnicaData && item.tecnicaData.tipo_logo && item.tecnicaData.tipo_logo.nombre)
+            ? item.tecnicaData.tipo_logo.nombre
+            : (item.tecnicaData ? item.tecnicaData.tipo : '');
+
+        const key = `${item.tecnicaIndex}`;
+
+        // UBICACIONES
+        const ubicacionesIniciales = Array.isArray(item.prenda.ubicaciones) ? [...item.prenda.ubicaciones] : [];
+        window.p3EdicionContexto.ubicacionesPorTecnica[key] = ubicacionesIniciales;
+
+        const blockUb = document.createElement('div');
+        blockUb.style.cssText = 'padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;';
+        blockUb.innerHTML = `
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Ubicaciones - ${tecnicaNombre}</div>
+            <div style="display:flex; gap:8px; margin-bottom: 8px;">
+                <input type="text" class="p3-edit-ubicacion-input" data-tecnica-key="${key}" placeholder="Ej: PECHO" style="flex:1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem;">
+                <button type="button" class="p3-edit-ubicacion-add" data-tecnica-key="${key}" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 800;">+ Agregar</button>
+            </div>
+            <div class="p3-edit-ubicaciones-list" data-tecnica-key="${key}" style="display:flex; flex-wrap: wrap; gap: 8px; min-height: 28px;"></div>
+        `;
+        ubicacionesRoot.appendChild(blockUb);
+
+        const renderUbs = () => {
+            const list = blockUb.querySelector(`.p3-edit-ubicaciones-list[data-tecnica-key="${key}"]`);
+            if (!list) return;
+            const arr = window.p3EdicionContexto.ubicacionesPorTecnica[key] || [];
+            list.innerHTML = arr.map((ub, i) => `
+                <span style="background:#dbeafe; color:#1e40af; padding: 6px 10px; border-radius: 999px; font-weight: 800; display:inline-flex; align-items:center; gap: 8px; font-size: 0.85rem;">
+                    ${ub}
+                    <button type="button" class="p3-edit-ubicacion-del" data-tecnica-key="${key}" data-idx="${i}" style="background:none; border:none; cursor:pointer; color:#1e40af; font-weight:900; padding:0;">×</button>
+                </span>
+            `).join('');
+
+            list.querySelectorAll('.p3-edit-ubicacion-del').forEach((b) => {
+                b.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    const i = parseInt(b.getAttribute('data-idx'));
+                    const arr2 = window.p3EdicionContexto.ubicacionesPorTecnica[key] || [];
+                    arr2.splice(i, 1);
+                    window.p3EdicionContexto.ubicacionesPorTecnica[key] = arr2;
+                    renderUbs();
+                });
+            });
+        };
+
+        renderUbs();
+
+        const btnAddUb = blockUb.querySelector(`.p3-edit-ubicacion-add[data-tecnica-key="${key}"]`);
+        const inputUb = blockUb.querySelector(`.p3-edit-ubicacion-input[data-tecnica-key="${key}"]`);
+
+        if (btnAddUb && inputUb) {
+            btnAddUb.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const ub = (inputUb.value || '').trim().toUpperCase();
+                if (!ub) return;
+                const arr = window.p3EdicionContexto.ubicacionesPorTecnica[key] || [];
+                if (arr.includes(ub)) return;
+                arr.push(ub);
+                window.p3EdicionContexto.ubicacionesPorTecnica[key] = arr;
+                inputUb.value = '';
+                renderUbs();
+                inputUb.focus();
+            });
+            inputUb.addEventListener('keypress', (ev) => {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    btnAddUb.click();
+                }
             });
         }
+
+        // IMÁGENES
+        const imagenesIniciales = Array.isArray(item.prenda.imagenes) ? [...item.prenda.imagenes] : [];
+        // solo permitir editar/agregar imágenes del paso3 (File) + mantener paso2 tal cual
+        const archivosPaso3 = imagenesIniciales
+            .filter(img => img && img.tipo === 'paso3' && img.file instanceof File && !img.nombreCompartido)
+            .map(img => img.file);
+
+        window.p3EdicionContexto.imagenesPorTecnica[key] = archivosPaso3;
+
+        const blockImg = document.createElement('div');
+        blockImg.style.cssText = 'padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;';
+        blockImg.innerHTML = `
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Imágenes - ${tecnicaNombre} (máx. 3)</div>
+            <div class="p3-edit-drop" data-tecnica-key="${key}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
+                <div style="font-size: 1.2rem; margin-bottom: 6px;">📁</div>
+                <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes, máximo 3)</div>
+                <input type="file" class="p3-edit-file" data-tecnica-key="${key}" accept="image/*" multiple style="display:none;" />
+            </div>
+            <div class="p3-edit-previews" data-tecnica-key="${key}" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;"></div>
+        `;
+        imagenesRoot.appendChild(blockImg);
+
+        const drop = blockImg.querySelector(`.p3-edit-drop[data-tecnica-key="${key}"]`);
+        const fileInput = blockImg.querySelector(`.p3-edit-file[data-tecnica-key="${key}"]`);
+        const previews = blockImg.querySelector(`.p3-edit-previews[data-tecnica-key="${key}"]`);
+
+        const renderImgs = () => {
+            if (!previews) return;
+            previews.innerHTML = '';
+            const files = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
+            files.forEach((f, i) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; background: #fff;';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = '×';
+                btn.style.cssText = 'position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:999px; border:none; cursor:pointer; background: rgba(0,0,0,0.6); color:#fff; font-weight:900;';
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    const arr = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
+                    arr.splice(i, 1);
+                    window.p3EdicionContexto.imagenesPorTecnica[key] = arr;
+                    renderImgs();
+                });
+
+                const img = document.createElement('img');
+                img.style.cssText = 'width:100%; height:100%; object-fit: cover;';
+                const r = new FileReader();
+                r.onload = (ev2) => { img.src = ev2.target.result; };
+                r.readAsDataURL(f);
+
+                wrap.appendChild(img);
+                wrap.appendChild(btn);
+                previews.appendChild(wrap);
+            });
+        };
+
+        renderImgs();
+
+        const addFiles = (files) => {
+            const imagenes = (files || []).filter(ff => ff && ff.type && ff.type.startsWith('image/'));
+            if (imagenes.length === 0) return;
+            const arr = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
+            for (const f of imagenes) {
+                if (arr.length >= 3) break;
+                arr.push(f);
+            }
+            window.p3EdicionContexto.imagenesPorTecnica[key] = arr;
+            renderImgs();
+        };
+
+        if (drop && fileInput) {
+            drop.addEventListener('click', () => fileInput.click());
+            drop.addEventListener('dragover', (ev) => {
+                ev.preventDefault();
+                drop.style.background = '#eff6ff';
+                drop.style.borderColor = '#2563eb';
+            });
+            drop.addEventListener('dragleave', () => {
+                drop.style.background = '#ffffff';
+                drop.style.borderColor = '#cbd5e1';
+            });
+            drop.addEventListener('drop', (ev) => {
+                ev.preventDefault();
+                drop.style.background = '#ffffff';
+                drop.style.borderColor = '#cbd5e1';
+                addFiles(Array.from(ev.dataTransfer.files || []));
+            });
+            fileInput.addEventListener('change', (ev) => {
+                addFiles(Array.from(ev.target.files || []));
+                ev.target.value = '';
+            });
+        }
+
     });
-    
-    console.log(' Prenda editada en PASO 3:', nombrePrenda);
+
+    modal.style.display = 'flex';
+}
+
+function guardarEdicionPrendaPaso3DesdeModal() {
+    if (!window.p3EdicionContexto) {
+        return;
+    }
+
+    const { nombrePrenda, tecnicasConPrenda, ubicacionesPorTecnica, imagenesPorTecnica, logoCompartido } = window.p3EdicionContexto;
+    const obs = document.getElementById('p3EditarObservaciones') ? document.getElementById('p3EditarObservaciones').value.trim() : '';
+
+    tecnicasConPrenda.forEach((item) => {
+        const tecnicaKey = `${item.tecnicaIndex}`;
+        const tecnicaData = window.tecnicasAgregadasPaso3[item.tecnicaIndex];
+        if (!tecnicaData || !Array.isArray(tecnicaData.prendas)) return;
+
+        tecnicaData.prendas = tecnicaData.prendas.map((p) => {
+            if (!p || p.nombre_prenda !== nombrePrenda) return p;
+
+            // Mantener imágenes del paso2 + reemplazar las del paso3 por las del modal
+            const prevImgs = Array.isArray(p.imagenes) ? p.imagenes : [];
+            const soloPaso2 = prevImgs.filter(img => img && img.tipo === 'paso2');
+            const archivosPaso3 = Array.isArray(imagenesPorTecnica[tecnicaKey]) ? imagenesPorTecnica[tecnicaKey] : [];
+            const nuevasPaso3 = archivosPaso3.map(f => ({ file: f, tipo: 'paso3' }));
+
+            // Logo compartido: reconstruir imágenes compartidas por técnica
+            const tecnicaNombreActual = (tecnicaData.tipo_logo && tecnicaData.tipo_logo.nombre)
+                ? tecnicaData.tipo_logo.nombre
+                : tecnicaData.tipo;
+            let sharedImgs = [];
+            if (logoCompartido && logoCompartido.enabled) {
+                const items = logoCompartido.items || {};
+                const files = logoCompartido.files || {};
+                Object.entries(items).forEach(([clave, item]) => {
+                    const tecnicas = Array.isArray(item.tecnicasCompartidas)
+                        ? item.tecnicasCompartidas
+                        : String(clave).split('-').map(t => t.trim()).filter(Boolean);
+                    if (!tecnicas.includes(tecnicaNombreActual)) return;
+                    const file = files[clave];
+                    if (!(file instanceof File)) return;
+                    sharedImgs.push({
+                        file,
+                        tipo: 'paso3',
+                        nombreCompartido: `IMAGEN-${clave}`,
+                        tecnicasCompartidas: tecnicas
+                    });
+                });
+            }
+
+            return {
+                ...p,
+                observaciones: obs,
+                ubicaciones: Array.isArray(ubicacionesPorTecnica[tecnicaKey]) ? ubicacionesPorTecnica[tecnicaKey] : (p.ubicaciones || []),
+                imagenes: [...soloPaso2, ...nuevasPaso3, ...sharedImgs]
+            };
+        });
+    });
+
     renderizarTecnicasAgregadasPaso3();
+    cerrarModalEditarPrendaPaso3();
 }
 
 function eliminarTecnicaPaso3(nombrePrenda) {

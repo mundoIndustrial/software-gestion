@@ -219,6 +219,29 @@
     </div>
 </div>
 
+<div id="modalEditarPrendaPaso3" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 18px; max-width: 980px; width: 96%; max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e293b;">Editar Prenda</h2>
+                <p style="margin: 6px 0 0 0; color: #64748b; font-size: 0.85rem;">Actualiza ubicaciones, imágenes, variaciones y observaciones</p>
+            </div>
+            <button type="button" onclick="if (typeof cerrarModalEditarPrendaPaso3 === 'function') cerrarModalEditarPrendaPaso3()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8; padding: 0; line-height: 1; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+
+        <div id="contenidoModalEditarPrendaPaso3"></div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
+            <button type="button" onclick="if (typeof cerrarModalEditarPrendaPaso3 === 'function') cerrarModalEditarPrendaPaso3()" style="background: white; color: #333; border: 1px solid #ddd; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                Cancelar
+            </button>
+            <button type="button" onclick="if (typeof guardarEdicionPrendaPaso3DesdeModal === 'function') guardarEdicionPrendaPaso3DesdeModal()" style="background: #111827; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.9rem;">
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
 
 <script>
 // Variables para gestionar secciones en paso-tres
