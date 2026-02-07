@@ -5,20 +5,17 @@ namespace App\Infrastructure\Http\Controllers;
 use App\Application\Cotizacion\Commands\AceptarCotizacionCommand;
 use App\Application\Cotizacion\Commands\CambiarEstadoCotizacionCommand;
 use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
-use App\Application\Cotizacion\Commands\CrearReflectivoCotizacionCommand;
 use App\Application\Cotizacion\Commands\EliminarCotizacionCommand;
 use App\Application\Cotizacion\Commands\SubirImagenCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CrearCotizacionDTO;
 use App\Application\Cotizacion\Handlers\Commands\AceptarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CambiarEstadoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CrearCotizacionHandler;
-use App\Application\Cotizacion\Handlers\CrearReflectivoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\EliminarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\SubirImagenCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
-use App\Application\Cotizacion\Queries\ObtenerCotizacionQuery;
 use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use App\Application\Services\ProcesarImagenesCotizacionService;
@@ -97,16 +94,13 @@ final class CotizacionController extends Controller
                 'cliente'
             ])->findOrFail($id);
 
-            // Verificar propiedad
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
 
             $data = $cotizacion->toArray();
 
-            // Agregar prendas con sus tallas formateadas
             $data['prendas'] = $cotizacion->prendas->map(function ($prenda) {
-                // Obtener todas las variantes
                 $variantes = $prenda->variantes->map(function ($variante) {
                     return [
                         'id' => $variante->id,
@@ -156,37 +150,30 @@ final class CotizacionController extends Controller
         try {
             Log::info(' getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
 
-            // Obtener cotización reflectivo con TODAS las relaciones de prendas
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
-                'prendas.tallas',           //  Tallas de cada prenda
-                'prendas.variantes',        //  Género y variantes
+                'prendas.tallas',           
+                'prendas.variantes',       
             ])->findOrFail($id);
 
             Log::info(' Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
 
-            // Verificar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
                 Log::warning(' Usuario no autorizado', ['cotizacion_asesor' => $cotizacion->asesor_id, 'usuario_actual' => Auth::id()]);
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
 
-            // Verificar que es reflectivo y borrador
             if ($cotizacion->es_borrador === false) {
                 Log::warning(' No es borrador', ['cotizacion_id' => $id, 'es_borrador' => $cotizacion->es_borrador]);
                 return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
             }
 
-            //  PROCESAR PRENDAS CON SUS VARIANTES Y TALLAS
             $prendasProcesadas = [];
             if ($cotizacion->prendas) {
                 foreach ($cotizacion->prendas as $prenda) {
-                    // Obtener variante para verificar reflectivo
                     $variante = $prenda->variantes ? $prenda->variantes->first() : null;
                     $tieneReflectivo = $variante ? ($variante->tiene_reflectivo ?? false) : false;
-                    $fotos = []; // No hay fotos de reflectivo directo desde la prenda
                     
-                    // Procesar tallas con sus cantidades
                     $tallas = [];
                     $cantidades = [];
                     if ($prenda->tallas) {
@@ -196,13 +183,11 @@ final class CotizacionController extends Controller
                         }
                     }
 
-                    // Obtener género de variantes
                     $genero = null;
                     $variantes = null;
                     if ($prenda->variantes) {
                         foreach ($prenda->variantes as $variante) {
                             if ($variante->genero_id) {
-                                // Si es JSON, decodificarlo
                                 $generoIds = is_string($variante->genero_id) ? json_decode($variante->genero_id, true) : $variante->genero_id;
                                 if (is_array($generoIds) && !empty($generoIds)) {
                                     $generoObj = \App\Models\GeneroPrenda::find($generoIds[0]);
@@ -226,10 +211,10 @@ final class CotizacionController extends Controller
                         'id' => $prenda->id,
                         'tipo' => $prenda->nombre_producto,
                         'descripcion' => $prenda->descripcion ?? '',
-                        'tallas' => $tallas,                    //  Array de tallas
-                        'cantidades' => $cantidades,           //  Cantidades por talla
-                        'genero' => $genero,                   //  Género (dama/caballero)
-                        'variantes' => $variantes,             //  Todas las variantes
+                        'tallas' => $tallas,                    
+                        'cantidades' => $cantidades,           
+                        'genero' => $genero,                   
+                        'variantes' => $variantes,             
                         'reflectivo' => $tieneReflectivo ? [
                             'tiene_reflectivo' => true,
                             'observaciones' => $variante ? $variante->obs_reflectivo : null,
@@ -248,7 +233,7 @@ final class CotizacionController extends Controller
                 'success' => true,
                 'data' => [
                     'cotizacion' => $cotizacion->toArray(),
-                    'prendas' => $prendasProcesadas,  //  Prendas con tallas, género y reflectivos
+                    'prendas' => $prendasProcesadas,  
                 ],
             ]);
         } catch (\Exception $e) {
@@ -263,7 +248,6 @@ final class CotizacionController extends Controller
     public function getForEdit(int $id): JsonResponse
     {
         try {
-            // Obtener cotización con todas sus relaciones
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
                 'prendas.fotos',
@@ -274,7 +258,6 @@ final class CotizacionController extends Controller
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 
-            // Verificar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
@@ -311,9 +294,8 @@ final class CotizacionController extends Controller
         try {
             $fotoId = $request->input('foto_id');
             
-            Log::info('🗑️ Borrando imagen de prenda:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
+            Log::info('Borrando imagen de prenda:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
             
-            // Buscar y borrar la imagen
             $foto = \App\Models\PrendaFotoCot::find($fotoId);
             
             if (!$foto) {
@@ -324,12 +306,10 @@ final class CotizacionController extends Controller
                 ], 404);
             }
             
-            // Borrar archivo del storage
             if ($foto->ruta_original && \Storage::disk('public')->exists($foto->ruta_original)) {
                 \Storage::disk('public')->delete($foto->ruta_original);
             }
             
-            // Borrar la imagen de la BD
             $foto->forceDelete();
             
             Log::info(' Imagen de prenda borrada exitosamente:', ['foto_id' => $fotoId]);
@@ -356,9 +336,6 @@ final class CotizacionController extends Controller
         try {
             $fotoId = $request->input('foto_id');
             
-            Log::info('🗑️ Borrando imagen de tela:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
-            
-            // Buscar y borrar la imagen
             $foto = \App\Models\PrendaTelaFotoCot::find($fotoId);
             
             if (!$foto) {
@@ -399,7 +376,6 @@ final class CotizacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            //  Verificar si es una actualización de borrador existente
             $cotizacionIdExistente = $request->input('cotizacion_id');
             if ($cotizacionIdExistente) {
                 Log::info('CotizacionController@store: Detectada actualización de borrador existente', [
@@ -408,17 +384,7 @@ final class CotizacionController extends Controller
                 return $this->update($request, (int)$cotizacionIdExistente);
             }
             
-            //  LOG DE ZONA HORARIA
-            Log::info('🕐 ZONA HORARIA AL GUARDAR COTIZACIÓN', [
-                'config_timezone' => config('app.timezone'),
-                'php_timezone' => date_default_timezone_get(),
-                'ahora_carbon' => \Carbon\Carbon::now()->toDateTimeString(),
-                'ahora_utc' => \Carbon\Carbon::now('UTC')->toDateTimeString(),
-                'ahora_bogota' => \Carbon\Carbon::now('America/Bogota')->toDateTimeString(),
-                'timestamp' => time(),
-                'fecha_php' => date('Y-m-d H:i:s'),
-            ]);
-            
+
             // Mapear productos_friendly -> prendas para compatibilidad frontend
             //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
             $allData = $request->all();
@@ -432,7 +398,6 @@ final class CotizacionController extends Controller
             $prendasRecibidas = $allData['prendas'] ?? $allData['productos_friendly'] ?? $request->input('prendas', $request->input('productos_friendly', []));
             $especificacionesRecibidas = $request->input('especificaciones', []);
             
-            // Las especificaciones pueden venir como string JSON o array desde el frontend
             if (is_string($especificacionesRecibidas)) {
                 $especificacionesRecibidas = json_decode($especificacionesRecibidas, true) ?? [];
             } elseif (!is_array($especificacionesRecibidas)) {
@@ -447,27 +412,12 @@ final class CotizacionController extends Controller
                 }
             }
             
-            Log::info('CotizacionController@store: Datos recibidos', [
-                'tipo' => $request->input('tipo'),
-                'cliente' => $request->input('cliente'),
-                'tipo_venta' => $request->input('tipo_venta'),
-                'especificaciones' => $especificacionesRecibidas,
-                'prendas_count' => count($prendasRecibidas),
-                'prendas_keys' => array_keys($prendasRecibidas),
-            ]);
-            
-            Log::info(' ESPECIFICACIONES RECIBIDAS DEL FRONTEND', [
-                'especificaciones_raw' => $especificacionesRecibidas,
-                'especificaciones_type' => gettype($especificacionesRecibidas),
-                'especificaciones_keys' => is_array($especificacionesRecibidas) ? array_keys($especificacionesRecibidas) : 'no es array',
-                'especificaciones_json' => json_encode($especificacionesRecibidas),
-            ]);
+          
 
-            // Obtener o crear cliente si se proporciona nombre
             $clienteId = $request->input('cliente_id');
             $nombreCliente = $request->input('cliente');
-            $accion = $request->input('accion'); // 'guardar' o 'enviar'
-            $esBorrador = $request->input('es_borrador'); // Recibir directamente del frontend
+            $accion = $request->input('accion');
+            $esBorrador = $request->input('es_borrador');
 
             if ($nombreCliente && !$clienteId) {
                 $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
@@ -479,7 +429,7 @@ final class CotizacionController extends Controller
             if ($esBorrador === null) {
                 $esBorrador = ($accion === 'guardar');
             } else {
-                $esBorrador = (bool)$esBorrador; // Convertir a booleano
+                $esBorrador = (bool)$esBorrador;
             }
             
             $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
@@ -497,14 +447,7 @@ final class CotizacionController extends Controller
                 ]);
             }
 
-            Log::info('CotizacionController@store: Lógica aplicada', [
-                'accion' => $accion,
-                'es_borrador_recibido' => $request->input('es_borrador'),
-                'es_borrador_final' => $esBorrador,
-                'estado' => $estado,
-                'numero_cotizacion' => $numeroCotizacion,
-                'cliente_id' => $clienteId,
-            ]);
+       
 
             // Tipo de cotización: Logo (L), Combinado (PL), o Reflectivo (RF)
             $tipoCotizacion = $request->input('tipo_cotizacion', 'PL');
