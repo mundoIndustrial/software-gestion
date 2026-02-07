@@ -256,13 +256,21 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+    
+    <!-- ✅ SERVICIOS DDD FRONTEND - Necesarios para PrendaEditorOrchestrator -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-event-bus.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-api.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-dom-adapter.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor-orchestrator.js') }}?v={{ time() }}"></script>
     
     <!-- Componentes de Modales -->
     <script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
     
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
+    <!-- Servicios de Modal -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-modal-editor.js') }}?v={{ time() }}"></script>
+    
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-refactorizado.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
     
     <!-- Wrappers delegadores para prendas -->

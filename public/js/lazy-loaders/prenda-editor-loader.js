@@ -36,23 +36,15 @@ window.PrendaEditorLoader = (function() {
     ];
 
     const scriptsToLoad = [
-        // ========== SERVICIOS PROCESOS (Orden crítico - dependen entre sí) ==========
-        // NOTA: payload-normalizer-v3-definitiva.js se carga en paralelo (no se necesita para abrir modal)
-        // NOTA: notification-service.js se carga en paralelo (línea 44)
-        '/js/modulos/crear-pedido/procesos/services/item-api-service.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/item-validator.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/item-form-collector.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/item-renderer.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/prenda-editor.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/item-orchestrator.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/proceso-editor.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/gestor-edicion-procesos.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/servicio-procesos.js?v=' + Date.now(),
-        '/js/modulos/crear-pedido/procesos/services/middleware-guardado-prenda.js?v=' + Date.now(),
+        // ========== SERVICIOS DDD FRONTEND (NUEVO - Orquestación pura sin lógica de negocio) ==========
+        '/js/modulos/crear-pedido/procesos/services/prenda-event-bus.js?v=' + Date.now(),
+        '/js/modulos/crear-pedido/procesos/services/prenda-api.js?v=' + Date.now(),
+        '/js/modulos/crear-pedido/procesos/services/prenda-dom-adapter.js?v=' + Date.now(),
+        '/js/modulos/crear-pedido/procesos/services/prenda-editor-orchestrator.js?v=' + Date.now(),
         
         // ========== GESTIÓN DE ITEMS Y PROCESOS ==========
         '/js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js',
-        '/js/modulos/crear-pedido/procesos/gestion-items-pedido.js?v=' + Date.now(),
+        '/js/modulos/crear-pedido/procesos/gestion-items-pedido-refactorizado.js?v=' + Date.now(),
         '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js',
         '/js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js',
         '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js',

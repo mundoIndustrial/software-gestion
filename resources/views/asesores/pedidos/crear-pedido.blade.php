@@ -65,15 +65,20 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+    
+    <!-- ✅ SERVICIOS DDD FRONTEND - Necesarios para PrendaEditorOrchestrator -->
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-event-bus.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-api.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-dom-adapter.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor-orchestrator.js') }}?v={{ time() }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes y servicios -->
     <!-- Módulos para COTIZACIONES (crear pedido desde cotización) -->
     <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-refactorizado.js') }}"></script>
     <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
     <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}"></script>
     <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>

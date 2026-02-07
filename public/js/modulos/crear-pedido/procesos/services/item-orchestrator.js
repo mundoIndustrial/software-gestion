@@ -19,9 +19,13 @@ class ItemOrchestrator {
         });
         this.notificationService = opciones.notificationService || new NotificationService();
         this.formCollector = opciones.formCollector || new ItemFormCollector();
-        this.prendaEditor = opciones.prendaEditor || new PrendaEditor({
+        // ✅ MIGRADO a PrendaEditorOrchestrator (frontend puro, sin lógica de negocio)
+        this.prendaEditor = opciones.prendaEditor || (typeof PrendaEditorOrchestrator !== 'undefined' ? new PrendaEditorOrchestrator({
+            api: new PrendaAPI(),
+            eventBus: new PrendaEventBus(),
+            domAdapter: new PrendaDOMAdapter(),
             notificationService: this.notificationService
-        });
+        }) : null);
 
         // Estado interno
         this.items = [];

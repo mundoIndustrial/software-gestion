@@ -16,6 +16,16 @@ use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
+
+// NUEVOS: Gestión de Items en Pedidos (REFACTOR - DDD)
+use App\Domain\Pedidos\Repositories\ItemPedidoRepository as ItemPedidoRepositoryInterface;
+use App\Repositories\EloquentItemPedidoRepository;
+use App\Domain\Pedidos\DomainServices\GestorItemsPedidoDomainService;
+use App\Domain\Pedidos\CommandHandlers\AgregarItemAlPedidoHandler;
+use App\Domain\Pedidos\CommandHandlers\EliminarItemDelPedidoHandler;
+use App\Application\Pedidos\UseCases\AgregarItemAlPedidoUseCase;
+use App\Application\Pedidos\UseCases\EliminarItemDelPedidoUseCase;
+
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -121,6 +131,52 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar ImagenRelocalizadorService como singleton
         $this->app->singleton(ImagenRelocalizadorService::class, function ($app) {
             return new ImagenRelocalizadorService();
+        });
+
+        // ========================================
+        // GESTIÓN DE ITEMS EN PEDIDOS (REFACTOR - DDD)
+        // ========================================
+
+        // Registrar Repository Interface con implementación Eloquent
+        $this->app->bind(ItemPedidoRepositoryInterface::class, function ($app) {
+            return new EloquentItemPedidoRepository();
+        });
+
+        // Registrar Domain Service
+        $this->app->singleton(GestorItemsPedidoDomainService::class, function ($app) {
+            return new GestorItemsPedidoDomainService();
+        });
+
+        // Registrar Command Handlers
+        $this->app->bind(AgregarItemAlPedidoHandler::class, function ($app) {
+            return new AgregarItemAlPedidoHandler(
+                $app->make(ItemPedidoRepositoryInterface::class),
+                $app->make(GestorItemsPedidoDomainService::class)
+            );
+        });
+
+        $this->app->bind(EliminarItemDelPedidoHandler::class, function ($app) {
+            return new EliminarItemDelPedidoHandler(
+                $app->make(ItemPedidoRepositoryInterface::class),
+                $app->make(GestorItemsPedidoDomainService::class)
+            );
+        });
+
+        // Registrar Use Cases (Application Services)
+        $this->app->bind(AgregarItemAlPedidoUseCase::class, function ($app) {
+            return new AgregarItemAlPedidoUseCase(
+                $app->make(AgregarItemAlPedidoHandler::class),
+                $app->make(ItemPedidoRepositoryInterface::class),
+                $app->make(GestorItemsPedidoDomainService::class)
+            );
+        });
+
+        $this->app->bind(EliminarItemDelPedidoUseCase::class, function ($app) {
+            return new EliminarItemDelPedidoUseCase(
+                $app->make(EliminarItemDelPedidoHandler::class),
+                $app->make(ItemPedidoRepositoryInterface::class),
+                $app->make(GestorItemsPedidoDomainService::class)
+            );
         });
     }
 

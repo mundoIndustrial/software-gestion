@@ -42,7 +42,8 @@
     38 => 'App\\Providers\\BladeDirectivesServiceProvider',
     39 => 'App\\Providers\\DomainServiceProvider',
     40 => 'App\\Providers\\CQRSServiceProvider',
-    41 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
+    41 => 'App\\Providers\\PrendaServiceProvider',
+    42 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
   ),
   'eager' => 
   array (
@@ -69,7 +70,8 @@
     20 => 'App\\Providers\\BladeDirectivesServiceProvider',
     21 => 'App\\Providers\\DomainServiceProvider',
     22 => 'App\\Providers\\CQRSServiceProvider',
-    23 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
+    23 => 'App\\Providers\\PrendaServiceProvider',
+    24 => 'App\\Modules\\Pedidos\\Infrastructure\\Providers\\PedidosServiceProvider',
   ),
   'deferred' => 
   array (

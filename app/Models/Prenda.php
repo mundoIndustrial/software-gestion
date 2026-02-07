@@ -12,6 +12,9 @@ class Prenda extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'genero',
+        'origen',
+        'tipo_cotizacion',
         'imagen',
         'referencia',
         'tipo',
@@ -21,6 +24,48 @@ class Prenda extends Model
     protected $casts = [
         'activo' => 'boolean',
     ];
+
+    /**
+     * Relación con Telas (belongsToMany)
+     * Una prenda puede tener múltiples telas
+     */
+    public function telas()
+    {
+        return $this->belongsToMany(
+            Tela::class,
+            'prenda_tela',
+            'prenda_id',
+            'tela_id'
+        );
+    }
+
+    /**
+     * Relación con Procesos (belongsToMany)
+     * Una prenda puede tener múltiples procesos
+     */
+    public function procesos()
+    {
+        return $this->belongsToMany(
+            Proceso::class,
+            'prenda_proceso',
+            'prenda_id',
+            'proceso_id'
+        );
+    }
+
+    /**
+     * Relación con Variaciones (belongsToMany)
+     * Una prenda puede tener múltiples variaciones
+     */
+    public function variaciones()
+    {
+        return $this->belongsToMany(
+            Variacion::class,
+            'prenda_variacion',
+            'prenda_id',
+            'variacion_id'
+        );
+    }
 
     /**
      * Relación con balanceos

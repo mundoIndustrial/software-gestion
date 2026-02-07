@@ -1,8 +1,9 @@
 <?php
 
+use App\Infrastructure\Http\Controllers\API\PedidoItemsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api_temp\V1\OrdenController;
-use App\Http\Controllers\PrendaController;
+use App\Infrastructure\Http\Controllers\API\PrendaController;
 use App\Http\Controllers\Api_temp\ProcesosController;
 use App\Http\Controllers\Api_temp\PedidoController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
@@ -59,11 +60,11 @@ Route::middleware('api')->prefix('api/v1')->name('api.v1.')->group(function () {
 });
 
 /**
- * API Routes for Prendas (Nueva Arquitectura)
+ * API Routes for Prendas (Nueva Arquitectura DDD)
  * 
  * Prefix: /api
  * Auth: session-based (web guard) - Solo para rutas que modifican
- * Controller: App\Http\Controllers\PrendaController
+ * Controller: App\Infrastructure\Http\Controllers\API\PrendaController
  */
 // Rutas PUBLIC - Lectura (GET)
 Route::middleware('api')->group(function () {
@@ -98,6 +99,21 @@ Route::withoutMiddleware(['api']) // Remover el middleware api global
         
         Route::delete('{id}/cancelar', [PedidoController::class, 'cancelar'])
             ->name('cancelar');
+
+        // ========================================
+        // GESTIÓN DE ITEMS EN PEDIDOS (REFACTOR DDD)
+        // ========================================
+        // Rutas para agregar/eliminar items (prendas y EPPs)
+        Route::prefix('{pedidoId}/items')->name('items.')->group(function () {
+            Route::post('/', [PedidoItemsController::class, 'agregarItem'])
+                ->name('agregar');
+            
+            Route::get('/', [PedidoItemsController::class, 'obtenerItems'])
+                ->name('obtener');
+            
+            Route::delete('{itemId}', [PedidoItemsController::class, 'eliminarItem'])
+                ->name('eliminar');
+        });
     });
     
     // Rutas de cotizaciones

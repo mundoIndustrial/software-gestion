@@ -11,8 +11,30 @@
 
 class ItemAPIService {
     constructor(options = {}) {
-        this.baseUrl = options.baseUrl || '/asesores/pedidos-editable';
+        this.pedidoId = options.pedidoId;
+        this.baseUrlCustom = options.baseUrl;
         this.csrfToken = options.csrfToken || this.obtenerCSRFToken();
+    }
+
+    /**
+     * Obtener baseUrl dinámicamente
+     * @private
+     */
+    getBaseUrl() {
+        // Usar baseUrl personalizado si se proporcionó
+        if (this.baseUrlCustom) {
+            return this.baseUrlCustom;
+        }
+        
+        // Intentar obtener pedidoId dinámicamente
+        const pedidoId = this.pedidoId || window.datosEdicionPedido?.pedido_id;
+        
+        if (pedidoId) {
+            return `/api/pedidos/${pedidoId}`;
+        }
+        
+        // Fallback a ruta vieja (solo para compatibilidad)
+        return '/asesores/pedidos-editable';
     }
 
     /**
@@ -64,7 +86,8 @@ class ItemAPIService {
      */
     async obtenerItems() {
         try {
-            return await this.realizarPeticion(`${this.baseUrl}/items`);
+            // Usar: /api/pedidos/{pedidoId}/items (GET)
+            return await this.realizarPeticion(`${this.getBaseUrl()}/items`);
         } catch (error) {
 
             throw error;
@@ -76,7 +99,8 @@ class ItemAPIService {
      */
     async agregarItem(itemData) {
         try {
-            return await this.realizarPeticion(`${this.baseUrl}/items`, {
+            // Usar: /api/pedidos/{pedidoId}/items (POST)
+            return await this.realizarPeticion(`${this.getBaseUrl()}/items`, {
                 method: 'POST',
                 body: JSON.stringify(itemData)
             });
@@ -89,9 +113,10 @@ class ItemAPIService {
     /**
      * Eliminar un ítem
      */
-    async eliminarItem(index) {
+    async eliminarItem(itemId) {
         try {
-            return await this.realizarPeticion(`${this.baseUrl}/items/${index}`, {
+            // Usar: /api/pedidos/{pedidoId}/items/{itemId} (DELETE)
+            return await this.realizarPeticion(`${this.getBaseUrl()}/items/${itemId}`, {
                 method: 'DELETE'
             });
         } catch (error) {
@@ -105,7 +130,7 @@ class ItemAPIService {
      */
     async renderizarItemCard(item, index) {
         try {
-            return await this.realizarPeticion(`${this.baseUrl}/render-item-card`, {
+            return await this.realizarPeticion(`${this.getBaseUrl()}/render-item-card`, {
                 method: 'POST',
                 body: JSON.stringify({ item, index })
             });
@@ -135,7 +160,7 @@ class ItemAPIService {
             formData.append('pedido', jsonString);
             
             console.debug('[validarPedido] 📤 Enviando a /validar con FormData...');
-            const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
+            const respuesta = await this.realizarPeticion(`${this.getBaseUrl()}/validar`, {
                 method: 'POST',
                 body: formData
             });
@@ -305,7 +330,7 @@ class ItemAPIService {
 
             // PASO 4: Enviar
             console.debug('[crearPedido] PASO 4: Enviando POST a /crear');
-            const respuesta = await fetch(`${this.baseUrl}/crear`, {
+            const respuesta = await fetch(`${this.getBaseUrl()}/crear`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -1016,7 +1041,7 @@ class ItemAPIService {
      */
     async actualizarPedido(pedidoId, pedidoData) {
         try {
-            return await this.realizarPeticion(`${this.baseUrl}/${pedidoId}`, {
+            return await this.realizarPeticion(`${this.getBaseUrl()}/${pedidoId}`, {
                 method: 'PUT',
                 body: JSON.stringify(pedidoData)
             });
