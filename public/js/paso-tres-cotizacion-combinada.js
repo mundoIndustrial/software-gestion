@@ -172,22 +172,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
     window.tecnicasCombinadas = tecnicas;
     window.modoTecnicasCombinadas = 'iguales';
     
-    // Obtener prendas del PASO 2
-    const prendasPaso2 = obtenerPrendasDelPaso2();
-    
-    // Crear opciones de dropdown
-    let opcionesDropdown = '<option value="">-- Selecciona una prenda --</option>';
-    prendasPaso2.forEach(prenda => {
-        // Construir texto para mostrar: Nombre - Género
-        let textoOpcion = prenda.nombre;
-        
-        if (prenda.genero) {
-            textoOpcion += ' - ' + prenda.genero;
-        }
-
-        opcionesDropdown += `<option value="${prenda.nombre}">${textoOpcion}</option>`;
-    });
-    
     Swal.fire({
         title: 'Datos Iguales para Todas las Técnicas',
         width: '650px',
@@ -195,13 +179,10 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         html: `
             <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 60vh; overflow-y: auto;">
                 
-                <!-- PRENDA ÚNICA - DROPDOWN -->
+                <!-- PRENDA ÚNICA - INPUT MANUAL -->
                 <div style="margin-bottom: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Prenda</h3>
-                    <select id="dNombrePrendaP3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; cursor: pointer;">
-                        ${opcionesDropdown}
-                    </select>
-                    <small style="color: #999; display: block; margin-top: 4px; font-size: 0.8rem;">Las prendas se cargan del PASO 2</small>
+                    <input id="dNombrePrendaP3" type="text" placeholder="Escribe el nombre de la prenda (Ej: CAMISA, GORRA, CHAQUETA...)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; text-transform: uppercase;" />
                 </div>
                 
                 <!-- UBICACIONES POR TÉCNICA -->
@@ -244,25 +225,15 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#333',
         didOpen: (modal) => {
-            const selectPrenda = document.getElementById('dNombrePrendaP3');
+            const inputNombrePrenda = document.getElementById('dNombrePrendaP3');
             const ubicacionesPorTecnicaDiv = document.getElementById('dUbicacionesPorTecnicaP3');
             const imagenesPorTecnicaDiv = document.getElementById('dImagenesPorTecnicaP3');
             
             const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
-            
-            // Listener para cambio de prenda - carga las imágenes automáticamente
-            selectPrenda.addEventListener('change', (e) => {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
-                
-                // Construir nombre completo IGUAL que en preConfirm
-                const genero = selectedOption.getAttribute('data-genero') || '';
-                
-                let nombrePrendaCompleto = nombrePrendaBase;
-                if (genero) {
-                    nombrePrendaCompleto += ' - ' + genero;
-                }
-            });
+
+            if (inputNombrePrenda) {
+                inputNombrePrenda.focus();
+            }
             
             // Crear inputs de ubicación por técnica y dropzones de imagen
             
@@ -511,28 +482,17 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             window.imagenesAgregadasPorTecnicaP3 = imagenesAgregadasPorTecnica;
         },
         preConfirm: () => {
-            const selectPrenda = document.getElementById('dNombrePrendaP3');
-            if (!selectPrenda) {
+            const inputNombrePrenda = document.getElementById('dNombrePrendaP3');
+            if (!inputNombrePrenda) {
                 Swal.showValidationMessage('Error: elemento de prenda no encontrado');
                 return false;
             }
-            
-            const selectedOption = selectPrenda.options[selectPrenda.selectedIndex];
-            const nombrePrendaBase = selectPrenda.value.trim().toUpperCase();
-            
-            if (!nombrePrendaBase || nombrePrendaBase === '' || selectPrenda.selectedIndex === 0) {
-                Swal.showValidationMessage(' Debes seleccionar una prenda del dropdown (Paso 2)');
+
+            const nombrePrendaCompleto = (inputNombrePrenda.value || '').trim().toUpperCase();
+
+            if (!nombrePrendaCompleto) {
+                Swal.showValidationMessage('Debes escribir el nombre de la prenda');
                 return false;
-            }
-            
-            // Obtener género y colores del data attribute
-            const genero = selectedOption.getAttribute('data-genero') || '';
-            
-            // Construir nombre completo: Nombre - Género
-            let nombrePrendaCompleto = nombrePrendaBase;
-            
-            if (genero) {
-                nombrePrendaCompleto += ' - ' + genero;
             }
             
             // Validar ubicaciones (múltiples por técnica)

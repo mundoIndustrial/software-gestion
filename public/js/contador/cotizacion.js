@@ -785,16 +785,39 @@ function openCotizacionModal(cotizacionId) {
                     observacionesArray.forEach(obs => {
                         if (obs && obs.texto) {
                             let checkboxHtml = '';
+                            let valorExtraHtml = '';
                             
                             if (obs.tipo === 'checkbox') {
-                                const isChecked = obs.valor === true || obs.valor === 'true' || obs.valor === 1;
+                                const valorRaw = obs.valor;
+                                const valorStr = (valorRaw === null || typeof valorRaw === 'undefined') ? '' : String(valorRaw).trim();
+                                const tieneValor = valorStr !== '';
+                                // Compatibilidad:
+                                // - Formato antiguo: true/1/'true'
+                                // - Formato intermedio: 'on'
+                                // - Formato nuevo: string con valor (ej. '200+')
+                                const isChecked = (
+                                    valorRaw === true ||
+                                    valorRaw === 1 ||
+                                    valorRaw === '1' ||
+                                    valorRaw === 'true' ||
+                                    valorStr.toLowerCase() === 'on' ||
+                                    tieneValor
+                                );
                                 checkboxHtml = `<input type="checkbox" ${isChecked ? 'checked' : ''} disabled style="margin-right: 0.75rem; cursor: not-allowed; width: 18px; height: 18px; accent-color: #0ea5e9;" />`;
+
+                                // Mostrar valor adicional si existe y no es el marcador 'on'
+                                if (tieneValor && valorStr.toLowerCase() !== 'on') {
+                                    valorExtraHtml = `
+                                        <span style="margin-left: 0.75rem; padding: 0.2rem 0.5rem; background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;">${valorStr}</span>
+                                    `;
+                                }
                             }
                             
                             htmlPrendas += `
                                 <div style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 4px; border-left: 3px solid #0ea5e9;">
                                     ${checkboxHtml}
                                     <span style="color: #0f172a; font-weight: 500; font-size: 0.95rem;">${obs.texto}</span>
+                                    ${valorExtraHtml}
                                 </div>
                             `;
                         }

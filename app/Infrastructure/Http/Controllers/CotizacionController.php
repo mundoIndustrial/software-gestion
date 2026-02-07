@@ -1691,6 +1691,11 @@ final class CotizacionController extends Controller
                 
                 if (!empty($tecnicasAgregadas)) {
                     try {
+                        // PASO 3 (cotización combinada): reutilizar la MISMA PrendaCot por nombre
+                        // para que todas las técnicas (y sus imágenes) queden asociadas a una sola prenda.
+                        // Cache por request/cotización.
+                        $prendasCotPorNombre = [];
+
                         foreach ($tecnicasAgregadas as $tecnicaIndex => $tecnicaData) {
                             Log::info(" Procesando técnica {$tecnicaIndex}", [
                                 'tipo_logo_id' => $tecnicaData['tipo_logo']['id'] ?? null,
@@ -1746,42 +1751,44 @@ final class CotizacionController extends Controller
                                 
                                 Log::info("   Procesando prenda {$prendaIndex} de técnica {$tecnicaIndex}");
                                 
-                                // Buscar si la prenda ya existe en prendas_cot (del PASO 2)
-                                // El nombre viene con formato: "PRENDA - genero - Color: color"
-                                // Necesitamos extraer solo el nombre base (antes del primer " - ")
-                                $nombrePrenda = explode(' - ', $nombrePrendaCompleto)[0]; // Extraer nombre base
-                                
-                                Log::info("🔍 Buscando prenda en PASO 2", [
-                                    'nombre_completo' => $nombrePrendaCompleto,
-                                    'nombre_base' => $nombrePrenda,
-                                    'cotizacion_id' => $cotizacionId
-                                ]);
-                                
-                                $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
-                                    ->where('nombre_producto', $nombrePrenda)
-                                    ->first();
-                                
-                                // Si no existe, crearla
-                                if (!$prendaCot) {
-                                    $prendaCot = \App\Models\PrendaCot::create([
+                                // PASO 3 (cotización combinada): ya NO depende de PASO 2.
+                                // Crear (o reutilizar) una prenda en prendas_cot con el nombre escrito en el modal.
+                                // IMPORTANTE: si se seleccionan múltiples técnicas, TODAS apuntan al mismo prenda_cot_id.
+                                // Adicional: proteger contra duplicados consultando BD (firstOrCreate).
+                                $nombreKey = trim(mb_strtoupper($nombrePrendaCompleto));
+                                $nombreProductoNormalizado = $nombreKey;
+
+                                if (!isset($prendasCotPorNombre[$nombreKey])) {
+                                    $prendasCotPorNombre[$nombreKey] = \App\Models\PrendaCot::firstOrCreate(
+                                        [
+                                            'cotizacion_id' => $cotizacionId,
+                                            'nombre_producto' => $nombreProductoNormalizado,
+                                        ],
+                                        [
+                                            'descripcion' => $prendaData['descripcion'] ?? ($prendaData['observaciones'] ?? ''),
+                                            'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
+                                            'cantidad' => $prendaData['cantidad'] ?? 1,
+                                            'prenda_bodega' => true,
+                                        ]
+                                    );
+
+                                    Log::info(' Prenda creada/reutilizada en prendas_cot (desde PASO 3)', [
+                                        'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
+                                        'nombre_producto' => $nombreProductoNormalizado,
                                         'cotizacion_id' => $cotizacionId,
-                                        'nombre_producto' => $nombrePrenda, // Usar nombre base
-                                        'descripcion' => $prendaData['descripcion'] ?? '',
-                                        'cantidad' => $prendaData['cantidad'] ?? 1,
-                                    ]);
-                                    
-                                    Log::info(' Nueva prenda creada en prendas_cot', [
-                                        'prenda_cot_id' => $prendaCot->id,
-                                        'nombre_base' => $nombrePrenda,
-                                        'nombre_completo' => $nombrePrendaCompleto
+                                        'was_recently_created' => method_exists($prendasCotPorNombre[$nombreKey], 'wasRecentlyCreated')
+                                            ? $prendasCotPorNombre[$nombreKey]->wasRecentlyCreated
+                                            : null,
                                     ]);
                                 } else {
-                                    Log::info(' Prenda existente encontrada (del PASO 2)', [
-                                        'prenda_cot_id' => $prendaCot->id,
-                                        'nombre_base' => $nombrePrenda,
-                                        'nombre_completo' => $nombrePrendaCompleto
+                                    Log::info(' Prenda reutilizada en memoria (desde PASO 3)', [
+                                        'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
+                                        'nombre_producto' => $nombreProductoNormalizado,
+                                        'cotizacion_id' => $cotizacionId
                                     ]);
                                 }
+
+                                $prendaCot = $prendasCotPorNombre[$nombreKey];
                                 
                                 // Verificar si ya existe un registro con la misma técnica, prenda y ubicaciones
                                 $ubicacionesJson = json_encode($prendaData['ubicaciones'] ?? []);
