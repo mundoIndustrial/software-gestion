@@ -27,6 +27,23 @@ window.abrirModalPrendaNueva = function() {
     // Fallback: abrir el modal directamente si existe
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
+        // 🔥 Asegurar que estamos en modo CREATE (prendaEditIndex = null)
+        if (window.gestionItemsUI) {
+            window.gestionItemsUI.prendaEditIndex = null;
+        }
+        window.prendaEditIndex = null;
+        
+        // 🔥 Limpiar telas residuales ANTES de abrir el modal
+        if (window.telasAgregadas) {
+            window.telasAgregadas = [];
+        }
+        if (window.telasCreacion) {
+            window.telasCreacion = [];
+        }
+        const tbodyTelas = document.getElementById('tbody-telas');
+        if (tbodyTelas) {
+            tbodyTelas.innerHTML = '';
+        }
 
         modal.style.display = 'flex';
         // Limpiar formulario
@@ -42,6 +59,17 @@ window.abrirModalPrendaNueva = function() {
  */
 window.cerrarModalPrendaNueva = function() {
 
+    // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
+    if (window.gestionItemsUI) {
+        window.gestionItemsUI.prendaEditIndex = null;
+    }
+    window.prendaEditIndex = null;
+    
+    // 🔥 CRÍTICO: Limpiar COMPLETAMENTE todos los contenedores visuales al cerrar
+    // Esto asegura que no haya residuos visuales entre modal open/close
+    if (typeof ModalCleanup !== 'undefined') {
+        ModalCleanup.limpiarContenedores();
+    }
     
     // Cerrar el modal directamente
     const modal = document.getElementById('modal-agregar-prenda-nueva');
@@ -84,10 +112,19 @@ window.cerrarModalPrendaNueva = function() {
             }
         });
         
-        // Limpiar telas agregadas
+        // 🔥 CRÍTICO: Limpiar TELAS - Array y DOM
+        // Array en memoria
         if (window.telasAgregadas) {
             window.telasAgregadas = [];
-
+        }
+        // También limpiar telasCreacion si existe
+        if (window.telasCreacion) {
+            window.telasCreacion = [];
+        }
+        // 🔥 Limpiar tabla DOM de telas
+        const tbodyTelas = document.getElementById('tbody-telas');
+        if (tbodyTelas) {
+            tbodyTelas.innerHTML = '';
         }
         
         // Limpiar imágenes de prenda
@@ -505,6 +542,17 @@ function limpiarFormulario() {
             if (input) input.value = '';
         });
         
+        // 🔥 CRÍTICO: Limpiar TELAS - Array y DOM
+        if (window.telasAgregadas) {
+            window.telasAgregadas = [];
+        }
+        if (window.telasCreacion) {
+            window.telasCreacion = [];
+        }
+        const tbodyTelas = document.getElementById('tbody-telas');
+        if (tbodyTelas) {
+            tbodyTelas.innerHTML = '';
+        }
 
     } catch (e) {
 

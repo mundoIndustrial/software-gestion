@@ -205,14 +205,25 @@ final class ActualizarPrendaCompletaUseCase
     {
         // Solo actualizar si se proporcionan tallas
         if (is_null($dto->cantidadTalla)) {
+            \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - NO tallas provided (null)', [
+                'prenda_id' => $prenda->id
+            ]);
             return;
         }
 
         if (empty($dto->cantidadTalla)) {
             // Si viene vacÃ­o, eliminar todas
+            \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Empty array, deleting all', [
+                'prenda_id' => $prenda->id
+            ]);
             $prenda->tallas()->delete();
             return;
         }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Iniciando', [
+            'prenda_id' => $prenda->id,
+            'dto_cantidad_talla' => $dto->cantidadTalla
+        ]);
 
         // Obtener tallas existentes
         $tallasExistentes = $prenda->tallas()->get()->keyBy(function($t) {
@@ -221,22 +232,61 @@ final class ActualizarPrendaCompletaUseCase
 
         // Nuevas tallas a guardar
         $tallasNuevas = [];
+        $esSobremedidaPorGenero = [];
+        
         foreach ($dto->cantidadTalla as $genero => $tallasCantidad) {
+            // Skip metadata keys that start with underscore
+            if (strpos($genero, '_') === 0) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Skipping metadata key', ['key' => $genero]);
+                continue;
+            }
+            
             if (is_array($tallasCantidad)) {
+                // Check for sobremedida flag
+                $esSobremedida = !empty($tallasCantidad['_es_sobremedida']);
+                
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Procesando genero', [
+                    'genero' => $genero,
+                    'es_sobremedida' => $esSobremedida,
+                    'data' => $tallasCantidad
+                ]);
+                
                 foreach ($tallasCantidad as $talla => $cantidad) {
+                    // Skip metadata keys
+                    if (strpos($talla, '_') === 0) {
+                        \Log::debug('[ActualizarPrendaCompletaUseCase] Skipping metadata talla key', ['key' => $talla]);
+                        continue;
+                    }
+                    
                     $key = "{$genero}_{$talla}";
                     $tallasNuevas[$key] = [
                         'genero' => $genero,
                         'talla' => $talla,
                         'cantidad' => (int) $cantidad,
+                        'es_sobremedida' => (int) $esSobremedida,
                     ];
+                    
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Talla creada', [
+                        'key' => $key,
+                        'genero' => $genero,
+                        'talla' => $talla,
+                        'cantidad' => $cantidad,
+                        'es_sobremedida' => $esSobremedida
+                    ]);
                 }
             }
         }
 
+        \Log::info('[ActualizarPrendaCompletaUseCase] Tallas nuevas preparadas', [
+            'prenda_id' => $prenda->id,
+            'cantidad' => count($tallasNuevas),
+            'tallas_nuevas' => $tallasNuevas
+        ]);
+
         // Eliminar tallas que ya no estÃ¡n en la nueva lista
         foreach ($tallasExistentes as $key => $tallaRecord) {
             if (!isset($tallasNuevas[$key])) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla existente', ['key' => $key]);
                 $tallaRecord->delete();
             }
         }
@@ -245,25 +295,46 @@ final class ActualizarPrendaCompletaUseCase
         foreach ($tallasNuevas as $key => $dataTalla) {
             if (isset($tallasExistentes[$key])) {
                 // Actualizar existente
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Actualizando talla existente', [
+                    'key' => $key,
+                    'datos' => $dataTalla
+                ]);
                 $tallasExistentes[$key]->update([
                     'cantidad' => $dataTalla['cantidad'],
+                    'es_sobremedida' => $dataTalla['es_sobremedida'],
                 ]);
             } else {
                 // Crear nueva
-                $prenda->tallas()->create($dataTalla);
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Creando talla nueva', [
+                    'key' => $key,
+                    'datos' => $dataTalla
+                ]);
+                $tallaNueva = $prenda->tallas()->create($dataTalla);
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Talla creada exitosamente', [
+                    'talla_id' => $tallaNueva->id,
+                    'key' => $key
+                ]);
             }
         }
+        
+        \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Completado', [
+            'prenda_id' => $prenda->id,
+            'total_tallas' => $prenda->tallas()->count()
+        ]);
     }
 
     private function actualizarVariantes(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
         // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
+        // CRÍTICO: Solo si explícitamente se envía array vacío es intención de eliminar todo
         if (is_null($dto->variantes)) {
+            \Log::info('[ActualizarPrendaCompletaUseCase] Variantes = null, NO SE TOCAN las existentes');
             return;
         }
 
         if (empty($dto->variantes)) {
-            // Si viene array vacÃ­o, es intención explÃ­cita de eliminar TODO
+            \Log::info('[ActualizarPrendaCompletaUseCase] Variantes vacío, ELIMINANDO todas');
+            // Si viene array vacío, usuario intenta eliminar
             $prenda->variantes()->delete();
             return;
         }

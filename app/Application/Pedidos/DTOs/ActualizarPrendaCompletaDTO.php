@@ -38,7 +38,7 @@ final class ActualizarPrendaCompletaDTO
 
     public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null): self
     {
-        // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad)
+        // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad, es_sobremedida)
         $tallasArray = null;
         if (!empty($data['tallas'])) {
             if (is_string($data['tallas'])) {
@@ -46,16 +46,26 @@ final class ActualizarPrendaCompletaDTO
             } else {
                 $tallasArray = $data['tallas'];
             }
-            // Convertir a formato antiguo cantidad_talla: { GENERO: { TALLA: CANTIDAD } }
+            // Convertir a formato cantidad_talla manteniendo es_sobremedida
+            // Nuevo formato: { GENERO: { TALLA: CANTIDAD, _es_sobremedida: true } }
+            // Para tallas normales: DAMA: { S: 10, M: 5 }
+            // Para sobremedida: DAMA: { null: 34, _es_sobremedida: true }
             $cantidadTalla = [];
             if (is_array($tallasArray)) {
                 foreach ($tallasArray as $talla) {
-                    if (isset($talla['genero'], $talla['talla'], $talla['cantidad'])) {
+                    if (isset($talla['genero'], $talla['cantidad'])) {
                         $genero = strtoupper($talla['genero']);
                         if (!isset($cantidadTalla[$genero])) {
                             $cantidadTalla[$genero] = [];
                         }
-                        $cantidadTalla[$genero][$talla['talla']] = $talla['cantidad'];
+                        
+                        $tallaKey = $talla['talla'] ?? null;
+                        $cantidadTalla[$genero][$tallaKey] = $talla['cantidad'];
+                        
+                        // Preservar bandera es_sobremedida si existe
+                        if (!empty($talla['es_sobremedida'])) {
+                            $cantidadTalla[$genero]['_es_sobremedida'] = true;
+                        }
                     }
                 }
             }

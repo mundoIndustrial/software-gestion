@@ -14,6 +14,7 @@ class PrendaPedidoTalla extends Model
         'genero',
         'talla',
         'cantidad',
+        'es_sobremedida',
     ];
 
     protected $casts = [

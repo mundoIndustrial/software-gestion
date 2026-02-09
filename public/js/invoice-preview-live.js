@@ -1324,12 +1324,26 @@ function generarHTMLFactura(datos) {
                     <div style="font-weight: 700; color: #2c3e50; margin-bottom: 6px; font-size: 11px;"> Tallas</div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                         <tbody>
-                            ${generosConTallas.map(([genero, tallasObj]) => `
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
-                                    <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
-                                </tr>
-                            `).join('')}
+                            ${generosConTallas.map(([genero, tallasObj]) => {
+                                // CASO ESPECIAL: SOBREMEDIDA
+                                if (genero.toUpperCase() === 'SOBREMEDIDA') {
+                                    // Renderizar cada género dentro de sobremedida
+                                    return Object.entries(tallasObj).map(([generoSobremedida, cantidad]) => `
+                                        <tr style="border-bottom: 1px solid #eee; background: #fffbeb;">
+                                            <td style="padding: 4px 4px; font-weight: 700; color: #d97706; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">SOBREMEDIDA ${generoSobremedida}</td>
+                                            <td style="padding: 4px 4px; color: #d97706; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${cantidad}</td>
+                                        </tr>
+                                    `).join('');
+                                } else {
+                                    // Género normal (DAMA, CABALLERO, UNISEX)
+                                    return `
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 4px 4px; font-weight: 600; color: #374151; width: 35%; word-break: break-word; font-size: 11px; overflow: hidden;">${genero}</td>
+                                            <td style="padding: 4px 4px; color: #374151; word-break: break-word; overflow: hidden; font-size: 11px; font-weight: 600;">${Object.entries(tallasObj).map(([talla, cant]) => `${talla}:${cant}`).join(', ')}</td>
+                                        </tr>
+                                    `;
+                                }
+                            }).join('')}
                         </tbody>
                     </table>
                 `;

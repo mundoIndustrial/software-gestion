@@ -237,6 +237,18 @@ Route::middleware('auth')->group(function () {
     
     // Insumos / Supervisor Planta (mantener compatibilidad)
     Route::post('/insumos/notifications/marcar-leidas', [App\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
+    
+    // ========================================
+    // APIS DE CATÁLOGOS (Accesibles para todos los roles autenticados)
+    // ========================================
+    // Esto permite a supervisores y otros roles acceder a catálogos sin restricciones de roles
+    Route::get('/api/public/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposManga'])->name('api.public.tipos-manga');
+    Route::post('/api/public/tipos-manga', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTipoManga'])->name('api.public.tipos-manga.create');
+    Route::get('/api/public/tipos-broche-boton', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTiposBrocheBoton'])->name('api.public.tipos-broche-boton');
+    Route::get('/api/public/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerTelas'])->name('api.public.telas');
+    Route::post('/api/public/telas', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerTela'])->name('api.public.telas.create');
+    Route::get('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerColores'])->name('api.public.colores');
+    Route::post('/api/public/colores', [App\Http\Controllers\Api_temp\PedidoController::class, 'crearObtenerColor'])->name('api.public.colores.create');
 });
 
 Route::middleware(['auth', 'supervisor-access'])->group(function () {
@@ -1035,6 +1047,12 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Actualizar pedido
     Route::put('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar');
     Route::post('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
+    
+    // Actualizar prenda completa (con novedades) - Ruta adicional para edición de prendas desde el modal
+    Route::post('/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
+    
+    // Actualizar proceso específico de una prenda (para supervisor)
+    Route::match(['patch', 'post'], '/{prendaId}/procesos/{procesoId}', [App\Infrastructure\Http\Controllers\API\PrendaPedidoEditController::class, 'actualizarProcesoEspecifico'])->where(['prendaId' => '[0-9]+', 'procesoId' => '[0-9]+'])->name('procesos-actualizar');
     
     // Eliminar imagen de prenda
     Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');

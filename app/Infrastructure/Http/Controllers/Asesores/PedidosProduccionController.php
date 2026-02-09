@@ -981,6 +981,10 @@ class PedidosProduccionController
                 'prenda_id' => $prenda->id,
             ]);
 
+            // 🔴 FIX CRÍTICO: Recargar fotos y relaciones después de actualizar
+            // Esto evita que Eloquent devuelva fotos cacheadas que fueron eliminadas
+            $prenda = $prenda->fresh(['fotos', 'coloresTelas', 'fotosTelas', 'variantes', 'procesos', 'tallas']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda actualizada correctamente en la base de datos',

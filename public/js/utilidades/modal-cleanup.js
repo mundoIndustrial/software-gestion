@@ -64,6 +64,17 @@ class ModalCleanup {
                     }
                     element.value = element.querySelector('option')?.value || '';
                 } else {
+                    // 🔴 IMPORTANTE: NO resetear inputs de telas en modo edición
+                    // Se necesitan para permitir agregar nuevas telas durante la edición
+                    if ((id === 'nueva-prenda-tela' || id === 'nueva-prenda-color' || id === 'nueva-prenda-referencia') 
+                        && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
+                        console.log('[limpiarFormulario]  SALTANDO LIMPIAR INPUT TELA (MODO EDICIÓN)', {
+                            prendaEditIndex: window.prendaEditIndex,
+                            inputId: id,
+                            razon: 'Se permite agregar nuevas telas en edición'
+                        });
+                        return; // No limpiar inputs de telas en modo edición
+                    }
                     element.value = '';
                 }
             }
@@ -76,18 +87,34 @@ class ModalCleanup {
      * Limpiar todos los storages globales
      */
     static limpiarStorages() {
-        // Limpiar storage de imágenes de prenda
+        // 🔥 CRÍTICO: Limpiar storage de imágenes de prenda PRIMERO
+        // Esto vacía el array y revoca todas las URLs blob
         if (window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage.limpiar?.();
-
+            if (typeof window.imagenesPrendaStorage.limpiar === 'function') {
+                window.imagenesPrendaStorage.limpiar();
+            } else if (window.imagenesPrendaStorage.images) {
+                // Fallback: limpiar directamente si el método no existe
+                window.imagenesPrendaStorage.images.forEach(img => {
+                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(img.previewUrl);
+                    }
+                });
+                window.imagenesPrendaStorage.images = [];
+            }
         }
 
         // Limpiar storage de imágenes de tela
         if (window.imagenesTelaStorage) {
-            window.imagenesTelaStorage.limpiar?.();
-
+            if (typeof window.imagenesTelaStorage.limpiar === 'function') {
+                window.imagenesTelaStorage.limpiar();
+            }
         }
 
+        // 🔥 CRÍTICO: Limpiar telas agregadas (variable principal donde se guardan las telas)
+        if (window.telasAgregadas) {
+            window.telasAgregadas.length = 0;
+        }
+        
         // Limpiar telas agregadas (AMBOS FLUJOS: CREACIÓN y EDICIÓN - SEPARADOS)
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
@@ -156,6 +183,16 @@ class ModalCleanup {
             });
 
         }
+        
+        // 🔥 CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
+        if (!preservar) {
+            if (window.tallasSeleccionadasProceso) {
+                window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
+            }
+            if (window.tallasCantidadesProceso) {
+                window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+            }
+        }
     }
 
     /**
@@ -163,7 +200,7 @@ class ModalCleanup {
      */
     static limpiarContenedores() {
         // Limpiar tabla de telas - PERO MANTENER LA FILA BASE CON INPUTS
-        const tbodyTelas = DOMUtils.getElement('tbody-telas');
+        const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
             const filas = tbodyTelas.querySelectorAll('tr');
             let filasEliminadas = 0;
@@ -182,27 +219,75 @@ class ModalCleanup {
         }
 
         // Limpiar preview de tela
-        const telaPreview = DOMUtils.getElement('nueva-prenda-tela-preview');
+        const telaPreview = document.getElementById('nueva-prenda-tela-preview');
         if (telaPreview) {
             telaPreview.innerHTML = '';
+            telaPreview.style.display = 'none';
         }
 
-        // Limpiar galería de fotos
-        const fotosPreview = DOMUtils.getElement('nueva-prenda-foto-preview');
+        // 🔥 CRÍTICO: Limpiar COMPLETAMENTE galería de fotos - STORAGE + DOM
+        // Primero limpiar el servicio de imágenes (vacía array y revoca URLs)
+        if (window.imagenesPrendaStorage) {
+            window.imagenesPrendaStorage.limpiar?.();
+        }
+        
+        // Luego limpiar el DOM del preview
+        const fotosPreview = document.getElementById('nueva-prenda-foto-preview');
         if (fotosPreview) {
-            fotosPreview.innerHTML = FOTOS_PREVIEW_VACIO_HTML;
+            fotosPreview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
+            fotosPreview.style.cursor = 'pointer';
+        }
+        
+        // Limpiar contador de fotos
+        const fotosContador = document.getElementById('nueva-prenda-foto-contador');
+        if (fotosContador) {
+            fotosContador.textContent = '';
+        }
+        
+        // Limpiar botón de agregar fotos
+        const fotosBtn = document.getElementById('nueva-prenda-foto-btn');
+        if (fotosBtn) {
+            fotosBtn.style.display = 'block';
         }
 
-        // Limpiar contenedor de géneros
-        const tarjetasGenerosContainer = DOMUtils.getElement('tarjetas-generos-container');
+        // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
+        const tarjetasGenerosContainer = document.getElementById('tarjetas-generos-container');
         if (tarjetasGenerosContainer) {
             tarjetasGenerosContainer.innerHTML = '';
         }
+        
+        // Resetear botones de género a estado NO seleccionado
+        ['dama', 'caballero', 'unisex'].forEach(genero => {
+            const btnGenero = document.getElementById(`btn-genero-${genero}`);
+            const checkMark = document.getElementById(`check-${genero}`);
+            
+            if (btnGenero) {
+                btnGenero.dataset.selected = 'false';
+                btnGenero.style.borderColor = '';
+                btnGenero.style.background = '';
+            }
+            
+            if (checkMark) {
+                checkMark.style.display = 'none';
+            }
+        });
 
         // Limpiar contenedor de procesos
-        const contenedorTarjetas = DOMUtils.getElement('contenedor-tarjetas-procesos');
+        const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
         if (contenedorTarjetas) {
             contenedorTarjetas.innerHTML = '';
+        }
+        
+        // 🔥 CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
+        const resumenTallas = document.getElementById('proceso-tallas-resumen');
+        if (resumenTallas) {
+            resumenTallas.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
+        }
+        
+        // 🔥 CRÍTICO: Resetear el contador general de prendas también
+        const totalPrendas = document.getElementById('total-prendas');
+        if (totalPrendas) {
+            totalPrendas.textContent = '0';
         }
 
 
@@ -337,18 +422,75 @@ class ModalCleanup {
         // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
         window.prendaEditIndex = null;
         
-        // Debug: Verificar si los campos de tela existen ANTES de limpiar
-        const telaField = document.getElementById('nueva-prenda-tela');
-        const colorField = document.getElementById('nueva-prenda-color');
-        const refField = document.getElementById('nueva-prenda-referencia');
-        const telaPreview = document.getElementById('nueva-prenda-tela-preview');
+        // 🔥 CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
+        // Esto previene que datos viejos de prenda anterior aparezcan en las tarjetas
+        if (!window.tallasRelacionales) {
+            window.tallasRelacionales = {};
+        }
+        window.tallasRelacionales.DAMA = {};
+        window.tallasRelacionales.CABALLERO = {};
+        window.tallasRelacionales.UNISEX = {};
+        
+        // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
+        if (window.telasAgregadas) {
+            window.telasAgregadas.length = 0;
+        }
+        if (window.telasCreacion) {
+            window.telasCreacion.length = 0;
+        }
+        
+        // 🔥 CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
+        // Esto asegura que los inputs SIEMPRE estén presentes
         const tbody = document.getElementById('tbody-telas');
+        if (tbody) {
+            // Limpiar todas las filas
+            tbody.innerHTML = '';
+            
+            // Recrear SOLO la fila de entrada con todos los inputs
+            // Esto garantiza que los inputs siempre existan sin importar cuántas veces se limpie
+            tbody.innerHTML = `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.5rem; width: 20%;">
+                        <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" list="opciones-telas" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                        <datalist id="opciones-telas"></datalist>
+                    </td>
+                    <td style="padding: 0.5rem; width: 20%;">
+                        <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" list="opciones-colores" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                        <datalist id="opciones-colores"></datalist>
+                    </td>
+                    <td style="padding: 0.5rem; width: 20%;">
+                        <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
+                        <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
+                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
+                        </button>
+                        <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px;"></div>
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center; width: 20%;">
+                        <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
+                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>Agregar
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
         
         this.limpiarFormulario();
         this.limpiarStorages();
         this.limpiarCheckboxes(false); // Limpiar TODO
         this.limpiarProcesos(false); // Limpiar TODO
         this.limpiarContenedores();
+        
+        // 🔥 CRÍTICO: Cargar opciones de telas y colores para las datalist
+        // Esto restaura las sugerencias de autocomplete
+        if (typeof window.cargarTelasDisponibles === 'function') {
+            window.cargarTelasDisponibles();
+        }
+        if (typeof window.cargarColoresDisponibles === 'function') {
+            window.cargarColoresDisponibles();
+        }
         
         // Cambiar título del modal a "Agregar Prenda Nueva"
         this.actualizarTituloModal('agregar');
@@ -372,6 +514,14 @@ class ModalCleanup {
         
         // Establecer índice de edición
         window.prendaEditIndex = prendaIndex;
+        
+        // 🔥 Cargar opciones de telas y colores para las datalist
+        if (typeof window.cargarTelasDisponibles === 'function') {
+            window.cargarTelasDisponibles();
+        }
+        if (typeof window.cargarColoresDisponibles === 'function') {
+            window.cargarColoresDisponibles();
+        }
         
         // Cambiar título del modal a "Edición de Prenda"
         this.actualizarTituloModal('editar');

@@ -126,7 +126,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
     try {
         // OBTENER DATOS FRESCOS DE LA BD
         console.log('📡 [EDITAR-PRENDA] Obteniendo datos frescos del servidor...');
-        const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`);
+        const response = await fetch(`/pedidos-public/${pedidoId}/factura-datos`);
         
         if (!response.ok) {
             throw new Error(`Error ${response.status}: No se pudieron obtener los datos`);
@@ -303,9 +303,12 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         };
         
         // DETECTAR FORMATO DE TALLAS
-        if (prendaCompleta.tallas && typeof prendaCompleta.tallas === 'object' && 
-            Object.keys(prendaCompleta.tallas).some(g => ['DAMA', 'CABALLERO', 'UNISEX'].includes(g.toUpperCase()))) {
-            formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}}
+        if (prendaCompleta.generosConTallas && typeof prendaCompleta.generosConTallas === 'object') {
+            formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}, SOBREMEDIDA: {DAMA: 34}}
+            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: NUEVO (generosConTallas)');
+        } else if (prendaCompleta.tallas && typeof prendaCompleta.tallas === 'object' && 
+            Object.keys(prendaCompleta.tallas).some(g => ['DAMA', 'CABALLERO', 'UNISEX', 'SOBREMEDIDA'].includes(g.toUpperCase()))) {
+            formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}, SOBREMEDIDA: {DAMA: 34}}
             console.log('🔍 [DETECCIÓN] Formato de tallas detectado: NUEVO (objeto por género)');
         } else if ((prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) || 
                    (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero))) {
@@ -564,18 +567,43 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         const tallasPorGenero = {};
         
         if (formatoDetectado.tallas === 'nuevo') {
-            // Formato nuevo: {DAMA: {L: 20, M: 10}}
-            console.log('🔄 [TALLAS] Procesando formato NUEVO:', prendaCompleta.tallas);
+            // Formato nuevo: {DAMA: {L: 20, M: 10}, SOBREMEDIDA: {DAMA: 34}}
+            console.log('🔄 [TALLAS] Procesando formato NUEVO:', prendaCompleta.tallas || prendaCompleta.generosConTallas);
             
-            Object.entries(prendaCompleta.tallas).forEach(([genero, tallasGenero]) => {
+            // Usar generosConTallas si existe, si no usar tallas
+            const fuente = prendaCompleta.generosConTallas || prendaCompleta.tallas || {};
+            
+            Object.entries(fuente).forEach(([genero, tallasGenero]) => {
                 const generoNormalizado = genero.toUpperCase();
-                if (['DAMA', 'CABALLERO', 'UNISEX'].includes(generoNormalizado) && 
+                
+                // Validar que el género sea válido
+                if (['DAMA', 'CABALLERO', 'UNISEX', 'SOBREMEDIDA'].includes(generoNormalizado) && 
                     typeof tallasGenero === 'object' && tallasGenero !== null) {
-                    tallasPorGenero[generoNormalizado] = {};
-                    Object.entries(tallasGenero).forEach(([talla, cantidad]) => {
-                        const cantidadValida = (typeof cantidad === 'number' && cantidad >= 0) ? cantidad : 0;
-                        tallasPorGenero[generoNormalizado][talla] = cantidadValida;
-                    });
+                    
+                    // CASO ESPECIAL: SOBREMEDIDA tiene estructura {DAMA: 34, CABALLERO: 20}
+                    if (generoNormalizado === 'SOBREMEDIDA') {
+                        // SOBREMEDIDA es el género padre, sus claves son sub-géneros
+                        Object.entries(tallasGenero).forEach(([subGenero, cantidad]) => {
+                            const subGeneroUpper = subGenero.toUpperCase();
+                            if (['DAMA', 'CABALLERO', 'UNISEX'].includes(subGeneroUpper)) {
+                                if (!tallasPorGenero[subGeneroUpper]) {
+                                    tallasPorGenero[subGeneroUpper] = {};
+                                }
+                                // Usar 'SOBREMEDIDA' como talla especial con cantidad
+                                const cantidadValida = (typeof cantidad === 'number' && cantidad >= 0) ? cantidad : 0;
+                                if (cantidadValida > 0) {
+                                    tallasPorGenero[subGeneroUpper]['SOBREMEDIDA'] = cantidadValida;
+                                }
+                            }
+                        });
+                    } else {
+                        // Géneros normales: procesar tallas
+                        tallasPorGenero[generoNormalizado] = {};
+                        Object.entries(tallasGenero).forEach(([talla, cantidad]) => {
+                            const cantidadValida = (typeof cantidad === 'number' && cantidad >= 0) ? cantidad : 0;
+                            tallasPorGenero[generoNormalizado][talla] = cantidadValida;
+                        });
+                    }
                 }
             });
         } else if (formatoDetectado.tallas === 'antiguo') {
@@ -621,7 +649,9 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         });
         
-        // Transformar a estructura con cantidades para generosConTallas - Manejo robusto
+        // Transformar a estructura sin envoltura para generosConTallas - Manejo robusto
+        // NOTA: El backend envía {GENERO: {TALLA: CANTIDAD}, SOBREMEDIDA: {DAMA: 34}}
+        // NO envolvemos con .cantidades - eso rompe la consistencia con el backend
         const generosConTallasEstructura = {};
         
         Object.entries(tallasPorGenero).forEach(([genero, tallas]) => {
@@ -636,9 +666,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                     });
                     
                     // Usar mayúsculas para consistencia con el procesamiento en prenda-editor.js
-                    generosConTallasEstructura[genero] = {
-                        cantidades: cantidadesValidadas
-                    };
+                    // ✅ IMPORTANTE: Pasar directamente SIN envoltura .cantidades
+                    generosConTallasEstructura[genero] = cantidadesValidadas;
                     
                     console.log(` [EDITAR-PRENDA] Género ${genero} procesado:`, cantidadesValidadas);
                 } else {
@@ -917,6 +946,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             if (typeof window.gestionItemsUI.cargarItemEnModal === 'function') {
                 console.log(' [EDITAR-PRENDA] Cargando datos en modal');
                 window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
+                
+                // 🔓 CRÍTICO: Habilitar controles de telas después de cargar los datos
+                if (typeof window.habilitarControlsTelasEdicion === 'function') {
+                    window.habilitarControlsTelasEdicion();
+                }
             }
             
             console.log(' [EDITAR-PRENDA] Modal abierto exitosamente');
@@ -1090,6 +1124,12 @@ function eliminarFilaTela(btn) {
  * Cerrar modal de prendas
  */
 function cerrarModalPrendaNueva() {
+    // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
+    if (window.gestionItemsUI) {
+        window.gestionItemsUI.prendaEditIndex = null;
+    }
+    window.prendaEditIndex = null;
+    
     // Cerrar el modal directamente
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
@@ -1108,6 +1148,40 @@ function cerrarModalPrendaNueva() {
     if (form) {
         form.reset();
     }
+    
+    // 🔥 CRÍTICO: Limpiar TELAS - Array y DOM
+    // Array en memoria
+    if (window.telasAgregadas) {
+        window.telasAgregadas = [];
+    }
+    // También limpiar telasCreacion si existe
+    if (window.telasCreacion) {
+        window.telasCreacion = [];
+    }
+    // 🔥 Limpiar tabla DOM de telas
+    const tbodyTelas = document.getElementById('tbody-telas');
+    if (tbodyTelas) {
+        tbodyTelas.innerHTML = '';
+    }
+}
+
+/**
+ * Actualizar título del modal dinámicamente según modo (crear/editar)
+ * @param {boolean} esEdicion - true si es modo edición, false si es crear
+ */
+function actualizarTituloModalPrenda(esEdicion = false) {
+    const titulo = document.getElementById('modal-prenda-texto');
+    const icon = document.getElementById('modal-prenda-icon');
+    
+    if (titulo && icon) {
+        if (esEdicion) {
+            titulo.textContent = 'Editar Prenda';
+            icon.textContent = 'edit';
+        } else {
+            titulo.textContent = 'Agregar Prenda Nueva';
+            icon.textContent = 'add_box';
+        }
+    }
 }
 
 // Exponer funciones globalmente para onclick
@@ -1117,6 +1191,7 @@ window.abrirEditarProcesoEspecifico = abrirEditarProcesoEspecifico;
 window.agregarFilaTela = agregarFilaTela;
 window.eliminarFilaTela = eliminarFilaTela;
 window.cerrarModalPrendaNueva = cerrarModalPrendaNueva;
+window.actualizarTituloModalPrenda = actualizarTituloModalPrenda;
 window.limpiarFormularioPrendaNueva = limpiarFormularioPrendaNueva;
 window.cargarPrendaEnFormularioModal = cargarPrendaEnFormularioModal;
 
@@ -1221,6 +1296,14 @@ function limpiarFormularioPrendaNueva() {
     if (prevFoto) {
         prevFoto.style.backgroundImage = 'none';
         prevFoto.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Agregar</div></div>';
+    }
+    
+    // 🔥 CRÍTICO: Limpiar arrays de telas
+    if (window.telasAgregadas) {
+        window.telasAgregadas = [];
+    }
+    if (window.telasCreacion) {
+        window.telasCreacion = [];
     }
     
     // Limpiar tabla de telas
@@ -1390,3 +1473,60 @@ async function cargarPrendasDatalist() {
 
 // Exponer función globalmente
 window.cargarPrendasDatalist = cargarPrendasDatalist;
+
+/**
+ * FUNCIÓN CRÍTICA: Asegurar que TODOS los controles de telas estén habilitados en modo edición
+ * Se ejecuta después de cargar los datos en el modal
+ */
+window.habilitarControlsTelasEdicion = function() {
+    console.log('[habilitarControlsTelasEdicion] 🔓 Habilitando controles de telas en modo edición...');
+    
+    // Esperar a que el DOM esté completamente renderizado
+    setTimeout(() => {
+        // 1. Habilitar inputs de telas
+        const telasInputs = [
+            'nueva-prenda-tela',
+            'nueva-prenda-color',
+            'nueva-prenda-referencia'
+        ];
+        
+        telasInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.disabled = false;
+                input.style.pointerEvents = 'auto';
+                input.style.opacity = '1';
+                input.style.display = '';
+                console.log(`  ✓ ${id} habilitado`);
+            }
+        });
+        
+        // 2. Habilitar botones de telas  (agregar y eliminar)
+        const tbody = document.getElementById('tbody-telas');
+        if (tbody) {
+            const primeraFila = tbody.querySelector('tr:first-child');
+            if (primeraFila) {
+                const botones = primeraFila.querySelectorAll('button');
+                botones.forEach((btn, idx) => {
+                    btn.disabled = false;
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                    btn.style.display = '';
+                    console.log(`  ✓ Botón ${idx} en fila base habilitado`);
+                });
+            }
+        }
+        
+        // 3. Verificar que las funciones existan
+        const funciones = ['agregarTelaNueva', 'eliminarTela', 'actualizarTablaTelas'];
+        funciones.forEach(fn => {
+            if (typeof window[fn] === 'function') {
+                console.log(`  ✓ Función ${fn} disponible`);
+            } else {
+                console.warn(`  ✗ Función ${fn} NO disponible`);
+            }
+        });
+        
+        console.log('[habilitarControlsTelasEdicion] ✓ Todos los controles de telas están habilitados');
+    }, 200);
+};

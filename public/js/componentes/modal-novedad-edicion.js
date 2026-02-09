@@ -106,6 +106,12 @@ class ModalNovedadEdicion {
         this.prendaData = prendaData;
         this.prendaIndex = prendaIndex;
         
+        // CRITICO: Guardar variantes ORIGINALES para detectar si fueron modificadas
+        // Si solo se edita sobremedida, no enviar variantes al backend
+        this.variantesOriginalesAlAbrirModal = prendaData?.variantes 
+            ? JSON.parse(JSON.stringify(prendaData.variantes))
+            : [];
+        
         // CRITICO: Guardar imagenes ORIGINALES para detectar eliminaciones
         // IMPORTANTE: Leer de window.imagenesPrendaStorage.snapshotOriginal (estado en memoria guardado al cargar)
         // NO de prendaData.imagenes (que puede haber cambiado en el servidor)
@@ -278,6 +284,115 @@ class ModalNovedadEdicion {
             });
         }
 
+        //  FIX CRÍTICO: Cargar telas existentes en window.telasAgregadas (no telasEdicion)
+        // Esto permite que al editar una prenda existente que tiene telas, se carguen en el storage
+        // para que cuando el usuario agregue/elimine telas, se envíen TODAS al backend
+        // El código en gestion-telas.js detecta modo edición por window.telasAgregadas
+        
+        // Buscar telas en múltiples ubicaciones posibles (colores_telas, telasAgregadas, telas_array)
+        const telasExistentes = prendaData?.colores_telas || prendaData?.telasAgregadas || prendaData?.telas_array || [];
+        
+        if (telasExistentes && Array.isArray(telasExistentes) && telasExistentes.length > 0) {
+            console.log('[modal-novedad-edicion]  [CARGAR-TELAS] Cargando telas existentes de la prenda:', {
+                prendaId: prendaData.prenda_pedido_id || prendaData.id,
+                telasExistentes: telasExistentes.length,
+                origen: prendaData?.colores_telas ? 'colores_telas' : (prendaData?.telasAgregadas ? 'telasAgregadas' : 'telas_array'),
+                datosConImagines: telasExistentes.map(t => ({
+                    id: t.id,
+                    color: t.color || t.color_nombre || '',
+                    tela: t.tela || t.tela_nombre || t.nombre || '',
+                    imagenes: (t.imagenes_tela || t.fotos_tela || t.imagenes || t.fotos || []).length
+                }))
+            });
+
+            // Inicializar window.telasAgregadas si no existe (para modo edición)
+            if (!window.telasAgregadas) {
+                window.telasAgregadas = [];
+            }
+
+            // 🔴 CRÍTICO: Solo cargar las telas existentes SI window.telasAgregadas está vacío
+            // Si el usuario ya agregó telas nuevas, las conservamos sin limpiar
+            if (window.telasAgregadas.length === 0) {
+                telasExistentes.forEach(telaDeserv => {
+                    // Crear objeto tela con estructura esperada por formulario
+                    // Soportar múltiples formatos posibles
+                    const telaObj = {
+                        id: telaDeserv.id,                          // ID de relación (prenda_pedido_colores_telas.id)
+                        color_id: telaDeserv.color_id || null,     // ID del color
+                        tela_id: telaDeserv.tela_id || null,       // ID de la tela
+                        color: telaDeserv.color || telaDeserv.color_nombre || '',              // Nombre del color
+                        tela: telaDeserv.tela || telaDeserv.tela_nombre || telaDeserv.nombre || '',                // Nombre de la tela
+                        referencia: telaDeserv.referencia || telaDeserv.tela_referencia || '',    // Referencia
+                        color_nombre: telaDeserv.color || telaDeserv.color_nombre || '',
+                        tela_nombre: telaDeserv.tela || telaDeserv.tela_nombre || telaDeserv.nombre || '',         // Normalizar para que sea compatible
+                        nombre_tela: telaDeserv.tela || telaDeserv.tela_nombre || telaDeserv.nombre || '',
+                        imagenes: []
+                    };
+
+                    // Cargar imágenes de tela si existen - soportar múltiples nombres de propiedad
+                    const imagenesTelaRaw = telaDeserv.imagenes_tela || telaDeserv.fotos_tela || telaDeserv.imagenes || telaDeserv.fotos || [];
+                    
+                    if (Array.isArray(imagenesTelaRaw) && imagenesTelaRaw.length > 0) {
+                        telaObj.imagenes = imagenesTelaRaw.map(img => {
+                            // 🔥 CRÍTICO: Detectar si es imagen nueva (tiene previewUrl/file) o de BD
+                            const esImagenNueva = img.file instanceof File || (img.previewUrl && img.previewUrl.startsWith('blob:'));
+                            
+                            if (esImagenNueva) {
+                                // ✅ IMAGEN NUEVA: Preservar previewUrl y file
+                                return {
+                                    id: img.id || undefined,
+                                    previewUrl: img.previewUrl,  // Blob URL válida
+                                    url: img.url || img.previewUrl,  // Fallback
+                                    file: img.file instanceof File ? img.file : null,
+                                    nombre: img.nombre || 'imagen_nueva',
+                                    tamaño: img.tamaño,
+                                    urlDesdeDB: false,  // Marca correctamente que es NUEVA
+                                    ruta_original: img.ruta_original,
+                                    ruta_webp: img.ruta_webp
+                                };
+                            } else {
+                                // ✅ IMAGEN DE BD: Los datos vienen del servidor
+                                return {
+                                    id: img.id,
+                                    url: img.url || img.ruta_webp || img.ruta_original,
+                                    ruta: img.url || img.ruta_webp || img.ruta_original,
+                                    urlDesdeDB: true,  // Marca correctamente que viene de BD
+                                    nombre: img.nombre || `imagen_${img.id}`,
+                                    prenda_pedido_colores_telas_id: telaDeserv.id,
+                                    ruta_original: img.ruta_original,
+                                    ruta_webp: img.ruta_webp,
+                                    file: null  // No hay File objeto para imágenes de BD
+                                };
+                            }
+                        });
+                    }
+
+                    window.telasAgregadas.push(telaObj);
+                    console.log('[modal-novedad-edicion]  [CARGAR-TELAS] Tela cargada:', {
+                        id: telaObj.id,
+                        color: telaObj.color,
+                        tela: telaObj.tela,
+                        imagenes: telaObj.imagenes.length,
+                        tiposImagenes: telaObj.imagenes.map(i => ({ esNueva: !i.urlDesdeDB, previewUrl: !!i.previewUrl }))
+                    });
+                });
+
+                console.log('[modal-novedad-edicion]  [CARGAR-TELAS] Telas cargadas en window.telasAgregadas:', {
+                    cantidad: window.telasAgregadas.length,
+                    telas: window.telasAgregadas.map(t => ({ id: t.id, color: t.color, tela: t.tela }))
+                });
+
+                // Actualizar tabla de telas si existe
+                if (window.actualizarTablaTelas) {
+                    window.actualizarTablaTelas();
+                }
+            } else {
+                console.log('[modal-novedad-edicion]  [CARGAR-TELAS] window.telasAgregadas ya tiene telas, preservando:', {
+                    cantidad: window.telasAgregadas.length
+                });
+            }
+        }
+
         return new Promise((resolve) => {
             const html = `
                 <div style="text-align: left;">
@@ -396,13 +511,30 @@ class ModalNovedadEdicion {
                 const tallasArray = [];
                 for (const [genero, tallas] of Object.entries(tallasParaEnviar)) {
                     if (typeof tallas === 'object' && tallas !== null) {
-                        for (const [talla, cantidad] of Object.entries(tallas)) {
-                            if (cantidad > 0) {
-                                tallasArray.push({
-                                    genero: genero.toLowerCase(),
-                                    talla: talla,
-                                    cantidad: parseInt(cantidad)
-                                });
+                        // CASO ESPECIAL: SOBREMEDIDA
+                        if (genero.toUpperCase() === 'SOBREMEDIDA') {
+                            // SOBREMEDIDA: {DAMA: 14, CABALLERO: 20}
+                            // Convertir a: [{genero: DAMA, talla: null, cantidad: 14, es_sobremedida: true}, ...]
+                            for (const [subGenero, cantidad] of Object.entries(tallas)) {
+                                if (cantidad > 0) {
+                                    tallasArray.push({
+                                        genero: subGenero.toUpperCase(),
+                                        talla: null,
+                                        cantidad: parseInt(cantidad),
+                                        es_sobremedida: true
+                                    });
+                                }
+                            }
+                        } else {
+                            // GÉNEROS NORMALES: {DAMA: {S: 10, M: 20}}
+                            for (const [talla, cantidad] of Object.entries(tallas)) {
+                                if (cantidad > 0) {
+                                    tallasArray.push({
+                                        genero: genero.toUpperCase(),
+                                        talla: talla,
+                                        cantidad: parseInt(cantidad)
+                                    });
+                                }
                             }
                         }
                     }
@@ -413,17 +545,23 @@ class ModalNovedadEdicion {
                 }
             }
             
-            // Agregar variantes si existen
-            // Leer variantes ACTUALES del formulario, no de this.prendaData
+            // Agregar variantes SOLO SI fueron modificadas
+            // Leer variantes ACTUALES del formulario
             const variantesActuales = await this.obtenerVariantesDelFormulario();
             
-            if (variantesActuales && Object.keys(variantesActuales).some(key => variantesActuales[key] !== null && variantesActuales[key] !== '')) {
-                // Convertir variantes a formato esperado por backend: array de objetos
+            // Comparar con las originales
+            const variantesModificadas = this.compararVariantes(
+                this.variantesOriginalesAlAbrirModal, 
+                variantesActuales
+            );
+            
+            if (variantesModificadas) {
+                // Solo enviar si realmente fueron modificadas
                 const variantesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
                 formData.append('variantes', JSON.stringify(variantesArray));
-                console.log('[modal-novedad-edicion] Variantes enviadas:', variantesArray);
+                console.log('[modal-novedad-edicion] ✏️ Variantes MODIFICADAS enviadas:', variantesArray);
             } else {
-                console.log('[modal-novedad-edicion]  No hay variantes para enviar');
+                console.log('[modal-novedad-edicion] ℹ️ Variantes NO modificadas - no se envían');
             }
             
             // ========== NUEVO: LEER FILAS DE TELAS NUEVAS DEL MODAL ==========
@@ -516,16 +654,34 @@ class ModalNovedadEdicion {
                     if (tela.imagenes && tela.imagenes.length > 0) {
                         obj.imagenes = [];
                         tela.imagenes.forEach((img, imgIdx) => {
-                            if (img instanceof File) {
-                                // Imagen nueva (File object)
-                                formData.append(`telas[${idx}][imagenes][${imgIdx}]`, img);
-                            } else if (img.urlDesdeDB || img.url) {
-                                // Imagen existente de BD - guardar para preservar
+                            // 🔥 FIX: Detectar File en múltiples formas
+                            const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
+                            
+                            if (fileObject) {
+                                // ✅ IMAGEN NUEVA: Subir File object real
+                                formData.append(`telas[${idx}][imagenes][${imgIdx}]`, fileObject);
+                                console.log('[modal-novedad-edicion]  📤 Imagen nueva de tela agregada a FormData:', {
+                                    telaIdx: idx,
+                                    imgIdx: imgIdx,
+                                    fileName: fileObject.name,
+                                    fileSize: fileObject.size
+                                });
+                            } else if (img.urlDesdeDB && img.url) {
+                                // ✅ IMAGEN DE BD: Solo guardar referencia (no es blob URL)
                                 obj.imagenes.push({
-                                    url: img.url || img.urlDesdeDB,
-                                    nombre: img.nombre || ''
+                                    url: img.url,
+                                    nombre: img.nombre || '',
+                                    id: img.id  // Preservar ID si existe
+                                });
+                                console.log('[modal-novedad-edicion]  📌 Imagen de BD preservada:', {
+                                    telaIdx: idx,
+                                    imgIdx: imgIdx,
+                                    id: img.id,
+                                    url: img.url
                                 });
                             }
+                            // Las imágenes nuevas SIN File object (podrían ser blob URLs de preview) se ignoran
+                            // porque ya fueron enviadas como File objects arriba
                         });
                     }
                     
@@ -556,7 +712,17 @@ class ModalNovedadEdicion {
                                     // ⚠️ NO enviar 'id' para fotos nuevas - backend las creará
                                 });
                                 fotoTelaFileIndex++;
-                            } else if (img.id && (img.urlDesdeDB || img.url)) {
+                                
+                                console.log('[modal-novedad-edicion]  📤 Foto de tela nueva agregada (MERGE):', {
+                                    telaIdx: telaIdx,
+                                    imgIdx: imgIdx,
+                                    fotoTelaFileIndex: fotoTelaFileIndex - 1,
+                                    fileName: fileObject.name,
+                                    fileSize: fileObject.size,
+                                    color_id: tela.color_id,
+                                    tela_id: tela.tela_id
+                                });
+                            } else if (img.id && (img.urlDesdeDB || (img.url && !img.url.startsWith('blob:')))) {
                                 // ✅ FOTO EXISTENTE: Preservar referencia
                                 fotosTelaArray.push({
                                     id: img.id,
@@ -565,6 +731,16 @@ class ModalNovedadEdicion {
                                     tela_id: tela.tela_id || null,
                                     ruta_original: img.url || img.urlDesdeDB,
                                     orden: imgIdx + 1
+                                });
+                            } else {
+                                console.warn('[modal-novedad-edicion]  ⚠️ Imagen de tela ignorada (sin file ni datos válidos):', {
+                                    telaIdx: telaIdx,
+                                    imgIdx: imgIdx,
+                                    tieneFile: !!img.file,
+                                    tieneId: !!img.id,
+                                    tieneUrl: !!img.url,
+                                    esBlob: img.url?.startsWith('blob:'),
+                                    urlDesdeDB: img.urlDesdeDB
                                 });
                             }
                         });
@@ -982,7 +1158,24 @@ class ModalNovedadEdicion {
                             });
                         }
                         
-                        const patchResponse = await fetch(`/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`, {
+                        // ========== FIX: USAR RUTA CORRECTA SEGÚN ROL DEL USUARIO ==========
+                        const usuarioActual = this.obtenerUsuarioActual();
+                        const rolUsuario = usuarioActual?.rol || 'asesor';
+                        
+                        // Si el usuario es supervisor_pedidos, usar ruta de supervisor-pedidos
+                        // Si no, usar ruta de API general
+                        const urlPatch = rolUsuario === 'supervisor_pedidos' 
+                            ? `/supervisor-pedidos/${prendaIdInt}/procesos/${procesoEditado.id}`
+                            : `/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`;
+                        
+                        console.log('[modal-novedad-edicion] 🔄 PATCH usando ruta según rol:', {
+                            rol: rolUsuario,
+                            urlUsada: urlPatch,
+                            prendaId: prendaIdInt,
+                            procesoId: procesoEditado.id
+                        });
+                        
+                        const patchResponse = await fetch(urlPatch, {
                             method: 'POST',  //  FIX: Usar POST en lugar de PATCH, Laravel lo procesará con _method=PATCH
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
@@ -1037,7 +1230,15 @@ class ModalNovedadEdicion {
                 }
             }
 
-            const response = await fetch(`/asesores/pedidos/${this.pedidoId}/actualizar-prenda`, {
+            // Determinar la ruta correcta según el contexto
+            let urlActualizar = `/asesores/pedidos/${this.pedidoId}/actualizar-prenda`;
+            
+            // Si estamos en supervisor-pedidos, usar ruta específica para supervisores
+            if (window.location.pathname.includes('supervisor-pedidos')) {
+                urlActualizar = `/supervisor-pedidos/${this.pedidoId}/actualizar-prenda`;
+            }
+
+            const response = await fetch(urlActualizar, {
                 method: 'POST',
                 headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''},
                 body: formData
@@ -1370,6 +1571,48 @@ class ModalNovedadEdicion {
             
             return tieneId || tieneTipoProceso;
         });
+    }
+
+    /**
+     * Comparar variantes originales con las actuales
+     * Retorna true si fueron modificadas, false si son iguales
+     * @private
+     */
+    compararVariantes(variantesOriginales = [], variantesActuales = {}) {
+        // Si no hay originales, cualquier valor actual es una modificación
+        if (!variantesOriginales || variantesOriginales.length === 0) {
+            const tieneValores = Object.keys(variantesActuales).some(
+                key => variantesActuales[key] !== null && variantesActuales[key] !== ''
+            );
+            return tieneValores;
+        }
+        
+        // Convertir variantesActuales a formato de array para comparar
+        const variantesActualesArray = this.convertirVariantesAlFormatoBackend(variantesActuales);
+        
+        // Comparación simple: mismo número de items?
+        if (variantesActualesArray.length !== variantesOriginales.length) {
+            return true; // Fueron modificadas
+        }
+        
+        // Comparar cada propiedad
+        for (let i = 0; i < variantesOriginales.length; i++) {
+            const orig = variantesOriginales[i];
+            const actual = variantesActualesArray[i];
+            
+            // Comparar propiedades clave
+            if ((orig.tipo_manga_id || 0) !== (actual.tipo_manga_id || 0) ||
+                (orig.tipo_broche_boton_id || 0) !== (actual.tipo_broche_boton_id || 0) ||
+                (orig.manga_obs || '') !== (actual.manga_obs || '') ||
+                (orig.broche_boton_obs || '') !== (actual.broche_boton_obs || '') ||
+                (orig.tiene_bolsillos || false) !== (actual.tiene_bolsillos || false) ||
+                (orig.bolsillos_obs || '') !== (actual.bolsillos_obs || '')) {
+                return true; // Fueron modificadas
+            }
+        }
+        
+        // Sin cambios
+        return false;
     }
 }
 

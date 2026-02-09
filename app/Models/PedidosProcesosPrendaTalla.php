@@ -21,6 +21,7 @@ class PedidosProcesosPrendaTalla extends Model
         'genero',
         'talla',
         'cantidad',
+        'es_sobremedida',
     ];
 
     protected $casts = [

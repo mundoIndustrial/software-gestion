@@ -424,7 +424,7 @@ class GestionItemsUI {
                 console.log('[gestion-items-pedido] 🔄 Creando tipo de manga:', prendaData.variantes.tipo_manga);
                 
                 try {
-                    const response = await fetch('/asesores/api/tipos-manga', {
+                    const response = await fetch('/api/public/tipos-manga', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -523,6 +523,20 @@ class GestionItemsUI {
                         prendaDataId: prendaData.id
                     });
 
+                    // 🔥 CRÍTICO: Incluir telas nuevas si fueron agregadas
+                    // Si hay telas en window.telasAgg o window.telasCreacion, incluirlas en prendaData
+                    if ((window.telasAgregadas && window.telasAgregadas.length > 0) || 
+                        (window.telasCreacion && window.telasCreacion.length > 0)) {
+                        
+                        const telasAIncluir = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
+                        prendaData.telasAgregadas = telasAIncluir;
+                        
+                        console.log('[gestion-items-pedido] 📦 Telas nuevas incluidas en prendaData:', {
+                            cantidad: telasAIncluir.length,
+                            origen: window.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
+                            telas: telasAIncluir.map(t => ({ color: t.color, tela: t.tela, imagenes: t.imagenes?.length }))
+                        });
+                    }
                     
                     await window.modalNovedadEditacion.mostrarModalYActualizar(pedidoId, prendaData, this.prendaEditIndex);
                     // El modal de novedades maneja todo: actualización, cierre, etc.
@@ -1027,8 +1041,57 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
     
     // Cargar tallas
     if (datos.tallas && window.tallasSeleccionadasProceso) {
-        window.tallasSeleccionadasProceso.dama = datos.tallas.dama || [];
-        window.tallasSeleccionadasProceso.caballero = datos.tallas.caballero || [];
+        let damaTallas = datos.tallas.dama || {};
+        let caballeroTallas = datos.tallas.caballero || {};
+        let sobremedidaTallas = datos.tallas.sobremedida || {};
+        
+        // 🔥 FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada (número u objeto), EXTRAERLA
+        const damaTallasLimpias = {};
+        for (const [talla, valor] of Object.entries(damaTallas)) {
+            if (talla === 'SOBREMEDIDA') {
+                if (typeof valor === 'number') {
+                    sobremedidaTallas['DAMA'] = valor;
+                } else if (typeof valor === 'object' && valor !== null) {
+                    // SOBREMEDIDA anidada: extraer a sobremedidaTallas
+                    for (const [genero, cantidad] of Object.entries(valor)) {
+                        sobremedidaTallas[genero] = cantidad;
+                    }
+                }
+            } else {
+                damaTallasLimpias[talla] = valor;
+            }
+        }
+        damaTallas = damaTallasLimpias;
+        
+        const caballeroTallasLimpias = {};
+        for (const [talla, valor] of Object.entries(caballeroTallas)) {
+            if (talla === 'SOBREMEDIDA') {
+                if (typeof valor === 'number') {
+                    sobremedidaTallas['CABALLERO'] = valor;
+                } else if (typeof valor === 'object' && valor !== null) {
+                    // SOBREMEDIDA anidada: extraer a sobremedidaTallas
+                    for (const [genero, cantidad] of Object.entries(valor)) {
+                        sobremedidaTallas[genero] = cantidad;
+                    }
+                }
+            } else {
+                caballeroTallasLimpias[talla] = valor;
+            }
+        }
+        caballeroTallas = caballeroTallasLimpias;
+        
+        window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
+        window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
+        window.tallasSeleccionadasProceso.sobremedida = sobremedidaTallas;
+        
+        // Actualizar tallasCantidadesProceso también
+        if (!window.tallasCantidadesProceso) {
+            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
+        }
+        window.tallasCantidadesProceso.dama = damaTallas;
+        window.tallasCantidadesProceso.caballero = caballeroTallas;
+        window.tallasCantidadesProceso.sobremedida = sobremedidaTallas;
+        
         if (window.actualizarResumenTallasProceso) {
             window.actualizarResumenTallasProceso();
         }

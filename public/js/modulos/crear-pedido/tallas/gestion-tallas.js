@@ -476,7 +476,7 @@ window.cerrarModalTallas = function(genero) {
 /**
  * Crear tarjeta de género con tallas y cantidades en estructura relacional
  */
-window.crearTarjetaGenero = function(genero) {
+window.crearTarjetaGenero = function(genero, tallas) {
     // Normalizar género a mayúsculas para consistencia
     genero = String(genero).toUpperCase();
     
@@ -557,7 +557,22 @@ window.crearTarjetaGenero = function(genero) {
         btnEditar.style.color = '#6b7280';
         btnEditar.style.background = 'transparent';
     };
-    btnEditar.onclick = () => abrirModalSeleccionarTallas(genero);
+    btnEditar.onclick = (() => {
+        // Capturar 'tallas' en la clausura
+        const tallasDelGenero = tallas;
+        return () => {
+            // DETECTAR si es SOBREMEDIDA o tallas normales
+            if (tallasDelGenero && typeof tallasDelGenero === 'object' && tallasDelGenero.SOBREMEDIDA) {
+                // ✅ ES SOBREMEDIDA - Abrir modal especial de sobremedida
+                console.log(`[crearTarjetaGenero] 📐 Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
+                abrirModalSobremedida();
+            } else {
+                // ❌ SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)
+                console.log(`[crearTarjetaGenero] 📏 Tallas normales en ${genero}, abriendo selector`);
+                abrirModalSeleccionarTallas(genero);
+            }
+        };
+    })();
     btnGroupAcciones.appendChild(btnEditar);
     
     const btnEliminar = document.createElement('button');
@@ -643,13 +658,22 @@ window.crearTarjetaGenero = function(genero) {
 };
 
 /**
- * Actualizar total de prendas
+ * Actualizar total de prendas (incluyendo sobremedida)
  */
 window.actualizarTotalPrendas = function() {
     let total = 0;
+    
+    // Sumar tallas normales
     document.querySelectorAll('#tarjetas-generos-container input[type="number"]').forEach(input => {
         total += parseInt(input.value) || 0;
     });
+    
+    // Sumar sobremedida
+    if (window.tallasRelacionales.SOBREMEDIDA) {
+        Object.values(window.tallasRelacionales.SOBREMEDIDA).forEach(cantidad => {
+            total += parseInt(cantidad) || 0;
+        });
+    }
     
     const totalElement = document.getElementById('total-prendas');
     if (totalElement) {
@@ -737,3 +761,299 @@ window.limpiarTallasSeleccionadas = function() {
     actualizarTotalPrendas();
 
 };
+
+// ========== FUNCIONES PARA SOBREMEDIDA ==========
+
+/**
+ * Estructura especial para sobremedida en tallasRelacionales:
+ * { SOBREMEDIDA: { cantidad: <numero>, genero: 'UNISEX'|'DAMA'|'CABALLERO' } }
+ */
+
+/**
+ * Abrir modal para ingresar sobremedida (solo cantidad, sin tallas)
+ */
+window.abrirModalSobremedida = async function() {
+    const modal = document.createElement('div');
+    modal.id = 'modal-sobremedida';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100001;';
+    
+    const container = document.createElement('div');
+    container.style.cssText = 'background: white; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;';
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;';
+    
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    headerContent.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.5rem;">straighten</span><h2 style="margin: 0; font-size: 1.25rem;">Agregar Sobremedida</h2>`;
+    header.appendChild(headerContent);
+    
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+    btnCerrar.style.cssText = 'background: transparent; color: white; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;';
+    btnCerrar.onclick = () => cerrarModalSobremedida();
+    header.appendChild(btnCerrar);
+    
+    container.appendChild(header);
+    
+    // Content
+    const content = document.createElement('div');
+    content.style.cssText = 'padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;';
+    
+    // Explicación
+    const explicacion = document.createElement('p');
+    explicacion.style.cssText = 'margin: 0; color: #6b7280; font-size: 0.95rem; line-height: 1.5;';
+    explicacion.textContent = 'La sobremedida permite agregar cantidad total sin especificar tallas individuales. Ideal para prenda a medida o genérica.';
+    content.appendChild(explicacion);
+    
+    // Selector de Género
+    const generoLabel = document.createElement('label');
+    generoLabel.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; font-weight: 600; color: #1f2937;';
+    generoLabel.innerHTML = '<span>¿Para cuál género? *</span>';
+    
+    const generoSelect = document.createElement('select');
+    generoSelect.id = 'sobremedida-genero';
+    generoSelect.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 1rem; cursor: pointer;';
+    generoSelect.innerHTML = `
+        <option value="UNISEX">UNISEX / Indistinto</option>
+        <option value="DAMA">DAMA</option>
+        <option value="CABALLERO">CABALLERO</option>
+    `;
+    generoLabel.appendChild(generoSelect);
+    content.appendChild(generoLabel);
+    
+    // Input de Cantidad
+    const cantidadLabel = document.createElement('label');
+    cantidadLabel.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; font-weight: 600; color: #1f2937;';
+    cantidadLabel.innerHTML = '<span>Cantidad Total *</span>';
+    
+    const cantidadInput = document.createElement('input');
+    cantidadInput.id = 'sobremedida-cantidad';
+    cantidadInput.type = 'number';
+    cantidadInput.min = '1';
+    cantidadInput.placeholder = 'Ej: 100';
+    cantidadInput.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 1rem; font-weight: 600;';
+    cantidadLabel.appendChild(cantidadInput);
+    content.appendChild(cantidadLabel);
+    
+    container.appendChild(content);
+    
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem; border-top: 1px solid #e5e7eb;';
+    
+    const btnCancelar = document.createElement('button');
+    btnCancelar.type = 'button';
+    btnCancelar.textContent = 'Cancelar';
+    btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
+    btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
+    btnCancelar.onclick = () => cerrarModalSobremedida();
+    footer.appendChild(btnCancelar);
+    
+    const btnConfirmar = document.createElement('button');
+    btnConfirmar.type = 'button';
+    btnConfirmar.textContent = 'Confirmar';
+    btnConfirmar.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#0052a3';
+    btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#0066cc';
+    btnConfirmar.onclick = () => {
+        const genero = document.getElementById('sobremedida-genero').value;
+        const cantidad = parseInt(document.getElementById('sobremedida-cantidad').value) || 0;
+        
+        if (!genero) {
+            alert('Selecciona un género');
+            return;
+        }
+        
+        if (cantidad <= 0) {
+            alert('La cantidad debe ser mayor a 0');
+            document.getElementById('sobremedida-cantidad').focus();
+            return;
+        }
+        
+        guardarSobremedida(genero, cantidad);
+        cerrarModalSobremedida();
+        crearTarjetaSobremedida(genero, cantidad);
+        actualizarTotalPrendas();
+    };
+    footer.appendChild(btnConfirmar);
+    
+    container.appendChild(footer);
+    modal.appendChild(container);
+    
+    document.body.appendChild(modal);
+    
+    // Focus en cantidad
+    setTimeout(() => document.getElementById('sobremedida-cantidad').focus(), 100);
+};
+
+/**
+ * Cerrar modal de sobremedida
+ */
+window.cerrarModalSobremedida = function() {
+    const modal = document.getElementById('modal-sobremedida');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
+ * Guardar sobremedida en la estructura relacional
+ */
+window.guardarSobremedida = function(genero, cantidad) {
+    genero = String(genero).toUpperCase();
+    
+    // Crear estructura especial para sobremedida
+    if (!window.tallasRelacionales.SOBREMEDIDA) {
+        window.tallasRelacionales.SOBREMEDIDA = {};
+    }
+    
+    window.tallasRelacionales.SOBREMEDIDA[genero] = cantidad;
+    
+    console.log('[gestion-tallas] Sobremedida guardada:', {
+        genero: genero,
+        cantidad: cantidad,
+        estado: window.tallasRelacionales.SOBREMEDIDA
+    });
+};
+
+/**
+ * Crear tarjeta de sobremedida en el DOM
+ */
+window.crearTarjetaSobremedida = function(genero, cantidad) {
+    genero = String(genero).toUpperCase();
+    
+    // Marcar botón
+    const btnSobremedida = document.getElementById('btn-genero-sobremedida');
+    const checkMark = document.getElementById('check-sobremedida');
+    
+    if (btnSobremedida) {
+        btnSobremedida.dataset.selected = 'true';
+        btnSobremedida.style.borderColor = '#0066cc';
+        btnSobremedida.style.background = '#f0f9ff';
+    }
+    
+    if (checkMark) {
+        checkMark.style.display = 'block';
+    }
+    
+    // Obtener o crear contenedor
+    const container = document.getElementById('tarjetas-generos-container');
+    if (!container) return;
+    
+    // Eliminar tarjeta anterior si existe
+    const tarjetaAnterior = container.querySelector('[data-sobremedida="true"]');
+    if (tarjetaAnterior) {
+        tarjetaAnterior.remove();
+    }
+    
+    // Crear tarjeta compacta
+    const tarjeta = document.createElement('div');
+    tarjeta.dataset.sobremedida = 'true';
+    tarjeta.style.cssText = `
+        background: white;
+        border: 2px solid #0066cc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    `;
+    
+    // Header compacto
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: space-between;';
+    
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 0.5rem;';
+    headerLeft.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 1.25rem; color: #0066cc;">straighten</span>
+        <div>
+            <h4 style="margin: 0; color: #1f2937; font-size: 0.9rem; font-weight: 600;">SOBREMEDIDA</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 0.75rem;">${genero}</p>
+        </div>
+    `;
+    header.appendChild(headerLeft);
+    
+    const btnGroupAcciones = document.createElement('div');
+    btnGroupAcciones.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+    
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.title = 'Eliminar sobremedida';
+    btnEliminar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.35rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 4px; font-size: 1rem;';
+    btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1rem;">delete</span>';
+    btnEliminar.onmouseover = () => {
+        btnEliminar.style.color = '#ef4444';
+        btnEliminar.style.background = '#fee2e2';
+    };
+    btnEliminar.onmouseout = () => {
+        btnEliminar.style.color = '#6b7280';
+        btnEliminar.style.background = 'transparent';
+    };
+    btnEliminar.onclick = () => {
+        delete window.tallasRelacionales.SOBREMEDIDA;
+        tarjeta.remove();
+        
+        const btn = document.getElementById('btn-genero-sobremedida');
+        const check = document.getElementById('check-sobremedida');
+        
+        if (btn) {
+            btn.dataset.selected = 'false';
+            btn.style.borderColor = '#d1d5db';
+            btn.style.background = 'white';
+        }
+        
+        if (check) {
+            check.style.display = 'none';
+        }
+        
+        actualizarTotalPrendas();
+    };
+    btnGroupAcciones.appendChild(btnEliminar);
+    
+    header.appendChild(btnGroupAcciones);
+    tarjeta.appendChild(header);
+    
+    // Cantidad compacta y destacada
+    const cantidadDiv = document.createElement('div');
+    cantidadDiv.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background: #f0f9ff;
+        border-radius: 6px;
+        padding: 0.75rem;
+        border: 1px solid #bfdbfe;
+    `;
+    cantidadDiv.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 1.25rem; color: #0066cc;">shopping_bag</span>
+        <div style="text-align: center;">
+            <p style="margin: 0; color: #6b7280; font-size: 0.7rem; text-transform: uppercase; font-weight: 600;">Cantidad</p>
+            <p style="margin: 0; color: #0066cc; font-size: 1.5rem; font-weight: 700;">${cantidad}</p>
+        </div>
+    `;
+    tarjeta.appendChild(cantidadDiv);
+    
+    container.appendChild(tarjeta);
+};
+
+/**
+ * Obtener todas las tallas, cantidades y sobremedida para enviar
+ * Actualiza la función existente
+ */
+const originalObtenerTallasYCantidades = window.obtenerTallasYCantidades;
+window.obtenerTallasYCantidades = function() {
+    const resultado = originalObtenerTallasYCantidades.call(this);
+    
+    // Agregar sobremedida si existe
+    if (window.tallasRelacionales.SOBREMEDIDA && Object.keys(window.tallasRelacionales.SOBREMEDIDA).length > 0) {
+        resultado.SOBREMEDIDA = window.tallasRelacionales.SOBREMEDIDA;
+        console.log('[gestion-tallas] Sobremedida incluida en resultado:', resultado.SOBREMEDIDA);
+    }
+    
+    return resultado;
+};
+
