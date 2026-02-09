@@ -130,18 +130,23 @@ class User extends Authenticatable
     /**
      * Verificar si el usuario tiene un rol específico
      *
-     * @param string|int $role - Nombre o ID del rol
+     * @param string|int|array $role - Nombre, ID del rol, o array de roles
      * @return bool
      */
     public function hasRole($role): bool
     {
+        // Si es un array, verificar si tiene alguno de los roles
+        if (is_array($role)) {
+            return $this->hasAnyRole($role);
+        }
+
         // Si es un número, buscar por ID en roles_ids
         if (is_numeric($role)) {
             return in_array($role, $this->roles_ids ?? []);
         }
 
-        // Si es string, buscar por nombre en roles usando el accessor
-        return $this->roles->pluck('name')->contains($role);
+        // Si es string, buscar por nombre en roles usando el accessor (case-insensitive)
+        return $this->roles->pluck('name')->map(fn($name) => strtolower($name))->contains(strtolower($role));
     }
 
     /**
