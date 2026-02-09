@@ -114,7 +114,7 @@ class PedidoWebService
             'estado' => 'pendiente_cartera',
         ]);
 
-        return PedidoProduccion::create([
+        $pedido = PedidoProduccion::create([
             'numero_pedido' => null, // Se asignará cuando cartera apruebe
             'cliente' => $datos['cliente'] ?? 'SIN NOMBRE',
             'asesor_id' => $asesorId,
@@ -126,6 +126,31 @@ class PedidoWebService
             'area' => $area,  // AHORA SE GUARDA EL ÁREA CORRECTAMENTE
             'fecha_de_creacion_de_orden' => now(), // Fecha actual de creación de la orden
         ]);
+
+        // ⚡ DISPARAR EVENTO DIRECTAMENTE AQUÍ (no confiar en Observer)
+        try {
+            Log::info('[PedidoWebService] 🚀 DISPARANDO EVENTO PedidoCreado DIRECTAMENTE', [
+                'pedido_id' => $pedido->id,
+            ]);
+            
+            $asesor = \App\Models\User::find($asesorId);
+            if ($asesor) {
+                \App\Events\PedidoCreado::dispatch($pedido, $asesor);
+                Log::info('[PedidoWebService] ✅ EVENTO PedidoCreado DISPARADO', [
+                    'pedido_id' => $pedido->id,
+                    'asesor_id' => $asesor->id,
+                ]);
+            } else {
+                Log::warning('[PedidoWebService] ⚠️ Asesor no encontrado para' . $asesorId);
+            }
+        } catch (\Exception $e) {
+            Log::error('[PedidoWebService] ❌ Error disparando evento PedidoCreado', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $pedido;
     }
 
     /**
