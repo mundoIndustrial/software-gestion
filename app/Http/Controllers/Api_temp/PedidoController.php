@@ -1134,14 +1134,15 @@ class PedidoController extends Controller
                 ], 400);
             }
 
-            // Buscar si ya existe (case-insensitive)
-            $tela = \App\Models\TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+            // ✅ BÚSQUEDA EXACTA: Solo coincidencia perfecta
+            // NO usar case-insensitive - debe ser EXACTAMENTE lo que el usuario escribe
+            $tela = \App\Models\TelaPrenda::where('nombre', $nombre)
                 ->first();
 
             // Si no existe, crearla
             if (!$tela) {
                 $tela = \App\Models\TelaPrenda::create([
-                    'nombre' => ucfirst(strtolower($nombre)),
+                    'nombre' => $nombre,  // ✅ Guardar exactamente como enviadas
                     'referencia' => $referencia,
                     'activo' => true
                 ]);
@@ -1218,14 +1219,15 @@ class PedidoController extends Controller
                 ], 400);
             }
 
-            // Buscar si ya existe (case-insensitive)
-            $color = \App\Models\ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombre)])
+            // ✅ BÚSQUEDA EXACTA: Solo coincidencia perfecta
+            // NO usar case-insensitive - debe ser EXACTAMENTE lo que el usuario escribe
+            $color = \App\Models\ColorPrenda::where('nombre', $nombre)
                 ->first();
 
             // Si no existe, crearlo
             if (!$color) {
                 $color = \App\Models\ColorPrenda::create([
-                    'nombre' => ucfirst(strtolower($nombre)),
+                    'nombre' => $nombre,  // ✅ Guardar exactamente como enviadas
                     'codigo' => $codigo,
                     'activo' => true
                 ]);

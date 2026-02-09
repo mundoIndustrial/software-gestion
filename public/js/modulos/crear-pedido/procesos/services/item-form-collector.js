@@ -71,7 +71,21 @@ class ItemFormCollector {
             console.log('[ItemFormCollector] 📦 baseItem CONSTRUIDO:', {
                 itemIndex,
                 nombre_prenda: baseItem.nombre_prenda,
-                cantidad_talla_keys: Object.keys(baseItem.cantidad_talla || {}).length
+                cantidad_talla_keys: Object.keys(baseItem.cantidad_talla || {}).length,
+                telas_length: baseItem.telas?.length || 0,
+                telas_primer_elemento: baseItem.telas?.[0]
+            });
+            
+            // DEBUG: Log detallado de telasAgregadas vs telas
+        // itemeIdx: índice del item (prenda)
+            console.log('[ItemFormCollector] 🔍 TELAS EN ITEM - DETALLADO:', {
+                itemIndex,
+                item_keys: Object.keys(item),
+                item_telas: item.telas?.length || 0,
+                item_telasAgregadas: item.telasAgregadas?.length || 0,
+                item_telasAgregadas_content: item.telasAgregadas,
+                baseItem_telas_final: baseItem.telas?.length || 0,
+                contenido_telas: baseItem.telas
             });
             
             // DEBUG: Log para verificar valores de origen y de_bodega

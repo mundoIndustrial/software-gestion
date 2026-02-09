@@ -155,7 +155,18 @@ class PrendaFormCollector {
             // ============================================
             // 4. PROCESAR TELAS AGREGADAS (FLUJO CREACIÓN)
             // ============================================
+            console.log('[prenda-form-collector] 🔍 INICIANDO PROCESAMIENTO DE TELAS:', {
+                window_telasCreacion_exists: !!window.telasCreacion,
+                window_telasCreacion_isArray: Array.isArray(window.telasCreacion),
+                window_telasCreacion_length: window.telasCreacion?.length || 0
+            });
+
             if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
+                console.log('[prenda-form-collector] 🔍 ANTES DE MAPEAR window.telasCreacion:', {
+                    length: window.telasCreacion.length,
+                    primer_elemento: window.telasCreacion[0]
+                });
+
                 prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
                     // Copiar imágenes de tela: SOLO File objects (NO blobs ni previewUrl)
                     const imagenesCopia = (tela.imagenes || []).map(img => {
@@ -182,14 +193,27 @@ class PrendaFormCollector {
                         tela: tela.tela || '',
                         color: tela.color || '',
                         referencia: tela.referencia || '',
+                        tela_id: tela.tela_id || 0,
+                        color_id: tela.color_id || 0,
+                        nombre_tela: tela.nombre_tela || tela.tela || '',
+                        color_nombre: tela.color_nombre || tela.color || '',
                         imagenes: imagenesCopia
                     };
+                });
+
+                console.log('[prenda-form-collector] 🧵 DESPUÉS DE MAPEAR prendaData.telasAgregadas:', {
+                    length: prendaData.telasAgregadas?.length || 0,
+                    primer_elemento: prendaData.telasAgregadas?.[0]
+                });
+            } else {
+                console.log('[prenda-form-collector] ⚠️ NO HAY TELAS EN window.telasCreacion, mantiendo array vacío:', {
+                    telasAgregadas_iniciales: prendaData.telasAgregadas
                 });
             }
             // ============================================
             // 4.1. PROCESAR TELAS AGREGADAS (FLUJO EDICIÓN DESDE BD O COTIZACIÓN)
             // ============================================
-            else if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
+            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
                 console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS (BD o Cotización)');
                 prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
                     // Para cotización/BD, las imágenes ya vienen procesadas
@@ -340,6 +364,12 @@ class PrendaFormCollector {
             prendaData.variantes = variantes;
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
+            console.log('[prenda-form-collector] 🔍 VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
+                telasAgregadas_exist: !!prendaData.telasAgregadas,
+                telasAgregadas_isArray: Array.isArray(prendaData.telasAgregadas),
+                telasAgregadas_length: prendaData.telasAgregadas?.length || 0,
+                telasAgregadas_content: prendaData.telasAgregadas
+            });
             console.log('[prenda-form-collector]', prendaData);
 
             return prendaData;

@@ -411,7 +411,8 @@ class PedidoWebService
                     try {
                         $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
                         if ($telaNombre && !$telaId) {
-                            $tela = TelaPrenda::where('nombre', 'like', '%' . $telaNombre . '%')->first();
+                            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto
+                            $tela = TelaPrenda::where('nombre', $telaNombre)->first();
                             if ($tela) {
                                 $telaId = $tela->id;
                                 Log::info('[PedidoWebService] 🧵 Tela encontrada por fallback', [
@@ -423,7 +424,8 @@ class PedidoWebService
                         
                         $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
                         if ($colorNombre && !empty($colorNombre) && !$colorId) {
-                            $color = ColorPrenda::where('nombre', 'like', '%' . $colorNombre . '%')->first();
+                            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto
+                            $color = ColorPrenda::where('nombre', $colorNombre)->first();
                             if ($color) {
                                 $colorId = $color->id;
                                 Log::info('[PedidoWebService]  Color encontrado por fallback', [
@@ -453,8 +455,8 @@ class PedidoWebService
                 
                 // Si no hay telaId pero hay nombre de tela, buscar o crear la tela
                 if (!$telaId && !empty($telaNombreGeneral)) {
-                    // Buscar tela con el mismo nombre
-                    $telaExistente = TelaPrenda::where('nombre', 'like', '%' . $telaNombreGeneral . '%')
+                    // 🔥 BÚSQUEDA EXACTA: Solo match perfecto (no LIKE)
+                    $telaExistente = TelaPrenda::where('nombre', $telaNombreGeneral)
                                                 ->where('activo', true)
                                                 ->first();
                     if ($telaExistente) {

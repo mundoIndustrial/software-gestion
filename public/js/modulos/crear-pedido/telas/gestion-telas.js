@@ -127,28 +127,51 @@ window.agregarTelaNueva = async function() {
     if (tela && tela.trim()) {  // ✅ Solo buscar/crear si tela no está vacía
         const datalistTelas = document.getElementById('opciones-telas');
         if (datalistTelas) {
+            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto, sin similares
             for (let option of datalistTelas.options) {
-                if (option.value.toUpperCase() === tela) {
+                // Comparación exacta: ambas en MAYÚSCULAS para consistencia
+                const opcionNormalizada = option.value.toUpperCase().trim();
+                const telaInput = tela.toUpperCase().trim();
+                
+                if (opcionNormalizada === telaInput) {
                     telaId = parseInt(option.dataset.id);
+                    console.log('[guardarTela] ✅ Tela encontrada exactamente:', {
+                        búsqueda: telaInput,
+                        encontrada: opcionNormalizada,
+                        id: telaId
+                    });
                     break;
                 }
             }
         }
         
-        // Si no existe, crearla
+        // Si no existe EXACTAMENTE, crearla (NUNCA reutilizar similares)
         if (!telaId) {
+            console.log('[guardarTela] 📝 Tela no existe (o no hay coincidencia exacta), creando nueva:', { tela });
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                console.log('[guardarTela] 🔐 CSRF Token obtenido:', { hasToken: !!csrfToken, tokenLength: csrfToken.length });
+                
+                const payload = { nombre: tela, referencia: referencia };
+                console.log('[guardarTela] 📤 Payload a enviar:', payload);
+                
                 const response = await fetch('/api/public/telas', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ nombre: tela, referencia: referencia })
+                    body: JSON.stringify(payload)
                 });
+                
+                console.log('[guardarTela] 📨 Response status:', response.status, response.statusText);
+                
                 const result = await response.json();
+                console.log('[guardarTela] 📥 Response JSON:', result);
+                
                 if (result.success && result.data) {
                     telaId = result.data.id;
+                    console.log('[guardarTela] ✅ Tela creada con ID:', telaId);
                     
                     // Agregar al datalist
                     if (datalistTelas) {
@@ -157,12 +180,16 @@ window.agregarTelaNueva = async function() {
                         newOption.dataset.id = result.data.id;
                         newOption.dataset.referencia = result.data.referencia || '';
                         datalistTelas.appendChild(newOption);
+                        console.log('[guardarTela] ✅ Opción agregada al datalist');
                     }
                     
-                    console.log('[Telas] Tela creada:', result.data);
+                    console.log('[Telas] ✨ Tela creada:', result.data);
+                } else {
+                    console.error('[guardarTela] ❌ Response sin success o sin data:', result);
                 }
             } catch (error) {
-                console.error('[Telas] Error creando tela:', error);
+                console.error('[Telas] ❌ Error creando tela:', error);
+                console.error('[Telas] Stack:', error.stack);
             }
         }
     }
@@ -172,28 +199,51 @@ window.agregarTelaNueva = async function() {
     if (color && color.trim()) {  // ✅ Solo buscar/crear si hay color
         const datalistColores = document.getElementById('opciones-colores');
         if (datalistColores) {
+            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto, sin similares
             for (let option of datalistColores.options) {
-                if (option.value.toUpperCase() === color) {
+                // Comparación exacta: ambas en MAYÚSCULAS para consistencia
+                const opcionNormalizada = option.value.toUpperCase().trim();
+                const colorInput = color.toUpperCase().trim();
+                
+                if (opcionNormalizada === colorInput) {
                     colorId = parseInt(option.dataset.id);
+                    console.log('[guardarTela] ✅ Color encontrado exactamente:', {
+                        búsqueda: colorInput,
+                        encontrado: opcionNormalizada,
+                        id: colorId
+                    });
                     break;
                 }
             }
         }
         
-        // Si no existe, crearlo
+        // Si no existe EXACTAMENTE, crearlo (NUNCA reutilizar similares)
         if (!colorId) {
+            console.log('[guardarTela] 📝 Color no existe (o no hay coincidencia exacta), creando nuevo:', { color });
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                console.log('[guardarTela] 🔐 CSRF Token obtenido:', { hasToken: !!csrfToken, tokenLength: csrfToken.length });
+                
+                const payload = { nombre: color };
+                console.log('[guardarTela] 📤 Payload a enviar:', payload);
+                
                 const response = await fetch('/api/public/colores', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ nombre: color })
+                    body: JSON.stringify(payload)
                 });
+                
+                console.log('[guardarTela] 📨 Response status:', response.status, response.statusText);
+                
                 const result = await response.json();
+                console.log('[guardarTela] 📥 Response JSON:', result);
+                
                 if (result.success && result.data) {
                     colorId = result.data.id;
+                    console.log('[guardarTela] ✅ Color creado con ID:', colorId);
                     
                     // Agregar al datalist
                     if (datalistColores) {
@@ -202,12 +252,16 @@ window.agregarTelaNueva = async function() {
                         newOption.dataset.id = result.data.id;
                         newOption.dataset.codigo = result.data.codigo || '';
                         datalistColores.appendChild(newOption);
+                        console.log('[guardarTela] ✅ Opción de color agregada al datalist');
                     }
                     
-                    console.log('[Colores] Color creado:', result.data);
+                    console.log('[Colores] ✨ Color creado:', result.data);
+                } else {
+                    console.error('[guardarTela] ❌ Response sin success o sin data:', result);
                 }
             } catch (error) {
-                console.error('[Colores] Error creando color:', error);
+                console.error('[Colores] ❌ Error creando color:', error);
+                console.error('[Colores] Stack:', error.stack);
             }
         }
     }

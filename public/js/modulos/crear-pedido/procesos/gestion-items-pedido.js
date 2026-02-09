@@ -628,7 +628,9 @@ class GestionItemsUI {
                         tipo: prendaData.tipo,
                         nombre_prenda: prendaData.nombre_prenda,
                         cantidad_talla: prendaData.cantidad_talla,
-                        telas: prendaData.telas?.length || 0
+                        telas: prendaData.telas?.length || 0,
+                        telasAgregadas: prendaData.telasAgregadas?.length || 0,
+                        contenido_telasAgregadas: prendaData.telasAgregadas
                     });
                     
                     // Agregar prenda al orden
@@ -698,6 +700,12 @@ class GestionItemsUI {
 
             const pedidoData = this.formCollector.recolectarDatosPedido();
             
+            console.log('[gestion-items-pedido] 🔍 PEDIDO DATA RECOLECTADA:', {
+                prendas_total: pedidoData.prendas?.length || 0,
+                epps_total: pedidoData.epps?.length || 0,
+                primer_prenda_telas: pedidoData.prendas?.[0]?.telas?.length || 0,
+                primer_prenda_contenido: pedidoData.prendas?.[0]
+            });
 
             // Permitir prendas O epps (al menos uno debe tener items)
             const tienePrendas = pedidoData.prendas && pedidoData.prendas.length > 0;
