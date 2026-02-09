@@ -318,6 +318,10 @@ class SupervisorPedidosController extends Controller
                 'timestamp' => now()
             ]);
 
+            // 🔥 Broadcast evento en tiempo real
+            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']));
+            \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido aprobado correctamente. Estado cambiado a Pendiente Insumos y consecutivos generados.',
@@ -410,6 +414,10 @@ class SupervisorPedidosController extends Controller
             'rol' => $rol,
         ]);
 
+        // 🔥 Broadcast evento en tiempo real
+        broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades', 'motivo_revision']));
+        \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Revisión");
+
         return response()->json([
             'success' => true,
             'message' => 'Orden enviada a revisión correctamente',
@@ -457,6 +465,10 @@ class SupervisorPedidosController extends Controller
                     'tipo_cotizacion' => $orden->cotizacion->tipoCotizacion->nombre ?? 'N/A',
                 ]);
 
+                // 🔥 Broadcast evento en tiempo real
+                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
+                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Reflectiva");
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Pedido reflectivo aprobado correctamente. Enviado directamente a Costura en estado "En Ejecución".',
@@ -476,6 +488,10 @@ class SupervisorPedidosController extends Controller
                     'estado_nuevo' => 'PENDIENTE_INSUMOS',
                     'area' => 'Insumos',
                 ]);
+
+                // 🔥 Broadcast evento en tiempo real
+                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
+                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Normal");
 
                 return response()->json([
                     'success' => true,

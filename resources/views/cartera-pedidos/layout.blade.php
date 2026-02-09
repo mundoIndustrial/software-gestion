@@ -568,6 +568,9 @@
         }, 100);
     </script>
 
+    <!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->
+    @vite(['resources/js/app.js'])
+
     <!-- Laravel Echo - Para actualizaciones en tiempo real -->
     @auth
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>

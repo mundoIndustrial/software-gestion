@@ -1599,6 +1599,269 @@
             });
         };
     </script>
+
+    <!-- 🔥 REALTIME: Listener para actualizaciones de órdenes en tiempo real -->
+    <script>
+        /**
+         * Sistema de Tiempo Real - Supervisor-Pedidos
+         * Se suscribe al canal 'supervisor-pedidos' via WebSockets
+         * Actualiza la tabla automáticamente cuando llegan nuevas órdenes o cambios
+         * 
+         * Usa un polling para esperar a que window.waitForEcho esté disponible
+         */
+        
+        // Definir funciones reutilizables ANTES de intentar conectarse
+        /**
+         * Actualiza una fila existente en la tabla
+         */
+        function actualizarFilaEnTabla(fila, orden, action) {
+            console.log(`[Realtime] Actualizando fila para pedido #${orden.numero_pedido}`);
+
+            // Actualizar campos que pueden haber cambiado
+            const celdas = fila.querySelectorAll('[data-field]');
+            celdas.forEach(celda => {
+                const field = celda.getAttribute('data-field');
+                if (orden[field]) {
+                    const newValue = orden[field];
+                    if (celda.textContent !== newValue) {
+                        celda.textContent = newValue;
+                        // Agregar animación de cambio
+                        celda.style.backgroundColor = '#fff9e6';
+                        setTimeout(() => {
+                            celda.style.backgroundColor = '';
+                        }, 1500);
+                    }
+                }
+            });
+
+            // Cambiar background de la fila para indicar cambio
+            fila.style.backgroundColor = '#f0f9ff';
+            setTimeout(() => {
+                fila.style.backgroundColor = 'white';
+            }, 2000);
+        }
+
+        /**
+         * Agrega una nueva fila a la tabla cuando llega una nueva orden
+         */
+        function agregarNuevaFilaATabla(orden, action) {
+            console.log(`[Realtime] Agregando nueva fila para pedido #${orden.numero_pedido}`);
+            
+            const tableContainer = document.querySelector('.table-scroll-container');
+            if (!tableContainer) {
+                console.warn('[Realtime] No se encontró el contenedor de tabla');
+                return;
+            }
+
+            // Crear HTML de la nueva fila basado en la estructura existente
+            const numeroPedido = orden.numero_pedido || orden.numero;
+            const filaHTML = `
+                <div data-pedido-id="${orden.id}" style="
+                    display: grid;
+                    grid-template-columns: 200px 140px 200px 140px 150px 150px;
+                    gap: 1.2rem;
+                    padding: 1rem;
+                    border-bottom: 1px solid #e5e7eb;
+                    align-items: center;
+                    min-width: min-content;
+                    background: #f0f9ff;
+                    animation: slideInDown 0.5s ease;
+                    transition: background 0.2s ease;
+                " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#f0f9ff'">
+                    <!-- Acciones -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                        <button class="btn-ver-dropdown" onclick="editarPedido(${orden.id})" title="Editar" style="
+                            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: all 0.3s ease;
+                        ">
+                            <span class="material-symbols-rounded">edit</span>
+                        </button>
+                    </div>
+                    <!-- Número -->
+                    <div data-field="numero_pedido" style="font-weight: 600; color: #1e3a8a;">#${numeroPedido}</div>
+                    <!-- Cliente -->
+                    <div data-field="cliente" style="color: #2c3e50;">${orden.cliente || 'Sin especificar'}</div>
+                    <!-- Novedades -->
+                    <div data-field="novedades" style="color: #666; font-size: 0.9rem;">${orden.novedades || '-'}</div>
+                    <!-- Asesora -->
+                    <div data-field="asesor" style="color: #666;">${orden.asesor?.name || orden.asesor || 'Sin asignar'}</div>
+                    <!-- Forma Pago -->
+                    <div data-field="forma_pago" style="color: #666;">${orden.forma_pago || 'No especificada'}</div>
+                </div>
+            `;
+
+            // Agregar la nueva fila al final de la tabla
+            tableContainer.innerHTML += filaHTML;
+            
+            // Scroll suave a la nueva fila
+            tableContainer.scrollLeft = tableContainer.scrollWidth;
+        }
+
+        /**
+         * Muestra una notificación al usuario sobre la actualización
+         */
+        function mostrarNotificacionEnTiempoReal(orden, action) {
+            const mensajes = {
+                'created': `✨ Nueva orden creada: #${orden.numero_pedido}`,
+                'updated': `🔄 Orden actualizada: #${orden.numero_pedido}`,
+                'deleted': `❌ Orden eliminada: #${orden.numero_pedido}`
+            };
+
+            const mensaje = mensajes[action] || `Orden #${orden.numero_pedido} modificada`;
+
+            // Mostrar notificación flotante
+            const notif = document.createElement('div');
+            notif.innerHTML = mensaje;
+            notif.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                font-weight: 600;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                animation: slideInRight 0.5s ease;
+                z-index: 10000;
+            `;
+            
+            document.body.appendChild(notif);
+
+            // Remover después de 4 segundos
+            setTimeout(() => {
+                notif.style.animation = 'slideOutRight 0.5s ease';
+                setTimeout(() => notif.remove(), 500);
+            }, 4000);
+        }
+
+        // Agregar estilos de animación si no existen
+        if (!document.querySelector('style[data-realtime]')) {
+            const style = document.createElement('style');
+            style.setAttribute('data-realtime', 'true');
+            style.textContent = `
+                @keyframes slideInDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+                @keyframes slideOutRight {
+                    from {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 🔥 ESPERAR A QUE window.waitForEcho ESTÉ DISPONIBLE ANTES DE CONECTARSE
+        console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
+        
+        // Función para inicializar el listener
+        function initializeRealtimeListener() {
+            // Verificar que window.waitForEcho está disponible
+            if (typeof window.waitForEcho !== 'function') {
+                console.log('[Realtime Supervisor] ⏳ window.waitForEcho aún no disponible, reintentando en 100ms...');
+                setTimeout(initializeRealtimeListener, 100);
+                return;
+            }
+            
+            console.log('[Realtime Supervisor] ✅ window.waitForEcho está disponible, inicializando listener...');
+            
+            window.waitForEcho(() => {
+                console.log('[Realtime Supervisor] 🚀 Echo está listo, inicializando suscripción...');
+                
+                try {
+                    window.Echo.channel('supervisor-pedidos')
+                        .listen('OrdenUpdated', (data) => {
+                            console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
+                            
+                            if (!data.orden) {
+                                console.warn('[Realtime Supervisor] ⚠️ Evento sin datos de orden');
+                                return;
+                            }
+
+                            const orden = data.orden;
+                            const numeroPedido = orden.numero_pedido || orden.numero_pedido || orden.pedido;
+                            const action = data.action || 'updated';
+                            
+                            console.log(`[Realtime Supervisor] 📦 Procesando ${action}: Pedido #${numeroPedido}`);
+
+                            // Buscar la fila en la tabla correspondiente al pedido
+                            const filas = document.querySelectorAll('[data-pedido-id]');
+                            let filaEncontrada = null;
+
+                            for (let fila of filas) {
+                                const pedidoIdAttr = fila.getAttribute('data-pedido-id');
+                                if (pedidoIdAttr == orden.id) {
+                                    filaEncontrada = fila;
+                                    break;
+                                }
+                            }
+
+                            if (filaEncontrada) {
+                                console.log('[Realtime Supervisor] ✅ Fila encontrada, actualizando...');
+                                actualizarFilaEnTabla(filaEncontrada, orden, action);
+                            } else {
+                                console.log('[Realtime Supervisor] ℹ️ Fila no encontrada, agregando nueva fila...');
+                                agregarNuevaFilaATabla(orden, action);
+                            }
+
+                            // Notificar al usuario
+                            mostrarNotificacionEnTiempoReal(orden, action);
+                            
+                            // Actualizar contador de órdenes pendientes si es necesario
+                            if (typeof actualizarContadorPendientes === 'function') {
+                                actualizarContadorPendientes();
+                            }
+                        })
+                        .on('pusher:subscription_succeeded', () => {
+                            console.log('[Realtime Supervisor] ✅ Subscripción exitosa al canal supervisor-pedidos');
+                        })
+                        .on('pusher:subscription_error', (error) => {
+                            console.error('[Realtime Supervisor] ❌ Error en subscripción:', error);
+                        });
+                    
+                    console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
+                } catch (error) {
+                    console.error('[Realtime Supervisor] ❌ Error inicializando listener:', error);
+                }
+            });
+        }
+
+        // Esperar a que el documento esté completamente cargado antes de inicializar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeRealtimeListener);
+        } else {
+            initializeRealtimeListener();
+        }
+    </script>
 @endpush
 
 @endsection

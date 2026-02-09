@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PedidoProduccion;
 use App\Application\Services\Asesores\ObtenerDatosFacturaService;
 use App\Domain\Pedidos\Services\PedidoSequenceService;
+use App\Events\OrdenUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -127,14 +128,16 @@ class CarteraPedidosController extends Controller
     public function aprobarPedido($id, Request $request)
     {
         try {
-            return DB::transaction(function () use ($id, $request) {
+            $resultado = DB::transaction(function () use ($id, $request) {
                 $pedido = PedidoProduccion::find($id);
                 
                 if (!$pedido) {
-                    return response()->json([
+                    return [
                         'success' => false,
-                        'message' => 'Pedido no encontrado'
-                    ], 404);
+                        'message' => 'Pedido no encontrado',
+                        'pedido' => null,
+                        'numero_pedido' => null
+                    ];
                 }
                 
                 // Generar número de pedido correlativo solo al aprobar usando servicio centralizado
@@ -160,12 +163,30 @@ class CarteraPedidosController extends Controller
                     'aprobado_por' => $usuarioId
                 ]);
                 
-                return response()->json([
+                return [
                     'success' => true,
                     'message' => 'Pedido aprobado correctamente',
+                    'pedido' => $pedido->fresh(),
                     'numero_pedido' => $siguienteNumero
-                ]);
+                ];
             });
+            
+            // 🔥 Si la transacción fue exitosa, dispara el broadcast FUERA de la transacción
+            if ($resultado['success'] && $resultado['pedido']) {
+                broadcast(new \App\Events\OrdenUpdated($resultado['pedido'], 'created', ['numero_pedido', 'estado']));
+                \Log::info("✅ Broadcast enviado para pedido {$resultado['numero_pedido']} desde CARTERA", [
+                    'evento' => 'created',
+                    'numero_pedido' => $resultado['numero_pedido'],
+                    'timestamp' => now()
+                ]);
+            }
+            
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'numero_pedido' => $resultado['numero_pedido']
+            ]);
+            
         } catch (\Exception $e) {
             \Log::error('Error en CarteraPedidosController::aprobarPedido: ' . $e->getMessage());
             return response()->json([
@@ -229,6 +250,10 @@ class CarteraPedidosController extends Controller
                 'rechazado_por' => $usuarioId,
                 'numero_pedido' => $pedido->numero_pedido // debe ser null
             ]);
+
+            // 🔥 Broadcast evento en tiempo real
+            broadcast(new OrdenUpdated($pedido->fresh(), 'updated', ['estado', 'novedades']));
+            \Log::info("Broadcast enviado para pedido #{$pedido->id} - Rechazo desde CARTERA");
             
             return response()->json([
                 'success' => true,

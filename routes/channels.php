@@ -40,3 +40,10 @@ Broadcast::channel('bodega-detalles-{numero_pedido}-{talla}', function ($user, $
 Broadcast::channel('bodega-notas-{numero_pedido}-{talla}', function ($user, $numero_pedido, $talla) {
     return $user && ($user->hasRole(['Bodeguero', 'EPP-Bodega', 'Costura-Bodega', 'Admin']) || $user->role === 'admin');
 });
+/**
+ * Canal Público: Supervisor de Pedidos
+ * Permite que supervisores reciban actualizaciones de órdenes en tiempo real
+ */
+Broadcast::channel('supervisor-pedidos', function ($user) {
+    return $user->hasRole(['supervisor_pedidos', 'admin']) || $user->hasRole('asesor');
+});
