@@ -51,7 +51,10 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(cargarPedidos, 5 * 60 * 1000);
   
   // Configurar WebSockets en tiempo real para nuevos pedidos
-  configurarWebSocketsPedidos();
+  // Esperar 1 segundo para asegurar que Echo esté listo
+  setTimeout(() => {
+    configurarWebSocketsPedidos();
+  }, 1000);
 });
 
 // ===== CARGA DE PEDIDOS =====
