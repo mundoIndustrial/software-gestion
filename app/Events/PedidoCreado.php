@@ -49,10 +49,10 @@ class PedidoCreado implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            // Canal para todos los usuarios que pueden ver cartera (contadores, admins, etc)
-            new Channel('pedidos.creados'),
-            // Canal para el asesor específico
-            new Channel('pedidos.asesor.' . $this->asesorId),
+            // Canal privado para todos los usuarios que pueden ver cartera
+            new PrivateChannel('pedidos.creados'),
+            // Canal privado para el asesor específico
+            new PrivateChannel('pedidos.asesor.' . $this->asesorId),
         ];
     }
 

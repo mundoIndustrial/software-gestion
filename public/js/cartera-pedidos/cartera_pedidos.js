@@ -618,8 +618,8 @@ function configurarWebSocketsPedidos() {
   console.log('🔌 [CarteraPedidos] Intentando conectar a WebSockets...');
 
   try {
-    // Escuchar en el canal público 'pedidos.creados'
-    window.Echo.channel('pedidos.creados')
+    // Escuchar en el canal privado 'pedidos.creados'
+    window.Echo.private('pedidos.creados')
       .listen('pedido.creado', (event) => {
         console.log('📨 [CarteraPedidos] Nuevo pedido recibido en tiempo real:', event);
         

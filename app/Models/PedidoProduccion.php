@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\Cliente;
 use App\Models\ConsecutivoReciboPedido;
 use App\Services\CalculadorDiasService;
-use App\Events\PedidoCreado;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -75,37 +74,8 @@ class PedidoProduccion extends Model
             }
         });
 
-        // Disparar evento cuando se crea un pedido
-        static::created(function ($model) {
-            \Log::info(' [PedidoProduccion.boot] Hook created disparado', [
-                'pedido_id' => $model->id,
-                'numero_pedido' => $model->numero_pedido,
-                'tiene_cotizacion' => !is_null($model->cotizacion_id),
-            ]);
-            
-            // Solo disparar evento si hay cotización asociada
-            if (!$model->cotizacion_id) {
-                \Log::info('[PedidoProduccion.boot] Sin cotización, saltando evento PedidoCreado', [
-                    'pedido_id' => $model->id,
-                ]);
-                return;
-            }
-            
-            $asesor = $model->asesora;
-            
-            if ($asesor) {
-                \Log::info('📤 [PedidoProduccion.boot] Disparando evento PedidoCreado', [
-                    'pedido_id' => $model->id,
-                    'asesor_id' => $asesor->id,
-                ]);
-                event(new PedidoCreado($model, $asesor));
-            } else {
-                \Log::warning(' [PedidoProduccion.boot] Asesor no encontrado para pedido', [
-                    'pedido_id' => $model->id,
-                    'asesor_id' => $model->asesor_id,
-                ]);
-            }
-        });
+        // NOTA: El evento PedidoCreado es disparado por el Observer PedidoProduccionObserver
+        // No es necesario disparar aquí en el boot hook
 
         // Nota: Los procesos se crean automáticamente cuando se crean prendas
         // No crear procesos aquí, ya que no tenemos prendas aún
