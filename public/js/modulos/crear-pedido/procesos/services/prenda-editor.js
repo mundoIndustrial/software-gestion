@@ -51,15 +51,15 @@ class PrendaEditor {
             window.cargarTiposMangaDisponibles();
         }
 
+        // Actualizar título modal según modo (si la función está disponible)
+        if (typeof window.actualizarTituloModalPrenda === 'function') {
+            window.actualizarTituloModalPrenda(esEdicion);
+        }
+
         // Mostrar modal
 
         const modal = document.getElementById(this.modalId);
         if (modal) {
-
-
-
-
-
             modal.style.display = 'flex';
         } else {
 
@@ -1560,11 +1560,12 @@ class PrendaEditor {
      */
     cargarTallasYCantidades(prenda) {
         if (!window.tallasRelacionales) {
-            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {} };
+            window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
         }
         window.tallasRelacionales.DAMA = {};
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
+        window.tallasRelacionales.SOBREMEDIDA = {};
 
         console.log('[cargarTallasYCantidades] 🔍 Analizando prenda:', {
             tiene_tallas: !!prenda.tallas,
@@ -1591,7 +1592,7 @@ class PrendaEditor {
         console.log('[cargarTallasYCantidades] 👥 Género seleccionado:', generoActual);
 
         // CARGAR TALLAS DESDE:
-        // 1. generosConTallas (edición de BD)
+        // 1. generosConTallas (edición de BD) - Formato: {DAMA: {S: 20}, SOBREMEDIDA: {DAMA: 34}}
         // 2. cantidad_talla (prendas nuevas creadas en formulario)
         // 3. tallas (array)
         // 4. tallas_disponibles (prendas nuevas sin cantidades)
@@ -1600,18 +1601,75 @@ class PrendaEditor {
             
             Object.entries(prenda.generosConTallas).forEach(([generoKey, tallaData]) => {
                 const generoUpper = generoKey.toUpperCase();
-                if (tallaData.cantidades && typeof tallaData.cantidades === 'object') {
-                    window.tallasRelacionales[generoUpper] = { ...tallaData.cantidades };
+                
+                // Validar que tallaData es un objeto válido con datos
+                if (!tallaData || typeof tallaData !== 'object' || Object.keys(tallaData).length === 0) {
+                    return; // Saltar géneros vacíos
+                }
+                
+                // CASO ESPECIAL: SOBREMEDIDA
+                if (generoUpper === 'SOBREMEDIDA') {
+                    // generosConTallas[SOBREMEDIDA] tiene estructura: {DAMA: 34, CABALLERO: 20}
+                    window.tallasRelacionales.SOBREMEDIDA = { ...tallaData };
+                    console.log('[cargarTallasYCantidades] ✓✓ Sobremedida cargada:', window.tallasRelacionales.SOBREMEDIDA);
+                } else {
+                    // Géneros normales: {S: 20, M: 30, L: 25}
+                    // 🔥 FIX: Si hay SOBREMEDIDA anidada dentro de este género (número u objeto), EXTRAERLA
+                    const tallaDataLimpia = {};
+                    for (const [talla, valor] of Object.entries(tallaData)) {
+                        if (talla === 'SOBREMEDIDA') {
+                            if (typeof valor === 'number') {
+                                // SOBREMEDIDA como número: {DAMA: 344}
+                                window.tallasRelacionales.SOBREMEDIDA[generoUpper] = valor;
+                            } else if (typeof valor === 'object' && valor !== null) {
+                                // SOBREMEDIDA anidada: {DAMA: 34}
+                                for (const [generoSobremedida, cantidad] of Object.entries(valor)) {
+                                    window.tallasRelacionales.SOBREMEDIDA[generoSobremedida] = cantidad;
+                                }
+                            }
+                            console.log(`[cargarTallasYCantidades] 🔧 ${generoUpper} SOBREMEDIDA extraída:`, valor);
+                        } else {
+                            tallaDataLimpia[talla] = valor;
+                        }
+                    }
+                    
+                    if (window.tallasRelacionales[generoUpper]) {
+                        window.tallasRelacionales[generoUpper] = tallaDataLimpia;
+                        console.log(`[cargarTallasYCantidades] ✓✓ ${generoUpper} cargado:`, window.tallasRelacionales[generoUpper]);
+                    }
                 }
             });
         } else if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && Object.keys(prenda.cantidad_talla).length > 0) {
             console.log('[cargarTallasYCantidades] ✓ Cargando tallas desde cantidad_talla (prendas nuevas):', prenda.cantidad_talla);
             
-            // cantidad_talla tiene estructura: { DAMA: {S: 20, M: 20}, CABALLERO: {}, UNISEX: {} }
+            // cantidad_talla tiene estructura: { DAMA: {S: 20, M: 20}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} }
             Object.entries(prenda.cantidad_talla).forEach(([generoKey, tallasObj]) => {
                 const generoUpper = generoKey.toUpperCase();
-                if (tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
-                    window.tallasRelacionales[generoUpper] = { ...tallasObj };
+                
+                // CASO ESPECIAL: SOBREMEDIDA
+                if (generoUpper === 'SOBREMEDIDA' && tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                    window.tallasRelacionales.SOBREMEDIDA = { ...tallasObj };
+                    console.log('[cargarTallasYCantidades] ✓✓ Sobremedida cargada:', window.tallasRelacionales.SOBREMEDIDA);
+                } else if (window.tallasRelacionales[generoUpper] && tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                    // 🔥 FIX: Detectar si SOBREMEDIDA viene anidada en este género (número u objeto)
+                    const tallasObjLimpia = {};
+                    for (const [talla, valor] of Object.entries(tallasObj)) {
+                        if (talla === 'SOBREMEDIDA') {
+                            if (typeof valor === 'number') {
+                                // SOBREMEDIDA como número: es para este género
+                                window.tallasRelacionales.SOBREMEDIDA[generoUpper] = valor;
+                            } else if (typeof valor === 'object' && valor !== null) {
+                                // SOBREMEDIDA anidada: extraer
+                                for (const [generoSobremedida, cantidad] of Object.entries(valor)) {
+                                    window.tallasRelacionales.SOBREMEDIDA[generoSobremedida] = cantidad;
+                                }
+                            }
+                            console.log(`[cargarTallasYCantidades] 🔧 ${generoUpper} SOBREMEDIDA extraída:`, valor);
+                        } else {
+                            tallasObjLimpia[talla] = valor;
+                        }
+                    }
+                    window.tallasRelacionales[generoUpper] = tallasObjLimpia;
                 }
             });
         } else if (prenda.cotizacion_id) {
@@ -1818,10 +1876,24 @@ class PrendaEditor {
                 
                 // Crear tarjeta de género con tallas
                 setTimeout(() => {
-                    // Llamar a la función que crea la tarjeta de género
-                    if (window.crearTarjetaGenero) {
-                        window.crearTarjetaGenero(generoLower);
-                        console.log(`[cargarTallasYCantidades] ✓ Tarjeta creada para género: ${generoLower}`);
+                    // Detectar si es SOBREMEDIDA y usar la función correcta
+                    if (genero.toUpperCase() === 'SOBREMEDIDA') {
+                        // SOBREMEDIDA - buscar el primer género con cantidad
+                        for (const [generoSobremedida, cantidad] of Object.entries(tallasObj)) {
+                            if (cantidad > 0) {
+                                console.log(`[cargarTallasYCantidades] 📐 Creando tarjeta SOBREMEDIDA: ${generoSobremedida} = ${cantidad}`);
+                                if (window.crearTarjetaSobremedida) {
+                                    window.crearTarjetaSobremedida(generoSobremedida, cantidad);
+                                }
+                                break; // Solo una entrada de sobremedida
+                            }
+                        }
+                    } else {
+                        // GÉNEROS NORMALES
+                        if (window.crearTarjetaGenero) {
+                            window.crearTarjetaGenero(generoLower, tallasObj);
+                            console.log(`[cargarTallasYCantidades] ✓ Tarjeta creada para género: ${generoLower}`);
+                        }
                     }
                     
                     // PRE-CARGAR CANTIDADES Y PRE-SELECCIONAR TALLAS (SOLO para cotizaciones)
@@ -2238,9 +2310,9 @@ class PrendaEditor {
                 }
 
                 // Convertir tallas si es necesario
-                let tallasFormato = datosReales.tallas || { dama: {}, caballero: {} };
+                let tallasFormato = datosReales.tallas || { dama: {}, caballero: {}, sobremedida: {} };
                 if (Array.isArray(tallasFormato) && tallasFormato.length === 0) {
-                    tallasFormato = { dama: {}, caballero: {} };
+                    tallasFormato = { dama: {}, caballero: {}, sobremedida: {} };
                 }
                 
                 const datosProces = {

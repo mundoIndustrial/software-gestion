@@ -69,7 +69,8 @@ async function cargarTiposMangaDisponibles() {
     console.log('[Manga] Cargando tipos de manga desde BD...');
     tiposMangaPromise = (async () => {
         try {
-            const response = await fetch('/asesores/api/tipos-manga');
+            // Usar ruta pública accesible para todos los roles
+            const response = await fetch('/api/public/tipos-manga');
             const result = await response.json();
             
             if (result.success && result.data) {
@@ -141,7 +142,7 @@ async function cargarTiposBrocheBotonDisponibles() {
     console.log('[Broche] Cargando tipos de broche/botón desde BD...');
     tiposBrochePromise = (async () => {
         try {
-            const response = await fetch('/asesores/api/tipos-broche-boton');
+            const response = await fetch('/api/public/tipos-broche-boton');
             const result = await response.json();
             
             if (result.success && result.data) {
@@ -208,7 +209,7 @@ async function procesarMangaInput(input) {
             console.log('[Manga] Creando nuevo tipo de manga:', valor);
             
             // Crear el nuevo tipo de manga
-            const response = await fetch('/asesores/api/tipos-manga', {
+            const response = await fetch('/api/public/tipos-manga', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -260,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function cargarTelasDisponibles() {
     try {
-        const response = await fetch('/asesores/api/telas');
+        const response = await fetch('/api/public/telas');
         const result = await response.json();
         
         if (result.success && result.data) {
@@ -289,7 +290,7 @@ async function cargarTelasDisponibles() {
  */
 async function cargarColoresDisponibles() {
     try {
-        const response = await fetch('/asesores/api/colores');
+        const response = await fetch('/api/public/colores');
         const result = await response.json();
         
         if (result.success && result.data) {

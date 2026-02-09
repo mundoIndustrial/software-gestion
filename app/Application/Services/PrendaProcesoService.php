@@ -95,18 +95,46 @@ class PrendaProcesoService
 
                 // Guardar TALLAS en tabla relacional (NUEVO MODELO)
                 if (!empty($proceso['tallas']) && is_array($proceso['tallas'])) {
-                    foreach ($proceso['tallas'] as $genero => $tallasArray) {
-                        if (is_array($tallasArray)) {
-                            foreach ($tallasArray as $talla => $cantidad) {
-                                // Mapear género a mayúscula y validar
-                                $generoNormalizado = strtoupper($genero); // 'dama' -> 'DAMA', etc.
-                                
-                                if (in_array($generoNormalizado, ['DAMA', 'CABALLERO', 'UNISEX'])) {
+                    $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
+
+                    foreach ($proceso['tallas'] as $generoBD => $tallasArray) {
+                        if (!is_array($tallasArray) || empty($tallasArray)) {
+                            continue;
+                        }
+
+                        // CASO ESPECIAL: SOBREMEDIDA
+                        if (strtolower($generoBD) === 'sobremedida') {
+                            // Estructura: {sobremedida: {CABALLERO: 100, DAMA: 50}}
+                            foreach ($tallasArray as $generoParaSobremedida => $cantidad) {
+                                $cantidad = (int)$cantidad;
+                                if ($cantidad > 0) {
+                                    $generoEnum = strtoupper($generoParaSobremedida);
                                     DB::table('pedidos_procesos_prenda_tallas')->insert([
                                         'proceso_prenda_detalle_id' => $procesoDetalleId,
-                                        'genero' => $generoNormalizado,
+                                        'genero' => $generoEnum,
+                                        'talla' => null,
+                                        'cantidad' => $cantidad,
+                                        'es_sobremedida' => true,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+                        } else {
+                            // CASO NORMAL: Género con tallas específicas
+                            $generoEnum = $generoMap[strtolower($generoBD)] ?? null;
+                            if (!$generoEnum) {
+                                continue;
+                            }
+
+                            foreach ($tallasArray as $talla => $cantidad) {
+                                $cantidad = (int)$cantidad;
+                                if ($cantidad > 0) {
+                                    DB::table('pedidos_procesos_prenda_tallas')->insert([
+                                        'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                        'genero' => $generoEnum,
                                         'talla' => (string)$talla,
-                                        'cantidad' => (int)$cantidad,
+                                        'cantidad' => $cantidad,
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);

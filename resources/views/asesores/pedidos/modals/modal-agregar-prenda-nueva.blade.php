@@ -3,8 +3,9 @@
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">
-            <h3 class="modal-title">
-                <span class="material-symbols-rounded">add_box</span>Agregar Prenda Nueva
+            <h3 class="modal-title" id="modal-prenda-titulo">
+                <span class="material-symbols-rounded" id="modal-prenda-icon">add_box</span>
+                <span id="modal-prenda-texto">Agregar Prenda Nueva</span>
             </h3>
             <button class="modal-close-btn" onclick="cerrarModalPrendaNueva()">
                 <span class="material-symbols-rounded">close</span>
@@ -138,7 +139,7 @@
                         <span class="material-symbols-rounded">straighten</span>TALLAS Y CANTIDADES *
                     </label>
                     
-                    <!-- Seleccionar Género(s) -->
+                    <!-- Seleccionar Género(s) o Sobremedida -->
                     <div class="genero-buttons">
                         <!-- Botón DAMA -->
                         <button type="button" id="btn-genero-dama" class="btn-genero" data-selected="false" onclick="abrirModalSeleccionarTallas('dama')">
@@ -156,6 +157,15 @@
                                 <span>CABALLERO</span>
                             </div>
                             <span id="check-caballero" class="btn-genero-check">✓</span>
+                        </button>
+                        
+                        <!-- Botón SOBREMEDIDA -->
+                        <button type="button" id="btn-genero-sobremedida" class="btn-genero" data-selected="false" onclick="abrirModalSobremedida()">
+                            <div class="btn-genero-content">
+                                <span class="material-symbols-rounded">straighten</span>
+                                <span>SOBREMEDIDA</span>
+                            </div>
+                            <span id="check-sobremedida" class="btn-genero-check">✓</span>
                         </button>
                     </div>
                     
@@ -298,3 +308,53 @@
         </div>
     </div>
 </div>
+
+<!-- SCRIPT: Asegurar que la fila de inputs de telas siempre esté disponible en edición -->
+<script>
+/**
+ * Asegurar que la fila de inputs de telas sea siempre visible y funcional
+ * Ejecutar después de que se renderice el modal en modo edición
+ */
+window.asegurarFilaTelasVisible = function() {
+    // Esperar a que el DOM esté listo
+    setTimeout(() => {
+        const tbody = document.getElementById('tbody-telas');
+        if (!tbody) return;
+        
+        const primeraFila = tbody.querySelector('tr:first-child');
+        if (!primeraFila) return;
+        
+        const telasInputRow = primeraFila.querySelector('#nueva-prenda-tela');
+        if (!telasInputRow) return;
+        
+        // Asegurar que la primera fila sea visible
+        primeraFila.style.display = 'table-row';
+        primeraFila.style.visibility = 'visible';
+        primeraFila.style.opacity = '1';
+        
+        // Asegurar que todos los inputs sean interactivos
+        const inputs = primeraFila.querySelectorAll('input, button');
+        inputs.forEach(input => {
+            input.disabled = false;
+            input.style.display = '';
+            input.style.visibility = 'visible';
+            input.style.opacity = '1';
+            input.style.pointerEvents = 'auto';
+        });
+        
+        console.log('[asegurarFilaTelasVisible]  Fila de inputs de telas asegurada como visible y funcional');
+    }, 100);
+};
+
+// Llamar al abrir el modal en modo edición
+if (window.actualizarTablaTelas) {
+    const originalActualizarTablaTelas = window.actualizarTablaTelas;
+    window.actualizarTablaTelas = function() {
+        originalActualizarTablaTelas();
+        // Después de actualizar la tabla, asegurar que la fila sea visible
+        setTimeout(() => {
+            window.asegurarFilaTelasVisible();
+        }, 50);
+    };
+}
+</script>

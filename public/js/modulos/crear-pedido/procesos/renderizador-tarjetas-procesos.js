@@ -346,28 +346,88 @@ window.editarProcesoDesdeModal = function(tipo) {
                 
                 // Inicializar si no existe
                 if (!window.tallasCantidadesProceso) {
-                    window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+                    window.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
                 }
                 
-                // Copiar DAMA
+                if (!window.tallasSeleccionadasProceso) {
+                    window.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: {} };
+                }
+                
+                // Copiar DAMA - PROCESAR CORRECTAMENTE si tiene SOBREMEDIDA anidada
                 if (window.tallasRelacionales.DAMA && Object.keys(window.tallasRelacionales.DAMA).length > 0) {
-                    window.tallasCantidadesProceso.dama = { ...window.tallasRelacionales.DAMA };
+                    window.tallasCantidadesProceso.dama = {};
+                    const tallasDama = [];
+                    
+                    // 🔥 FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
+                    for (const [talla, valor] of Object.entries(window.tallasRelacionales.DAMA)) {
+                        if (talla === 'SOBREMEDIDA') {
+                            // SOBREMEDIDA puede ser:
+                            // 1. Un NÚMERO directo: 344 → significa DAMA sobremedida
+                            // 2. Un OBJETO anidado: {DAMA: 34} → extraer por género
+                            
+                            if (typeof valor === 'number') {
+                                // SOBREMEDIDA como número: es para DAMA (género actual)
+                                window.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
+                            } else if (typeof valor === 'object' && valor !== null) {
+                                // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
+                                for (const [genero, cantidad] of Object.entries(valor)) {
+                                    window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
+                                }
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                            }
+                        } else {
+                            // Otras tallas: copiar directamente
+                            window.tallasCantidadesProceso.dama[talla] = valor;
+                            tallasDama.push(talla);
+                        }
+                    }
+                    window.tallasSeleccionadasProceso.dama = tallasDama;
                     console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas DAMA copiadas al proceso:', window.tallasCantidadesProceso.dama);
                 }
                 
                 // Copiar CABALLERO
                 if (window.tallasRelacionales.CABALLERO && Object.keys(window.tallasRelacionales.CABALLERO).length > 0) {
-                    window.tallasCantidadesProceso.caballero = { ...window.tallasRelacionales.CABALLERO };
+                    window.tallasCantidadesProceso.caballero = {};
+                    const tallasCaballero = [];
+                    
+                    // 🔥 FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
+                    for (const [talla, valor] of Object.entries(window.tallasRelacionales.CABALLERO)) {
+                        if (talla === 'SOBREMEDIDA') {
+                            // SOBREMEDIDA puede ser número o objeto
+                            if (typeof valor === 'number') {
+                                // SOBREMEDIDA como número: es para CABALLERO
+                                window.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                            } else if (typeof valor === 'object' && valor !== null) {
+                                // SOBREMEDIDA anidada: extraer por género
+                                for (const [genero, cantidad] of Object.entries(valor)) {
+                                    window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
+                                }
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                            }
+                        } else {
+                            window.tallasCantidadesProceso.caballero[talla] = valor;
+                            tallasCaballero.push(talla);
+                        }
+                    }
+                    window.tallasSeleccionadasProceso.caballero = tallasCaballero;
                     console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas CABALLERO copiadas al proceso:', window.tallasCantidadesProceso.caballero);
                 }
                 
-                // Sincronizar tallas seleccionadas
-                if (!window.tallasSeleccionadasProceso) {
-                    window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
+                // Copiar UNISEX si existe
+                if (window.tallasRelacionales.UNISEX && Object.keys(window.tallasRelacionales.UNISEX).length > 0) {
+                    window.tallasCantidadesProceso.unisex = { ...window.tallasRelacionales.UNISEX };
+                    window.tallasSeleccionadasProceso.unisex = Object.keys(window.tallasRelacionales.UNISEX);
+                    console.log('[EDITAR-PROCESO-MODAL] ✏️ Tallas UNISEX copiadas al proceso:', window.tallasCantidadesProceso.unisex);
                 }
-                window.tallasSeleccionadasProceso.dama = Object.keys(window.tallasCantidadesProceso.dama || {});
-                window.tallasSeleccionadasProceso.caballero = Object.keys(window.tallasCantidadesProceso.caballero || {});
-                console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', window.tallasSeleccionadasProceso);
+                
+                console.log('[EDITAR-PROCESO-MODAL]  Tallas seleccionadas sincronizadas:', {
+                    dama: window.tallasSeleccionadasProceso.dama,
+                    caballero: window.tallasSeleccionadasProceso.caballero,
+                    unisex: window.tallasSeleccionadasProceso.unisex,
+                    sobremedida: window.tallasCantidadesProceso.sobremedida
+                });
             }
             
             // Renderizar el resumen con las tallas ya aplicadas
@@ -604,25 +664,78 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     // Cargar tallas
     if (datos.tallas && window.tallasSeleccionadasProceso) {
 
-        // Convertir objetos de tallas a arrays de strings
-        const damaTallas = datos.tallas.dama || {};
-        const caballeroTallas = datos.tallas.caballero || {};
+        // Convertir objetos de tallas a arrays de strings para géneros normales
+        let damaTallas = datos.tallas.dama || {};
+        let caballeroTallas = datos.tallas.caballero || {};
+        let sobremedidaTallas = datos.tallas.sobremedida || {};
+        
+        // 🔥 FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada, EXTRAERLA
+        // Estructura incorrecta: {DAMA: {SOBREMEDIDA: {DAMA: 34}}} 
+        // Debe convertirse a: {DAMA: {}} y sobremedidaTallas = {DAMA: 34}
+        
+        // Procesar DAMA
+        const damaTallasLimpias = {};
+        for (const [talla, valor] of Object.entries(damaTallas)) {
+            if (talla === 'SOBREMEDIDA') {
+                // SOBREMEDIDA puede ser número o objeto anidado
+                if (typeof valor === 'number') {
+                    sobremedidaTallas['DAMA'] = valor;
+                    console.log('[cargarDatosProcesoEnModal] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
+                } else if (typeof valor === 'object' && valor !== null) {
+                    for (const [genero, cantidad] of Object.entries(valor)) {
+                        sobremedidaTallas[genero] = cantidad;
+                    }
+                    console.log('[cargarDatosProcesoEnModal] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                }
+            } else {
+                damaTallasLimpias[talla] = valor;
+            }
+        }
+        damaTallas = damaTallasLimpias;
+        
+        // Procesar CABALLERO
+        const caballeroTallasLimpias = {};
+        for (const [talla, valor] of Object.entries(caballeroTallas)) {
+            if (talla === 'SOBREMEDIDA') {
+                // SOBREMEDIDA puede ser número o objeto anidado
+                if (typeof valor === 'number') {
+                    sobremedidaTallas['CABALLERO'] = valor;
+                    console.log('[cargarDatosProcesoEnModal] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                } else if (typeof valor === 'object' && valor !== null) {
+                    for (const [genero, cantidad] of Object.entries(valor)) {
+                        sobremedidaTallas[genero] = cantidad;
+                    }
+                    console.log('[cargarDatosProcesoEnModal] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                }
+            } else {
+                caballeroTallasLimpias[talla] = valor;
+            }
+        }
+        caballeroTallas = caballeroTallasLimpias;
         
         // Extraer solo las claves (tallas) del objeto
         window.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
         window.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
         
+        // SOBREMEDIDA: Es diferente - guardar el objeto completo {DAMA: 34, CABALLERO: 20}
+        if (Object.keys(sobremedidaTallas).length > 0) {
+            window.tallasSeleccionadasProceso.sobremedida = sobremedidaTallas;
+            console.log('[cargarDatosProcesoEnModal] 📐 Sobremedida cargada:', sobremedidaTallas);
+        } else {
+            window.tallasSeleccionadasProceso.sobremedida = null;
+        }
 
         
         // IMPORTANTE: Guardar las cantidades en la estructura del PROCESO (NO en tallasRelacionales)
         // tallasCantidadesProceso: estructura independiente para las cantidades del proceso
         if (!window.tallasCantidadesProceso) {
-            window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
         }
         
         // Poblar con datos del proceso (estructura del PROCESO, no de la PRENDA)
         window.tallasCantidadesProceso.dama = { ...damaTallas };
         window.tallasCantidadesProceso.caballero = { ...caballeroTallas };
+        window.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
         
 
         

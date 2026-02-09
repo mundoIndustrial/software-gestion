@@ -342,17 +342,28 @@ class PedidoProduccionRepository
                             $procTallas = [
                                 'dama' => [],
                                 'caballero' => [],
-                                'unisex' => []
+                                'unisex' => [],
+                                'sobremedida' => []
                             ];
                             
                             // Obtener desde pedidos_procesos_prenda_tallas
                             if ($proc->tallas && $proc->tallas->count() > 0) {
                                 foreach ($proc->tallas as $tallaProceso) {
-                                    $genero = strtolower($tallaProceso->genero ?? 'dama');
-                                    if (!isset($procTallas[$genero])) {
-                                        $procTallas[$genero] = [];
+                                    // CASO ESPECIAL: SOBREMEDIDA
+                                    if ($tallaProceso->es_sobremedida) {
+                                        $genero = strtoupper($tallaProceso->genero ?? 'DAMA');
+                                        if (!isset($procTallas['sobremedida'])) {
+                                            $procTallas['sobremedida'] = [];
+                                        }
+                                        $procTallas['sobremedida'][$genero] = (int)$tallaProceso->cantidad;
+                                    } else {
+                                        // Género normal
+                                        $genero = strtolower($tallaProceso->genero ?? 'dama');
+                                        if (!isset($procTallas[$genero])) {
+                                            $procTallas[$genero] = [];
+                                        }
+                                        $procTallas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
                                     }
-                                    $procTallas[$genero][$tallaProceso->talla] = (int)$tallaProceso->cantidad;
                                 }
                             }
                             
@@ -430,17 +441,64 @@ class PedidoProduccionRepository
                 ];
                 
                 // Construir tallas agrupadas por género
+                \Log::warning('[FACTURA-TALLAS-DEBUG] Procesando tallas de prenda', [
+                    'prenda_id' => $prenda->id,
+                    'prenda_nombre' => $prenda->nombre_prenda,
+                    'tiene_tallas' => !!($prenda->tallas && $prenda->tallas->count() > 0),
+                    'tallas_count' => $prenda->tallas ? $prenda->tallas->count() : 0,
+                    'tallas_raw' => $prenda->tallas ? $prenda->tallas->toArray() : [],
+                ]);
+                
+                // Inicializar generosConTallas que el frontend espera
+                $generosConTallas = [
+                    'DAMA' => [],
+                    'CABALLERO' => [],
+                    'UNISEX' => [],
+                    'SOBREMEDIDA' => []
+                ];
+                
                 if ($prenda->tallas && $prenda->tallas->count() > 0) {
                     foreach ($prenda->tallas as $t) {
-                        $genero = $t->genero ?? 'GENERAL';
-                        if (!isset($prendasFormato['tallas'][$genero])) {
-                            $prendasFormato['tallas'][$genero] = [];
+                        // CASO ESPECIAL: SOBREMEDIDA
+                        if ($t->es_sobremedida) {
+                            if (!isset($prendasFormato['tallas']['SOBREMEDIDA'])) {
+                                $prendasFormato['tallas']['SOBREMEDIDA'] = [];
+                            }
+                            $generoParaSobremedida = strtoupper($t->genero ?? 'DAMA');
+                            $prendasFormato['tallas']['SOBREMEDIDA'][$generoParaSobremedida] = (int)$t->cantidad;
+                            
+                            // Agregar a generosConTallas
+                            $generosConTallas['SOBREMEDIDA'][$generoParaSobremedida] = (int)$t->cantidad;
+                        } else {
+                            // Género normal
+                            $genero = $t->genero ?? 'GENERAL';
+                            if (!isset($prendasFormato['tallas'][$genero])) {
+                                $prendasFormato['tallas'][$genero] = [];
+                            }
+                            $prendasFormato['tallas'][$genero][$t->talla] = (int)$t->cantidad;
+                            
+                            // Agregar a generosConTallas
+                            $generosConTallasClave = strtoupper($genero);
+                            if (!isset($generosConTallas[$generosConTallasClave])) {
+                                $generosConTallas[$generosConTallasClave] = [];
+                            }
+                            $generosConTallas[$generosConTallasClave][$t->talla] = (int)$t->cantidad;
                         }
-                        $prendasFormato['tallas'][$genero][$t->talla] = (int)$t->cantidad;
                     }
                 }
                 
+                // Agregar generosConTallas a prendasFormato
+                $prendasFormato['generosConTallas'] = $generosConTallas;
+                
                 $datos['prendas'][] = $prendasFormato;
+                
+                // LOG FINAL - Verificar estructura de tallas devuelta
+                \Log::warning('[FACTURA-TALLAS-FINAL] Estructura de tallas guardada en response', [
+                    'prenda_nombre' => $prendasFormato['nombre'],
+                    'tallas_estructura' => json_encode($prendasFormato['tallas']),
+                    'tallas_keys' => array_keys($prendasFormato['tallas']),
+                ]);
+                
                 $datos['total_items'] += $cantidadTotal;
             }
 
@@ -508,6 +566,13 @@ class PedidoProduccionRepository
                 }
             } catch (\Exception $e) {
                 \Log::error('[FACTURA] Error procesando EPPs', ['pedido_id' => $pedidoId, 'error' => $e->getMessage()]);
+            }
+
+            // LOG FINAL - Verificar estructura completa antes de devolver
+            if (!empty($datos['prendas'])) {
+                \Log::warning('[FACTURA-JSON-FINAL-PRENDA-COMPLETA] Primera prenda COMPLETA', [
+                    'prenda_completa' => json_encode($datos['prendas'][0]),
+                ]);
             }
 
             return $datos;

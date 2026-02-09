@@ -143,7 +143,8 @@ class PrendaProcesoService
      * {
      *   "dama": { "S": 10, "M": 20 },
      *   "caballero": { "L": 15, "XL": 5 },
-     *   "unisex": { "M": 8 }
+     *   "unisex": { "M": 8 },
+     *   "sobremedida": { "CABALLERO": 100, "DAMA": 50 }
      * }
      */
     private function guardarTallasProceso(int $procesoDetalleId, array $proceso): void
@@ -170,44 +171,81 @@ class PrendaProcesoService
                     continue;
                 }
                 
-                $generoEnum = $generoMap[$generoBD] ?? null;
-                if (!$generoEnum) {
-                    Log::warning(' [guardarTallasProceso] GÃ©nero desconocido', [
-                        'proceso_detalle_id' => $procesoDetalleId,
-                        'genero' => $generoBD,
-                    ]);
-                    continue;
-                }
-                
-                foreach ($tallasCantidades as $talla => $cantidad) {
-                    $cantidad = (int)$cantidad;
-                    
-                    if ($cantidad > 0) {
-                        // Verificar si existe
-                        $existe = DB::table('pedidos_procesos_prenda_tallas')
-                            ->where('proceso_prenda_detalle_id', $procesoDetalleId)
-                            ->where('genero', $generoEnum)
-                            ->where('talla', $talla)
-                            ->exists();
+                // CASO ESPECIAL: SOBREMEDIDA
+                if (strtolower($generoBD) === 'sobremedida') {
+                    // Estructura: {sobremedida: {CABALLERO: 32432, DAMA: 100}}
+                    foreach ($tallasCantidades as $generoParaSobremedida => $cantidad) {
+                        $cantidad = (int)$cantidad;
                         
-                        if ($existe) {
-                            DB::table('pedidos_procesos_prenda_tallas')
+                        if ($cantidad > 0) {
+                            $generoEnum = strtoupper($generoParaSobremedida);
+                            
+                            $existe = DB::table('pedidos_procesos_prenda_tallas')
+                                ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                                ->where('genero', $generoEnum)
+                                ->where('talla', null)
+                                ->where('es_sobremedida', true)
+                                ->exists();
+                            
+                            if ($existe) {
+                                DB::table('pedidos_procesos_prenda_tallas')
+                                    ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                                    ->where('genero', $generoEnum)
+                                    ->where('talla', null)
+                                    ->where('es_sobremedida', true)
+                                    ->update([
+                                        'cantidad' => $cantidad,
+                                        'updated_at' => now(),
+                                    ]);
+                            } else {
+                                DB::table('pedidos_procesos_prenda_tallas')->insert([
+                                    'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                    'genero' => $generoEnum,
+                                    'talla' => null,
+                                    'cantidad' => $cantidad,
+                                    'es_sobremedida' => true,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                        }
+                    }
+                } else {
+                    // CASO NORMAL: Género con tallas
+                    $generoEnum = $generoMap[$generoBD] ?? null;
+                    if (!$generoEnum) {
+                        continue;
+                    }
+                    
+                    foreach ($tallasCantidades as $talla => $cantidad) {
+                        $cantidad = (int)$cantidad;
+                        
+                        if ($cantidad > 0) {
+                            $existe = DB::table('pedidos_procesos_prenda_tallas')
                                 ->where('proceso_prenda_detalle_id', $procesoDetalleId)
                                 ->where('genero', $generoEnum)
                                 ->where('talla', $talla)
-                                ->update([
+                                ->exists();
+                            
+                            if ($existe) {
+                                DB::table('pedidos_procesos_prenda_tallas')
+                                    ->where('proceso_prenda_detalle_id', $procesoDetalleId)
+                                    ->where('genero', $generoEnum)
+                                    ->where('talla', $talla)
+                                    ->update([
+                                        'cantidad' => $cantidad,
+                                        'updated_at' => now(),
+                                    ]);
+                            } else {
+                                DB::table('pedidos_procesos_prenda_tallas')->insert([
+                                    'proceso_prenda_detalle_id' => $procesoDetalleId,
+                                    'genero' => $generoEnum,
+                                    'talla' => $talla,
                                     'cantidad' => $cantidad,
+                                    'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
-                        } else {
-                            DB::table('pedidos_procesos_prenda_tallas')->insert([
-                                'proceso_prenda_detalle_id' => $procesoDetalleId,
-                                'genero' => $generoEnum,
-                                'talla' => $talla,
-                                'cantidad' => $cantidad,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
+                            }
                         }
                     }
                 }

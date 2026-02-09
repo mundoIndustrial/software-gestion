@@ -89,9 +89,18 @@ class MiddlewareGuardadoPrenda {
                     cambios: Object.keys(procesoEditado.cambios)
                 });
 
+                // Determinar la ruta correcta según el rol del usuario
+                let urlPatch = `/api/prendas-pedido/${prendaId}/procesos/${procesoEditado.id}`;
+                
+                // Si tenemos información de que estamos en contexto de supervisor, usar ruta alternativa
+                if (window.usuarioAutenticado && window.usuarioAutenticado.rol === 'supervisor_pedidos') {
+                    urlPatch = `/supervisor-pedidos/${prendaId}/procesos/${procesoEditado.id}`;
+                    console.log('🔄 [MIDDLEWARE-GUARDADO] Usando ruta de supervisor-pedidos:', urlPatch);
+                }
+
                 // Hacer PATCH al servidor
                 const response = await fetch(
-                    `/api/prendas-pedido/${prendaId}/procesos/${procesoEditado.id}`,
+                    urlPatch,
                     {
                         method: 'PATCH',
                         headers: {

@@ -95,11 +95,10 @@ window.agregarTelaNueva = async function() {
     
     // Validación con mensajes en rojo
     let errores = [];
-    if (!color) {
-        errores.push({ campo: 'nueva-prenda-color', mensaje: ' Color es requerido' });
-    }
-    if (!tela) {
-        errores.push({ campo: 'nueva-prenda-tela', mensaje: ' Tela es requerida' });
+    // ✅ MEJORADO: Tela O color (o ambos) son requeridos
+    if (!tela && !color) {
+        errores.push({ campo: 'nueva-prenda-tela', mensaje: ' Se requiere al menos Tela o Color' });
+        errores.push({ campo: 'nueva-prenda-color', mensaje: ' Se requiere al menos Tela o Color' });
     }
     // Referencia es opcional - no se valida
     
@@ -123,89 +122,93 @@ window.agregarTelaNueva = async function() {
         return;
     }
     
-    // Buscar o crear tela en BD
+    // Buscar o crear tela en BD (SOLO SI HAY NOMBRE)
     let telaId = null;
-    const datalistTelas = document.getElementById('opciones-telas');
-    if (datalistTelas) {
-        for (let option of datalistTelas.options) {
-            if (option.value.toUpperCase() === tela) {
-                telaId = parseInt(option.dataset.id);
-                break;
-            }
-        }
-    }
-    
-    // Si no existe, crearla
-    if (!telaId) {
-        try {
-            const response = await fetch('/asesores/api/telas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                },
-                body: JSON.stringify({ nombre: tela, referencia: referencia })
-            });
-            const result = await response.json();
-            if (result.success && result.data) {
-                telaId = result.data.id;
-                
-                // Agregar al datalist
-                if (datalistTelas) {
-                    const newOption = document.createElement('option');
-                    newOption.value = result.data.nombre;
-                    newOption.dataset.id = result.data.id;
-                    newOption.dataset.referencia = result.data.referencia || '';
-                    datalistTelas.appendChild(newOption);
+    if (tela && tela.trim()) {  // ✅ Solo buscar/crear si tela no está vacía
+        const datalistTelas = document.getElementById('opciones-telas');
+        if (datalistTelas) {
+            for (let option of datalistTelas.options) {
+                if (option.value.toUpperCase() === tela) {
+                    telaId = parseInt(option.dataset.id);
+                    break;
                 }
-                
-                console.log('[Telas] Tela creada:', result.data);
             }
-        } catch (error) {
-            console.error('[Telas] Error creando tela:', error);
+        }
+        
+        // Si no existe, crearla
+        if (!telaId) {
+            try {
+                const response = await fetch('/api/public/telas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({ nombre: tela, referencia: referencia })
+                });
+                const result = await response.json();
+                if (result.success && result.data) {
+                    telaId = result.data.id;
+                    
+                    // Agregar al datalist
+                    if (datalistTelas) {
+                        const newOption = document.createElement('option');
+                        newOption.value = result.data.nombre;
+                        newOption.dataset.id = result.data.id;
+                        newOption.dataset.referencia = result.data.referencia || '';
+                        datalistTelas.appendChild(newOption);
+                    }
+                    
+                    console.log('[Telas] Tela creada:', result.data);
+                }
+            } catch (error) {
+                console.error('[Telas] Error creando tela:', error);
+            }
         }
     }
     
-    // Buscar o crear color en BD
+    // Buscar o crear color en BD (SOLO SI COLOR NO ESTÁ VACÍO)
     let colorId = null;
-    const datalistColores = document.getElementById('opciones-colores');
-    if (datalistColores) {
-        for (let option of datalistColores.options) {
-            if (option.value.toUpperCase() === color) {
-                colorId = parseInt(option.dataset.id);
-                break;
+    if (color && color.trim()) {  // ✅ Solo buscar/crear si hay color
+        const datalistColores = document.getElementById('opciones-colores');
+        if (datalistColores) {
+            for (let option of datalistColores.options) {
+                if (option.value.toUpperCase() === color) {
+                    colorId = parseInt(option.dataset.id);
+                    break;
+                }
             }
         }
-    }
-    
-    // Si no existe, crearlo
-    if (!colorId) {
-        try {
-            const response = await fetch('/asesores/api/colores', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                },
-                body: JSON.stringify({ nombre: color })
-            });
-            const result = await response.json();
-            if (result.success && result.data) {
-                colorId = result.data.id;
-                
-                // Agregar al datalist
-                if (datalistColores) {
-                    const newOption = document.createElement('option');
-                    newOption.value = result.data.nombre;
-                    newOption.dataset.id = result.data.id;
-                    newOption.dataset.codigo = result.data.codigo || '';
-                    datalistColores.appendChild(newOption);
+        
+        // Si no existe, crearlo
+        if (!colorId) {
+            try {
+                const response = await fetch('/api/public/colores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({ nombre: color })
+                });
+                const result = await response.json();
+                if (result.success && result.data) {
+                    colorId = result.data.id;
+                    
+                    // Agregar al datalist
+                    if (datalistColores) {
+                        const newOption = document.createElement('option');
+                        newOption.value = result.data.nombre;
+                        newOption.dataset.id = result.data.id;
+                        newOption.dataset.codigo = result.data.codigo || '';
+                        datalistColores.appendChild(newOption);
+                    }
+                    
+                    console.log('[Colores] Color creado:', result.data);
                 }
-                
-                console.log('[Colores] Color creado:', result.data);
+            } catch (error) {
+                console.error('[Colores] Error creando color:', error);
             }
-        } catch (error) {
-            console.error('[Colores] Error creando color:', error);
         }
     }
     
@@ -213,27 +216,65 @@ window.agregarTelaNueva = async function() {
     const imagenesTemporales = window.imagenesTelaStorage.obtenerImagenes();
 
     
-    // Copiar SOLO los File objects y metadatos (NO el previewUrl volátil)
-    const imagenesCopia = imagenesTemporales.map(img => ({
-        file: img.file,  // El File object es permanente
-        nombre: img.nombre,
-        tamaño: img.tamaño
-        // NO copiar previewUrl - crearemos una nueva blob URL cuando sea necesario
-    }));
+    // Copiar archivos E IMPORTANTE: generar previewUrl para que sean válidas en tabla
+    const imagenesCopia = imagenesTemporales.map(img => {
+        let previewUrl = '';
+        
+        // 1. Usar el previewUrl actual si existe (es un blob válido)
+        if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+            previewUrl = img.previewUrl;
+        }
+        // 2. Si no hay blob URL, generar uno del File object
+        else if (img.file instanceof File) {
+            previewUrl = URL.createObjectURL(img.file);
+        }
+        // 3. Si no hay previewUrl, intentar crear uno del objeto
+        else if (img.file) {
+            previewUrl = URL.createObjectURL(img.file);
+        }
+        
+        return {
+            file: img.file,  // El File object es permanente
+            nombre: img.nombre,
+            tamaño: img.tamaño,
+            previewUrl: previewUrl,  // ✅ CRÍTICO: Incluir previewUrl válida
+            url: previewUrl  // Fallback para compatibilidad
+        };
+    });
+    
+    console.log('[guardarTela] 📷 Imágenes copiadas con previewUrl:', {
+        total: imagenesCopia.length,
+        conPreviewUrl: imagenesCopia.filter(i => !!i.previewUrl).length,
+        detalles: imagenesCopia.map(i => ({ 
+            nombre: i.nombre, 
+            tienePreviewUrl: !!i.previewUrl, 
+            tieneFile: !!i.file 
+        }))
+    });
     
     // Agregar a la lista CORRECTA según el modo
     // En EDICIÓN: agregar a window.telasAgregadas (conserva telas de BD + nuevas)
     // En CREACIÓN: agregar a window.telasCreacion
-    const modoEdicion = window.telasAgregadas && window.telasAgregadas.length > 0;
+    // 🔥 FIX: Detectar modo edición igual que en gestion-items-pedido.js
+    const modoEdicion = window.prendaEditIndex !== null && window.prendaEditIndex !== undefined;
+    
+    // Si es edición pero telasAgregadas no existe, inicializarlo
+    if (modoEdicion && !window.telasAgregadas) {
+        window.telasAgregadas = [];
+    }
+    
     const destino = modoEdicion ? window.telasAgregadas : window.telasCreacion;
     
     destino.push({ 
         color, 
         tela, 
         referencia,
-        color_id: colorId,
-        tela_id: telaId,
+        color_id: colorId || 0,
+        tela_id: telaId || 0,
+        nombre: tela,  // Nombre general de la tela
         nombre_tela: tela,  // Normalizar para que sea compatible
+        color_nombre: color,  // ✅ Explícito para el backend
+        tela_nombre: tela,    // ✅ Explícito para el backend
         imagenes: imagenesCopia
     });
     
@@ -337,27 +378,31 @@ window.actualizarTablaTelas = function() {
             const imagenConBlobUrl = telaData.imagenes.map((img) => {
                 let blobUrl;
                 
-                if (img && img.previewUrl) {
+                // 🔥 PRIORIDAD: Para imágenes NUEVAS (urlDesdeDB = false), usar previewUrl
+                if (!img.urlDesdeDB && img.previewUrl) {
                     blobUrl = img.previewUrl;
-                } else if (img && img.file === null && img.tamaño === 0) {
-                    blobUrl = '';
-                } else if (img && img.file instanceof File) {
+                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Usando previewUrl de imagen nueva: ${blobUrl.substring(0, 50)}...`);
+                }
+                // Para imágenes DE BD, usar URL/ruta
+                else if (img.urlDesdeDB && (img.url || img.ruta)) {
+                    blobUrl = img.url || img.ruta;
+                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Usando URL de BD: ${blobUrl}`);
+                }
+                // Fallback: intentar generar blob URL si hay File object
+                else if (img.file instanceof File) {
                     blobUrl = URL.createObjectURL(img.file);
-                } else if (img instanceof File) {
-                    blobUrl = URL.createObjectURL(img);
-                } else if (img && img.blobUrl) {
+                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Generado blob URL del File object`);
+                }
+                // Otros fallback
+                else if (img.previewUrl) {
+                    blobUrl = img.previewUrl;
+                } else if (img.blobUrl) {
                     blobUrl = img.blobUrl;
                 } else if (typeof img === 'string' && img.trim()) {
                     blobUrl = img;
-                } else if (img && img.url && img.url.trim()) {
-                    blobUrl = img.url;
-                } else if (img && img.ruta && img.ruta.trim()) {
-                    // Prioridad: ruta (viene de BD de cotizaciones)
-                    blobUrl = img.ruta;
-                } else if (img && img.ruta_webp && img.ruta_webp.trim()) {
-                    // Si no hay ruta, usar ruta_webp
+                } else if (img.ruta_webp && img.ruta_webp.trim()) {
                     blobUrl = img.ruta_webp;
-                } else if (img && img.ruta_original && img.ruta_original.trim()) {
+                } else if (img.ruta_original && img.ruta_original.trim()) {
                     blobUrl = img.ruta_original;
                 } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);

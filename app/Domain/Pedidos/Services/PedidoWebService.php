@@ -211,16 +211,51 @@ class PedidoWebService
      */
     private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla): void
     {
-        // cantidadTalla: { DAMA: {S: 10, M: 20}, CABALLERO: {...} }
-        foreach ($cantidadTalla as $genero => $tallas) {
-            if (is_array($tallas)) {
-                foreach ($tallas as $talla => $cantidad) {
+        // cantidadTalla puede ser:
+        // 1. Normal: { DAMA: {S: 10, M: 20}, CABALLERO: {...} }
+        // 2. Sobremedida: { SOBREMEDIDA: {CABALLERO: 100, DAMA: 50} }
+        // 3. Mixta: { DAMA: {S: 10}, SOBREMEDIDA: {CABALLERO: 100} }
+        
+        foreach ($cantidadTalla as $generoOEspecial => $contenido) {
+            if (!is_array($contenido) || empty($contenido)) {
+                continue;
+            }
+            
+            // CASO ESPECIAL: SOBREMEDIDA
+            if (strtoupper($generoOEspecial) === 'SOBREMEDIDA') {
+                // Estructura: {SOBREMEDIDA: {CABALLERO: 32432, DAMA: 100}}
+                // generoOEspecial = "SOBREMEDIDA"
+                // contenido = {CABALLERO: 32432, DAMA: 100}
+                
+                foreach ($contenido as $genero => $cantidad) {
                     if ($cantidad > 0) {
                         PrendaPedidoTalla::create([
                             'prenda_pedido_id' => $prenda->id,
-                            'genero' => $genero,
+                            'genero' => strtoupper($genero),  // El género CORRECTO es la clave interna
+                            'talla' => null,                 // Sobremedida no tiene talla específica
+                            'cantidad' => (int)$cantidad,
+                            'es_sobremedida' => true,        // Marcar como sobremedida
+                        ]);
+                    }
+                }
+                
+                Log::info('[PedidoWebService] Sobremedida creada', [
+                    'prenda_id' => $prenda->id,
+                    'generos_sobremedida' => count($contenido),
+                ]);
+            } else {
+                // CASO NORMAL: Género con tallas
+                // Estructura: {DAMA: {S: 10, M: 20}}
+                // generoOEspecial = "DAMA"
+                // contenido = {S: 10, M: 20}
+                
+                foreach ($contenido as $talla => $cantidad) {
+                    if ($cantidad > 0) {
+                        PrendaPedidoTalla::create([
+                            'prenda_pedido_id' => $prenda->id,
+                            'genero' => strtoupper($generoOEspecial),
                             'talla' => $talla,
-                            'cantidad' => $cantidad,
+                            'cantidad' => (int)$cantidad,
                         ]);
                     }
                 }
@@ -341,24 +376,28 @@ class PedidoWebService
                 $colorId = null;
 
                 try {
-                    if (isset($telaData['tela'])) {
+                    // MEJORADO: Buscar tanto en 'tela' como en 'tela_nombre'
+                    $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                    if ($telaNombre) {
                         // Usar ColorTelaService para obtener o crear tela
                         $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
-                        $telaId = $colorTelaService->obtenerOCrearTela($telaData['tela']);
+                        $telaId = $colorTelaService->obtenerOCrearTela($telaNombre);
                         
                         Log::info('[PedidoWebService] 🧵 Tela procesada', [
-                            'tela_nombre' => $telaData['tela'],
+                            'tela_nombre' => $telaNombre,
                             'tela_id' => $telaId,
                         ]);
                     }
 
-                    if (isset($telaData['color'])) {
+                    // MEJORADO: Buscar tanto en 'color' como en 'color_nombre'
+                    $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
+                    if ($colorNombre && !empty($colorNombre)) {
                         // Usar ColorTelaService para obtener o crear color
                         $colorTelaService = app(\App\Application\Services\ColorTelaService::class);
-                        $colorId = $colorTelaService->obtenerOCrearColor($telaData['color']);
+                        $colorId = $colorTelaService->obtenerOCrearColor($colorNombre);
                         
                         Log::info('[PedidoWebService]  Color procesado', [
-                            'color_nombre' => $telaData['color'],
+                            'color_nombre' => $colorNombre,
                             'color_id' => $colorId,
                         ]);
                     }
@@ -370,23 +409,25 @@ class PedidoWebService
                     
                     //  FALLBACK: Buscar directamente en BD si el servicio falla
                     try {
-                        if (isset($telaData['tela']) && !$telaId) {
-                            $tela = TelaPrenda::where('nombre', 'like', '%' . $telaData['tela'] . '%')->first();
+                        $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                        if ($telaNombre && !$telaId) {
+                            $tela = TelaPrenda::where('nombre', 'like', '%' . $telaNombre . '%')->first();
                             if ($tela) {
                                 $telaId = $tela->id;
                                 Log::info('[PedidoWebService] 🧵 Tela encontrada por fallback', [
-                                    'tela_nombre' => $telaData['tela'],
+                                    'tela_nombre' => $telaNombre,
                                     'tela_id' => $telaId,
                                 ]);
                             }
                         }
                         
-                        if (isset($telaData['color']) && !$colorId) {
-                            $color = ColorPrenda::where('nombre', 'like', '%' . $telaData['color'] . '%')->first();
+                        $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
+                        if ($colorNombre && !empty($colorNombre) && !$colorId) {
+                            $color = ColorPrenda::where('nombre', 'like', '%' . $colorNombre . '%')->first();
                             if ($color) {
                                 $colorId = $color->id;
                                 Log::info('[PedidoWebService]  Color encontrado por fallback', [
-                                    'color_nombre' => $telaData['color'],
+                                    'color_nombre' => $colorNombre,
                                     'color_id' => $colorId,
                                 ]);
                             }
@@ -399,78 +440,66 @@ class PedidoWebService
                     }
                 }
 
-                //  MEJORADO: Si solo tiene color pero no tela, buscar tela con mismo nombre
+                //  MEJORADO: Crear tela si solo hay nombre (sin requerir color) - PERO NO crear genérica si solo hay color
+                $telaNombreGeneral = $telaData['nombre'] ?? $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
+                
                 Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Verificando búsqueda de tela', [
                     'colorId' => $colorId,
                     'telaId' => $telaId,
-                    'tiene_nombre' => isset($telaData['nombre']),
-                    'nombre_valor' => $telaData['nombre'] ?? 'NO EXISTE',
-                    'nombre_vacio' => empty($telaData['nombre'] ?? ''),
-                    'tiene_tela_nombre' => isset($telaData['tela_nombre']),
-                    'tela_nombre_valor' => $telaData['tela_nombre'] ?? 'NO EXISTE',
-                    'condicion_colorId' => !empty($colorId),
-                    'condicion_no_telaId' => !$telaId,
-                    'condicion_nombre' => isset($telaData['nombre']),
-                    'condicion_no_vacio' => !empty($telaData['nombre'] ?? ''),
-                    'condicion_completa' => ($colorId && !$telaId && isset($telaData['nombre']) && !empty($telaData['nombre'] ?? ''))
+                    'tiene_nombre_tela' => !empty($telaNombreGeneral),
+                    'nombre_tela_valor' => $telaNombreGeneral ?? 'NO EXISTE',
+                    'condicion_tela_sin_color' => (!$telaId && !empty($telaNombreGeneral))
                 ]);
                 
-                if ($colorId && !$telaId && isset($telaData['nombre']) && !empty($telaData['nombre'])) {
+                // Si no hay telaId pero hay nombre de tela, buscar o crear la tela
+                if (!$telaId && !empty($telaNombreGeneral)) {
                     // Buscar tela con el mismo nombre
-                    $telaExistente = TelaPrenda::where('nombre', 'like', '%' . $telaData['nombre'] . '%')
+                    $telaExistente = TelaPrenda::where('nombre', 'like', '%' . $telaNombreGeneral . '%')
                                                 ->where('activo', true)
                                                 ->first();
                     if ($telaExistente) {
                         $telaId = $telaExistente->id;
                         Log::info('[PedidoWebService] 🧵 Tela encontrada por nombre', [
-                            'tela_nombre_busqueda' => $telaData['nombre'],
+                            'tela_nombre_busqueda' => $telaNombreGeneral,
                             'tela_encontrada' => $telaExistente->nombre,
                             'tela_id' => $telaId,
-                            'color_nombre' => $telaData['color'] ?? 'N/A',
                         ]);
                     } else {
-                        // Si no encuentra tela con ese nombre, buscar la primera activa
-                        $telaPorDefecto = TelaPrenda::where('activo', true)->first();
-                        if ($telaPorDefecto) {
-                            $telaId = $telaPorDefecto->id;
-                            Log::info('[PedidoWebService] 🧵 Tela por defecto usada (no se encontró por nombre)', [
-                                'tela_nombre_busqueda' => $telaData['nombre'],
-                                'tela_por_defecto' => $telaPorDefecto->nombre,
-                                'tela_id' => $telaId,
-                            ]);
-                        } else {
-                            // Crear una tela genérica si no hay ninguna activa
-                            $telaPorDefecto = TelaPrenda::create([
-                                'nombre' => $telaData['nombre'] ?: 'Tela Genérica',
-                                'referencia' => 'GEN-' . time(),
-                                'descripcion' => 'Tela creada automáticamente',
-                                'activo' => true,
-                            ]);
-                            $telaId = $telaPorDefecto->id;
-                            Log::info('[PedidoWebService] 🧵 Tela creada (no existían activas)', [
-                                'tela_nombre' => $telaPorDefecto->nombre,
-                                'tela_id' => $telaId,
-                            ]);
-                        }
+                        // Si no encuentra tela con ese nombre, crear una nueva
+                        $telaPorDefecto = TelaPrenda::create([
+                            'nombre' => $telaNombreGeneral ?: 'Tela Genérica',
+                            'referencia' => 'GEN-' . time(),
+                            'descripcion' => 'Tela creada automáticamente',
+                            'activo' => true,
+                        ]);
+                        $telaId = $telaPorDefecto->id;
+                        Log::info('[PedidoWebService] 🧵 Tela creada (no existía)', [
+                            'tela_nombre' => $telaPorDefecto->nombre,
+                            'tela_id' => $telaId,
+                        ]);
                     }
                 }
 
-                if ($telaId && $colorId) {
+                // Crear registro de tela con color si hay telaId (color es opcional)
+                // ✅ Si solo hay color sin tela → se crea el registro con tela_id = NULL
+                // ✅ Si hay tela con o sin color → se crea el registro
+                if ($telaId || $colorId) {
                     $colorTela = PrendaPedidoColorTela::create([
                         'prenda_pedido_id' => $prenda->id,
-                        'color_id' => $colorId,
-                        'tela_id' => $telaId,
+                        'color_id' => $colorId ?? null,  // Color es opcional
+                        'tela_id' => $telaId ?? null,    // Tela es opcional
                         'referencia' => $telaData['referencia'] ?? null,
                     ]);
                     $telasCreadasCount++;
 
-                    \Log::info('[PedidoWebService] Tela creada (búsqueda)', [
+                    \Log::info('[PedidoWebService] Tela/Color registrado', [
                         'prenda_id' => $prenda->id,
-                        'tela_nombre' => $telaData['tela'] ?? 'N/A',
-                        'color_nombre' => $telaData['color'] ?? 'N/A',
-                        'tela_id' => $telaId,
-                        'color_id' => $colorId,
+                        'tela_nombre' => $telaData['tela'] ?? $telaData['tela_nombre'] ?? 'N/A',
+                        'tela_id' => $telaId ?? null,
+                        'color_nombre' => $telaData['color'] ?? $telaData['color_nombre'] ?? 'N/A',
+                        'color_id' => $colorId ?? null,
                         'referencia' => $telaData['referencia'] ?? null,
+                        'tipo_registro' => !$telaId && $colorId ? 'solo_color' : (!$colorId && $telaId ? 'solo_tela' : 'tela_y_color'),
                     ]);
 
                     //  DESHABILITADO: Imágenes se procesan en CrearPedidoEditableController::procesarYAsignarImagenes()
@@ -763,6 +792,13 @@ class PedidoWebService
 
     /**
      * Crear tallas para un proceso
+     * 
+     * Estructura esperada:
+     * {
+     *   "dama": { "S": 10, "M": 20 },
+     *   "caballero": { "L": 15, "XL": 5 },
+     *   "sobremedida": { "CABALLERO": 100, "DAMA": 50 }
+     * }
      */
     private function crearTallasProceso(PedidosProcesosPrendaDetalle $proceso, array $tallas): void
     {
@@ -772,14 +808,46 @@ class PedidoWebService
         ]);
 
         $tallasCreadas = 0;
+        $generoMap = ['dama' => 'DAMA', 'caballero' => 'CABALLERO', 'unisex' => 'UNISEX'];
 
-        foreach ($tallas as $genero => $tallasCant) {
-            if (is_array($tallasCant)) {
+        foreach ($tallas as $generoBD => $tallasCant) {
+            if (!is_array($tallasCant) || empty($tallasCant)) {
+                continue;
+            }
+
+            // CASO ESPECIAL: SOBREMEDIDA
+            if (strtolower($generoBD) === 'sobremedida') {
+                // Estructura: {sobremedida: {CABALLERO: 100, DAMA: 50}}
+                foreach ($tallasCant as $generoParaSobremedida => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    
+                    if ($cantidad > 0) {
+                        $generoEnum = strtoupper($generoParaSobremedida);
+                        
+                        PedidosProcesosPrendaTalla::create([
+                            'proceso_prenda_detalle_id' => $proceso->id,
+                            'genero' => $generoEnum,
+                            'talla' => null,
+                            'cantidad' => $cantidad,
+                            'es_sobremedida' => true,
+                        ]);
+                        $tallasCreadas++;
+                    }
+                }
+            } else {
+                // CASO NORMAL: Género con tallas específicas
+                $generoEnum = $generoMap[strtolower($generoBD)] ?? null;
+                if (!$generoEnum) {
+                    continue;
+                }
+
                 foreach ($tallasCant as $talla => $cantidad) {
+                    $cantidad = (int)$cantidad;
+                    
                     if ($cantidad > 0) {
                         PedidosProcesosPrendaTalla::create([
                             'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => $genero,
+                            'genero' => $generoEnum,
                             'talla' => $talla,
                             'cantidad' => $cantidad,
                         ]);

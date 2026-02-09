@@ -20,6 +20,7 @@ class PrendaTallaService
      * - Array jerárquico: {'DAMA': {'S': 10, 'M': 20}, 'CABALLERO': {'32': 15}}
      * - Array plano: ['S' => 10, 'M' => 20] (DEFAULT: género UNISEX)
      * - String JSON
+     * - Sobremedida: {'SOBREMEDIDA': {'DAMA': 100, 'CABALLERO': 50}}
      */
     public function guardarTallasPrenda(int $prendaId, mixed $cantidades): void
     {
@@ -29,6 +30,27 @@ class PrendaTallaService
 
             // Parsear según formato
             if (is_array($cantidades)) {
+                // Verificar si incluye SOBREMEDIDA
+                if (isset($cantidades['SOBREMEDIDA']) && is_array($cantidades['SOBREMEDIDA'])) {
+                    // Procesar sobremedida
+                    foreach ($cantidades['SOBREMEDIDA'] as $genero => $cantidad) {
+                        $this->guardarSobremedida($prendaId, (int)$cantidad, strtoupper($genero));
+                    }
+                    
+                    Log::info('[PrendaTallaService] Sobremedida guardada', [
+                        'prenda_id' => $prendaId,
+                        'sobremedida' => $cantidades['SOBREMEDIDA'],
+                    ]);
+                    
+                    // Procesar el resto de las tallas (si existen)
+                    $cantidades = array_diff_key($cantidades, ['SOBREMEDIDA' => null]);
+                    
+                    if (empty($cantidades)) {
+                        // Solo había sobremedida
+                        return;
+                    }
+                }
+                
                 // Verificar si es estructura jerárquica {GENERO: {TALLA: CANTIDAD}}
                 // Indicador: primer valor es array
                 $firstValue = reset($cantidades);
@@ -55,6 +77,15 @@ class PrendaTallaService
                 // Intentar parsear como JSON
                 $parsed = json_decode($cantidades, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                    // Verificar si incluye SOBREMEDIDA
+                    if (isset($parsed['SOBREMEDIDA']) && is_array($parsed['SOBREMEDIDA'])) {
+                        foreach ($parsed['SOBREMEDIDA'] as $genero => $cantidad) {
+                            $this->guardarSobremedida($prendaId, (int)$cantidad, strtoupper($genero));
+                        }
+                        $parsed = array_diff_key($parsed, ['SOBREMEDIDA' => null]);
+                        if (empty($parsed)) return;
+                    }
+                    
                     // Verificar si el JSON es jerárquico
                     $firstValue = reset($parsed);
                     if (is_array($firstValue) && !is_numeric(key($parsed))) {
@@ -112,15 +143,63 @@ class PrendaTallaService
     }
 
     /**
-     * Insertar una talla en la tabla relacional (método helper)
+     * Guardar una entrada de sobremedida (cantidad sin talla específica)
+     * 
+     * La sobremedida es para cantidad genérica que no se asigna a tallas específicas
+     * @param int $prendaId - ID de la prenda
+     * @param int $cantidad - Cantidad total de sobremedida
+     * @param string $genero - Género (DAMA, CABALLERO, UNISEX)
      */
-    private function insertarTalla(int $prendaId, string $talla, int $cantidad, string $genero): void
+    public function guardarSobremedida(int $prendaId, int $cantidad, string $genero = 'UNISEX'): void
+    {
+        if ($cantidad <= 0) {
+            Log::warning('[PrendaTallaService::guardarSobremedida] Cantidad debe ser > 0', [
+                'prenda_id' => $prendaId,
+                'cantidad' => $cantidad,
+            ]);
+            return;
+        }
+
+        try {
+            Log::info('[PrendaTallaService::guardarSobremedida] Guardando sobremedida', [
+                'prenda_id' => $prendaId,
+                'genero' => $genero,
+                'cantidad' => $cantidad,
+            ]);
+
+            $this->insertarTalla($prendaId, null, $cantidad, strtoupper($genero), true);
+
+            Log::info('[PrendaTallaService::guardarSobremedida] Sobremedida guardada', [
+                'prenda_id' => $prendaId,
+                'genero' => $genero,
+                'cantidad' => $cantidad,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[PrendaTallaService::guardarSobremedida] Error guardando sobremedida', [
+                'prenda_id' => $prendaId,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Insertar una talla en la tabla relacional (método helper)
+     * 
+     * @param int $prendaId - ID de la prenda
+     * @param string|null $talla - Nombre de la talla (null para sobremedida)
+     * @param int $cantidad - Cantidad
+     * @param string $genero - Género
+     * @param bool $esSobremedida - Indica si es sobremedida
+     */
+    private function insertarTalla(int $prendaId, ?string $talla, int $cantidad, string $genero, bool $esSobremedida = false): void
     {
         DB::table('prenda_pedido_tallas')->insertOrIgnore([
             'prenda_pedido_id' => $prendaId,
             'genero' => strtoupper($genero),
             'talla' => $talla,
             'cantidad' => max(0, $cantidad),
+            'es_sobremedida' => $esSobremedida,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

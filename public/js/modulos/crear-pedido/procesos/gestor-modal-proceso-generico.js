@@ -11,11 +11,11 @@ let modoActual = 'crear';  // 'crear' o 'editar'
 // NUEVO: Buffer temporal para cambios en EDICIÓN (no se sincroniza hasta GUARDAR CAMBIOS final)
 let cambiosProceso = null;
 
-window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
+window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
 window.ubicacionesProcesoSeleccionadas = [];
 // ESTRUCTURA INDEPENDIENTE: Cantidades de TALLAS DEL PROCESO (NO de la prenda)
-// Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 } }
-window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+// Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 }, sobremedida: { DAMA: 10, CABALLERO: 5 } }
+window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
 
 // Configuración por tipo de proceso
 const procesosConfig = {
@@ -96,8 +96,8 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         // SOLO limpiar variables si NO es edición
         if (!esEdicion) {
             // En CREACIÓN: limpiar todo
-            window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
-            window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+            window.tallasSeleccionadasProceso = { dama: [], caballero: [], sobremedida: null };
+            window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
             
             // Limpiar resumen
             const resumenTallas = document.getElementById('proceso-tallas-resumen');
@@ -116,6 +116,13 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             }
         } else {
             // En EDICIÓN: renderizar lo que ya está cargado
+            // IMPORTANTE: Cargar las tallas del proceso existente en el window
+            const procesoDatos = window.procesosSeleccionados[tipoProceso]?.datos;
+            if (procesoDatos && procesoDatos.tallas) {
+                window.tallasCantidadesProceso = { ...procesoDatos.tallas };
+                console.log(' [EDICIÓN] Tallas del proceso cargadas en tallas CantidadesProceso:', window.tallasCantidadesProceso);
+            }
+            
             if (window.renderizarListaUbicaciones) {
                 window.renderizarListaUbicaciones();
             }
@@ -170,7 +177,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
         
         // PASO 3: Limpiar estructura de tallas del proceso
-        window.tallasCantidadesProceso = { dama: {}, caballero: {} };
+        window.tallasCantidadesProceso = { dama: {}, caballero: {}, sobremedida: {} };
         
     } else if (modoActual === 'editar' && procesoGuardado) {
         console.log('[EDICIÓN] Modal cerrada - cambios en buffer temporal, esperando GUARDAR CAMBIOS final');
@@ -450,26 +457,33 @@ window.aplicarProcesoParaTodasTallas = function() {
     // Extraer solo los nombres para UI (como arrays)
     const tallasPrendaArrays = {
         dama: Object.keys(tallasPrendaConCantidades.dama || {}),
-        caballero: Object.keys(tallasPrendaConCantidades.caballero || {})
+        caballero: Object.keys(tallasPrendaConCantidades.caballero || {}),
+        sobremedida: tallasPrendaConCantidades.sobremedida || null
     };
     
-    if (tallasPrendaArrays.dama.length === 0 && tallasPrendaArrays.caballero.length === 0) {
-        // No hay tallas seleccionadas - mostrar modal de advertencia
+    // Si hay sobremedida, permitir aplicar
+    const hayTallasNormales = tallasPrendaArrays.dama.length > 0 || tallasPrendaArrays.caballero.length > 0;
+    const haySobremedida = tallasPrendaArrays.sobremedida !== null;
+    
+    if (!hayTallasNormales && !haySobremedida) {
+        // No hay tallas ni sobremedida - mostrar modal de advertencia
         mostrarModalAdvertenciaTallas();
         return;
     }
     
-    // Para UI, usamos arrays (nombres de tallas)
+    // Para UI, usamos arrays (nombres de tallas) o sobremedida
     window.tallasSeleccionadasProceso = {
         dama: tallasPrendaArrays.dama,
-        caballero: tallasPrendaArrays.caballero
+        caballero: tallasPrendaArrays.caballero,
+        sobremedida: tallasPrendaArrays.sobremedida
     };
     
     //  IMPORTANTE: Copiar TODAS las cantidades de la prenda al proceso
     // Esto hace que "Aplicar para todas" asigne las cantidades completas de la prenda
     window.tallasCantidadesProceso = {
         dama: { ...tallasPrendaConCantidades.dama } || {},
-        caballero: { ...tallasPrendaConCantidades.caballero } || {}
+        caballero: { ...tallasPrendaConCantidades.caballero } || {},
+        sobremedida: tallasPrendaConCantidades.sobremedida || {}
     };
     
     console.log(' [aplicarProcesoParaTodasTallas] Copiadas todas las tallas de la prenda al proceso:', {
@@ -483,10 +497,10 @@ window.aplicarProcesoParaTodasTallas = function() {
 // Obtener tallas registradas en la prenda del modal
 function obtenerTallasDeLaPrenda() {
     // NUEVO: Leer directamente del modelo relacional window.tallasRelacionales
-    // Estructura: { DAMA: { S: 20, M: 20 }, CABALLERO: { 32: 10 } }
+    // Estructura: { DAMA: { S: 20, M: 20 }, CABALLERO: { 32: 10 }, SOBREMEDIDA: { UNISEX: 100 } }
     const tallasRelacionales = window.tallasRelacionales || { DAMA: {}, CABALLERO: {} };
     
-    const tallas = { dama: {}, caballero: {} };
+    const tallas = { dama: {}, caballero: {}, sobremedida: null };
     
     console.log('[obtenerTallasDeLaPrenda] Leyendo de tallasRelacionales:', tallasRelacionales);
     
@@ -504,6 +518,14 @@ function obtenerTallasDeLaPrenda() {
         console.log('[obtenerTallasDeLaPrenda] Tallas CABALLERO encontradas:', tallas.caballero);
     } else {
         console.log('[obtenerTallasDeLaPrenda] No hay tallas CABALLERO');
+    }
+    
+    // Obtener SOBREMEDIDA si existe
+    if (tallasRelacionales.SOBREMEDIDA && Object.keys(tallasRelacionales.SOBREMEDIDA).length > 0) {
+        tallas.sobremedida = { ...tallasRelacionales.SOBREMEDIDA };
+        console.log('[obtenerTallasDeLaPrenda] Sobremedida encontrada:', tallas.sobremedida);
+    } else {
+        console.log('[obtenerTallasDeLaPrenda] No hay sobremedida');
     }
     
     console.log('[obtenerTallasDeLaPrenda] Resultado final:', tallas);
@@ -550,26 +572,26 @@ function mostrarModalAdvertenciaTallas() {
         </div>
     `;
     
-    console.log('[🔍 MODAL-PROCESO-GENERICO] 📍 Antes de appendChild');
-    console.log('[🔍 MODAL-PROCESO-GENERICO] z-index calculado:', window.getComputedStyle(modal).zIndex);
-    console.log('[🔍 MODAL-PROCESO-GENERICO] Swal2-container z-index:', window.getComputedStyle(document.querySelector('.swal2-container')).zIndex);
+    console.log('[MODAL-ADVERTENCIA-TALLAS] Creando modal');
+    
+    // Agregar seguro a getComputedStyle
+    try {
+        const swal2Container = document.querySelector('.swal2-container');
+        if (swal2Container) {
+            console.log('[MODAL-ADVERTENCIA-TALLAS] z-index swal2:', window.getComputedStyle(swal2Container).zIndex);
+        }
+    } catch (e) {
+        console.log('[MODAL-ADVERTENCIA-TALLAS] Sin swal2-container activo');
+    }
     
     document.body.appendChild(modal);
-    
-    console.log('[🔍 MODAL-PROCESO-GENERICO]  appendChild ejecutado');
-    console.log('[🔍 MODAL-PROCESO-GENERICO] z-index después:', window.getComputedStyle(modal).zIndex);
-    console.log('[🔍 MODAL-PROCESO-GENERICO] display:', window.getComputedStyle(modal).display);
-    console.log('[🔍 MODAL-PROCESO-GENERICO] posición en DOM:', Array.from(document.body.children).indexOf(modal));
-    
     modal.style.display = 'flex';
     
     // Forzar z-index máximo para asegurar que esté encima de todo
     setTimeout(() => {
         modal.style.setProperty('z-index', '9999999999', 'important');
-        console.log('[ MODAL-PROCESO] Z-index forzado en apertura:', window.getComputedStyle(modal).zIndex);
+        console.log('[MODAL-ADVERTENCIA-TALLAS] Modal visible');
     }, 10);
-    
-    console.log('[🔍 MODAL-PROCESO-GENERICO]  Modal visible, display=flex')
 }
 
 // Cerrar modal de advertencia
@@ -596,8 +618,9 @@ window.abrirEditorTallasEspecificas = function() {
     // Validar que haya tallas seleccionadas - son OBJETOS, no arrays
     const tallasDamaArray = Object.keys(tallasPrenda.dama || {});
     const tallasCaballeroArray = Object.keys(tallasPrenda.caballero || {});
+    const haySobremedida = tallasPrenda.sobremedida !== null;
     
-    if (tallasDamaArray.length === 0 && tallasCaballeroArray.length === 0) {
+    if (tallasDamaArray.length === 0 && tallasCaballeroArray.length === 0 && !haySobremedida) {
         mostrarModalAdvertenciaTallas();
         return;
     }
@@ -1276,10 +1299,11 @@ window.actualizarResumenTallasProceso = function() {
     console.log('[actualizarResumenTallasProceso]  window.tallasCantidadesProceso:', window.tallasCantidadesProceso);
     
     const totalTallas = window.tallasSeleccionadasProceso.dama.length + window.tallasSeleccionadasProceso.caballero.length;
-    console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas);
+    const haySobremedida = window.tallasSeleccionadasProceso.sobremedida && Object.keys(window.tallasSeleccionadasProceso.sobremedida).length > 0;
+    console.log('[actualizarResumenTallasProceso] 📈 Total de tallas seleccionadas:', totalTallas, ' | Hay sobremedida:', haySobremedida);
     
-    if (totalTallas === 0) {
-        console.log('[actualizarResumenTallasProceso]  No hay tallas seleccionadas, mostrando placeholder');
+    if (totalTallas === 0 && !haySobremedida) {
+        console.log('[actualizarResumenTallasProceso]  No hay tallas ni sobremedida seleccionadas, mostrando placeholder');
         resumen.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         return;
     }
@@ -1336,6 +1360,37 @@ window.actualizarResumenTallasProceso = function() {
         `;
     }
     
+    // AGREGAR SOBREMEDIDA AL RESUMEN
+    if (haySobremedida && window.tallasCantidadesProceso.sobremedida) {
+        console.log('[actualizarResumenTallasProceso] 📐 Renderizando SOBREMEDIDA:', window.tallasCantidadesProceso.sobremedida);
+        
+        const sobremedidaHTML = Object.entries(window.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
+            console.log(`[actualizarResumenTallasProceso] 📦 SOBREMEDIDA ${genero}: ${cantidad}`);
+            const colorMap = {
+                'DAMA': { bg: '#fce7f3', text: '#be185d' },
+                'CABALLERO': { bg: '#dbeafe', text: '#1d4ed8' },
+                'UNISEX': { bg: '#f3e8ff', text: '#7c3aed' }
+            };
+            const colores = colorMap[genero] || { bg: '#e5e7eb', text: '#374151' };
+            
+            return `<span style="background: ${colores.bg}; color: ${colores.text}; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
+                ${genero}
+                <span style="background: ${colores.text}; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
+            </span>`;
+        }).join('');
+        
+        html += `
+            <div>
+                <strong style="color: #0066cc; margin-bottom: 0.5rem; display: block;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">straighten</span> SOBREMEDIDA
+                </strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${sobremedidaHTML}
+                </div>
+            </div>
+        `;
+    }
+    
     html += '</div>';
     console.log('[actualizarResumenTallasProceso] 🎨 HTML generado (length):', html.length);
     console.log('[actualizarResumenTallasProceso] 🎨 HTML preview:', html.substring(0, 200) + '...');
@@ -1375,7 +1430,8 @@ window.agregarProcesoAlPedido = function() {
             observaciones: document.getElementById('proceso-observaciones')?.value || '',
             tallas: {
                 dama: { ...window.tallasCantidadesProceso?.dama } || {},
-                caballero: { ...window.tallasCantidadesProceso?.caballero } || {}
+                caballero: { ...window.tallasCantidadesProceso?.caballero } || {},
+                sobremedida: { ...window.tallasCantidadesProceso?.sobremedida } || {}
             },
             imagenes: imagenesValidas // Array de imágenes (existentes + nuevas)
         };
