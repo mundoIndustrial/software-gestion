@@ -25,9 +25,9 @@ Broadcast::channel('pedidos.{asesorId}', function ($user, $asesorId) {
 });
 
 /**
- * Canal privado para nuevos pedidos creados (acceso a cartera/supervisores/asesores)
+ * Canal para nuevos pedidos creados (acceso a cartera/supervisores/asesores)
  */
-Broadcast::privateChannel('pedidos.creados', function ($user) {
+Broadcast::channel('pedidos.creados', function ($user) {
     // Permitir acceso a contadores, admins, supervisores y asesores
     return $user && (
         $user->hasRole('contador') || 
@@ -38,9 +38,9 @@ Broadcast::privateChannel('pedidos.creados', function ($user) {
 });
 
 /**
- * Canal privado para pedidos específicos del asesor
+ * Canal para pedidos específicos del asesor
  */
-Broadcast::privateChannel('pedidos.asesor.{asesorId}', function ($user, $asesorId) {
+Broadcast::channel('pedidos.asesor.{asesorId}', function ($user, $asesorId) {
     return (int) $user->id === (int) $asesorId || $user->hasRole('admin');
 });
 
