@@ -24,50 +24,61 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 ### 1. COSTURA
 - **Se genera**: Si `de_bodega = false`
 - **No se genera**: Si `de_bodega = true`
+- **Cantidad**: Un consecutivo por cada prenda que cumpla la condición
 - **Razón**: Las prendas de bodega ya vienen hechas, no necesitan costura
 
 ### 2. ESTAMPADO
 - **Se genera**: Si la prenda tiene proceso de tipo "ESTAMPADO"
-- **Independiente de**: `de_bodega`
+- **Cantidad**: Un consecutivo **por cada prenda** con este proceso
+- **Aplica para**: `de_bodega = true` Y `de_bodega = false`
 - **Razón**: El estampado siempre necesita recibo, sin importar el origen de la prenda
 
 ### 3. BORDADO
 - **Se genera**: Si la prenda tiene proceso de tipo "BORDADO"
-- **Independiente de**: `de_bodega`
+- **Cantidad**: Un consecutivo **por cada prenda** con este proceso
+- **Aplica para**: `de_bodega = true` Y `de_bodega = false`
 - **Razón**: El bordado siempre necesita recibo, sin importar el origen de la prenda
 
 ### 4. DTF (Direct-to-Film)
 - **Se genera**: Si la prenda tiene proceso de tipo "DTF"
-- **Independiente de**: `de_bodega`
+- **Cantidad**: Un consecutivo **por cada prenda** con este proceso
+- **Aplica para**: `de_bodega = true` Y `de_bodega = false`
 - **Propio consecutivo**: Separado de ESTAMPADO y SUBLIMADO
 - **Razón**: DTF requiere su propio proceso y control independiente
 
 ### 5. SUBLIMADO
 - **Se genera**: Si la prenda tiene proceso de tipo "SUBLIMADO"
-- **Independiente de**: `de_bodega`
+- **Cantidad**: Un consecutivo **por cada prenda** con este proceso
+- **Aplica para**: `de_bodega = true` Y `de_bodega = false`
 - **Propio consecutivo**: Separado de ESTAMPADO y DTF
 - **Razón**: Sublimado requiere su propio proceso y control independiente
 
 ### 6. REFLECTIVO
 - **Se genera**: Si la prenda tiene proceso de tipo "REFLECTIVO" **Y** `de_bodega = true`
-- **Independiente de**: N/A (Depende de `de_bodega`)
+- **NO se genera**: Si `de_bodega = false`
+- **Cantidad**: Un consecutivo **por cada prenda** que cumpla las condiciones
 - **Razón**: El reflectivo solo necesita recibo cuando la prenda es de bodega
 
 ##  Tabla de Decisiones
 
 | de_bodega | Procesos | COSTURA | ESTAMPADO | BORDADO | DTF | SUBLIMADO | REFLECTIVO | Total Consecutivos |
 |-----------|----------|---------|-----------|---------|-----|-----------|------------|-------------------|
-| false | Ninguno |  | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
-| false | Estampado |  |  | ❌ | ❌ | ❌ | ❌ | 2 |
-| false | DTF |  | ❌ | ❌ |  | ❌ | ❌ | 2 |
-| false | Sublimado |  | ❌ | ❌ | ❌ |  | ❌ | 2 |
-| false | Bordado, Reflectivo |  | ❌ |  | ❌ | ❌ | ❌ | 3 |
-| false | Estampado, DTF, Sublimado |  |  | ❌ |  |  | ❌ | 4 |
+| false | Ninguno | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
+| false | Estampado | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | 2 |
+| false | DTF | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | 2 |
+| false | Sublimado | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | 2 |
+| false | Bordado, Reflectivo | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | 2 (Reflectivo NO genera) |
+| false | Estampado, DTF, Sublimado | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | 4 |
 | true | Ninguno | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0 |
-| true | Estampado | ❌ |  | ❌ | ❌ | ❌ | ❌ | 1 |
-| true | DTF | ❌ | ❌ | ❌ |  | ❌ | ❌ | 1 |
-| true | Sublimado | ❌ | ❌ | ❌ | ❌ |  | ❌ | 1 |
-| true | Bordado, Reflectivo | ❌ | ❌ |  | ❌ | ❌ |  | 2 |
+| true | Estampado | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | 1 |
+| true | DTF | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | 1 |
+| true | Sublimado | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | 1 |
+| true | Bordado, Reflectivo | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | 2 |
+
+⚠️ **IMPORTANTE**: 
+- Cada proceso genera **UN consecutivo por cada prenda** que lo tenga.
+- **REFLECTIVO** es el único proceso que requiere `de_bodega = true`.
+- **BORDADO, ESTAMPADO, DTF, SUBLIMADO** generan consecutivo independientemente de `de_bodega`.
 
 ## 🔄 Flujo de Generación
 
@@ -164,11 +175,9 @@ foreach ($tiposPorPrenda as $prendaId => $tipos) {
 - Verificación previa: `yaTieneConsecutivos()`
 - Solo se ejecuta una vez por pedido
 
-## 📈 Ejemplos Prácticos
-
-### Ejemplo 1: Pedido Mixto
+## 📈 Ejemplos Prácticos con Múltiples Procesos
 ```
-Pedido #123456
+Pedido #123456 (3 prendas)
 ├── Prenda 1: Camisa (de_bodega=false, procesos=Bordado,Estampado)
 │   └── Consecutivos: COSTURA + BORDADO + ESTAMPADO = 3
 ├── Prenda 2: Polo (de_bodega=true, procesos=Bordado)
@@ -178,24 +187,38 @@ Pedido #123456
 Total: 4 consecutivos
 ```
 
-### Ejemplo 2: Solo Prendas de Bodega
+### Ejemplo 2: Múltiples Prendas con el Mismo Proceso
 ```
-Pedido #123457
+Pedido #123457 (3 prendas)
 ├── Prenda 1: Polo (de_bodega=true, procesos=Estampado)
 │   └── Consecutivos: ESTAMPADO = 1
-└── Prenda 2: Gorra (de_bodega=true, procesos=ninguno)
+├── Prenda 2: Camisa (de_bodega=true, procesos=Estampado)
+│   └── Consecutivos: ESTAMPADO = 1
+└── Prenda 3: Gorra (de_bodega=true, procesos=Estampado)
+    └── Consecutivos: ESTAMPADO = 1
+Total: 3 consecutivos (1 ESTAMPADO por cada prenda)(de_bodega=true, procesos=ninguno)
     └── Consecutivos: 0
 Total: 1 consecutivo
 ```
 
-### Ejemplo 3: Solo Prendas de Producción
+### Ejemplo 3: Prendas de Producción con Reflectivo
 ```
 Pedido #123458
 ├── Prenda 1: Camisa (de_bodega=false, procesos=ninguno)
 │   └── Consecutivos: COSTURA = 1
 └── Prenda 2: Pantalón (de_bodega=false, procesos=Reflectivo)
-    └── Consecutivos: COSTURA = 1 (REFLECTIVO no se genera porque de_bodega=false)
+    └── Consecutivos: COSTURA = 1 (REFLECTIVO NO se genera porque de_bodega=false)
 Total: 2 consecutivos
+```
+
+### Ejemplo 4: Prendas de Producción con Bordado
+```
+Pedido #123459
+├── Prenda 1: Camisa (de_bodega=false, procesos=Bordado)
+│   └── Consecutivos: COSTURA + BORDADO = 2
+└── Prenda 2: Pantalón (de_bodega=false, procesos=Estampado,DTF)
+    └── Consecutivos: COSTURA + ESTAMPADO + DTF = 3
+Total: 5 consecutivos
 ```
 
 ##  Implementación Técnica

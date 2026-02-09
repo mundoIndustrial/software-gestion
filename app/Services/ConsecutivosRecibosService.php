@@ -196,8 +196,7 @@ class ConsecutivosRecibosService
             }
         }
 
-        // Para ESTAMPADO, BORDADO, REFLECTIVO: se generan solo una vez por pedido
-        $procesosPorPedido = [];
+        // Para ESTAMPADO, BORDADO, REFLECTIVO, DTF, SUBLIMADO: se generan por cada prenda que tenga el proceso
         foreach ($pedidoCompleto->prendas as $prenda) {
             foreach ($prenda->procesos as $proceso) {
                 // Obtener el nombre del tipo de proceso desde la relación
@@ -211,51 +210,38 @@ class ConsecutivosRecibosService
                     $nombreTipoProceso = strtoupper(trim($tipoDirecto->nombre ?? ''));
                 }
                 
-                // Mapear tipos de proceso a tipos de recibo (solo una vez por pedido)
+                // Mapear tipos de proceso a tipos de recibo (uno por cada prenda)
                 switch ($nombreTipoProceso) {
                     case 'BORDADO':
-                        if (!isset($procesosPorPedido['BORDADO'])) {
-                            $procesosPorPedido['BORDADO'] = true;
-                            $tiposRecibo['BORDADO'] = [
-                                'tipo_recibo' => 'BORDADO',
-                                'prenda_pedido_id' => $prenda->id
-                            ];
-                        }
+                        $tiposRecibo["BORDADO_{$prenda->id}"] = [
+                            'tipo_recibo' => 'BORDADO',
+                            'prenda_pedido_id' => $prenda->id
+                        ];
                         break;
                     case 'ESTAMPADO':
-                        if (!isset($procesosPorPedido['ESTAMPADO'])) {
-                            $procesosPorPedido['ESTAMPADO'] = true;
-                            $tiposRecibo['ESTAMPADO'] = [
-                                'tipo_recibo' => 'ESTAMPADO',
-                                'prenda_pedido_id' => $prenda->id
-                            ];
-                        }
+                        $tiposRecibo["ESTAMPADO_{$prenda->id}"] = [
+                            'tipo_recibo' => 'ESTAMPADO',
+                            'prenda_pedido_id' => $prenda->id
+                        ];
                         break;
                     case 'DTF':
-                        if (!isset($procesosPorPedido['DTF'])) {
-                            $procesosPorPedido['DTF'] = true;
-                            $tiposRecibo['DTF'] = [
-                                'tipo_recibo' => 'DTF',
-                                'prenda_pedido_id' => $prenda->id
-                            ];
-                        }
+                        $tiposRecibo["DTF_{$prenda->id}"] = [
+                            'tipo_recibo' => 'DTF',
+                            'prenda_pedido_id' => $prenda->id
+                        ];
                         break;
                     case 'SUBLIMADO':
-                        if (!isset($procesosPorPedido['SUBLIMADO'])) {
-                            $procesosPorPedido['SUBLIMADO'] = true;
-                            $tiposRecibo['SUBLIMADO'] = [
-                                'tipo_recibo' => 'SUBLIMADO',
-                                'prenda_pedido_id' => $prenda->id
-                            ];
-                        }
+                        $tiposRecibo["SUBLIMADO_{$prenda->id}"] = [
+                            'tipo_recibo' => 'SUBLIMADO',
+                            'prenda_pedido_id' => $prenda->id
+                        ];
                         break;
                     case 'REFLECTIVO':
-                        // REFLECTIVO se genera para la primera prenda de bodega
-                        if ($prenda->de_bodega && !isset($procesosPorPedido['REFLECTIVO'])) {
-                            $procesosPorPedido['REFLECTIVO'] = true;
-                            $tiposRecibo['REFLECTIVO'] = [
+                        // REFLECTIVO: un consecutivo por cada prenda con de_bodega = true
+                        if ($prenda->de_bodega) {
+                            $tiposRecibo["REFLECTIVO_{$prenda->id}"] = [
                                 'tipo_recibo' => 'REFLECTIVO',
-                                'prenda_pedido_id' => $prenda->id  // Asignar el prenda_id
+                                'prenda_pedido_id' => $prenda->id
                             ];
                         }
                         break;

@@ -13,6 +13,12 @@ class ItemAPIService {
     constructor(options = {}) {
         this.baseUrl = options.baseUrl || '/asesores/pedidos-editable';
         this.csrfToken = options.csrfToken || this.obtenerCSRFToken();
+        
+        // ✅ Registro global de archivos File por UID
+        if (!window._fileRegistry) {
+            window._fileRegistry = new Map();
+        }
+        this.fileRegistry = window._fileRegistry;
     }
 
     /**
@@ -125,6 +131,10 @@ class ItemAPIService {
             console.log('[validarPedido]  Prendas:', pedidoData.prendas?.length || 0);
             console.log('[validarPedido]  EPPs:', pedidoData.epps?.length || 0);
             
+            // ✅ PASO 0: Registrar todos los archivos File con sus UIDs ANTES de serializar
+            console.debug('[validarPedido] 🗂️ Registrando archivos File en fileRegistry...');
+            this.registrarArchivosEnGlobal(pedidoData);
+            
             // PASO 1: Serializar JSON directamente (ya viene bien formado desde recolectarDatosPedido)
             const jsonString = JSON.stringify(pedidoData);
             console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
@@ -141,10 +151,16 @@ class ItemAPIService {
             });
             
             console.debug('[validarPedido] Respuesta:', respuesta);
+            
+            // ℹ️ NO limpiar registry aquí porque crearPedido() necesita los archivos
+            // El registry se limpiará después de crearPedido()
+            
             return respuesta;
             
         } catch (error) {
             console.error('[validarPedido]  Error:', error);
+            // ⚠️ Limpiar registry en caso de error de validación
+            this.limpiarFileRegistry();
             throw error;
         }
     }
@@ -338,11 +354,16 @@ class ItemAPIService {
                 pedido_id: resultado.pedido_id,
                 numero_pedido: resultado.numero_pedido
             });
+            
+            // ✅ Limpiar registry después de envío exitoso
+            this.limpiarFileRegistry();
 
             return resultado;
 
         } catch (error) {
             console.error('[crearPedido]  Error final:', error);
+            // ⚠️ Limpiar registry también en caso de error
+            this.limpiarFileRegistry();
             throw error;
         }
     }
@@ -673,6 +694,18 @@ class ItemAPIService {
                             });
                             estructura.archivosMap[formdataKey] = img;
                             console.debug(`[extraerFiles] Prenda[${prendaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${item.uid || 'N/A'})`);
+                        } else if (img.file && img.file.uid && this.fileRegistry.has(img.file.uid)) {
+                            // ✅ RECUPERAR File desde el registro global por UID
+                            const fileOriginal = this.fileRegistry.get(img.file.uid);
+                            console.log(`[extraerFiles] 🔄 Recuperando File desde registry para uid:`, img.file.uid);
+                            const formdataKey = `prendas[${prendaIdx}][imagenes][${imgIdx}]`;
+                            prendaData.imagenes.push({
+                                file: fileOriginal,
+                                formdata_key: formdataKey,
+                                uid: img.uid || item.uid || null
+                            });
+                            estructura.archivosMap[formdataKey] = fileOriginal;
+                            console.debug(`[extraerFiles] ✅ File recuperado: ${fileOriginal.name} (key: ${formdataKey})`);
                         } else if (img.ruta && typeof img.ruta === 'string') {
                             // 🔄 CONVERTIR IMAGEN DE COTIZACIÓN A FILE
                             console.log(`[extraerFiles] 🔄 Convirtiendo imagen de prenda con ruta:`, img.ruta);
@@ -722,6 +755,18 @@ class ItemAPIService {
                                     });
                                     estructura.archivosMap[formdataKey] = img;
                                     console.debug(`[extraerFiles] Prenda[${prendaIdx}].telas[${telaIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${tela.uid || 'N/A'})`);
+                                } else if (img.file && img.file.uid && this.fileRegistry.has(img.file.uid)) {
+                                    // ✅ RECUPERAR File desde el registro global por UID
+                                    const fileOriginal = this.fileRegistry.get(img.file.uid);
+                                    console.log(`[extraerFiles] 🔄 Recuperando File de tela desde registry para uid:`, img.file.uid);
+                                    const formdataKey = `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`;
+                                    prendaData.telas[telaIdx].push({
+                                        file: fileOriginal,
+                                        formdata_key: formdataKey,
+                                        uid: img.uid || tela.uid || null
+                                    });
+                                    estructura.archivosMap[formdataKey] = fileOriginal;
+                                    console.debug(`[extraerFiles] ✅ File de tela recuperado: ${fileOriginal.name}`);
                                 } else if (img.ruta && typeof img.ruta === 'string') {
                                     // 🔄 CONVERTIR IMAGEN DE COTIZACIÓN A FILE
                                     const promise = this.convertirImagenDeCotizacionAFile(img, `prendas[${prendaIdx}][telas][${telaIdx}][imagenes][${imgIdx}]`, prendaData.telas[telaIdx], estructura.archivosMap, tela.uid);
@@ -760,6 +805,18 @@ class ItemAPIService {
                                 });
                                 estructura.archivosMap[formdataKey] = img;
                                 console.debug(`[extraerFiles] Prenda[${prendaIdx}].procesos[${procesoKey}][imagenes][${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${img.uid || 'N/A'})`);
+                            } else if (img.file && img.file.uid && this.fileRegistry.has(img.file.uid)) {
+                                // ✅ RECUPERAR File desde el registro global por UID
+                                const fileOriginal = this.fileRegistry.get(img.file.uid);
+                                console.log(`[extraerFiles] 🔄 Recuperando File de proceso desde registry para uid:`, img.file.uid);
+                                const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
+                                prendaData.procesos[procesoKey].push({
+                                    file: fileOriginal,
+                                    formdata_key: formdataKey,
+                                    uid: img.uid || null
+                                });
+                                estructura.archivosMap[formdataKey] = fileOriginal;
+                                console.debug(`[extraerFiles] ✅ File de proceso recuperado: ${fileOriginal.name}`);
                             } else if (img && (typeof img === 'string' || (typeof img === 'object' && (img.ruta || img.url)))) {
                                 //  CRÍTICO: Convertir URLs de cotización a File objects
                                 const formdataKey = `prendas[${prendaIdx}][procesos][${procesoKey}][imagenes][${imgIdx}]`;
@@ -797,6 +854,18 @@ class ItemAPIService {
                             });
                             estructura.archivosMap[formdataKey] = img;
                             console.debug(`[extraerFiles] EPP[${eppIdx}].imagenes[${imgIdx}] = ${img.name} (key: ${formdataKey}, uid: ${epp.uid || 'N/A'})`);
+                        } else if (img.file && img.file.uid && this.fileRegistry.has(img.file.uid)) {
+                            // ✅ RECUPERAR File desde el registro global por UID
+                            const fileOriginal = this.fileRegistry.get(img.file.uid);
+                            console.log(`[extraerFiles] 🔄 Recuperando File de EPP desde registry para uid:`, img.file.uid);
+                            const formdataKey = `epps[${eppIdx}][imagenes][${imgIdx}]`;
+                            eppData.imagenes.push({
+                                file: fileOriginal,
+                                formdata_key: formdataKey,
+                                uid: img.uid || epp.uid || null
+                            });
+                            estructura.archivosMap[formdataKey] = fileOriginal;
+                            console.debug(`[extraerFiles] ✅ File de EPP recuperado: ${fileOriginal.name}`);
                         }
                     });
                 }
@@ -1077,6 +1146,124 @@ class ItemAPIService {
             });
             // No lanzar el error, solo loguearlo para que continúe el proceso
         }
+    }
+    
+    /**
+     * Registrar todos los archivos File con sus UIDs en el registro global
+     * Esto previene la pérdida de archivos durante JSON.stringify
+     * @private
+     */
+    registrarArchivosEnGlobal(pedidoData) {
+        let contadorArchivos = 0;
+        
+        // Registrar imágenes de prendas
+        if (pedidoData.prendas && Array.isArray(pedidoData.prendas)) {
+            pedidoData.prendas.forEach((prenda, pIdx) => {
+                // Imágenes de prenda
+                if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
+                    prenda.imagenes.forEach((img, imgIdx) => {
+                        if (img instanceof File) {
+                            const uid = `file-prenda-${pIdx}-img-${imgIdx}-${Date.now()}`;
+                            this.fileRegistry.set(uid, img);
+                            // Reemplazar File con objeto que tiene UID
+                            prenda.imagenes[imgIdx] = { file: { uid: uid }, uid: uid };
+                            contadorArchivos++;
+                        } else if (img.file instanceof File) {
+                            const uid = `file-prenda-${pIdx}-img-${imgIdx}-${Date.now()}`;
+                            this.fileRegistry.set(uid, img.file);
+                            img.file = { uid: uid };
+                            if (!img.uid) img.uid = uid;
+                            contadorArchivos++;
+                        }
+                    });
+                }
+                
+                // Imágenes de telas
+                if (prenda.telas && Array.isArray(prenda.telas)) {
+                    prenda.telas.forEach((tela, tIdx) => {
+                        if (tela.imagenes && Array.isArray(tela.imagenes)) {
+                            tela.imagenes.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    const uid = `file-tela-${pIdx}-${tIdx}-img-${imgIdx}-${Date.now()}`;
+                                    this.fileRegistry.set(uid, img);
+                                    tela.imagenes[imgIdx] = { file: { uid: uid }, uid: uid };
+                                    contadorArchivos++;
+                                } else if (img.file instanceof File) {
+                                    const uid = `file-tela-${pIdx}-${tIdx}-img-${imgIdx}-${Date.now()}`;
+                                    this.fileRegistry.set(uid, img.file);
+                                    img.file = { uid: uid };
+                                    if (!img.uid) img.uid = uid;
+                                    contadorArchivos++;
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Imágenes de procesos
+                if (prenda.procesos && typeof prenda.procesos === 'object') {
+                    Object.entries(prenda.procesos).forEach(([procesoKey, proceso]) => {
+                        const imagenesProceso = proceso.datos?.imagenes || proceso.imagenes;
+                        if (imagenesProceso && Array.isArray(imagenesProceso)) {
+                            imagenesProceso.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    const uid = `file-proceso-${procesoKey}-${pIdx}-img-${imgIdx}-${Date.now()}`;
+                                    this.fileRegistry.set(uid, img);
+                                    const newImgObj = { file: { uid: uid }, uid: uid };
+                                    if (proceso.datos?.imagenes) {
+                                        proceso.datos.imagenes[imgIdx] = newImgObj;
+                                    } else {
+                                        proceso.imagenes[imgIdx] = newImgObj;
+                                    }
+                                    contadorArchivos++;
+                                } else if (img.file instanceof File) {
+                                    const uid = `file-proceso-${procesoKey}-${pIdx}-img-${imgIdx}-${Date.now()}`;
+                                    this.fileRegistry.set(uid, img.file);
+                                    img.file = { uid: uid };
+                                    if (!img.uid) img.uid = uid;
+                                    contadorArchivos++;
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Registrar imágenes de EPPs
+        if (pedidoData.epps && Array.isArray(pedidoData.epps)) {
+            pedidoData.epps.forEach((epp, eIdx) => {
+                if (epp.imagenes && Array.isArray(epp.imagenes)) {
+                    epp.imagenes.forEach((img, imgIdx) => {
+                        if (img instanceof File) {
+                            const uid = `file-epp-${eIdx}-img-${imgIdx}-${Date.now()}`;
+                            this.fileRegistry.set(uid, img);
+                            epp.imagenes[imgIdx] = { file: { uid: uid }, uid: uid };
+                            contadorArchivos++;
+                        } else if (img.file instanceof File) {
+                            const uid = `file-epp-${eIdx}-img-${imgIdx}-${Date.now()}`;
+                            this.fileRegistry.set(uid, img.file);
+                            img.file = { uid: uid };
+                            if (!img.uid) img.uid = uid;
+                            contadorArchivos++;
+                        }
+                    });
+                }
+            });
+        }
+        
+        console.log(`[registrarArchivosEnGlobal] ✅ ${contadorArchivos} archivos registrados en fileRegistry`);
+    }
+    
+    /**
+     * Limpiar el registro de archivos para liberar memoria
+     * Debe llamarse después de cada envío exitoso o error
+     * @public
+     */
+    limpiarFileRegistry() {
+        const cantidadAntes = this.fileRegistry.size;
+        this.fileRegistry.clear();
+        console.log(`[limpiarFileRegistry] 🧹 Registry limpiado: ${cantidadAntes} archivos liberados`);
     }
 }
 
