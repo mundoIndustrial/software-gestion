@@ -25,6 +25,20 @@ Broadcast::channel('pedidos.{asesorId}', function ($user, $asesorId) {
 });
 
 /**
+ * Canal para nuevos pedidos creados (acceso a cartera/supervisores/asesores)
+ */
+Broadcast::channel('pedidos.creados', function ($user) {
+    return $user && ($user->hasRole(['contador', 'admin', 'supervisor']) || $user->hasRole('asesor'));
+});
+
+/**
+ * Canal para pedidos específicos del asesor
+ */
+Broadcast::channel('pedidos.asesor.{asesorId}', function ($user, $asesorId) {
+    return (int) $user->id === (int) $asesorId || $user->hasRole('admin');
+});
+
+/**
  * Canales de Bodega - Detalles (privados)
  * Permite que usuarios autenticados en bodega se suscriban a actualizaciones de detalles
  */

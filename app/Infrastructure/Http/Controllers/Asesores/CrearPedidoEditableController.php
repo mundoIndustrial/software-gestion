@@ -23,6 +23,7 @@ use App\Application\Services\ColorTelaService;
 use App\Domain\Pedidos\DTOs\PedidoNormalizadorDTO;
 use App\Domain\Pedidos\Services\ResolutorImagenesService;
 use App\Domain\Pedidos\Services\MapeoImagenesService;
+use App\Events\PedidoCreado;
 
 /**
  * CrearPedidoEditableController
@@ -734,6 +735,9 @@ class CrearPedidoEditableController extends Controller
                 ],
                 'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
             ]);
+
+            // Dispatchear evento en tiempo real para que otros usuarios reciban el nuevo pedido
+            PedidoCreado::dispatch($pedido, Auth::user());
 
             return response()->json([
                 'success' => true,

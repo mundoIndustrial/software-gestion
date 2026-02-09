@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Configurar auto-refresh cada 5 minutos
   setInterval(cargarPedidos, 5 * 60 * 1000);
+  
+  // Configurar WebSockets en tiempo real para nuevos pedidos
+  configurarWebSocketsPedidos();
 });
 
 // ===== CARGA DE PEDIDOS =====
@@ -598,6 +601,77 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     toast.style.animation = 'slideOutRight 0.3s ease-out forwards';
     setTimeout(() => toast.remove(), 300);
   }, 5000);
+}
+
+// ===== WEBSOCKETS EN TIEMPO REAL PARA NUEVOS PEDIDOS =====
+/**
+ * Configura los listeners de Echo para recibir nuevos pedidos en tiempo real
+ * Se suscribe al canal 'pedidos.creados' para escuchar el evento 'pedido.creado'
+ */
+function configurarWebSocketsPedidos() {
+  // Verificar que Echo esté disponible
+  if (typeof window.Echo === 'undefined') {
+    console.warn('⚠️ [CarteraPedidos] Echo no está disponible. WebSockets desactivados.');
+    return;
+  }
+
+  console.log('🔌 [CarteraPedidos] Intentando conectar a WebSockets...');
+
+  try {
+    // Escuchar en el canal público 'pedidos.creados'
+    window.Echo.channel('pedidos.creados')
+      .listen('pedido.creado', (event) => {
+        console.log('📨 [CarteraPedidos] Nuevo pedido recibido en tiempo real:', event);
+        
+        // Recargar la tabla de pedidos para mostrar el nuevo
+        cargarPedidos();
+        
+        // Mostrar notificación al usuario
+        mostrarNotificacion('Nuevo Pedido', `Se ha creado un nuevo pedido: ${event.pedido.numero_pedido}`, 'success');
+      })
+      .error((error) => {
+        console.error('❌ [CarteraPedidos] Error al suscribirse al canal pedidos.creados:', error);
+      });
+
+    console.log('✅ [CarteraPedidos] WebSockets configurado exitosamente');
+  } catch (error) {
+    console.error('❌ [CarteraPedidos] Error configurando WebSockets:', error);
+  }
+}
+
+/**
+ * Mostrar notificación simple al usuario
+ */
+function mostrarNotificacion(titulo, mensaje, tipo = 'info') {
+  const container = document.getElementById('toastContainer') || createToastContainer();
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${tipo}`;
+  toast.innerHTML = `
+    <div class="toast-content">
+      <strong>${titulo}</strong>
+      <p>${mensaje}</p>
+    </div>
+  `;
+  
+  container.appendChild(toast);
+  
+  // Auto-remover después de 5 segundos
+  setTimeout(() => {
+    toast.style.animation = 'slideOutRight 0.3s ease-out forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
+/**
+ * Crear el contenedor de notificaciones si no existe
+ */
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.id = 'toastContainer';
+  container.className = 'toast-container';
+  document.body.appendChild(container);
+  return container;
 }
 
 // ===== CIERRE DE MODALES CON ESC =====
