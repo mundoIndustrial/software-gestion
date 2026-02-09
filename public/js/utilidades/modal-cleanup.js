@@ -504,6 +504,10 @@ class ModalCleanup {
     static prepararParaEditar(prendaIndex) {
 
         
+        // 🔥 IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
+        // Esto permite que limpiarFormulario() sepa que estamos en modo edición
+        window.prendaEditIndex = prendaIndex;
+        
         // NO limpiar storages en modo edición - se cargarán los datos de la prenda
         // Solo limpiar formulario e inputs
         this.limpiarFormulario();
@@ -512,8 +516,18 @@ class ModalCleanup {
         // NO limpiar contenedores en modo edición - se cargarán los datos de la prenda
         // this.limpiarContenedores();
         
-        // Establecer índice de edición
-        window.prendaEditIndex = prendaIndex;
+        // 🔥 CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
+        // Cuando editamos una prenda que fue agregada desde creación, telasCreacion podría tener datos viejos
+        if (window.telasCreacion) {
+            window.telasCreacion.length = 0;
+            console.log('🔄 [prepararParaEditar] telasCreacion limpiado para modo edición');
+        }
+        
+        // 🔥 CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
+        if (!window.telasAgregadas) {
+            window.telasAgregadas = [];
+            console.log('🔄 [prepararParaEditar] telasAgregadas inicializado como array vacío');
+        }
         
         // 🔥 Cargar opciones de telas y colores para las datalist
         if (typeof window.cargarTelasDisponibles === 'function') {

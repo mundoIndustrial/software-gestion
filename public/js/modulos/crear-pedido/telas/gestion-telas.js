@@ -332,27 +332,99 @@ window.actualizarTablaTelas = function() {
         return;
     }
     
-    // Limpiar tbody excepto la fila de inputs (la primera fila)
-    const filas = Array.from(tbody.querySelectorAll('tr'));
-    filas.forEach((fila, index) => {
-        if (index > 0) {
-            fila.remove();
+    // 🔥 CRÍTICO: Asegurar que la fila de inputs SIEMPRE existe
+    // Verificar si existe la fila de entrada (la que tiene los inputs)
+    let filaEntrada = tbody.querySelector('tr:first-child');
+    const tieneInputs = filaEntrada && filaEntrada.querySelector('#nueva-prenda-tela');
+    
+    if (!tieneInputs) {
+        console.warn('[actualizarTablaTelas] ⚠️ Fila de entrada NO encontrada, recreando...');
+        // Recrear SOLO la fila de entrada con todos los inputs
+        const html = `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 0.5rem; width: 20%;">
+                    <input type="text" id="nueva-prenda-tela" placeholder="TELA..." class="form-input" list="opciones-telas" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                    <datalist id="opciones-telas"></datalist>
+                </td>
+                <td style="padding: 0.5rem; width: 20%;">
+                    <input type="text" id="nueva-prenda-color" placeholder="COLOR..." class="form-input" list="opciones-colores" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                    <datalist id="opciones-colores"></datalist>
+                </td>
+                <td style="padding: 0.5rem; width: 20%;">
+                    <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
+                </td>
+                <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
+                    <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
+                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
+                    </button>
+                    <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                    <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px;"></div>
+                </td>
+                <td style="padding: 0.5rem; text-align: center; width: 20%;">
+                    <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
+                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>Agregar
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML = html;
+        console.log('[actualizarTablaTelas] ✅ Fila de entrada recreada exitosamente');
+    } else {
+        // La fila de entrada existe, solo limpiar las filas de telas
+        console.log('[actualizarTablaTelas] ✓ Fila de entrada ya existe, limpiando filas de telas agregadas');
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+        // Eliminar todas EXCEPTO la primera (que tiene los inputs)
+        for (let i = filas.length - 1; i > 0; i--) {
+            filas[i].remove();
         }
+    }
+    
+    // 🔥 CRITERIO DE SELECCIÓN: Detectar modo edición PRIMERO
+    const enModoEdicion = window.prendaEditIndex !== null && window.prendaEditIndex !== undefined;
+    
+    console.log('[actualizarTablaTelas] 🔍 Contexto:',  {
+        enModoEdicion: enModoEdicion,
+        prendaEditIndex: window.prendaEditIndex,
+        telasAgregadas_length: window.telasAgregadas?.length || 0,
+        telasCreacion_length: window.telasCreacion?.length || 0,
+        telasEdicion_length: window.telasEdicion?.length || 0
     });
     
-    // Detectar modo: CREACIÓN o EDICIÓN
-    const telasParaMostrar = (window.telasAgregadas && window.telasAgregadas.length > 0) 
-        ? window.telasAgregadas 
-        : (window.telasEdicion && window.telasEdicion.length > 0)
-            ? window.telasEdicion
-            : window.telasCreacion;
+    let telasParaMostrar = [];
+    let fuente = '';
     
+    if (enModoEdicion) {
+        telasParaMostrar = window.telasAgregadas || [];
+        fuente = 'telasAgregadas (EDICIÓN)';
+    } else {
+        if (window.telasAgregadas && window.telasAgregadas.length > 0) {
+            telasParaMostrar = window.telasAgregadas;
+            fuente = 'telasAgregadas (LEGACY)';
+        } else if (window.telasEdicion && window.telasEdicion.length > 0) {
+            telasParaMostrar = window.telasEdicion;
+            fuente = 'telasEdicion';
+        } else {
+            telasParaMostrar = window.telasCreacion || [];
+            fuente = 'telasCreacion (CREACIÓN)';
+        }
+    }
+    
+    console.log(`[actualizarTablaTelas] 📦 Usando ${fuente}:`, {
+        cantidad: telasParaMostrar.length,
+        datos: telasParaMostrar.map((t, i) => ({ 
+            index: i, 
+            nombre: t.nombre_tela || t.tela,
+            color: t.color
+        }))
+    });
+    
+    // 🔥 SI NO HAY TELAS, la tabla solo tiene la fila de entrada (que ya está ahí)
     if (!telasParaMostrar || telasParaMostrar.length === 0) {
+        console.log('[actualizarTablaTelas] ℹ️ Sin telas agregadas - mostrando solo fila de entrada');
         return;
     }
 
-    //  OPTIMIZACIÓN 1: Usar DocumentFragment para batch rendering
-    // Esto evita un reflow por cada appendChild()
+    // Usar DocumentFragment para batch rendering
     const fragment = document.createDocumentFragment();
     
     telasParaMostrar.forEach((telaData, index) => {
@@ -361,15 +433,11 @@ window.actualizarTablaTelas = function() {
         const color = telaData.color || telaData.color_nombre || '(Sin color)';
         const referencia = telaData.referencia || telaData.tela_referencia || '';
         
-        // DEBUG: Log detallado para depurar referencias
         console.log(`[actualizarTablaTelas] 📋 Procesando tela ${index} para mostrar:`, {
             nombre_tela,
             color,
             referencia: `"${referencia}"`,
-            referencia_original: telaData.referencia,
-            referencia_alternativa: telaData.tela_referencia,
-            origen: telaData.origen || 'desconocido',
-            todos_los_campos: Object.keys(telaData)
+            origen: telaData.origen || 'desconocido'
         });
         
         // Crear celda de imágenes
@@ -378,22 +446,15 @@ window.actualizarTablaTelas = function() {
             const imagenConBlobUrl = telaData.imagenes.map((img) => {
                 let blobUrl;
                 
-                // 🔥 PRIORIDAD: Para imágenes NUEVAS (urlDesdeDB = false), usar previewUrl
                 if (!img.urlDesdeDB && img.previewUrl) {
                     blobUrl = img.previewUrl;
-                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Usando previewUrl de imagen nueva: ${blobUrl.substring(0, 50)}...`);
                 }
-                // Para imágenes DE BD, usar URL/ruta
                 else if (img.urlDesdeDB && (img.url || img.ruta)) {
                     blobUrl = img.url || img.ruta;
-                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Usando URL de BD: ${blobUrl}`);
                 }
-                // Fallback: intentar generar blob URL si hay File object
                 else if (img.file instanceof File) {
                     blobUrl = URL.createObjectURL(img.file);
-                    console.log(`[actualizarTablaTelas] ✅ [Tela ${index}] Generado blob URL del File object`);
                 }
-                // Otros fallback
                 else if (img.previewUrl) {
                     blobUrl = img.previewUrl;
                 } else if (img.blobUrl) {
@@ -407,7 +468,6 @@ window.actualizarTablaTelas = function() {
                 } else if (img instanceof Blob) {
                     blobUrl = URL.createObjectURL(img);
                 } else {
-                    // DEBUG para encontrar imágenes sin ruta
                     console.warn(`[actualizarTablaTelas] ⚠️ Imagen sin ruta válida en tela ${index}:`, img);
                     blobUrl = '';
                 }
@@ -415,12 +475,7 @@ window.actualizarTablaTelas = function() {
                 return { ...img, previewUrl: blobUrl };
             });
             
-            // DEBUG: Mostrar qué se extrajo de cada imagen
-            console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas:`, {
-                total_imagenes: imagenConBlobUrl.length,
-                primera_imagen_blob: imagenConBlobUrl[0]?.previewUrl || 'VACÍA',
-                imagenes_con_url: imagenConBlobUrl.filter(i => i.previewUrl).length
-            });
+            console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
             
             imagenHTML = `
                 <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
@@ -450,12 +505,12 @@ window.actualizarTablaTelas = function() {
             </td>
         `;
         
-        // Agregar al fragment (sin reflow todavía)
         fragment.appendChild(tr);
     });
     
-    //  UN SOLO REFLOW: Agregar todo el fragment de una vez
+    // Agregar todas las filas al tbody
     tbody.appendChild(fragment);
+    console.log(`[actualizarTablaTelas] ✅ Tabla actualizada con ${telasParaMostrar.length} telas`);
 };
 
 /**
@@ -518,15 +573,83 @@ window.eliminarTela = function(index, event) {
         e.stopPropagation();
         confirmModal.remove();
 
-        // Eliminar según el modo (EDICIÓN o CREACIÓN)
-        // Soporta ambas variables: telasAgregadas (modo edición actual) y telasEdicion (legacy)
-        if (window.telasAgregadas && window.telasAgregadas.length > 0) {
-            window.telasAgregadas.splice(index, 1);
-        } else if (window.telasEdicion && window.telasEdicion.length > 0) {
-            window.telasEdicion.splice(index, 1);
+        // 🔥 CRITERIO DE SELECCIÓN MEJORADO: Determinar cuál variable usar
+        // SI: Estamos en modo EDICIÓN (prendaEditIndex existe)
+        // ENTONCES: Usar SIEMPRE window.telasAgregadas
+        // SINO: Usar telasCreacion (modo creación)
+        
+        const enModoEdicion = window.prendaEditIndex !== null && window.prendaEditIndex !== undefined;
+        
+        console.log('[eliminarTela] 🔍 Contexto:', {
+            enModoEdicion: enModoEdicion,
+            prendaEditIndex: window.prendaEditIndex,
+            telasAgregadas_existe: !!window.telasAgregadas,
+            telasAgregadas_length: window.telasAgregadas?.length || 0,
+            telasCreacion_existe: !!window.telasCreacion,
+            telasCreacion_length: window.telasCreacion?.length || 0,
+            telasEdicion_existe: !!window.telasEdicion,
+            telasEdicion_length: window.telasEdicion?.length || 0,
+            index: index
+        });
+        
+        let arrayAModificar = null;
+        let nombreArray = '';
+        
+        // LÓGICA DE SELECCIÓN
+        if (enModoEdicion) {
+            // EN MODO EDICIÓN: SIEMPRE usar telasAgregadas
+            if (!window.telasAgregadas) {
+                window.telasAgregadas = [];
+                console.warn('[eliminarTela] ⚠️ telasAgregadas no existía, inicializado como array vacío');
+            }
+            arrayAModificar = window.telasAgregadas;
+            nombreArray = 'telasAgregadas (EDICIÓN)';
+            console.log('[eliminarTela] 📦 MODO EDICIÓN: Usando telasAgregadas');
         } else {
-            window.telasCreacion.splice(index, 1);
+            // EN MODO CREACIÓN: Usar telasCreacion como predeterminado
+            // Pero si telasAgregadas tiene datos, usarlo (puede ser legacy)
+            if (window.telasAgregadas && window.telasAgregadas.length > 0) {
+                arrayAModificar = window.telasAgregadas;
+                nombreArray = 'telasAgregadas (LEGACY)';
+                console.log('[eliminarTela] 📦 MODO CREACIÓN: Usando telasAgregadas (legacy con datos)');
+            } else if (window.telasEdicion && window.telasEdicion.length > 0) {
+                arrayAModificar = window.telasEdicion;
+                nombreArray = 'telasEdicion';
+                console.log('[eliminarTela] 📦 MODO CREACIÓN: Usando telasEdicion');
+            } else {
+                // Fallback a telasCreacion
+                if (!window.telasCreacion) {
+                    window.telasCreacion = [];
+                    console.warn('[eliminarTela] ⚠️ telasCreacion no existía, inicializado como array vacío');
+                }
+                arrayAModificar = window.telasCreacion;
+                nombreArray = 'telasCreacion';
+                console.log('[eliminarTela] 📦 MODO CREACIÓN: Usando telasCreacion');
+            }
         }
+        
+        // Verificar que el array existe y tieneélementos antes de eliminar
+        if (arrayAModificar && arrayAModificar.length > index) {
+            const telaEliminada = arrayAModificar[index];
+            console.log(`[eliminarTela] 🗑️ Eliminando tela index ${index} de ${nombreArray}:`, {
+                nombre_tela: telaEliminada.nombre_tela,
+                color: telaEliminada.color,
+                arrayAntes: arrayAModificar.length,
+                arrayDespues: arrayAModificar.length - 1
+            });
+            
+            arrayAModificar.splice(index, 1);
+            
+            console.log(`[eliminarTela] ✅ Tela eliminada correctamente. Array ahora tiene ${arrayAModificar.length} telas`);
+        } else {
+            console.error('[eliminarTela] ❌ ERROR: No se puede eliminar, index inválido o array vacío', {
+                arrayLength: arrayAModificar?.length || 0,
+                index: index,
+                nombreArray: nombreArray
+            });
+        }
+        
+        // Actualizar tabla
         actualizarTablaTelas();
     };
     botones.appendChild(btnConfirmar);
