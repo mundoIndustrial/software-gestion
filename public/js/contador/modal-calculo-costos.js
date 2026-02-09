@@ -19,6 +19,9 @@ if (!document.getElementById('swal-high-z-index-style')) {
 // Variable global para rastrear la prenda actual
 let prendaActualIndex = 0;
 
+// Lista de prendas del modal (incluye prenda_cot_id real)
+let prendasModalActuales = [];
+
 // Almacenamiento temporal de costos de todas las prendas
 let costosTodasPrendas = {};
 
@@ -31,6 +34,7 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
     // Guardar cotización ID para guardar después
     window.cotizacionIdActual = cotizacionId;
     prendaActualIndex = 0;
+    prendasModalActuales = [];
     
     // Limpiar memoria de costos al abrir el modal
     costosTodasPrendas = {};
@@ -51,6 +55,7 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
                     const tecnicasPrendaArray = data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas 
                         ? data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
                         : [];
+                    const esPrendaLogo = tecnicasPrendaArray && tecnicasPrendaArray.length > 0;
                     
                     if (tecnicasPrendaArray && tecnicasPrendaArray.length > 0) {
                         // Consolidar ubicaciones por técnica
@@ -109,13 +114,18 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
                         }
                     }
                     
+                    const nombreBase = prenda.nombre_prenda || `Prenda ${index + 1}`;
                     return {
-                        id: index,
-                        nombre: prenda.nombre_prenda || `Prenda ${index + 1}`,
+                        id: prenda.id,
+                        nombre_base: nombreBase,
+                        nombre: esPrendaLogo ? `${nombreBase} - logo` : nombreBase,
+                        es_logo: esPrendaLogo,
                         descripcion: descripcionCompleta || prenda.descripcion_formateada || prenda.descripcion || ''
                     };
                 });
             }
+
+            prendasModalActuales = prendas;
             
             if (prendas.length === 0) {
                 alert('No se encontraron prendas en esta cotización');
@@ -143,12 +153,15 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
                     letter-spacing: 0.3px;
                 `;
                 tab.textContent = prenda.nombre;
+                // Guardar nombre base para que el guardado/carga de costos no dependa del sufijo visual "- logo"
+                tab.dataset.nombreBase = prenda.nombre_base || prenda.nombre;
+                tab.dataset.prendaCotId = String(prenda.id);
                 tab.onclick = () => cambiarPrendaTab(prenda.id, prendas);
                 tabsContainer.appendChild(tab);
             });
             
             // Mostrar primera prenda
-            window.cambiarPrendaTab(0, prendas);
+            window.cambiarPrendaTab(prendas[0].id, prendas);
             
             // Inicializar tabla vacía
             window.limpiarTablaPrecios();
@@ -198,7 +211,8 @@ window.cambiarPrendaTab = function(prendaId, prendas) {
     limpiarTablaPrecios();
     
     // Cargar costos guardados de esta prenda si existen
-    cargarCostosPrendaDesdeMemoria(prendaActualIndex);
+    const prendaActual = prendas[prendaActualIndex];
+    cargarCostosPrendaDesdeMemoria(prendaActual ? prendaActual.id : null);
 }
 
 /**
@@ -215,7 +229,8 @@ window.guardarCostosPrendaActual = function() {
             const item = inputs[0].value.trim();
             const precio = parseFloat(inputs[1].value) || 0;
             
-            if (item && precio > 0) {
+            // Guardar el item aunque el precio esté vacío (se guarda como 0)
+            if (item) {
                 items.push({ item, precio });
             }
         }
@@ -224,10 +239,19 @@ window.guardarCostosPrendaActual = function() {
     // Guardar en el objeto global si hay items
     if (items.length > 0) {
         const prendasTabs = document.querySelectorAll('#prendasTabs button');
-        const nombrePrenda = prendasTabs[prendaActualIndex]?.textContent.trim() || `Prenda ${prendaActualIndex}`;
+        const tabActual = prendasTabs[prendaActualIndex];
+        const prendaCotId = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
+        if (!prendaCotId) {
+            return;
+        }
+
+        const nombrePrenda = tabActual?.dataset?.nombreBase?.trim() ||
+            tabActual?.textContent.trim() ||
+            `Prenda ${prendaActualIndex}`;
         const descripcion = document.getElementById('prendasDescripcion').textContent.trim();
         
-        costosTodasPrendas[prendaActualIndex] = {
+        costosTodasPrendas[prendaCotId] = {
+            prenda_cot_id: prendaCotId,
             nombre: nombrePrenda,
             descripcion: descripcion,
             items: items
@@ -236,16 +260,21 @@ window.guardarCostosPrendaActual = function() {
 
     } else {
         // Si no hay items, eliminar de la memoria
-        delete costosTodasPrendas[prendaActualIndex];
+        const prendasTabs = document.querySelectorAll('#prendasTabs button');
+        const tabActual = prendasTabs[prendaActualIndex];
+        const prendaCotId = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
+        if (prendaCotId) {
+            delete costosTodasPrendas[prendaCotId];
+        }
     }
 }
 
 /**
  * Carga los costos de una prenda desde la memoria temporal
  */
-function cargarCostosPrendaDesdeMemoria(prendaIndex) {
-    if (costosTodasPrendas[prendaIndex]) {
-        const costos = costosTodasPrendas[prendaIndex];
+function cargarCostosPrendaDesdeMemoria(prendaCotId) {
+    if (prendaCotId && costosTodasPrendas[prendaCotId]) {
+        const costos = costosTodasPrendas[prendaCotId];
         const body = document.getElementById('tablaPreciosBody');
         body.innerHTML = '';
         
@@ -398,18 +427,9 @@ window.cargarItemsGuardados = function(cotizacionId) {
                 
                 // Cargar todos los costos en la memoria temporal
                 data.costos.forEach(costoPrenda => {
-                    // Buscar el índice de la prenda por nombre
-                    let prendaIndex = -1;
-                    prendasTabs.forEach((tab, idx) => {
-                        const nombreTab = tab.textContent.trim();
-                        if (nombreTab === costoPrenda.nombre_prenda || 
-                            nombreTab.includes(costoPrenda.nombre_prenda) ||
-                            costoPrenda.nombre_prenda.includes(nombreTab)) {
-                            prendaIndex = idx;
-                        }
-                    });
+                    const prendaCotId = costoPrenda.prenda_cot_id ? parseInt(costoPrenda.prenda_cot_id, 10) : null;
                     
-                    if (prendaIndex !== -1 && costoPrenda.items) {
+                    if (prendaCotId && costoPrenda.items) {
                         // Parsear items si es string
                         let items = costoPrenda.items;
                         if (typeof items === 'string') {
@@ -417,18 +437,20 @@ window.cargarItemsGuardados = function(cotizacionId) {
                         }
                         
                         // Guardar en memoria temporal
-                        costosTodasPrendas[prendaIndex] = {
+                        costosTodasPrendas[prendaCotId] = {
+                            prenda_cot_id: prendaCotId,
                             nombre: costoPrenda.nombre_prenda,
                             descripcion: '',
                             items: items
                         };
                         
-
                     }
                 });
                 
                 // Cargar los costos de la prenda actual (primera prenda)
-                cargarCostosPrendaDesdeMemoria(prendaActualIndex);
+                const tabActual = prendasTabs[prendaActualIndex];
+                const prendaCotIdActual = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
+                cargarCostosPrendaDesdeMemoria(prendaCotIdActual);
             }
         })
         .catch(error => {

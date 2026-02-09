@@ -27,7 +27,7 @@ class CostoPrendaController extends Controller
             $prendasCotizacion = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
 
             // Guardar los nuevos costos (actualizar o crear)
-            foreach ($costos as $prendaIndex => $costoPrenda) {
+            foreach ($costos as $prendaKey => $costoPrenda) {
                 if (isset($costoPrenda['items']) && !empty($costoPrenda['items'])) {
                     // Calcular total
                     $total = 0;
@@ -35,8 +35,21 @@ class CostoPrendaController extends Controller
                         $total += floatval($item['precio'] ?? 0);
                     }
 
-                    // Obtener la prenda correspondiente por índice
-                    $prendaCot = $prendasCotizacion->get($prendaIndex);
+                    $prendaCotId = null;
+                    if (isset($costoPrenda['prenda_cot_id']) && $costoPrenda['prenda_cot_id']) {
+                        $prendaCotId = intval($costoPrenda['prenda_cot_id']);
+                    } elseif (is_numeric($prendaKey)) {
+                        $prendaCotId = intval($prendaKey);
+                    }
+
+                    $prendaCot = null;
+                    if ($prendaCotId) {
+                        $prendaCot = $prendasCotizacion->firstWhere('id', $prendaCotId);
+                    }
+
+                    if (!$prendaCot && is_numeric($prendaKey)) {
+                        $prendaCot = $prendasCotizacion->get(intval($prendaKey));
+                    }
                     
                     if ($prendaCot) {
                         // Buscar si ya existe un costo para esta prenda

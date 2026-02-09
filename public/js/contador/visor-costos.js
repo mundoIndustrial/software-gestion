@@ -102,6 +102,10 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
                     color: (prenda.variantes && prenda.variantes[0]) ? prenda.variantes[0].color : '',
                     tela: (prenda.telas && prenda.telas[0]) ? prenda.telas[0].nombre_tela : '',
                     tela_referencia: (prenda.telas && prenda.telas[0]) ? prenda.telas[0].referencia : '',
+                    telas_info: (Array.isArray(prenda.telas) ? prenda.telas : []).map(t => ({
+                        nombre_tela: t?.nombre_tela || '',
+                        referencia: t?.referencia || ''
+                    })).filter(t => (t.nombre_tela || '').trim() !== '' || (t.referencia || '').trim() !== ''),
                     manga_nombre: (prenda.variantes && prenda.variantes[0]) ? prenda.variantes[0].tipo_manga_nombre : ''
                 };
             });
@@ -303,6 +307,12 @@ function generarTabsPrendas() {
     
 
     
+    const esPrendaLogoPorId = (prendaId) => {
+        const tecnicas = visorCostosActual?.cotizacionData?.logo_cotizacion?.tecnicas_prendas;
+        if (!tecnicas || !Array.isArray(tecnicas) || !prendaId) return false;
+        return tecnicas.some(tp => tp.prenda_id === prendaId);
+    };
+
     visorCostosActual.prendas.forEach((prenda, idx) => {
         const tab = document.createElement('button');
         tab.setAttribute('data-prenda-tab', idx);
@@ -315,7 +325,10 @@ function generarTabsPrendas() {
             nombrePrenda = `Prenda ${idx + 1}`;
         }
         
-        tab.textContent = nombrePrenda;
+        // Aplicar sufijo "- logo" si la prenda corresponde a técnicas de logo
+        const esLogo = esPrendaLogoPorId(prenda.id);
+        const nombreBase = (nombrePrenda || '').trim();
+        tab.textContent = esLogo && !/\s-\slogo\s*$/i.test(nombreBase) ? `${nombreBase} - logo` : nombreBase;
         tab.style.cssText = `
             padding: 12px 24px;
             background: ${idx === 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#6b7280'};
@@ -379,7 +392,15 @@ function mostrarPrendaVisor(indice) {
     // Construir detalles en una línea compacta
     let detallesLinea = [];
     if (detalles.color) detallesLinea.push(`<strong>Color:</strong> ${detalles.color}`);
-    if (detalles.tela) {
+    if (detalles.telas_info && Array.isArray(detalles.telas_info) && detalles.telas_info.length > 0) {
+        const telasHtml = detalles.telas_info.map(t => {
+            const nombre = (t.nombre_tela || '').trim();
+            const ref = (t.referencia || '').trim();
+            const label = ref ? `${nombre} (Ref: ${ref})` : nombre;
+            return `<span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; background: #e5e7eb; color: #111827; font-weight: 600; font-size: 0.78rem; white-space: nowrap;">${label}</span>`;
+        }).join(' ');
+        detallesLinea.push(`<strong>Telas:</strong> <span style="display: inline-flex; gap: 6px; flex-wrap: wrap; vertical-align: middle;">${telasHtml}</span>`);
+    } else if (detalles.tela) {
         const tela = detalles.tela_referencia ? `${detalles.tela} (Ref: ${detalles.tela_referencia})` : detalles.tela;
         detallesLinea.push(`<strong>Tela:</strong> ${tela}`);
     }
@@ -390,19 +411,43 @@ function mostrarPrendaVisor(indice) {
     
     // DETECTAR SI ES COTIZACIÓN COMBINADA (tiene logo_cotizacion)
     const esCotizacionCombinada = visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion;
-    
-    // En cotizaciones combinadas, SOLO mostrar imágenes de prenda
+    const tecnicas = visorCostosActual?.cotizacionData?.logo_cotizacion?.tecnicas_prendas;
+    const esPrendaLogo = Array.isArray(tecnicas) ? tecnicas.some(tp => tp.prenda_id === prenda.id) : false;
+
+    // En cotizaciones combinadas:
+    // - Si la prenda es de logo: mostrar imágenes de logo
+    // - Si no: mostrar imágenes de prenda
     if (esCotizacionCombinada) {
-        // Recolectar SOLO imágenes de prenda
-        if (detalles.fotos && detalles.fotos.length > 0) {
-            detalles.fotos.forEach((foto, idx) => {
-                imagenesParaMostrar.push({
-                    grupo: 'Prenda',
-                    url: foto,
-                    titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
-                    color: '#1e5ba8'
+        if (esPrendaLogo) {
+            const urlsLogoAgregadas = new Set();
+            if (Array.isArray(tecnicas)) {
+                tecnicas.forEach(tp => {
+                    if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                        tp.fotos.forEach((foto) => {
+                            if (foto.url && !urlsLogoAgregadas.has(foto.url)) {
+                                urlsLogoAgregadas.add(foto.url);
+                                imagenesParaMostrar.push({
+                                    grupo: 'Imagen - Logo',
+                                    url: foto.url,
+                                    titulo: 'Imagen - Logo',
+                                    color: '#1e5ba8'
+                                });
+                            }
+                        });
+                    }
                 });
-            });
+            }
+        } else {
+            if (detalles.fotos && detalles.fotos.length > 0) {
+                detalles.fotos.forEach((foto, idx) => {
+                    imagenesParaMostrar.push({
+                        grupo: 'Prenda',
+                        url: foto,
+                        titulo: `${detalles.nombre_prenda || 'Prenda'} ${idx + 1}`,
+                        color: '#1e5ba8'
+                    });
+                });
+            }
         }
     } else {
         // En cotizaciones normales, mostrar todas las imágenes
@@ -480,12 +525,12 @@ function mostrarPrendaVisor(indice) {
             <!-- Sección Detalles Compacta -->
             <div style="margin-bottom: 1.5rem; margin-top: 0.5rem;">
                 <!-- Línea de atributos -->
-                <div style="color: #333; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; height: 1.5rem;">
+                <div style="color: #333; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; height: 1.5rem; position: relative; top: 22px;">
                     ${detallesLinea.join(' | ')}
                 </div>
                 
                 <!-- Descripción Concatenada según tipo de cotización -->
-                ${detalles.descripcion_formateada ? `<div id="descripcionPrenda" style="color: #333; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;">${detalles.descripcion_formateada.replace(/\n/g, '<br>')}</div>` : '<div id="descripcionPrenda" style="color: #999; font-size: 0.9rem;">Sin descripción</div>'}
+                ${detalles.descripcion_formateada ? `<div id="descripcionPrenda" style="color: #333; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; margin-top: 22px;">${detalles.descripcion_formateada.replace(/\n/g, '<br>')}</div>` : '<div id="descripcionPrenda" style="color: #999; font-size: 0.9rem; margin-top: 22px;">Sin descripción</div>'}
             </div>
             
             <!-- Contenedor de Tabla e Imágenes -->
@@ -536,9 +581,9 @@ function mostrarPrendaVisor(indice) {
                         if (imagenesParaMostrar.length === 0) {
                             return '<div style="width: 700px; height: 700px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>';
                         }
-                        // Mostrar imágenes lado a lado como en el modal de cotización
+                        const stackVertical = esCotizacionCombinada && esPrendaLogo;
                         return `
-                            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: flex-start;">
+                            <div style="display: flex; gap: 1.5rem; flex-wrap: ${stackVertical ? 'nowrap' : 'wrap'}; flex-direction: ${stackVertical ? 'column' : 'row'}; justify-content: flex-start;">
                                 ${imagenesParaMostrar.map((img, idx) => `
                                     <div style="display: flex; flex-direction: column; align-items: center;">
                                         <img src="${img.url}" 
