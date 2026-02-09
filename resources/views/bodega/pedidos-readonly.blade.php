@@ -4,6 +4,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/bodega.css') }}">
+<link rel="stylesheet" href="{{ asset('css/pedido-row-colors.css') }}">
 @endpush
 
 @section('content')
@@ -409,7 +410,7 @@
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                 data-talla="{{ $item['talla'] }}"
-                                                data-prenda-nombre="{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}"
+                                                data-prenda-nombre="{{ $item['prenda_nombre_actual'] ?? '' }}"
                                                 data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                                 data-item-unique-id="{{ $loop->index ?? uniqid() }}"
                                                 data-asesor="{{ $item['asesor'] ?? '' }}"
@@ -432,7 +433,7 @@
                                             <!-- BOTÓN GUARDAR -->
                                             <button
                                                 type="button"
-                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ $item['descripcion']['nombre'] ?? 'sin-nombre' }}', {{ $item['cantidad_total'] ?? 0 }})"
+                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
                                                 class="w-full px-2 py-2 bg-green-500 hover:bg-green-600 text-white text-[12px] font-bold uppercase tracking-wide rounded-lg transition"
                                                 style="font-family: 'Poppins', sans-serif;"
                                             >
@@ -980,77 +981,37 @@ let notasActualTalla = '';
 /**
  * Guardar todos los cambios de una fila por click en botón Guardar
  */
-function guardarFilaCompleta(btnGuardar, numeroPedido, talla, prendaNombre, cantidad) {
-    // DEBUG: Verificar estado del selector inmediatamente al iniciar la función
-    const selectorInmediato = document.querySelector(
-        `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    console.log(`[SELECTOR DEBUG] INICIO guardarFilaCompleta - Buscando: ${numeroPedido}|${talla}|${prendaNombre}|${cantidad}`);
-    console.log(`[SELECTOR DEBUG] INICIO guardarFilaCompleta - Valor inmediato:`, selectorInmediato?.value);
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
+    // Obtener el select más cercano para extraer prenda_nombre y cantidad desde los data attributes
+    const estadoSelect = btnGuardar.closest('td').querySelector('.estado-select-readonly');
     
-    // Obtener todos los valores de la fila
-    const pendientesInput = document.querySelector(
-        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    const observacionesInput = document.querySelector(
-        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    const fechaPedidoInput = document.querySelector(
-        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    const fechaEntregaInput = document.querySelector(
-        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    
-    // DEBUG: Verificar si el selector cambia entre el inicio y la obtención
-    console.log(`[SELECTOR DEBUG] Después de obtener elementos - Valor:`, selectorInmediato?.value);
-    
-    const estadoSelect = document.querySelector(
-        `.estado-select-readonly[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"][data-prenda-nombre="${prendaNombre}"][data-cantidad="${cantidad}"]`
-    );
-    
-    // DEBUG: Verificar si es el mismo selector
-    console.log(`[SELECTOR DEBUG] ¿Mismo selector?`, selectorInmediato === estadoSelect);
-    console.log(`[SELECTOR DEBUG] Valor del segundo selector:`, estadoSelect?.value);
-
-    // DEBUG: Verificar valor del selector de estado
-    console.log(`[SELECTOR DEBUG] Guardando fila ${numeroPedido}-${talla}-${prendaNombre}-${cantidad}`);
-    console.log(`[SELECTOR DEBUG] estadoSelect encontrado:`, estadoSelect);
-    console.log(`[SELECTOR DEBUG] estadoSelect.value ANTES DE FORZAR:`, estadoSelect?.value);
-    
-    // SOLUCIÓN: Forzar el valor del selector si está vacío
-    if (!estadoSelect || !estadoSelect.value || estadoSelect.value.trim() === '') {
-        // Crear clave única con identificador único del item
-        const itemUniqueId = estadoSelect?.getAttribute('data-item-unique-id') || uniqid();
-        const clave = `${numeroPedido}-${talla}-${prendaNombre}-${cantidad}-${itemUniqueId}`;
-        
-        // Intentar obtener el valor guardado globalmente
-        const valorGlobal = window.ultimoValorSeleccionado[clave];
-        
-        if (valorGlobal && valorGlobal.trim() !== '') {
-            console.log(`[SELECTOR DEBUG] Forzando valor desde variable global [${clave}]:`, valorGlobal);
-            estadoSelect.value = valorGlobal;
-        } else {
-            // Intentar obtener el valor del data-original-estado
-            const valorGuardado = estadoSelect?.getAttribute('data-original-estado');
-            if (valorGuardado && valorGuardado.trim() !== '') {
-                console.log(`[SELECTOR DEBUG] Forzando valor desde data-original-estado:`, valorGuardado);
-                estadoSelect.value = valorGuardado;
-            } else {
-                console.log(`[SELECTOR DEBUG] No hay valor guardado, manteniendo vacío`);
-            }
-        }
+    if (!estadoSelect) {
+        alert('Error: No se encontró el selector de estado');
+        return;
     }
     
-    console.log(`[SELECTOR DEBUG] estadoSelect.value DESPUÉS DE FORZAR:`, estadoSelect?.value);
-    console.log(`[SELECTOR DEBUG] estadoSelect.selectedOptions:`, Array.from(estadoSelect?.selectedOptions || []).map(opt => ({value: opt.value, text: opt.text, selected: opt.selected})));
-
-    // DEBUG: Agregar listener para detectar cambios en el selector
-    if (estadoSelect) {
-        estadoSelect.addEventListener('change', function() {
-            console.log(`[SELECTOR DEBUG] Cambio detectado en selector ${numeroPedido}-${talla}-${prendaNombre}-${cantidad}:`, this.value);
-        });
-    }
+    // Obtener prendaNombre y cantidad desde los data attributes del select
+    const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
+    const cantidad = parseInt(estadoSelect.getAttribute('data-cantidad') || '0');
+    
+    // DEBUG
+    console.log(`[GUARDAR FILA] numeroPedido=${numeroPedido}, talla=${talla}, prenda=${prendaNombre}, cantidad=${cantidad}`);
+    
+    // Obtener todos los valores de la fila usando querySelector sobre la fila cercana
+    const fila = btnGuardar.closest('tr') || document.body;
+    
+    const pendientesInput = fila.querySelector(
+        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const observacionesInput = fila.querySelector(
+        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaPedidoInput = fila.querySelector(
+        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaEntregaInput = fila.querySelector(
+        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
 
     // Validar que existan los elementos
     if (!pendientesInput || !estadoSelect) {
@@ -1065,8 +1026,8 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, prendaNombre, cant
         pedido_produccion_id: estadoSelect?.getAttribute('data-pedido-produccion-id') || null,
         numero_pedido: numeroPedido,
         talla: talla,
-        cantidad: parseInt(estadoSelect?.getAttribute('data-cantidad') || '0'),
-        prenda_nombre: estadoSelect?.getAttribute('data-prenda-nombre') || null,
+        cantidad: cantidad,
+        prenda_nombre: prendaNombre,
         asesor: estadoSelect?.getAttribute('data-asesor') || null,
         empresa: estadoSelect?.getAttribute('data-empresa') || null,
         pendientes: pendientesInput.value.trim(),
@@ -1076,6 +1037,8 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla, prendaNombre, cant
         estado_bodega: estadoSelect?.value || null,
         last_updated_at: lastUpdatedAt,
     };
+
+    console.log('📝 DATOS A GUARDAR:', datosAGuardar);
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;
@@ -1617,4 +1580,5 @@ if (typeof window.Echo !== 'undefined') {
 }
 </script>
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/pedido-row-colors.js') }}?v={{ time() }}"></script>
 @endpush

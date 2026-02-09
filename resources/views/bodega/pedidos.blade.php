@@ -409,6 +409,8 @@
                                                 style="font-family: 'Poppins', sans-serif; min-height: 35px; font-size: 13px; line-height: 1.4; background-color: white; color: #0f172a !important;"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
+                                                data-prenda-nombre="{{ $item['prenda_nombre_actual'] ?? '' }}"
+                                                data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
                                             >
                                                 <option value="">ESTADO</option>
@@ -804,34 +806,21 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         return;
     }
 
-    // Obtener PRENDA_NOMBRE y CANTIDAD desde la fila
-    const fila = pendientesInput.closest('tr');
-    const cantidadCell = fila.querySelector('td[data-cantidad]');
-    const cantidad = cantidadCell?.getAttribute('data-cantidad') || '0';
-    
-    // Obtener nombre de la prenda desde la columna descripción
-    const descriptorCell = fila.querySelector('td[data-prenda-nombre]');
-    let prenda_nombre = '';
-    if (descriptorCell) {
-        const nombreDiv = descriptorCell.querySelector('div.font-bold');
-        if (nombreDiv) {
-            prenda_nombre = nombreDiv.textContent.trim();
-        } else {
-            const nombreDivEpp = descriptorCell.querySelector('div.font-semibold');
-            if (nombreDivEpp) {
-                prenda_nombre = nombreDivEpp.textContent.trim();
-            }
-        }
-    }
+    // Obtener PRENDA_NOMBRE y CANTIDAD desde el select
+    const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
+    const cantidad = parseInt(estadoSelect.getAttribute('data-cantidad') || '0');
 
-    // Obtener el último updated_at del textarea de observaciones
+    console.log(`[GUARDAR BODEGUERO] numeroPedido=${numeroPedido}, talla=${talla}, prenda=${prendaNombre}, cantidad=${cantidad}`);
+
+    // Obtener la fila para extraer otros campos
+    const fila = pendientesInput.closest('tr');
     const lastUpdatedAt = observacionesInput?.dataset?.updatedAt || new Date().toISOString();
 
     const datosAGuardar = {
         numero_pedido: numeroPedido,
         talla: talla,
-        prenda_nombre: prenda_nombre,  // Enviar nombre de la prenda
-        cantidad: parseInt(cantidad) || 0,  // Enviar cantidad
+        prenda_nombre: prendaNombre,  // Enviar nombre de la prenda
+        cantidad: cantidad,  // Enviar cantidad
         asesor: fila.getAttribute('data-asesor') || '',  // Asesor
         empresa: fila.getAttribute('data-empresa') || '',  // Empresa
         pendientes: pendientesInput.value.trim(),
@@ -842,8 +831,6 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         estado_bodega: estadoSelect?.value || null,
         last_updated_at: lastUpdatedAt,
     };
-
-    console.log('📝 DATOS A GUARDAR:', datosAGuardar);
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;

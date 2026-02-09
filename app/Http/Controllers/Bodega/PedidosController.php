@@ -234,26 +234,107 @@ class PedidosController extends Controller
                                 foreach ($variantes as $variante) {
                                     $talla = $variante['talla'] ?? '';
                                     
-                                    // SIEMPRE obtener datos BASE de bodega_detalles_talla
+                                    // Obtener nombre de prenda desde el pedido original
+                                    $prendaNombre = $prendaEnriquecida['nombre'] ?? null;
+                                    
+                                    \Log::info('[DEBUG PRENDA NOMBRE]', [
+                                        'prendaEnriquecida_keys' => array_keys($prendaEnriquecida),
+                                        'prendaEnriquecida_nombre' => $prendaEnriquecida['nombre'] ?? 'NULL',
+                                        'prendaNombre_valor' => $prendaNombre
+                                    ]);
+                                    
+                                    // IMPORTANTE: usar cantidad de la TALLA, NO cantidad total de la prenda
+                                    $cantidad = $variante['cantidad'] ?? 0;
+                                    
+                                    // AHORA buscar datos BASE de bodega_detalles_talla usando los 4 criterios
                                     $bodegaDataBase = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)
                                         ->where('talla', $talla)
+                                        ->where('prenda_nombre', $prendaNombre)
+                                        ->where('cantidad', $cantidad)
                                         ->first();
                                     
-                                    // Obtener estado de la tabla específica del rol
+                                    // Obtener estado SOLO del rol específico por los 4 criterios exactos
                                     $bodegaDataEstado = null;
                                     if (in_array('EPP-Bodega', $rolesDelUsuario)) {
                                         $bodegaDataEstado = EppBodegaDetalle::where('numero_pedido', $item->numero_pedido)
                                             ->where('talla', $talla)
-                                            ->where('prenda_nombre', $bodegaDataBase?->prenda_nombre ?? $prendaEnriquecida['nombre'] ?? null)
-                                            ->where('cantidad', $bodegaDataBase?->cantidad ?? $prendaEnriquecida['cantidad'] ?? 0)
+                                            ->where('prenda_nombre', $prendaNombre)
+                                            ->where('cantidad', $cantidad)
                                             ->first();
+                                        
+                                        \Log::info('[VISTA BUSQUEDA EPP] Búsqueda por 4 criterios', [
+                                            'numero_pedido' => $item->numero_pedido,
+                                            'talla' => $talla,
+                                            'prenda_nombre' => $prendaNombre,
+                                            'cantidad' => $cantidad,
+                                            'encontrado' => $bodegaDataEstado ? true : false,
+                                            'registro_id' => $bodegaDataEstado?->id,
+                                            'estado_guardado' => $bodegaDataEstado?->estado_bodega
+                                        ]);
+                                        
+                                        // Si no encuentra, log todos los registros para debugging
+                                        if (!$bodegaDataEstado) {
+                                            $todosLosRegistros = EppBodegaDetalle::where('numero_pedido', $item->numero_pedido)
+                                                ->where('talla', $talla)
+                                                ->get();
+                                            
+                                            \Log::warning('[VISTA BUSQUEDA EPP] NO ENCONTRADO - Registros existentes en BD', [
+                                                'numero_pedido' => $item->numero_pedido,
+                                                'talla' => $talla,
+                                                'prenda_buscada' => $prendaNombre,
+                                                'cantidad_buscada' => $cantidad,
+                                                'registros_encontrados' => $todosLosRegistros->count(),
+                                                'registros_detalles' => $todosLosRegistros->map(function($r) {
+                                                    return [
+                                                        'id' => $r->id,
+                                                        'prenda_nombre' => $r->prenda_nombre,
+                                                        'cantidad' => $r->cantidad,
+                                                        'estado_bodega' => $r->estado_bodega
+                                                    ];
+                                                })->toArray()
+                                            ]);
+                                        }
                                     } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
                                         $bodegaDataEstado = CosturaBodegaDetalle::where('numero_pedido', $item->numero_pedido)
                                             ->where('talla', $talla)
-                                            ->where('prenda_nombre', $bodegaDataBase?->prenda_nombre ?? $prendaEnriquecida['nombre'] ?? null)
-                                            ->where('cantidad', $bodegaDataBase?->cantidad ?? $prendaEnriquecida['cantidad'] ?? 0)
+                                            ->where('prenda_nombre', $prendaNombre)
+                                            ->where('cantidad', $cantidad)
                                             ->first();
+                                        
+                                        \Log::info('[VISTA BUSQUEDA COSTURA] Búsqueda por 4 criterios', [
+                                            'numero_pedido' => $item->numero_pedido,
+                                            'talla' => $talla,
+                                            'prenda_nombre' => $prendaNombre,
+                                            'cantidad' => $cantidad,
+                                            'encontrado' => $bodegaDataEstado ? true : false,
+                                            'registro_id' => $bodegaDataEstado?->id,
+                                            'estado_guardado' => $bodegaDataEstado?->estado_bodega
+                                        ]);
+                                        
+                                        // Si no encuentra, log todos los registros para debugging
+                                        if (!$bodegaDataEstado) {
+                                            $todosLosRegistros = CosturaBodegaDetalle::where('numero_pedido', $item->numero_pedido)
+                                                ->where('talla', $talla)
+                                                ->get();
+                                            
+                                            \Log::warning('[VISTA BUSQUEDA COSTURA] NO ENCONTRADO - Registros existentes en BD', [
+                                                'numero_pedido' => $item->numero_pedido,
+                                                'talla' => $talla,
+                                                'prenda_buscada' => $prendaNombre,
+                                                'cantidad_buscada' => $cantidad,
+                                                'registros_encontrados' => $todosLosRegistros->count(),
+                                                'registros_detalles' => $todosLosRegistros->map(function($r) {
+                                                    return [
+                                                        'id' => $r->id,
+                                                        'prenda_nombre' => $r->prenda_nombre,
+                                                        'cantidad' => $r->cantidad,
+                                                        'estado_bodega' => $r->estado_bodega
+                                                    ];
+                                                })->toArray()
+                                            ]);
+                                        }
                                     }
+
                                     
                                     // Para roles específicos de área, usar base + estado del rol
                                     // Para bodeguero, usar solo base
@@ -306,6 +387,7 @@ class PedidosController extends Controller
                                         'empresa_rowspan' => $firstRow ? $rowspanCorreto : 0,
                                         'descripcion' => $prendaEnriquecida,
                                         'descripcion_rowspan' => $firstRow ? $rowspanCorreto : 0,
+                                        'prenda_nombre_actual' => $bodegaDataBase?->prenda_nombre ?? $prendaNombre ?? '',
                                         'talla' => $variante['talla'] ?? '—',
                                         'cantidad_total' => $variante['cantidad'] ?? 0,
                                         'observaciones' => $bodegaData?->observaciones_bodega ?? null,
@@ -713,9 +795,23 @@ class PedidosController extends Controller
             $rolesDelUsuario = $usuario->getRoleNames()->toArray();
             
             // Obtener el pedido
+            \Log::info('[GUARDANDO DETALLE] Buscando pedido', [
+                'numero_pedido' => $validated['numero_pedido']
+            ]);
+
             $pedido = PedidoProduccion::where('numero_pedido', $validated['numero_pedido'])->first();
             
+            \Log::info('[GUARDANDO DETALLE] Resultado búsqueda pedido', [
+                'pedido_encontrado' => $pedido ? true : false,
+                'pedido_id' => $pedido?->id,
+                'numero_pedido' => $validated['numero_pedido']
+            ]);
+
             if (!$pedido) {
+                \Log::warning('Pedido no encontrado en guardarDetallesTalla', [
+                    'numero_pedido' => $validated['numero_pedido']
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Pedido no encontrado'
@@ -773,6 +869,8 @@ class PedidosController extends Controller
                 \Log::info('[EPP-BODEGA GUARDAR] Iniciando guardado para EPP-Bodega', [
                     'numero_pedido' => $validated['numero_pedido'],
                     'talla' => $validated['talla'],
+                    'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                    'cantidad' => $validated['cantidad'] ?? 0,
                     'estado_bodega' => $validated['estado_bodega'] ?? null,
                     'roles_usuario' => $rolesDelUsuario
                 ]);
@@ -786,7 +884,13 @@ class PedidosController extends Controller
                 $estadoAnterior = $detalleAnterior?->estado_bodega;
                 $estadoNuevo = $validated['estado_bodega'] ?? null;
                 
+                // IMPORTANTE: Si el estado viene vacío o null, usar "Pendiente" como defecto
+                if (empty($estadoNuevo)) {
+                    $estadoNuevo = 'Pendiente';
+                }
+                
                 \Log::info('[EPP-BODEGA GUARDAR] Estados', [
+                    'detalle_anterior_encontrado' => $detalleAnterior ? true : false,
                     'estado_anterior' => $estadoAnterior,
                     'estado_nuevo' => $estadoNuevo
                 ]);
@@ -807,6 +911,10 @@ class PedidosController extends Controller
                     'usuario_bodega_nombre' => $usuario->name,
                 ];
 
+                \Log::info('[EPP-BODEGA GUARDAR] Datos a guardar', [
+                    'datos' => $datosEppEstado
+                ]);
+
                 $detalle = EppBodegaDetalle::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
@@ -818,14 +926,21 @@ class PedidosController extends Controller
                     $datosEppEstado
                 );
 
-                \Log::info('[EPP-BODEGA GUARDAR] Registro guardado', [
+                \Log::info('[EPP-BODEGA GUARDAR] Registro guardado exitosamente', [
                     'detalle_id' => $detalle->id,
                     'estado_guardado' => $detalle->estado_bodega,
-                    'datos_guardados' => $datosEppEstado
+                    'numero_pedido' => $detalle->numero_pedido,
+                    'talla' => $detalle->talla
                 ]);
 
                 // AHORA crear la auditoría con el ID del registro guardado
                 if ($estadoAnterior !== $estadoNuevo && !is_null($estadoNuevo)) {
+                    \Log::info('[EPP-BODEGA AUDITORIA] Creando registro de auditoría', [
+                        'detalle_id' => $detalle->id,
+                        'estado_anterior' => $estadoAnterior,
+                        'estado_nuevo' => $estadoNuevo
+                    ]);
+
                     EppBodegaAuditoria::create([
                         'epp_bodega_detalle_id' => $detalle->id,
                         'numero_pedido' => $validated['numero_pedido'],
@@ -840,6 +955,15 @@ class PedidosController extends Controller
                 }
             } elseif (in_array('Costura-Bodega', $rolesDelUsuario)) {
                 // GUARDAR ESTADO EN costura_bodega_detalles
+                \Log::info('[COSTURA-BODEGA GUARDAR] Iniciando guardado para Costura-Bodega', [
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'talla' => $validated['talla'],
+                    'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                    'cantidad' => $validated['cantidad'] ?? 0,
+                    'estado_bodega' => $validated['estado_bodega'] ?? null,
+                    'roles_usuario' => $rolesDelUsuario
+                ]);
+
                 $detalleAnterior = CosturaBodegaDetalle::where('numero_pedido', $validated['numero_pedido'])
                     ->where('talla', $validated['talla'])
                     ->where('prenda_nombre', $validated['prenda_nombre'] ?? null)
@@ -848,6 +972,17 @@ class PedidosController extends Controller
                 
                 $estadoAnterior = $detalleAnterior?->estado_bodega;
                 $estadoNuevo = $validated['estado_bodega'] ?? null;
+                
+                // IMPORTANTE: Si el estado viene vacío o null, usar "Pendiente" como defecto
+                if (empty($estadoNuevo)) {
+                    $estadoNuevo = 'Pendiente';
+                }
+                
+                \Log::info('[COSTURA-BODEGA GUARDAR] Estados', [
+                    'detalle_anterior_encontrado' => $detalleAnterior ? true : false,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => $estadoNuevo
+                ]);
                 
                 // Guardar estado específico de Costura-Bodega PRIMERO
                 $datosCosturaEstado = [
@@ -865,6 +1000,10 @@ class PedidosController extends Controller
                     'usuario_bodega_nombre' => $usuario->name,
                 ];
 
+                \Log::info('[COSTURA-BODEGA GUARDAR] Datos a guardar', [
+                    'datos' => $datosCosturaEstado
+                ]);
+
                 $detalle = CosturaBodegaDetalle::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
@@ -876,8 +1015,21 @@ class PedidosController extends Controller
                     $datosCosturaEstado
                 );
 
+                \Log::info('[COSTURA-BODEGA GUARDAR] Registro guardado exitosamente', [
+                    'detalle_id' => $detalle->id,
+                    'estado_guardado' => $detalle->estado_bodega,
+                    'numero_pedido' => $detalle->numero_pedido,
+                    'talla' => $detalle->talla
+                ]);
+
                 // AHORA crear la auditoría con el ID del registro guardado
                 if ($estadoAnterior !== $estadoNuevo && !is_null($estadoNuevo)) {
+                    \Log::info('[COSTURA-BODEGA AUDITORIA] Creando registro de auditoría', [
+                        'detalle_id' => $detalle->id,
+                        'estado_anterior' => $estadoAnterior,
+                        'estado_nuevo' => $estadoNuevo
+                    ]);
+
                     CosturaBodegaAuditoria::create([
                         'costura_bodega_detalle_id' => $detalle->id,
                         'numero_pedido' => $validated['numero_pedido'],
@@ -891,15 +1043,24 @@ class PedidosController extends Controller
                     ]);
                 }
             } else {
-                // BODEGUERO: guarda estado en bodega_detalles_talla (ya guardado arriba)
+                // BODEGUERO: guarda estado en bodega_detalles_talla usando los 4 criterios
                 $datosActualizarBasicos['area'] = $validated['area'] ?? null;
                 $datosActualizarBasicos['estado_bodega'] = $validated['estado_bodega'] ?? null;
+                
+                \Log::info('[BODEGUERO GUARDAR] Guardando en bodega_detalles_talla', [
+                    'numero_pedido' => $validated['numero_pedido'],
+                    'talla' => $validated['talla'],
+                    'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                    'cantidad' => $validated['cantidad'] ?? 0
+                ]);
                 
                 $detalle = \App\Models\BodegaDetallesTalla::updateOrCreate(
                     [
                         'pedido_produccion_id' => $pedido->id,
                         'numero_pedido' => $validated['numero_pedido'],
                         'talla' => $validated['talla'],
+                        'prenda_nombre' => $validated['prenda_nombre'] ?? null,
+                        'cantidad' => $validated['cantidad'] ?? 0,
                     ],
                     $datosActualizarBasicos
                 );
@@ -935,6 +1096,11 @@ class PedidosController extends Controller
                 'data' => $detalle
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Error de validación en guardarDetallesTalla', [
+                'errors' => $e->errors(),
+                'request' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
@@ -943,12 +1109,20 @@ class PedidosController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error en guardarDetallesTalla: ' . $e->getMessage(), [
                 'exception' => $e,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar: ' . $e->getMessage()
+                'message' => 'Error al guardar: ' . $e->getMessage(),
+                'error_details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ], 500);
         }
     }
