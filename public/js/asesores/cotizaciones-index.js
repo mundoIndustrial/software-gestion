@@ -13,6 +13,65 @@ function mostrarTab(tab) {
     document.getElementById('tab-' + tab).style.display = 'block';
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const last = sessionStorage.getItem('debug_edit_borrador_nav');
+        if (last) {
+            console.log('[EditarBorrador] Página cargada después de intento de navegación:', JSON.parse(last));
+            sessionStorage.removeItem('debug_edit_borrador_nav');
+        }
+    } catch (e) {
+        console.warn('[EditarBorrador] No se pudo leer sessionStorage:', e);
+    }
+});
+
+document.addEventListener('click', function(e) {
+    const btn = e.target && e.target.closest ? e.target.closest('.btn-editar-borrador') : null;
+    if (!btn) return;
+
+    const url = btn.getAttribute('data-url') || btn.getAttribute('href');
+    console.log('[EditarBorrador] Click detectado', {
+        url,
+        tag: btn.tagName,
+        id: btn.id || null,
+        classes: btn.className || null,
+    });
+
+    if (!url || url === '#') {
+        console.error('[EditarBorrador] URL inválida en el botón Editar');
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        return;
+    }
+
+    try {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+
+        try {
+            sessionStorage.setItem('debug_edit_borrador_nav', JSON.stringify({
+                url,
+                from: window.location.href,
+                at: new Date().toISOString(),
+            }));
+        } catch (storageError) {
+            console.warn('[EditarBorrador] No se pudo escribir sessionStorage:', storageError);
+        }
+
+        window.location.href = url;
+    } catch (err) {
+        console.error('[EditarBorrador] Error manejando click:', err);
+        try {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        } catch (_) {
+        }
+    }
+}, true);
+
 /**
  * Muestra secciones según el tipo de cotización
  * @param {string} tipo - 'todas', 'P', 'L', 'PL'

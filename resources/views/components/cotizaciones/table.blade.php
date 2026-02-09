@@ -81,21 +81,22 @@
                                 @elseif($column['key'] === 'accion')
                                     <td style="padding: 12px; text-align: center;">
                                         <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                                        <?php
+                                            $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
+                                            $tieneLogo = false;
+                                            $esLogo = false;
+                                            $esCombinada = false;
+                                            $pdfButtons = [];
+                                        ?>
                                         @if($isBorrador)
-                                            <a href="{{ route('asesores.cotizaciones.edit-borrador', $cot->id) }}" 
-                                                title="Editar Borrador"
-                                                style="background: {{ $buttonColor }}; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);"
-                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.4)'" 
-                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.3)'">
-                                                <i class="fas fa-edit" style="font-size: 1rem;"></i>
-                                            </a>
-                                            <a href="#" onclick="eliminarBorrador({{ $cot->id }}); return false;" 
-                                                title="Eliminar Borrador"
-                                                style="background: #e74c3c; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);"
-                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(231, 76, 60, 0.4)'" 
-                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(231, 76, 60, 0.3)'">
-                                                <i class="fas fa-trash-alt" style="font-size: 1rem;"></i>
-                                            </a>
+                                            <?php $editUrl = route('asesores.pedidos.create', ['tipo' => 'PB', 'editar' => $cot->id]); ?>
+                                            <a href="{{ $editUrl }}"
+                                                data-url="{{ $editUrl }}"
+                                                class="btn-editar-borrador"
+                                                title="Editar"
+                                                style="background: #6b7280; color: white; height: 36px; padding: 0 12px; border-radius: 6px; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(107, 114, 128, 0.4)'"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(107, 114, 128, 0.3)'"><i class="fas fa-edit" style="font-size: 1rem;"></i><span style="font-size: 0.85rem; font-weight: 700;">Editar</span></a>
                                         @else
                                             <a href="#" onclick="openCotizacionModal({{ $cot->id }}); return false;" 
                                                 title="Ver Cotización"
@@ -106,7 +107,7 @@
                                             </a>
                                             
                                             <!-- Botones PDF dinámicos según tipo y relaciones -->
-                                            @php
+                                            <?php
                                                 $tienePrendas = $cot->prendas && count($cot->prendas) > 0;
                                                 $tieneLogo = \App\Models\LogoCotizacion::where('cotizacion_id', $cot->id)->exists();
                                                 
@@ -134,7 +135,7 @@
                                                         ];
                                                     }
                                                 }
-                                            @endphp
+                                            ?>
                                             
                                             @if($esCombinada)
                                                 <!-- Cotización COMBINADA: Descargar directamente sin menú -->
@@ -157,7 +158,7 @@
                                             @elseif(count($pdfButtons) > 0)
                                                 @if(count($pdfButtons) === 1)
                                                     <!-- Un solo botón PDF -->
-                                                    @php $btn = $pdfButtons[0]; @endphp
+                                                    <?php $btn = $pdfButtons[0]; ?>
                                                     <button onclick="abrirPDFEnPestana({{ $cot->id }}, '{{ $btn['tipo'] }}')" 
                                                         title="Descargar {{ $btn['label'] }}"
                                                         style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"

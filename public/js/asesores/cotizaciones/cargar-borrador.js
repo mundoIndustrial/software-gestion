@@ -1,8 +1,3 @@
-/**
- * SISTEMA DE COTIZACIONES - CARGAR BORRADOR
- * Responsabilidad: Cargar datos de un borrador existente en el formulario
- */
-
 function cargarBorrador(cotizacion) {
     if (!cotizacion) return;
     
@@ -16,6 +11,32 @@ function cargarBorrador(cotizacion) {
     if (window.fotosSeleccionadas) {
         window.fotosSeleccionadas = {};
 
+    }
+
+    // Cargar campos del Paso 3 (nuevo): desde relación logoCotizacion
+    try {
+        const logoCotizacionNuevo = cotizacion.logoCotizacion || null;
+        if (logoCotizacionNuevo) {
+            const tipoVentaPaso3 = document.getElementById('tipo_venta_paso3');
+            if (tipoVentaPaso3 && logoCotizacionNuevo.tipo_venta) {
+                tipoVentaPaso3.value = logoCotizacionNuevo.tipo_venta;
+                tipoVentaPaso3.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            const descLogoInput = document.getElementById('descripcion_logo') || document.querySelector('textarea[name="descripcion_logo"]');
+            if (descLogoInput && logoCotizacionNuevo.descripcion) {
+                descLogoInput.value = logoCotizacionNuevo.descripcion;
+                descLogoInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            const obsTecnicasTextarea = document.querySelector('textarea[name="observaciones_tecnicas"]');
+            if (obsTecnicasTextarea && logoCotizacionNuevo.observaciones_tecnicas) {
+                obsTecnicasTextarea.value = logoCotizacionNuevo.observaciones_tecnicas;
+                obsTecnicasTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    } catch (e) {
+        console.error('Error cargando campos Paso 3 desde logoCotizacion:', e);
     }
     if (window.telasSeleccionadas) {
         window.telasSeleccionadas = {};
@@ -240,24 +261,38 @@ function cargarBorrador(cotizacion) {
 
                 }
                     
-                    // Tallas - buscar en los botones de talla
-                    // Soportar múltiples formatos: array strings, array objects con .talla, objeto con .prendas_tallas[]
-                    let tallasValores = [];
-                    
-                    if (prenda.tallas && Array.isArray(prenda.tallas)) {
-                        // Formato: ["XS", "S", "M"] o [{talla: "XS"}, ...]
-                        tallasValores = prenda.tallas.map(t => {
-                            if (typeof t === 'string') {
-                                return t;
-                            } else if (typeof t === 'object' && t.talla) {
-                                return t.talla;
-                            }
-                            return null;
-                        }).filter(t => t !== null);
-                    } else if (prenda.prendas_tallas && Array.isArray(prenda.prendas_tallas)) {
-                        // Formato: relación de Eloquent
-                        tallasValores = prenda.prendas_tallas.map(pt => pt.talla).filter(t => t);
-                    }
+                    // Tallas (con género)
+                // Soportar relación Eloquent: prenda.tallas[] = {talla, genero_id, cantidad}
+                let tallasValores = [];
+                let tallasPorGenero = { dama: [], caballero: [] };
+
+                if (prenda.tallas && Array.isArray(prenda.tallas)) {
+                    prenda.tallas.forEach(t => {
+                        if (!t) return;
+                        const tallaValor = typeof t === 'string' ? t : (t.talla || null);
+                        if (!tallaValor) return;
+                        tallasValores.push(tallaValor);
+
+                        const generoId = typeof t === 'object' ? (t.genero_id ?? null) : null;
+                        if (generoId === 2 || generoId === '2') {
+                            tallasPorGenero.dama.push(tallaValor);
+                        } else if (generoId === 1 || generoId === '1') {
+                            tallasPorGenero.caballero.push(tallaValor);
+                        }
+                    });
+                } else if (prenda.prendas_tallas && Array.isArray(prenda.prendas_tallas)) {
+                    prenda.prendas_tallas.forEach(pt => {
+                        if (!pt || !pt.talla) return;
+                        tallasValores.push(pt.talla);
+                        const generoId = pt.genero_id ?? null;
+                        if (generoId === 2 || generoId === '2') {
+                            tallasPorGenero.dama.push(pt.talla);
+                        } else if (generoId === 1 || generoId === '1') {
+                            tallasPorGenero.caballero.push(pt.talla);
+                        }
+                    });
+                }
+                tallasValores = Array.from(new Set(tallasValores));
                     
 
                     
@@ -288,19 +323,20 @@ function cargarBorrador(cotizacion) {
                             const botonesExistentes = productoActual.querySelectorAll('.talla-btn');
 
                             
-                            // Si es número, detectar género
-                            if (!esLetra) {
-                                const tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26'];
-                                const esGenero = tallasValores.some(t => tallasDama.includes(t));
-                                const genero = esGenero ? 'dama' : 'caballero';
-                                
-                                const generoSelect = productoActual.querySelector('.talla-genero-select');
-                                if (generoSelect) {
-                                    generoSelect.value = genero;
-                                    generoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            // Marcar géneros usando checkboxes (UI nueva)
+                        const generoSelectors = productoActual.querySelector('.talla-genero-selectores');
+                        const cbDama = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="dama"]') : null;
+                        const cbCab = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="caballero"]') : null;
 
-                                }
-                            }
+                        const tieneDama = tallasPorGenero.dama.length > 0;
+                        const tieneCab = tallasPorGenero.caballero.length > 0;
+
+                        if (cbDama) cbDama.checked = !!tieneDama;
+                        if (cbCab) cbCab.checked = !!tieneCab;
+
+                        // Disparar update para que se construyan botones de tallas
+                        if (cbDama) cbDama.dispatchEvent(new Event('change', { bubbles: true }));
+                        if (cbCab) cbCab.dispatchEvent(new Event('change', { bubbles: true }));
                             
                             // Esperar a que se carguen los botones del género
                             setTimeout(() => {
@@ -308,19 +344,23 @@ function cargarBorrador(cotizacion) {
                                 
                                 // Hacer clic en los botones de talla
                                 let tallasActivadas = 0;
-                                tallasValores.forEach(tallaValor => {
-                                    const tallaBtn = productoActual.querySelector(`.talla-btn[data-talla="${tallaValor}"]`);
-                                    if (tallaBtn) {
-                                        tallaBtn.click();
-                                        tallasActivadas++;
+                                const activarTallas = (lista, genero) => {
+                                    lista.forEach(tallaValor => {
+                                        const selectorConGenero = `.talla-btn[data-talla="${tallaValor}"][data-genero="${genero}"]`;
+                                        const tallaBtn = productoActual.querySelector(selectorConGenero) || productoActual.querySelector(`.talla-btn[data-talla="${tallaValor}"]`);
+                                        if (tallaBtn) {
+                                            tallaBtn.click();
+                                            tallasActivadas++;
+                                        }
+                                    });
+                                };
 
-                                    } else {
-
-                                        // Debug: mostrar botones disponibles
-                                        const botonesDisponibles = productoActual.querySelectorAll('.talla-btn');
-
-                                    }
-                                });
+                                if (tieneDama || tieneCab) {
+                                    activarTallas(tallasPorGenero.dama, 'dama');
+                                    activarTallas(tallasPorGenero.caballero, 'caballero');
+                                } else {
+                                    activarTallas(tallasValores, '');
+                                }
                                 
 
                                 
@@ -886,27 +926,33 @@ function cargarBorrador(cotizacion) {
 
     }
     
-    // Cargar técnicas
-    if (cotizacion.tecnicas && Array.isArray(cotizacion.tecnicas)) {
-        cotizacion.tecnicas.forEach(tecnica => {
-            const contenedor = document.getElementById('tecnicas_seleccionadas');
-            if (contenedor) {
-                const tag = document.createElement('div');
-                tag.style.cssText = 'background: #3498db; color: white; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 600;';
-                tag.innerHTML = `
-                    <input type="hidden" name="tecnicas[]" value="${tecnica}">
-                    <span>${tecnica}</span>
-                    <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
-                `;
-                contenedor.appendChild(tag);
-            }
-        });
-    }
-    
-    // Cargar observaciones técnicas
-    if (cotizacion.observaciones_tecnicas) {
-        const textarea = document.getElementById('observaciones_tecnicas');
-        if (textarea) textarea.value = cotizacion.observaciones_tecnicas;
+    // NOTA: En cotización combinada (PL), las técnicas/ubicaciones/imágenes del logo se manejan en PASO 3.
+    // Evitar que se carguen en PASO 2.
+    const esCombinada = (window.tipoCotizacionGlobal === 'PL' || cotizacion.tipo === 'PL' || cotizacion.tipo_cotizacion_id === 1);
+
+    if (!esCombinada) {
+        // Cargar técnicas (legacy)
+        if (cotizacion.tecnicas && Array.isArray(cotizacion.tecnicas)) {
+            cotizacion.tecnicas.forEach(tecnica => {
+                const contenedor = document.getElementById('tecnicas_seleccionadas');
+                if (contenedor) {
+                    const tag = document.createElement('div');
+                    tag.style.cssText = 'background: #3498db; color: white; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 600;';
+                    tag.innerHTML = `
+                        <input type="hidden" name="tecnicas[]" value="${tecnica}">
+                        <span>${tecnica}</span>
+                        <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
+                    `;
+                    contenedor.appendChild(tag);
+                }
+            });
+        }
+
+        // Cargar observaciones técnicas (legacy)
+        if (cotizacion.observaciones_tecnicas) {
+            const textarea = document.getElementById('observaciones_tecnicas');
+            if (textarea) textarea.value = cotizacion.observaciones_tecnicas;
+        }
     }
     
     // Cargar observaciones generales
@@ -967,14 +1013,14 @@ function cargarBorrador(cotizacion) {
         });
     }
     
-    // Cargar ubicaciones/secciones
-    if (cotizacion.ubicaciones && Array.isArray(cotizacion.ubicaciones)) {
-        cotizacion.ubicaciones.forEach(ubicacion => {
-            if (ubicacion.seccion) {
-                // Aquí se puede implementar lógica para cargar secciones
-
-            }
-        });
+    // Cargar ubicaciones/secciones (legacy)
+    if (!esCombinada) {
+        if (cotizacion.ubicaciones && Array.isArray(cotizacion.ubicaciones)) {
+            cotizacion.ubicaciones.forEach(ubicacion => {
+                if (ubicacion.seccion) {
+                }
+            });
+        }
     }
     
     // Cargar imágenes guardadas desde productos/prendas
@@ -1188,8 +1234,8 @@ function cargarBorrador(cotizacion) {
         });
     }
     
-    // Cargar datos del logo (Paso 4)
-    if (cotizacion.logo_cotizacion) {
+    // Cargar datos del logo (legacy) - NO para combinada
+    if (!esCombinada && cotizacion.logo_cotizacion) {
 
         
         // Cargar tipo de venta del logo (PASO 3)
@@ -1465,6 +1511,72 @@ function cargarBorrador(cotizacion) {
         actualizarResumenFriendly();
     } else {
 
+    }
+
+    // ==============================
+    // PASO 3 (LOGO): reconstruir cards desde BD
+    // ==============================
+    try {
+        const logoCotizacion = cotizacion.logoCotizacion || cotizacion.logo_cotizacion || cotizacion.logoCotizacionModel || null;
+        const tecnicasPrendas = logoCotizacion?.prendas || logoCotizacion?.tecnicas_prendas || [];
+
+        if (Array.isArray(tecnicasPrendas) && tecnicasPrendas.length > 0) {
+            const tecnicasMap = new Map();
+
+            tecnicasPrendas.forEach((tp) => {
+                if (!tp) return;
+                const tipoLogo = tp.tipo_logo || tp.tipoLogo || null;
+                const prendaCot = tp.prenda_cot || tp.prendaCot || tp.prenda || null;
+                if (!tipoLogo || !prendaCot) return;
+
+                const tipoId = tipoLogo.id;
+                const nombreTecnica = tipoLogo.nombre;
+                const key = String(tipoId);
+
+                if (!tecnicasMap.has(key)) {
+                    tecnicasMap.set(key, {
+                        tipo_logo: { id: tipoId, nombre: nombreTecnica },
+                        tipo: nombreTecnica,
+                        prendas: [],
+                        observacionesGenerales: tp.observaciones || ''
+                    });
+                }
+
+                // Imagen principal prenda (paso2) para card
+                const fotosPrenda = prendaCot.fotos || [];
+                const imagenesPrenda = Array.isArray(fotosPrenda)
+                    ? fotosPrenda.map(f => ({ preview: f.url || f.url_miniatura || f.ruta_webp || f.ruta_original || '', tipo: 'paso2' })).filter(i => i.preview)
+                    : [];
+
+                // Imágenes de logo paso3 guardadas en técnica+prenda
+                const fotosLogo = tp.fotos || [];
+                const imagenesLogo = Array.isArray(fotosLogo)
+                    ? fotosLogo.map(f => ({ preview: f.url || f.url_miniatura || f.ruta_webp || f.ruta_original || '', tipo: 'paso2' })).filter(i => i.preview)
+                    : [];
+
+                const ubicaciones = tp.ubicaciones || [];
+                const ubicacionesArr = Array.isArray(ubicaciones)
+                    ? ubicaciones.map(u => (typeof u === 'string' ? u : (u.ubicacion || u.seccion || ''))).filter(Boolean)
+                    : [];
+
+                tecnicasMap.get(key).prendas.push({
+                    nombre_prenda: prendaCot.nombre_producto || prendaCot.nombre || '',
+                    ubicaciones: ubicacionesArr,
+                    imagenes: [...imagenesPrenda, ...imagenesLogo],
+                    talla_cantidad: tp.talla_cantidad || [],
+                    observaciones: tp.observaciones || ''
+                });
+            });
+
+            window.tecnicasAgregadasPaso3 = Array.from(tecnicasMap.values());
+            setTimeout(() => {
+                if (typeof renderizarTecnicasAgregadasPaso3 === 'function') {
+                    renderizarTecnicasAgregadasPaso3();
+                }
+            }, 800);
+        }
+    } catch (e) {
+        console.error('Error reconstruyendo Paso 3 desde borrador:', e);
     }
 }
 

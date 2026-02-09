@@ -184,7 +184,7 @@ function cargarProductosDesdeStorage() {
 
 // ============ LIMPIAR LOCALSTORAGE ============
 
-function limpiarStorage() {
+function verificarLocalStorage() {
     try {
         // Limpiar localStorage
         localStorage.removeItem(STORAGE_KEY_PREFIX + 'datos_generales');
@@ -411,22 +411,3 @@ function mostrarEstorageSummary() {
 
     return summary;
 }
-
-// ============ NOTAS SOBRE WEBSOCKETS ============
-/*
- * localStorage y WebSockets son completamente independientes y sin conflictos:
- * 
- * - localStorage: Persistencia local en el navegador (datos que quedan si recarga)
- * - WebSockets: Comunicación en tiempo real con el servidor (Reverb/Echo)
- * 
- * Usos complementarios:
- * 1. localStorage para guardar borradores localmente
- * 2. WebSockets para notificar cambios a otros usuarios en tiempo real
- * 
- * Si quieres sincronizar datos entre usuarios vía WebSocket:
- * - Los datos se guardan en localStorage primero
- * - Se notifica a través de WebSocket a otros usuarios
- * - Cada usuario recibe la notificación y actualiza su localStorage
- * 
- * No hay conflicto de rendimiento ni de datos. Son complementarios.
- */

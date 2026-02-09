@@ -429,7 +429,17 @@ final class CotizacionController extends Controller
             if ($esBorrador === null) {
                 $esBorrador = ($accion === 'guardar');
             } else {
-                $esBorrador = (bool)$esBorrador;
+                // IMPORTANTE: (bool)"0" en PHP es true (string no vacío). Parsear correctamente.
+                if (is_bool($esBorrador)) {
+                    $esBorrador = $esBorrador;
+                } elseif (is_numeric($esBorrador)) {
+                    $esBorrador = ((int)$esBorrador) === 1;
+                } elseif (is_string($esBorrador)) {
+                    $esBorradorLower = strtolower(trim($esBorrador));
+                    $esBorrador = in_array($esBorradorLower, ['1', 'true', 'yes', 'on'], true);
+                } else {
+                    $esBorrador = false;
+                }
             }
             
             $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
@@ -439,11 +449,15 @@ final class CotizacionController extends Controller
             if (!$esBorrador) {
                 // Usar el servicio de generación segura de números (con database locks)
                 $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear(Auth::id());
-                $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                // IMPORTANTE: guardar el consecutivo como INT en el DTO/handler.
+                // Si se envía formateado (ej: "COT-00005"), el DTO puede castear mal y
+                // el handler termina generando otro consecutivo.
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioId);
                 
                 Log::info('CotizacionController@store: Número de cotización generado con servicio seguro', [
                     'usuario_id' => Auth::id(),
-                    'numero_secuencial' => $numeroCotizacion,
+                    'numero' => $numeroCotizacion,
+                    'numero_formateado' => $this->generarNumeroCotizacionService->formatearNumero($numeroCotizacion),
                 ]);
             }
 
@@ -1934,6 +1948,10 @@ final class CotizacionController extends Controller
                             'cotizacion_id' => $cotizacionId,
                             'total_imagenes' => count($imagenesP3Archivos)
                         ]);
+
+                        // Cache por request: si el mismo archivo se usa en múltiples técnicas (logo compartido),
+                        // se procesa/guarda físicamente una sola vez y se reutiliza la misma ruta.
+                        $logoPaso3PathCache = [];
                         
                         foreach ($imagenesP3Archivos as $fieldName => $archivo) {
                             // Coincide con patrón: logo[imagenes_paso3][{tecnicaIndex}][{prendaIndex}][{imagenIndex}]
@@ -2001,8 +2019,30 @@ final class CotizacionController extends Controller
                                                 $nombreArchivo = uniqid('img_paso3_');
                                                 $rutaCompleta = $rutaDirectorio . '/' . $nombreArchivo . '.webp';
                                                 
-                                                // Usar el servicio para procesar y convertir a WebP
-                                                $path = $this->procesarImagenesService->procesarImagenLogo($archivo, $cotizacionId);
+                                                // Usar el servicio para procesar y convertir a WebP (logo compartido: deduplicar)
+                                                $cacheKey = null;
+                                                try {
+                                                    $realPath = $archivo->getRealPath();
+                                                    if ($realPath && is_string($realPath) && file_exists($realPath)) {
+                                                        $cacheKey = hash_file('sha256', $realPath);
+                                                    }
+                                                } catch (\Throwable $e) {
+                                                    $cacheKey = null;
+                                                }
+
+                                                if ($cacheKey && isset($logoPaso3PathCache[$cacheKey])) {
+                                                    $path = $logoPaso3PathCache[$cacheKey];
+                                                    Log::info(' Logo compartido: reutilizando imagen ya procesada', [
+                                                        'cacheKey' => $cacheKey,
+                                                        'path' => $path,
+                                                        'fieldName' => $fieldName,
+                                                    ]);
+                                                } else {
+                                                    $path = $this->procesarImagenesService->procesarImagenLogo($archivo, $cotizacionId);
+                                                    if ($cacheKey) {
+                                                        $logoPaso3PathCache[$cacheKey] = $path;
+                                                    }
+                                                }
                                                 
                                                 Log::info(' Imagen del PASO 3 procesada y guardada como WebP', [
                                                     'path' => $path,
@@ -2049,6 +2089,110 @@ final class CotizacionController extends Controller
                                         'fieldName' => $fieldName,
                                         'file' => $e->getFile(),
                                         'line' => $e->getLine()
+                                    ]);
+                                }
+                            } elseif (preg_match('/^logo\[imagenes_paso3\]\[(\d+)\]$/', $fieldName, $matches)) {
+                                // Fallback: array plano logo[imagenes_paso3][]
+                                // Debe guardarse relacionado a técnica+prenda (logo_cotizacion_tecnica_prendas_fotos).
+                                try {
+                                    // Logo compartido: deduplicar el archivo físico
+                                    $cacheKey = null;
+                                    try {
+                                        $realPath = $archivo->getRealPath();
+                                        if ($realPath && is_string($realPath) && file_exists($realPath)) {
+                                            $cacheKey = hash_file('sha256', $realPath);
+                                        }
+                                    } catch (\Throwable $e) {
+                                        $cacheKey = null;
+                                    }
+
+                                    if ($cacheKey && isset($logoPaso3PathCache[$cacheKey])) {
+                                        $path = $logoPaso3PathCache[$cacheKey];
+                                        Log::info(' Logo compartido (fallback): reutilizando imagen ya procesada', [
+                                            'cacheKey' => $cacheKey,
+                                            'path' => $path,
+                                            'fieldName' => $fieldName,
+                                        ]);
+                                    } else {
+                                        $path = $this->procesarImagenesService->procesarImagenLogo($archivo, $cotizacionId);
+                                        if ($cacheKey) {
+                                            $logoPaso3PathCache[$cacheKey] = $path;
+                                        }
+                                    }
+
+                                    $logoCotizacionTecnicaPrendaTarget = null;
+
+                                    // Intentar asociar al único registro técnica/prenda si existe
+                                    if ($logoCotizacion) {
+                                        $queryTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                            ->orderByDesc('id');
+
+                                        $countTecnicaPrenda = (clone $queryTecnicaPrenda)->count();
+
+                                        if ($countTecnicaPrenda === 1) {
+                                            $logoCotizacionTecnicaPrendaTarget = $queryTecnicaPrenda->first();
+                                        }
+
+                                        // Si hay varias, usar la primera técnica+prenda del JSON (si existe)
+                                        if (!$logoCotizacionTecnicaPrendaTarget && isset($tecnicasAgregadas[0]) && isset($tecnicasAgregadas[0]['prendas'][0])) {
+                                            $prendaData = $tecnicasAgregadas[0]['prendas'][0];
+                                            $tipoLogoId = $tecnicasAgregadas[0]['tipo_logo']['id'] ?? null;
+
+                                            if ($tipoLogoId) {
+                                                $nombrePrendaBase = explode(' - ', $prendaData['nombre_prenda'])[0];
+                                                $nombreKeyImg = trim(mb_strtoupper($nombrePrendaBase));
+
+                                                $prendaCot = null;
+                                                if (isset($prendasCotPorNombre) && is_array($prendasCotPorNombre) && isset($prendasCotPorNombre[$nombreKeyImg])) {
+                                                    $prendaCot = $prendasCotPorNombre[$nombreKeyImg];
+                                                } else {
+                                                    $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                                        ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
+                                                        ->where('prenda_bodega', true)
+                                                        ->orderByDesc('id')
+                                                        ->first();
+                                                }
+
+                                                if ($prendaCot) {
+                                                    $logoCotizacionTecnicaPrendaTarget = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                                        ->where('tipo_logo_id', $tipoLogoId)
+                                                        ->where('prenda_cot_id', $prendaCot->id)
+                                                        ->first();
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if ($logoCotizacionTecnicaPrendaTarget) {
+                                        $ordenFoto = $logoCotizacionTecnicaPrendaTarget->fotos()->count() + 1;
+
+                                        $logoCotizacionTecnicaPrendaTarget->fotos()->create([
+                                            'ruta_original' => $path,
+                                            'ruta_webp' => $path,
+                                            'ruta_miniatura' => $path,
+                                            'orden' => $ordenFoto,
+                                        ]);
+
+                                        Log::info(' Imagen del PASO 3 guardada en logo_cotizacion_tecnica_prendas_fotos (array plano)', [
+                                            'fieldName' => $fieldName,
+                                            'cotizacion_id' => $cotizacionId,
+                                            'logo_cotizacion_id' => $logoCotizacion->id ?? null,
+                                            'logo_cotizacion_tecnica_prenda_id' => $logoCotizacionTecnicaPrendaTarget->id,
+                                            'ruta' => $path,
+                                            'orden' => $ordenFoto,
+                                        ]);
+                                    } else {
+                                        Log::warning(' No se pudo asociar imagen PASO 3 (array plano) a técnica+prenda; no se guardará', [
+                                            'fieldName' => $fieldName,
+                                            'cotizacion_id' => $cotizacionId,
+                                            'logo_cotizacion_id' => $logoCotizacion->id ?? null,
+                                            'ruta' => $path,
+                                        ]);
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::error(' Error guardando imagen PASO 3 (array plano) en técnica+prenda', [
+                                        'fieldName' => $fieldName,
+                                        'error' => $e->getMessage(),
                                     ]);
                                 }
                             }

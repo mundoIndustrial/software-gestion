@@ -202,9 +202,6 @@
                     <i class="fas fa-times"></i> Cancelar
                 </button>
                 <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
-                    <button type="button" class="btn btn-success" id="btnGuardarBorrador">
-                        <i class="fas fa-save"></i> Guardar Borrador
-                    </button>
                     <button type="button" class="btn btn-primary" id="btnEnviar">
                         <i class="fas fa-paper-plane"></i> Enviar
                     </button>

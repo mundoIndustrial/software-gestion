@@ -71,8 +71,19 @@ class CotizacionPrendaService
                 if (!empty($fotos)) {
                     $orden = 1;
                     foreach ($fotos as $foto) {
-                        // Si es base64, guardar directamente; si es archivo, usar ruta
+                        // El procesamiento real de imágenes se hace en el controlador.
+                        // Aquí solo se deben persistir rutas ya existentes (ej: reutilización/edición).
                         $ruta = is_array($foto) ? ($foto['ruta_webp'] ?? $foto['url'] ?? '') : $foto;
+
+                        if (!is_string($ruta) || trim($ruta) === '') {
+                            continue;
+                        }
+
+                        // Evitar persistir rutas temporales del servidor (phpXXXX.tmp / paths absolutos)
+                        if (str_contains($ruta, 'AppData') || str_contains($ruta, 'Temp') || str_contains($ruta, '.tmp') || str_contains($ruta, ':\\')) {
+                            continue;
+                        }
+
                         if (!empty($ruta)) {
                             $prenda->fotos()->create([
                                 'ruta_original' => $ruta,

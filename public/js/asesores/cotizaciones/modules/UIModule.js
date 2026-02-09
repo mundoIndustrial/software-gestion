@@ -34,7 +34,6 @@ const UIModule = (() => {
         
         // Botones de acción
         btnFlotante: '#btnFlotante',
-        btnGuardarBorrador: '#btnGuardarBorrador',
         btnEnviar: '#btnEnviar',
         
         // Menú flotante
@@ -153,13 +152,6 @@ const UIModule = (() => {
             clearFieldError(SELECTORS.errorTipoCotizacion);
         });
 
-        // Botones de acción
-        addListener(SELECTORS.btnGuardarBorrador, 'click', () => {
-            if (window.app && window.app.guardar) {
-                window.app.guardar('borrador');
-            }
-        });
-
         addListener(SELECTORS.btnEnviar, 'click', () => {
             if (window.app && window.app.guardar) {
                 window.app.guardar('enviar');
@@ -263,14 +255,7 @@ const UIModule = (() => {
      * Deshabilitar botones de acción
      */
     function disableActionButtons(disabled = true) {
-        const btnGuardar = getElement(SELECTORS.btnGuardarBorrador);
         const btnEnviar = getElement(SELECTORS.btnEnviar);
-
-        if (btnGuardar) {
-            btnGuardar.disabled = disabled;
-            btnGuardar.style.opacity = disabled ? '0.5' : '1';
-            btnGuardar.style.cursor = disabled ? 'not-allowed' : 'pointer';
-        }
 
         if (btnEnviar) {
             btnEnviar.disabled = disabled;
@@ -322,25 +307,16 @@ const UIModule = (() => {
      */
     function showLoading(show = true) {
         const btnEnviar = getElement(SELECTORS.btnEnviar);
-        const btnGuardar = getElement(SELECTORS.btnGuardarBorrador);
 
         if (show) {
             if (btnEnviar) {
                 btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
                 btnEnviar.disabled = true;
             }
-            if (btnGuardar) {
-                btnGuardar.disabled = true;
-                btnGuardar.style.opacity = '0.5';
-            }
         } else {
             if (btnEnviar) {
                 btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
                 btnEnviar.disabled = false;
-            }
-            if (btnGuardar) {
-                btnGuardar.disabled = false;
-                btnGuardar.style.opacity = '1';
             }
         }
     }

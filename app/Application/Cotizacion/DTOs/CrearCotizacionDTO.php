@@ -34,6 +34,23 @@ final readonly class CrearCotizacionDTO
             $especificaciones = json_decode($especificaciones, true) ?? [];
         }
 
+        $numeroCotizacion = null;
+        if (array_key_exists('numero_cotizacion', $datos)) {
+            $raw = $datos['numero_cotizacion'];
+            if (is_int($raw)) {
+                $numeroCotizacion = $raw;
+            } elseif (is_string($raw)) {
+                // Soportar formato: "COT-00005" u otros que contengan dígitos
+                if (preg_match('/\d+/', $raw, $matches)) {
+                    $numeroCotizacion = (int) $matches[0];
+                } else {
+                    $numeroCotizacion = (int) $raw;
+                }
+            } else {
+                $numeroCotizacion = (int) $raw;
+            }
+        }
+
         return new self(
             usuarioId: (int) ($datos['usuario_id'] ?? 0),
             tipo: $datos['tipo'] ?? 'P',
@@ -44,7 +61,7 @@ final readonly class CrearCotizacionDTO
             especificaciones: $especificaciones,
             esBorrador: (bool) ($datos['es_borrador'] ?? true),
             estado: $datos['estado'] ?? 'BORRADOR',
-            numeroCotizacion: isset($datos['numero_cotizacion']) ? (int) $datos['numero_cotizacion'] : null,
+            numeroCotizacion: $numeroCotizacion,
         );
     }
 

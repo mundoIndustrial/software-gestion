@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (pageHeader) pageHeader.style.display = 'none';
     
     // Inicializar funciones
-    cargarDatosDelBorrador();
     mostrarFechaActual();
     configurarDragAndDrop();
 });
@@ -627,7 +626,6 @@ function actualizarResumenFriendly() {
     // 6. TÉCNICAS Y OBSERVACIÓN
     const resumenTecnicas = document.getElementById('resumen_tecnicas');
     if (resumenTecnicas) {
-        // Usar variable global si está disponible (desde cargar-borrador.js)
         let tecnicasArray = window.tecnicasGuardadas || [];
         
         // Si no hay técnicas guardadas, buscar en el DOM
@@ -672,12 +670,11 @@ function actualizarResumenFriendly() {
     }
     
     // 6B. UBICACIONES EN LOGO
-    const resumenLogoUbicacionesContainer = document.getElementById('resumen_logo_ubicaciones_container');
     const resumenLogoUbicaciones = document.getElementById('resumen_logo_ubicaciones');
+    const resumenLogoUbicacionesContainer = document.getElementById('resumen_logo_ubicaciones_container');
     if (resumenLogoUbicaciones && resumenLogoUbicacionesContainer) {
         resumenLogoUbicaciones.innerHTML = '';
         
-        // Usar variable global si está disponible (desde cargar-borrador.js)
         let ubicacionesArray = window.ubicacionesGuardadas || [];
         if (ubicacionesArray.length === 0) {
             resumenLogoUbicacionesContainer.style.display = 'none';
@@ -810,8 +807,7 @@ function actualizarResumenFriendly() {
 
 }
 
-function cargarDatosDelBorrador() {
-    // Implementar si es necesario cargar datos de un borrador existente
+function inicializarCargaEdicion() {
 }
 
 function recopilarDatos() {
@@ -1231,6 +1227,7 @@ function recopilarDatos() {
         
         if (nombre.trim()) {
             const producto = {
+                productoId: productoId,
                 nombre_producto: nombre,
                 descripcion: descripcion,
                 cantidad: parseInt(cantidad) || 1,

@@ -217,9 +217,6 @@ if (!validation.valid) {
     formModule.showValidationErrors(validation.errors);
 }
 
-// Guardar como borrador
-await formModule.handleSave('borrador');
-
 // Obtener estado
 const state = formModule.getState();
 // → {
@@ -267,7 +264,7 @@ app.init();
 window.agregarProductoPrenda();
 
 // Guardar
-window.guardarCotizacionPrenda('borrador');
+window.guardarCotizacionPrenda();
 
 // Obtener estado
 const state = app.getState();
