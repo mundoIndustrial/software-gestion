@@ -225,37 +225,48 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                     prendas_count: resultado.data?.prendas?.length ?? 0
                 });
                 
-                // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL COMPLETA
+                // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL MEJORADA
+                // 🔴 FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
                 const prendaDelPedido = resultado.data?.prendas?.find(p => {
-                    // Coincidencia por ID (prioridad más alta)
-                    const coincideId = (p.id === prenda.id || p.prenda_pedido_id === prenda.id);
+                    // Coincidencia por prenda_pedido_id (PRIORIDAD MÁXIMA - es el ID único de la BD)
+                    const coincidePrendaPedidoId = (p.prenda_pedido_id === prenda.prenda_pedido_id || 
+                                                   p.prenda_pedido_id === prenda.id);
                     
-                    // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES)
+                    // Coincidencia por ID general
+                    const coincideId = (p.id === prenda.id);
+                    
+                    // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES) - baja prioridad
+                    // 🔴 FIX: Evitar comparar undefined === undefined (siempre es true)
                     const coincideNombre = (
-                        // Caso 1: nombre_prenda local == nombre_prenda servidor
-                        p.nombre_prenda === prenda.nombre_prenda ||
+                        // Caso 1: nombre_prenda local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre_prenda && p.nombre_prenda && p.nombre_prenda === prenda.nombre_prenda) ||
                         // Caso 2: nombre local == nombre servidor  
-                        p.nombre === prenda.nombre ||
-                        // Caso 3: nombre_prenda local == nombre servidor (cruzado)
-                        p.nombre === prenda.nombre_prenda ||
-                        // Caso 4: nombre local == nombre_prenda servidor (cruzado)
-                        p.nombre_prenda === prenda.nombre ||
-                        // Caso 5: nombre_producto local == nombre servidor
-                        p.nombre === prenda.nombre_producto ||
-                        // Caso 6: nombre_producto local == nombre_prenda servidor
-                        p.nombre_prenda === prenda.nombre_producto ||
-                        // Caso 7: nombre local == nombre_producto servidor
-                        p.nombre_producto === prenda.nombre ||
-                        // Caso 8: nombre_prenda local == nombre_producto servidor
-                        p.nombre_producto === prenda.nombre_prenda
+                        (prenda.nombre && p.nombre && p.nombre === prenda.nombre) ||
+                        // Caso 3: nombre_prenda local == nombre servidor (cruzado - AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre_prenda && p.nombre && p.nombre === prenda.nombre_prenda) ||
+                        // Caso 4: nombre local == nombre_prenda servidor (cruzado - AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre && p.nombre_prenda && p.nombre_prenda === prenda.nombre) ||
+                        // Caso 5: nombre_producto local == nombre servidor (AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre_producto && p.nombre && p.nombre === prenda.nombre_producto) ||
+                        // Caso 6: nombre_producto local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre_producto && p.nombre_prenda && p.nombre_prenda === prenda.nombre_producto) ||
+                        // Caso 7: nombre local == nombre_producto servidor (AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre && p.nombre_producto && p.nombre_producto === prenda.nombre) ||
+                        // Caso 8: nombre_prenda local == nombre_producto servidor (AMBOS DEBEN SER VÁLIDOS)
+                        (prenda.nombre_prenda && p.nombre_producto && p.nombre_producto === prenda.nombre_prenda)
                     );
                     
-                    // Si coincide por ID, es suficiente (prioridad más alta)
+                    // Si coincide por prenda_pedido_id, es la más confiable (PRIORIDAD MÁXIMA)
+                    if (coincidePrendaPedidoId) {
+                        return true;
+                    }
+                    
+                    // Si coincide por ID, es suficiente (segunda prioridad)
                     if (coincideId) {
                         return true;
                     }
                     
-                    // Si no coincide por ID, requerir coincidencia por nombre
+                    // Si no coincide por ID, requerir coincidencia por nombre (baja prioridad)
                     return coincideNombre;
                 });
                 

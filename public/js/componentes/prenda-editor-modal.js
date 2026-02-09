@@ -159,40 +159,77 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // 🔍 DEBUG: Mostrar qué estamos buscando
         console.log('🔍 [EDITAR-PRENDA] Buscando prenda con:', {
             buscar_id: prenda.id,
-            buscar_prenda_pedido_id: prenda.id,
+            buscar_prenda_pedido_id: prenda.prenda_pedido_id || prenda.id,
             buscar_nombre: prenda.nombre,
             buscar_nombre_prenda: prenda.nombre_prenda,
-            buscar_nombre_producto: prenda.nombre_producto
+            buscar_nombre_producto: prenda.nombre_producto,
+            prendasIndex: prendasIndex
         });
         
-        // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL COMPLETA
+        // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL MEJORADA
+        // 🔴 FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
         const prendaCompleta = resultado.data.prendas?.find(p => {
-            // Coincidencia por ID (prioridad más alta)
-            const coincideId = (p.id === prenda.id || p.prenda_pedido_id === prenda.id);
+            // Coincidencia por prenda_pedido_id (PRIORIDAD MÁXIMA - es el ID único de la BD)
+            const coincidePrendaPedidoId = (p.prenda_pedido_id === prenda.prenda_pedido_id || 
+                                           p.prenda_pedido_id === prenda.id);
             
-            // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES)
+            // Coincidencia por ID general
+            const coincideId = (p.id === prenda.id);
+            
+            // Coincidencia por índice como último recurso (si el servidor devuelve en mismo orden)
+            const coincideIndice = (prendasIndex !== null && prendasIndex !== undefined && 
+                                   resultado.data.prendas.indexOf(p) === prendasIndex);
+            
+            // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES) - baja prioridad
+            // 🔴 FIX: Evitar comparar undefined === undefined (siempre es true)
             const coincideNombre = (
-                // Caso 1: nombre_prenda local == nombre_prenda servidor
-                p.nombre_prenda === prenda.nombre_prenda ||
+                // Caso 1: nombre_prenda local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre_prenda && p.nombre_prenda && p.nombre_prenda === prenda.nombre_prenda) ||
                 // Caso 2: nombre local == nombre servidor  
-                p.nombre === prenda.nombre ||
-                // Caso 3: nombre_prenda local == nombre servidor (cruzado)
-                p.nombre === prenda.nombre_prenda ||
-                // Caso 4: nombre local == nombre_prenda servidor (cruzado)
-                p.nombre_prenda === prenda.nombre ||
-                // Caso 5: nombre_producto local == nombre servidor
-                p.nombre === prenda.nombre_producto ||
-                // Caso 6: nombre_producto local == nombre_prenda servidor
-                p.nombre_prenda === prenda.nombre_producto ||
-                // Caso 7: nombre local == nombre_producto servidor
-                p.nombre_producto === prenda.nombre ||
-                // Caso 8: nombre_prenda local == nombre_producto servidor
-                p.nombre_producto === prenda.nombre_prenda
+                (prenda.nombre && p.nombre && p.nombre === prenda.nombre) ||
+                // Caso 3: nombre_prenda local == nombre servidor (cruzado - AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre_prenda && p.nombre && p.nombre === prenda.nombre_prenda) ||
+                // Caso 4: nombre local == nombre_prenda servidor (cruzado - AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre && p.nombre_prenda && p.nombre_prenda === prenda.nombre) ||
+                // Caso 5: nombre_producto local == nombre servidor (AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre_producto && p.nombre && p.nombre === prenda.nombre_producto) ||
+                // Caso 6: nombre_producto local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre_producto && p.nombre_prenda && p.nombre_prenda === prenda.nombre_producto) ||
+                // Caso 7: nombre local == nombre_producto servidor (AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre && p.nombre_producto && p.nombre_producto === prenda.nombre) ||
+                // Caso 8: nombre_prenda local == nombre_producto servidor (AMBOS DEBEN SER VÁLIDOS)
+                (prenda.nombre_prenda && p.nombre_producto && p.nombre_producto === prenda.nombre_prenda)
             );
             
-            // Si coincide por ID, es suficiente (prioridad más alta)
+            // Si coincide por prenda_pedido_id, es la más confiable (prioridad máxima)
+            if (coincidePrendaPedidoId) {
+                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por prenda_pedido_id encontrada (ÓPTIMA):', {
+                    encontrado_id: p.id,
+                    encontrado_prenda_pedido_id: p.prenda_pedido_id,
+                    buscado_id: prenda.id,
+                    buscado_prenda_pedido_id: prenda.prenda_pedido_id,
+                    encontrado_nombre: p.nombre || p.nombre_prenda,
+                    buscado_nombre: prenda.nombre || prenda.nombre_prenda
+                });
+                return true;
+            }
+            
+            // Si coincide por índice, es confiable (segunda prioridad)
+            if (coincideIndice) {
+                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por índice encontrada:', {
+                    encontrado_id: p.id,
+                    encontrado_prenda_pedido_id: p.prenda_pedido_id,
+                    buscado_id: prenda.id,
+                    prendasIndex: prendasIndex,
+                    encontrado_nombre: p.nombre || p.nombre_prenda,
+                    buscado_nombre: prenda.nombre || prenda.nombre_prenda
+                });
+                return true;
+            }
+            
+            // Si coincide por ID, es suficiente (tercera prioridad)
             if (coincideId) {
-                console.log(' [EDITAR-PRENDA] Coincidencia por ID encontrada:', {
+                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por ID encontrada:', {
                     encontrado_id: p.id,
                     encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_id: prenda.id,
@@ -202,16 +239,21 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                 return true;
             }
             
-            // Si no coincide por ID, requerir coincidencia por nombre
+            // Si no coincide por ID, requerir coincidencia por nombre (baja prioridad)
             if (coincideNombre) {
-                console.log(' [EDITAR-PRENDA] Coincidencia por nombre encontrada:', {
+                console.log(' [EDITAR-PRENDA] ⚠️  Coincidencia por nombre encontrada (validar que sea correcta):', {
                     encontrado_nombre: p.nombre || p.nombre_prenda || p.nombre_producto,
                     encontrado_nombre_prenda: p.nombre_prenda,
                     encontrado_nombre_producto: p.nombre_producto,
+                    encontrado_id: p.id,
+                    encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_nombre: prenda.nombre || prenda.nombre_prenda || prenda.nombre_producto,
                     buscado_nombre_prenda: prenda.nombre_prenda,
                     buscado_nombre_producto: prenda.nombre_producto,
-                    tipo_coincidencia: 'nombre'
+                    buscado_id: prenda.id,
+                    buscado_prenda_pedido_id: prenda.prenda_pedido_id,
+                    tipo_coincidencia: 'nombre',
+                    precaucion: 'VALIDAR QUE ES LA PRENDA CORRECTA'
                 });
                 return true;
             }
@@ -359,19 +401,38 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             console.log('🔄 [TELAS] Procesando formato NUEVO (telas_array):', prendaCompleta.telas_array);
             
             prendaCompleta.telas_array.forEach((ct) => {
-                if (ct && typeof ct === 'object' && ct.id && ct.tela_id && ct.color_id) {
+                // 🔴 FIX: Permitir que color_id sea null (es opcional en la BD)
+                // Solo requerimos id y tela_id que son obligatorios
+                if (ct && typeof ct === 'object' && ct.id && ct.tela_id) {
+                    // DEBUG: Ver TODOS los campos que vienen del servidor
+                    console.log('🔍 [TELAS-DEBUG] Estructura COMPLETA de ct del servidor:', {
+                        ...ct,
+                        tiene_tela_object: typeof ct.tela === 'object',
+                        tiene_color_object: typeof ct.color === 'object',
+                        ct_keys: Object.keys(ct)
+                    });
+                    
                     // Validación segura de objetos anidados para evitar null reference
-                    const color = ct.color || {};
-                    const tela = ct.tela || {};
+                    const color = (typeof ct.color === 'object') ? (ct.color || {}) : {};
+                    const tela = (typeof ct.tela === 'object') ? (ct.tela || {}) : {};
+                    
+                    // Determinar valores principales
+                    const color_principal = (typeof ct.color === 'object') 
+                        ? (color.nombre || ct.color_nombre || '')
+                        : ct.color; // Si es string directo, usarlo
+                    
+                    const tela_principal = (typeof ct.tela === 'object')
+                        ? (tela.nombre || ct.tela_nombre || '')
+                        : ct.tela; // Si es string directo, usarlo
                     
                     telasAgregadas.push({
                         id: ct.id,
                         color_id: ct.color_id,
-                        color: color.nombre || ct.color_nombre || ct.color || '',
+                        color: color_principal || ct.color_nombre || '',
                         codigo_color: color.codigo || ct.color_codigo || ct.codigo_color || '',
                         tela_id: ct.tela_id,
-                        tela: tela.nombre || ct.tela_nombre || ct.nombre || '',
-                        nombre_tela: tela.nombre || ct.tela_nombre || ct.nombre || '',
+                        tela: tela_principal || ct.tela_nombre || '',
+                        nombre_tela: tela_principal || ct.tela_nombre || '',
                         referencia: ct.referencia || tela.referencia || ct.tela_referencia || ct.ref || '',
                         imagenes_count: (ct.imagenes_tela || ct.fotos_tela || ct.imagenes || ct.fotos || []).length,
                         imagenes: (ct.imagenes_tela || ct.fotos_tela || ct.imagenes || ct.fotos || []).map(f => {
@@ -396,7 +457,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             console.log('🔄 [TELAS] Procesando formato ANTIGUO (colores_telas):', prendaCompleta.colores_telas);
             
             prendaCompleta.colores_telas.forEach((ct) => {
-                if (ct && typeof ct === 'object' && ct.id && ct.color_id && ct.tela_id) {
+                // 🔴 FIX: Permitir que color_id sea null (es opcional en la BD)
+                if (ct && typeof ct === 'object' && ct.id && ct.tela_id) {
                     // Validación segura de objetos anidados para evitar null reference
                     const color = ct.color || {};
                     const tela = ct.tela || {};
