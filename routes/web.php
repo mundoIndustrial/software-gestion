@@ -627,6 +627,15 @@ Route::middleware(['auth'])->prefix('asesores')->group(function () {
 });
 
 // ========================================
+// PDF - VISUALIZADOR LOGO
+// ========================================
+// Estas rutas NO deben vivir bajo el prefijo /asesores porque el usuario del visualizador
+// no necesariamente tiene rol asesor y se bloquea con 403.
+Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,contador,aprobador_cotizaciones,asesor'])->group(function () {
+    Route::get('/cotizacion/{id}/pdf/logo', [PDFLogoController::class, 'generate'])->name('visualizador.cotizacion.pdf.logo');
+});
+
+// ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin y supervisor_pedidos pueden acceder a asesores además del rol asesor

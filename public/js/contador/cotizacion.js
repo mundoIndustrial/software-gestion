@@ -17,54 +17,108 @@ function openCotizacionModal(cotizacionId) {
         .then(data => {
 
 
-            // Actualizar header del modal con información de la cotización
-            if (data.cotizacion) {
-                const cot = data.cotizacion;
-                document.getElementById('modalHeaderNumber').textContent = cot.numero_cotizacion || 'N/A';
-                document.getElementById('modalHeaderDate').textContent = cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A';
-                document.getElementById('modalHeaderClient').textContent = cot.nombre_cliente || 'N/A';
-                document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
-            }
+            // Guardar data para poder re-renderizar (cotización combinada: Prenda/Logo)
+            window.__cotizacionModalData = data;
 
-            // Construir HTML del modal sin el encabezado (que ya está en el layout)
-            let html = '';
-            
-            // No se crean tabs - el logo se integrará directamente en las prendas
-            const tieneTabsNecesarios = false;
+            const renderCotizacionModal = (payload, viewMode = null) => {
+                // Actualizar header del modal con información de la cotización
+                if (payload.cotizacion) {
+                    const cot = payload.cotizacion;
+                    document.getElementById('modalHeaderNumber').textContent = cot.numero_cotizacion || 'N/A';
+                    document.getElementById('modalHeaderDate').textContent = cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A';
+                    document.getElementById('modalHeaderClient').textContent = cot.nombre_cliente || 'N/A';
+                    document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
+                }
 
-            // Construir contenido de prendas
-            let htmlPrendas = '';
+                // IMPORTANTE:
+                // - Una cotización SOLO-LOGO puede traer prendas (porque el logo se aplica sobre prendas).
+                // - Los botones "Cotización Prenda / Cotización Logo" solo deben mostrarse en cotización combinada (tipo PL).
+                const tipoCot = payload.cotizacion ? payload.cotizacion.tipo : null;
+                const tipoCotizacionId = payload.cotizacion ? payload.cotizacion.tipo_cotizacion_id : null;
+                const esCombinada = tipoCot === 'PL';
+                const esSoloLogo = (tipoCot === 'L') || (tipoCotizacionId === 2);
+                const moduloActual = (typeof document !== 'undefined' && document.body && document.body.dataset)
+                    ? document.body.dataset.module
+                    : '';
+                const isVisualizadorLogo = moduloActual === 'visualizador-logo';
+                const hideSelector = isVisualizadorLogo || !!window.__cotizacionModalHideSelector;
+                let modo = viewMode || (esCombinada ? (window.__cotizacionModalViewMode || 'prenda') : null);
+                if (esCombinada && hideSelector) {
+                    modo = 'logo';
+                }
+                if (esCombinada) {
+                    window.__cotizacionModalViewMode = modo;
+                }
+
+                // Construir HTML del modal sin el encabezado (que ya está en el layout)
+                let html = '';
+                
+                // Construir contenido de prendas
+                let htmlPrendas = '';
 
             // Contenedor de prendas
             htmlPrendas += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
-            // Agregar mensaje de tipo de venta antes del primer card
-            let tipoVenta = null;
+                // Agregar mensaje de tipo de venta antes del primer card
+                let tipoVenta = null;
+                
+                // Reglas:
+                // - Cotización combinada: en modo LOGO, mostrar tipo_venta de logo_cotizaciones.
+                // - En modo PRENDA (o no combinada), mostrar tipo_venta de cotizaciones.
+                // - Cotización solo-logo: mostrar tipo_venta de logo_cotizaciones.
+                if (payload.logo_cotizacion && payload.logo_cotizacion.tipo_venta && (esSoloLogo || (esCombinada && modo === 'logo'))) {
+                    tipoVenta = payload.logo_cotizacion.tipo_venta;
+                } else if (payload.cotizacion && payload.cotizacion.tipo_venta) {
+                    tipoVenta = payload.cotizacion.tipo_venta;
+                }
             
-            // Verificar si es cotización de logo para obtener tipo_venta de logo_cotizaciones
-            if (data.logo_cotizacion && data.logo_cotizacion.tipo_venta) {
-                // Es cotización de logo, obtener de logo_cotizaciones
-                tipoVenta = data.logo_cotizacion.tipo_venta;
-            } else if (data.cotizacion && data.cotizacion.tipo_venta) {
-                // Es cotización normal, obtener de cotizaciones
-                tipoVenta = data.cotizacion.tipo_venta;
-            }
-            
-            if (tipoVenta) {
-                htmlPrendas += `
-                    <div style="display: inline-block; text-align: left; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px;">
-                        <span style="color: #000000; font-size: 1.1rem; font-weight: 600;">
-                            Por favor cotizar al 
-                        </span>
-                        <span style="color: #dc2626; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
-                            ${tipoVenta}
-                        </span>
-                    </div>
-                `;
-            }
+                if (tipoVenta) {
+                    htmlPrendas += `
+                        <div style="display: inline-block; text-align: left; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 8px;">
+                            <span style="color: #000000; font-size: 1.1rem; font-weight: 600;">
+                                Por favor cotizar al 
+                            </span>
+                            <span style="color: #dc2626; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px;">
+                                ${tipoVenta}
+                            </span>
+                        </div>
+                    `;
+                }
 
-            if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
-                data.prendas_cotizaciones.forEach((prenda, index) => {
+                // Selector Prenda/Logo solo para cotización combinada
+                if (esCombinada && !hideSelector) {
+                    const isPrenda = modo === 'prenda';
+                    const isLogo = modo === 'logo';
+                    htmlPrendas += `
+                        <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+                            <button type="button" id="cotModalBtnPrenda" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isPrenda ? '#1e5ba8' : '#cbd5e1'}; background: ${isPrenda ? '#1e5ba8' : '#ffffff'}; color: ${isPrenda ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">
+                                Cotización Prenda
+                            </button>
+                            <button type="button" id="cotModalBtnLogo" style="padding: 0.6rem 0.9rem; border-radius: 8px; border: 2px solid ${isLogo ? '#1e5ba8' : '#cbd5e1'}; background: ${isLogo ? '#1e5ba8' : '#ffffff'}; color: ${isLogo ? '#ffffff' : '#0f172a'}; font-weight: 800; cursor: pointer;">
+                                Cotización Logo
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const prendaTieneLogo = (prendaObj) => {
+                    const tecnicas = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
+                        ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prendaObj.id)
+                        : [];
+                    if (!tecnicas || tecnicas.length === 0) return false;
+                    // Si existe al menos una técnica asociada a esta prenda, se considera "con logo".
+                    return true;
+                };
+
+                const prendas = Array.isArray(payload.prendas_cotizaciones) ? payload.prendas_cotizaciones : [];
+                const prendasFiltradas = !esCombinada
+                    ? prendas
+                    : (modo === 'logo'
+                        ? prendas.filter(p => prendaTieneLogo(p))
+                        : prendas.filter(p => !prendaTieneLogo(p)));
+
+                if (prendasFiltradas && prendasFiltradas.length > 0) {
+                    prendasFiltradas.forEach((prenda, index) => {
 
 
                     // Construir atributos principales
@@ -81,8 +135,8 @@ function openCotizacionModal(cotizacionId) {
                     let imgTela = '';
                     
                     // Si es cotización logo, buscar en telas_prendas
-                    if (data.logo_cotizacion && data.logo_cotizacion.telas_prendas && data.logo_cotizacion.telas_prendas.length > 0) {
-                        const telaPrenda = data.logo_cotizacion.telas_prendas.find(tp => tp.prenda_cot_id === prenda.id);
+                    if (payload.logo_cotizacion && payload.logo_cotizacion.telas_prendas && payload.logo_cotizacion.telas_prendas.length > 0) {
+                        const telaPrenda = payload.logo_cotizacion.telas_prendas.find(tp => tp.prenda_cot_id === prenda.id);
                         if (telaPrenda) {
                             telaInfo = telaPrenda.tela || '';
                             if (telaPrenda.color) {
@@ -151,8 +205,8 @@ function openCotizacionModal(cotizacionId) {
                                     descripcionCompleta = descripcionCompleta.replace(/\s+/g, ' ').replace(/^,\s*|,\s*$/g, '').trim();
                                     
                                     // Si hay técnicas de logo para esta prenda, agregar ubicaciones
-                                    const tecnicasPrendaArray = data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas 
-                                        ? data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
+                                    const tecnicasPrendaArray = payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas 
+                                        ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
                                         : [];
                                     
                                     if (tecnicasPrendaArray && tecnicasPrendaArray.length > 0) {
@@ -309,9 +363,9 @@ function openCotizacionModal(cotizacionId) {
                     }
 
                     // Renderizar variaciones de técnicas prendas si existen (solo para cotizaciones con logo)
-                    if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas && Array.isArray(data.logo_cotizacion.tecnicas_prendas)) {
+                    if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas && Array.isArray(payload.logo_cotizacion.tecnicas_prendas)) {
                         // Buscar técnicas prendas para esta prenda
-                        const tecnicasPrendaArray = data.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
+                        const tecnicasPrendaArray = payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
                         
                         if (tecnicasPrendaArray.length > 0) {
                             // Consolidar todas las variaciones
@@ -396,7 +450,7 @@ function openCotizacionModal(cotizacionId) {
                                             <span style="color: #1e5ba8; font-weight: 600; font-size: 0.95rem;">TALLAS </span>
                                             <span id="tallas-texto-${prenda.id}" 
                                                   data-prenda-id="${prenda.id}"
-                                                  data-cotizacion-id="${data.cotizacion.id}"
+                                                  data-cotizacion-id="${payload.cotizacion.id}"
                                                   ondblclick="editarTallasConParentesis(this)"
                                                   style="color: #dc2626; font-weight: 700; font-size: 1rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; display: inline-block;"
                                                   onmouseover="this.style.backgroundColor='#fee2e2'"
@@ -541,8 +595,8 @@ function openCotizacionModal(cotizacionId) {
                     // Agrupar por URL para soportar "logo compartido" entre técnicas
                     const logosPorUrl = new Map();
                     
-                    if (data.logo_cotizacion && data.logo_cotizacion.tecnicas_prendas) {
-                        data.logo_cotizacion.tecnicas_prendas.forEach(tp => {
+                    if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
+                        payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
                             if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
                                 const tecnicaNombre = (tp.tipo_logo_nombre || (tp.tipoLogo && tp.tipoLogo.nombre) || 'Logo');
                                 tp.fotos.forEach((foto, idx) => {
@@ -645,9 +699,14 @@ function openCotizacionModal(cotizacionId) {
 
                     htmlPrendas += `</div>`;
                 });
-            } else {
-                htmlPrendas += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
-            }
+                } else {
+                    const mensaje = esCombinada
+                        ? (modo === 'logo'
+                            ? 'No hay prendas con información de logo para mostrar'
+                            : 'No hay prendas sin logo para mostrar')
+                        : 'No hay prendas para mostrar';
+                    htmlPrendas += `<p style="color: #999; text-align: center; padding: 2rem;">${mensaje}</p>`;
+                }
 
             htmlPrendas += '</div>';
 
@@ -684,13 +743,13 @@ function openCotizacionModal(cotizacionId) {
             };
 
             // Parsear especificaciones una sola vez
-            const especificacionesObj = parseEspecificaciones(data.cotizacion?.especificaciones);
+            const especificacionesObj = parseEspecificaciones(payload.cotizacion?.especificaciones);
             const tieneEspecificacionesReales = verificarEspecificaciones(especificacionesObj);
 
             console.log('Especificaciones parseadas:', especificacionesObj);
             console.log('Tiene especificaciones reales:', tieneEspecificacionesReales);
-            console.log('tiene_prendas:', data.tiene_prendas);
-            console.log('tiene_logo:', data.tiene_logo);
+            console.log('tiene_prendas:', payload.tiene_prendas);
+            console.log('tiene_logo:', payload.tiene_logo);
 
             // SECCIÓN ESPECIFICACIONES GENERALES
             if (tieneEspecificacionesReales) {
@@ -762,14 +821,14 @@ function openCotizacionModal(cotizacionId) {
             }
                 
             // SECCIÓN DE OBSERVACIONES GENERALES (para cotización logo)
-            if (data.logo_cotizacion && data.logo_cotizacion.observaciones_generales) {
+            if (payload.logo_cotizacion && payload.logo_cotizacion.observaciones_generales) {
                 let observacionesArray = [];
                 
                 try {
-                    if (typeof data.logo_cotizacion.observaciones_generales === 'string') {
-                        observacionesArray = JSON.parse(data.logo_cotizacion.observaciones_generales);
-                    } else if (Array.isArray(data.logo_cotizacion.observaciones_generales)) {
-                        observacionesArray = data.logo_cotizacion.observaciones_generales;
+                    if (typeof payload.logo_cotizacion.observaciones_generales === 'string') {
+                        observacionesArray = JSON.parse(payload.logo_cotizacion.observaciones_generales);
+                    } else if (Array.isArray(payload.logo_cotizacion.observaciones_generales)) {
+                        observacionesArray = payload.logo_cotizacion.observaciones_generales;
                     }
                 } catch (e) {
                     console.log('Error al parsear observaciones generales:', e);
@@ -832,8 +891,8 @@ function openCotizacionModal(cotizacionId) {
 
             // Construir contenido de logo
             let htmlLogo = '';
-            if (data.logo_cotizacion) {
-                const logo = data.logo_cotizacion;
+            if (payload.logo_cotizacion) {
+                const logo = payload.logo_cotizacion;
                 // Normalizar arrays que pueden venir como string o null
                 const parseArray = (value) => {
                     if (!value) return [];
@@ -1003,15 +1062,36 @@ function openCotizacionModal(cotizacionId) {
 
             // Insertar contenido en el modal sin tabs
             // El logo ahora se renderiza directamente dentro de cada prenda
-            if (data.tiene_prendas) {
+            if (payload.tiene_prendas) {
                 html += htmlPrendas;
             }
             
             document.getElementById('modalBody').innerHTML = html;
 
+            // Wire events del selector (si es combinada)
+            if (esCombinada && !hideSelector) {
+                const btnPrenda = document.getElementById('cotModalBtnPrenda');
+                const btnLogo = document.getElementById('cotModalBtnLogo');
+
+                if (btnPrenda) {
+                    btnPrenda.onclick = () => {
+                        window.__cotizacionModalViewMode = 'prenda';
+                        renderCotizacionModal(window.__cotizacionModalData, 'prenda');
+                    };
+                }
+
+                if (btnLogo) {
+                    btnLogo.onclick = () => {
+                        window.__cotizacionModalViewMode = 'logo';
+                        renderCotizacionModal(window.__cotizacionModalData, 'logo');
+                    };
+                }
+            }
+
             document.getElementById('cotizacionModal').style.display = 'flex';
+            };
 
-
+            renderCotizacionModal(data);
         })
         .catch(error => {
 
@@ -1031,6 +1111,11 @@ function closeCotizacionModal() {
  */
 function cerrarModalCotizacion() {
     document.getElementById('cotizacionModal').style.display = 'none';
+}
+
+if (typeof window !== 'undefined') {
+    window.openCotizacionModalContador = openCotizacionModal;
+    window.closeCotizacionModalContador = closeCotizacionModal;
 }
 
 /**

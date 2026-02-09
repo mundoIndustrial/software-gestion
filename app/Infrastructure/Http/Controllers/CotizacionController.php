@@ -1759,27 +1759,41 @@ final class CotizacionController extends Controller
                                 $nombreProductoNormalizado = $nombreKey;
 
                                 if (!isset($prendasCotPorNombre[$nombreKey])) {
-                                    $prendasCotPorNombre[$nombreKey] = \App\Models\PrendaCot::firstOrCreate(
-                                        [
+                                    // PASO 3 (combinada): permitir duplicados por nombre vs PASO 2.
+                                    // No usar firstOrCreate por nombre, porque puede colisionar con prendas del PASO 2
+                                    // (ej: cuando PASO 2 trae prenda_bodega=true).
+                                    // Reutilizamos solo si ya existe una prenda previamente referenciada por técnicas de logo
+                                    // para esta logo_cotizacion y ese nombre.
+                                    $prendaCotExistentePaso3 = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                        ->whereHas('prendaCot', function ($q) use ($nombreProductoNormalizado) {
+                                            $q->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombreProductoNormalizado)]);
+                                        })
+                                        ->orderByDesc('id')
+                                        ->first();
+
+                                    if ($prendaCotExistentePaso3 && $prendaCotExistentePaso3->prendaCot) {
+                                        $prendasCotPorNombre[$nombreKey] = $prendaCotExistentePaso3->prendaCot;
+                                        Log::info(' Prenda reutilizada desde técnicas existentes (PASO 3)', [
+                                            'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
+                                            'nombre_producto' => $nombreProductoNormalizado,
+                                            'cotizacion_id' => $cotizacionId,
+                                        ]);
+                                    } else {
+                                        $prendasCotPorNombre[$nombreKey] = \App\Models\PrendaCot::create([
                                             'cotizacion_id' => $cotizacionId,
                                             'nombre_producto' => $nombreProductoNormalizado,
-                                        ],
-                                        [
                                             'descripcion' => $prendaData['descripcion'] ?? ($prendaData['observaciones'] ?? ''),
                                             'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
                                             'cantidad' => $prendaData['cantidad'] ?? 1,
                                             'prenda_bodega' => true,
-                                        ]
-                                    );
+                                        ]);
 
-                                    Log::info(' Prenda creada/reutilizada en prendas_cot (desde PASO 3)', [
-                                        'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
-                                        'nombre_producto' => $nombreProductoNormalizado,
-                                        'cotizacion_id' => $cotizacionId,
-                                        'was_recently_created' => method_exists($prendasCotPorNombre[$nombreKey], 'wasRecentlyCreated')
-                                            ? $prendasCotPorNombre[$nombreKey]->wasRecentlyCreated
-                                            : null,
-                                    ]);
+                                        Log::info(' Prenda creada en prendas_cot (desde PASO 3)', [
+                                            'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
+                                            'nombre_producto' => $nombreProductoNormalizado,
+                                            'cotizacion_id' => $cotizacionId,
+                                        ]);
+                                    }
                                 } else {
                                     Log::info(' Prenda reutilizada en memoria (desde PASO 3)', [
                                         'prenda_cot_id' => $prendasCotPorNombre[$nombreKey]->id,
@@ -1948,9 +1962,21 @@ final class CotizacionController extends Controller
                                             'nombre_prenda_base' => $nombrePrendaBase
                                         ]);
                                         
-                                        $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
-                                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
-                                            ->first();
+                                        // IMPORTANTE (combinada): si existe prenda del PASO 2 y del PASO 3 con el mismo nombre,
+                                        // las técnicas e imágenes del PASO 3 deben ir a la prenda del PASO 3 (prenda_bodega=true).
+                                        // Reutilizar el cache de prendas creado durante el procesamiento de técnicas si está disponible.
+                                        $nombreKeyImg = trim(mb_strtoupper($nombrePrendaBase));
+                                        $prendaCot = null;
+
+                                        if (isset($prendasCotPorNombre) && is_array($prendasCotPorNombre) && isset($prendasCotPorNombre[$nombreKeyImg])) {
+                                            $prendaCot = $prendasCotPorNombre[$nombreKeyImg];
+                                        } else {
+                                            $prendaCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                                                ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
+                                                ->where('prenda_bodega', true)
+                                                ->orderByDesc('id')
+                                                ->first();
+                                        }
                                         
                                         if ($prendaCot) {
                                             $tipoLogoId = $tecnicasAgregadas[$tecnicaIndex]['tipo_logo']['id'];

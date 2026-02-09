@@ -413,6 +413,7 @@ class ContadorController extends Controller
                 $logoCotizacion = [
                     'id' => $cotizacionModelo->logoCotizacion->id,
                     'descripcion' => $cotizacionModelo->logoCotizacion->descripcion ?? null,
+                    'tipo_venta' => $cotizacionModelo->logoCotizacion->tipo_venta ?? null,
                     'tecnicas' => $cotizacionModelo->logoCotizacion->tecnicas ?? [],
                     'secciones' => $cotizacionModelo->logoCotizacion->secciones ?? [],
                     'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
