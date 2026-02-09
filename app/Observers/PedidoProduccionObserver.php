@@ -3,6 +3,8 @@
 namespace App\Observers;
 
 use App\Events\PedidoActualizado;
+use App\Events\PedidoCreado;
+use App\Jobs\BroadcastPedidoCreado;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use App\Services\ConsecutivosRecibosService;
@@ -41,7 +43,34 @@ class PedidoProduccionObserver
      */
     public function created(PedidoProduccion $pedido): void
     {
-        $this->broadcastPedidoChange($pedido, 'created');
+        try {
+            $userId = Auth::id();
+            
+            if (!$userId) {
+                Log::warning('[PedidoProduccionObserver] No authenticated user when pedido created', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                ]);
+                return;
+            }
+
+            Log::info('[PedidoProduccionObserver] Pedido creado, disparando broadcast job', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'asesor_id' => $userId,
+            ]);
+
+            // Dispatchear job asíncrono para broadcasting
+            // Esto notifica en tiempo real a la cartera de pedidos
+            BroadcastPedidoCreado::dispatch($pedido->id, $userId);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidoProduccionObserver] Error en observer created', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+            // No lanzar excepción - no queremos bloquear la creación del pedido
+        }
     }
 
     /**

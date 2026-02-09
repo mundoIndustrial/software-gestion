@@ -736,8 +736,19 @@ class CrearPedidoEditableController extends Controller
                 'resumen' => "JSON: {$tiempoPaso1}ms | Cliente: {$tiempoPaso2}ms | DTO: {$tiempoPaso3}ms | PedidoBase: {$tiempoPaso5}ms | Carpetas: {$tiempoPaso6}ms | Imágenes: {$tiempoPaso7}ms | EPPs: {$tiempoPaso7B}ms | Cálculo: {$tiempoPaso8}ms | TOTAL: {$tiempoTotal}ms"
             ]);
 
-            // Dispatchear evento en tiempo real para que otros usuarios reciban el nuevo pedido
-            PedidoCreado::dispatch($pedido, Auth::user());
+            // TODO: Dispatchear evento en tiempo real para que otros usuarios reciban el nuevo pedido
+            // Temporalmente deshabilitado hasta que se resuelvan problemas de serialización
+            // try {
+            //     $pedidoFresco = PedidoProduccion::find($pedidoId);
+            //     if ($pedidoFresco) {
+            //         PedidoCreado::dispatch($pedidoFresco, Auth::user());
+            //     }
+            // } catch (\Exception $broadcastError) {
+            //     Log::warning('[CREAR-PEDIDO] ⚠️ Error al disparar evento de broadcasting', [
+            //         'pedido_id' => $pedidoId,
+            //         'error' => $broadcastError->getMessage(),
+            //     ]);
+            // }
 
             return response()->json([
                 'success' => true,

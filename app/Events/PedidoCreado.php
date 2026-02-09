@@ -14,13 +14,33 @@ class PedidoCreado implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $pedidoId;
+    public $numeroPedido;
+    public $cliente;
+    public $asesorId;
+    public $asesorNombre;
+    public $estado;
+    public $formaPago;
+    public $cantidadTotal;
+    public $fechaCreacion;
+
     /**
      * Create a new event instance.
      */
     public function __construct(
-        public PedidoProduccion $pedido,
-        public User $asesor
+        PedidoProduccion $pedido,
+        User $asesor
     ) {
+        // Extraer datos del pedido y asesor para evitar problemas de serialización
+        $this->pedidoId = $pedido->id;
+        $this->numeroPedido = $pedido->numero_pedido;
+        $this->cliente = $pedido->cliente;
+        $this->asesorId = $asesor->id;
+        $this->asesorNombre = $asesor->name;
+        $this->estado = $pedido->estado;
+        $this->formaPago = $pedido->forma_pago;
+        $this->cantidadTotal = $pedido->cantidad_total;
+        $this->fechaCreacion = $pedido->created_at?->toISOString();
     }
 
     /**
@@ -32,7 +52,7 @@ class PedidoCreado implements ShouldBroadcastNow
             // Canal para todos los usuarios que pueden ver cartera (contadores, admins, etc)
             new Channel('pedidos.creados'),
             // Canal para el asesor específico
-            new Channel('pedidos.asesor.' . $this->asesor->id),
+            new Channel('pedidos.asesor.' . $this->asesorId),
         ];
     }
 
@@ -50,26 +70,27 @@ class PedidoCreado implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         \Log::info('Broadcasting PedidoCreado event', [
-            'pedido_id' => $this->pedido->id,
-            'numero_pedido' => $this->pedido->numero_pedido,
-            'asesor_id' => $this->asesor->id,
-            'cliente' => $this->pedido->cliente,
+            'pedido_id' => $this->pedidoId,
+            'numero_pedido' => $this->numeroPedido,
+            'asesor_id' => $this->asesorId,
+            'cliente' => $this->cliente,
         ]);
 
         return [
             'pedido' => [
-                'id' => $this->pedido->id,
-                'numero_pedido' => $this->pedido->numero_pedido,
-                'cliente' => $this->pedido->cliente,
-                'estado' => $this->pedido->estado,
-                'forma_pago' => $this->pedido->forma_pago,
-                'fecha_creacion' => $this->pedido->created_at?->toISOString(),
-                'cantidad_total' => $this->pedido->cantidad_total,
-                'asesora' => $this->asesor->name,
-                'asesor_id' => $this->asesor->id,
+                'id' => $this->pedidoId,
+                'numero_pedido' => $this->numeroPedido,
+                'cliente' => $this->cliente,
+                'estado' => $this->estado,
+                'forma_pago' => $this->formaPago,
+                'fecha_creacion' => $this->fechaCreacion,
+                'cantidad_total' => $this->cantidadTotal,
+                'asesora' => $this->asesorNombre,
+                'asesor_id' => $this->asesorId,
             ],
             'timestamp' => now()->toISOString(),
         ];
     }
 }
+
 
