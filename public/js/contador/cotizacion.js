@@ -30,13 +30,7 @@ function openCotizacionModal(cotizacionId) {
                     document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
                 }
 
-                // IMPORTANTE:
-                // - Una cotización SOLO-LOGO puede traer prendas (porque el logo se aplica sobre prendas).
-                // - Los botones "Cotización Prenda / Cotización Logo" solo deben mostrarse en cotización combinada (tipo PL).
-                const tipoCot = payload.cotizacion ? payload.cotizacion.tipo : null;
-                const tipoCotizacionId = payload.cotizacion ? payload.cotizacion.tipo_cotizacion_id : null;
-                const esCombinada = tipoCot === 'PL';
-                const esSoloLogo = (tipoCot === 'L') || (tipoCotizacionId === 2);
+                const esCombinada = !!(payload.tiene_prendas && payload.tiene_logo);
                 const moduloActual = (typeof document !== 'undefined' && document.body && document.body.dataset)
                     ? document.body.dataset.module
                     : '';
@@ -66,7 +60,7 @@ function openCotizacionModal(cotizacionId) {
                 // - Cotización combinada: en modo LOGO, mostrar tipo_venta de logo_cotizaciones.
                 // - En modo PRENDA (o no combinada), mostrar tipo_venta de cotizaciones.
                 // - Cotización solo-logo: mostrar tipo_venta de logo_cotizaciones.
-                if (payload.logo_cotizacion && payload.logo_cotizacion.tipo_venta && (esSoloLogo || (esCombinada && modo === 'logo'))) {
+                if (payload.logo_cotizacion && payload.logo_cotizacion.tipo_venta && ((esCombinada && modo === 'logo') || (!payload.tiene_prendas && payload.tiene_logo))) {
                     tipoVenta = payload.logo_cotizacion.tipo_venta;
                 } else if (payload.cotizacion && payload.cotizacion.tipo_venta) {
                     tipoVenta = payload.cotizacion.tipo_venta;
