@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Events\PedidoActualizado;
 use App\Events\PedidoCreado;
-use App\Jobs\BroadcastPedidoCreado;
 use App\Models\PedidoProduccion;
 use App\Models\User;
 use App\Services\ConsecutivosRecibosService;
@@ -54,18 +53,22 @@ class PedidoProduccionObserver
                 return;
             }
 
-            Log::info('[PedidoProduccionObserver] Pedido creado, disparando broadcast job', [
+            Log::info('[PedidoProduccionObserver] Pedido creado, disparando evento broadcast síncrono', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'asesor_id' => $userId,
             ]);
 
-            // Dispatchear job asíncrono para broadcasting
-            // Esto notifica en tiempo real a la cartera de pedidos
-            BroadcastPedidoCreado::dispatch($pedido->id, $userId);
+            // Obtener user fresco para el evento
+            $user = User::find($userId);
+            
+            // Disparar evento de forma SÍNCRONA (sin cola)
+            if ($user) {
+                PedidoCreado::dispatch($pedido, $user);
+            }
 
         } catch (\Exception $e) {
-            Log::error('[PedidoProduccionObserver] Error en observer created', [
+            Log::error('[PedidoProduccionObserver] Error al disparar evento en observer created', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
             ]);
