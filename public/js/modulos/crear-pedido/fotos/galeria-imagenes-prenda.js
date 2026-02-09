@@ -201,7 +201,10 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     };
     
     imgModal.onerror = function() {
-        console.error('🖼️ [galeria-imagenes-prenda] Error al cargar imagen:', this.src);
+        // Solo reportar error si hay una URL real (no vacía o la URL de la página)
+        if (this.src && !this.src.includes('/crear-nuevo') && !this.src.endsWith('/')) {
+            console.error('🖼️ [galeria-imagenes-prenda] Error al cargar imagen:', this.src);
+        }
     };
     
     //  Crear contador ANTES de la función actualizarImagen
@@ -213,6 +216,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     const actualizarImagen = (nuevoIndice) => {
         indiceActual = nuevoIndice;
         const newBlobUrl = imagenesConBlobUrl[indiceActual].blobUrl;
+        imgModal.style.display = 'block'; // Asegurar que la imagen sea visible
         imgModal.src = '';
         imgModal.src = newBlobUrl;
         contador.textContent = (indiceActual + 1) + ' de ' + imagenesConBlobUrl.length;
@@ -414,7 +418,9 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         if (imagenesConBlobUrl.length === 0) {
 
             
-            imgModal.src = '';
+            // Ocultar la imagen en lugar de establecer src vacío
+            imgModal.style.display = 'none';
+            imgModal.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // imagen transparente 1x1
             imgContainer.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 2rem;">
                     <div style="font-size: 4rem; color: rgba(255,255,255,0.3);">📸</div>
