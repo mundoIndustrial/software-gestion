@@ -31,12 +31,37 @@ function openCotizacionModal(cotizacionId) {
                 }
 
                 const esCombinada = !!(payload.tiene_prendas && payload.tiene_logo);
+                const esSoloLogo = !!(!payload.tiene_prendas && payload.tiene_logo);
                 const moduloActual = (typeof document !== 'undefined' && document.body && document.body.dataset)
                     ? document.body.dataset.module
                     : '';
                 const isVisualizadorLogo = moduloActual === 'visualizador-logo';
                 const hideSelector = isVisualizadorLogo || !!window.__cotizacionModalHideSelector;
                 let modo = viewMode || (esCombinada ? (window.__cotizacionModalViewMode || 'prenda') : null);
+                // Helper: identifica si una prenda tiene técnicas de logo
+                const prendaTieneLogo = (prendaObj) => {
+                    const tecnicas = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
+                        ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prendaObj.id)
+                        : [];
+                    if (!tecnicas || tecnicas.length === 0) return false;
+                    // Si existe al menos una técnica asociada a esta prenda, se considera "con logo".
+                    return true;
+                };
+
+                // En algunos casos (cotización tipo logo) el backend igual envía prendas_cotizaciones,
+                // por lo que tiene_prendas puede venir en true. Detectamos "solo logo" por contenido.
+                const prendasAll = Array.isArray(payload.prendas_cotizaciones) ? payload.prendas_cotizaciones : [];
+                const esSoloLogoPorContenido = !!(
+                    payload.tiene_logo &&
+                    prendasAll.length > 0 &&
+                    prendasAll.every(p => prendaTieneLogo(p))
+                );
+
+                const esSoloLogoFinal = esSoloLogo || esSoloLogoPorContenido;
+
+                if (esSoloLogoFinal) {
+                    modo = 'logo';
+                }
                 if (esCombinada && hideSelector) {
                     modo = 'logo';
                 }
@@ -79,8 +104,8 @@ function openCotizacionModal(cotizacionId) {
                     `;
                 }
 
-                // Selector Prenda/Logo solo para cotización combinada
-                if (esCombinada && !hideSelector) {
+                // Selector Prenda/Logo solo para cotización combinada (NO aplica para cotización solo-logo)
+                if (esCombinada && !hideSelector && !esSoloLogoFinal) {
                     const isPrenda = modo === 'prenda';
                     const isLogo = modo === 'logo';
                     htmlPrendas += `
@@ -95,21 +120,14 @@ function openCotizacionModal(cotizacionId) {
                     `;
                 }
 
-                const prendaTieneLogo = (prendaObj) => {
-                    const tecnicas = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
-                        ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prendaObj.id)
-                        : [];
-                    if (!tecnicas || tecnicas.length === 0) return false;
-                    // Si existe al menos una técnica asociada a esta prenda, se considera "con logo".
-                    return true;
-                };
-
-                const prendas = Array.isArray(payload.prendas_cotizaciones) ? payload.prendas_cotizaciones : [];
-                const prendasFiltradas = !esCombinada
-                    ? prendas
-                    : (modo === 'logo'
-                        ? prendas.filter(p => prendaTieneLogo(p))
-                        : prendas.filter(p => !prendaTieneLogo(p)));
+                const prendas = prendasAll;
+                const prendasFiltradas = esSoloLogoFinal
+                    ? prendas.filter(p => prendaTieneLogo(p))
+                    : (!esCombinada
+                        ? prendas
+                        : (modo === 'logo'
+                            ? prendas.filter(p => prendaTieneLogo(p))
+                            : prendas.filter(p => !prendaTieneLogo(p))));
 
                 if (prendasFiltradas && prendasFiltradas.length > 0) {
                     prendasFiltradas.forEach((prenda, index) => {
