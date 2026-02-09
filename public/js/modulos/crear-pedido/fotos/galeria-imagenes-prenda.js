@@ -30,19 +30,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     console.log('   - estamosCriando:', estamosCriando);
     console.log('   - estamoEditando:', estamoEditando);
 
-    //  DETECTAR SI ES PRENDA DE COTIZACIÓN PARA PROTECCIÓN
-    let esPrendaDeCotizacion = false;
-    let cotizacionId = null;
-    
-    if (estamoEditando && prenda) {
-        esPrendaDeCotizacion = !!(prenda.cotizacion_id || prenda.tipo === 'cotizacion');
-        cotizacionId = prenda.cotizacion_id || null;
-    }
-    
-    console.log('   - esPrendaDeCotizacion:', esPrendaDeCotizacion);
-    console.log('   - cotizacionId:', cotizacionId);
-
-    
+    //  DECLARAR VARIABLES PRIMERO
     let imagenesActuales = [];
     let prenda = null;
     
@@ -60,6 +48,18 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
         prenda = window.gestorPrendaSinCotizacion?.obtenerPorIndice(window.gestionItemsUI.prendaEditIndex);
 
     }
+    
+    //  AHORA QUE TENEMOS 'prenda', DETECTAR SI ES PRENDA DE COTIZACIÓN PARA PROTECCIÓN
+    let esPrendaDeCotizacion = false;
+    let cotizacionId = null;
+    
+    if (estamoEditando && prenda) {
+        esPrendaDeCotizacion = !!(prenda.cotizacion_id || prenda.tipo === 'cotizacion');
+        cotizacionId = prenda.cotizacion_id || null;
+    }
+    
+    console.log('   - esPrendaDeCotizacion:', esPrendaDeCotizacion);
+    console.log('   - cotizacionId:', cotizacionId);
     
     //  Si estamos EDITANDO, usar SOLAMENTE this.prendas[prendaIndex].imagenes
     if (estamoEditando && prenda) {
