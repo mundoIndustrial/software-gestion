@@ -63,7 +63,7 @@ class PedidoWebService
     {
         $tiempoInicio = microtime(true);
         
-        $pedido = DB::transaction(function () use ($datosValidados, $asesorId, &$tiempoInicio) {
+        return DB::transaction(function () use ($datosValidados, $asesorId, &$tiempoInicio) {
             // 1. Crear pedido base
             $tiempoInicioBase = microtime(true);
             $pedido = $this->crearPedidoBase($datosValidados, $asesorId);
@@ -93,31 +93,6 @@ class PedidoWebService
 
             return $pedido;
         });
-
-        // ⚡ DISPARAR EVENTO FUERA DE LA TRANSACCIÓN
-        try {
-            Log::info('[PedidoWebService] 🚀 DISPARANDO EVENTO PedidoCreado (FUERA DE TRANSACCIÓN)', [
-                'pedido_id' => $pedido->id,
-            ]);
-            
-            $asesor = \App\Models\User::find($asesorId);
-            if ($asesor) {
-                \App\Events\PedidoCreado::dispatch($pedido, $asesor);
-                Log::info('[PedidoWebService] ✅ EVENTO PedidoCreado DISPARADO', [
-                    'pedido_id' => $pedido->id,
-                    'asesor_id' => $asesor->id,
-                ]);
-            } else {
-                Log::warning('[PedidoWebService] ⚠️ Asesor no encontrado para' . $asesorId);
-            }
-        } catch (\Exception $e) {
-            Log::error('[PedidoWebService] ❌ Error disparando evento PedidoCreado', [
-                'pedido_id' => $pedido->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return $pedido;
     }
 
     /**
