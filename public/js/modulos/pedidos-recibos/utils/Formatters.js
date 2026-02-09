@@ -287,10 +287,27 @@ export class Formatters {
                     lineas.push('</div>');
                 }
                 
-                // Tallas del reflectivo
-                if (prenda.tallas && (Object.keys(prenda.tallas).length > 0)) {
-                    lineas.push('<strong>TALLAS</strong>');
-                    this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);
+                // Tallas del reflectivo - SOLO si son diferentes a las de la prenda principal
+                let tallasAMostrar = null;
+                
+                // Preferir tallas del proceso reflectivo si existen
+                if (procesoReflectivo.tallas && Object.keys(procesoReflectivo.tallas).length > 0) {
+                    tallasAMostrar = procesoReflectivo.tallas;
+                } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
+                    tallasAMostrar = prenda.tallas;
+                }
+                
+                if (tallasAMostrar) {
+                    // Comparar si son diferentes a las de la prenda
+                    const tallasIguales = this._sonTallasIguales(tallasAMostrar, prenda.tallas);
+                    
+                    if (!tallasIguales) {
+                        lineas.push('<strong>TALLAS</strong>');
+                        this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero);
+                        console.log('[Formatters] ℹ️ Tallas del reflectivo son DIFERENTES, mostrando');
+                    } else {
+                        console.log('[Formatters] ℹ️ Tallas del reflectivo son IGUALES a la prenda, omitiendo duplicado');
+                    }
                 }
                 
                 console.log('[Formatters]  Proceso REFLECTIVO agregado');
@@ -385,6 +402,63 @@ export class Formatters {
         }
 
         return lineas.join('<br>') || '<em>Sin información</em>';
+    }
+
+    /**
+     * Comparar si dos objetos de tallas son idénticos
+     */
+    static _sonTallasIguales(tallas1, tallas2) {
+        // Validación básica
+        if (!tallas1 || !tallas2) return false;
+        
+        // Convertir ambas a objetos normalizados
+        const norm1 = this._normalizarTallas(tallas1);
+        const norm2 = this._normalizarTallas(tallas2);
+        
+        // Comparar estructura
+        const keys1 = Object.keys(norm1).sort();
+        const keys2 = Object.keys(norm2).sort();
+        
+        if (keys1.length !== keys2.length) return false;
+        
+        // Comparar cada clave y valor
+        for (let i = 0; i < keys1.length; i++) {
+            if (keys1[i] !== keys2[i]) return false;
+            if (JSON.stringify(norm1[keys1[i]]) !== JSON.stringify(norm2[keys2[i]])) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Normalizar estructura de tallas a un formato consistente
+     */
+    static _normalizarTallas(tallas) {
+        const resultado = {};
+        
+        if (Array.isArray(tallas)) {
+            tallas.forEach((item) => {
+                if (item && typeof item === 'object') {
+                    const genero = String(item.genero || 'dama').toLowerCase();
+                    const talla = item.talla || '';
+                    const cantidad = item.cantidad || 0;
+                    
+                    if (!resultado[genero]) resultado[genero] = {};
+                    resultado[genero][talla] = cantidad;
+                }
+            });
+        } else if (typeof tallas === 'object') {
+            Object.entries(tallas).forEach(([key, value]) => {
+                const genero = key.toLowerCase();
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    resultado[genero] = value;
+                }
+            });
+        }
+        
+        return resultado;
     }
 
     /**
