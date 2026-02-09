@@ -31,7 +31,9 @@ class CheckRole
         \Log::info('[CHECKROLE-DEBUG] Datos del usuario', [
             'usuario_id' => $user->id,
             'usuario_email' => $user->email,
+            'ruta_actual' => $request->path(),
             'roles_ids' => $rolesIds,
+            'roles_string_recibido' => $roles,
             'roles_requeridos' => $requiredRoles,
         ]);
 
@@ -51,6 +53,13 @@ class CheckRole
         // Verificar si alguno de los roles requeridos coincide
         $hasAccess = false;
         foreach ($requiredRoles as $requiredRole) {
+            // HERENCIA DE ROLES: supervisor_pedidos puede acceder a rutas que requieren asesor
+            if ($requiredRole === 'asesor' && in_array('supervisor_pedidos', $userRoleNames)) {
+                $hasAccess = true;
+                \Log::info('[CHECKROLE-ACCESO] Rol herencia: supervisor_pedidos actúa como asesor');
+                break;
+            }
+            
             if (in_array($requiredRole, $userRoleNames)) {
                 $hasAccess = true;
                 \Log::info('[CHECKROLE-ACCESO] Rol encontrado: ' . $requiredRole);

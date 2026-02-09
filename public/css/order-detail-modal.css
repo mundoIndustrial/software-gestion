@@ -288,3 +288,78 @@
     margin-bottom: 2px;
 }
 
+/* ===== REGLAS PARA IMPRESIÓN ===== */
+@media print {
+    /* Ocultar contenedores de botones flotantes */
+    #floating-buttons-container,
+    #floating-buttons-container-logo,
+    .floating-buttons,
+    .no-print,
+    [data-no-print="true"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+    
+    /* Botones individuales */
+    #btn-factura,
+    #btn-galeria,
+    #btn-factura-logo,
+    #btn-galeria-logo {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+    
+    /* Forzar colores exactos */
+    .order-date {
+        background: #000000 !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        -moz-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+    
+    .date-box {
+        background: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        -moz-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+    
+    .receipt-title {
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    /* Asegurar que la tarjeta se imprima bien */
+    .order-detail-card {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+    
+    .order-detail-modal-container {
+        transform: scale(1) !important;
+        transform-origin: center !important;
+    }
+    
+    /* Ocultar elementos no necesarios en impresión */
+    .arrow-container,
+    .modal-close-btn,
+    button.close,
+    .modal-footer {
+        display: none !important;
+    }
+}
+
+

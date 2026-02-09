@@ -372,6 +372,68 @@
     <!-- Sistema de refresh automático de token CSRF (Previene error 419) -->
     <script src="{{ asset('js/configuraciones/csrf-refresh.js') }}"></script>
     
+    <!-- Print Handler - Gestión centralizada de impresión -->
+    <script>
+        // PRINT HANDLER INLINE - Oculta botones flotantes en impresión
+        (function() {
+            'use strict';
+            const hideSelectors = [
+                '#floating-buttons-container',
+                '#floating-buttons-container-logo',
+                '#btn-factura',
+                '#btn-galeria',
+                '#btn-factura-logo',
+                '#btn-galeria-logo'
+            ];
+            
+            let savedStates = [];
+            
+            function hidePrintElements() {
+                console.log('[PRINT] Ocultando botones flotantes...');
+                savedStates = [];
+                
+                hideSelectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        savedStates.push({
+                            el: el,
+                            display: el.style.display,
+                            visibility: el.style.visibility
+                        });
+                        el.style.display = 'none !important';
+                        el.style.visibility = 'hidden !important';
+                    });
+                });
+            }
+            
+            function showPrintElements() {
+                console.log('[PRINT] Restaurando botones flotantes...');
+                savedStates.forEach(state => {
+                    state.el.style.display = state.display || '';
+                    state.el.style.visibility = state.visibility || '';
+                });
+            }
+            
+            window.addEventListener('beforeprint', hidePrintElements);
+            window.addEventListener('afterprint', showPrintElements);
+            
+            window.PrintHandler = {
+                debug: function() {
+                    console.log('[PRINT] Elementos encontrados:');
+                    hideSelectors.forEach(sel => {
+                        const count = document.querySelectorAll(sel).length;
+                        console.log('  ' + sel + ': ' + count);
+                    });
+                },
+                testPrint: function() {
+                    hidePrintElements();
+                    print();
+                }
+            };
+            
+            console.log('[PRINT] Handler inicializado');
+        })();
+    </script>
+    
     <!-- Non-critical JS (diferido) -->
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
@@ -397,10 +459,6 @@
     
     <!--  PAYLOAD NORMALIZER v3 - CARGADO EN BLADE TEMPLATES INDIVIDUALES -->
     <!-- Implementación definitiva en: payload-normalizer-v3-definitiva.js -->
-
-</body>
-</html>
-   
 
 </body>
 </html>
