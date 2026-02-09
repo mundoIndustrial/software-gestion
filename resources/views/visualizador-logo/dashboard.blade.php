@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
                            " onmouseover="this.style.transform='translateY(-3px) scale(1.1)'; this.style.boxShadow='0 6px 16px rgba(14, 165, 233, 0.35)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.2)'">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <a href="/cotizacion/${cot.id}/pdf?tipo=logo" 
+                        <a href="/cotizacion/${cot.id}/pdf/logo" 
                            target="_blank"
                            title="Descargar PDF Logo"
                            style="
@@ -375,21 +375,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Funciones para el modal de cotización
 function openCotizacionModal(cotizacionId) {
-    const modal = document.getElementById('cotizacionModal');
-    const content = document.getElementById('modalBody');
-    
-    fetch(`/contador/cotizacion/${cotizacionId}`)
-        .then(response => response.text())
-        .then(html => {
-            content.innerHTML = html;
-            modal.style.display = 'flex';
-        })
-        .catch(error => {
-            alert('Error al cargar la cotización');
-        });
+    // En Visualizador Logo:
+    // - Si es combinada, forzar vista LOGO y ocultar selector.
+    //   El openCotizacionModal del contador aplica esto cuando __cotizacionModalHideSelector=true.
+    window.__cotizacionModalHideSelector = true;
+    window.__cotizacionModalViewMode = 'logo';
+
+    if (window.openCotizacionModalContador) {
+        window.openCotizacionModalContador(cotizacionId);
+        return;
+    }
+    alert('No se pudo abrir el modal de cotización');
 }
 
 function closeCotizacionModal() {
+    if (window.closeCotizacionModalContador) {
+        window.closeCotizacionModalContador();
+        return;
+    }
     document.getElementById('cotizacionModal').style.display = 'none';
 }
 </script>

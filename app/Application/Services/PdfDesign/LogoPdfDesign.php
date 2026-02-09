@@ -175,11 +175,14 @@ CSS;
         $nombreAsesor = $this->cotizacion->usuario?->name ?? 'N/A';
         $fecha = $this->cotizacion->created_at?->format('d/m/Y') ?? 'N/A';
         $numero = $this->cotizacion->numero_cotizacion ?? 'Por asignar';
+        $tipoVentaLogo = $this->cotizacion->logoCotizacion?->tipo_venta ?? null;
 
         $nombreCliente = htmlspecialchars($nombreCliente);
         $nombreAsesor = htmlspecialchars($nombreAsesor);
         $fecha = htmlspecialchars($fecha);
         $numero = htmlspecialchars($numero);
+
+        $tipoVentaLogoEsc = $tipoVentaLogo ? htmlspecialchars($tipoVentaLogo) : '-';
 
         return <<<HTML
         <div class="info-wrapper">
@@ -193,6 +196,10 @@ CSS;
                     <td style="color: #e74c3c; font-weight: bold; width: 16%;">{$nombreAsesor}</td>
                     <td class="label" style="width: 10%;">Fecha</td>
                     <td style="color: #e74c3c; font-weight: bold; width: 10%;">{$fecha}</td>
+                </tr>
+                <tr>
+                    <td class="label" style="width: 12%;">TIPO VENTA</td>
+                    <td style="color: #e74c3c; font-weight: bold;" colspan="7">{$tipoVentaLogoEsc}</td>
                 </tr>
             </table>
         </div>
@@ -208,6 +215,23 @@ CSS;
         
         // Obtener prendas de la cotización
         $prendas = $this->cotizacion->prendas ?? collect();
+
+        $logoCot = $this->cotizacion->logoCotizacion;
+        if ($logoCot && isset($logoCot->tecnicasPrendas)) {
+            $prendaIdsConLogo = collect($logoCot->tecnicasPrendas)
+                ->pluck('prenda_cot_id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($prendaIdsConLogo->isNotEmpty()) {
+                $prendas = $prendas->filter(function ($p) use ($prendaIdsConLogo) {
+                    return $p && isset($p->id) && $prendaIdsConLogo->contains($p->id);
+                })->values();
+            } else {
+                $prendas = collect();
+            }
+        }
         
         if ($prendas->isEmpty()) {
             $html .= '<p style="text-align: center; color: #999;">No hay prendas en esta cotización</p>';
