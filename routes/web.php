@@ -921,7 +921,7 @@ Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('superviso
 // ========================================
 // RUTAS PARA VISUALIZADOR DE COTIZACIONES LOGO
 // ========================================
-Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin'])->prefix('visualizador-logo')->name('visualizador-logo.')->group(function () {
+Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,diseñador-logos,bordador'])->prefix('visualizador-logo')->name('visualizador-logo.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\VisualizadorLogoController::class, 'dashboard'])->name('dashboard');
     
@@ -932,6 +932,7 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin'])->prefix
     // Pedidos Logo
     Route::get('/pedidos-logo', [App\Http\Controllers\VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
     Route::get('/pedidos-logo/data', [App\Http\Controllers\VisualizadorLogoController::class, 'getPedidosLogo'])->name('pedidos-logo.data');
+    Route::post('/pedidos-logo/area-novedad', [App\Http\Controllers\VisualizadorLogoController::class, 'guardarAreaNovedadPedidoLogo'])->name('pedidos-logo.area-novedad');
     
     // Estadísticas
     Route::get('/estadisticas', [App\Http\Controllers\VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');

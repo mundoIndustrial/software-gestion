@@ -17,6 +17,17 @@ export class NavigationManager {
             return;
         }
 
+        // En el visualizador-logo se listan recibos individualmente; no permitir navegación por flechas
+        const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+        if (esVistaVisualizadorLogo) {
+            arrowContainer.style.display = 'none';
+            prevArrow.style.display = 'none';
+            nextArrow.style.display = 'none';
+            prevArrow.onclick = null;
+            nextArrow.onclick = null;
+            return;
+        }
+
         const state = modalManager.getState();
         const procesosActuales = state.procesosActuales;
         const procesoActualIndice = state.procesoActualIndice;
@@ -117,8 +128,20 @@ export class NavigationManager {
     static actualizarVisibilidad(modalManager) {
         const prevArrow = document.getElementById('prev-arrow');
         const nextArrow = document.getElementById('next-arrow');
+        const arrowContainer = document.querySelector('.arrow-container');
         
         if (!prevArrow || !nextArrow) return;
+
+        // En el visualizador-logo no se usan flechas de navegación
+        const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+        if (esVistaVisualizadorLogo) {
+            if (arrowContainer) arrowContainer.style.display = 'none';
+            prevArrow.style.display = 'none';
+            nextArrow.style.display = 'none';
+            prevArrow.onclick = null;
+            nextArrow.onclick = null;
+            return;
+        }
 
         const state = modalManager.getState();
         const { procesoActualIndice, procesosActuales } = state;

@@ -58,6 +58,16 @@ class RolesSeeder extends Seeder
                 'description' => 'Operario de costura',
                 'requires_credentials' => false,
             ],
+            [
+                'name' => 'diseñador-logos',
+                'description' => 'Diseñador Logos - Solo ve Pedidos Logo en área DISEÑO',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'bordador',
+                'description' => 'Bordador - Operario que borda el diseño/logo en la prenda (solo ve Pedidos Logo en área BORDANDO)',
+                'requires_credentials' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

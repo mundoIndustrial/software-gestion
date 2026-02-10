@@ -33,6 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();
+
+        if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
+            return redirect(route('visualizador-logo.pedidos-logo', absolute: false));
+        }
         
         \Log::info('Login usuario', [
             'user_id' => $user->id,

@@ -110,6 +110,12 @@ class User extends Authenticatable
             return Role::whereIn('id', $this->roles_ids)->get();
         }
 
+        // Compatibilidad legacy: role_id
+        if (!empty($this->role_id)) {
+            $role = Role::find($this->role_id);
+            return $role ? collect([$role]) : collect([]);
+        }
+
         // Si no tiene roles, retornar colección vacía
         return collect([]);
     }
@@ -123,6 +129,11 @@ class User extends Authenticatable
         // Retornar una query builder que simula la relación
         if (!empty($this->roles_ids)) {
             return Role::whereIn('id', $this->roles_ids);
+        }
+
+        // Compatibilidad legacy: role_id
+        if (!empty($this->role_id)) {
+            return Role::whereIn('id', [$this->role_id]);
         }
         return Role::whereIn('id', []); // Retorna query builder vacío
     }
