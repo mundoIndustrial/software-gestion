@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\ConsecutivoReciboPedido;
 
-class DebugRecibosLoadedForReflectivo extends Command
+class DebugRecibosLoaded extends Command
 {
     protected $signature = 'debug:recibos-loaded';
     protected $description = 'Debug what recibos are loaded for costura-reflectivo';
