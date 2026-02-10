@@ -118,6 +118,80 @@
             observer.observe(formSection, { childList: true, subtree: true });
         }
 
+        if (typeof window.__setupPasteImagenesCotizacion !== 'function') {
+            window.__setupPasteImagenesCotizacion = function() {
+                let lastContainer = null;
+
+                function getFileInputFromContainer(container) {
+                    if (!container) return null;
+                    if (container.matches && container.matches('input[type="file"]')) return container;
+                    const input = container.querySelector ? container.querySelector('input[type="file"]') : null;
+                    if (!input) return null;
+                    const accept = (input.getAttribute('accept') || '').toLowerCase();
+                    if (accept && !accept.includes('image')) return null;
+                    return input;
+                }
+
+                function findContainerFromElement(el) {
+                    if (!el || !el.closest) return null;
+                    const selectors = [
+                        'label',
+                        '#drop_zone_imagenes',
+                        '.drop-zone',
+                        '[class*="Dropzone"]',
+                        '[class*="dropzone"]',
+                        '[class*="dImagenesDropzone"]',
+                        '[class*="dImagenesCompartidasDropzone"]'
+                    ];
+                    for (const sel of selectors) {
+                        const c = el.closest(sel);
+                        if (c && getFileInputFromContainer(c)) return c;
+                    }
+                    const label = el.closest('label');
+                    if (label && getFileInputFromContainer(label)) return label;
+                    return null;
+                }
+
+                function setLastContainerFromEvent(e) {
+                    const target = e.target;
+                    const container = findContainerFromElement(target) || (target && target.querySelector ? (getFileInputFromContainer(target) ? target : null) : null);
+                    if (container) lastContainer = container;
+                }
+
+                document.addEventListener('click', setLastContainerFromEvent, true);
+                document.addEventListener('focusin', setLastContainerFromEvent, true);
+
+                document.addEventListener('paste', async (e) => {
+                    const cd = e.clipboardData;
+                    if (!cd || !cd.items) return;
+
+                    const items = Array.from(cd.items);
+                    const imageItem = items.find(it => it && it.type && it.type.startsWith('image/'));
+                    if (!imageItem) return;
+
+                    const file = imageItem.getAsFile();
+                    if (!file) return;
+
+                    const active = document.activeElement;
+                    const container = findContainerFromElement(active) || lastContainer;
+                    const input = getFileInputFromContainer(container);
+                    if (!input) return;
+
+                    e.preventDefault();
+
+                    const dt = new DataTransfer();
+                    if (input.multiple && input.files && input.files.length > 0) {
+                        Array.from(input.files).forEach(f => dt.items.add(f));
+                    }
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }, true);
+            };
+        }
+
+        window.__setupPasteImagenesCotizacion();
+
         // Aquí puedes agregar más inicializaciones específicas
 
     }
