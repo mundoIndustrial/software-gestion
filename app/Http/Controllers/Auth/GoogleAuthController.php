@@ -55,6 +55,10 @@ class GoogleAuthController extends Controller
      */
     private function redirectByRole($user)
     {
+        if ($user && method_exists($user, 'hasRole') && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
+            return redirect()->intended(route('visualizador-logo.pedidos-logo'));
+        }
+
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
             

@@ -70,14 +70,7 @@ class FormModule {
      * Configura listeners de eventos
      */
     setupEventListeners() {
-        const btnGuardarBorrador = document.getElementById('btnGuardarBorrador');
         const btnEnviar = document.getElementById('btnEnviar');
-
-        if (btnGuardarBorrador) {
-            btnGuardarBorrador.addEventListener('click', () => {
-                this.handleSave('borrador');
-            });
-        }
 
         if (btnEnviar) {
             btnEnviar.addEventListener('click', () => {
@@ -93,7 +86,7 @@ class FormModule {
         const tipoSeleccionado = this.state.tipo_cotizacion;
         const deshabilitado = !tipoSeleccionado;
 
-        ['btnGuardarBorrador', 'btnEnviar'].forEach(btnId => {
+        ['btnEnviar'].forEach(btnId => {
             const btn = document.getElementById(btnId);
             if (btn) {
                 btn.disabled = deshabilitado;
@@ -218,7 +211,7 @@ class FormModule {
         formData.append('fecha', fecha);
         formData.append('tipo_venta', tipoVenta);
         formData.append('tipo_cotizacion', 'P');
-        formData.append('tipo', action === 'borrador' ? 'borrador' : 'enviada');
+        formData.append('tipo', 'enviada');
         formData.append('action', action);
         formData.append('_token', token);
 

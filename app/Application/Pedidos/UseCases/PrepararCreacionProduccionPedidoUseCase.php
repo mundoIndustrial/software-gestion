@@ -19,7 +19,9 @@ class PrepararCreacionProduccionPedidoUseCase
                     $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
                 },
                 'logoCotizacion.fotos',
-                'reflectivoCotizacion.fotos'
+                'logoCotizacion.prendas.tipoLogo',
+                'logoCotizacion.prendas.fotos',
+                'logoCotizacion.prendas.prendaCot.fotos',
             ])->findOrFail($dto->editarId);
             
             // Validar permisos

@@ -8,11 +8,11 @@
     @auth
     <meta name="user-id" content="{{ auth()->id() }}">
     <!-- Meta tags para WebSockets/Reverb -->
-    <meta name="reverb-key" content="{{ env('REVERB_APP_KEY') }}">
-    <meta name="reverb-app-id" content="{{ env('REVERB_APP_ID') }}">
-    <meta name="reverb-host" content="{{ env('REVERB_HOST', '127.0.0.1') }}">
-    <meta name="reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
-    <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', 'http') }}">
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
     @endauth
     
     <title>@yield('title', 'Bodega')</title>

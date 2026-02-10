@@ -12,7 +12,7 @@ class CheckRole
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, string $roles): Response
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!$request->user()) {
             Log::warning('[CHECKROLE] Usuario no autenticado');
@@ -20,12 +20,25 @@ class CheckRole
         }
 
         $user = $request->user();
-        $requiredRoles = array_map('trim', explode(',', $roles));
+
+        $requiredRoles = [];
+        foreach (($roles ?? []) as $r) {
+            if ($r === null) continue;
+            $r = (string) $r;
+            foreach (explode(',', $r) as $piece) {
+                $piece = trim($piece);
+                if ($piece !== '') $requiredRoles[] = $piece;
+            }
+        }
 
         // Obtener roles_ids del usuario
         $rolesIds = $user->roles_ids ?? [];
         if (is_string($rolesIds)) {
             $rolesIds = json_decode($rolesIds, true) ?? [];
+        }
+
+        if (empty($rolesIds) && !empty($user->role_id)) {
+            $rolesIds = [(int) $user->role_id];
         }
 
         \Log::info('[CHECKROLE-DEBUG] Datos del usuario', [

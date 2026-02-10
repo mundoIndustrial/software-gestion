@@ -33,10 +33,11 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $procesos = null,                       // [ { tipo_proceso_id, ubicaciones, obs } ]
         public readonly ?array $fotosProcesosPorProceso = null,         // [ { proceso_id, imagenes: [ ruta ] } ]
         public readonly ?array $fotosTelasProcesadas = null,            // [ indice => { ruta_original, ruta_webp } ]
+        public readonly ?array $fotosProcesoNuevo = null,              // [ indice => { ruta_original, ruta_webp } ] para procesos nuevos
         public readonly ?string $novedad = null,                       // Descripción de cambios realizados
     ) {}
 
-    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null): self
+    public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null, ?array $fotosProcesoNuevo = null): self
     {
         // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad, es_sobremedida)
         $tallasArray = null;
@@ -179,6 +180,7 @@ final class ActualizarPrendaCompletaDTO
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
             fotosTelasProcesadas: $fotosTelasProcesadas,
+            fotosProcesoNuevo: $fotosProcesoNuevo,
             novedad: $data['novedad'] ?? null,
         );
     }

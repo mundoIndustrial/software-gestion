@@ -52,7 +52,7 @@
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
         <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-submit" id="btnGuardarBorrador" onclick="guardarCotizacion()" style="background: #95a5a6;">
+            <button type="button" class="btn-submit" id="btnGuardarBorrador" onclick="guardarCotizacion()" style="background: #6b7280;">
                 <i class="fas fa-save"></i> GUARDAR COMO BORRADOR
             </button>
             <button type="button" class="btn-submit" id="btnEnviarCotizacion" onclick="enviarCotizacion()" style="background: #27ae60;">

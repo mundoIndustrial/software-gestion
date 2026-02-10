@@ -16,7 +16,9 @@
 // Ejemplo: { DAMA: { S: 10, M: 15 }, CABALLERO: { 32: 20 } }
 window.tallasRelacionales = window.tallasRelacionales || {
     DAMA: {},
-    CABALLERO: {}
+    CABALLERO: {},
+    UNISEX: {},
+    SOBREMEDIDA: {}
 };
 
 // Cache de catálogo de tallas desde BD
@@ -731,7 +733,9 @@ window.limpiarTallasSeleccionadas = function() {
     // Resetear estructura relacional
     window.tallasRelacionales = {
         DAMA: {},
-        CABALLERO: {}
+        CABALLERO: {},
+        UNISEX: {},
+        SOBREMEDIDA: {}
     };
     
 

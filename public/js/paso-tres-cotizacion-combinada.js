@@ -1424,23 +1424,49 @@ function renderizarTecnicasAgregadasPaso3() {
             imgSection.style.display = 'block';
             const grid = imgSection.querySelector('.imagenes-grid');
             if (grid) {
-                // Deduplicar imágenes compartidas: si una imagen compartida ya está, no la duplicar
-                const imagenesUnicas = [];
-                const imagenesVistas = new Set();
-                
-                imagenesMaps.forEach((img) => {
-                    // Si es una imagen compartida, solo incluirla una vez
-                    if (img.tecnica.startsWith('IMAGEN-')) {
-                        if (!imagenesVistas.has(img.data)) {
-                            imagenesUnicas.push(img);
-                            imagenesVistas.add(img.data);
-                        }
-                    } else {
-                        imagenesUnicas.push(img);
+                // Logo compartido: si múltiples técnicas apuntan a la misma URL, mostrar 1 sola imagen
+                // y etiquetar como: "logo compartido - BORDADO-ESTAMPADO".
+                const imagenesPorUrl = new Map();
+                (Array.isArray(imagenesMaps) ? imagenesMaps : []).forEach((img) => {
+                    if (!img || !img.data) return;
+                    const url = String(img.data);
+                    const tecnica = String(img.tecnica || '').trim();
+                    if (!imagenesPorUrl.has(url)) {
+                        imagenesPorUrl.set(url, {
+                            data: url,
+                            tecnicas: new Set(tecnica ? [tecnica] : []),
+                        });
+                        return;
+                    }
+                    if (tecnica) {
+                        imagenesPorUrl.get(url).tecnicas.add(tecnica);
                     }
                 });
-                
-                grid.innerHTML = imagenesUnicas.map((img, idx) => `
+
+                const imagenesFinales = Array.from(imagenesPorUrl.values()).map((item) => {
+                    const tecnicas = Array.from(item.tecnicas).filter(Boolean);
+                    const tecnicasUnicas = Array.from(new Set(tecnicas));
+
+                    // Si venía el formato antiguo de compartida con prefijo IMAGEN-, lo limpiamos para UI
+                    const tecnicasLimpias = tecnicasUnicas
+                        .map(t => String(t).replace(/^IMAGEN-/, '').trim())
+                        .filter(Boolean);
+
+                    if (tecnicasLimpias.length > 1) {
+                        const combo = tecnicasLimpias.join('-');
+                        return {
+                            data: item.data,
+                            tecnica: `logo compartido - ${combo}`
+                        };
+                    }
+
+                    return {
+                        data: item.data,
+                        tecnica: tecnicasLimpias[0] || ''
+                    };
+                });
+
+                grid.innerHTML = imagenesFinales.map((img, idx) => `
                     <div style="display: flex; flex-direction: column; align-items: center;">
                         <div style="position: relative; border-radius: 3px; overflow: hidden; border: 1px solid #1e40af; cursor: pointer; width: 100%; aspect-ratio: 1;" ondblclick="abrirModalImagenPrendaConIndice('${img.data}', ${idx})">
                             <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover; min-height: 60px;" alt="Imagen prenda">
@@ -1525,6 +1551,59 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
                 sharedFiles[clave] = img.file;
             }
         });
+    });
+
+    // Detectar logos compartidos por URL (borrador): si la misma ruta aparece en múltiples técnicas,
+    // se considera "logo compartido" aunque no exista File (solo URLs tipo paso2).
+    // Esto permite reestablecerlo en el modal igual que en creación.
+    const sharedPorUrl = new Map();
+    tecnicasConPrenda.forEach((item) => {
+        const tecnicaNombre = (item.tecnicaData && item.tecnicaData.tipo_logo && item.tecnicaData.tipo_logo.nombre)
+            ? item.tecnicaData.tipo_logo.nombre
+            : (item.tecnicaData ? item.tecnicaData.tipo : '');
+        const imgs = Array.isArray(item.prenda.imagenes) ? item.prenda.imagenes : [];
+        imgs.forEach((img) => {
+            if (!img) return;
+            // URL paso2 puede venir como string o como {ruta, tipo:'paso2'}
+            let url = '';
+            if (typeof img === 'string') {
+                url = img;
+            } else if (typeof img === 'object' && img.tipo === 'paso2' && img.ruta) {
+                url = img.ruta;
+            }
+            url = String(url || '').trim();
+            if (!url) return;
+
+            if (!sharedPorUrl.has(url)) {
+                sharedPorUrl.set(url, new Set());
+            }
+            if (tecnicaNombre) {
+                sharedPorUrl.get(url).add(tecnicaNombre);
+            }
+        });
+    });
+
+    // Convertir URL duplicadas en items del modal
+    sharedPorUrl.forEach((setTecnicas, url) => {
+        const tecnicas = Array.from(setTecnicas).filter(Boolean);
+        if (tecnicas.length < 2) return;
+
+        const clave = tecnicas.join('-');
+        if (!sharedItems[clave]) {
+            sharedItems[clave] = {
+                tecnicasCompartidas: tecnicas,
+                previewUrl: url,
+                ruta: url,
+            };
+        } else {
+            // Si ya existía por File, al menos setear preview si está vacío
+            if (!sharedItems[clave].previewUrl) {
+                sharedItems[clave].previewUrl = url;
+            }
+            if (!sharedItems[clave].ruta) {
+                sharedItems[clave].ruta = url;
+            }
+        }
     });
 
     window.p3EdicionContexto.logoCompartido.items = sharedItems;
@@ -1972,13 +2051,25 @@ function guardarEdicionPrendaPaso3DesdeModal() {
                         ? item.tecnicasCompartidas
                         : String(clave).split('-').map(t => t.trim()).filter(Boolean);
                     if (!tecnicas.includes(tecnicaNombreActual)) return;
+
+                    // Caso A: se reemplazó/subió un File (flujo creación)
                     const file = files[clave];
-                    if (!(file instanceof File)) return;
+                    if (file instanceof File) {
+                        sharedImgs.push({
+                            file,
+                            tipo: 'paso3',
+                            nombreCompartido: `IMAGEN-${clave}`,
+                            tecnicasCompartidas: tecnicas
+                        });
+                        return;
+                    }
+
+                    // Caso B: logo compartido existente en borrador por URL (sin File)
+                    const ruta = (item && (item.ruta || item.previewUrl)) ? String(item.ruta || item.previewUrl) : '';
+                    if (!ruta) return;
                     sharedImgs.push({
-                        file,
-                        tipo: 'paso3',
-                        nombreCompartido: `IMAGEN-${clave}`,
-                        tecnicasCompartidas: tecnicas
+                        ruta,
+                        tipo: 'paso2'
                     });
                 });
             }

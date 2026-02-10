@@ -1338,8 +1338,28 @@ window.agregarProcesoAlPedido = function() {
             // EDICIÓN: Usar el nuevo sistema de ProcesosEditor
             console.log('✏️ [EDICIÓN] Guardando cambios del proceso con ProcesosEditor');
             
-            // Registrar cambios en el editor
-            if (window.procesosEditor) {
+            // 🔴 FIX CRÍTICO: Si es un NUEVO proceso en modo edición, agregarlo a window.procesosSeleccionados
+            // Esto ocurre cuando el usuario agrega un proceso que no existía previamente
+            if (!window.procesosSeleccionados) {
+                window.procesosSeleccionados = {};
+            }
+            
+            // Si el proceso NO existe todavía en window.procesosSeleccionados, crearlo
+            if (!window.procesosSeleccionados[procesoActual]) {
+                console.log('🆕 [EDICIÓN] NUEVO PROCESO detectado, agregando a window.procesosSeleccionados:', procesoActual);
+                window.procesosSeleccionados[procesoActual] = {
+                    tipo: procesoActual,
+                    datos: datos
+                };
+                console.log('✅ [EDICIÓN] Nuevo proceso agregado:', {
+                    tipo: procesoActual,
+                    datos: window.procesosSeleccionados[procesoActual].datos
+                });
+            } else if (window.procesosEditor) {
+                // EDICIÓN: Si el proceso YA EXISTE, usar ProcesosEditor para actualizar
+                console.log('✏️ [EDICIÓN] Proceso existente, usando ProcesosEditor para actualizar...');
+                
+                // Registrar cambios en el editor
                 // Registrar ubicaciones (reemplazo completo)
                 window.procesosEditor.registrarCambioUbicaciones(datos.ubicaciones);
                 

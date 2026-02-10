@@ -947,6 +947,42 @@ class PedidosProduccionController
                 }
             }
 
+            // NUEVO: Procesar imágenes de procesos NUEVOS (vienen como fotosProcesoNuevo_0, fotosProcesoNuevo_1, etc.)
+            $fotosProcesoNuevo = [];
+            
+            // Obtener dinámicamente todos los fotosProcesoNuevo_* del request
+            foreach ($request->all() as $key => $value) {
+                if (strpos($key, 'fotosProcesoNuevo_') === 0) {
+                    // Extraer el índice del nombre de la clave
+                    preg_match('/fotosProcesoNuevo_(\d+)/', $key, $matches);
+                    if (!isset($matches[1])) continue;
+                    
+                    $indice = (int)$matches[1];
+                    
+                    // Obtener el archivo REAL del request usando el mismo nombre de clave
+                    $archivo = $request->file($key);
+                    
+                    if ($archivo && $archivo->isValid()) {
+                        try {
+                            $rutas = $procesoFotoService->procesarFoto($archivo);
+                            $fotosProcesoNuevo[$indice] = $rutas;
+                            Log::info('[PedidosProduccionController] Imagen de proceso nuevo procesada', [
+                                'key' => $key,
+                                'indice' => $indice,
+                                'archivo' => $archivo->getClientOriginalName(),
+                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error procesando imagen de proceso nuevo', [
+                                'key' => $key,
+                                'indice' => $indice,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+
             // Procesar imágenes existentes que deben preservarse
             $imagenesExistentes = [];
             if ($request->input('imagenes_existentes')) {
@@ -969,11 +1005,12 @@ class PedidosProduccionController
                 'imagenes_a_eliminar' => $request->input('imagenes_a_eliminar') ? count((array)$request->input('imagenes_a_eliminar')) : 0,
                 'fotos_telas_procesadas' => count($fotosTelasProcesadas),
                 'fotos_telas_detalles' => $fotosTelasProcesadas,
+                'fotos_proceso_nuevo_count' => count($fotosProcesoNuevo),
                 'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
-            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas);
+            $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo);
             $prenda = $this->actualizarPrendaCompletaUseCase->ejecutar($dto);
 
             Log::info('[PedidosProduccionController] Prenda completa actualizada exitosamente', [
@@ -985,10 +1022,50 @@ class PedidosProduccionController
             // Esto evita que Eloquent devuelva fotos cacheadas que fueron eliminadas
             $prenda = $prenda->fresh(['fotos', 'coloresTelas', 'fotosTelas', 'variantes', 'procesos', 'tallas']);
 
+            // 🔴 FIX CRÍTICO: Transformar procesos para asegurar que incluyan el ID
+            // Cuando se retorna toArray(), algunos procesos podrían no tener su ID
+            $prendaArray = $prenda->toArray();
+            
+            // Reemplazar procesos con estructura que incluya SIEMPRE el ID
+            if (!empty($prenda->procesos)) {
+                $prendaArray['procesos'] = $prenda->procesos->map(function($proceso) {
+                    return [
+                        'id' => $proceso->id,
+                        'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                        'tipo_proceso' => $proceso->tipoProceso ? $proceso->tipoProceso->nombre : null,
+                        'slug' => $proceso->tipoProceso ? $proceso->tipoProceso->slug : null,
+                        'ubicaciones' => $proceso->ubicaciones ? json_decode($proceso->ubicaciones, true) : [],
+                        'observaciones' => $proceso->observaciones,
+                        'estado' => $proceso->estado,
+                        'imagenes' => $proceso->imagenes ? $proceso->imagenes->map(fn($img) => [
+                            'id' => $img->id,
+                            'ruta_original' => $img->ruta_original,
+                            'ruta_webp' => $img->ruta_webp,
+                            'orden' => $img->orden,
+                            'es_principal' => $img->es_principal,
+                        ])->toArray() : [],
+                        'tallas' => $proceso->tallas ? $proceso->tallas->map(fn($t) => [
+                            'genero' => $t->genero,
+                            'talla' => $t->talla,
+                            'cantidad' => $t->cantidad,
+                        ])->toArray() : [],
+                    ];
+                })->toArray();
+            }
+
+            Log::info('[PedidosProduccionController] Procesos retornados al frontend:', [
+                'count' => count($prendaArray['procesos'] ?? []),
+                'procesos' => array_map(fn($p) => [
+                    'id' => $p['id'] ?? 'N/A',
+                    'tipo' => $p['tipo_proceso'] ?? 'N/A',
+                    'tiene_id' => !empty($p['id']),
+                ], $prendaArray['procesos'] ?? [])
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Prenda actualizada correctamente en la base de datos',
-                'prenda' => $prenda->toArray(),
+                'prenda' => $prendaArray,
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

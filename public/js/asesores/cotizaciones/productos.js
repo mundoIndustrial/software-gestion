@@ -179,7 +179,7 @@ function agregarFotos(files, dropZone) {
 
 
     
-    // Contar imágenes guardadas (desde cargarBorrador)
+    // Contar imágenes guardadas
     const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
     const fotosNuevasActuales = window.fotosSeleccionadas[productoId].length;
     const totalFotosActuales = fotosGuardadas + fotosNuevasActuales;
@@ -251,7 +251,6 @@ function actualizarPreviewFotos(input) {
 
     
     // NO limpiar el contenedor - solo agregar las nuevas fotos (File objects)
-    // Las imágenes guardadas ya están en el contenedor desde cargarBorrador()
     const fotos = window.fotosSeleccionadas[productoId] || [];
     
 

@@ -15,18 +15,20 @@
     </div>
 
     <div class="sidebar-content">
-        <div class="menu-section">
-            <span class="menu-section-title">Principal</span>
-            <ul class="menu-list" role="navigation">
-                <li class="menu-item">
-                    <a href="{{ route('visualizador-logo.dashboard') }}"
-                       class="menu-link {{ request()->routeIs('visualizador-logo.dashboard') || request()->routeIs('visualizador-logo.cotizaciones') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">description</span>
-                        <span class="menu-label">Cotizaciones</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
+        @if(!(Auth::user()->hasRole('diseñador-logos') || Auth::user()->hasRole('bordador')))
+            <div class="menu-section">
+                <span class="menu-section-title">Principal</span>
+                <ul class="menu-list" role="navigation">
+                    <li class="menu-item">
+                        <a href="{{ route('visualizador-logo.dashboard') }}"
+                           class="menu-link {{ request()->routeIs('visualizador-logo.dashboard') || request()->routeIs('visualizador-logo.cotizaciones') ? 'active' : '' }}">
+                            <span class="material-symbols-rounded">description</span>
+                            <span class="menu-label">Cotizaciones</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        @endif
 
         <div class="menu-section">
             <span class="menu-section-title">Pedidos</span>

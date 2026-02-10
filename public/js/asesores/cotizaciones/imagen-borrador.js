@@ -1,9 +1,4 @@
 /**
- * imagen-borrador.js
- * Gestiona la eliminación de imágenes del borrador
- */
-
-/**
  * Borrar imagen de prenda
  * @param {number} fotoId - ID de la imagen en BD
  * @param {HTMLElement} element - Elemento DOM a remover

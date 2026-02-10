@@ -1,8 +1,3 @@
-/**
- * Script de carga de borrador completo
- * Carga técnicas, observaciones, imágenes y otros datos al editar una cotización
- */
-
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar si hay datos de cotización para cargar
     const cotizacionElement = document.querySelector('script[data-cotizacion]');

@@ -108,7 +108,6 @@ class AsesoresController extends Controller
                     $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
                 },
                 'logoCotizacion.fotos',
-                'reflectivoCotizacion.fotos'
             ])->findOrFail($cotizacionId);
             
             // Debug: verificar telaFotos

@@ -6,6 +6,7 @@ use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\Traits\ManejaPedidosUseCase;
 use App\Models\PrendaPedido;
 use App\Models\PedidosProcesosPrendaDetalle;
+use App\Models\TipoProceso;
 
 /**
  * Use Case para actualizar una prenda y fotos
@@ -755,20 +756,72 @@ final class ActualizarPrendaCompletaUseCase
                 }
             } else {
                 //  CREAR: Nuevo proceso
+                // 🔴 FIX CRÍTICO: Si no hay tipo_proceso_id, buscarlo por el tipo/nombre que viene del frontend
+                $tipoProceso = $proceso['tipo_proceso_id'] ?? null;
+                
+                if (!$tipoProceso && isset($proceso['tipo'])) {
+                    // Buscar el tipo de proceso por slug o nombre (ambos pueden ser "reflectivo", "bordado", etc)
+                    $tipoProcesoModel = TipoProceso::where('slug', strtolower($proceso['tipo']))
+                        ->orWhere('nombre', $proceso['tipo'])
+                        ->first();
+                    
+                    if ($tipoProcesoModel) {
+                        $tipoProceso = $tipoProcesoModel->id;
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Tipo de proceso encontrado por slug/nombre', [
+                            'tipo_buscado' => $proceso['tipo'],
+                            'tipo_proceso_id' => $tipoProceso,
+                            'nombre_encontrado' => $tipoProcesoModel->nombre
+                        ]);
+                    } else {
+                        \Log::error('[ActualizarPrendaCompletaUseCase] Tipo de proceso NO encontrado', [
+                            'tipo_buscado' => $proceso['tipo'],
+                            'prenda_id' => $prenda->id
+                        ]);
+                    }
+                }
+                
+                // 🔴 FIX CRÍTICO: Verificar si el proceso YA EXISTE antes de crear
+                // Evita violación de constraint unique (prenda_pedido_id, tipo_proceso_id)
+                if ($tipoProceso) {
+                    $procesoExistente = $prenda->procesos()
+                        ->where('tipo_proceso_id', $tipoProceso)
+                        ->first();
+                    
+                    if ($procesoExistente) {
+                        // El proceso ya existe → ACTUALIZAR en lugar de crear
+                        \Log::info('[ActualizarPrendaCompletaUseCase] Proceso del tipo YA EXISTE - actualizando en lugar de crear', [
+                            'proceso_id' => $procesoExistente->id,
+                            'tipo_proceso_id' => $tipoProceso,
+                            'prenda_id' => $prenda->id
+                        ]);
+                        
+                        // Actualizar ubicaciones y observaciones
+                        $procesoExistente->update([
+                            'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : $procesoExistente->ubicaciones,
+                            'observaciones' => $proceso['observaciones'] ?? $procesoExistente->observaciones,
+                            'estado' => $proceso['estado'] ?? $procesoExistente->estado,
+                        ]);
+                        
+                        // Agregar imágenes del proceso si existen (es actualización, no creación)
+                        $this->agregarImagenesProceso($procesoExistente, $proceso, $dto, false);
+                        return;
+                    }
+                }
+                
                 \Log::info('[ActualizarPrendaCompletaUseCase] Creando nuevo proceso', [
-                    'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
+                    'tipo_proceso_id' => $tipoProceso,
                     'ubicaciones' => $ubicaciones
                 ]);
 
                 $procesoCreado = $prenda->procesos()->create([
-                    'tipo_proceso_id' => $proceso['tipo_proceso_id'] ?? null,
+                    'tipo_proceso_id' => $tipoProceso,
                     'ubicaciones' => !empty($ubicaciones) ? json_encode($ubicaciones) : null,
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'estado' => $proceso['estado'] ?? 'PENDIENTE',
                 ]);
 
                 // Agregar imágenes del proceso si existen
-                $this->agregarImagenesProceso($procesoCreado, $proceso, $dto);
+                $this->agregarImagenesProceso($procesoCreado, $proceso, $dto, true);
             }
         }
     }
@@ -776,8 +829,39 @@ final class ActualizarPrendaCompletaUseCase
     private function agregarImagenesProceso(
         PedidosProcesosPrendaDetalle $procesoCreado,
         array $proceso,
-        ActualizarPrendaCompletaDTO $dto
+        ActualizarPrendaCompletaDTO $dto,
+        bool $esProcesoNuevo = false
     ): void {
+        \Log::info('[ActualizarPrendaCompletaUseCase] agregarImagenesProceso', [
+            'proceso_id' => $procesoCreado->id,
+            'es_proceso_nuevo' => $esProcesoNuevo,
+            'tiene_fotosProcesoNuevo' => !empty($dto->fotosProcesoNuevo),
+            'fotosProcesoNuevo_count' => count($dto->fotosProcesoNuevo ?? []),
+        ]);
+
+        // 🔴 IMPORTANTE: Si hay fotosProcesoNuevo, SIEMPRE usarlas
+        // Sin importar si es un proceso nuevo o si estamos actualizando uno existente
+        // El usuario acaba de cargar estas imágenes en esto request
+        if (!empty($dto->fotosProcesoNuevo)) {
+            foreach ($dto->fotosProcesoNuevo as $idx => $foto) {
+                if (!empty($foto) && is_array($foto)) {
+                    $procesoCreado->imagenes()->create([
+                        'ruta_original' => $foto['ruta_original'] ?? null,
+                        'ruta_webp' => $foto['ruta_webp'] ?? null,
+                        'orden' => $idx + 1,
+                        'es_principal' => $idx === 0 ? 1 : 0,
+                    ]);
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Imagen de proceso agregada', [
+                        'proceso_id' => $procesoCreado->id,
+                        'indice' => $idx,
+                        'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
+                    ]);
+                }
+            }
+            return; // No procesar fotosProcesosPorProceso si ya agregamos fotosProcesoNuevo
+        }
+
+        // Si es un proceso EXISTENTE (sin fotosProcesoNuevo), usar fotosProcesosPorProceso
         if (empty($dto->fotosProcesosPorProceso)) {
             return;
         }

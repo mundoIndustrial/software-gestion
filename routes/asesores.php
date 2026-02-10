@@ -106,15 +106,6 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     // ÓRDENES/COTIZACIONES - SISTEMA DE BORRADORES
     // ========================================
     Route::get('/borradores', [CotizacionControllerAlias::class, 'borradores'])->name('borradores.index');
-    Route::get('/ordenes/create', [CotizacionControllerAlias::class, 'create'])->name('ordenes.create');
-    Route::post('/ordenes/guardar', [CotizacionControllerAlias::class, 'guardarBorrador'])->name('ordenes.store.draft');
-    Route::get('/ordenes/{id}/edit', [CotizacionControllerAlias::class, 'edit'])->name('ordenes.edit');
-    Route::patch('/ordenes/{id}', [CotizacionControllerAlias::class, 'update'])->name('ordenes.update');
-    Route::post('/ordenes/{id}/confirmar', [CotizacionControllerAlias::class, 'confirmar'])->name('ordenes.confirm');
-    Route::delete('/ordenes/{id}', [CotizacionControllerAlias::class, 'destroy'])->name('ordenes.destroy');
-    Route::get('/ordenes', [CotizacionControllerAlias::class, 'index'])->name('ordenes.index');
-    Route::get('/ordenes/{id}', [CotizacionControllerAlias::class, 'show'])->name('ordenes.show');
-    Route::get('/ordenes/stats', [CotizacionControllerAlias::class, 'stats'])->name('ordenes.stats');
 
     // ========================================
     // COTIZACIONES - DDD Refactorizado

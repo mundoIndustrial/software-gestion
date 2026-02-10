@@ -82,20 +82,11 @@
                                 {{ $orden->created_at->format('d/m/Y h:i A') }}
                             </td>
                             <td class="actions-cell">
-                                <div class="action-buttons">
-                                    <a href="{{ route('asesores.ordenes.edit', $orden->id) }}" 
-                                       class="btn-action btn-edit" title="Editar">
-                                        <span class="material-symbols-rounded">edit</span>
-                                    </a>
-                                    <button onclick="confirmarOrden({{ $orden->id }})" 
-                                            class="btn-action btn-confirm" title="Confirmar">
-                                        <span class="material-symbols-rounded">check_circle</span>
-                                    </button>
-                                    <button onclick="eliminarBorrador({{ $orden->id }})" 
-                                            class="btn-action btn-delete" title="Eliminar">
-                                        <span class="material-symbols-rounded">delete</span>
-                                    </button>
-                                </div>
+                                @php($editUrl = route('asesores.pedidos.create', ['tipo' => 'PB', 'editar' => $orden->id]))
+                                <a href="{{ $editUrl }}" data-url="{{ $editUrl }}" class="btn-action btn-edit btn-editar-borrador">
+                                    <span class="material-symbols-rounded">edit</span>
+                                    Editar
+                                </a>
                             </td>
                         </tr>
                     @endforeach
@@ -114,30 +105,6 @@
             <p>Aún no has guardado ningún borrador. Crea uno desde el formulario.</p>
         </div>
     @endif
-</div>
-
-<!-- Modal de Confirmación -->
-<div id="confirmModal" class="modal">
-    <div class="modal-content">
-        <h2>Confirmar Borrador</h2>
-        <p>¿Deseas confirmar este borrador? No podrá ser editado una vez confirmado.</p>
-        <div class="modal-actions">
-            <button type="button" onclick="closeModal()" class="btn-secondary">Cancelar</button>
-            <button type="button" onclick="submitConfirm()" class="btn-danger">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Eliminación -->
-<div id="deleteModal" class="modal">
-    <div class="modal-content">
-        <h2>Eliminar Borrador</h2>
-        <p>¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer.</p>
-        <div class="modal-actions">
-            <button type="button" onclick="closeModal()" class="btn-secondary">Cancelar</button>
-            <button type="button" onclick="submitDelete()" class="btn-danger">Eliminar</button>
-        </div>
-    </div>
 </div>
 
 <style>
@@ -251,6 +218,30 @@
     .btn-filter-reset:hover {
         background: #f8f9fa;
         border-color: #adb5bd;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #111827;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: #f3f4f6;
+        border-color: #cbd5e1;
+    }
+
+    .btn-action .material-symbols-rounded {
+        font-size: 18px;
     }
 
     .stats-grid {
@@ -603,122 +594,5 @@
     }
 </style>
 
-<script>
-    let modalFor = ''; // Para identificar qué modal está abierto
-
-    function confirmarOrden(ordenId) {
-        modalFor = 'confirm';
-        document.getElementById('confirmModal').style.display = 'block';
-        document.confirmForm = { ordenId };
-    }
-
-    function eliminarBorrador(ordenId) {
-        modalFor = 'delete';
-        document.getElementById('deleteModal').style.display = 'block';
-        document.deleteForm = { ordenId };
-    }
-
-    function closeModal() {
-        document.getElementById('confirmModal').style.display = 'none';
-        document.getElementById('deleteModal').style.display = 'none';
-        modalFor = '';
-    }
-
-    function submitConfirm() {
-        const ordenId = document.confirmForm.ordenId;
-        
-        fetch(`{{ route('asesores.ordenes.confirm', ':id') }}`.replace(':id', ordenId), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Confirmado!',
-                    text: 'El borrador ha sido confirmado exitosamente.',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.message || 'No se pudo confirmar el borrador.'
-                });
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Error al confirmar el borrador.'
-            });
-        })
-        .finally(() => {
-            closeModal();
-        });
-    }
-
-    function submitDelete() {
-        const ordenId = document.deleteForm.ordenId;
-        
-        fetch(`{{ route('asesores.ordenes.destroy', ':id') }}`.replace(':id', ordenId), {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Eliminado!',
-                    text: 'El borrador ha sido eliminado.',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.message || 'No se pudo eliminar el borrador.'
-                });
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Error al eliminar el borrador.'
-            });
-        })
-        .finally(() => {
-            closeModal();
-        });
-    }
-
-    // Cerrar modal al hacer clic fuera
-    window.onclick = function(event) {
-        let confirmModal = document.getElementById('confirmModal');
-        let deleteModal = document.getElementById('deleteModal');
-        
-        if (event.target === confirmModal) {
-            confirmModal.style.display = 'none';
-        }
-        if (event.target === deleteModal) {
-            deleteModal.style.display = 'none';
-        }
-    }
-</script>
 @endsection
 

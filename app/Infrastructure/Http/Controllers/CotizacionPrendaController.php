@@ -23,9 +23,34 @@ class CotizacionPrendaController extends Controller
     /**
      * Mostrar formulario de crear cotización de prenda
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('cotizaciones.prenda.create');
+        $cotizacion = null;
+
+        if ($request->has('editar')) {
+            $id = (int)$request->query('editar');
+            $cotizacion = Cotizacion::with([
+                'cliente',
+                'prendas.fotos',
+                'prendas.telaFotos',
+                'prendas.tallas',
+                'prendas.variantes.genero',
+                'prendas.variantes.manga',
+                'prendas.variantes.broche',
+                'logoCotizacion.fotos'
+            ])->findOrFail($id);
+
+            if ($cotizacion->asesor_id !== Auth::id() || !$cotizacion->es_borrador) {
+                abort(403, 'No tienes permiso para editar este borrador');
+            }
+
+            Log::info('CotizacionPrendaController@create: Cargando borrador para edición', [
+                'cotizacion_id' => $id,
+                'es_borrador' => $cotizacion->es_borrador,
+            ]);
+        }
+
+        return view('cotizaciones.prenda.create', ['cotizacion' => $cotizacion]);
     }
 
     /**
@@ -72,7 +97,7 @@ class CotizacionPrendaController extends Controller
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $clienteId,
                     'numero_cotizacion' => $numeroCotizacion,
-                    'tipo_cotizacion_id' => 1, // Cotizaci\u00f3n Combinada (Prenda + Logo)
+                    'tipo_cotizacion_id' => 3, // Cotización de Prenda (solo prendas)
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
@@ -108,7 +133,7 @@ class CotizacionPrendaController extends Controller
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
                         $cotizacion->id,
-                        1 // tipo_cotizacion_id para Combinada (Prenda + Logo)
+                        3 // tipo_cotizacion_id para Prenda (solo prendas)
                     )->onQueue('cotizaciones');
 
                     Log::info(' Job de envío encolado (número ya existe)', [

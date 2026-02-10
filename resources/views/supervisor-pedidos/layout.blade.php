@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- Meta tags para Reverb WebSocket (valores públicos para el cliente) -->
-    <meta name="reverb-host" content="{{ env('REVERB_HOST', '127.0.0.1') }}">
-    <meta name="reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
+    <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
     
     <title>@yield('title', 'Supervisor de Pedidos') - MundoIndustrial</title>
 
