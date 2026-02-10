@@ -1513,6 +1513,7 @@ final class CotizacionController extends Controller
             
             // Crear o actualizar logo_cotizaciones SOLO si hay información válida
             $logoCotizacion = null;
+            $logoFueCreadoNuevo = false;
             
             if ($logoTieneInformacionValida) {
                 // PRIMERO: Verificar si ya existe un LogoCotizacion para esta cotización
@@ -1543,6 +1544,7 @@ final class CotizacionController extends Controller
                         'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
                         'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
                     ]);
+                    $logoFueCreadoNuevo = true;
                     Log::info(' LogoCotizacion CREADO (nuevo)', [
                         'cotizacion_id' => $cotizacionId,
                         'logo_id' => $logoCotizacion->id,
@@ -1626,7 +1628,9 @@ final class CotizacionController extends Controller
                     $fotoLogosExistentes = [];
                 }
                 
-                if (!empty($fotoLogosExistentes)) {
+                // Si este request está actualizando un borrador (LogoCotizacion ya existía),
+                // NO duplicar registros copiando las mismas fotos otra vez.
+                if (!empty($fotoLogosExistentes) && $logoFueCreadoNuevo) {
                     // Deduplicar IDs
                     $fotoLogosExistentes = array_unique($fotoLogosExistentes);
                     $orden = 1;
@@ -1702,6 +1706,40 @@ final class CotizacionController extends Controller
                 } else {
                     $tecnicasAgregadas = (array)$tecnicasAgregadasJson;
                 }
+
+                // Normalizar estructuras para que el JSON sea estable (y el WHERE por string funcione)
+                $normalizarArrayRecursivo = function ($v) use (&$normalizarArrayRecursivo) {
+                    if (!is_array($v)) return $v;
+                    foreach ($v as $k => $val) {
+                        $v[$k] = $normalizarArrayRecursivo($val);
+                    }
+                    // Si es array asociativo, ordenar por clave; si es indexado, ordenar por valor (si aplica)
+                    $keys = array_keys($v);
+                    $esIndexado = ($keys === range(0, count($v) - 1));
+                    if ($esIndexado) {
+                        // Normalizar valores escalares
+                        $allScalar = true;
+                        foreach ($v as $val) {
+                            if (is_array($val) || is_object($val)) { $allScalar = false; break; }
+                        }
+                        if ($allScalar) {
+                            sort($v);
+                        }
+                    } else {
+                        ksort($v);
+                    }
+                    return $v;
+                };
+                $jsonEstable = function ($v) use ($normalizarArrayRecursivo) {
+                    if (is_string($v)) {
+                        $decoded = json_decode($v, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $v = $decoded;
+                        }
+                    }
+                    $v = is_array($v) ? $normalizarArrayRecursivo($v) : $v;
+                    return json_encode($v ?? [], JSON_UNESCAPED_UNICODE);
+                };
                 
                 Log::info(' Procesando técnicas agregadas para cotización combinada', [
                     'cotizacion_id' => $cotizacionId,
@@ -1826,8 +1864,8 @@ final class CotizacionController extends Controller
                                 $prendaCot = $prendasCotPorNombre[$nombreKey];
                                 
                                 // Verificar si ya existe un registro con la misma técnica, prenda y ubicaciones
-                                $ubicacionesJson = json_encode($prendaData['ubicaciones'] ?? []);
-                                $tallaCantidadJson = json_encode($prendaData['talla_cantidad'] ?? []);
+                                $ubicacionesJson = $jsonEstable($prendaData['ubicaciones'] ?? []);
+                                $tallaCantidadJson = $jsonEstable($prendaData['talla_cantidad'] ?? []);
                                 
                                 $logoCotizacionTecnicaPrendaExistente = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
                                     ->where('tipo_logo_id', $tipoLogoId)
@@ -1894,6 +1932,22 @@ final class CotizacionController extends Controller
                                             // Guardar ruta en logo_cotizacion_tecnica_prendas_fotos
                                             if ($rutaGuardar) {
                                                 try {
+                                                    $yaExisteFoto = $logoCotizacionTecnicaPrenda->fotos()
+                                                        ->where(function ($q) use ($rutaGuardar) {
+                                                            $q->where('ruta_webp', $rutaGuardar)
+                                                              ->orWhere('ruta_original', $rutaGuardar)
+                                                              ->orWhere('ruta_miniatura', $rutaGuardar);
+                                                        })
+                                                        ->exists();
+
+                                                    if ($yaExisteFoto) {
+                                                        \Log::info(' Logo foto ya existe (no se duplica)', [
+                                                            'tecnica_prenda_id' => $logoCotizacionTecnicaPrenda->id,
+                                                            'ruta' => $rutaGuardar,
+                                                        ]);
+                                                        continue;
+                                                    }
+
                                                     $logoCotizacionTecnicaPrenda->fotos()->create([
                                                         'ruta_original' => $rutaGuardar,
                                                         'ruta_webp' => $rutaGuardar,
@@ -2005,9 +2059,13 @@ final class CotizacionController extends Controller
                                         
                                         if ($prendaCot) {
                                             $tipoLogoId = $tecnicasAgregadas[$tecnicaIndex]['tipo_logo']['id'];
+                                            $ubicacionesJsonImg = $jsonEstable($prendaData['ubicaciones'] ?? []);
+                                            $tallaCantidadJsonImg = $jsonEstable($prendaData['talla_cantidad'] ?? []);
                                             $logoCotizacionTecnicaPrenda = \App\Models\LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
                                                 ->where('tipo_logo_id', $tipoLogoId)
                                                 ->where('prenda_cot_id', $prendaCot->id)
+                                                ->where('ubicaciones', $ubicacionesJsonImg)
+                                                ->where('talla_cantidad', $tallaCantidadJsonImg)
                                                 ->first();
                                             
                                             if ($logoCotizacionTecnicaPrenda) {

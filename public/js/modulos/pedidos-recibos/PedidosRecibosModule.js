@@ -270,6 +270,14 @@ window.cerrarModalRecibos = function() {
     window.pedidosRecibosModule.cerrarRecibo();
 };
 
+// Compatibilidad: algunos templates aún llaman onclick="toggleFactura()"
+// (sin cargar public/js/asesores/pedidos.js en ciertos contextos como visualizador-logo)
+if (typeof window.toggleFactura !== 'function') {
+    window.toggleFactura = function() {
+        GalleryManager.cerrarGaleria();
+    };
+}
+
 // Interceptar toggleGaleria original
 const originalToggleGaleria = window.toggleGaleria;
 window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para evitar recursión
