@@ -606,6 +606,32 @@ function openCotizacionModal(cotizacionId) {
                     // Recolectar imágenes de logo para esta prenda
                     // Agrupar por URL para soportar "logo compartido" entre técnicas
                     const logosPorUrl = new Map();
+
+                    const normalizarUrlLogo = (u) => {
+                        if (!u) return '';
+                        let url = String(u).trim();
+                        if (!url) return '';
+
+                        // Quitar querystring/hash para evitar duplicados del mismo archivo
+                        try {
+                            url = url.split('#')[0];
+                            url = url.split('?')[0];
+                        } catch (_) {
+                            // no-op
+                        }
+
+                        // Estandarizar rutas locales a /storage/...
+                        if (!url.startsWith('http')) {
+                            if (url.startsWith('storage/')) {
+                                url = '/' + url;
+                            }
+                            if (!url.startsWith('/storage/')) {
+                                url = '/storage/' + url.replace(/^\/+/, '').replace(/^storage\//, '');
+                            }
+                        }
+
+                        return url;
+                    };
                     
                     if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
                         payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
@@ -614,14 +640,17 @@ function openCotizacionModal(cotizacionId) {
                                 tp.fotos.forEach((foto, idx) => {
                                     if (!foto.url) return;
 
-                                    if (!logosPorUrl.has(foto.url)) {
-                                        logosPorUrl.set(foto.url, {
-                                            url: foto.url,
+                                    const urlOriginal = String(foto.url);
+                                    const urlKey = normalizarUrlLogo(urlOriginal) || urlOriginal;
+
+                                    if (!logosPorUrl.has(urlKey)) {
+                                        logosPorUrl.set(urlKey, {
+                                            url: urlKey,
                                             tecnicas: new Set(),
                                         });
                                     }
 
-                                    logosPorUrl.get(foto.url).tecnicas.add(tecnicaNombre);
+                                    logosPorUrl.get(urlKey).tecnicas.add(tecnicaNombre);
                                 });
                             }
                         });

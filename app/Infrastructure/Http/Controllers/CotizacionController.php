@@ -1447,6 +1447,8 @@ final class CotizacionController extends Controller
             }
             
             //  VALIDAR si logo (PASO 3) tiene información escrita válida
+            $tipoCotizacionRequest = $request->input('tipo_cotizacion');
+
             // Para incluir logo necesita: técnicas agregadas (en window.tecnicasAgregadasPaso3)
             $logoTecnicasAgregadas = $request->input('logo.tecnicas_agregadas');
             if (is_string($logoTecnicasAgregadas)) {
@@ -1503,6 +1505,11 @@ final class CotizacionController extends Controller
                 'logoTecnicasAgregadas_count' => count($logoTecnicasAgregadas),
                 'logoTieneInformacionValida' => $logoTieneInformacionValida,
             ]);
+
+            // Si la cotización es tipo Prenda (P), NUNCA debe crearse logo_cotizaciones.
+            if ($tipoCotizacionRequest === 'P') {
+                $logoTieneInformacionValida = false;
+            }
             
             // Crear o actualizar logo_cotizaciones SOLO si hay información válida
             $logoCotizacion = null;
@@ -3740,10 +3747,26 @@ final class CotizacionController extends Controller
             $mapeoTipos = [
                 1 => '/asesores/cotizaciones/create?tipo=PB&editar={id}',  // Combinada (Prenda + Logo)
                 2 => '/asesores/cotizaciones/bordado/crear?editar={id}',  // Logo only
+                3 => '/asesores/cotizaciones/create?tipo=P&editar={id}',   // Prenda only
                 4 => null, // Reflectivo se maneja especialmente
             ];
 
             $tipoCotizacionId = $cotizacion->tipo_cotizacion_id ?? 1;  // Default to Combinada (ID 1)
+
+            if ($tipoCotizacionId === 1) {
+                $logoCotizacion = $cotizacion->logoCotizacion()
+                    ->withCount(['tecnicasPrendas', 'fotos'])
+                    ->first();
+
+                $logoVacio = !$logoCotizacion
+                    || (((int)($logoCotizacion->tecnicas_prendas_count ?? 0)) === 0
+                        && ((int)($logoCotizacion->fotos_count ?? 0)) === 0
+                        && empty($logoCotizacion->observaciones_generales));
+
+                if ($logoVacio) {
+                    $tipoCotizacionId = 3;
+                }
+            }
 
             // Si es Reflectivo (tipo 4), mostrar la vista
             if ($tipoCotizacionId === 4) {
@@ -3835,7 +3858,7 @@ final class CotizacionController extends Controller
             }
 
             // Para otros tipos, obtener la ruta y redirigir
-            $ruta = $mapeoTipos[$tipoCotizacionId] ?? $mapeoTipos[3];
+            $ruta = $mapeoTipos[$tipoCotizacionId] ?? null;
             if ($ruta) {
                 $ruta = str_replace('{id}', $id, $ruta);
                 return redirect($ruta);

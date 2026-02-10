@@ -1,21 +1,21 @@
-function cargarBorrador(cotizacion) {
+function __hidratarPaso3DesdeBorrador(cotizacion) {
     if (!cotizacion) return;
-    
 
-    
-    //  GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
-    window.cotizacionData = cotizacion;
-
-    
-    //  LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
-    if (window.fotosSeleccionadas) {
-        window.fotosSeleccionadas = {};
-
+    // Evitar cargar múltiples veces si el usuario navega entre pasos
+    try {
+        const id = cotizacion.id || 'sin-id';
+        window.__paso3Hidratado = window.__paso3Hidratado || {};
+        if (window.__paso3Hidratado[id]) return;
+        window.__paso3Hidratado[id] = true;
+    } catch (_) {
+        // no-op
     }
 
-    // Cargar campos del Paso 3 (nuevo): desde relación logoCotizacion
+    // ==============================
+    // PASO 3: campos de logo (tipo venta, descripción, obs técnicas)
+    // ==============================
     try {
-        const logoCotizacionNuevo = cotizacion.logoCotizacion || null;
+        const logoCotizacionNuevo = cotizacion.logoCotizacion || cotizacion.logo_cotizacion || null;
         if (logoCotizacionNuevo) {
             const tipoVentaPaso3 = document.getElementById('tipo_venta_paso3');
             if (tipoVentaPaso3 && logoCotizacionNuevo.tipo_venta) {
@@ -34,10 +34,199 @@ function cargarBorrador(cotizacion) {
                 obsTecnicasTextarea.value = logoCotizacionNuevo.observaciones_tecnicas;
                 obsTecnicasTextarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            // Observaciones generales (logo_cotizaciones.observaciones_generales)
+            // Formato esperado (ejemplo): [{"tipo":"checkbox","texto":"SE HA VENDIDO","valor":"200+"}]
+            try {
+                const contObs = document.getElementById('observaciones_lista');
+                if (contObs && logoCotizacionNuevo.observaciones_generales) {
+                    let obsGen = logoCotizacionNuevo.observaciones_generales;
+                    if (typeof obsGen === 'string') {
+                        try {
+                            obsGen = JSON.parse(obsGen);
+                        } catch (_) {
+                            obsGen = [];
+                        }
+                    }
+
+                    const arrObs = Array.isArray(obsGen) ? obsGen : [];
+
+                    // Limpiar UI para evitar duplicados al reentrar
+                    contObs.innerHTML = '';
+
+                    arrObs.forEach((item) => {
+                        const texto = (item && typeof item === 'object') ? (item.texto || item.descripcion || '') : String(item || '');
+                        const valor = (item && typeof item === 'object') ? (item.valor || item.value || '') : '';
+                        const tipo = (item && typeof item === 'object') ? (item.tipo || '') : '';
+
+                        if (typeof agregarObservacion === 'function') {
+                            agregarObservacion();
+                            const fila = contObs.lastElementChild;
+                            if (!fila) return;
+
+                            const inputTexto = fila.querySelector('input[name="observaciones_generales[]"]');
+                            if (inputTexto) {
+                                inputTexto.value = String(texto || '').trim().toUpperCase();
+                                inputTexto.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+
+                            const toggleBtn = fila.querySelector('.obs-toggle-btn');
+                            const checkboxMode = fila.querySelector('.obs-checkbox-mode');
+                            const textMode = fila.querySelector('.obs-text-mode');
+                            const inputValor = fila.querySelector('input[name="observaciones_valor[]"]');
+                            const inputCheck = fila.querySelector('input[name="observaciones_check[]"]');
+
+                            // Si viene valor, forzar modo texto para mostrarlo
+                            if (String(valor || '').trim().length > 0) {
+                                if (checkboxMode && textMode && checkboxMode.style.display !== 'none') {
+                                    if (toggleBtn) toggleBtn.click();
+                                }
+                                if (inputValor) {
+                                    inputValor.value = String(valor || '').trim().toUpperCase();
+                                    inputValor.dispatchEvent(new Event('input', { bubbles: true }));
+                                }
+                            } else if (String(tipo).toLowerCase() === 'checkbox') {
+                                // Si es checkbox sin valor, marcarlo
+                                if (inputCheck) {
+                                    inputCheck.checked = true;
+                                    inputCheck.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error cargando observaciones_generales Paso 3:', e);
+            }
         }
     } catch (e) {
         console.error('Error cargando campos Paso 3 desde logoCotizacion:', e);
     }
+
+    // ==============================
+    // PASO 3 (LOGO): reconstruir cards desde BD
+    // ==============================
+    try {
+        const logoCotizacion = cotizacion.logoCotizacion || cotizacion.logo_cotizacion || cotizacion.logoCotizacionModel || null;
+        const tecnicasPrendas = logoCotizacion?.prendas || logoCotizacion?.tecnicas_prendas || [];
+
+        const normalizarUrl = (f) => {
+            const ruta = (typeof f === 'string')
+                ? f
+                : (f?.url || f?.url_miniatura || f?.ruta_webp || f?.ruta_original || f?.ruta || '');
+            if (!ruta) return '';
+            if (ruta.startsWith('http')) return ruta;
+            if (ruta.startsWith('/storage')) return ruta;
+            return '/storage/' + (ruta.startsWith('/') ? ruta.substring(1) : ruta);
+        };
+
+        if (Array.isArray(tecnicasPrendas) && tecnicasPrendas.length > 0) {
+            const tecnicasMap = new Map();
+
+            tecnicasPrendas.forEach((tp) => {
+                if (!tp) return;
+                const tipoLogo = tp.tipo_logo || tp.tipoLogo || null;
+                const prendaCot = tp.prenda_cot || tp.prendaCot || tp.prenda || null;
+                if (!tipoLogo || !prendaCot) return;
+
+                const tipoId = tipoLogo.id;
+                const nombreTecnica = tipoLogo.nombre;
+                const key = String(tipoId);
+
+                if (!tecnicasMap.has(key)) {
+                    tecnicasMap.set(key, {
+                        tipo_logo: { id: tipoId, nombre: nombreTecnica },
+                        tipo: nombreTecnica,
+                        prendas: [],
+                        observacionesGenerales: tp.observaciones || ''
+                    });
+                }
+
+                // Imagen principal prenda (paso2) para card (formato esperado por render: {ruta, tipo:'paso2'})
+                const fotosPrenda = prendaCot.fotos || [];
+                const imagenesPrenda = Array.isArray(fotosPrenda)
+                    ? fotosPrenda.map(f => ({ ruta: normalizarUrl(f), tipo: 'paso2' })).filter(i => i.ruta)
+                    : [];
+
+                // Imágenes de logo guardadas en técnica+prenda (también se pasan como {ruta, tipo:'paso2'} para que el render las muestre)
+                const fotosLogo = tp.fotos || [];
+                const imagenesLogo = Array.isArray(fotosLogo)
+                    ? fotosLogo.map(f => ({ ruta: normalizarUrl(f), tipo: 'paso2' })).filter(i => i.ruta)
+                    : [];
+
+                // Ubicaciones pueden venir como array, objetos, o string JSON
+                let ubicaciones = tp.ubicaciones || tp.ubicacion || [];
+                if (typeof ubicaciones === 'string') {
+                    try {
+                        const parsed = JSON.parse(ubicaciones);
+                        ubicaciones = parsed;
+                    } catch (_) {
+                        ubicaciones = ubicaciones.split(',').map(s => s.trim()).filter(Boolean);
+                    }
+                }
+                const ubicacionesArr = Array.isArray(ubicaciones)
+                    ? ubicaciones.map(u => (typeof u === 'string' ? u : (u.ubicacion || u.seccion || u.nombre || ''))).filter(Boolean)
+                    : [];
+
+                tecnicasMap.get(key).prendas.push({
+                    nombre_prenda: prendaCot.nombre_producto || prendaCot.nombre || '',
+                    ubicaciones: ubicacionesArr,
+                    imagenes: [...imagenesPrenda, ...imagenesLogo],
+                    talla_cantidad: tp.talla_cantidad || [],
+                    observaciones: tp.observaciones || ''
+                });
+            });
+
+            window.tecnicasAgregadasPaso3 = Array.from(tecnicasMap.values());
+            setTimeout(() => {
+                if (typeof renderizarTecnicasAgregadasPaso3 === 'function') {
+                    renderizarTecnicasAgregadasPaso3();
+                }
+            }, 800);
+        }
+    } catch (e) {
+        console.error('Error reconstruyendo Paso 3 desde borrador:', e);
+    }
+}
+
+function __engancharHidratacionPaso3() {
+    if (window.__paso3Hookeado) return;
+    window.__paso3Hookeado = true;
+
+    // Hook a irAlPaso para ejecutar la hidratación del paso 3 solo cuando el usuario entra al paso 3
+    const original = window.irAlPaso;
+    if (typeof original !== 'function') return;
+
+    window.irAlPaso = function(paso) {
+        const result = original.apply(this, arguments);
+        try {
+            if (String(paso) === '3') {
+                __hidratarPaso3DesdeBorrador(window.cotizacionData);
+            }
+        } catch (e) {
+            console.error('Error hidratando Paso 3 al navegar:', e);
+        }
+        return result;
+    };
+}
+
+function cargarBorrador(cotizacion) {
+    if (!cotizacion) return;
+    
+
+    
+    //  GUARDAR COTIZACIÓN EN MEMORIA PARA PASO 3
+    window.cotizacionData = cotizacion;
+
+    
+    //  LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
+    if (window.fotosSeleccionadas) {
+        window.fotosSeleccionadas = {};
+
+    }
+
+    // No hidratar Paso 3 aquí (estás en Paso 2). Se hidrata al navegar a Paso 3.
+    __engancharHidratacionPaso3();
     if (window.telasSeleccionadas) {
         window.telasSeleccionadas = {};
 
@@ -199,7 +388,58 @@ function cargarBorrador(cotizacion) {
     
     // Cargar productos/prendas
     // Soportar ambos nombres: productos (legacy) y prendas (nuevo)
-    const prendas = cotizacion.prendas || cotizacion.productos || [];
+    const prendasRaw = cotizacion.prendas || cotizacion.productos || [];
+
+    const prendasFiltradas = (Array.isArray(prendasRaw) ? prendasRaw : []).filter((prenda) => {
+        if (!prenda || typeof prenda !== 'object') return false;
+
+        // Excluir objetos que pertenecen al Paso 3 (logo/técnicas) y que a veces vienen mezclados
+        // (ej: {tipo_logo, prenda_cot, talla_cantidad, ubicaciones, ...})
+        const esObjetoTecnicaLogo = (
+            prenda.tipo_logo ||
+            prenda.tipoLogo ||
+            prenda.prenda_cot ||
+            prenda.prendaCot ||
+            prenda.talla_cantidad ||
+            prenda.tecnica ||
+            prenda.ubicaciones
+        );
+        if (esObjetoTecnicaLogo) return false;
+
+        // Debe tener nombre de prenda para ser renderizable en Paso 2
+        const nombre = prenda.nombre_producto || prenda.nombre || prenda.tipo || '';
+        return String(nombre).trim().length > 0;
+    });
+
+    // Deduplicar por nombre (case-insensitive) y quedarse con la prenda "más completa"
+    // Esto evita que se rendericen duplicados vacíos (típico cuando viene una prenda asociada a logo sin tallas/variantes/fotos).
+    const prendasMap = new Map();
+    const prendasOrden = [];
+    const scorePrenda = (p) => {
+        const tallas = Array.isArray(p?.tallas) ? p.tallas.length : 0;
+        const variantes = Array.isArray(p?.variantes) ? p.variantes.length : 0;
+        const fotos = Array.isArray(p?.fotos) ? p.fotos.length : 0;
+        const telas = Array.isArray(p?.tela_fotos) ? p.tela_fotos.length : 0;
+        return (tallas * 10) + (variantes * 5) + fotos + telas;
+    };
+
+    prendasFiltradas.forEach((p) => {
+        const key = String(p.nombre_producto || p.nombre || p.tipo || '').trim().toLowerCase();
+        if (!key) return;
+
+        if (!prendasMap.has(key)) {
+            prendasMap.set(key, p);
+            prendasOrden.push(key);
+            return;
+        }
+
+        const actual = prendasMap.get(key);
+        if (scorePrenda(p) > scorePrenda(actual)) {
+            prendasMap.set(key, p);
+        }
+    });
+
+    const prendas = prendasOrden.map(k => prendasMap.get(k)).filter(Boolean);
     
     if (prendas && Array.isArray(prendas) && prendas.length > 0) {
 
@@ -260,8 +500,29 @@ function cargarBorrador(cotizacion) {
                     textareaDesc.dispatchEvent(new Event('change', { bubbles: true }));
 
                 }
-                    
-                    // Tallas (con género)
+
+                // Inferir género para tallas cuando la BD/JSON no trae genero_id por talla
+                // (la UI nueva construye botones por género; si no se marca género, no aparecen las tallas)
+                let varianteParaTallas = prenda.variantes;
+                if (Array.isArray(varianteParaTallas) && varianteParaTallas.length > 0) {
+                    varianteParaTallas = varianteParaTallas[0];
+                }
+                if (!varianteParaTallas && prenda.prendas_variantes && Array.isArray(prenda.prendas_variantes) && prenda.prendas_variantes.length > 0) {
+                    varianteParaTallas = prenda.prendas_variantes[0];
+                }
+
+                let generoInferido = null; // 'dama' | 'caballero'
+                if (typeof prenda.genero === 'string' && prenda.genero.trim()) {
+                    const g = prenda.genero.toLowerCase().trim();
+                    if (g === 'dama' || g === 'caballero') generoInferido = g;
+                }
+                if (!generoInferido && varianteParaTallas && (varianteParaTallas.genero_id !== undefined && varianteParaTallas.genero_id !== null)) {
+                    // Regla negocio/UI: 1 = caballero, 2 = dama
+                    if (varianteParaTallas.genero_id === 1 || varianteParaTallas.genero_id === '1') generoInferido = 'caballero';
+                    if (varianteParaTallas.genero_id === 2 || varianteParaTallas.genero_id === '2') generoInferido = 'dama';
+                }
+
+                // Tallas (con género)
                 // Soportar relación Eloquent: prenda.tallas[] = {talla, genero_id, cantidad}
                 let tallasValores = [];
                 let tallasPorGenero = { dama: [], caballero: [] };
@@ -274,6 +535,7 @@ function cargarBorrador(cotizacion) {
                         tallasValores.push(tallaValor);
 
                         const generoId = typeof t === 'object' ? (t.genero_id ?? null) : null;
+                        // Regla negocio/UI: 1 = caballero, 2 = dama
                         if (generoId === 2 || generoId === '2') {
                             tallasPorGenero.dama.push(tallaValor);
                         } else if (generoId === 1 || generoId === '1') {
@@ -285,6 +547,7 @@ function cargarBorrador(cotizacion) {
                         if (!pt || !pt.talla) return;
                         tallasValores.push(pt.talla);
                         const generoId = pt.genero_id ?? null;
+                        // Regla negocio/UI: 1 = caballero, 2 = dama
                         if (generoId === 2 || generoId === '2') {
                             tallasPorGenero.dama.push(pt.talla);
                         } else if (generoId === 1 || generoId === '1') {
@@ -315,7 +578,7 @@ function cargarBorrador(cotizacion) {
 
                         }
                         
-                        // Esperar a que se carguen los botones (aumentar delay)
+                        // Esperar a que se carguen los controles (aumentar delay)
                         setTimeout(() => {
 
                             
@@ -328,8 +591,14 @@ function cargarBorrador(cotizacion) {
                         const cbDama = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="dama"]') : null;
                         const cbCab = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="caballero"]') : null;
 
-                        const tieneDama = tallasPorGenero.dama.length > 0;
-                        const tieneCab = tallasPorGenero.caballero.length > 0;
+                        let tieneDama = tallasPorGenero.dama.length > 0;
+                        let tieneCab = tallasPorGenero.caballero.length > 0;
+
+                        // Si las tallas vienen sin genero_id, usar género guardado en la prenda/variante
+                        if (!tieneDama && !tieneCab && generoInferido) {
+                            tieneDama = generoInferido === 'dama';
+                            tieneCab = generoInferido === 'caballero';
+                        }
 
                         if (cbDama) cbDama.checked = !!tieneDama;
                         if (cbCab) cbCab.checked = !!tieneCab;
@@ -337,6 +606,15 @@ function cargarBorrador(cotizacion) {
                         // Disparar update para que se construyan botones de tallas
                         if (cbDama) cbDama.dispatchEvent(new Event('change', { bubbles: true }));
                         if (cbCab) cbCab.dispatchEvent(new Event('change', { bubbles: true }));
+
+                        // Si son tallas de letras, es obligatorio seleccionar modo para que se creen los botones
+                        if (tipoTalla === 'letra') {
+                            const modoSelect = productoActual.querySelector('.talla-modo-select');
+                            if (modoSelect) {
+                                modoSelect.value = 'manual';
+                                modoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
                             
                             // Esperar a que se carguen los botones del género
                             setTimeout(() => {
@@ -356,8 +634,13 @@ function cargarBorrador(cotizacion) {
                                 };
 
                                 if (tieneDama || tieneCab) {
-                                    activarTallas(tallasPorGenero.dama, 'dama');
-                                    activarTallas(tallasPorGenero.caballero, 'caballero');
+                                    // Si no tenemos separación por genero_id, activarlas con el género inferido
+                                    if (tallasPorGenero.dama.length === 0 && tallasPorGenero.caballero.length === 0 && generoInferido) {
+                                        activarTallas(tallasValores, generoInferido);
+                                    } else {
+                                        activarTallas(tallasPorGenero.dama, 'dama');
+                                        activarTallas(tallasPorGenero.caballero, 'caballero');
+                                    }
                                 } else {
                                     activarTallas(tallasValores, '');
                                 }
@@ -1513,71 +1796,7 @@ function cargarBorrador(cotizacion) {
 
     }
 
-    // ==============================
-    // PASO 3 (LOGO): reconstruir cards desde BD
-    // ==============================
-    try {
-        const logoCotizacion = cotizacion.logoCotizacion || cotizacion.logo_cotizacion || cotizacion.logoCotizacionModel || null;
-        const tecnicasPrendas = logoCotizacion?.prendas || logoCotizacion?.tecnicas_prendas || [];
-
-        if (Array.isArray(tecnicasPrendas) && tecnicasPrendas.length > 0) {
-            const tecnicasMap = new Map();
-
-            tecnicasPrendas.forEach((tp) => {
-                if (!tp) return;
-                const tipoLogo = tp.tipo_logo || tp.tipoLogo || null;
-                const prendaCot = tp.prenda_cot || tp.prendaCot || tp.prenda || null;
-                if (!tipoLogo || !prendaCot) return;
-
-                const tipoId = tipoLogo.id;
-                const nombreTecnica = tipoLogo.nombre;
-                const key = String(tipoId);
-
-                if (!tecnicasMap.has(key)) {
-                    tecnicasMap.set(key, {
-                        tipo_logo: { id: tipoId, nombre: nombreTecnica },
-                        tipo: nombreTecnica,
-                        prendas: [],
-                        observacionesGenerales: tp.observaciones || ''
-                    });
-                }
-
-                // Imagen principal prenda (paso2) para card
-                const fotosPrenda = prendaCot.fotos || [];
-                const imagenesPrenda = Array.isArray(fotosPrenda)
-                    ? fotosPrenda.map(f => ({ preview: f.url || f.url_miniatura || f.ruta_webp || f.ruta_original || '', tipo: 'paso2' })).filter(i => i.preview)
-                    : [];
-
-                // Imágenes de logo paso3 guardadas en técnica+prenda
-                const fotosLogo = tp.fotos || [];
-                const imagenesLogo = Array.isArray(fotosLogo)
-                    ? fotosLogo.map(f => ({ preview: f.url || f.url_miniatura || f.ruta_webp || f.ruta_original || '', tipo: 'paso2' })).filter(i => i.preview)
-                    : [];
-
-                const ubicaciones = tp.ubicaciones || [];
-                const ubicacionesArr = Array.isArray(ubicaciones)
-                    ? ubicaciones.map(u => (typeof u === 'string' ? u : (u.ubicacion || u.seccion || ''))).filter(Boolean)
-                    : [];
-
-                tecnicasMap.get(key).prendas.push({
-                    nombre_prenda: prendaCot.nombre_producto || prendaCot.nombre || '',
-                    ubicaciones: ubicacionesArr,
-                    imagenes: [...imagenesPrenda, ...imagenesLogo],
-                    talla_cantidad: tp.talla_cantidad || [],
-                    observaciones: tp.observaciones || ''
-                });
-            });
-
-            window.tecnicasAgregadasPaso3 = Array.from(tecnicasMap.values());
-            setTimeout(() => {
-                if (typeof renderizarTecnicasAgregadasPaso3 === 'function') {
-                    renderizarTecnicasAgregadasPaso3();
-                }
-            }, 800);
-        }
-    } catch (e) {
-        console.error('Error reconstruyendo Paso 3 desde borrador:', e);
-    }
+    // PASO 3 se hidrata al entrar al paso 3
 }
 
 /**

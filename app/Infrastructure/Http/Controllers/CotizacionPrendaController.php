@@ -97,7 +97,7 @@ class CotizacionPrendaController extends Controller
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $clienteId,
                     'numero_cotizacion' => $numeroCotizacion,
-                    'tipo_cotizacion_id' => 1, // Cotizaci\u00f3n Combinada (Prenda + Logo)
+                    'tipo_cotizacion_id' => 3, // Cotización de Prenda (solo prendas)
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
@@ -133,7 +133,7 @@ class CotizacionPrendaController extends Controller
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
                         $cotizacion->id,
-                        1 // tipo_cotizacion_id para Combinada (Prenda + Logo)
+                        3 // tipo_cotizacion_id para Prenda (solo prendas)
                     )->onQueue('cotizaciones');
 
                     Log::info(' Job de envío encolado (número ya existe)', [
