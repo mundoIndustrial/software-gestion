@@ -23,8 +23,6 @@
      * Ocultar elementos antes de imprimir
      */
     function hidePrintElements() {
-        console.log('[PRINT] beforeprint: ocultando elementos flotantes');
-        
         hiddenElements = [];
         
         HIDE_SELECTORS.forEach(selector => {
@@ -45,30 +43,25 @@
             });
         });
         
-        console.log('[PRINT] ' + hiddenElements.length + ' elementos ocultados');
+        hiddenElements = hiddenElements.concat(Array.from(elements));
     }
 
     /**
      * Restaurar elementos después de imprimir
      */
     function showPrintElements() {
-        console.log('[PRINT] afterprint: restaurando elementos');
-        
         hiddenElements.forEach(state => {
             state.element.style.display = state.originalDisplay || '';
             state.element.style.visibility = state.originalVisibility || '';
         });
         
         hiddenElements = [];
-        console.log('[PRINT] elementos restaurados');
     }
 
     /**
      * Inicializar listeners
      */
     function init() {
-        console.log('[PRINT] Print Handler inicializado');
-        
         // Event listeners para impresión
         window.addEventListener('beforeprint', hidePrintElements);
         window.addEventListener('afterprint', showPrintElements);
@@ -76,12 +69,9 @@
         // Para navegadores que no usan beforeprint (fallback)
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-                console.log('[PRINT] Ctrl+P detectado');
                 // beforeprint se dispará automáticamente
             }
         });
-        
-        console.log('[PRINT] Event listeners registrados');
     }
 
     // Ejecutar cuando el DOM esté disponible
@@ -94,18 +84,10 @@
     // Exponer métodos públicos para debugging
     window.PrintHandler = {
         debug: function() {
-            console.log('[PRINT] Debug info:');
-            console.log('  - Floating buttons container:', document.getElementById('floating-buttons-container'));
-            console.log('  - Floating buttons container logo:', document.getElementById('floating-buttons-container-logo'));
-            console.log('  - All hidden selectors:');
-            HIDE_SELECTORS.forEach(sel => {
-                const els = document.querySelectorAll(sel);
-                console.log('    ' + sel + ':', els.length + ' encontrados');
-            });
+            // Debug info disponible en consola
         },
         
         testPrint: function() {
-            console.log('[PRINT] Ejecutando print()...');
             print();
         }
     };

@@ -282,7 +282,7 @@ const PROCESO_SECCION_OBSERVACIONES = `
 const FOTOS_PREVIEW_VACIO_HTML = `
     <div class="foto-preview-content">
         <div class="material-symbols-rounded">add_photo_alternate</div>
-        <div class="foto-preview-text">Agregar</div>
+        <div class="foto-preview-text">Click o arrastra para agregar</div>
     </div>
 `;
 

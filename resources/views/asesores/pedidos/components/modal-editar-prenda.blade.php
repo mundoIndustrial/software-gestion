@@ -15,15 +15,15 @@
         const html = `
             <div style="text-align: left;">
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Nombre de la Prenda</label>
+                    <label for="editPrendaNombre" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Nombre de la Prenda</label>
                     <input type="text" id="editPrendaNombre" value="${prenda.nombre_prenda || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
+                    <label for="editPrendaCantidad" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cantidad</label>
                     <input type="number" id="editPrendaCantidad" value="${prenda.cantidad || 0}" min="1" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
+                    <label for="editPrendaDescripcion" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Descripción</label>
                     <textarea id="editPrendaDescripcion" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 80px;">${prenda.descripcion || ''}</textarea>
                 </div>
             </div>

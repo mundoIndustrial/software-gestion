@@ -51,15 +51,6 @@
     const scheme = document.querySelector('meta[name="reverb-scheme"]')?.content || env.scheme;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
-    console.log(' echo-init.js - Environment Detection:');
-    console.log('Hostname:', window.location.hostname);
-    console.log('isProduction:', isProduction);
-    console.log('');
-    console.log('📡 Configuración de Echo/Reverb (echo-init.js):');
-    console.log('Host:', host);
-    console.log('Port:', port);
-    console.log('Scheme:', scheme);
-
     try {
         // Initialize Echo with Reverb (Pusher protocol)
         window.Echo = new Echo({
@@ -80,16 +71,12 @@
             }
         });
 
-        console.log(' Echo inicializado exitosamente por echo-init.js (fallback)');
-
         // Connection event handlers
         window.Echo.connector.pusher.connection.bind('connected', () => {
-            console.log(' WebSocket conectado exitosamente a Reverb');
             updateConnectionStatus(true);
         });
 
         window.Echo.connector.pusher.connection.bind('disconnected', () => {
-            console.warn(' WebSocket desconectado');
             updateConnectionStatus(false);
         });
 
@@ -99,7 +86,6 @@
         });
 
         window.Echo.connector.pusher.connection.bind('unavailable', () => {
-            console.warn(' WebSocket no disponible');
             updateConnectionStatus(false);
         });
 

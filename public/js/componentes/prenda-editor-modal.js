@@ -1225,6 +1225,11 @@ function cerrarModalPrendaNueva() {
     if (tbodyTelas) {
         tbodyTelas.innerHTML = '';
     }
+    
+    // 🔥 CRÍTICO: Limpiar ASIGNACIONES DE COLORES POR TALLA
+    if (typeof limpiarAsignacionesColores === 'function') {
+        limpiarAsignacionesColores();
+    }
 }
 
 /**
@@ -1357,7 +1362,12 @@ function limpiarFormularioPrendaNueva() {
     const prevFoto = document.getElementById('nueva-prenda-foto-preview');
     if (prevFoto) {
         prevFoto.style.backgroundImage = 'none';
-        prevFoto.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Agregar</div></div>';
+        prevFoto.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Click o arrastra para agregar</div></div>';
+        
+        // 🔥 IMPORTANTE: Configurar drag & drop después de limpiar
+        if (typeof window.setupDragAndDrop === 'function') {
+            window.setupDragAndDrop(prevFoto);
+        }
     }
     
     // 🔥 CRÍTICO: Limpiar arrays de telas

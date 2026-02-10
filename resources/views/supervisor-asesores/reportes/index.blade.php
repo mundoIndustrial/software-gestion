@@ -13,7 +13,7 @@
     <!-- Filtros -->
     <div class="filters-section">
         <div class="filter-group">
-            <label>Período</label>
+            <label for="filterPeriod">Período</label>
             <select id="filterPeriod" onchange="actualizarReportes()">
                 <option value="week">Esta Semana</option>
                 <option value="month" selected>Este Mes</option>
@@ -23,7 +23,7 @@
         </div>
 
         <div class="filter-group">
-            <label>Asesor</label>
+            <label for="filterAsesor">Asesor</label>
             <select id="filterAsesor" onchange="actualizarReportes()">
                 <option value="">Todos los Asesores</option>
                 <option value="">Cargando...</option>

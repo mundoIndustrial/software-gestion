@@ -15,7 +15,7 @@
             
             <!-- Buscador -->
             <div>
-                <label class="text-sm font-medium text-gray-700 block mb-2">Buscar por Referencia o Nombre</label>
+                <label for="inputBuscadorEPP" class="text-sm font-medium text-gray-700 block mb-2">Buscar por Referencia o Nombre</label>
                 <div class="relative">
                     <i class="material-symbols-rounded absolute left-3 top-2.5 text-gray-400 text-xl">search</i>
                     <input 
@@ -51,7 +51,7 @@
                 
                 <div class="space-y-3">
                     <div>
-                        <label class="text-sm font-medium text-gray-700 block mb-1">Nombre Completo</label>
+                        <label for="nombreCompletNuevoEPP" class="text-sm font-medium text-gray-700 block mb-1">Nombre Completo</label>
                         <input 
                             type="text"
                             id="nombreCompletNuevoEPP"
@@ -85,7 +85,7 @@
             <!-- Tarjeta Producto (inicialmente oculta) -->
             <div id="productoCardEPP" class="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-in fade-in" style="display: none;">
                 <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-2">Nombre del EPP</label>
+                    <label for="nombreProductoEPP" class="text-sm font-medium text-gray-700 block mb-2">Nombre del EPP</label>
                     <input 
                         type="text"
                         id="nombreProductoEPP"
@@ -100,7 +100,7 @@
             <!-- Solo Cantidad -->
             <div id="formularioAgregarEPP" style="display: none;">
                 <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
+                    <label for="cantidadEPP" class="text-sm font-medium text-gray-700 block mb-2">Cantidad</label>
                     <input 
                         type="number"
                         id="cantidadEPP"
@@ -115,7 +115,7 @@
 
             <!-- Observaciones -->
             <div id="observacionesContainer" style="display: none;">
-                <label class="text-sm font-medium text-gray-700 block mb-2">Observaciones (Opcional)</label>
+                <label for="observacionesEPP" class="text-sm font-medium text-gray-700 block mb-2">Observaciones (Opcional)</label>
                 <textarea 
                     id="observacionesEPP"
                     placeholder="Detalles adicionales..."
@@ -895,10 +895,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Exportar función globalmente para que sea accesible desde otros scripts
 window.editarEPPAgregado = editarEPPAgregado;
 window.guardarEdicionEPP = guardarEdicionEPP;
-console.log(' [modal-agregar-epp] Funciones exportadas a window:', {
-    editarEPPAgregado: typeof window.editarEPPAgregado,
-    guardarEdicionEPP: typeof window.guardarEdicionEPP
-});
 </script>
 
 <style>

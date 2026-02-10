@@ -13,8 +13,6 @@
      * @param {Array} prendas - Array de prendas desde cotización
      */
     window.agregarPrendasDesdeCotizacion = function(prendas) {
-        console.log('[agregador-prendas-cotizacion] 🚀 Iniciando agregación de prendas desde cotización:', prendas.length);
-        
         if (!window.gestorPedidoSinCotizacion) {
             console.error('[agregador-prendas-cotizacion] ❌ gestorPedidoSinCotizacion no disponible');
             return false;

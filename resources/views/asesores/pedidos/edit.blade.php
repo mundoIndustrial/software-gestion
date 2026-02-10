@@ -86,33 +86,33 @@
                         <div class="producto-body">
                             <div class="form-grid">
                                 <div class="form-group full-width">
-                                    <label>Nombre del Producto *</label>
-                                    <input type="text" name="productos[{{ $index }}][nombre_producto]" value="{{ $producto->nombre_producto }}" required>
+                                    <label for="nombre_producto_{{ $index }}">Nombre del Producto *</label>
+                                    <input type="text" id="nombre_producto_{{ $index }}" name="productos[{{ $index }}][nombre_producto]" value="{{ $producto->nombre_producto }}" required>
                                 </div>
 
                                 <div class="form-group full-width">
-                                    <label>Descripción Completa</label>
-                                    <textarea name="productos[{{ $index }}][descripcion]" rows="3">{{ $producto->descripcion }}</textarea>
+                                    <label for="descripcion_completa_editar">Descripción Completa</label>
+                                    <textarea id="descripcion_completa_editar" name="productos[{{ $index }}][descripcion]" rows="3">{{ $producto->descripcion }}</textarea>
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Talla</label>
-                                    <input type="text" name="productos[{{ $index }}][talla]" value="{{ $producto->talla }}">
+                                    <label for="talla_{{ $index }}">Talla</label>
+                                    <input type="text" id="talla_{{ $index }}" name="productos[{{ $index }}][talla]" value="{{ $producto->talla }}">
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Cantidad *</label>
-                                    <input type="number" name="productos[{{ $index }}][cantidad]" min="1" value="{{ $producto->cantidad }}" class="producto-cantidad" required>
+                                    <label for="cantidad_{{ $index }}">Cantidad *</label>
+                                    <input type="number" id="cantidad_{{ $index }}" name="productos[{{ $index }}][cantidad]" min="1" value="{{ $producto->cantidad }}" class="producto-cantidad" required>
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Precio Unitario</label>
-                                    <input type="number" name="productos[{{ $index }}][precio_unitario]" min="0" step="0.01" value="{{ $producto->precio_unitario }}" class="producto-precio">
+                                    <label for="precio_unitario_{{ $index }}">Precio Unitario</label>
+                                    <input type="number" id="precio_unitario_{{ $index }}" name="productos[{{ $index }}][precio_unitario]" min="0" step="0.01" value="{{ $producto->precio_unitario }}" class="producto-precio">
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Subtotal</label>
-                                    <input type="text" class="producto-subtotal" readonly value="${{ number_format($producto->subtotal ?? 0, 2) }}">
+                                    <label for="subtotal_{{ $index }}">Subtotal</label>
+                                    <input type="text" id="subtotal_{{ $index }}" class="producto-subtotal" readonly value="${{ number_format($producto->subtotal ?? 0, 2) }}">
                                 </div>
                             </div>
                         </div>
@@ -158,33 +158,33 @@
         <div class="producto-body">
             <div class="form-grid">
                 <div class="form-group full-width">
-                    <label>Nombre del Producto *</label>
-                    <input type="text" name="productos[][nombre_producto]" required>
+                    <label for="nombre_producto_nuevo">Nombre del Producto *</label>
+                    <input type="text" id="nombre_producto_nuevo" name="productos[][nombre_producto]" required>
                 </div>
 
                 <div class="form-group full-width">
-                    <label>Descripción Completa</label>
-                    <textarea name="productos[][descripcion]" rows="3"></textarea>
+                    <label for="descripcion_completa">Descripción Completa</label>
+                    <textarea id="descripcion_completa" name="productos[][descripcion]" rows="3"></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>Talla</label>
-                    <input type="text" name="productos[][talla]">
+                    <label for="talla_nuevo">Talla</label>
+                    <input type="text" id="talla_nuevo" name="productos[][talla]">
                 </div>
 
                 <div class="form-group">
-                    <label>Cantidad *</label>
-                    <input type="number" name="productos[][cantidad]" min="1" value="1" class="producto-cantidad" required>
+                    <label for="cantidad_nuevo">Cantidad *</label>
+                    <input type="number" id="cantidad_nuevo" name="productos[][cantidad]" min="1" value="1" class="producto-cantidad" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Precio Unitario</label>
-                    <input type="number" name="productos[][precio_unitario]" min="0" step="0.01" class="producto-precio">
+                    <label for="precio_unitario_nuevo">Precio Unitario</label>
+                    <input type="number" id="precio_unitario_nuevo" name="productos[][precio_unitario]" min="0" step="0.01" class="producto-precio">
                 </div>
 
                 <div class="form-group">
-                    <label>Subtotal</label>
-                    <input type="text" class="producto-subtotal" readonly placeholder="$0.00">
+                    <label for="subtotal_nuevo">Subtotal</label>
+                    <input type="text" id="subtotal_nuevo" class="producto-subtotal" readonly placeholder="$0.00">
                 </div>
             </div>
         </div>

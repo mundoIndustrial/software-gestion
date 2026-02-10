@@ -162,8 +162,6 @@ function asignarTelasAgregadas(prenda, telasAgregadas) {
  * @returns {Object} Prenda modificada con telasAgregadas
  */
 function procesarTelasDesdeVariantes(prenda) {
-    console.log('🚀 [procesarTelasDesdeVariantes] Iniciando flujo completo');
-    
     // 1. Transformar variantes a telasAgregadas
     const telasAgregadas = transformarVariantesATelasAgregadas(prenda);
     

@@ -5,8 +5,6 @@
  * Patrón: Adapter + Factory
  */
 
-console.log('[DEBUG]  PrendaDataTransformer.js cargado correctamente');
-
 class PrendaDataTransformer {
     /**
      * Transformar datos de prenda a formato consistente

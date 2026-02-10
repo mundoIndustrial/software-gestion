@@ -3,8 +3,6 @@
  * Mostrar, navegar y eliminar imágenes de prendas con modal
  */
 
-console.log(' [galeria-imagenes-prenda.js] ARCHIVO CARGADO - Definiendo window.mostrarGaleriaImagenesPrenda');
-
 /**
  * Mostrar galería de imágenes de prenda
  * @param {Array} imagenes - Array de imágenes de la prenda

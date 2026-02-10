@@ -234,8 +234,13 @@ class ModalCleanup {
         // Luego limpiar el DOM del preview
         const fotosPreview = document.getElementById('nueva-prenda-foto-preview');
         if (fotosPreview) {
-            fotosPreview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click para agregar</div></div>';
+            fotosPreview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
             fotosPreview.style.cursor = 'pointer';
+            
+            // 🔥 IMPORTANTE: Configurar drag & drop después de limpiar
+            if (typeof window.setupDragAndDrop === 'function') {
+                window.setupDragAndDrop(fotosPreview);
+            }
         }
         
         // Limpiar contador de fotos
@@ -248,6 +253,14 @@ class ModalCleanup {
         const fotosBtn = document.getElementById('nueva-prenda-foto-btn');
         if (fotosBtn) {
             fotosBtn.style.display = 'block';
+        }
+        
+        // 🔥 IMPORTANTE: Configurar drag & drop para imágenes de tela después de limpiar
+        if (typeof window.setupDragDropTela === 'function') {
+            const telaDropZone = document.getElementById('nueva-prenda-tela-drop-zone');
+            if (telaDropZone) {
+                window.setupDragDropTela(telaDropZone);
+            }
         }
 
         // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
@@ -462,10 +475,19 @@ class ModalCleanup {
                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                     </td>
                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
-                        <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar imagen (opcional)">
-                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">image</span>
-                        </button>
-                        <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed transparent; border-radius: 6px; padding: 8px; cursor: pointer;">
+                            <button type="button" onclick="document.getElementById('nueva-prenda-tela-img-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px;" title="Agregar imagen (opcional) o arrastra una imagen aquí">
+                                <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
+                                <span style="font-size: 0.7rem;">Agregar imagen</span>
+                            </button>
+                            <input type="file" id="nueva-prenda-tela-img-input" accept="image/*" style="display: none;" onchange="manejarImagenTela(this)">
+                            
+                            <!-- Texto de ayuda -->
+                            <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
+                                <div class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.5;">cloud_upload</div>
+                                <div>Arrastra una imagen aquí</div>
+                            </div>
+                        </div>
                         <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px;"></div>
                     </td>
                     <td style="padding: 0.5rem; text-align: center; width: 20%;">

@@ -219,23 +219,23 @@
         <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.3rem;">Editar EPP</h3>
         
         <div style="margin-bottom: 1.5rem; position: relative;">
-            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Buscar EPP:</label>
+            <label for="buscadorEppEdicion" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Buscar EPP:</label>
             <input type="text" id="buscadorEppEdicion" placeholder="Buscar EPP..." style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
             <div id="resultadosBuscadorEppEdicion" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; display: none; z-index: 10;"></div>
         </div>
         
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">EPP Seleccionado:</label>
+            <label for="modalEppNombre" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">EPP Seleccionado:</label>
             <input type="text" id="modalEppNombre" disabled style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; color: #6b7280;">
         </div>
         
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Cantidad:</label>
+            <label for="cantidadEPP" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Cantidad:</label>
             <input type="number" id="cantidadEPP" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
         </div>
         
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Observaciones:</label>
+            <label for="observacionesEPP" style="display: block; color: #374151; font-weight: 600; margin-bottom: 0.5rem;">Observaciones:</label>
             <textarea id="observacionesEPP" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; min-height: 100px; resize: vertical;"></textarea>
         </div>
         

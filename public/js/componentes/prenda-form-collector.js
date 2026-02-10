@@ -363,6 +363,22 @@ class PrendaFormCollector {
             
             prendaData.variantes = variantes;
 
+            // ============================================
+            // 6. ASIGNACIONES DE COLORES POR TALLA
+            // ============================================
+            // Recolectar asignaciones de colores-talla definidas en el módulo de colores-por-talla
+            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
+                prendaData.asignacionesColoresPorTalla = window.ColoresPorTalla.obtenerDatosAsignaciones();
+                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla:', prendaData.asignacionesColoresPorTalla);
+            } else if (typeof obtenerDatosAsignacionesColores === 'function') {
+                // Compatibilidad con la API antigua
+                prendaData.asignacionesColoresPorTalla = obtenerDatosAsignacionesColores();
+                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla (API antigua):', prendaData.asignacionesColoresPorTalla);
+            } else {
+                prendaData.asignacionesColoresPorTalla = {};
+                console.warn('[prenda-form-collector] ⚠️ Función obtenerDatosAsignaciones no disponible');
+            }
+
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector] 🔍 VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
                 telasAgregadas_exist: !!prendaData.telasAgregadas,

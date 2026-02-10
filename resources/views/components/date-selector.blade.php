@@ -26,11 +26,11 @@
         <template x-if="filterType === 'range'">
             <div class="date-inputs-inline">
                 <div class="date-input-group">
-                    <label>Inicio</label>
+                    <label for="startDate">Inicio</label>
                     <input type="date" id="startDate" x-model="startDate">
                 </div>
                 <div class="date-input-group">
-                    <label>Fin</label>
+                    <label for="endDate">Fin</label>
                     <input type="date" id="endDate" x-model="endDate">
                 </div>
             </div>
@@ -40,7 +40,7 @@
         <template x-if="filterType === 'day'">
             <div class="date-inputs-inline">
                 <div class="date-input-group">
-                    <label>Día</label>
+                    <label for="specificDate">Día</label>
                     <input type="date" id="specificDate" x-model="specificDate">
                 </div>
             </div>
@@ -50,7 +50,7 @@
         <template x-if="filterType === 'month'">
             <div class="date-inputs-inline">
                 <div class="date-input-group">
-                    <label>Mes</label>
+                    <label for="month">Mes</label>
                     <input type="month" id="month" x-model="month">
                 </div>
             </div>

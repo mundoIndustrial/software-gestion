@@ -42,10 +42,8 @@ window.echoReadyCallbacks = [];
  */
 window.waitForEcho = function(callback) {
     if (window.echoReady && window.Echo) {
-        console.log('[Echo] ✅ Echo ya está listo, ejecutando callback inmediatamente');
         callback();
     } else {
-        console.log('[Echo] ⏳ Echo no está listo, esperando...');
         window.echoReadyCallbacks.push(callback);
     }
 };
@@ -54,7 +52,6 @@ window.waitForEcho = function(callback) {
  * Notificar que Echo está listo (llamado al final de inicializeEcho)
  */
 window.notifyEchoReady = function() {
-    console.log('[Echo] ✅ ECHO LISTO - Ejecutando', window.echoReadyCallbacks.length, 'callbacks');
     window.echoReady = true;
     
     // Ejecutar todos los callbacks pendientes
@@ -72,8 +69,6 @@ window.notifyEchoReady = function() {
  * Inicializar Echo después de que todo esté cargado
  */
 function initializeEcho() {
-    console.log('[Echo] 🚀 Iniciando inicialización de Echo...');
-    
     // 🔥 Leer config desde meta tags inyectados por Laravel (dinámico, no compilado)
     const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
     const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
@@ -82,21 +77,12 @@ function initializeEcho() {
     let wsHost = metaReverbHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
     let wsPort = parseInt(metaReverbPort || import.meta.env.VITE_REVERB_PORT) || 8080;
     
-    // DEBUG: Mostrar valores
-    console.log('[Echo] Meta tags encontrados:', { metaReverbHost, metaReverbPort });
-    console.log('[Echo] import.meta.env:', { 
-        VITE_REVERB_HOST: import.meta.env.VITE_REVERB_HOST,
-        VITE_REVERB_PORT: import.meta.env.VITE_REVERB_PORT 
-    });
-    
     // Detectar si está en producción por el hostname
     const hostname = window.location.hostname;
     const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname.includes('.');
     
     // En producción con dominio, usar HTTPS automáticamente
     const forceTLS = isProduction && wsPort === 443;
-
-    console.log('[Echo] Configuración final:', { wsHost, wsPort, forceTLS, isProduction, hostname });
 
     try {
         // WebSockets habilitados para Reverb (Supervisor Pedidos en tiempo real)
@@ -118,8 +104,6 @@ function initializeEcho() {
             wsErrorMessage: 'WebSocket connection failed',
         });
         
-        console.log('[Echo] ✅ Echo instancia creada exitosamente');
-        
         // Notificar que Echo está listo
         setTimeout(() => {
             window.notifyEchoReady();
@@ -133,10 +117,8 @@ function initializeEcho() {
 // Inicializar cuando el documento esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('[Echo] DOMContentLoaded disparado');
         initializeEcho();
     });
 } else {
-    console.log('[Echo] Documento ya cargado, inicializando Echo directamente');
     initializeEcho();
 }

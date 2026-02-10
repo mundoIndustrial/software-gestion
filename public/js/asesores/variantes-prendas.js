@@ -516,13 +516,11 @@ function obtenerVariantesSeleccionadas(productoCard) {
 }
 
 /**
- * Agregar variantes al formulario antes de enviar
- * Nota: Las variantes ya están en los inputs con los nombres correctos
  * (productos_friendly[][variantes][tipo_manga_id], etc.)
  * Por lo que no es necesario hacer nada adicional
  */
 function agregarVariantesAlFormulario() {
-
+    // Función vacía - las variantes se manejan automáticamente
 }
 
 /**

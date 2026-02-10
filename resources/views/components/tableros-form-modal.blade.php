@@ -582,7 +582,7 @@
                 div.className = 'hora-checkbox';
                 div.innerHTML = `
                     <input type="checkbox" id="hora${i}" value="${i}">
-                    <label>${horaId}</label>
+                    <label for="hora${i}">${horaId}</label>
                 `;
                 div.onclick = function() {
                     const checkbox = this.querySelector('input[type="checkbox"]');

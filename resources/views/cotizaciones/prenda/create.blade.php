@@ -564,7 +564,8 @@
             <div class="producto-section">
                 <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
                     <div class="form-col full">
-                        <textarea name="productos_prenda[][descripcion]" class="input-large" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2" style="font-size: 0.75rem; padding: 0.4rem; min-height: 50px;"></textarea>
+                        <label for="descripcion_prenda"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</label>
+                        <textarea id="descripcion_prenda" name="productos_prenda[][descripcion]" class="input-large" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2" style="font-size: 0.75rem; padding: 0.4rem; min-height: 50px;"></textarea>
                         <small class="help-text" style="font-size: 0.65rem; margin-top: 0.2rem; display: block;">DESCRIBE LA PRENDA, DETALLES ESPECIALES, ETC.</small>
                     </div>
             </div>

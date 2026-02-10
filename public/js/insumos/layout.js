@@ -192,7 +192,7 @@ async function _parseResponseData(response) {
     if (contentType && contentType.includes('application/json')) {
         return await response.json();
     }
-    throw new Error('Respuesta no es JSON válida');
+    throw new Error('Respuesta no es JSON vï¿½lida');
 }
 
 /**
@@ -246,7 +246,7 @@ window.showToast = function(message, type = 'success') {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 10005;
+            z-index: 99999;
             display: flex;
             flex-direction: column;
             gap: 10px;

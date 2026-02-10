@@ -45,8 +45,8 @@
                 <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
                 <div class="form-row">
                     <div class="form-col full">
-                        <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
-                        <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
+                        <label for="descripcion_producto"><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
+                        <textarea id="descripcion_producto" name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
                         <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, ETC.</small>
                     </div>
                 </div>

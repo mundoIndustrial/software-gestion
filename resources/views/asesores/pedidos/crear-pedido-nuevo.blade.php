@@ -414,4 +414,7 @@
 
 <!-- Script para modal de prendas y autocomplete -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
+
+<!-- Script para drag & drop de procesos -->
+<script src="{{ asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ time() }}"></script>
 @endpush

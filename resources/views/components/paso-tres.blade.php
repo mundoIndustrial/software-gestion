@@ -201,7 +201,7 @@
         <!-- OBSERVACIONES GENERALES - Igual al formulario de logo individual -->
         <div class="obs-box">
             <div class="obs-header">
-                <label>Observaciones Generales</label>
+                <label for="observaciones_generales">Observaciones Generales</label>
                 <button type="button" class="btn-add" onclick="agregarObservacion()">+</button>
             </div>
             

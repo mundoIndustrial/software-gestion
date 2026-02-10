@@ -5,8 +5,6 @@
  * Patrón: Builder + Template Method
  */
 
-console.log('[DEBUG]  ProcesosBuilder.js cargado correctamente');
-
 class ProcesosBuilder {
     static ICONOS = {
         'reflectivo': '<i class="fas fa-lightbulb" style="color: #f59e0b;"></i>',

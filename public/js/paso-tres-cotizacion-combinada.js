@@ -2033,13 +2033,6 @@ function cerrarModalValidacionTecnicaPaso3() {
     }
 }
 
-
-function agregarFilaPrendaPaso3_DEPRECATED() {
-    // FUNCIÓN DEPRECADA - NO USAR
-    console.warn('agregarFilaPrendaPaso3_DEPRECATED: Esta función ha sido eliminada');
-    return; 
-}
-
 function agregarObservacionPaso3() {
     const contenedor = document.getElementById('observaciones_lista_paso3');
     const fila = document.createElement('div');

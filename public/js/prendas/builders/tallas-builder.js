@@ -5,8 +5,6 @@
  * Patrón: Builder
  */
 
-console.log('[DEBUG]  TallasBuilder.js cargado correctamente');
-
 class TallasBuilder {
     static construir(prenda, indice) {
         console.log('[TallasBuilder.construir] 📦 ENTRADA - generosConTallas:', prenda.generosConTallas);

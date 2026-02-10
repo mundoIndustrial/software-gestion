@@ -260,10 +260,9 @@
     
     <!-- CSS no-crítico (diferido) -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <noscript>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     </noscript>
 
     <!-- Vite (contiene app.css y app.js críticos) -->
@@ -418,19 +417,13 @@
             
             window.PrintHandler = {
                 debug: function() {
-                    console.log('[PRINT] Elementos encontrados:');
-                    hideSelectors.forEach(sel => {
-                        const count = document.querySelectorAll(sel).length;
-                        console.log('  ' + sel + ': ' + count);
-                    });
+                    // Debug info disponible
                 },
                 testPrint: function() {
                     hidePrintElements();
                     print();
                 }
             };
-            
-            console.log('[PRINT] Handler inicializado');
         })();
     </script>
     

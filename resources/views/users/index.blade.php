@@ -150,17 +150,17 @@
                         <small>Mínimo 8 caracteres</small>
                     </div>
                     <div class="form-group">
-                        <label>Roles</label>
+                        <label for="create_roles">Roles</label>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="form-checkbox">
-                                    <span>{{ $role->name }}</span>
+                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}" id="role_{{ $role->id }}">
+                                    {{ $role->name }}
                                 </label>
                             @endforeach
                         </div>
-                        <small style="color: #666;">Selecciona al menos un rol</small>
                     </div>
+                    <small style="color: #666;">Selecciona al menos un rol</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancelar</button>
@@ -190,17 +190,17 @@
                         <input type="email" id="edit_email" name="email" class="form-input" required>
                     </div>
                     <div class="form-group">
-                        <label>Roles</label>
+                        <label for="edit_roles">Roles</label>
                         <div id="edit_roles_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="form-checkbox edit-role-checkbox">
-                                    <span>{{ $role->name }}</span>
+                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}" id="edit_role_{{ $role->id }}">
+                                    {{ $role->name }}
                                 </label>
                             @endforeach
                         </div>
-                        <small style="color: #666;">Selecciona al menos un rol</small>
                     </div>
+                    <small style="color: #666;">Selecciona al menos un rol</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancelar</button>

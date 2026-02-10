@@ -558,7 +558,6 @@ class GestorPrendaSinCotizacion {
 
 // Exportar a window para uso global
 window.GestorPrendaSinCotizacion = GestorPrendaSinCotizacion;
-console.log('[gestor-prenda-sin-cotizacion.js]  Clase exportada a window.GestorPrendaSinCotizacion');
 
 // Instancia global
 window.gestorPrendaSinCotizacion = null;

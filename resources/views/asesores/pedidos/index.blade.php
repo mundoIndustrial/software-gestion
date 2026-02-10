@@ -535,11 +535,11 @@
         const html = `
             <div style="text-align: left;">
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cliente</label>
+                    <label for="editCliente" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Cliente</label>
                     <input type="text" id="editCliente" value="${datos.cliente || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
+                    <label for="editFormaPago" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Forma de Pago</label>
                     <input type="text" id="editFormaPago" value="${datos.forma_de_pago || ''}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem;">
                 </div>
             </div>
@@ -572,8 +572,8 @@
         const html = `
             <div style="text-align: left;">
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
-                    <textarea id="justificacionCambio" 
+                    <label for="justificacion-cambio" style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">¿Por qué hiciste este cambio?</label>
+                    <textarea id="justificacion-cambio" 
                         placeholder="Explica brevemente el motivo de los cambios..." 
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; min-height: 100px; resize: vertical;">
                     </textarea>
