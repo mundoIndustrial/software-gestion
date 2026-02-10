@@ -501,6 +501,27 @@ function cargarBorrador(cotizacion) {
 
                 }
 
+                // Prenda de bodega (checkbox)
+                // `prenda_bodega` se guarda en `prendas_cot.prenda_bodega`.
+                // Al cargar borrador, debe reflejarse en el checkbox del Paso 2.
+                try {
+                    const prendaBodegaCheckbox = productoActual.querySelector('.prenda-bodega-checkbox')
+                        || productoActual.querySelector('input[name*="prenda_bodega"]');
+
+                    if (prendaBodegaCheckbox) {
+                        const vieneDeBodega = (
+                            prenda.prenda_bodega === true ||
+                            prenda.prenda_bodega === 1 ||
+                            prenda.prenda_bodega === '1'
+                        );
+
+                        prendaBodegaCheckbox.checked = !!vieneDeBodega;
+                        prendaBodegaCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } catch (e) {
+                    console.error('Error cargando prenda_bodega en Paso 2:', e);
+                }
+
                 // Inferir género para tallas cuando la BD/JSON no trae genero_id por talla
                 // (la UI nueva construye botones por género; si no se marca género, no aparecen las tallas)
                 let varianteParaTallas = prenda.variantes;
@@ -1063,6 +1084,14 @@ function cargarBorrador(cotizacion) {
                             nombreProducto: prenda.nombre_producto,
                             tallas: tallasSeleccionadas.join(', '),
                             genero: variantes.genero || '', // Agregar género para mostrar en resumen
+                            prendaBodega: (
+                                prenda.prenda_bodega === true ||
+                                prenda.prenda_bodega === 1 ||
+                                prenda.prenda_bodega === '1' ||
+                                variantes.prenda_bodega === true ||
+                                variantes.prenda_bodega === 1 ||
+                                variantes.prenda_bodega === '1'
+                            ),
                             color: variantes.color || '',
                             tela: (variantes.telas_multiples && variantes.telas_multiples.length > 0) ? variantes.telas_multiples[0].tela : '',
                             referencia: (variantes.telas_multiples && variantes.telas_multiples.length > 0) ? variantes.telas_multiples[0].referencia : '',
