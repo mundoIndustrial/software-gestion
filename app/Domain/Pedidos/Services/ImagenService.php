@@ -103,23 +103,45 @@ class ImagenService
     /**
      * Eliminar imagen
      * 
-     * @param string $ruta Ruta relativa de la imagen
+     * @param string $ruta Ruta relativa de la imagen (puede venir con o sin /storage/ al inicio)
      * @return bool
      */
     public function eliminarImagen(string $ruta): bool
     {
         try {
-            $rutaCompleta = storage_path("app/public/{$ruta}");
+            // Limpiar la ruta: remover /storage/ al inicio si existe
+            $rutaLimpia = preg_replace('|^/storage/|', '', $ruta);
+            
+            $rutaCompleta = storage_path("app/public/{$rutaLimpia}");
+            
+            \Log::debug('[ImagenService] Intentando eliminar imagen', [
+                'ruta_original' => $ruta,
+                'ruta_limpia' => $rutaLimpia,
+                'ruta_completa' => $rutaCompleta,
+                'existe' => file_exists($rutaCompleta)
+            ]);
             
             if (file_exists($rutaCompleta)) {
-                return unlink($rutaCompleta);
+                $resultado = unlink($rutaCompleta);
+                \Log::info('[ImagenService] Imagen eliminada exitosamente', [
+                    'ruta' => $ruta,
+                    'ruta_completa' => $rutaCompleta
+                ]);
+                return $resultado;
+            } else {
+                \Log::warning('[ImagenService] Archivo no existe en la ruta especificada', [
+                    'ruta_original' => $ruta,
+                    'ruta_limpia' => $rutaLimpia,
+                    'ruta_completa' => $rutaCompleta
+                ]);
             }
             
             return false;
         } catch (\Exception $e) {
-            \Log::error('Error eliminando imagen', [
+            \Log::error('[ImagenService] Error eliminando imagen', [
                 'error' => $e->getMessage(),
-                'ruta' => $ruta
+                'ruta' => $ruta,
+                'trace' => $e->getTraceAsString()
             ]);
             return false;
         }

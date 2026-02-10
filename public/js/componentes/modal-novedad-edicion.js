@@ -166,6 +166,12 @@ class ModalNovedadEdicion {
         if (window.imagenesPrendaStorage && prendaData && prendaData.imagenes) {
             const imagenesActualesEnStorage = window.imagenesPrendaStorage.obtenerImagenes();
             
+            // 🔴 CRITICAL FIX: Actualizar snapshotOriginal con las imágenes actuales del servidor
+            // Esto asegura que cuando el usuario abre el modal por segunda vez,
+            // las imágenes originales sean las correctas para detectar eliminaciones
+            window.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaData.imagenes));
+            console.log('[modal-novedad-edicion]  [SNAPSHOT-SYNC-INICIAL] Snapshot sincronizado con', prendaData.imagenes.length, 'imágenes del servidor');
+            
             // 🔴 FIX CRÍTICO: No sobrescribir snapshot válido desde prenda-editor-modal.js
             // El snapshot debería tener IDs porque prendaData.imagenes ya viene mapeado
             const snapshotValido = window.imagenesPrendaStorage.snapshotOriginal && window.imagenesPrendaStorage.snapshotOriginal.length > 0;
@@ -763,6 +769,34 @@ class ModalNovedadEdicion {
             if (procesosArray && procesosArray.length > 0) {
                 formData.append('procesos', JSON.stringify(procesosArray));
                 console.log('[modal-novedad-edicion]  Procesos enviados (MERGE):', procesosArray);
+                
+                // 🔴 FIX CRÍTICO: Enviar imágenes de procesos nuevos
+                // Las imágenes se capturan en window.imagenesProcesoActual cuando el usuario las agrega
+                if (window.imagenesProcesoActual && Array.isArray(window.imagenesProcesoActual) && window.imagenesProcesoActual.length > 0) {
+                    console.log('[modal-novedad-edicion] 📸 Imágenes de proceso nuevo detectadas:', {
+                        cantidad: window.imagenesProcesoActual.length,
+                        tipos: window.imagenesProcesoActual.map(img => img instanceof File ? 'File' : typeof img)
+                    });
+                    
+                    // Agregar cada imagen de proceso al FormData
+                    window.imagenesProcesoActual.forEach((img, idx) => {
+                        if (img instanceof File) {
+                            // La imagen es un File object (nueva)
+                            formData.append(`fotosProcesoNuevo_${idx}`, img);
+                            console.log(`[modal-novedad-edicion] 📸 Imagen de proceso nuevo ${idx} agregada:`, {
+                                nombre: img.name,
+                                tamaño: img.size,
+                                tipo: img.type
+                            });
+                        }
+                    });
+                    
+                    // Agregar información sobre las imágenes de proceso para que el backend sepa dónde asociarlas
+                    formData.append('fotosProcesoNuevoCount', window.imagenesProcesoActual.filter(img => img instanceof File).length.toString());
+                    console.log('[modal-novedad-edicion] 📸 Total imágenes de proceso nuevo a guardar:', window.imagenesProcesoActual.filter(img => img instanceof File).length);
+                } else {
+                    console.log('[modal-novedad-edicion] ⚠️ No hay imágenes de proceso nuevo para enviar');
+                }
             } else {
                 console.log('[modal-novedad-edicion]  Usuario NO modificó procesos - no enviar procesos para preservar datos existentes');
             }
@@ -1206,6 +1240,20 @@ class ModalNovedadEdicion {
                         }
                         
                         console.log('[modal-novedad-edicion]  PATCH aplicado exitosamente para proceso:', procesoEditado.id);
+                        
+                        // 🔴 CRITICAL FIX: Limpiar imágenes de proceso después de PATCH exitoso
+                        // Para evitar que se vuelvan a enviar al guardar la prenda (duplicación)
+                        if (window.imagenesProcesoActual && Array.isArray(window.imagenesProcesoActual)) {
+                            const imagenesFileCount = window.imagenesProcesoActual.filter(img => img instanceof File).length;
+                            if (imagenesFileCount > 0) {
+                                console.log('[modal-novedad-edicion] 🧹 Limpiando imágenes de proceso después de PATCH:', {
+                                    cantidad_limpiadas: imagenesFileCount
+                                });
+                                // Remover solo los archivos File, mantener las imágenes existentes de BD
+                                window.imagenesProcesoActual = window.imagenesProcesoActual.filter(img => !(img instanceof File));
+                                console.log('[modal-novedad-edicion] ✅ Imágenes de proceso limpiadas');
+                            }
+                        }
                     } catch (error) {
                         console.error('[modal-novedad-edicion] ❌ Error al aplicar PATCH:', error);
                         throw error; // Detener el proceso si algún PATCH falla
@@ -1215,6 +1263,35 @@ class ModalNovedadEdicion {
                 // Limpiar gestor de edición después de aplicar
                 window.gestorEditacionProcesos?.limpiar();
                 console.log('[modal-novedad-edicion] 🧹 Gestor de edición limpiado');
+                
+                // 🔴 CRITICAL FIX: Remover fotosProcesoNuevo_* del FormData después de PATCH exitoso
+                // Ya fueron procesadas en el PATCH, no deben enviarse nuevamente en el POST final
+                try {
+                    // Obtener todas las keys del FormData
+                    const keysParaEliminar = [];
+                    for (let pair of formData.entries()) {
+                        if (pair[0].startsWith('fotosProcesoNuevo_')) {
+                            keysParaEliminar.push(pair[0]);
+                        }
+                    }
+                    
+                    // Remover cada clave encontrada
+                    keysParaEliminar.forEach(key => {
+                        formData.delete(key);
+                    });
+                    
+                    // También remover el contador
+                    formData.delete('fotosProcesoNuevoCount');
+                    
+                    if (keysParaEliminar.length > 0) {
+                        console.log('[modal-novedad-edicion] 🧹 Campos de imágenes de proceso removidos del FormData:', {
+                            campos_eliminados: keysParaEliminar.length,
+                            contador_también_eliminado: true
+                        });
+                    }
+                } catch (error) {
+                    console.warn('[modal-novedad-edicion] ⚠️ No se pudo remover fotosProcesoNuevo del FormData (puede que no exista):', error.message);
+                }
             }
 
             // ==================== NUEVO: ELIMINAR PROCESOS MARCADOS ====================
@@ -1565,11 +1642,17 @@ class ModalNovedadEdicion {
             //  ARREGLO: Filtro más permisivo
             // Aceptar procesos que tengan:
             // 1. tipo_proceso_id válido (proceso nuevo con tipo asignado)
-            // 2. O id válido (proceso existente en BD, aunque sea sin tipo_proceso_id en temp)
+            // 2. O id válido (proceso existente en BD)
+            // 3. O tipo válido (proceso nuevo sin ID, agregado por usuario)
             const tieneId = proc.id && proc.id > 0;
             const tieneTipoProceso = proc.tipo_proceso_id && proc.tipo_proceso_id > 0;
+            const tieneTipo = proc.tipo && proc.tipo.length > 0;
             
-            return tieneId || tieneTipoProceso;
+            // 🔴 FIX CRÍTICO: El proceso es válido si tiene CUALQUIERA de estos:
+            // - ID de BD (existente)
+            // - ID de tipo de proceso (nuevo pero con tipo asignado)
+            // - Tipo formateado (nuevo agregado por usuario en edición)
+            return tieneId || tieneTipoProceso || tieneTipo;
         });
     }
 

@@ -432,6 +432,9 @@ class ModalCleanup {
         window.tallasRelacionales.UNISEX = {};
         window.tallasRelacionales.SOBREMEDIDA = {};
         
+        // 🔥 CRÍTICO: Limpiar imágenes de procesos
+        window.imagenesProcesoActual = [null, null, null];
+        
         // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
@@ -508,6 +511,9 @@ class ModalCleanup {
         // 🔥 IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
         // Esto permite que limpiarFormulario() sepa que estamos en modo edición
         window.prendaEditIndex = prendaIndex;
+        
+        // 🔥 CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
+        window.imagenesProcesoActual = [null, null, null];
         
         // NO limpiar storages en modo edición - se cargarán los datos de la prenda
         // Solo limpiar formulario e inputs
