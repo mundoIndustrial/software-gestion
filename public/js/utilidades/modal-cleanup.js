@@ -128,7 +128,7 @@ class ModalCleanup {
             window.tallasRelacionales.DAMA = {};
             window.tallasRelacionales.CABALLERO = {};
             window.tallasRelacionales.UNISEX = {};
-
+            window.tallasRelacionales.SOBREMEDIDA = {};
         }
 
         // Limpieza de variables
@@ -430,6 +430,7 @@ class ModalCleanup {
         window.tallasRelacionales.DAMA = {};
         window.tallasRelacionales.CABALLERO = {};
         window.tallasRelacionales.UNISEX = {};
+        window.tallasRelacionales.SOBREMEDIDA = {};
         
         // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
         if (window.telasAgregadas) {
