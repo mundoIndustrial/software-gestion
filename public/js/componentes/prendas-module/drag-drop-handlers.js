@@ -1437,248 +1437,235 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
     }, true); // Usar captura para que se ejecute primero
     
     // Bloquear también en mouseup para mayor efectividad
-    newPreview.addEventListener('mouseup', (e) => {
-        if (e.button === 2) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log(`[setupDragDropProceso] 🚫 Mouseup botón derecho bloqueado`);
-        }
-    });
-    
-    // Evento para mostrar menú personalizado
-    // NOTA: Usamos mousedown + botón derecho como alternativa ya que contextmenu está bloqueado
-    newPreview.addEventListener('mousedown', (e) => {
-        console.log(`[setupDragDropProceso] 🖱️ Mousedown detectado en proceso ${procesoNumero}, botón: ${e.button}`);
+    // Evento contextmenu: prevenir menú del navegador Y mostrar menú personalizado
+    newPreview.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         
-        // Botón derecho = 2
-        if (e.button === 2) {
-            console.log(`[setupDragDropProceso] 🎉 ¡Botón derecho detectado en proceso ${procesoNumero}!`);
+        console.log(`[setupDragDropProceso] 🎉 ¡Evento contextmenu detectado en proceso ${procesoNumero}!`);
+        
+        // Enfocar el elemento
+        newPreview.focus();
+        
+        // Calcular posición para evitar que se corte por los bordes
+        const menuWidth = 180;
+        const menuHeight = 50; // Altura aproximada del menú
+        const padding = 10;
+        
+        let left = e.clientX;
+        let top = e.clientY;
+        
+        // Ajustar posición horizontal si se sale por la derecha
+        if (left + menuWidth > window.innerWidth - padding) {
+            left = window.innerWidth - menuWidth - padding;
+        }
+        
+        // Ajustar posición vertical si se sale por abajo
+        if (top + menuHeight > window.innerHeight - padding) {
+            top = window.innerHeight - menuHeight - padding;
+        }
+        
+        // Asegurar que no sea negativo
+        left = Math.max(padding, left);
+        top = Math.max(padding, top);
+        
+        // Crear menú contextual
+        const menu = document.createElement('div');
+        menu.style.cssText = `
+            position: fixed !important;
+            left: ${left}px !important;
+            top: ${top}px !important;
+            background: white !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 6px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25) !important;
+            z-index: 999999999 !important;
+            padding: 4px 0 !important;
+            min-width: 180px !important;
+            font-size: 14px !important;
+            backdrop-filter: blur(10px) !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
+            pointer-events: auto !important;
+        `;
+        
+        // Agregar clase para debugging
+        menu.className = 'proceso-context-menu-debug';
+        
+        // Prevenir propagación de eventos en el menú
+        menu.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+        });
+        menu.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        // Opción de pegar
+        const pasteOption = document.createElement('div');
+        pasteOption.style.cssText = `
+            padding: 8px 16px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            color: #374151 !important;
+            transition: background-color 0.2s !important;
+            user-select: none !important;
+            white-space: nowrap !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            line-height: 1.5 !important;
+        `;
+        pasteOption.innerHTML = `
+            <span class="material-symbols-rounded" style="font-size: 18px; flex-shrink: 0;">content_paste</span>
+            <span>Pegar imagen ${procesoNumero}</span>
+        `;
+        
+        // Hover effect
+        pasteOption.addEventListener('mouseenter', () => {
+            pasteOption.style.backgroundColor = '#f3f4f6';
+        });
+        pasteOption.addEventListener('mouseleave', () => {
+            pasteOption.style.backgroundColor = '';
+        });
+        
+        // Click para pegar
+        pasteOption.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`[setupDragDropProceso] 📋 Iniciando pegado de imagen de proceso ${procesoNumero}...`);
             
-            // Enfocar el elemento
-            newPreview.focus();
-            
-            console.log(`[setupDragDropProceso] 🎯 Elemento enfocado, creando menú...`);
-            
-            // Calcular posición para evitar que se corte por los bordes
-            const menuWidth = 180;
-            const menuHeight = 50; // Altura aproximada del menú
-            const padding = 10;
-            
-            let left = e.clientX;
-            let top = e.clientY;
-            
-            // Ajustar posición horizontal si se sale por la derecha
-            if (left + menuWidth > window.innerWidth - padding) {
-                left = window.innerWidth - menuWidth - padding;
-            }
-            
-            // Ajustar posición vertical si se sale por abajo
-            if (top + menuHeight > window.innerHeight - padding) {
-                top = window.innerHeight - menuHeight - padding;
-            }
-            
-            // Asegurar que no sea negativo
-            left = Math.max(padding, left);
-            top = Math.max(padding, top);
-            
-            // Crear menú contextual
-            const menu = document.createElement('div');
-            menu.style.cssText = `
-                position: fixed !important;
-                left: ${left}px !important;
-                top: ${top}px !important;
-                background: white !important;
-                border: 1px solid #d1d5db !important;
-                border-radius: 6px !important;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25) !important;
-                z-index: 1 !important;
-                padding: 4px 0 !important;
-                min-width: 180px !important;
-                font-size: 14px !important;
-                backdrop-filter: blur(10px) !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                display: block !important;
-                pointer-events: auto !important;
-            `;
-            
-            // Agregar clase para debugging
-            menu.className = 'proceso-context-menu-debug';
-            
-            // Prevenir propagación de eventos en el menú
-            menu.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            menu.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            
-            // Opción de pegar
-            const pasteOption = document.createElement('div');
-            pasteOption.style.cssText = `
-                padding: 8px 16px !important;
-                cursor: pointer !important;
-                display: flex !important;
-                align-items: center !important;
-                gap: 8px !important;
-                color: #374151 !important;
-                transition: background-color 0.2s !important;
-                user-select: none !important;
-                white-space: nowrap !important;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-                line-height: 1.5 !important;
-            `;
-            pasteOption.innerHTML = `
-                <span class="material-symbols-rounded" style="font-size: 18px; flex-shrink: 0;">content_paste</span>
-                <span>Pegar imagen ${procesoNumero}</span>
-            `;
-            
-            // Hover effect
-            pasteOption.addEventListener('mouseenter', () => {
-                pasteOption.style.backgroundColor = '#f3f4f6';
-            });
-            pasteOption.addEventListener('mouseleave', () => {
-                pasteOption.style.backgroundColor = '';
-            });
-            
-            // Click para pegar
-            pasteOption.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log(`[setupDragDropProceso] 📋 Iniciando pegado de imagen de proceso ${procesoNumero}...`);
-                
-                // Cerrar menú inmediatamente para evitar múltiples clics
-                if (menu && menu.parentElement) {
-                    menu.parentElement.removeChild(menu);
-                    // Restaurar pointer-events si el contenedor está vacío
-                    const overlay = document.getElementById('drag-drop-overlay-container');
-                    if (overlay && overlay.children.length === 0) {
-                        overlay.style.pointerEvents = 'none';
-                    }
+            // Cerrar menú inmediatamente para evitar múltiples clics
+            if (menu && menu.parentElement) {
+                menu.parentElement.removeChild(menu);
+                // Restaurar pointer-events si el contenedor está vacío
+                const overlay = document.getElementById('drag-drop-overlay-container');
+                if (overlay && overlay.children.length === 0) {
+                    overlay.style.pointerEvents = 'none';
                 }
+            }
+            
+            // Intentar obtener imagen del portapapeles
+            navigator.clipboard.read().then(items => {
+                console.log(`[setupDragDropProceso] 📋 Items en portapapeles:`, items.length);
                 
-                // Intentar obtener imagen del portapapeles
-                navigator.clipboard.read().then(items => {
-                    console.log(`[setupDragDropProceso] 📋 Items en portapapeles:`, items.length);
+                for (let item of items) {
+                    console.log(`[setupDragDropProceso] 📋 Tipos disponibles:`, item.types);
                     
-                    for (let item of items) {
-                        console.log(`[setupDragDropProceso] 📋 Tipos disponibles:`, item.types);
+                    // Verificar si hay algún tipo de imagen
+                    const imageTypes = item.types.filter(type => 
+                        type.includes('image/png') || 
+                        type.includes('image/jpeg') || 
+                        type.includes('image/gif') || 
+                        type.includes('image/webp') ||
+                        type.includes('image/bmp')
+                    );
+                    
+                    console.log(`[setupDragDropProceso] 📋 Tipos de imagen encontrados:`, imageTypes);
+                    
+                    if (imageTypes.length > 0) {
+                        console.log(`[setupDragDropProceso] 📋 Procesando tipo:`, imageTypes[0]);
                         
-                        // Verificar si hay algún tipo de imagen
-                        const imageTypes = item.types.filter(type => 
-                            type.includes('image/png') || 
-                            type.includes('image/jpeg') || 
-                            type.includes('image/gif') || 
-                            type.includes('image/webp') ||
-                            type.includes('image/bmp')
-                        );
-                        
-                        console.log(`[setupDragDropProceso] 📋 Tipos de imagen encontrados:`, imageTypes);
-                        
-                        if (imageTypes.length > 0) {
-                            console.log(`[setupDragDropProceso] 📋 Procesando tipo:`, imageTypes[0]);
+                        item.getType(imageTypes[0]).then(blob => {
+                            console.log(`[setupDragDropProceso] 📋 Blob obtenido:`, blob.type, blob.size);
                             
-                            item.getType(imageTypes[0]).then(blob => {
-                                console.log(`[setupDragDropProceso] 📋 Blob obtenido:`, blob.type, blob.size);
-                                
-                                const file = new File([blob], `pasted-proceso-${procesoNumero}-image.png`, { type: blob.type });
-                                console.log(`[setupDragDropProceso] 📋 File creado:`, file.name, file.type, file.size);
-                                
-                                // Crear input temporal
-                                const tempInput = document.createElement('input');
-                                tempInput.type = 'file';
-                                const dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(file);
-                                tempInput.files = dataTransfer.files;
-                                
-                                console.log(`[setupDragDropProceso] 📋 Input temporal creado, archivos:`, tempInput.files.length);
-                                
-                                // Usar función existente
-                                if (typeof window.manejarImagenProceso === 'function') {
-                                    console.log(`[setupDragDropProceso] 📋 Llamando a manejarImagenProceso...`);
-                                    window.manejarImagenProceso(tempInput, procesoNumero);
-                                } else {
-                                    console.error(`[setupDragDropProceso] ❌ La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
-                                }
-                            }).catch(err => {
-                                console.error(`[setupDragDropProceso] ❌ Error al obtener blob:`, err);
-                                mostrarModalError('No se pudo procesar la imagen del portapapeles');
-                            });
-                            break;
-                        }
+                            const file = new File([blob], `pasted-proceso-${procesoNumero}-image.png`, { type: blob.type });
+                            console.log(`[setupDragDropProceso] 📋 File creado:`, file.name, file.type, file.size);
+                            
+                            // Crear input temporal
+                            const tempInput = document.createElement('input');
+                            tempInput.type = 'file';
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            tempInput.files = dataTransfer.files;
+                            
+                            console.log(`[setupDragDropProceso] 📋 Input temporal creado, archivos:`, tempInput.files.length);
+                            
+                            // Usar función existente
+                            if (typeof window.manejarImagenProceso === 'function') {
+                                console.log(`[setupDragDropProceso] 📋 Llamando a manejarImagenProceso...`);
+                                window.manejarImagenProceso(tempInput, procesoNumero);
+                            } else {
+                                console.error(`[setupDragDropProceso] ❌ La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
+                            }
+                        }).catch(err => {
+                            console.error(`[setupDragDropProceso] ❌ Error al obtener blob:`, err);
+                            mostrarModalError('No se pudo procesar la imagen del portapapeles');
+                        });
+                        break;
                     }
-                    
-                    // Si no se encontraron imágenes
-                    if (items.length > 0 && !items.some(item => 
-                        item.types.some(type => type.includes('image/'))
-                    )) {
-                        console.warn(`[setupDragDropProceso] ⚠️ No hay imágenes en el portapapeles`);
-                        mostrarModalError('El portapapeles no contiene imágenes. Por favor copia una imagen primero.');
-                    }
-                    
-                }).catch(err => {
-                    console.warn(`[setupDragDropProceso] 📋 No se pudo acceder al portapapeles:`, err);
-                    mostrarModalError('No se pudo acceder al portapapeles. Intenta copiar una imagen y usar Ctrl+V.');
-                });
-            });
-            
-            menu.appendChild(pasteOption);
-            
-            // Agregar al contenedor overlay (sin restricciones de overflow)
-            const overlayContainer = obtenerContenedorOverlay();
-            // Cambiar pointer-events para que el menú sea clickeable
-            overlayContainer.style.pointerEvents = 'auto';
-            overlayContainer.appendChild(menu);
-            
-            console.log(`[setupDragDropProceso] ✅ Menú agregado al OVERLAY en posición (${left}, ${top})`);
-            
-            
-            // Cerrar menú al hacer clic fuera (pero NO dentro del menú)
-            const closeMenu = (e) => {
-                // Verificar si el clic fue dentro del menú
-                if (menu && menu.contains(e.target)) {
-                    return; // No cerrar si es dentro del menú
                 }
+                
+                // Si no se encontraron imágenes
+                if (items.length > 0 && !items.some(item => 
+                    item.types.some(type => type.includes('image/'))
+                )) {
+                    console.warn(`[setupDragDropProceso] ⚠️ No hay imágenes en el portapapeles`);
+                    mostrarModalError('El portapapeles no contiene imágenes. Por favor copia una imagen primero.');
+                }
+                
+            }).catch(err => {
+                console.warn(`[setupDragDropProceso] 📋 No se pudo acceder al portapapeles:`, err);
+                mostrarModalError('No se pudo acceder al portapapeles. Intenta copiar una imagen y usar Ctrl+V.');
+            });
+        });
+        
+        menu.appendChild(pasteOption);
+        
+        // Agregar al contenedor overlay (sin restricciones de overflow)
+        const overlayContainer = obtenerContenedorOverlay();
+        // Cambiar pointer-events para que el menú sea clickeable
+        overlayContainer.style.pointerEvents = 'auto';
+        overlayContainer.appendChild(menu);
+        
+        console.log(`[setupDragDropProceso] ✅ Menú agregado al OVERLAY en posición (${left}, ${top})`);
+        
+        // Cerrar menú al hacer clic fuera (pero NO dentro del menú)
+        const closeMenu = (e) => {
+            // Verificar si el clic fue dentro del menú
+            if (menu && menu.contains(e.target)) {
+                return; // No cerrar si es dentro del menú
+            }
+            if (menu && menu.parentElement) {
+                console.log(`[setupDragDropProceso] 🔌 Cerrando menú por clic fuera`);
+                menu.parentElement.removeChild(menu);
+                // Restaurar pointer-events si el contenedor está vacío
+                const overlay = document.getElementById('drag-drop-overlay-container');
+                if (overlay && overlay.children.length === 0) {
+                    overlay.style.pointerEvents = 'none';
+                }
+                document.removeEventListener('click', closeMenu);
+                document.removeEventListener('mousedown', closeMenu);
+            }
+        };
+        
+        // Cerrar menú al presionar Escape
+        const closeMenuEscape = (e) => {
+            if (e.key === 'Escape') {
                 if (menu && menu.parentElement) {
-                    console.log(`[setupDragDropProceso] 🔌 Cerrando menú por clic fuera`);
+                    console.log(`[setupDragDropProceso] 🔌 Cerrando menú por Escape`);
                     menu.parentElement.removeChild(menu);
                     // Restaurar pointer-events si el contenedor está vacío
                     const overlay = document.getElementById('drag-drop-overlay-container');
                     if (overlay && overlay.children.length === 0) {
                         overlay.style.pointerEvents = 'none';
                     }
-                    document.removeEventListener('click', closeMenu);
-                    document.removeEventListener('mousedown', closeMenu);
                 }
-            };
-            
-            // Cerrar menú al presionar Escape
-            const closeMenuEscape = (e) => {
-                if (e.key === 'Escape') {
-                    if (menu && menu.parentElement) {
-                        console.log(`[setupDragDropProceso] 🔌 Cerrando menú por Escape`);
-                        menu.parentElement.removeChild(menu);
-                        // Restaurar pointer-events si el contenedor está vacío
-                        const overlay = document.getElementById('drag-drop-overlay-container');
-                        if (overlay && overlay.children.length === 0) {
-                            overlay.style.pointerEvents = 'none';
-                        }
-                    }
-                    document.removeEventListener('keydown', closeMenuEscape);
-                }
-            };
-            
-            setTimeout(() => {
-                console.log(`[setupDragDropProceso] 📌 Activando listeners para cerrar menú`);
-                document.addEventListener('click', closeMenu);
-                document.addEventListener('mousedown', closeMenu);
-                document.addEventListener('keydown', closeMenuEscape);
-            }, 200);
-        }
+                document.removeEventListener('keydown', closeMenuEscape);
+            }
+        };
+        
+        setTimeout(() => {
+            console.log(`[setupDragDropProceso] 📌 Activando listeners para cerrar menú`);
+            document.addEventListener('click', closeMenu);
+            document.addEventListener('mousedown', closeMenu);
+            document.addEventListener('keydown', closeMenuEscape);
+        }, 200);
+        
+        return false;
     });
     
     // Evento paste para permitir pegar imágenes desde el portapapeles
