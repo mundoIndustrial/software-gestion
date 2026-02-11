@@ -448,3 +448,14 @@ Route::prefix('prendas')->name('prendas.')->middleware(['auth'])->group(function
     Route::post('{id}/procesar-procesos', [PrendaEditorController::class, 'procesarProcesos'])
         ->name('procesar-procesos');
 });
+
+/**
+ * API Routes for Bodega Filter System
+ * Proporciona datos paginados para filtros dinámicos
+ */
+Route::prefix('bodega')->name('bodega.')->middleware(['auth'])->group(function () {
+    
+    // Obtener datos para filtros dinámicos
+    Route::get('filtro-datos/{tipo}', [App\Http\Controllers\Bodega\PedidosController::class, 'obtenerDatosFiltro'])
+        ->name('filtro-datos');
+});

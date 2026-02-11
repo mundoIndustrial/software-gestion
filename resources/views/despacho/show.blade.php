@@ -642,8 +642,16 @@ async function abrirModalFactura(pedidoId) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        
+        let data;
+        try {
+            data = await response.json();
+            console.log('[DESPACHO][factura-datos] respuesta:', data);
+        } catch (parseError) {
+            console.error('[DESPACHO][factura-datos] error parseando JSON:', parseError);
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error: respuesta inválida del servidor (no JSON)</div>';
+            return;
+        }
+
         if (data) {
             // Generar HTML de la factura
             const htmlFactura = generarHTMLFactura(data);

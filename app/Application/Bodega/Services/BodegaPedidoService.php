@@ -186,6 +186,27 @@ class BodegaPedidoService
 
     private function paginarPedidos(Collection $pedidos, Request $request): array
     {
+        // Aplicar filtro de búsqueda si existe
+        $search = $request->get('search');
+        if ($search) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($search) {
+                // Buscar por número de pedido
+                if (stripos($pedido->numero_pedido, $search) !== false) {
+                    return true;
+                }
+                
+                // Buscar por nombre del cliente
+                if ($pedido->cliente && stripos($pedido->cliente, $search) !== false) {
+                    return true;
+                }
+                
+                return false;
+            });
+        }
+        
+        // Aplicar filtros adicionales si existen
+        $pedidos = $this->aplicarFiltrosAvanzados($pedidos, $request);
+        
         $numerosPedidosUnicos = $pedidos->pluck('numero_pedido')->unique()->values();
         $totalPedidos = $numerosPedidosUnicos->count();
 
@@ -213,6 +234,79 @@ class BodegaPedidoService
             'por_pagina' => $porPagina,
             'paginacion_obj' => $paginacion
         ];
+    }
+    
+    private function aplicarFiltrosAvanzados(Collection $pedidos, Request $request): Collection
+    {
+        // Filtro por número de pedido
+        $filtroNumeroPedido = $request->get('filtro_numero_pedido');
+        if ($filtroNumeroPedido) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($filtroNumeroPedido) {
+                return stripos($pedido->numero_pedido, $filtroNumeroPedido) !== false;
+            });
+        }
+        
+        // Filtro por estado
+        $filtroEstado = $request->get('filtro_estado');
+        if ($filtroEstado) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($filtroEstado) {
+                $estadoPedido = strtoupper(trim($pedido->estado ?? ''));
+                return $estadoPedido === strtoupper(trim($filtroEstado));
+            });
+        }
+        
+        // Filtro por asesor
+        $filtroAsesor = $request->get('filtro_asesor');
+        if ($filtroAsesor) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($filtroAsesor) {
+                $nombreAsesor = $pedido->asesor?->nombre ?? $pedido->asesor?->name ?? '';
+                return stripos($nombreAsesor, $filtroAsesor) !== false;
+            });
+        }
+        
+        // Filtro por cliente
+        $filtroCliente = $request->get('filtro_cliente');
+        if ($filtroCliente) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($filtroCliente) {
+                return $pedido->cliente && stripos($pedido->cliente, $filtroCliente) !== false;
+            });
+        }
+        
+        // Filtro por rango de fechas
+        $filtroFechaDesde = $request->get('filtro_fecha_desde');
+        $filtroFechaHasta = $request->get('filtro_fecha_hasta');
+        
+        if ($filtroFechaDesde || $filtroFechaHasta) {
+            $pedidos = $pedidos->filter(function ($pedido) use ($filtroFechaDesde, $filtroFechaHasta) {
+                $fechaPedido = $pedido->created_at ?? $pedido->fecha_pedido;
+                
+                if (!$fechaPedido) {
+                    return false;
+                }
+                
+                $fechaPedido = \Carbon\Carbon::parse($fechaPedido);
+                
+                // Verificar fecha desde
+                if ($filtroFechaDesde) {
+                    $fechaDesde = \Carbon\Carbon::parse($filtroFechaDesde)->startOfDay();
+                    if ($fechaPedido->lt($fechaDesde)) {
+                        return false;
+                    }
+                }
+                
+                // Verificar fecha hasta
+                if ($filtroFechaHasta) {
+                    $fechaHasta = \Carbon\Carbon::parse($filtroFechaHasta)->endOfDay();
+                    if ($fechaPedido->gt($fechaHasta)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        }
+        
+        return $pedidos;
     }
 
     private function procesarVistaDetallada(array $paginacion, array $rolesDelUsuario, array $areasPermitidas): array

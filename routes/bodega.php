@@ -52,9 +52,17 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::get('/pendiente-costura', [PedidosController::class, 'pendienteCostura'])
         ->name('pendientes-costura');
 
+    // Mostrar detalles de pedido específico para Pendiente Costura
+    Route::get('/pendiente-costura/{id}', [PedidosController::class, 'showPendienteCostura'])
+        ->name('pendiente-costura-show');
+
     // Pendiente EPP
     Route::get('/pendiente-epp', [PedidosController::class, 'pendienteEpp'])
         ->name('pendientes-epp');
+
+    // Mostrar detalles de pedido específico para Pendiente EPP
+    Route::get('/pendiente-epp/{id}', [PedidosController::class, 'showPendienteEpp'])
+        ->name('pendiente-epp-show');
 
     // Mostrar detalles de un pedido específico
     Route::get('/pedidos/{id}', [PedidosController::class, 'show'])
@@ -103,6 +111,10 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     // Exportar (opcional)
     Route::get('/pedidos/export', [PedidosController::class, 'export'])
         ->name('export');
+
+    // API para filtros dinámicos
+    Route::get('/filtro-datos/{tipo}', [PedidosController::class, 'obtenerDatosFiltro'])
+        ->name('obtener-datos-filtro');
 });
 
 // Ruta alternativa si prefieres acceso público (para testing)

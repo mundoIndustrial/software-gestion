@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Bodega - MundoIndustrial')
-@section('page-title', 'Bodega')
+@section('page-title', 'Gestión de Bodega')
 
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"

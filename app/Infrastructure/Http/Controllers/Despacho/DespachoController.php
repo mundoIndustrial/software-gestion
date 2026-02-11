@@ -105,9 +105,25 @@ class DespachoController extends Controller
 
     public function obtenerFacturaDatos(PedidoProduccion $pedido)
     {
-        // Usar el repositorio que ya obtiene los datos completos (igual que asesores)
-        $datos = $this->pedidoRepository->obtenerDatosFactura($pedido->id);
-        
-        return response()->json($datos);
+        try {
+            // Usar el repositorio que ya obtiene los datos completos (igual que asesores)
+            $datos = $this->pedidoRepository->obtenerDatosFactura($pedido->id);
+
+            // Asegurar que la estructura mínima esté presente y validar tipo
+            if (!is_array($datos)) {
+                \Log::warning('[DESPACHO] obtenerFacturaDatos: respuesta inesperada (no es array)', ['pedido_id' => $pedido->id, 'datos' => $datos]);
+                $datos = ['prendas' => [], 'epps' => [], 'total_items' => 0];
+            }
+
+            if (!array_key_exists('prendas', $datos) || !is_array($datos['prendas'])) {
+                \Log::warning('[DESPACHO] obtenerFacturaDatos: llave "prendas" faltante o inválida', ['pedido_id' => $pedido->id, 'keys' => array_keys((array)$datos)]);
+                $datos['prendas'] = [];
+            }
+
+            return response()->json($datos);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error en obtenerFacturaDatos', ['pedido_id' => $pedido->id, 'error' => $e->getMessage()]);
+            return response()->json(['error' => 'Error obteniendo datos de factura'], 500);
+        }
     }
 }

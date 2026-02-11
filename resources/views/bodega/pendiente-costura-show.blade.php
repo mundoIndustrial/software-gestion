@@ -1,6 +1,6 @@
 @extends('layouts.app-without-sidebar')
 
-@section('title', "Gestión de Bodega - Pedido {$pedido['numero_pedido']}")
+@section('title', "Pendientes de Costura - Pedido {$pedido['numero_pedido']}")
 
 @section('content')
 <div class="min-h-screen bg-slate-50 w-full flex flex-col">
@@ -9,7 +9,7 @@
         <div class="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-semibold text-black">Gestión de Bodega</h1>
+                    <h1 class="text-xl sm:text-2xl font-semibold text-black">Pendientes de Costura</h1>
                     <p class="text-xs sm:text-sm text-black mt-1">
                         N° Pedido: <span class="font-semibold text-black">{{ $pedido['numero_pedido'] }}</span> | 
                         Cliente: <span class="font-semibold text-black">{{ $pedido['cliente'] ?? 'No especificado' }}</span>
@@ -17,25 +17,23 @@
                             | Asesor: <span class="font-semibold text-black">{{ $pedido['asesor'] }}</span>
                         @endif
                     </p>
-                    @if(isset($filtro_aplicado))
-                        <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
-                            <p class="text-xs font-medium text-orange-800">
-                                <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
-                                {{ $filtro_aplicado['descripcion'] }}
-                            </p>
-                        </div>
-                    @endif
+                    <div class="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
+                        <p class="text-xs font-medium text-orange-800">
+                            <span class="material-symbols-rounded text-sm align-middle">filter_alt</span>
+                            Mostrando solo artículos de Costura con estado Pendiente
+                        </p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('gestion-bodega.pedidos') }}" 
+                    <a href="{{ route('gestion-bodega.pendientes-costura') }}" 
                        class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
-                        ← Volver
+                        ← Volver a Pendientes
                     </a>
                     @if($pedido['id'])
                         <button type="button"
                                 onclick="abrirModalFactura({{ $pedido['id'] }})"
                                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
-                            Ver Pedido
+                            Ver Pedido Completo
                         </button>
                     @endif
                 </div>
@@ -58,7 +56,7 @@
                                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 16%;">Observaciones</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Pedido</th>
                                 <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest border-r border-slate-300" style="width: 12%;">Fecha Entrega</th>
-                                <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 18%;">Área / Estado</th>
+                                <th class="px-4 py-3 text-center text-[11px] font-semibold text-black uppercase tracking-widest" style="width: 18%;">Estado</th>
                             </tr>
                         </thead>
                         
@@ -139,26 +137,18 @@
                                     
                                     <!-- TALLA -->
                                     <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" style="width: 6%;">
-                                        @if(($item['tipo'] ?? null) === 'epp' || ($item['area'] ?? null) === 'EPP')
-                                            —
-                                        @else
-                                            {{ $item['talla'] ?? '—' }}
-                                        @endif
+                                        {{ $item['talla'] ?? '—' }}
                                     </td>
                                     
                                     <!-- CANTIDAD -->
-                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">                                        {{ $item['cantidad_total'] }}
+                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                        {{ $item['cantidad'] ?? 0 }}
                                     </td>
                                     
                                     <!-- PENDIENTES -->
                                     <td class="px-2 py-3 border-r border-slate-300" style="width: 8%;">
                                         <textarea
-                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
+                                            class="pendientes-input w-full px-1.5 py-1 border-2 border-slate-300 text-[10px] focus:ring-2 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none bg-slate-50"
                                             style="font-family: 'Poppins', sans-serif;"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
@@ -171,21 +161,16 @@
                                     <td class="px-4 py-3 border-r border-slate-300" style="width: 16%;">
                                         <div class="flex gap-1">
                                             <textarea
-                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded
-                                                    @if($item['estado_bodega'] === 'Entregado')
-                                                        bg-blue-50
-                                                    @else
-                                                        bg-slate-50
-                                                    @endif"
+                                                class="observaciones-input flex-1 px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition resize-none rounded bg-slate-50"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
                                                 placeholder="Notas..."
                                                 rows="1"
                                                 readonly
-                                            >{{ $item['observaciones'] ?? '' }}</textarea>
+                                            >{{ $item['observaciones_bodega'] ?? '' }}</textarea>
                                             <button
                                                 type="button"
-                                                onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
+                                                onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($item['prenda_nombre'] ?? 'Prenda') }}', 'prenda', '{{ $item['talla'] }}')"
                                                 class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
                                                 title="Ver/agregar notas"
                                             >
@@ -198,13 +183,8 @@
                                     <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
                                         <input
                                             type="date"
-                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
-                                            value="{{ $item['fecha_pedido'] ?? '' }}"
+                                            class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                            value="{{ $item['fecha_pedido'] ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >
@@ -214,63 +194,47 @@
                                     <td class="px-4 py-3 border-r border-slate-300" style="width: 12%;">
                                         <input
                                             type="date"
-                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded
-                                                @if($item['estado_bodega'] === 'Entregado')
-                                                    bg-blue-50
-                                                @else
-                                                    bg-slate-50
-                                                @endif"
-                                            value="{{ $item['fecha_entrega'] ?? '' }}"
+                                            class="fecha-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
+                                            value="{{ $item['fecha_entrega'] ? \Carbon\Carbon::parse($item['fecha_entrega'])->format('Y-m-d') : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            @if($item['estado_bodega'] === 'Entregado')
-                                                disabled
-                                            @endif
                                         >
                                     </td>
                                     
-                                    <!-- ÁREA / ESTADO -->
+                                    <!-- ESTADO -->
                                     <td class="px-4 py-3" style="width: 18%;">
-                                        <div class="space-y-2">
-                                            <select
-                                                class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                data-original-area="{{ $item['area'] ?? '' }}"
-                                            >
-                                                <option value="">ÁREA</option>
-                                                <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
-                                                <option value="EPP" {{ ($item['area'] ?? null) === 'EPP' ? 'selected' : '' }}>EPP</option>
-                                            </select>
+                                        <select
+                                            class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
+                                            data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                            data-talla="{{ $item['talla'] }}"
+                                            data-original-estado="{{ $item['estado'] ?? '' }}"
+                                        >
+                                            <option value="">ESTADO</option>
+                                            <option value="Pendiente" {{ ($item['estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                            <option value="En Proceso" {{ ($item['estado'] ?? null) === 'En Proceso' ? 'selected' : '' }}>EN PROCESO</option>
+                                            <option value="Terminado" {{ ($item['estado'] ?? null) === 'Terminado' ? 'selected' : '' }}>TERMINADO</option>
+                                            @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                            <option value="Cancelado" {{ ($item['estado'] ?? null) === 'Cancelado' ? 'selected' : '' }}>CANCELADO</option>
+                                            @endif
+                                        </select>
 
-                                            <select
-                                                class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
-                                                data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                                data-talla="{{ $item['talla'] }}"
-                                                data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
-                                            >
-                                                <option value="">ESTADO</option>
-                                                <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
-                                                <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
-                                                @endif
-                                            </select>
-
-                                            <button
-                                                type="button"
-                                                onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
-                                                class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
-                                            >
-                                                💾 Guardar
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                            class="w-full px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
+                                        >
+                                            💾 Guardar
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="8" class="px-6 py-12 text-center">
-                                        <p class="text-slate-500 font-bold text-sm">No hay ítems en este pedido</p>
+                                        <div class="flex flex-col items-center">
+                                            <span class="material-symbols-rounded text-slate-300 text-5xl">inventory_2</span>
+                                            <p class="text-slate-500 font-medium mt-3">No hay artículos pendientes de costura</p>
+                                            <p class="text-slate-400 text-sm mt-1">Este pedido no tiene artículos en el área de Costura con estado Pendiente</p>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -305,49 +269,26 @@
     </div>
 </div>
 
-<!-- Modal de Notas -->
-<div id="modalNotas" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9998 overflow-auto">
-    <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 my-8">
-        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-white">💬 Notas - Pedido <span id="modalNotasNumeroPedido">#</span></h2>
-            <button onclick="cerrarModalNotas()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
-        </div>
-        <div class="px-6 py-6">
-            <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
-                <div class="flex justify-center items-center py-8">
-                    <span class="text-slate-500">⏳ Cargando notas...</span>
-                </div>
-            </div>
-            <div class="border-t border-slate-200 pt-6">
-                <label class="block text-sm font-bold text-slate-900 mb-3">Agregar Nueva Nota:</label>
-                <textarea
-                    id="notasNuevaContent"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-700 outline-none transition resize-none"
-                    placeholder="Escribe tu nota aquí..."
-                    rows="4"
-                ></textarea>
-                <div class="flex gap-3 mt-4">
-                    <button
-                        type="button"
-                        onclick="guardarNota()"
-                        class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition"
-                    >
-                        ✓ Guardar Nota
-                    </button>
-                    <button
-                        type="button"
-                        onclick="cerrarModalNotas()"
-                        class="flex-1 px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-lg transition"
-                    >
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
+function abrirModalFactura(pedidoId) {
+    // Implementar función para ver el pedido completo
+    window.open(`/gestion-bodega/pedidos/${pedidoId}`, '_blank');
+}
+
+function cerrarModalFactura() {
+    document.getElementById('modalFactura').classList.add('hidden');
+}
+
+function abrirModalNotas(numeroPedido, talla, nombrePrenda, tipo, identificador) {
+    // Implementar función para notas
+    console.log('Notas para:', numeroPedido, talla, nombrePrenda);
+}
+
+function guardarFilaCompleta(button, numeroPedido, talla) {
+    // Implementar función para guardar
+    console.log('Guardar fila:', numeroPedido, talla);
+}
+
 /**
  * Auto-resize textareas para Pendientes y Observaciones
  */
@@ -368,6 +309,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endsection

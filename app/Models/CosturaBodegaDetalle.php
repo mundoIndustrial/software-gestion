@@ -26,6 +26,7 @@ class CosturaBodegaDetalle extends Model
         'fecha_pedido',
         'fecha_entrega',
         'estado_bodega',
+        'estado',
         'usuario_bodega_id',
         'usuario_bodega_nombre',
     ];
