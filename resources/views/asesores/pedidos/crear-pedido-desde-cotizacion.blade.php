@@ -453,7 +453,12 @@
     });
 </script>
 
-<!-- Script para Vista Previa en Vivo de Factura -->
+<!-- Script para Vista Previa en Vivo de Factura - Módulos Desacoplados -->
+<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
 <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
 
 <!-- Script para interactividad de item-cards -->

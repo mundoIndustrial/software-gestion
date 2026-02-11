@@ -839,7 +839,15 @@
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
+<!-- Scripts para Vista Previa en Vivo de Factura - Módulos Desacoplados -->
+<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/invoice-preview-live.js') }}"></script>
+<!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->
+<script src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 
 <!--  ORDER TRACKING (MODULAR - necesario) -->

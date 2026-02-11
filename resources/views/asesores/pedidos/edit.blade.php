@@ -344,7 +344,12 @@
     });
 </script>
 
-<!-- Script para renderizar factura editable - Para mostrar prendas con imágenes -->
+<!-- Script para renderizar factura editable - Módulos Desacoplados -->
+<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}"></script>
 <script>
     window.addEventListener('load', function() {

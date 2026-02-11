@@ -2626,6 +2626,8 @@
 
 <!-- Scripts para Dropdown de Ver Pedido -->
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+<!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->
+<script src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/asesores/invoice-from-list.js') }}"></script>
 <script src="{{ asset('js/asesores/receipt-manager.js') }}"></script>
 <script src="{{ asset('js/insumos/insumos-galeria.js') }}"></script>
