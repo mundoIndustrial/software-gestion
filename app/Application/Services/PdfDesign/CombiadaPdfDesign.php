@@ -346,56 +346,38 @@ CSS;
             return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars('Sin tallas') . '</div>';
         }
 
-        $tallasCaballero = [];
-        $tallasDama = [];
-        $tallasSinGenero = [];
-
+        // Agrupar por color y luego por género; sobremedida se muestra como etiqueta roja
+        $gruposPorColor = [];
         foreach ($tallasCollection as $t) {
-            if (!$t) continue;
-            $generoId = is_array($t) ? ($t['genero_id'] ?? null) : ($t->genero_id ?? null);
+            if (!$t) {
+                continue;
+            }
+
             $talla = is_array($t) ? ($t['talla'] ?? null) : ($t->talla ?? null);
-            $cantidad = is_array($t) ? ($t['cantidad'] ?? null) : ($t->cantidad ?? null);
-            if (!$talla) continue;
-
-            $item = [
-                'talla' => (string) $talla,
-                'cantidad' => $cantidad,
-            ];
-
-            if ((string) $generoId === '1') {
-                $tallasCaballero[] = $item;
-            } elseif ((string) $generoId === '2') {
-                $tallasDama[] = $item;
-            } else {
-                $tallasSinGenero[] = $item;
+            if (!$talla) {
+                continue;
             }
+
+            $color = is_array($t) ? ($t['color'] ?? null) : ($t->color ?? null);
+            $colorKey = $color ? trim((string) $color) : 'Sin color';
+            if (!isset($gruposPorColor[$colorKey])) {
+                $gruposPorColor[$colorKey] = [];
+            }
+            $gruposPorColor[$colorKey][] = $t;
         }
 
-        $textoPersonalizadoRaw = $prenda->texto_personalizado_tallas ?? '';
-        $map = [];
-        if (is_string($textoPersonalizadoRaw)) {
-            $tt = trim($textoPersonalizadoRaw);
-            if ($tt !== '' && str_starts_with($tt, '{') && str_ends_with($tt, '}')) {
-                $decoded = json_decode($tt, true);
-                if (is_array($decoded)) {
-                    $map = $decoded;
-                }
-            } elseif ($tt !== '') {
-                // compatibilidad: texto antiguo "global" (con o sin paréntesis)
-                if (preg_match('/^\((.*)\)$/', $tt, $m)) {
-                    $map = ['global' => $m[1]];
-                } else {
-                    $map = ['global' => $tt];
-                }
-            }
-        }
+        ksort($gruposPorColor, SORT_NATURAL | SORT_FLAG_CASE);
 
         $fmtGrupo = function(array $arr): string {
             $items = [];
             foreach ($arr as $x) {
-                $talla = trim((string) ($x['talla'] ?? ''));
-                if ($talla === '') continue;
-                $cantidad = $x['cantidad'] ?? null;
+                $talla = is_array($x) ? ($x['talla'] ?? '') : ($x->talla ?? '');
+                $talla = trim((string) $talla);
+                if ($talla === '') {
+                    continue;
+                }
+
+                $cantidad = is_array($x) ? ($x['cantidad'] ?? null) : ($x->cantidad ?? null);
                 if ($cantidad !== null && $cantidad !== '' && (int) $cantidad !== 1) {
                     $items[] = $talla . ' (' . (int) $cantidad . ')';
                 } else {
@@ -408,27 +390,65 @@ CSS;
         $html = '<div class="prenda-tallas">';
         $html .= '<div><strong>TALLAS:</strong></div>';
 
-        $linea = function(string $label, string $key, array $arr) use ($fmtGrupo, $map): string {
-            $base = $fmtGrupo($arr);
-            if ($base === '') return '';
-            $paren = '';
-            if (array_key_exists($key, $map) && $map[$key] !== null) {
-                $paren = (string) $map[$key];
-            } elseif (array_key_exists('global', $map) && $map['global'] !== null) {
-                $paren = (string) $map['global'];
-            }
-            return '<div>'
-                . '<span style="color:#1e5ba8; font-weight:700;">' . htmlspecialchars($label) . ':</span> '
-                . '<span>' . htmlspecialchars($base) . ' (' . htmlspecialchars($paren) . ')</span>'
-                . '</div>';
-        };
+        foreach ($gruposPorColor as $colorKey => $group) {
+            $tallasCaballero = [];
+            $tallasDama = [];
+            $tallasSinGenero = [];
+            $haySobremedida = false;
 
-        $html .= $linea('Caballero', 'caballero', $tallasCaballero);
-        $html .= $linea('Dama', 'dama', $tallasDama);
-        $html .= $linea('Sin género', 'sin_genero', $tallasSinGenero);
+            foreach ($group as $t) {
+                $generoId = is_array($t) ? ($t['genero_id'] ?? null) : ($t->genero_id ?? null);
+                $talla = is_array($t) ? ($t['talla'] ?? null) : ($t->talla ?? null);
+                $cantidad = is_array($t) ? ($t['cantidad'] ?? null) : ($t->cantidad ?? null);
+                if (!$talla) {
+                    continue;
+                }
+
+                $tallaLower = strtolower(trim((string) $talla));
+                $esSobremedida = ($tallaLower === 'sobremedida' || $tallaLower === 'cantidad')
+                    && ($generoId === null || $generoId === '' || $generoId === 0 || $generoId === '0');
+                if ($esSobremedida) {
+                    $haySobremedida = true;
+                    continue;
+                }
+
+                $item = [
+                    'talla' => (string) $talla,
+                    'cantidad' => $cantidad,
+                ];
+
+                if ((string) $generoId === '1') {
+                    $tallasCaballero[] = $item;
+                } elseif ((string) $generoId === '2') {
+                    $tallasDama[] = $item;
+                } else {
+                    $tallasSinGenero[] = $item;
+                }
+            }
+
+            $cabTxt = $fmtGrupo($tallasCaballero);
+            $damaTxt = $fmtGrupo($tallasDama);
+            $sinTxt = $fmtGrupo($tallasSinGenero);
+
+            $html .= '<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.18);">'
+                . '<span style="color:#0f172a; font-weight:900; font-size: 9px; text-transform: uppercase;">' . htmlspecialchars($colorKey) . '</span>'
+                . '</div>';
+
+            if ($cabTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Caballero:</span> <span style="color:#e74c3c;">' . htmlspecialchars($cabTxt) . '</span></div>';
+            }
+            if ($damaTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Dama:</span> <span style="color:#e74c3c;">' . htmlspecialchars($damaTxt) . '</span></div>';
+            }
+            if ($haySobremedida) {
+                $html .= '<div style="margin-top: 2px;"><span style="color:#e74c3c; font-weight:900;">Sobremedida</span></div>';
+            }
+            if ($sinTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Sin género:</span> <span style="color:#e74c3c;">' . htmlspecialchars($sinTxt) . '</span></div>';
+            }
+        }
 
         $html .= '</div>';
-
         return $html;
     }
 

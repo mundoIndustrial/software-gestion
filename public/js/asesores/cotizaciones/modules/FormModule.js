@@ -317,6 +317,15 @@ class FormModule {
         // Tallas - Enviar el JSON directamente (nuevo formato con géneros)
         formData.append(`productos_friendly[${index}][tallas]`, tallasInput || '');
 
+        // Tallas/variaciones avanzadas (modal "Asignar colores a tallas")
+        // Se envía como JSON string en productos_friendly[i][tallas_color]
+        if (window.advancedVariationsByProductoId && window.advancedVariationsByProductoId[productoId]) {
+            const tallasColor = window.advancedVariationsByProductoId[productoId];
+            if (Array.isArray(tallasColor) && tallasColor.length > 0) {
+                formData.append(`productos_friendly[${index}][tallas_color]`, JSON.stringify(tallasColor));
+            }
+        }
+
         // Fotos - Enviar archivos File directamente
         if (window.fotosSeleccionadas && window.fotosSeleccionadas[productoId]) {
             const fotos = window.fotosSeleccionadas[productoId];

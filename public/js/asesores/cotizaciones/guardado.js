@@ -398,6 +398,15 @@ async function procederEnviarCotizacion(esBorrador = false) {
                 formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
                 formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
                 formData.append(`prendas[${index}][tallas]`, producto.tallas || '');
+
+                // Tallas/variaciones avanzadas (modal "Asignar colores a tallas")
+                // Se envía como JSON string en prendas[i][tallas_color]
+                if (window.advancedVariationsByProductoId && producto.productoId && window.advancedVariationsByProductoId[producto.productoId]) {
+                    const tallasColor = window.advancedVariationsByProductoId[producto.productoId];
+                    if (Array.isArray(tallasColor) && tallasColor.length > 0) {
+                        formData.append(`prendas[${index}][tallas_color]`, JSON.stringify(tallasColor));
+                    }
+                }
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};

@@ -287,19 +287,13 @@ function openCotizacionModal(cotizacionId) {
 
                     // Mostrar tallas si existen (agrupadas por género)
                     if (prenda.tallas && prenda.tallas.length > 0) {
-                        const tallasCaballero = [];
-                        const tallasDama = [];
-                        const tallasSinGenero = [];
-
-                        prenda.tallas.forEach((t) => {
-                            if (!t) return;
-                            if (t.genero_id === 1 || t.genero_id === '1') {
-                                tallasCaballero.push(t);
-                            } else if (t.genero_id === 2 || t.genero_id === '2') {
-                                tallasDama.push(t);
-                            } else {
-                                tallasSinGenero.push(t);
-                            }
+                        const tieneColorEnTallas = (Array.isArray(prenda.tallas) ? prenda.tallas : []).some(t => t && t.color);
+                        const tieneSobremedida = (Array.isArray(prenda.tallas) ? prenda.tallas : []).some(t => {
+                            if (!t) return false;
+                            const talla = String(t.talla || '').toLowerCase();
+                            const esSobremedida = (talla === 'sobremedida' || talla === 'cantidad');
+                            const sinGenero = (t.genero_id === null || t.genero_id === undefined || t.genero_id === '');
+                            return esSobremedida && sinGenero;
                         });
 
                         const formatearGrupoTallas = (arr) => {
@@ -314,64 +308,165 @@ function openCotizacionModal(cotizacionId) {
                             return items.join(', ');
                         };
 
-                        const cabTxt = formatearGrupoTallas(tallasCaballero);
-                        const damaTxt = formatearGrupoTallas(tallasDama);
-                        const sinTxt = formatearGrupoTallas(tallasSinGenero);
+                        // NUEVO: agrupar por color cuando exista campo color o haya sobremedida
+                        if (tieneColorEnTallas || tieneSobremedida) {
+                            const gruposPorColor = {};
+                            (Array.isArray(prenda.tallas) ? prenda.tallas : []).forEach((t) => {
+                                if (!t) return;
+                                const key = (t.color && String(t.color).trim()) ? String(t.color).trim() : 'Sin color';
+                                if (!gruposPorColor[key]) gruposPorColor[key] = [];
+                                gruposPorColor[key].push(t);
+                            });
 
-                        const parseTextoMap = (texto) => {
-                            if (!texto || typeof texto !== 'string') return {};
-                            const t = texto.trim();
-                            if (!t) return {};
-                            if (t.startsWith('{') && t.endsWith('}')) {
-                                try {
-                                    const parsed = JSON.parse(t);
-                                    if (parsed && typeof parsed === 'object') return parsed;
-                                } catch (e) {
-                                    return {};
-                                }
-                            }
-                            const matchParen = t.match(/^\((.*)\)$/);
-                            if (matchParen) return { global: matchParen[1] };
-                            return { global: t };
-                        };
+                            const ordenarKeys = (obj) => Object.keys(obj).sort((a, b) => a.localeCompare(b, 'es'));
+                            let gruposHtml = '';
 
-                        const textoMap = parseTextoMap(prenda.texto_personalizado_tallas || '');
-                        const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
+                            ordenarKeys(gruposPorColor).forEach((colorKey) => {
+                                const group = gruposPorColor[colorKey] || [];
+                                const tallasCaballero = [];
+                                const tallasDama = [];
+                                const tallasSinGenero = [];
+                                const tallasSobremedida = [];
 
-                        const construirLinea = (titulo, key, valorBase) => {
-                            if (!valorBase) return '';
-                            const valorParen = (textoMap && (textoMap[key] !== undefined && textoMap[key] !== null))
-                                ? String(textoMap[key])
-                                : (textoMap && textoMap.global ? String(textoMap.global) : '');
-                            return `
-                                <div style="margin-top: 0.25rem;">
-                                    <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
-                                    <span
-                                        class="tallas-genero-edit"
-                                        data-prenda-id="${prenda.id}"
-                                        data-genero-key="${key}"
-                                        data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
-                                        data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
-                                        style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
-                                        title="Doble click para editar el texto dentro de paréntesis"
-                                    >${valorBase} (${valorParen || ''})</span>
+                                group.forEach((t) => {
+                                    if (!t) return;
+                                    const talla = String(t.talla || '').toLowerCase();
+                                    const esSobremedida = (talla === 'sobremedida' || talla === 'cantidad') && (t.genero_id === null || t.genero_id === undefined || t.genero_id === '');
+                                    if (esSobremedida) {
+                                        tallasSobremedida.push(t);
+                                        return;
+                                    }
+
+                                    if (t.genero_id === 1 || t.genero_id === '1') {
+                                        tallasCaballero.push(t);
+                                    } else if (t.genero_id === 2 || t.genero_id === '2') {
+                                        tallasDama.push(t);
+                                    } else {
+                                        tallasSinGenero.push(t);
+                                    }
+                                });
+
+                                const cabTxt = formatearGrupoTallas(tallasCaballero);
+                                const damaTxt = formatearGrupoTallas(tallasDama);
+                                const sinTxt = formatearGrupoTallas(tallasSinGenero);
+                                const tieneSobremedidaEnGrupo = tallasSobremedida.length > 0;
+
+                                const line = (titulo, valor) => {
+                                    if (!valor) return '';
+                                    return `
+                                        <div style="margin-top: 0.25rem;">
+                                            <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
+                                            <span style="color: #ef4444; font-weight: 800; font-size: 0.85rem;">${valor}</span>
+                                        </div>
+                                    `;
+                                };
+
+                                const sobremedidaLine = tieneSobremedidaEnGrupo
+                                    ? `
+                                        <div style="margin-top: 0.25rem;">
+                                            <span style="color: #ef4444; font-weight: 900; font-size: 0.85rem;">Sobremedida</span>
+                                        </div>
+                                    `
+                                    : '';
+
+                                const colorHeader = `
+                                    <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed rgba(30,91,168,0.25);">
+                                        <div style="color:#0f172a; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">${colorKey}</div>
+                                    </div>
+                                `;
+
+                                gruposHtml +=
+                                    colorHeader +
+                                    line('Caballero', cabTxt) +
+                                    line('Dama', damaTxt) +
+                                    sobremedidaLine +
+                                    line('Sin género', sinTxt);
+                            });
+
+                            htmlPrendas += `
+                                <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
+                                    <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
+                                    <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                        ${gruposHtml}
+                                    </div>
                                 </div>
                             `;
-                        };
+                        } else {
+                            // LEGACY: render anterior (sin color)
+                            const tallasCaballero = [];
+                            const tallasDama = [];
+                            const tallasSinGenero = [];
 
-                        const gruposHtml =
-                            construirLinea('Caballero', 'caballero', cabTxt) +
-                            construirLinea('Dama', 'dama', damaTxt) +
-                            construirLinea('Sin género', 'sin_genero', sinTxt);
+                            prenda.tallas.forEach((t) => {
+                                if (!t) return;
+                                if (t.genero_id === 1 || t.genero_id === '1') {
+                                    tallasCaballero.push(t);
+                                } else if (t.genero_id === 2 || t.genero_id === '2') {
+                                    tallasDama.push(t);
+                                } else {
+                                    tallasSinGenero.push(t);
+                                }
+                            });
 
-                        htmlPrendas += `
-                            <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
-                                <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
-                                <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
-                                    ${gruposHtml}
+                            const cabTxt = formatearGrupoTallas(tallasCaballero);
+                            const damaTxt = formatearGrupoTallas(tallasDama);
+                            const sinTxt = formatearGrupoTallas(tallasSinGenero);
+
+                            const parseTextoMap = (texto) => {
+                                if (!texto || typeof texto !== 'string') return {};
+                                const t = texto.trim();
+                                if (!t) return {};
+                                if (t.startsWith('{') && t.endsWith('}')) {
+                                    try {
+                                        const parsed = JSON.parse(t);
+                                        if (parsed && typeof parsed === 'object') return parsed;
+                                    } catch (e) {
+                                        return {};
+                                    }
+                                }
+                                const matchParen = t.match(/^\((.*)\)$/);
+                                if (matchParen) return { global: matchParen[1] };
+                                return { global: t };
+                            };
+
+                            const textoMap = parseTextoMap(prenda.texto_personalizado_tallas || '');
+                            const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
+
+                            const construirLinea = (titulo, key, valorBase) => {
+                                if (!valorBase) return '';
+                                const valorParen = (textoMap && (textoMap[key] !== undefined && textoMap[key] !== null))
+                                    ? String(textoMap[key])
+                                    : (textoMap && textoMap.global ? String(textoMap.global) : '');
+                                return `
+                                    <div style="margin-top: 0.25rem;">
+                                        <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
+                                        <span
+                                            class="tallas-genero-edit"
+                                            data-prenda-id="${prenda.id}"
+                                            data-genero-key="${key}"
+                                            data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
+                                            data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
+                                            style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
+                                            title="Doble click para editar el texto dentro de paréntesis"
+                                        >${valorBase} (${valorParen || ''})</span>
+                                    </div>
+                                `;
+                            };
+
+                            const gruposHtml =
+                                construirLinea('Caballero', 'caballero', cabTxt) +
+                                construirLinea('Dama', 'dama', damaTxt) +
+                                construirLinea('Sin género', 'sin_genero', sinTxt);
+
+                            htmlPrendas += `
+                                <div style="margin: 0 0 0.5rem 0;" data-tallas-prenda-container="1">
+                                    <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas:</span>
+                                    <div id="tallas-prenda-${prenda.id}" style="padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                        ${gruposHtml}
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        }
                     }
 
                     // Renderizar variaciones de técnicas prendas si existen (solo para cotizaciones con logo)

@@ -132,6 +132,7 @@
 
 <!-- 2. Módulos de gestión de datos -->
 <script src="{{ asset('js/asesores/cotizaciones/tallas.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/advanced-size-variation-manager.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/cotizaciones.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/productos.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/imagenes.js') }}"></script>

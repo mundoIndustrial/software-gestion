@@ -81,9 +81,14 @@
             <div class="producto-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <div class="section-title"><i class="fas fa-palette"></i> COLOR, TELA Y REFERENCIA</div>
-                    <button type="button" class="btn-agregar-tela" onclick="agregarFilaTela(this)" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-plus"></i> Agregar Tela
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button type="button" class="btn-asignar-colores-tallas" style="padding: 0.5rem 1rem; background: #5c56f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase;">
+                            <i class="fas fa-layer-group"></i> Asignar colores a tallas
+                        </button>
+                        <button type="button" class="btn-agregar-tela" onclick="agregarFilaTela(this)" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-plus"></i> Agregar Tela
+                        </button>
+                    </div>
                 </div>
                 <div class="form-row" style="overflow-x: auto;">
                     <div class="form-col full" style="min-width: 0;">
@@ -149,6 +154,9 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+                <div class="advanced-variations-container" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                    <div class="advanced-variations-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;"></div>
                 </div>
             </div>
 

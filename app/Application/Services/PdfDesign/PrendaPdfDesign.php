@@ -52,6 +52,7 @@ class PrendaPdfDesign
         $html .= $this->renderHeader();
         $html .= $this->renderClientInfo();
         $html .= $this->renderPrendas();
+        $html .= $this->renderEspecificaciones();
 
         $html .= '</body>
 </html>';
@@ -90,7 +91,7 @@ class PrendaPdfDesign
         .prenda-header { background: #fff; padding: 8px 10px; border-bottom: 1px solid #000; }
         .prenda-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
         .prenda-detalles { font-size: 9px; margin-bottom: 2px; }
-        .prenda-tallas { font-size: 10px; color: #e74c3c; font-weight: bold; }
+        .prenda-tallas { font-size: 10px; color: #0f172a; font-weight: bold; }
         
         /* Contenedor principal de la prenda */
         .prenda-contenido { display: flex; gap: 10px; padding: 10px; }
@@ -116,6 +117,15 @@ class PrendaPdfDesign
         .ubicaciones-content { font-size: 9px; line-height: 1.6; }
         .ubicacion-item { margin-bottom: 8px; padding: 6px; border-left: 3px solid #000; }
         .ubicacion-titulo { font-weight: bold; }
+
+        /* Tabla de especificaciones (mismo diseño que PDF combinada) */
+        .especificaciones-wrapper { padding: 12mm; border-top: 2px solid #000; }
+        .especificaciones-title { font-weight: bold; font-size: 11px; margin-bottom: 10px; color: #1e5ba8; text-transform: uppercase; }
+        .especificaciones-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .especificaciones-table thead tr { background: #f5f5f5; border-bottom: 2px solid #1e5ba8; }
+        .especificaciones-table th { padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 9px; }
+        .especificaciones-table td { padding: 0.75rem 1rem; color: #666; font-size: 9px; border-bottom: 1px solid #eee; }
+        .especificaciones-table .espec-label { color: #333; font-weight: 600; }
 CSS;
     }
 
@@ -390,8 +400,170 @@ CSS;
      */
     private function renderPrendaTallas($prenda): string
     {
-        $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->implode(', ') : 'Sin tallas';
-        return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars($tallas) . '</div>';
+        $tallasCollection = $prenda->tallas ?? null;
+        if (!$tallasCollection || (is_object($tallasCollection) && method_exists($tallasCollection, 'isEmpty') && $tallasCollection->isEmpty())) {
+            return '<div class="prenda-tallas">Tallas: ' . htmlspecialchars('Sin tallas') . '</div>';
+        }
+
+        $gruposPorColor = [];
+        foreach ($tallasCollection as $t) {
+            if (!$t) {
+                continue;
+            }
+
+            $talla = is_array($t) ? ($t['talla'] ?? null) : ($t->talla ?? null);
+            if (!$talla) {
+                continue;
+            }
+
+            $color = is_array($t) ? ($t['color'] ?? null) : ($t->color ?? null);
+            $colorKey = $color ? trim((string) $color) : 'Sin color';
+            if (!isset($gruposPorColor[$colorKey])) {
+                $gruposPorColor[$colorKey] = [];
+            }
+            $gruposPorColor[$colorKey][] = $t;
+        }
+
+        ksort($gruposPorColor, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $fmtGrupo = function(array $arr): string {
+            $items = [];
+            foreach ($arr as $x) {
+                $talla = is_array($x) ? ($x['talla'] ?? '') : ($x->talla ?? '');
+                $talla = trim((string) $talla);
+                if ($talla === '') {
+                    continue;
+                }
+
+                $cantidad = is_array($x) ? ($x['cantidad'] ?? null) : ($x->cantidad ?? null);
+                if ($cantidad !== null && $cantidad !== '' && (int) $cantidad !== 1) {
+                    $items[] = $talla . ' (' . (int) $cantidad . ')';
+                } else {
+                    $items[] = $talla;
+                }
+            }
+            return implode(', ', $items);
+        };
+
+        $html = '<div class="prenda-tallas">';
+        $html .= '<div><strong>TALLAS:</strong></div>';
+
+        foreach ($gruposPorColor as $colorKey => $group) {
+            $tallasCaballero = [];
+            $tallasDama = [];
+            $tallasSinGenero = [];
+            $haySobremedida = false;
+
+            foreach ($group as $t) {
+                $generoId = is_array($t) ? ($t['genero_id'] ?? null) : ($t->genero_id ?? null);
+                $talla = is_array($t) ? ($t['talla'] ?? null) : ($t->talla ?? null);
+                $cantidad = is_array($t) ? ($t['cantidad'] ?? null) : ($t->cantidad ?? null);
+                if (!$talla) continue;
+
+                $tallaLower = strtolower(trim((string) $talla));
+                $esSobremedida = ($tallaLower === 'sobremedida' || $tallaLower === 'cantidad')
+                    && ($generoId === null || $generoId === '' || $generoId === 0 || $generoId === '0');
+                if ($esSobremedida) {
+                    $haySobremedida = true;
+                    continue;
+                }
+
+                $item = [
+                    'talla' => (string) $talla,
+                    'cantidad' => $cantidad,
+                ];
+
+                if ((string) $generoId === '1') {
+                    $tallasCaballero[] = $item;
+                } elseif ((string) $generoId === '2') {
+                    $tallasDama[] = $item;
+                } else {
+                    $tallasSinGenero[] = $item;
+                }
+            }
+
+            $cabTxt = $fmtGrupo($tallasCaballero);
+            $damaTxt = $fmtGrupo($tallasDama);
+            $sinTxt = $fmtGrupo($tallasSinGenero);
+
+            $html .= '<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.18);">'
+                . '<span style="color:#0f172a; font-weight:900; font-size: 9px; text-transform: uppercase;">' . htmlspecialchars($colorKey) . '</span>'
+                . '</div>';
+
+            if ($cabTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Caballero:</span> <span style="color:#e74c3c;">' . htmlspecialchars($cabTxt) . '</span></div>';
+            }
+            if ($damaTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Dama:</span> <span style="color:#e74c3c;">' . htmlspecialchars($damaTxt) . '</span></div>';
+            }
+            if ($haySobremedida) {
+                $html .= '<div style="margin-top: 2px;"><span style="color:#e74c3c; font-weight:900;">Sobremedida</span></div>';
+            }
+            if ($sinTxt !== '') {
+                $html .= '<div><span style="color:#1e5ba8; font-weight:800;">Sin género:</span> <span style="color:#e74c3c;">' . htmlspecialchars($sinTxt) . '</span></div>';
+            }
+        }
+
+        $html .= '</div>';
+        return $html;
+    }
+
+    private function renderEspecificaciones(): string
+    {
+        if (!$this->cotizacion->especificaciones || empty($this->cotizacion->especificaciones)) {
+            return '';
+        }
+
+        // MISMA ESTRUCTURA/LÓGICA QUE PDF COMBINADA
+        $especificacionesMap = [
+            'disponibilidad' => 'DISPONIBILIDAD',
+            'forma_pago' => 'FORMA DE PAGO',
+            'regimen' => 'RÉGIMEN',
+            'se_ha_vendido' => 'SE HA VENDIDO',
+            'ultima_venta' => 'ÚLTIMA VENTA',
+            'flete' => 'FLETE DE ENVÍO'
+        ];
+
+        $html = '<div class="especificaciones-wrapper">';
+        $html .= '<div class="especificaciones-title">Especificaciones Generales</div>';
+        $html .= '<table class="especificaciones-table">';
+        $html .= '<thead>';
+        $html .= '<tr>';
+        $html .= '<th>Especificación</th>';
+        $html .= '<th>Valor</th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+
+        foreach ($especificacionesMap as $clave => $nombreEspec) {
+            $valor = $this->cotizacion->especificaciones[$clave] ?? null;
+            $valorTexto = '-';
+
+            if ($valor) {
+                if (is_array($valor) && !empty($valor)) {
+                    $valorTexto = implode(', ', array_map(function($v) {
+                        $texto = $v['valor'] ?? '';
+                        if (isset($v['observacion'])) {
+                            $texto .= ' (' . $v['observacion'] . ')';
+                        }
+                        return htmlspecialchars($texto);
+                    }, $valor));
+                } elseif (is_string($valor)) {
+                    $valorTexto = htmlspecialchars($valor);
+                }
+            }
+
+            $html .= '<tr>';
+            $html .= '<td class="espec-label">' . htmlspecialchars($nombreEspec) . '</td>';
+            $html .= '<td>' . $valorTexto . '</td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody>';
+        $html .= '</table>';
+        $html .= '</div>';
+
+        return $html;
     }
 
     /**
@@ -420,12 +592,18 @@ CSS;
             $tieneBosillos = $var->tiene_bolsillos ?? false;
             $obsBolsillos = $var->obs_bolsillos ?? '';
             $obsBroche = $var->obs_broche ?? '';
+            $obsManga = $var->obs_manga ?? '';
 
             // Fila de manga
             if ($mangaId) {
+                $tipoManga = $var->manga?->nombre ?? ($var->tipo_manga ?? 'Sin especificar');
+                $mangaTxt = 'Tipo: ' . $tipoManga;
+                if ($obsManga) {
+                    $mangaTxt .= ' - ' . $obsManga;
+                }
                 $html .= '<tr>';
                 $html .= '<td class="var-label">Manga</td>';
-                $html .= '<td></td>';
+                $html .= '<td>' . htmlspecialchars($mangaTxt) . '</td>';
                 $html .= '</tr>';
             }
 

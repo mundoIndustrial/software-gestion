@@ -163,16 +163,116 @@ class CotizacionPrendaService
 
                 // 4b.  GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
                 // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15] o JSON con géneros: {"dama": ["S", "M"], "caballero": ["30", "32"]}
+                $tallasColor = $productoData['tallas_color'] ?? null; // Nuevo: viene del modal avanzado
                 $cantidades = $productoData['cantidades'] ?? [];
-                $tallasJson = $productoData['tallas'] ?? ''; // Nuevo campo con tallas separadas por género
+                $tallasJson = $productoData['tallas'] ?? ''; // Formato previo: tallas separadas por género
                 
                 Log::info(" DEBUG - TALLAS POR GÉNERO RECIBIDAS", [
                     'prenda_index' => $index,
+                    'tallas_color_raw' => $tallasColor,
                     'cantidades_raw' => $cantidades,
                     'tallas_json_raw' => $tallasJson,
                     'cantidades_type' => gettype($cantidades),
-                    'tallas_json_type' => gettype($tallasJson)
+                    'tallas_json_type' => gettype($tallasJson),
+                    'tallas_color_type' => gettype($tallasColor)
                 ]);
+
+                // Si llega tallas_color (modal avanzado), priorizarlo
+                if (is_string($tallasColor)) {
+                    $tallasColor = json_decode($tallasColor, true) ?? [];
+                }
+
+                // Primero, limpiar tallas previas si existen
+                $prenda->tallas()->delete();
+
+                if (!empty($tallasColor) && is_array($tallasColor)) {
+                    foreach ($tallasColor as $item) {
+                        if (!is_array($item)) {
+                            continue;
+                        }
+
+                        $assignmentType = $item['assignmentType'] ?? null;
+                        $color = $item['color'] ?? null;
+
+                        // SOBREMEMDIDA: no género; guardar como talla normal, sin cantidades
+                        if ($assignmentType === 'Sobremedida') {
+                            $prenda->tallas()->create([
+                                'talla' => 'sobremedida',
+                                'color' => $color,
+                                'cantidad' => 1,
+                                'genero_id' => null
+                            ]);
+                            continue;
+                        }
+
+                        // GÉNERO: guardar cada talla con su color
+                        $genders = $item['genders'] ?? [];
+                        $sizes = $item['sizes'] ?? [];
+                        $sizesByGender = $item['sizesByGender'] ?? null;
+
+                        // Si viene agrupado por género (cuando se seleccionan ambos), guardar por grupo
+                        if (is_array($sizesByGender) && !empty($sizesByGender)) {
+                            foreach ($sizesByGender as $genderName => $sizesList) {
+                                $generoId = null;
+                                if ($genderName === 'DAMA') {
+                                    $generoId = 2;
+                                } elseif ($genderName === 'CABALLERO') {
+                                    $generoId = 1;
+                                }
+
+                                if (!is_array($sizesList)) {
+                                    continue;
+                                }
+
+                                foreach ($sizesList as $talla) {
+                                    if (!$talla) {
+                                        continue;
+                                    }
+                                    $prenda->tallas()->create([
+                                        'talla' => (string)$talla,
+                                        'color' => $color,
+                                        'cantidad' => 1,
+                                        'genero_id' => $generoId
+                                    ]);
+                                }
+                            }
+
+                            continue;
+                        }
+
+                        // No agrupado: asumir un solo set
+                        $generoId = null;
+                        if (is_array($genders) && count($genders) === 1) {
+                            if ($genders[0] === 'DAMA') {
+                                $generoId = 2;
+                            } elseif ($genders[0] === 'CABALLERO') {
+                                $generoId = 1;
+                            }
+                        }
+
+                        if (is_array($sizes)) {
+                            foreach ($sizes as $talla) {
+                                if (!$talla) {
+                                    continue;
+                                }
+                                $prenda->tallas()->create([
+                                    'talla' => (string)$talla,
+                                    'color' => $color,
+                                    'cantidad' => 1,
+                                    'genero_id' => $generoId
+                                ]);
+                            }
+                        }
+                    }
+
+                    Log::info(" Tallas guardadas con color (modal avanzado)", [
+                        'prenda_index' => $index,
+                        'cantidad_items' => count($tallasColor)
+                    ]);
+
+                    // Ya procesado; saltar la lógica anterior
+                    goto despues_guardado_tallas;
+                }
                 
                 // Decodificar ambos campos si vienen como JSON
                 if (is_string($cantidades)) {
@@ -193,9 +293,6 @@ class CotizacionPrendaService
                     'cantidades_decoded' => $cantidades
                 ]);
                 
-                // Primero, limpiar tallas previas si existen
-                $prenda->tallas()->delete();
-                
                 if (!empty($tallasPorGenero) && is_array($tallasPorGenero)) {
                     // Guardar tallas separadas por género
                     foreach ($tallasPorGenero as $genero => $tallasGenero) {
@@ -212,6 +309,7 @@ class CotizacionPrendaService
                                 if ($talla && $cantidad > 0) {
                                     $prenda->tallas()->create([
                                         'talla' => (string)$talla,
+                                        'color' => null,
                                         'cantidad' => (int)$cantidad,
                                         'genero_id' => $generoId
                                     ]);
@@ -238,6 +336,7 @@ class CotizacionPrendaService
                         if ($talla && $cantidad > 0) {
                             $prenda->tallas()->create([
                                 'talla' => (string)$talla,
+                                'color' => null,
                                 'cantidad' => (int)$cantidad
                             ]);
                         }
@@ -252,6 +351,8 @@ class CotizacionPrendaService
                         'cantidades' => $cantidades
                     ]);
                 }
+
+                despues_guardado_tallas:
 
                 // 5. Guardar variantes en prenda_variantes_cot
                 // Las variantes vienen dentro de $productoData['variantes']

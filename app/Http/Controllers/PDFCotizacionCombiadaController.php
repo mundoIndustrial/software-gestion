@@ -41,7 +41,7 @@ class PDFCotizacionCombiadaController extends Controller
                     $query->with([
                         'fotos:id,prenda_cot_id,ruta_original,ruta_webp',
                         'telaFotos:id,prenda_cot_id,ruta_original,ruta_webp',
-                        'tallas:id,prenda_cot_id,talla,genero_id,cantidad',
+                        'tallas:id,prenda_cot_id,talla,color,genero_id,cantidad',
                         'variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche,es_jean_pantalon,tipo_jean_pantalon,telas_multiples',
                         'variantes.manga:id,nombre',
                         'variantes.broche:id,nombre',
@@ -67,7 +67,20 @@ class PDFCotizacionCombiadaController extends Controller
             $this->validateAccess($cotizacion);
 
             // 3. Validar que sea una cotización combinada
-            $this->validateCombiadaCotizacion($cotizacion);
+            // Una cotización se considera combinada para el PDF SOLO si tiene prendas Y logo.
+            // Si solo llenaron una parte (ej: solo paso 2), redirigir al PDF correcto.
+            $tienePrendas = ($cotizacion->prendas && $cotizacion->prendas->count() > 0);
+            $tieneLogo = !is_null($cotizacion->logoCotizacion);
+            $esCombinada = $tienePrendas && $tieneLogo;
+
+            if (!$esCombinada) {
+                if ($tieneLogo && !$tienePrendas) {
+                    return redirect("/asesores/cotizacion/{$cotizacion->id}/pdf/logo");
+                }
+
+                // Default: prenda
+                return redirect("/asesores/cotizacion/{$cotizacion->id}/pdf/prenda");
+            }
 
             // 4. Generar diseño HTML usando el componente
             \Log::info("Generando diseño HTML...");
@@ -129,19 +142,6 @@ class PDFCotizacionCombiadaController extends Controller
         
         if ($user && $user->hasRole('visualizador_cotizaciones_logo')) {
             abort(403, 'No tienes permiso para ver PDFs de cotizaciones combinadas. Solo puedes ver PDFs de logo.');
-        }
-    }
-
-    /**
-     * Valida que sea una cotización combinada (tipo PL)
-     */
-    private function validateCombiadaCotizacion(Cotizacion $cotizacion): void
-    {
-        $esCombinada = $cotizacion->tipo === 'PL' || 
-                       ($cotizacion->prendas && $cotizacion->prendas->count() > 0 && $cotizacion->logoCotizacion);
-        
-        if (!$esCombinada) {
-            abort(400, 'Esta cotización no es de tipo combinada. Use el PDF de prenda o logo según corresponda.');
         }
     }
 

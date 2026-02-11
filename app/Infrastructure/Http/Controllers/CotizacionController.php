@@ -3683,7 +3683,7 @@ final class CotizacionController extends Controller
                 // Recargar cotización con relaciones actualizadas
                 $cotizacionCompleta = \App\Models\Cotizacion::with([
                     'cliente',
-                    'prendas.reflectivo.fotos'
+                    'prendas'
                 ])->findOrFail($cotizacion->id);
 
                 Log::info(' CotizacionController@updateReflectivo - Exitoso', [
@@ -3835,7 +3835,6 @@ final class CotizacionController extends Controller
                     'prendas.tallas',
                     'prendas.fotos',              //  AGREGAR: Cargar fotos de prendas
                     'prendas.variantes',          //  Cargar variantes (para genero_id)
-                    'prendas.reflectivo.fotos'    //  Cargar reflectivo de cada prenda
                 ]);
                 
                 // Preparar datos iniciales en formato JSON

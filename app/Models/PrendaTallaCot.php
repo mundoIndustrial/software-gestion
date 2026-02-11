@@ -12,6 +12,7 @@ class PrendaTallaCot extends Model
     protected $fillable = [
         'prenda_cot_id',
         'talla',
+        'color',
         'cantidad',
         'genero_id',
     ];

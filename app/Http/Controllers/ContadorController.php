@@ -322,6 +322,7 @@ class ContadorController extends Controller
                             return [
                                 'id' => $talla->id,
                                 'talla' => $talla->talla,
+                                'color' => $talla->color,
                                 'genero_id' => $talla->genero_id,
                                 'cantidad' => $talla->cantidad,
                             ];
