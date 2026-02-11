@@ -68,8 +68,23 @@ window.PrendaCardService = {
 
         // Construir secciones
         const variacionesHTML = this._construirVariaciones(prenda, indice);
-        const tallasYCantidadesHTML = this._construirTallasYCantidades(prenda, indice);
         const procesosHTML = this._construirProcesos(prenda, indice);
+        
+        // Detectar si hay asignaciones de colores → combinar tela + tallas en una sola sección
+        const tieneAsignaciones = prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0;
+        
+        let tablaTelasHTML = '';
+        let tallasYCantidadesHTML = '';
+        
+        if (tieneAsignaciones) {
+            // Sección combinada: Tela, Tallas y Colores en un solo expandible
+            tablaTelasHTML = ''; // No mostrar tabla telas por separado
+            tallasYCantidadesHTML = this._construirSeccionCombinada(prenda, indice);
+        } else {
+            // Flujo normal: tabla telas + tallas separadas
+            tablaTelasHTML = this._construirTablaTelas(prenda, indice);
+            tallasYCantidadesHTML = this._construirTallasYCantidades(prenda, indice);
+        }
 
         // Calcular número de item global (considerando prendas y EPPs)
         let numeroItem = indice + 1;
@@ -140,7 +155,7 @@ window.PrendaCardService = {
                     <div class="prenda-card-info">
                         ${descripcion ? `<p class="prenda-descripcion">${descripcion}</p>` : ''}
 
-                        ${this._construirTablaTelas(prenda, indice)}
+                        ${tablaTelasHTML}
 
                         ${variacionesHTML}
                         ${tallasYCantidadesHTML}
@@ -339,13 +354,36 @@ window.PrendaCardService = {
             
             if (tallasList.length === 0) return;
             
+            // Obtener asignaciones de colores
+            const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
+            
             const tallasConCantidad = tallasList.map(talla => {
                 const cantidad = cantidadesGen[talla] || 0;
+                
+                // Buscar colores asignados para esta talla-género
+                let coloresHTML = '';
+                const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
+                    const coloresItems = asignacion.colores.map(c => {
+                        const nombre = c.nombre || c.color || 'Sin nombre';
+                        const cant = c.cantidad || 0;
+                        return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
+                            <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
+                            <span>${nombre}</span>
+                            <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
+                        </div>`;
+                    }).join('');
+                    coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+                }
+                
                 return `
-                    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc;">
-                        <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
-                        ${talla}
-                        <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                    <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
+                            ${talla}
+                            <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                        </div>
+                        ${coloresHTML}
                     </div>
                 `;
             }).join('');
@@ -375,6 +413,226 @@ window.PrendaCardService = {
                 </button>
                 <div class="seccion-expandible-content tallas-y-cantidades-content">
                     <div style="padding: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        ${generoHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Buscar asignación de color para un género y talla específicos
+     * Soporta claves: "genero-tipo-talla" (ej: "dama-Letra-M") o "genero-talla" (ej: "dama-M")
+     */
+    _buscarAsignacionColor(asignacionesColores, genero, talla) {
+        if (!asignacionesColores || Object.keys(asignacionesColores).length === 0) {
+            return null;
+        }
+        
+        // Método 1: Buscar por objeto con genero y talla 
+        const clavePorObjeto = Object.keys(asignacionesColores).find(clave => {
+            const asig = asignacionesColores[clave];
+            return asig && asig.genero && asig.genero.toLowerCase() === genero.toLowerCase() && asig.talla === talla;
+        });
+        if (clavePorObjeto) return asignacionesColores[clavePorObjeto];
+        
+        // Método 2: Buscar por clave "genero-...-talla" (última parte es la talla)
+        const clavePorFormato = Object.keys(asignacionesColores).find(clave => {
+            const partes = clave.split('-');
+            if (partes.length >= 2) {
+                return partes[0].toLowerCase() === genero.toLowerCase() && partes[partes.length - 1] === talla;
+            }
+            return false;
+        });
+        if (clavePorFormato) {
+            const valor = asignacionesColores[clavePorFormato];
+            return valor.genero ? valor : { genero, talla, colores: Array.isArray(valor) ? valor : [valor] };
+        }
+        
+        return null;
+    },
+
+    /**
+     * Sección combinada: Tela + Tallas + Colores en un solo expandible
+     * Se usa cuando hay asignaciones de colores (flujo wizard)
+     */
+    _construirSeccionCombinada(prenda, indice) {
+        // ── Obtener telas ──
+        let telas = [];
+        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
+            telas = prenda.telasAgregadas;
+        } else if (prenda.telas && Array.isArray(prenda.telas)) {
+            telas = prenda.telas;
+        }
+
+        // ── Obtener tallas (misma lógica de _construirTallasYCantidades) ──
+        let generosConTallas = prenda.generosConTallas;
+        let cantidadTallaRelacional = prenda.cantidad_talla;
+        let cantidadesPorTalla = prenda.cantidadesPorTalla || {};
+
+        if (cantidadTallaRelacional && typeof cantidadTallaRelacional === 'object' && !Array.isArray(cantidadTallaRelacional)) {
+            Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
+                if (typeof tallasObj === 'object') {
+                    Object.entries(tallasObj).forEach(([talla, cantidad]) => {
+                        cantidadesPorTalla[`${genero.toLowerCase()}-${talla}`] = cantidad;
+                    });
+                }
+            });
+            if (!generosConTallas || Object.keys(generosConTallas).length === 0) {
+                generosConTallas = {};
+                Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
+                    if (typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                        generosConTallas[genero.toLowerCase()] = { tallas: Object.keys(tallasObj) };
+                    }
+                });
+            }
+        }
+
+        let tallasByGeneroMap = {};
+        let cantidadesPorGenero = {};
+        let totalTallas = 0;
+
+        const generoKeys = Object.keys(generosConTallas || {});
+        if (generoKeys.length > 0) {
+            Object.entries(generosConTallas).forEach(([genero, data]) => {
+                if (data && data.tallas && Array.isArray(data.tallas) && data.tallas.length > 0) {
+                    tallasByGeneroMap[genero] = data.tallas;
+                    totalTallas += data.tallas.length;
+                }
+            });
+        }
+
+        if (totalTallas === 0 && Object.keys(cantidadesPorTalla).length > 0) {
+            const generosMap = {};
+            Object.keys(cantidadesPorTalla).forEach(clave => {
+                const [genero, talla] = clave.split('-');
+                if (genero && talla) {
+                    if (!generosMap[genero]) generosMap[genero] = [];
+                    if (!generosMap[genero].includes(talla)) generosMap[genero].push(talla);
+                }
+            });
+            tallasByGeneroMap = generosMap;
+            totalTallas = Object.values(generosMap).reduce((s, t) => s + t.length, 0);
+        }
+
+        Object.entries(cantidadesPorTalla).forEach(([clave, cantidad]) => {
+            const [genero, talla] = clave.split('-');
+            if (genero && talla) {
+                if (!cantidadesPorGenero[genero]) cantidadesPorGenero[genero] = {};
+                cantidadesPorGenero[genero][talla] = cantidad;
+            }
+        });
+
+        if (totalTallas === 0 && telas.length === 0) return '';
+
+        const asignacionesColores = prenda.asignacionesColoresPorTalla || {};
+
+        // ── Construir HTML de telas (mini-badges en vez de tabla) ──
+        let telasInfoHTML = '';
+        if (telas.length > 0) {
+            const telasBadges = telas.map(t => {
+                const nombre = t.tela || t.nombre_tela || 'N/A';
+                const col = t.color || '';
+                const ref = t.referencia || t.ref || '';
+                const telaFoto = window.ImageConverterService ? window.ImageConverterService.obtenerImagenTela(t) : null;
+
+                let detalles = '';
+                if (col && col !== 'N/A' && col !== '') detalles += `<span style="color: #64748b;">Color: <b>${col}</b></span>`;
+                if (ref && ref !== 'N/A' && ref !== '') detalles += `${detalles ? ' · ' : ''}<span style="color: #64748b;">Ref: <b>${ref}</b></span>`;
+
+                return `
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.85rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
+                        ${telaFoto ? `
+                            <img src="${telaFoto}" alt="${nombre}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 5px; border: 1px solid #e0e7ff; flex-shrink: 0;" />
+                        ` : `
+                            <div style="width: 36px; height: 36px; background: #e0f2fe; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="fas fa-scroll" style="color: #0284c7; font-size: 0.85rem;"></i>
+                            </div>
+                        `}
+                        <div>
+                            <div style="font-weight: 700; color: #0369a1; font-size: 0.9rem;">${nombre}</div>
+                            ${detalles ? `<div style="font-size: 0.75rem; margin-top: 0.15rem;">${detalles}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            telasInfoHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-weight: 600; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fas fa-scroll" style="color: #0ea5e9; font-size: 0.75rem;"></i> Tela${telas.length > 1 ? 's' : ''}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${telasBadges}
+                    </div>
+                </div>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0.75rem 0;">
+            `;
+        }
+
+        // ── Construir HTML de tallas por género con colores ──
+        let generoHTML = '';
+        Object.keys(tallasByGeneroMap).forEach(genero => {
+            const tallasList = tallasByGeneroMap[genero] || [];
+            const cantidadesGen = cantidadesPorGenero[genero] || {};
+            if (tallasList.length === 0) return;
+
+            const tallasConCantidad = tallasList.map(talla => {
+                const cantidad = cantidadesGen[talla] || 0;
+                let coloresHTML = '';
+                const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
+                    const coloresItems = asignacion.colores.map(c => {
+                        const nombre = c.nombre || c.color || 'Sin nombre';
+                        const cant = c.cantidad || 0;
+                        return `<div style="font-size: 0.65rem; color: #475569; padding: 0.15rem 0.4rem; background: rgba(255,255,255,0.8); border-radius: 3px; display: flex; align-items: center; gap: 0.25rem;">
+                            <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
+                            <span>${nombre}</span>
+                            <span style="color: #6b7280; font-weight: 600;">×${cant}</span>
+                        </div>`;
+                    }).join('');
+                    coloresHTML = `<div style="margin-top: 0.4rem; border-top: 1px solid rgba(203,213,225,0.4); padding-top: 0.3rem;">${coloresItems}</div>`;
+                }
+
+                return `
+                    <div style="background: #dbeafe; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; color: #0369a1; border: 1px solid #7dd3fc; min-width: 80px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-ruler" style="font-size: 0.85rem;"></i>
+                            ${talla}
+                            <span style="background: #0369a1; color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700;">${cantidad}</span>
+                        </div>
+                        ${coloresHTML}
+                    </div>
+                `;
+            }).join('');
+
+            generoHTML += `
+                <div style="margin-bottom: 0.75rem;">
+                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-users" style="color: #0ea5e9; font-size: 0.9rem;"></i>
+                        ${genero}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                        ${tallasConCantidad}
+                    </div>
+                </div>
+            `;
+        });
+
+        // ── Sección expandible combinada ──
+        return `
+            <div class="seccion-expandible tallas-y-cantidades-section">
+                <button class="seccion-expandible-header" type="button" data-section="tallas-y-cantidades" data-prenda-index="${indice}">
+                    <h4 style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-layer-group" style="color: #0ea5e9;"></i>
+                        Tela, Tallas & Colores
+                        <span style="margin-left: 0.5rem; font-size: 0.8rem; color: #6b7280; font-weight: 500;">(<span class="tallas-cantidades-count">${totalTallas}</span>)</span>
+                    </h4>
+                    <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <div class="seccion-expandible-content tallas-y-cantidades-content">
+                    <div style="padding: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        ${telasInfoHTML}
                         ${generoHTML}
                     </div>
                 </div>

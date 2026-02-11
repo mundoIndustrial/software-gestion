@@ -339,6 +339,14 @@ window.AsignacionManager = (function() {
          */
         obtenerDatosAsignaciones() {
             return StateManager.obtenerDatosAsignaciones();
+        },
+
+        /**
+         * Obtener el total de asignaciones (número de tallas con colores asignados)
+         */
+        obtenerTotalAsignaciones() {
+            const asignaciones = StateManager.getAsignaciones();
+            return asignaciones ? Object.keys(asignaciones).length : 0;
         }
     };
 })();

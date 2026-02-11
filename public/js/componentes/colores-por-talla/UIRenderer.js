@@ -363,7 +363,11 @@ window.UIRenderer = (function() {
                                 onchange="window.ColoresPorTalla.actualizarCantidadAsignacion('${asignacion.genero}', '${asignacion.talla}', '${color.nombre}', this.value)">
                         </td>
                         <td style="padding: 0.75rem; text-align: center;">
-                            <button type="button" class="btn btn-danger btn-xs" onclick="window.ColoresPorTalla.eliminarAsignacion('${asignacion.genero}', '${asignacion.talla}', '${color.nombre}');" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                            <button type="button" class="btn btn-danger btn-xs btn-eliminar-asignacion" 
+                                data-genero="${asignacion.genero}" 
+                                data-talla="${asignacion.talla}" 
+                                data-color="${color.nombre}" 
+                                style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                                 <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
                             </button>
                         </td>
@@ -375,6 +379,9 @@ window.UIRenderer = (function() {
             
             if (contador) contador.textContent = totalAsignaciones;
             console.log('[UIRenderer] Tabla actualizada con', totalAsignaciones, 'asignaciones');
+            
+            // Configurar event delegation para los botones de eliminar
+            this.configurarEventosEliminarAsignacion();
         },
 
         /**
@@ -461,7 +468,11 @@ window.UIRenderer = (function() {
                             ${cantidad}
                         </td>
                         <td style="padding: 0.75rem; text-align: center;">
-                            <button type="button" class="btn btn-danger btn-xs" onclick="window.ColoresPorTalla.eliminarAsignacion('${asignacion.genero}', '${asignacion.talla}', '${color.nombre}');" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                            <button type="button" class="btn btn-danger btn-xs btn-eliminar-asignacion" 
+                                data-genero="${asignacion.genero}" 
+                                data-talla="${asignacion.talla}" 
+                                data-color="${color.nombre}" 
+                                style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                                 <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
                             </button>
                         </td>
@@ -478,6 +489,66 @@ window.UIRenderer = (function() {
             }
             
             console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
+            
+            // Configurar event delegation para los botones de eliminar
+            this.configurarEventosEliminarAsignacion();
+        },
+
+        /**
+         * Configurar event delegation para los botones de eliminar asignaciones
+         */
+        configurarEventosEliminarAsignacion() {
+            // Configurar para tabla de asignaciones regular
+            const tbodyAsignaciones = document.getElementById('tabla-asignaciones-cuerpo');
+            if (tbodyAsignaciones) {
+                tbodyAsignaciones.removeEventListener('click', this._handleEliminarClickAsignaciones);
+                
+                this._handleEliminarClickAsignaciones = (event) => {
+                    const btn = event.target.closest('.btn-eliminar-asignacion');
+                    if (!btn) return;
+                    
+                    const genero = btn.dataset.genero;
+                    const talla = btn.dataset.talla;
+                    const color = btn.dataset.color;
+                    
+                    console.log('[UIRenderer.configurarEventosEliminarAsignacion]  Eliminando de tabla regular:', { genero, talla, color });
+                    
+                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.eliminarAsignacion === 'function') {
+                        window.ColoresPorTalla.eliminarAsignacion(genero, talla, color);
+                    } else {
+                        console.error('[UIRenderer.configurarEventosEliminarAsignacion]  ColoresPorTalla no disponible');
+                    }
+                };
+                
+                tbodyAsignaciones.addEventListener('click', this._handleEliminarClickAsignaciones);
+            }
+            
+            // Configurar para tabla de resumen
+            const tbodyResumen = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+            if (tbodyResumen) {
+                tbodyResumen.removeEventListener('click', this._handleEliminarClickResumen);
+                
+                this._handleEliminarClickResumen = (event) => {
+                    const btn = event.target.closest('.btn-eliminar-asignacion');
+                    if (!btn) return;
+                    
+                    const genero = btn.dataset.genero;
+                    const talla = btn.dataset.talla;
+                    const color = btn.dataset.color;
+                    
+                    console.log('[UIRenderer.configurarEventosEliminarAsignacion]  Eliminando de tabla resumen:', { genero, talla, color });
+                    
+                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.eliminarAsignacion === 'function') {
+                        window.ColoresPorTalla.eliminarAsignacion(genero, talla, color);
+                    } else {
+                        console.error('[UIRenderer.configurarEventosEliminarAsignacion]  ColoresPorTalla no disponible');
+                    }
+                };
+                
+                tbodyResumen.addEventListener('click', this._handleEliminarClickResumen);
+            }
+            
+            console.log('[UIRenderer.configurarEventosEliminarAsignacion]  Event delegation configurado para ambas tablas');
         },
 
         /**

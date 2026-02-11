@@ -83,6 +83,8 @@ class PedidoNormalizadorDTO
                 'prenda_0' => $json['prendas'][0],
                 'telas_count' => count($json['prendas'][0]['telas'] ?? []),
                 'telas_0_raw' => json_encode($json['prendas'][0]['telas'][0] ?? []),
+                'asignacionesColoresPorTalla_exists' => isset($json['prendas'][0]['asignacionesColoresPorTalla']),
+                'asignacionesColoresPorTalla_data' => $json['prendas'][0]['asignacionesColoresPorTalla'] ?? 'NO EXISTE'
             ]);
         }
         
@@ -118,7 +120,8 @@ class PedidoNormalizadorDTO
                 'variaciones' => $prenda['variaciones'] ?? [],
                 'telas' => self::normalizarTelas($prenda['telas'] ?? []),
                 'procesos' => self::normalizarProcesos($prenda['procesos'] ?? []),
-                'imagenes' => self::normalizarImagenes($prenda['imagenes'] ?? [])
+                'imagenes' => self::normalizarImagenes($prenda['imagenes'] ?? []),
+                'asignacionesColoresPorTalla' => $prenda['asignacionesColoresPorTalla'] ?? []  // ✅ Capture color assignments per talla from frontend
             ];
         }, $prendas);
     }

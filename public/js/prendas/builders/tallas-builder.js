@@ -7,11 +7,17 @@
 
 class TallasBuilder {
     static construir(prenda, indice) {
-        console.log('[TallasBuilder.construir]  ENTRADA - generosConTallas:', prenda.generosConTallas);
-        console.log('[TallasBuilder.construir]  ENTRADA - cantidadesPorTalla:', prenda.cantidadesPorTalla);
+        console.log('[TallasBuilder.construir] ===== INICIO CONSTRUCCIÓN TALLAS =====');
+        console.log('[TallasBuilder.construir] prenda.nombre:', prenda.nombre || 'SIN NOMBRE');
+        console.log('[TallasBuilder.construir] generosConTallas:', prenda.generosConTallas);
+        console.log('[TallasBuilder.construir] cantidadesPorTalla:', prenda.cantidadesPorTalla);
+        console.log('[TallasBuilder.construir] asignacionesColores (tipo):', typeof prenda.asignacionesColores);
+        console.log('[TallasBuilder.construir] asignacionesColores (keys):', prenda.asignacionesColores ? Object.keys(prenda.asignacionesColores) : 'UNDEFINED');
+        console.log('[TallasBuilder.construir] asignacionesColores (completo):', prenda.asignacionesColores);
 
         const generosConTallas = prenda.generosConTallas || {};
         const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
+        const asignacionesColores = prenda.asignacionesColores || {}; // Datos de colores asignados
         
         // Estructurar por género
         const tallasByGeneroMap = {};
@@ -53,10 +59,59 @@ class TallasBuilder {
                 const colorFondo = cantidad > 0 ? '#dbeafe' : '#f5f5f5';
                 const colorTexto = cantidad > 0 ? '#0369a1' : '#9ca3af';
 
+                // Buscar colores asignados para esta talla-género
+                // Las claves pueden ser: "dama-S", "dama-Letra-S", o directamente como objeto con genero/talla
+                let asignacion = null;
+                
+                console.log(`[TallasBuilder] Buscando colores para genero="${genero}", talla="${talla}"`);
+                
+                // Método 1: Buscar por objeto con genero y talla
+                const claveBuscada = Object.keys(asignacionesColores).find(clave => {
+                    const asignacion = asignacionesColores[clave];
+                    return asignacion && asignacion.genero && asignacion.genero.toLowerCase() === genero.toLowerCase() && asignacion.talla === talla;
+                });
+                
+                if (claveBuscada) {
+                    console.log(`[TallasBuilder]   ✅ Encontrado por Método 1 (objeto). Clave: "${claveBuscada}"`);
+                    asignacion = asignacionesColores[claveBuscada];
+                } else {
+                    console.log(`[TallasBuilder]   ⚠️ Método 1 no encontró`);
+                    // Método 2: Buscar por clave en formato "genero-tipo-talla" (ignorando tipo)
+                    const claveAlternativa = Object.keys(asignacionesColores).find(clave => {
+                        // Clave formato: "dama-Letra-S" o "dama-S"
+                        const partes = clave.split('-');
+                        if (partes.length >= 2) {
+                            const clavGenero = partes[0].toLowerCase();
+                            const claveTalla = partes[partes.length - 1]; // Última parte es siempre la talla
+                            return clavGenero === genero.toLowerCase() && claveTalla === talla;
+                        }
+                        return false;
+                    });
+                    
+                    if (claveAlternativa) {
+                        console.log(`[TallasBuilder]   ✅ Encontrado por Método 2 (clave). Clave: "${claveAlternativa}"`);
+                        // Si encontramos por clave, transformar a formato de asignacion si no lo está ya
+                        const valor = asignacionesColores[claveAlternativa];
+                        if (valor.genero) {
+                            asignacion = valor; // Ya es un objeto asignacion válido
+                        } else {
+                            // Podría ser solo un array de colores, envolver en objeto
+                            asignacion = { genero, talla, colores: Array.isArray(valor) ? valor : [valor] };
+                        }
+                    } else {
+                        console.log(`[TallasBuilder]   ❌ No encontrado por Método 2`);
+                    }
+                }
+                
+                const coloresHTML = this._generarColoresHTML(asignacion);
+
                 return `
-                    <div style="background: ${colorFondo}; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; color: ${colorTexto}; font-weight: 600; border: 1px solid #cbd5e1; text-align: center; min-width: 60px;">
-                        <div>${talla}</div>
-                        <div style="font-size: 0.75rem; opacity: 0.8;">×${cantidad}</div>
+                    <div style="background: ${colorFondo}; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1; min-width: 100px;">
+                        <div style="color: ${colorTexto}; font-weight: 600; font-size: 0.9rem; text-align: center;">
+                            <div>${talla}</div>
+                            <div style="font-size: 0.75rem; opacity: 0.8;">×${cantidad}</div>
+                        </div>
+                        ${coloresHTML}
                     </div>
                 `;
             }).join('');
@@ -95,7 +150,34 @@ class TallasBuilder {
         console.log('[TallasBuilder.construir] RETORNANDO HTML CON TALLAS:', htmlCompleto.substring(0, 100) + '...');
         return htmlCompleto;
     }
+
+    /**
+     * Generar HTML de colores asignados a una talla
+     * @private
+     */
+    static _generarColoresHTML(asignacion) {
+        if (!asignacion || !asignacion.colores || asignacion.colores.length === 0) {
+            return '';
+        }
+
+        const coloresItems = asignacion.colores.map(color => {
+            const colorName = color.nombre || color.color || 'Sin nombre';
+            const cantidadColor = color.cantidad || 0;
+            return `
+                <div style="font-size: 0.7rem; color: #475569; margin-top: 0.35rem; padding: 0.25rem 0.5rem; background: rgba(255,255,255,0.6); border-radius: 3px; display: flex; align-items: center; gap: 0.3rem;">
+                    <span style="display: inline-block; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%;"></span>
+                    <span style="flex: 1;">${colorName}</span>
+                    <span style="color: #6b7280; font-weight: 500;">×${cantidadColor}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div style="margin-top: 0.5rem; border-top: 1px solid rgba(203, 213, 225, 0.3); padding-top: 0.35rem;">
+                ${coloresItems}
+            </div>
+        `;
+    }
 }
 
 window.TallasBuilder = TallasBuilder;
-

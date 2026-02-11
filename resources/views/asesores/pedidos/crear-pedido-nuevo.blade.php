@@ -284,20 +284,20 @@
     <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
     
     <!-- UTILIDADES para transformación de datos -->
-    <script src="{{ asset('js/prendas/utils/prenda-data-transformer.js') }}"></script>
+    <script src="{{ asset('js/prendas/utils/prenda-data-transformer.js') }}?v={{ time() }}"></script>
     
     <!-- BUILDERS para construcción de secciones HTML -->
-    <script src="{{ asset('js/prendas/builders/variaciones-builder.js') }}"></script>
-    <script src="{{ asset('js/prendas/builders/tallas-builder.js') }}"></script>
-    <script src="{{ asset('js/prendas/builders/procesos-builder.js') }}"></script>
+    <script src="{{ asset('js/prendas/builders/variaciones-builder.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/prendas/builders/tallas-builder.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/prendas/builders/procesos-builder.js') }}?v={{ time() }}"></script>
     
     <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
-    <script src="{{ asset('js/componentes/services/image-converter-service.js') }}"></script>
-    <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}"></script>
-    <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}"></script>
+    <script src="{{ asset('js/componentes/services/image-converter-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ time() }}"></script>
     
     <!-- Componente tarjeta readonly (completo - funcional) -->
-    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}"></script>
+    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}?v={{ time() }}"></script>
     
     <!-- Modal de prendas - Constantes HTML (DEBE cargarse ANTES del modal principal) -->
     <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>

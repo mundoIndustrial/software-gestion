@@ -146,6 +146,7 @@
             cantidad_talla: normalizarTallas(item.cantidad_talla || {}),
             variaciones: item.variaciones || {},
             telas: normalizarTelas(item.telas || []),
+            asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {},  // ← AÑADIDO: Preservar colores por talla
             imagenes: normalizarImagenes(item.imagenes || [])
         };
     }

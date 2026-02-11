@@ -718,6 +718,7 @@ class PedidosProduccionController
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
+                'asignaciones_colores' => 'nullable|json',  // ✅ NUEVO: colores por talla
                 'procesos' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',

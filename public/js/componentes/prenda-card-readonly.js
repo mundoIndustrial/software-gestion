@@ -59,7 +59,7 @@ if (document.readyState === 'loading') {
 /**
  * Manejador de tarjetas - Delega a servicio centralizado
  * 
- * Después de generar y insertar una tarjeta en el DOM, inicializar event listeners
+ * Después de generar e insertar una tarjeta en el DOM, inicializar event listeners
  */
 function inicializarTarjetaReadOnly(tarjeta, prenda, indice, callbacks = {}) {
 
@@ -71,6 +71,60 @@ function inicializarTarjetaReadOnly(tarjeta, prenda, indice, callbacks = {}) {
     
     // Delegar toda la gestión de eventos al servicio
     window.PrendaCardHandlers.inicializar(tarjeta, prenda, indice, callbacks);
+    
+    // Agregar listener para actualizar tarjeta cuando las asignaciones cambien
+    agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice);
+}
+
+/**
+ * Agregar listener para actualizar tarjeta cuando cambian las asignaciones de colores
+ */
+function agregarListenerActualizacionAsignaciones(tarjeta, prenda, indice) {
+    console.log('[agregarListenerActualizacionAsignaciones]  Agregando listener para prenda', indice);
+    
+    const handleActualizacion = (event) => {
+        console.log('[agregarListenerActualizacionAsignaciones]  Evento disparado para prenda', event.detail?.prendaIndex);
+        
+        // Solo procesar si es para esta prenda
+        if (event.detail?.prendaIndex !== indice) {
+            return;
+        }
+        
+        // Reconstruir la sección de tallas
+        try {
+            console.log('[agregarListenerActualizacionAsignaciones]  Reconstruyendo tallas...');
+            
+            // Buscar la sección de tallas
+            const seccionTallas = tarjeta.querySelector('.tallas-y-cantidades-section');
+            if (!seccionTallas) {
+                console.log('[agregarListenerActualizacionAsignaciones]  Sección de tallas no encontrada');
+                return;
+            }
+            
+            // Reconstruir usando TallasBuilder
+            if (window.TallasBuilder && prenda) {
+                // El prenda object tiene asignacionesColores actualizado por PrendaDataTransformer
+                // Recargar desde StateManager
+                prenda.asignacionesColores = (window.StateManager && window.StateManager.getAsignaciones()) || {};
+                
+                const htmlTallas = window.TallasBuilder.construir(prenda, indice);
+                
+                // Reemplazar solo la sección de tallas
+                seccionTallas.outerHTML = htmlTallas;
+                console.log('[agregarListenerActualizacionAsignaciones]  ✓ Sección de tallas actualizada');
+            }
+        } catch (error) {
+            console.error('[agregarListenerActualizacionAsignaciones]  Error:', error);
+        }
+    };
+    
+    // Agregar listener
+    document.addEventListener('asignacionesActualizadas', handleActualizacion);
+    
+    // Guardar referencia para poder remover el listener si es necesario
+    if (!tarjeta.__asignacionesListener) {
+        tarjeta.__asignacionesListener = handleActualizacion;
+    }
 }
 
 

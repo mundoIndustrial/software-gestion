@@ -597,6 +597,21 @@ window.ColoresPorTalla = (function() {
             UIRenderer.actualizarTablaAsignaciones();
             UIRenderer.actualizarResumenAsignaciones();
             
+            // Disparar evento para actualizar tarjeta de prenda-card-readonly si existe
+            const tarjetaPrenda = document.querySelector('.prenda-card-readonly');
+            if (tarjetaPrenda) {
+                const prendaIndex = tarjetaPrenda.getAttribute('data-prenda-index');
+                console.log('[guardarAsignacionColores]  Disparando evento de actualización para prenda', prendaIndex);
+                
+                const evento = new CustomEvent('asignacionesActualizadas', {
+                    detail: {
+                        asignaciones: StateManager.getAsignaciones(),
+                        prendaIndex: prendaIndex ? parseInt(prendaIndex) : null
+                    }
+                });
+                document.dispatchEvent(evento);
+            }
+            
             console.log('[guardarAsignacionColores]  Asignación guardada exitosamente');
             return true;
         } else {
@@ -625,8 +640,8 @@ window.ColoresPorTalla = (function() {
             return;
         }
         
-        // Obtener inputs de color y cantidad para cada talla
-        const inputsColor = document.querySelectorAll('[data-color-input]');
+        // Obtener inputs de color con la clase correcta que usa UIRenderer
+        const inputsColor = document.querySelectorAll('.color-input-wizard');
         console.log('[wizardGuardarAsignacion]  Inputs de color encontrados:', inputsColor.length);
         
         if (inputsColor.length === 0) {
@@ -635,53 +650,43 @@ window.ColoresPorTalla = (function() {
             return;
         }
         
-        // Procesar cada input de color
+        // Procesar cada input de color agrupando por talla
         const asignacionesAgrupadas = {};
         let totalUnidades = 0;
         
-        inputsColor.forEach((input, index) => {
-            const tallaInput = input.querySelector('[data-talla-nombre]');
-            const colorInputs = input.querySelectorAll('[data-color-input]');
-            
-            if (!tallaInput) {
-                console.warn(`[wizardGuardarAsignacion]  No se encontró input de talla en el input #${index}`);
-                return;
-            }
-            
-            const talla = tallaInput.dataset.tallaNombre;
+        inputsColor.forEach((colorInput, index) => {
+            // UIRenderer guarda la talla en dataset.talla
+            const talla = colorInput.dataset.talla;
             
             if (!talla) {
-                console.warn(`[wizardGuardarAsignacion]  Input de talla sin dataset.tallaNombre en input #${index}`);
+                console.warn(`[wizardGuardarAsignacion]  Input #${index} sin dataset.talla`);
                 return;
             }
             
-            // Procesar colores para esta talla
-            const colores = [];
-            colorInputs.forEach((colorInput, colorIndex) => {
-                const colorNombreInput = colorInput.querySelector('[data-color-nombre]');
-                const cantidadInput = colorInput.querySelector('[data-color-cantidad]');
-                
-                if (colorNombreInput && cantidadInput) {
-                    const color = colorNombreInput.value.trim();
-                    const cantidad = parseInt(cantidadInput.value) || 0;
-                    
-                    if (color && cantidad > 0) {
-                        colores.push({ color, cantidad });
-                        totalUnidades += cantidad;
-                    }
-                }
-            });
+            // Obtener el input de cantidad que está en la misma fila (hermano siguiente)
+            const fila = colorInput.parentElement;
+            const cantidadInput = fila ? fila.querySelector('.cantidad-input-wizard') : null;
             
-            if (colores.length > 0) {
-                asignacionesAgrupadas[talla] = colores;
-                console.log(`[wizardGuardarAsignacion]  Guardando: ${talla} con ${colores.length} colores`);
+            const color = colorInput.value.trim().toUpperCase();
+            const cantidad = cantidadInput ? parseInt(cantidadInput.value) || 0 : 0;
+            
+            if (color && cantidad > 0) {
+                // Inicializar array para esta talla si no existe
+                if (!asignacionesAgrupadas[talla]) {
+                    asignacionesAgrupadas[talla] = [];
+                }
+                
+                // Guardar con propiedad 'nombre' para ser consistente con UIRenderer
+                asignacionesAgrupadas[talla].push({ nombre: color, cantidad });
+                totalUnidades += cantidad;
+                console.log(`[wizardGuardarAsignacion]  Agregado: ${talla} - ${color} x${cantidad}`);
             }
         });
         
         console.log('[wizardGuardarAsignacion]  Asignaciones agrupadas:', asignacionesAgrupadas);
         
-        // Guardar en StateManager
-        const resultado = AsignacionManager.guardarAsignaciones(genero, tipo, telaDelWizard, asignacionesAgrupadas);
+        // Guardar en StateManager usando el método correcto para múltiples tallas
+        const resultado = AsignacionManager.guardarAsignacionesMultiples(genero, tallas, tipo, telaDelWizard, asignacionesAgrupadas);
         
         if (resultado) {
             console.log('[wizardGuardarAsignacion] Resultado:', resultado);
@@ -710,8 +715,27 @@ window.ColoresPorTalla = (function() {
             
             console.log('[wizardGuardarAsignacion]  FIN - Asignaciones guardadas y wizard reseteado');
             
-            // Cerrar vista de asignación
+            // Actualizar tarjeta de género con los colores asignados
+            console.log('[wizardGuardarAsignacion]  Actualizando tarjeta de género con colores...');
+            actualizarTarjetaGeneroConColores(genero);
+            
+            // Disparar evento para actualizar tarjeta de prenda-card-readonly si existe
             setTimeout(() => {
+                const tarjetaPrenda = document.querySelector('.prenda-card-readonly');
+                if (tarjetaPrenda) {
+                    const prendaIndex = tarjetaPrenda.getAttribute('data-prenda-index');
+                    console.log('[wizardGuardarAsignacion]  Disparando evento de actualización para prenda', prendaIndex);
+                    
+                    const evento = new CustomEvent('asignacionesActualizadas', {
+                        detail: {
+                            asignaciones: StateManager.getAsignaciones(),
+                            prendaIndex: prendaIndex ? parseInt(prendaIndex) : null
+                        }
+                    });
+                    document.dispatchEvent(evento);
+                }
+                
+                // Cerrar vista de asignación
                 toggleVistaAsignacion();
             }, 500);
             
@@ -742,6 +766,10 @@ window.ColoresPorTalla = (function() {
         if (resultado) {
             UIRenderer.actualizarTablaAsignaciones();
             UIRenderer.actualizarResumenAsignaciones();
+            // Actualizar la tarjeta de género cuando se elimina una asignación
+            actualizarTarjetaGeneroConColores(genero);
+            // Actualizar la tarjeta de prenda-card-readonly
+            actualizarTarjetaPrendaReadOnly();
         }
         return resultado;
     }
@@ -751,6 +779,172 @@ window.ColoresPorTalla = (function() {
      */
     function obtenerDatosAsignaciones() {
         return AsignacionManager.obtenerDatosAsignaciones();
+    }
+
+    /**
+     * Actualizar tarjeta de género con colores asignados
+     * Muestra los colores debajo de cada talla en la tarjeta del género
+     */
+    function actualizarTarjetaGeneroConColores(genero) {
+        console.log('[actualizarTarjetaGeneroConColores]  Actualizando tarjeta de', genero);
+        
+        const container = document.getElementById('tarjetas-generos-container');
+        if (!container) {
+            console.warn('[actualizarTarjetaGeneroConColores]  No se encontró contenedor de tarjetas');
+            return;
+        }
+        
+        // Encontrar la tarjeta del género
+        const tarjeta = container.querySelector(`[data-genero="${genero}"]`);
+        if (!tarjeta) {
+            console.warn('[actualizarTarjetaGeneroConColores]  No se encontró tarjeta para género:', genero);
+            return;
+        }
+        
+        // Obtener asignaciones del StateManager
+        const asignaciones = StateManager.getAsignaciones();
+        console.log('[actualizarTarjetaGeneroConColores]  Asignaciones totales:', asignaciones);
+        
+        // Encontrar el grid de cantidades
+        const gridCantidades = tarjeta.querySelector('[style*="grid-template-columns"]');
+        if (!gridCantidades) {
+            console.warn('[actualizarTarjetaGeneroConColores]  No se encontró grid de cantidades');
+            return;
+        }
+        
+        // Para cada itemDiv de talla en el grid
+        const itemsDivs = gridCantidades.querySelectorAll('div:has(> input[type="number"])');
+        console.log('[actualizarTarjetaGeneroConColores]  Items de talla encontrados:', itemsDivs.length);
+        
+        itemsDivs.forEach((itemDiv) => {
+            // Obtener el label de talla
+            const label = itemDiv.querySelector('label');
+            if (!label) return;
+            
+            const talla = label.textContent.trim();
+            console.log('[actualizarTarjetaGeneroConColores]  Procesando talla:', talla);
+            
+            // Limpiar colores anteriores
+            const coloresAnteriores = itemDiv.querySelector('[data-colores-asignados]');
+            if (coloresAnteriores) {
+                coloresAnteriores.remove();
+            }
+            
+            // Buscar asignación para esta talla y género
+            const claveBuscada = Object.keys(asignaciones).find(clave => {
+                const asignacion = asignaciones[clave];
+                return asignacion.genero === genero && asignacion.talla === talla;
+            });
+            
+            if (claveBuscada) {
+                const asignacion = asignaciones[claveBuscada];
+                console.log('[actualizarTarjetaGeneroConColores]  Asignación encontrada para', talla, ':', asignacion);
+                
+                // Crear contenedor de colores
+                const coloresDiv = document.createElement('div');
+                coloresDiv.setAttribute('data-colores-asignados', 'true');
+                coloresDiv.style.cssText = `
+                    margin-top: 0.75rem;
+                    padding: 0.5rem;
+                    background: #f9fafb;
+                    border-radius: 4px;
+                    font-size: 0.75rem;
+                    border-left: 3px solid #0066cc;
+                `;
+                
+                // Crear título "Colores"
+                const tituloColores = document.createElement('div');
+                tituloColores.style.cssText = 'font-weight: 600; color: #374151; margin-bottom: 0.35rem;';
+                tituloColores.textContent = '🎨 Colores:';
+                coloresDiv.appendChild(tituloColores);
+                
+                // Agregar cada color
+                if (asignacion.colores && asignacion.colores.length > 0) {
+                    asignacion.colores.forEach((color) => {
+                        const colorItem = document.createElement('div');
+                        colorItem.style.cssText = 'color: #6b7280; margin: 0.25rem 0; display: flex; align-items: center; gap: 0.35rem;';
+                        
+                        const colorName = color.nombre || color.color || 'Sin nombre';
+                        const cantidad = color.cantidad || 0;
+                        
+                        colorItem.innerHTML = `
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #0066cc; border-radius: 50%;"></span>
+                            ${colorName} <span style="color: #9ca3af; font-weight: 500;">x${cantidad}</span>
+                        `;
+                        coloresDiv.appendChild(colorItem);
+                    });
+                } else {
+                    const sinColores = document.createElement('div');
+                    sinColores.style.cssText = 'color: #9ca3af; font-style: italic;';
+                    sinColores.textContent = 'Sin colores asignados';
+                    coloresDiv.appendChild(sinColores);
+                }
+                
+                // Agregar al itemDiv después del input
+                itemDiv.appendChild(coloresDiv);
+                console.log('[actualizarTarjetaGeneroConColores]  ✓ Colores agregados a', talla);
+            } else {
+                console.log('[actualizarTarjetaGeneroConColores]  No hay asignación para:', talla);
+            }
+        });
+        
+        console.log('[actualizarTarjetaGeneroConColores]  Tarjeta actualizada completamente');
+    }
+
+    /**
+     * Actualizar tarjeta de prenda-card-readonly
+     * Reconstruye la sección de tallas mostrando los colores asignados
+     */
+    function actualizarTarjetaPrendaReadOnly() {
+        console.log('[actualizarTarjetaPrendaReadOnly]  Iniciando actualización de tarjeta de prenda');
+        
+        try {
+            // Buscar la tarjeta de prenda-card-readonly visible
+            const tarjetaPrenda = document.querySelector('.prenda-card-readonly');
+            if (!tarjetaPrenda) {
+                console.log('[actualizarTarjetaPrendaReadOnly]  No hay tarjeta visible');
+                return;
+            }
+            
+            // Obtener el índice de la prenda
+            const prendaIndex = tarjetaPrenda.getAttribute('data-prenda-index');
+            console.log('[actualizarTarjetaPrendaReadOnly]  Índice de prenda:', prendaIndex);
+            
+            // Buscar la sección de tallas
+            const seccionTallas = tarjetaPrenda.querySelector('.tallas-y-cantidades-section');
+            if (!seccionTallas) {
+                console.log('[actualizarTarjetaPrendaReadOnly]  No se encontró sección de tallas');
+                return;
+            }
+            
+            // Obtener los datos actuales del StateManager (que ya contiene las asignaciones)
+            // Para esto necesitaremos acceso a los datos originales de la prenda
+            // Por ahora, simplemente reconstruimos el contenido del TallasBuilder
+            
+            // Si hay datos de prenda guardados, actualizar la sección de tallas
+            // Para esto podríamos usar PrendaCardService.generar() pero necesitaríamos la prenda original
+            // Una alternativa es actualizar solo la sección visible
+            
+            // Actualizar el contenido de la sección expandible
+            const seccionContent = seccionTallas.querySelector('.tallas-y-cantidades-content');
+            if (seccionContent && window.TallasBuilder) {
+                // Necesitamos los datos de prenda. Los obtendríamos del contexto que inicializó esta modal
+                // Por ahora, agregaremos un observador para que el TallasBuilder se reconstruya cuando se solicite
+                console.log('[actualizarTarjetaPrendaReadOnly]  Sección de contenido encontrada');
+                
+                // Disparar evento personalizado para que otros módulos sepan que las asignaciones cambiaron
+                const evento = new CustomEvent('asignacionesActualizadas', {
+                    detail: {
+                        asignaciones: StateManager.getAsignaciones(),
+                        prendaIndex: prendaIndex
+                    }
+                });
+                document.dispatchEvent(evento);
+                console.log('[actualizarTarjetaPrendaReadOnly]  Evento de actualización de asignaciones disparado');
+            }
+        } catch (error) {
+            console.error('[actualizarTarjetaPrendaReadOnly]  Error:', error);
+        }
     }
 
     /**
@@ -789,7 +983,8 @@ window.ColoresPorTalla = (function() {
         eliminarAsignacion,
         obtenerDatosAsignaciones,
         limpiarAsignaciones,
-        cargarAsignacionesPrevias
+        cargarAsignacionesPrevias,
+        actualizarTarjetaGeneroConColores
     };
 })();
 

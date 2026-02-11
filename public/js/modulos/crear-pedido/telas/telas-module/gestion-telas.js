@@ -124,6 +124,38 @@ window.agregarTelaNueva = async function() {
 };
 
 /**
+ * Función global única para confirmar eliminación de tela
+ */
+window.confirmarEliminacionTela = function(index) {
+    console.log('[confirmarEliminacionTela] 🗑️ Confirmando eliminación de tela en índice:', index);
+    
+    try {
+        const telas = window.telasCreacion;
+        if (!telas || index < 0 || index >= telas.length) {
+            console.warn('[confirmarEliminacionTela]  Índice inválido en confirmación:', index);
+            return;
+        }
+        
+        const telaAEliminar = telas[index];
+        console.log('[confirmarEliminacionTela]  Tela a eliminar definitivamente:', telaAEliminar);
+        
+        // Eliminar del array
+        window.telasCreacion.splice(index, 1);
+        
+        // Actualizar tabla
+        window.actualizarTablaTelas();
+        
+        // Actualizar contador
+        window.actualizarContadorTelas();
+        
+        console.log('[confirmarEliminacionTela]  Tela eliminada exitosamente. Quedan:', window.telasCreacion.length);
+        
+    } catch (error) {
+        console.error('[confirmarEliminacionTela]  Error al eliminar tela:', error);
+    }
+};
+
+/**
  * Eliminar tela con confirmación
  * @param {number} index - Índice de la tela a eliminar
  * @param {Event} event - Evento del click (opcional)
@@ -147,8 +179,15 @@ window.eliminarTela = function(index, event) {
         const telaAEliminar = telas[index];
         console.log('[eliminarTela] 📋 Tela a eliminar:', telaAEliminar);
         
+        // Cerrar cualquier modal existente primero
+        const modalExistente = document.querySelector('.modal-confirmacion');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+        
         // Crear modal de confirmación
         const modal = document.createElement('div');
+        modal.className = 'modal-confirmacion';
         modal.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
@@ -170,18 +209,33 @@ window.eliminarTela = function(index, event) {
                 <br><strong>Referencia:</strong> ${telaAEliminar.referencia || 'N/A'}
             </p>
             <div style="display: flex; gap: 1rem; justify-content: center;">
-                <button type="button" onclick="this.closest('.modal-confirmacion').remove()" style="background: #e5e7eb; color: #1f2937; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                <button type="button" onclick="confirmarEliminacionTela(${index})" style="background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Eliminar</button>
+                <button type="button" id="btn-cancelar-eliminar" style="background: #e5e7eb; color: #1f2937; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar" style="background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer;">Eliminar</button>
             </div>
         `;
         
-        modal.className = 'modal-confirmacion';
         modal.appendChild(contenido);
         document.body.appendChild(modal);
+        
+        // Configurar eventos de los botones
+        const btnCancelar = document.getElementById('btn-cancelar-eliminar');
+        const btnConfirmar = document.getElementById('btn-confirmar-eliminar');
+        
+        btnCancelar.addEventListener('click', () => {
+            console.log('[eliminarTela]  Cancelado por usuario');
+            modal.remove();
+        });
+        
+        btnConfirmar.addEventListener('click', () => {
+            console.log('[eliminarTela]  Confirmado por usuario');
+            window.confirmarEliminacionTela(index);
+            modal.remove();
+        });
         
         // Cerrar al hacer click fuera
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
+                console.log('[eliminarTela]  Cerrado al hacer click fuera');
                 modal.remove();
             }
         });
@@ -189,24 +243,14 @@ window.eliminarTela = function(index, event) {
         // Cerrar con Escape
         const cerrarConEsc = (e) => {
             if (e.key === 'Escape') {
+                console.log('[eliminarTela]  Cerrado con Escape');
                 modal.remove();
                 document.removeEventListener('keydown', cerrarConEsc);
             }
         };
         document.addEventListener('keydown', cerrarConEsc);
         
-        // Función para confirmar eliminación
-        window.confirmarEliminacionTela = function(index) {
-            modal.remove();
-            
-            // Eliminar del array
-            window.telasCreacion.splice(index, 1);
-            
-            // Actualizar tabla
-            window.actualizarTablaTelas();
-            
-            console.log('[eliminarTela]  Tela eliminada exitosamente');
-        };
+        console.log('[eliminarTela]  Modal de confirmación creado');
         
     } catch (error) {
         console.error('[eliminarTela]  Error al eliminar tela:', error);

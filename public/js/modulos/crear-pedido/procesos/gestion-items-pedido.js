@@ -633,7 +633,8 @@ class GestionItemsUI {
                         cantidad_talla: prendaData.cantidad_talla,
                         telas: prendaData.telas?.length || 0,
                         telasAgregadas: prendaData.telasAgregadas?.length || 0,
-                        contenido_telasAgregadas: prendaData.telasAgregadas
+                        contenido_telasAgregadas: prendaData.telasAgregadas,
+                        asignacionesColoresPorTalla: prendaData.asignacionesColoresPorTalla
                     });
                     
                     // Agregar prenda al orden
@@ -922,6 +923,16 @@ class GestionItemsUI {
         console.log('[mostrarModalExito] 🎬 INICIANDO');
         console.log('[mostrarModalExito] ¿Existe MODAL_EXITO_PEDIDO_HTML?', typeof MODAL_EXITO_PEDIDO_HTML);
         console.log('[mostrarModalExito] ¿datosPedidoCreado?', this.datosPedidoCreado);
+        
+        // LIMPIAR asignaciones de colores tras crear el pedido
+        console.log('[mostrarModalExito] 🧹 LIMPIANDO asignaciones de colores tras creación exitosa...');
+        if (typeof limpiarAsignacionesColores === 'function') {
+            limpiarAsignacionesColores();
+            console.log('[mostrarModalExito] ✓ Asignaciones limpiadas');
+        } else if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
+            window.StateManager.limpiarAsignaciones();
+            console.log('[mostrarModalExito] ✓ Asignaciones limpiadas (StateManager)');
+        }
         
         let modalElement = document.getElementById('modalExitoPedido');
         console.log('[mostrarModalExito] ¿modalElement existe?', !!modalElement);

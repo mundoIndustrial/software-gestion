@@ -1241,21 +1241,10 @@ function cerrarModalPrendaNueva() {
         console.log(` [cerrarModalPrendaNueva] Modal cerrado SINCRONAMENTE en ${tiempoTotalMs.toFixed(2)}ms`);
         console.log(` Si ves este mensaje en menos de 100ms, el cierre fue instantáneo`);
         
-        // PASO 6: Limpiar asignaciones de colores SIN BLOQUEAR (completamente asíncrono)
-        console.log('→ PASO 6: Programando limpieza asíncrona de asignaciones de colores...');
-        setTimeout(() => {
-            try {
-                if (typeof limpiarAsignacionesColores === 'function') {
-                    const inicioAsincronoTiempo = performance.now();
-                    limpiarAsignacionesColores();
-                    const tiempoAsincronoMs = performance.now() - inicioAsincronoTiempo;
-                    console.log(`✓ Limpieza asíncrona de colores completada en ${tiempoAsincronoMs.toFixed(2)}ms`);
-                }
-            } catch (error) {
-                console.error(' Error en limpieza asíncrona de colores:', error);
-            }
-        }, 50);
-        console.log('✓ PASO 6 completado (programado para ejecutarse después)');
+        // PASO 6: NO LIMPIAR ASIGNACIONES AQUÍ
+        // Las asignaciones deben persistir hasta que el pedido se cree completamente
+        // Se limpiarán como último paso en crearPedido() después de enviar al backend
+        console.log('→ PASO 6: Asignaciones de colores mantienen datos para crearPedido()');
         
     } catch (error) {
         console.error(' [cerrarModalPrendaNueva] Error:', error);

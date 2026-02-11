@@ -66,6 +66,7 @@ class ItemFormCollector {
                 cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
+                asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, // ✅ Agregar asignaciones de colores
             };
             
             console.log('[ItemFormCollector]  baseItem CONSTRUIDO:', {
@@ -73,7 +74,9 @@ class ItemFormCollector {
                 nombre_prenda: baseItem.nombre_prenda,
                 cantidad_talla_keys: Object.keys(baseItem.cantidad_talla || {}).length,
                 telas_length: baseItem.telas?.length || 0,
-                telas_primer_elemento: baseItem.telas?.[0]
+                telas_primer_elemento: baseItem.telas?.[0],
+                asignacionesColoresPorTalla_keys: Object.keys(baseItem.asignacionesColoresPorTalla || {}).length,
+                asignacionesColoresPorTalla_data: baseItem.asignacionesColoresPorTalla
             });
             
             // DEBUG: Log detallado de telasAgregadas vs telas

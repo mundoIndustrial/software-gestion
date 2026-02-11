@@ -153,7 +153,17 @@ class PedidoWebService
 
         // Crear tallas
         if (isset($itemData['cantidad_talla']) && is_array($itemData['cantidad_talla'])) {
-            $this->crearTallasPrenda($prenda, $itemData['cantidad_talla']);
+            $asignacionesColores = $itemData['asignacionesColoresPorTalla'] ?? [];
+            
+            // DIAGNÓSTICO: Verificar asignaciones recibidas
+            \Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Asignaciones en crearTallasPrenda:', [
+                'asignacionesColores_exists' => isset($itemData['asignacionesColoresPorTalla']),
+                'asignacionesColores_count' => count($asignacionesColores),
+                'asignacionesColores_keys' => array_keys($asignacionesColores),
+                'asignacionesColores_data' => $asignacionesColores,
+            ]);
+            
+            $this->crearTallasPrenda($prenda, $itemData['cantidad_talla'], $asignacionesColores);
         }
 
         // Crear variantes
@@ -210,13 +220,17 @@ class PedidoWebService
 
     /**
      * Crear tallas para una prenda
+     * 
+     * Ahora también procesa asignacionesColoresPorTalla para guardar tela y colores
      */
-    private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla): void
+    private function crearTallasPrenda(PrendaPedido $prenda, array $cantidadTalla, array $asignacionesColores = []): void
     {
         // cantidadTalla puede ser:
         // 1. Normal: { DAMA: {S: 10, M: 20}, CABALLERO: {...} }
         // 2. Sobremedida: { SOBREMEDIDA: {CABALLERO: 100, DAMA: 50} }
         // 3. Mixta: { DAMA: {S: 10}, SOBREMEDIDA: {CABALLERO: 100} }
+        
+        // asignacionesColores estructura: { "dama-Letra-S": { genero, tela, colores: [...] }, ... }
         
         foreach ($cantidadTalla as $generoOEspecial => $contenido) {
             if (!is_array($contenido) || empty($contenido)) {
@@ -253,12 +267,110 @@ class PedidoWebService
                 
                 foreach ($contenido as $talla => $cantidad) {
                     if ($cantidad > 0) {
-                        PrendaPedidoTalla::create([
+                        // Construir posibles claves para buscar en asignacionesColores
+                        $generoNormalizado = strtolower(trim($generoOEspecial));
+                        $tallaNormalizada = trim((string) $talla);
+                        
+                        // Las claves pueden ser:
+                        // 1. "genero-Letra-talla" (con tipo)
+                        // 2. "genero-talla" (sin tipo)
+                        // 3. Buscar por objeto con propiedades genero y talla
+                        
+                        $telaGuardar = null;
+                        $claveEncontrada = null;
+                        
+                        // Método 1: Buscar por clave exacta con tipos comunes
+                        $posiblesClaves = [
+                            "{$generoNormalizado}-Letra-{$tallaNormalizada}",  // Con tipo Letra
+                            "{$generoNormalizado}-Número-{$tallaNormalizada}",  // Con tipo Número
+                            "{$generoNormalizado}-{$tallaNormalizada}",  // Sin tipo
+                        ];
+                        
+                        $claveEncontrada = null;
+                        foreach ($posiblesClaves as $clave) {
+                            if (isset($asignacionesColores[$clave])) {
+                                $claveEncontrada = $clave;
+                                break;
+                            }
+                        }
+                        
+                        // Método 2: Si no encontró por clave, buscar por objeto con propiedades genero/talla
+                        if (!$claveEncontrada) {
+                            foreach ($asignacionesColores as $clave => $asignacion) {
+                                if (is_array($asignacion) && 
+                                    isset($asignacion['genero']) && 
+                                    isset($asignacion['talla']) &&
+                                    strtolower(trim($asignacion['genero'])) === $generoNormalizado &&
+                                    trim((string)$asignacion['talla']) === $tallaNormalizada) {
+                                    $claveEncontrada = $clave;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Si encontramos la asignación, extraer tela
+                        if ($claveEncontrada && isset($asignacionesColores[$claveEncontrada])) {
+                            $asignacion = $asignacionesColores[$claveEncontrada];
+                            $telaGuardar = $asignacion['tela'] ?? null;
+                            
+                            Log::info('[PedidoWebService] Asignación de colores encontrada', [
+                                'clave_buscada' => $claveEncontrada,
+                                'tela' => $telaGuardar,
+                                'colores' => $asignacion['colores'] ?? [],
+                            ]);
+                        }
+                        
+                        // ✅ CREAR TALLA (colores guardan en tabla relacional)
+                        $prendaPedidoTalla = PrendaPedidoTalla::create([
                             'prenda_pedido_id' => $prenda->id,
                             'genero' => strtoupper($generoOEspecial),
                             'talla' => $talla,
                             'cantidad' => (int)$cantidad,
                         ]);
+                        
+                        // ✅ NUEVO: If we have color assignments, save them to the relational table
+                        if ($claveEncontrada && isset($asignacionesColores[$claveEncontrada])) {
+                            $asignacion = $asignacionesColores[$claveEncontrada];
+                            
+                            // Buscar tela_id en tabla telas_prenda usando TelaPrenda model
+                            $telaId = null;
+                            if ($telaGuardar) {
+                                $telaRecord = \App\Models\TelaPrenda::where('nombre', $telaGuardar)->first();
+                                $telaId = $telaRecord?->id;
+                            }
+                            
+                            // Process each color in the assignment
+                            if (isset($asignacion['colores']) && is_array($asignacion['colores'])) {
+                                foreach ($asignacion['colores'] as $colorItem) {
+                                    $colorNombre = $colorItem['nombre'] ?? null;
+                                    $colorCantidad = $colorItem['cantidad'] ?? 1;
+                                    
+                                    if ($colorNombre) {
+                                        // Buscar color_id en tabla colores_prenda usando ColorPrenda model
+                                        $colorId = null;
+                                        $colorRecord = \App\Models\ColorPrenda::where('nombre', $colorNombre)->first();
+                                        $colorId = $colorRecord?->id;
+                                        
+                                        $prendaPedidoTalla->coloresAsignados()->create([
+                                            'tela_id' => $telaId,
+                                            'tela_nombre' => $telaGuardar,
+                                            'color_id' => $colorId,
+                                            'color_nombre' => $colorNombre,
+                                            'cantidad' => (int)$colorCantidad,
+                                        ]);
+                                        
+                                        Log::info('[PedidoWebService] Color guardado en tabla relacional', [
+                                            'talla_id' => $prendaPedidoTalla->id,
+                                            'tela_id' => $telaId,
+                                            'tela_nombre' => $telaGuardar,
+                                            'color_id' => $colorId,
+                                            'color_nombre' => $colorNombre,
+                                            'cantidad' => $colorCantidad,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -267,6 +379,7 @@ class PedidoWebService
         Log::info('[PedidoWebService] Tallas creadas', [
             'prenda_id' => $prenda->id,
             'cantidad_generos' => count($cantidadTalla),
+            'asignaciones_procesadas' => count($asignacionesColores),
         ]);
     }
 

@@ -67,6 +67,33 @@ class PrendaDataTransformer {
         console.log('[PrendaDataTransformer]   - Variantes:', prendaRaw.variantes || {});
         console.log('[PrendaDataTransformer]   - Procesos:', prendaRaw.procesos || {});
 
+        // Obtener asignaciones de colores desde la prenda o desde StateManager
+        let asignacionesColores = {};
+        
+        console.log('[PrendaDataTransformer]   - prendaRaw.asignacionesColoresPorTalla:', prendaRaw.asignacionesColoresPorTalla);
+        console.log('[PrendaDataTransformer]   - Keys en asignacionesColoresPorTalla:', prendaRaw.asignacionesColoresPorTalla ? Object.keys(prendaRaw.asignacionesColoresPorTalla) : 'N/A');
+        
+        // PRIMERO: Intentar obtener de prendaRaw.asignacionesColoresPorTalla (datos guardados en la prenda)
+        if (prendaRaw.asignacionesColoresPorTalla && Object.keys(prendaRaw.asignacionesColoresPorTalla).length > 0) {
+            console.log('[PrendaDataTransformer] ✅ Asignaciones encontradas en prendaRaw (PRIORIDAD):', prendaRaw.asignacionesColoresPorTalla);
+            asignacionesColores = prendaRaw.asignacionesColoresPorTalla;
+        } 
+        // SEGUNDO: Intentar obtener del StateManager (para prendas desde BD)
+        else if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
+            const asignacionesStateManager = window.StateManager.getAsignaciones() || {};
+            console.log('[PrendaDataTransformer]   - Intentando StateManager, cantidad:', Object.keys(asignacionesStateManager).length);
+            if (Object.keys(asignacionesStateManager).length > 0) {
+                console.log('[PrendaDataTransformer] ⚠️ Usando asignaciones desde StateManager (fallback):', asignacionesStateManager);
+                asignacionesColores = asignacionesStateManager;
+            } else {
+                console.log('[PrendaDataTransformer]   - StateManager está vacío');
+            }
+        } else {
+            console.log('[PrendaDataTransformer]   - StateManager no disponible');
+        }
+        
+        console.log('[PrendaDataTransformer] 🎨 RESULTADO FINAL de asignacionesColores:', asignacionesColores);
+
         return {
             // Identidad
             id: prendaRaw.id || null,
@@ -91,6 +118,9 @@ class PrendaDataTransformer {
             tallas: prendaRaw.tallas || prendaRaw.tallas_estructura || {},
             generosConTallas: generosConTallas,
             cantidadesPorTalla: cantidadesPorTalla,
+
+            // Asignaciones de colores por talla-género
+            asignacionesColores: asignacionesColores,
 
             // Variantes/Variaciones
             variantes: prendaRaw.variantes || {},

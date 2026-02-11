@@ -120,6 +120,36 @@ class PrendaFormCollector {
                 return copia;
             };
             
+            // IMPORTANTE: Obtener tallas desde window.tallasRelacionales O desde StateManager (si viene del wizard)
+            let tallasParaGuardar = window.tallasRelacionales || {};
+            
+            // Si window.tallasRelacionales está vacío pero hay datos en StateManager, usarlos
+            const hasWindowTallas = Object.keys(tallasParaGuardar).some(genero => Object.keys(tallasParaGuardar[genero] || {}).length > 0);
+            
+            if (!hasWindowTallas && window.StateManager && window.StateManager.getAsignaciones) {
+                console.log('[prenda-form-collector]  window.tallasRelacionales está vacío, recuperando de StateManager...');
+                
+                const asignaciones = window.StateManager.getAsignaciones();
+                tallasParaGuardar = {};
+                
+                // Convertir asignaciones a formato cantidad_talla
+                Object.values(asignaciones).forEach(asignacion => {
+                    const genero = asignacion.genero || 'UNISEX';
+                    if (!tallasParaGuardar[genero]) {
+                        tallasParaGuardar[genero] = {};
+                    }
+                    
+                    // Sumar cantidades de colores para esta talla
+                    const totalCantidad = (asignacion.colores || []).reduce((sum, color) => sum + (color.cantidad || 0), 0);
+                    
+                    if (totalCantidad > 0) {
+                        tallasParaGuardar[genero][asignacion.talla] = totalCantidad;
+                    }
+                });
+                
+                console.log('[prenda-form-collector]  Tallas recuperadas de StateManager:', tallasParaGuardar);
+            }
+
             const prendaData = {
                 tipo: 'prenda_nueva',
                 nombre_prenda: nombre,
@@ -133,7 +163,7 @@ class PrendaFormCollector {
                 procesos: copiarProcesos(window.procesosSeleccionados),
                 // Estructura relacional: { DAMA: {S: 5}, CABALLERO: {M: 3} }
                 //  COPIA PROFUNDA para evitar que se vacíe cuando se limpie el modal
-                cantidad_talla: copiarTallasRelacionales(window.tallasRelacionales || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
+                cantidad_talla: copiarTallasRelacionales(tallasParaGuardar || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
                 variantes: {}
             };
 
@@ -367,17 +397,42 @@ class PrendaFormCollector {
             // 6. ASIGNACIONES DE COLORES POR TALLA
             // ============================================
             // Recolectar asignaciones de colores-talla definidas en el módulo de colores-por-talla
+            let asignacionesColores = {};
+            
+            // DIAGNÓSTICO: Verificar qué está disponible
+            console.log('[prenda-form-collector] 🔍 DIAGNÓSTICO de asignaciones:');
+            console.log('[prenda-form-collector]   - window.ColoresPorTalla existe?', !!window.ColoresPorTalla);
+            console.log('[prenda-form-collector]   - window.ColoresPorTalla.obtenerDatosAsignaciones existe?', 
+                window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function');
+            console.log('[prenda-form-collector]   - window.StateManager existe?', !!window.StateManager);
+            console.log('[prenda-form-collector]   - window.StateManager.getAsignaciones existe?', 
+                window.StateManager && typeof window.StateManager.getAsignaciones === 'function');
+            
             if (window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
-                prendaData.asignacionesColoresPorTalla = window.ColoresPorTalla.obtenerDatosAsignaciones();
-                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla:', prendaData.asignacionesColoresPorTalla);
+                asignacionesColores = window.ColoresPorTalla.obtenerDatosAsignaciones();
+                console.log('[prenda-form-collector] 📋 Asignaciones obtenidas de ColoresPorTalla:', asignacionesColores);
+                console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
+                console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
             } else if (typeof obtenerDatosAsignacionesColores === 'function') {
                 // Compatibilidad con la API antigua
-                prendaData.asignacionesColoresPorTalla = obtenerDatosAsignacionesColores();
-                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla (API antigua):', prendaData.asignacionesColoresPorTalla);
+                asignacionesColores = obtenerDatosAsignacionesColores();
+                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla (API antigua):', asignacionesColores);
             } else {
-                prendaData.asignacionesColoresPorTalla = {};
-                console.warn('[prenda-form-collector]  Función obtenerDatosAsignaciones no disponible');
+                // Si no hay función disponible, intentar obtener del StateManager
+                if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
+                    asignacionesColores = window.StateManager.getAsignaciones();
+                    console.log('[prenda-form-collector] 📋 Asignaciones de colores recuperadas de StateManager:');
+                    console.log('[prenda-form-collector]   - Datos:', asignacionesColores);
+                    console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
+                    console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
+                } else {
+                    asignacionesColores = {};
+                    console.warn('[prenda-form-collector] ⚠️ Función obtenerDatosAsignaciones no disponible y StateManager sin datos');
+                }
             }
+            
+            prendaData.asignacionesColoresPorTalla = asignacionesColores;
+            console.log('[prenda-form-collector] ✅ prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
