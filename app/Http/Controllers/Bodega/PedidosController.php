@@ -12,7 +12,13 @@ use App\Application\Bodega\Services\BodegaNotaService;
 use App\Application\Bodega\Services\BodegaAuditoriaService;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
-use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Application\Bodega\CQRS\CQRSManager;
+use App\Application\Bodega\CQRS\Commands\EntregarPedidoCommand;
+use App\Application\Bodega\CQRS\Commands\ActualizarEstadoPedidoCommand;
+use App\Application\Bodega\CQRS\Queries\ObtenerPedidosPorAreaQuery;
+use App\Application\Bodega\CQRS\Queries\ObtenerEstadisticasPedidosQuery;
+use App\Domain\Bodega\ValueObjects\AreaBodega;
+use App\Domain\Bodega\ValueObjects\EstadoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -27,6 +33,7 @@ class PedidosController extends Controller
         private BodegaRoleService $roleService,
         private BodegaNotaService $notaService,
         private BodegaAuditoriaService $auditoriaService,
+        private CQRSManager $cqrsManager,
     ) {}
 
     /**
@@ -95,209 +102,120 @@ class PedidosController extends Controller
     }
 
     /**
-     * Mostrar pedidos pendientes de Costura
+     * Mostrar pedidos pendientes de Costura usando CQRS
      */
     public function pendienteCostura(Request $request)
     {
-        // Obtener usuario y roles
-        $usuario = auth()->user();
-        $rolesDelUsuario = $usuario->getRoleNames()->toArray();
-        
-        // Determinar áreas permitidas - solo Costura
-        $areasPermitidas = ['Costura'];
-        
-        // Estados permitidos
-        $estadosPermitidos = ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'ANULADA', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
-        
-        // Obtener TODOS los pedidos con estados permitidos
-        $todosLosPedidos = ReciboPrenda::with(['asesor'])
-            ->where(function($q) use ($estadosPermitidos) {
-                foreach($estadosPermitidos as $estado) {
-                    $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
-                }
-            })
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->get();
+        try {
+            // Crear Query con CQRS
+            $area = AreaBodega::costura();
+            $filtros = [
+                'cliente' => $request->query('cliente'),
+                'asesor' => $request->query('asesor'),
+                'numero_pedido' => $request->query('numero_pedido'),
+                'solo_retrasados' => $request->boolean('retrasados', false)
+            ];
 
-        // Filtrar por áreas permitidas (solo Costura)
-        $pedidosFiltradosPorRol = $todosLosPedidos->filter(function($item) use ($areasPermitidas) {
-            $bdDetalles = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)->get();
-            
-            if ($bdDetalles->isEmpty()) {
-                return false;
+            $query = new ObtenerPedidosPorAreaQuery(
+                $area,
+                $filtros,
+                $request->get('page', 1),
+                15
+            );
+
+            // Ejecutar Query usando CQRS Manager
+            $resultado = $this->cqrsManager->ask($query);
+
+            if (!$resultado['success']) {
+                return back()->with('error', $resultado['message']);
             }
-            
-            foreach ($bdDetalles as $detalle) {
-                if (in_array($detalle->area, $areasPermitidas)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        })->values();
 
-        // Obtener números de pedidos ÚNICOS
-        $numerosPedidosUnicos = $pedidosFiltradosPorRol->pluck('numero_pedido')->unique()->values();
-        $totalPedidos = $numerosPedidosUnicos->count();
+            return view('bodega.index-list', [
+                'pedidosPorPagina' => $resultado['pedidos'],
+                'totalPedidos' => $resultado['paginacion']['total'],
+                'paginaActual' => $resultado['paginacion']['pagina_actual'],
+                'porPagina' => $resultado['paginacion']['por_pagina'],
+                'search' => $request->query('search', ''),
+                'estadisticas' => $resultado['estadisticas'],
+                'area' => $resultado['area'],
+                'filtros_aplicados' => $resultado['filtros_aplicados'],
+                'paginacion_info' => $resultado['paginacion']
+            ]);
 
-        // Paginar
-        $paginaActual = $request->get('page', 1);
-        $porPagina = 15;
-        $offset = ($paginaActual - 1) * $porPagina;
-
-        $pedidosPaginados = $numerosPedidosUnicos->slice($offset, $porPagina);
-
-        // Obtener lista de pedidos para esta página
-        $pedidosPorPagina = [];
-        foreach ($pedidosPaginados as $numeroPedido) {
-            $pedidosDelNumero = $pedidosFiltradosPorRol->filter(fn($p) => $p->numero_pedido === $numeroPedido)->values();
-            if ($pedidosDelNumero->isNotEmpty()) {
-                $primerPedido = $pedidosDelNumero->first();
-                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-                
-                $pedidosPorPagina[] = [
-                    'id' => $primerPedido->id,
-                    'numero_pedido' => $numeroPedido,
-                    'cliente' => $primerPedido->cliente ?? 'N/A',
-                    'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? 'N/A',
-                    'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
-                    'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
-                    'cantidad_items' => $pedidosDelNumero->count(),
-                ];
-            }
+        } catch (\Exception $e) {
+            \Log::error('Error en pendienteCostura (CQRS): ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los pedidos de costura');
         }
-
-        $search = $request->query('search', '');
-
-        return view('bodega.index-list', [
-            'pedidosPorPagina' => $pedidosPorPagina,
-            'totalPedidos' => $totalPedidos,
-            'paginaActual' => $paginaActual,
-            'porPagina' => $porPagina,
-            'search' => $search,
-        ]);
     }
 
     /**
-     * Mostrar pedidos pendientes de EPP
+     * Mostrar pedidos pendientes de EPP usando CQRS
      */
     public function pendienteEpp(Request $request)
     {
-        // Obtener usuario y roles
-        $usuario = auth()->user();
-        $rolesDelUsuario = $usuario->getRoleNames()->toArray();
-        
-        // Determinar áreas permitidas - solo EPP
-        $areasPermitidas = ['EPP'];
-        
-        // Estados permitidos
-        $estadosPermitidos = ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'ANULADA', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
-        
-        // Obtener TODOS los pedidos con estados permitidos
-        $todosLosPedidos = ReciboPrenda::with(['asesor'])
-            ->where(function($q) use ($estadosPermitidos) {
-                foreach($estadosPermitidos as $estado) {
-                    $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);
-                }
-            })
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->get();
+        try {
+            // Crear Query con CQRS
+            $area = AreaBodega::epp();
+            $filtros = [
+                'cliente' => $request->query('cliente'),
+                'asesor' => $request->query('asesor'),
+                'numero_pedido' => $request->query('numero_pedido'),
+                'solo_retrasados' => $request->boolean('retrasados', false)
+            ];
 
-        // Filtrar por áreas permitidas (solo EPP)
-        $pedidosFiltradosPorRol = $todosLosPedidos->filter(function($item) use ($areasPermitidas) {
-            $bdDetalles = BodegaDetallesTalla::where('numero_pedido', $item->numero_pedido)->get();
-            
-            if ($bdDetalles->isEmpty()) {
-                return false;
+            $query = new ObtenerPedidosPorAreaQuery(
+                $area,
+                $filtros,
+                $request->get('page', 1),
+                15
+            );
+
+            // Ejecutar Query usando CQRS Manager
+            $resultado = $this->cqrsManager->ask($query);
+
+            if (!$resultado['success']) {
+                return back()->with('error', $resultado['message']);
             }
-            
-            foreach ($bdDetalles as $detalle) {
-                if (in_array($detalle->area, $areasPermitidas)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        })->values();
 
-        // Obtener números de pedidos ÚNICOS
-        $numerosPedidosUnicos = $pedidosFiltradosPorRol->pluck('numero_pedido')->unique()->values();
-        $totalPedidos = $numerosPedidosUnicos->count();
+            return view('bodega.index-list', [
+                'pedidosPorPagina' => $resultado['pedidos'],
+                'totalPedidos' => $resultado['paginacion']['total'],
+                'paginaActual' => $resultado['paginacion']['pagina_actual'],
+                'porPagina' => $resultado['paginacion']['por_pagina'],
+                'search' => $request->query('search', ''),
+                'estadisticas' => $resultado['estadisticas'],
+                'area' => $resultado['area'],
+                'filtros_aplicados' => $resultado['filtros_aplicados'],
+                'paginacion_info' => $resultado['paginacion']
+            ]);
 
-        // Paginar
-        $paginaActual = $request->get('page', 1);
-        $porPagina = 15;
-        $offset = ($paginaActual - 1) * $porPagina;
-
-        $pedidosPaginados = $numerosPedidosUnicos->slice($offset, $porPagina);
-
-        // Obtener lista de pedidos para esta página
-        $pedidosPorPagina = [];
-        foreach ($pedidosPaginados as $numeroPedido) {
-            $pedidosDelNumero = $pedidosFiltradosPorRol->filter(fn($p) => $p->numero_pedido === $numeroPedido)->values();
-            if ($pedidosDelNumero->isNotEmpty()) {
-                $primerPedido = $pedidosDelNumero->first();
-                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-                
-                $pedidosPorPagina[] = [
-                    'id' => $primerPedido->id,
-                    'numero_pedido' => $numeroPedido,
-                    'cliente' => $primerPedido->cliente ?? 'N/A',
-                    'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? 'N/A',
-                    'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
-                    'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
-                    'cantidad_items' => $pedidosDelNumero->count(),
-                ];
-            }
+        } catch (\Exception $e) {
+            \Log::error('Error en pendienteEpp (CQRS): ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los pedidos de EPP');
         }
-
-        $search = $request->query('search', '');
-
-        return view('bodega.index-list', [
-            'pedidosPorPagina' => $pedidosPorPagina,
-            'totalPedidos' => $totalPedidos,
-            'paginaActual' => $paginaActual,
-            'porPagina' => $porPagina,
-            'search' => $search,
-        ]);
     }
 
     /**
-     * Marcar pedido como entregado
+     * Marcar pedido como entregado usando CQRS
      */
     public function entregar(Request $request, $id): JsonResponse
     {
         try {
-            $reciboPrenda = ReciboPrenda::findOrFail($id);
-            $numeroPedido = $reciboPrenda->numero_pedido;
+            // Crear Command con CQRS
+            $command = new EntregarPedidoCommand(
+                $id,
+                $request->input('observaciones'),
+                auth()->id()
+            );
 
-            // Actualizar estado
-            $reciboPrenda->update([
-                'estado' => 'entregado',
-                'fecha_entrega_real' => Carbon::now(),
-            ]);
+            // Ejecutar Command usando CQRS Manager
+            $resultado = $this->cqrsManager->execute($command);
 
-            // Verificar si todos los artículos del pedido están entregados
-            $allDelivered = ReciboPrenda::where('numero_pedido', $numeroPedido)
-                ->where('estado', '!=', 'entregado')
-                ->doesntExist();
+            return response()->json($resultado);
 
-            $pedidoEstado = $allDelivered ? 'entregado' : 'pendiente';
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Pedido marcado como entregado correctamente',
-                'allDelivered' => $allDelivered,
-                'pedidoEstado' => $pedidoEstado,
-                'data' => [
-                    'id' => $reciboPrenda->id,
-                    'estado' => 'entregado',
-                    'fecha_entrega_real' => $reciboPrenda->fecha_entrega_real,
-                ]
-            ]);
         } catch (\Exception $e) {
+            \Log::error('Error en entregar (CQRS): ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al marcar como entregado: ' . $e->getMessage()
@@ -306,8 +224,132 @@ class PedidosController extends Controller
     }
 
     /**
-     * Actualizar observaciones
+     * Obtener estadísticas de pedidos usando CQRS
      */
+    public function estadisticas(Request $request): JsonResponse
+    {
+        try {
+            // Crear Query con CQRS
+            $query = new ObtenerEstadisticasPedidosQuery(
+                $request->input('areas'), // ['Costura', 'EPP', etc.]
+                $request->input('estados'), // ['ENTREGADO', 'EN EJECUCIÓN', etc.]
+                $request->input('fecha_desde') ? new \DateTime($request->input('fecha_desde')) : null,
+                $request->input('fecha_hasta') ? new \DateTime($request->input('fecha_hasta')) : null
+            );
+
+            // Ejecutar Query usando CQRS Manager
+            $resultado = $this->cqrsManager->ask($query);
+
+            return response()->json($resultado);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en estadisticas (CQRS): ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar estado de pedido usando CQRS
+     */
+    public function actualizarEstado(Request $request, $id): JsonResponse
+    {
+        try {
+            // Validar y crear Command con CQRS
+            $validated = $request->validate([
+                'estado' => 'required|string',
+                'motivo' => 'nullable|string|max:500',
+            ]);
+
+            $nuevoEstado = EstadoPedido::desdeString($validated['estado']);
+            
+            $command = new ActualizarEstadoPedidoCommand(
+                $id,
+                $nuevoEstado,
+                $validated['motivo'] ?? null,
+                auth()->id()
+            );
+
+            // Ejecutar Command usando CQRS Manager
+            $resultado = $this->cqrsManager->execute($command);
+
+            return response()->json($resultado);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error en actualizarEstado (CQRS): ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar estado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Limpiar cache de queries CQRS
+     */
+    public function limpiarCache(Request $request): JsonResponse
+    {
+        try {
+            $queryId = $request->input('query_id');
+            
+            if ($queryId) {
+                $this->cqrsManager->clearQueryCacheFor($queryId);
+                $message = "Cache limpiado para query: {$queryId}";
+            } else {
+                $this->cqrsManager->clearQueryCache();
+                $message = "Todo el cache de queries ha sido limpiado";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'limpiado_en' => now()->toDateTimeString()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en limpiarCache: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al limpiar cache: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener estadísticas del sistema CQRS
+     */
+    public function cqrsStats(): JsonResponse
+    {
+        try {
+            $stats = $this->cqrsManager->getStats();
+            
+            return response()->json([
+                'success' => true,
+                'stats' => $stats,
+                'generado_en' => now()->toDateTimeString(),
+                'version' => '1.0.0'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en cqrsStats: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas CQRS: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     public function actualizarObservaciones(Request $request): JsonResponse
     {
         try {
