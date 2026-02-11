@@ -38,6 +38,73 @@ function actualizarGeneroSeleccionado(checkbox) {
     console.log(`Géneros actualizados: ${generosIds.join(', ')} => IDs: [${generosIds.join(', ')}]`);
 }
 
+function actualizarTabsGeneroLetrasSinModo(container) {
+    const generoSelectors = container.querySelector('.talla-genero-selectores');
+    const botonesDiv = container.querySelector('.talla-botones-container');
+    if (!generoSelectors || !botonesDiv) return;
+
+    // Eliminar pestañas anteriores si existen
+    const tabsAnteriores = container.querySelector('.tabs-genero-container');
+    if (tabsAnteriores) {
+        tabsAnteriores.remove();
+    }
+
+    // Obtener géneros seleccionados
+    const checkboxesMarcados = generoSelectors.querySelectorAll('.talla-genero-checkbox:checked');
+
+    // Guardar el género activo para usarlo luego (cuando se escoja modo)
+    if (checkboxesMarcados.length === 1) {
+        container.dataset.generoActivoLetras = checkboxesMarcados[0].value;
+        return;
+    }
+
+    if (checkboxesMarcados.length === 0) {
+        delete container.dataset.generoActivoLetras;
+        return;
+    }
+
+    // Múltiples géneros: crear tabs
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'tabs-genero-container';
+    tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
+
+    const tabsData = [];
+
+    checkboxesMarcados.forEach((checkbox, index) => {
+        const genero = checkbox.value;
+        const esPrimero = index === 0;
+
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.textContent = genero === 'dama' ? '👩 DAMA' : '👨 CABALLERO';
+        tab.style.cssText = `padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid ${esPrimero ? '#0066cc' : 'white'}; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;`;
+        tab.className = 'tab-genero' + (esPrimero ? ' activo' : '');
+        tab.dataset.genero = genero;
+
+        tabsContainer.appendChild(tab);
+        tabsData.push({ tab, genero });
+
+        tab.onclick = function(e) {
+            e.preventDefault();
+
+            tabsData.forEach(({ tab: t }) => {
+                t.style.borderBottom = '3px solid white';
+                t.classList.remove('activo');
+            });
+            tab.style.borderBottom = '3px solid #0066cc';
+            tab.classList.add('activo');
+
+            container.dataset.generoActivoLetras = genero;
+        };
+    });
+
+    // Insertar pestañas antes del contenedor de botones
+    botonesDiv.parentElement.insertBefore(tabsContainer, botonesDiv);
+
+    // Activar el primero por defecto
+    tabsData[0].tab.click();
+}
+
 /**
  * Actualiza el selector de tallas basado en el tipo seleccionado
  */
@@ -124,6 +191,25 @@ function actualizarSelectTallas(select) {
         // LETRAS ahora muestra selector de género
         if (generoSelectors) {
             generoSelectors.style.display = 'block';
+        }
+
+        // Al cambiar géneros en LETRAS, generar tabs inmediatamente (sin depender del modo)
+        if (generoSelectors) {
+            const checkboxes = generoSelectors.querySelectorAll('.talla-genero-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox._handler = function() {
+                    actualizarTabsGeneroLetrasSinModo(container);
+
+                    // Si ya hay modo seleccionado, refrescar la UI del modo con el nuevo set de géneros
+                    if (modoSelect && modoSelect.value) {
+                        actualizarModoLetras(container, modoSelect.value);
+                    }
+                };
+                checkbox.addEventListener('change', checkbox._handler);
+            });
+
+            // Estado inicial (por si ya venían marcados por edición)
+            actualizarTabsGeneroLetrasSinModo(container);
         }
         
         // Mostrar selector de modo para LETRAS
