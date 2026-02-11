@@ -24,6 +24,40 @@
   </div>
 
   <div class="sidebar-content">
+    <!-- BODEGUERO: Menú simplificado solo Gestión de Bodega -->
+    @if(auth()->user()->hasRole('bodeguero'))
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
+           aria-label="Gestión de pedidos - Bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Pedidos</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+           aria-label="Pendiente Costura">
+          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
+          <span class="menu-label">Pendiente Costura</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
+           aria-label="Pendiente EPP">
+          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+          <span class="menu-label">Pendiente EPP</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    @else
+    <!-- OTROS ROLES: Menú completo -->
     <!-- Sección Principal -->
     <div class="menu-section">
       <span class="menu-section-title">Principal</span>
@@ -38,7 +72,6 @@
         </a>
       </li>
       @endif
-
       </ul>
     </div>
 
@@ -84,6 +117,7 @@
           </li>
         </ul>
       </li>
+      @endif
       </ul>
     </div>
 
@@ -153,7 +187,6 @@
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
-          @if(!auth()->user()->hasRole('bodeguero'))
           <li class="submenu-item">
             <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
                class="menu-link"
@@ -168,9 +201,6 @@
               <span class="menu-label">Costura</span>
             </a>
           </li>
-          @endif
-
-          @if(!auth()->user()->hasRole('cortador'))
           <li class="submenu-item">
             <a href="{{ route('vistas.index', ['tipo' => 'corte', 'origen' => 'bodega']) }}"
                class="menu-link"
@@ -185,19 +215,6 @@
               <span class="menu-label">Costura Bodega</span>
             </a>
           </li>
-          @endif
-
-          <!-- Módulo Bodega para Bodeguero -->
-          @if(auth()->user()->hasRole('bodeguero'))
-          <li class="submenu-item">
-            <a href="{{ route('gestion-bodega.pedidos') }}"
-               class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
-               aria-label="Gestión de pedidos - Bodega">
-              <span class="menu-label"> Gestión Pedidos</span>
-            </a>
-          </li>
-          @endif
-
           <li class="submenu-item">
             <a href="{{ route('vistas.control-calidad') }}"
                class="menu-link"
@@ -207,7 +224,6 @@
           </li>
         </ul>
       </li>
-      @endif
       </ul>
     </div>
 
@@ -304,6 +320,7 @@
       </li>
       </ul>
     </div>
+    @endif
     @endif
   </div>
 

@@ -48,6 +48,18 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::get('/pedidos', [PedidosController::class, 'index'])
         ->name('pedidos');
 
+    // Pendiente Costura
+    Route::get('/pendiente-costura', [PedidosController::class, 'pendienteCostura'])
+        ->name('pendientes-costura');
+
+    // Pendiente EPP
+    Route::get('/pendiente-epp', [PedidosController::class, 'pendienteEpp'])
+        ->name('pendientes-epp');
+
+    // Mostrar detalles de un pedido específico
+    Route::get('/pedidos/{id}', [PedidosController::class, 'show'])
+        ->name('pedidos-show');
+
     // Dashboard
     Route::get('/dashboard', [PedidosController::class, 'dashboard'])
         ->name('dashboard');
