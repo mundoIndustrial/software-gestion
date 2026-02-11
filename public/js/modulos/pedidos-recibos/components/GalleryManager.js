@@ -5,6 +5,40 @@
 
 export class GalleryManager {
     static _isOpening = false;
+    static _prevWrapperStyles = null;
+
+    static resetGaleria(modalManager) {
+        try {
+            const galeriaExistente = document.getElementById('galeria-modal-costura');
+            if (galeriaExistente) {
+                galeriaExistente.remove();
+            }
+
+            const wrapperNormal = document.getElementById('order-detail-modal-wrapper');
+            const wrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
+
+            const cardNormal = wrapperNormal ? wrapperNormal.querySelector('.order-detail-card') : null;
+            const cardLogo = wrapperLogo ? wrapperLogo.querySelector('.order-detail-card') : null;
+            if (cardNormal) cardNormal.style.display = 'block';
+            if (cardLogo) cardLogo.style.display = 'block';
+
+            if (wrapperNormal) GalleryManager._restaurarTamanioGaleria(wrapperNormal);
+            if (wrapperLogo) GalleryManager._restaurarTamanioGaleria(wrapperLogo);
+
+            const btnFactura = window.btnFacturaGlobal || document.getElementById('close-receipt-btn');
+            if (btnFactura) {
+                btnFactura.style.display = 'block';
+            }
+
+            GalleryManager.actualizarBotonesEstilo(false);
+
+            window.__logoDesignFiles = [];
+            window.__logoDesignSaved = [];
+            window.__logoDesignToDelete = new Set();
+        } catch (e) {
+            console.warn('[GalleryManager.resetGaleria] Error reseteando galería:', e);
+        }
+    }
     
     /**
      * Abre la galería con imágenes del recibo o de la prenda
@@ -27,7 +61,7 @@ export class GalleryManager {
         
         try {
             const state = modalManager.getState();
-            const { imagenesActuales, prendaPedidoId, prendaData } = state;
+            const { imagenesActuales, prendaPedidoId, prendaData, pedidoId, procesoPrendaDetalleId } = state;
             
             console.log('[GalleryManager.abrirGaleria] 🖼️ ABRIENDO GALERÍA');
             console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
@@ -62,16 +96,24 @@ export class GalleryManager {
             console.log(' Total imágenes a mostrar:', fotosParaMostrar.length);
             
             // La galería siempre se abre, incluso sin imágenes
-            const modalWrapper = modalManager.getModalWrapper();
-            if (!modalWrapper) {
-                return false;
+            const wrapperNormal = modalManager.getModalWrapper ? modalManager.getModalWrapper() : document.getElementById('order-detail-modal-wrapper');
+            const wrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
+            const modalWrapper = (wrapperLogo && window.getComputedStyle(wrapperLogo).display !== 'none')
+                ? wrapperLogo
+                : wrapperNormal;
+            if (!modalWrapper) return false;
+
+            const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+            const puedeAdjuntarDisenoLogo = esVistaVisualizadorLogo && window.__isDisenadorLogosRole === true;
+            if (puedeAdjuntarDisenoLogo) {
+                GalleryManager._aplicarTamanioGaleria(modalWrapper);
             }
 
             const card = modalWrapper.querySelector('.order-detail-card');
             if (card) card.style.display = 'none';
 
             let galeria = document.getElementById('galeria-modal-costura');
-            const container = modalManager.getModalContainer();
+            const container = modalWrapper.querySelector('.order-detail-modal-container');
 
             if (!galeria && container) {
                 galeria = document.createElement('div');
@@ -82,8 +124,8 @@ export class GalleryManager {
                     padding: 0;
                     display: flex;
                     flex-direction: column;
-                    min-height: 400px;
-                    max-height: 600px;
+                    min-height: 520px;
+                    max-height: 820px;
                     overflow-y: auto;
                     background: #ffffff;
                     border-radius: 12px;
@@ -132,7 +174,10 @@ export class GalleryManager {
                 }
                 
                 // Renderizar galería
-                this._renderizarGaleria(galeria, fotosParaMostrar);
+                this._renderizarGaleria(galeria, fotosParaMostrar, puedeAdjuntarDisenoLogo, {
+                    pedidoId,
+                    procesoPrendaDetalleId
+                });
             }
 
             return true; // Se mostró la galería custom
@@ -145,7 +190,18 @@ export class GalleryManager {
     /**
      * Renderiza la galería con HTML
      */
-    static _renderizarGaleria(galeria, fotos) {
+    static _renderizarGaleria(galeria, fotos, puedeAdjuntarDisenoLogo, uploadCtx = {}) {
+        const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+        const puedeGestionarDisenoLogo = (typeof puedeAdjuntarDisenoLogo === 'boolean')
+            ? puedeAdjuntarDisenoLogo
+            : (esVistaVisualizadorLogo && window.__isDisenadorLogosRole === true);
+
+        const puedeVerDisenoLogo = esVistaVisualizadorLogo && (
+            window.__isDisenadorLogosRole === true ||
+            window.__isBordadorRole === true ||
+            window.__isVisualizadorCotizacionesLogoRole === true
+        );
+        const esSoloLecturaDisenoLogo = puedeVerDisenoLogo && !puedeGestionarDisenoLogo;
         let html = `
             <div style="background: #ffffff; display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; border-radius: 12px; overflow: hidden;">
                 <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 16px 12px; margin: 0; border-radius: 12px 12px 0 0; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100;">
@@ -159,9 +215,392 @@ export class GalleryManager {
         } else {
             html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay fotos disponibles para este recibo</p>';
         }
+
+        if (puedeVerDisenoLogo) {
+            const titulo = esSoloLecturaDisenoLogo ? 'DISEÑOS DE LOGO' : 'ADJUNTAR DISEÑO DE LOGO';
+            html += `
+                <div style="margin-top: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
+                    <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 10px;">${titulo}</div>
+                    ${esSoloLecturaDisenoLogo ? '' : `
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <input id="logo-design-upload-input" type="file" accept="image/*" multiple style="flex: 1; min-width: 240px;" />
+                        <div id="logo-design-upload-hint" style="font-size: 0.85rem; color: #475569;">Máximo 3 imágenes</div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-end;">
+                        <button id="logo-design-upload-save" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">Guardar cambios</button>
+                    </div>
+                    `}
+                    <div id="logo-design-upload-error" style="display:none; margin-top: 8px; font-size: 0.85rem; color: #dc2626; font-weight: 700;"></div>
+                    <div id="logo-design-upload-preview" style="margin-top: 12px; display: flex; flex-direction: row; gap: 10px; overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; align-items: center;"></div>
+                </div>
+            `;
+        }
         
         html += '</div></div>';
         galeria.innerHTML = html;
+
+        if (puedeVerDisenoLogo) {
+            const input = galeria.querySelector('#logo-design-upload-input');
+            const preview = galeria.querySelector('#logo-design-upload-preview');
+            const error = galeria.querySelector('#logo-design-upload-error');
+            const btnSave = galeria.querySelector('#logo-design-upload-save');
+            const modoSoloLectura = esSoloLecturaDisenoLogo;
+            if (preview && error) {
+                const pedidoId = uploadCtx?.pedidoId;
+                const procesoPrendaDetalleId = uploadCtx?.procesoPrendaDetalleId;
+
+                const getCsrf = () => {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    return meta ? meta.getAttribute('content') : '';
+                };
+
+                const fetchExistentes = async () => {
+                    if (!pedidoId || !procesoPrendaDetalleId) {
+                        return [];
+                    }
+                    const params = new URLSearchParams({
+                        pedido_id: String(pedidoId),
+                        proceso_prenda_detalle_id: String(procesoPrendaDetalleId)
+                    });
+                    const response = await fetch(`/visualizador-logo/pedidos-logo/disenos?${params.toString()}`, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const json = await response.json().catch(() => ({}));
+                    if (!response.ok || json.success === false) {
+                        const msg = json?.message || 'Error al cargar diseños guardados.';
+                        throw new Error(msg);
+                    }
+                    const items = json?.data?.items;
+                    return Array.isArray(items) ? items : [];
+                };
+
+                const eliminarDiseno = async (disenoId) => {
+                    if (!pedidoId || !procesoPrendaDetalleId) {
+                        throw new Error('No se encontró el contexto del recibo (pedido/proceso) para eliminar diseños.');
+                    }
+                    const response = await fetch(`/visualizador-logo/pedidos-logo/disenos/${disenoId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': getCsrf(),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pedido_id: pedidoId,
+                            proceso_prenda_detalle_id: procesoPrendaDetalleId
+                        })
+                    });
+
+                    const json = await response.json().catch(() => ({}));
+                    if (!response.ok || json.success === false) {
+                        const msg = json?.message || 'Error al eliminar diseño.';
+                        throw new Error(msg);
+                    }
+                    return json;
+                };
+
+                const subirDisenos = async (files) => {
+                    if (!pedidoId || !procesoPrendaDetalleId) {
+                        throw new Error('No se encontró el contexto del recibo (pedido/proceso) para subir diseños.');
+                    }
+
+                    const form = new FormData();
+                    form.append('pedido_id', String(pedidoId));
+                    form.append('proceso_prenda_detalle_id', String(procesoPrendaDetalleId));
+                    files.forEach((f) => form.append('images[]', f));
+
+                    const response = await fetch('/visualizador-logo/pedidos-logo/disenos', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': getCsrf(),
+                            'Accept': 'application/json'
+                        },
+                        body: form
+                    });
+
+                    const json = await response.json().catch(() => ({}));
+                    if (!response.ok || json.success === false) {
+                        const msg = json?.message || 'Error al subir diseños.';
+                        throw new Error(msg);
+                    }
+                    return json;
+                };
+
+                const syncInputState = () => {
+                    const nuevos = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                    const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
+                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
+
+                    const guardadosActivos = guardados.filter((it) => !toDelete.has(String(it.id)));
+                    const totalSeleccionado = guardadosActivos.length + nuevos.length;
+
+                    const noHaySlots = totalSeleccionado >= 3;
+                    if (input) {
+                        input.disabled = noHaySlots || modoSoloLectura;
+                        input.style.opacity = (noHaySlots || modoSoloLectura) ? '0.6' : '1';
+                        input.style.cursor = (noHaySlots || modoSoloLectura) ? 'not-allowed' : 'pointer';
+                    }
+
+                    if (btnSave) {
+                        const hasChanges = !modoSoloLectura && (nuevos.length > 0 || toDelete.size > 0);
+                        btnSave.disabled = !hasChanges;
+                        btnSave.style.opacity = hasChanges ? '1' : '0.6';
+                        btnSave.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
+                    }
+
+                    if (noHaySlots && error.textContent === '') {
+                        error.textContent = 'Ya adjuntaste 3 imágenes. Elimina alguna para adjuntar otra.';
+                        error.style.display = 'block';
+                    }
+
+                    if (!noHaySlots && error.textContent === 'Ya adjuntaste 3 imágenes. Elimina alguna para adjuntar otra.') {
+                        error.textContent = '';
+                        error.style.display = 'none';
+                    }
+                };
+
+                const renderPreview = () => {
+                    const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
+                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
+                    const selected = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                    preview.innerHTML = '';
+
+                    const abrirFullscreen = (url) => {
+                        const fotosJSON = JSON.stringify([url]);
+                        if (typeof window.abrirModalImagenProcesoGrande === 'function') {
+                            window.abrirModalImagenProcesoGrande(0, fotosJSON);
+                        } else {
+                            // Fallback: llamar directamente al método estático si existe
+                            if (typeof GalleryManager.abrirModalImagenProcesoGrande === 'function') {
+                                GalleryManager.abrirModalImagenProcesoGrande(0, fotosJSON);
+                            }
+                        }
+                    };
+
+                    // Render: guardados primero
+                    guardados.forEach((item) => {
+                        const itemId = String(item.id);
+                        const marcado = !modoSoloLectura && toDelete.has(itemId);
+
+                        const wrap = document.createElement('div');
+                        wrap.style.cssText = 'position: relative; width: 96px; height: 96px; flex: 0 0 auto; border: 2px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: white; display:flex; align-items:center; justify-content:center;';
+                        if (marcado) {
+                            wrap.style.opacity = '0.45';
+                            wrap.style.borderColor = '#dc2626';
+                        }
+
+                        const img = document.createElement('img');
+                        img.src = item.url;
+                        img.alt = `Diseño ${item.id}`;
+                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display:block;';
+
+                        // Doble click para ver en fullscreen
+                        img.addEventListener('dblclick', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            abrirFullscreen(item.url);
+                        });
+
+                        if (!modoSoloLectura) {
+                            const btnRemove = document.createElement('button');
+                            btnRemove.type = 'button';
+                            btnRemove.textContent = '×';
+                            btnRemove.title = marcado ? 'Deshacer eliminación' : 'Eliminar';
+                            btnRemove.style.cssText = 'position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:999px; border:none; background: rgba(220,38,38,0.95); color:white; font-weight:900; line-height:22px; text-align:center; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);';
+                            btnRemove.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const set = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
+                                if (set.has(itemId)) {
+                                    set.delete(itemId);
+                                } else {
+                                    set.add(itemId);
+                                }
+                                window.__logoDesignToDelete = set;
+                                renderPreview();
+                                syncInputState();
+                            });
+                            wrap.appendChild(btnRemove);
+                        }
+
+                        wrap.appendChild(img);
+                        preview.appendChild(wrap);
+                    });
+
+                    selected.forEach((file, idx) => {
+                        const url = URL.createObjectURL(file);
+                        const item = document.createElement('div');
+                        item.style.cssText = 'position: relative; width: 96px; height: 96px; flex: 0 0 auto; border: 2px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: white; display:flex; align-items:center; justify-content:center;';
+
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = file.name;
+                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display:block;';
+
+                        // Doble click para ver en fullscreen
+                        img.addEventListener('dblclick', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            abrirFullscreen(url);
+                        });
+
+                        const btnRemove = document.createElement('button');
+                        btnRemove.type = 'button';
+                        btnRemove.textContent = '×';
+                        btnRemove.style.cssText = 'position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:999px; border:none; background: rgba(220,38,38,0.95); color:white; font-weight:900; line-height:22px; text-align:center; cursor:pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);';
+                        btnRemove.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                            window.__logoDesignFiles = current.filter((_, i) => i !== idx);
+                            renderPreview();
+                            syncInputState();
+                        });
+
+                        item.appendChild(img);
+                        item.appendChild(btnRemove);
+                        preview.appendChild(item);
+                    });
+                };
+
+                if (input && !modoSoloLectura) input.addEventListener('change', () => {
+                    const files = Array.from(input.files || []);
+                    error.style.display = 'none';
+                    error.textContent = '';
+
+                    const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                    const guardados = Array.isArray(window.__logoDesignSaved) ? window.__logoDesignSaved : [];
+                    const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
+                    const guardadosActivos = guardados.filter((it) => !toDelete.has(String(it.id)));
+                    const remainingSlots = Math.max(0, 3 - (guardadosActivos.length + current.length));
+                    if (remainingSlots === 0) {
+                        syncInputState();
+                        input.value = '';
+                        return;
+                    }
+
+                    const toAdd = files.slice(0, remainingSlots);
+                    if (files.length > remainingSlots) {
+                        error.textContent = 'Solo puedes adjuntar máximo 3 imágenes.';
+                        error.style.display = 'block';
+                    }
+
+                    // Acumular sin duplicados (por fingerprint básico)
+                    const fingerprint = (f) => `${f.name}__${f.size}__${f.lastModified}`;
+                    const currentMap = new Set(current.map(fingerprint));
+                    const merged = [...current];
+                    toAdd.forEach((f) => {
+                        const key = fingerprint(f);
+                        if (!currentMap.has(key) && merged.length < 3) {
+                            merged.push(f);
+                            currentMap.add(key);
+                        }
+                    });
+
+                    window.__logoDesignFiles = merged;
+                    renderPreview();
+                    syncInputState();
+
+                    // Permite seleccionar la misma imagen de nuevo (si se eliminó) y dispara change
+                    input.value = '';
+                });
+
+                if (btnSave && !modoSoloLectura) {
+                    btnSave.addEventListener('click', async () => {
+                        const current = Array.isArray(window.__logoDesignFiles) ? window.__logoDesignFiles : [];
+                        const toDelete = window.__logoDesignToDelete instanceof Set ? window.__logoDesignToDelete : new Set();
+                        if (current.length === 0 && toDelete.size === 0) return;
+
+                        error.style.display = 'none';
+                        error.textContent = '';
+
+                        const prevSaveDisabled = btnSave.disabled;
+                        btnSave.disabled = true;
+                        btnSave.style.opacity = '0.6';
+                        btnSave.style.cursor = 'not-allowed';
+                        input.disabled = true;
+                        input.style.opacity = '0.6';
+                        input.style.cursor = 'not-allowed';
+
+                        try {
+                            // 1) aplicar eliminaciones
+                            const ids = Array.from(toDelete);
+                            for (const id of ids) {
+                                await eliminarDiseno(id);
+                            }
+
+                            // 2) refrescar guardados (para recalcular slots)
+                            const refreshed = await fetchExistentes();
+                            window.__logoDesignSaved = refreshed;
+                            window.__logoDesignToDelete = new Set();
+
+                            // 3) subir nuevos si existen
+                            const slots = Math.max(0, 3 - refreshed.length);
+                            const filesToUpload = current.slice(0, slots);
+                            if (filesToUpload.length > 0) {
+                                await subirDisenos(filesToUpload);
+                            }
+
+                            // 4) refrescar de nuevo para mostrar lo que quedó guardado
+                            const finalList = await fetchExistentes();
+                            window.__logoDesignSaved = finalList;
+                            window.__logoDesignFiles = [];
+                            window.__logoDesignToDelete = new Set();
+                            renderPreview();
+                            syncInputState();
+                            error.textContent = 'Guardado correctamente.';
+                            error.style.color = '#16a34a';
+                            error.style.display = 'block';
+                            setTimeout(() => {
+                                if (error.textContent === 'Guardado correctamente.') {
+                                    error.textContent = '';
+                                    error.style.display = 'none';
+                                    error.style.color = '#dc2626';
+                                }
+                            }, 1800);
+                        } catch (err) {
+                            error.textContent = err?.message || 'Error al guardar diseños.';
+                            error.style.color = '#dc2626';
+                            error.style.display = 'block';
+                            btnSave.disabled = prevSaveDisabled;
+                            btnSave.style.opacity = prevSaveDisabled ? '0.6' : '1';
+                            btnSave.style.cursor = prevSaveDisabled ? 'not-allowed' : 'pointer';
+                        } finally {
+                            syncInputState();
+                        }
+                    });
+                }
+
+                if (!Array.isArray(window.__logoDesignFiles)) {
+                    window.__logoDesignFiles = [];
+                }
+                if (!Array.isArray(window.__logoDesignSaved)) {
+                    window.__logoDesignSaved = [];
+                }
+                if (!(window.__logoDesignToDelete instanceof Set)) {
+                    window.__logoDesignToDelete = new Set();
+                }
+
+                // Cargar existentes al abrir la galería
+                fetchExistentes()
+                    .then((items) => {
+                        window.__logoDesignSaved = items;
+                        renderPreview();
+                        syncInputState();
+                    })
+                    .catch((err) => {
+                        error.textContent = err?.message || 'Error al cargar diseños guardados.';
+                        error.style.color = '#dc2626';
+                        error.style.display = 'block';
+                        renderPreview();
+                        syncInputState();
+                    });
+                renderPreview();
+                syncInputState();
+            }
+        }
         
         // Agregar event listeners para los thumbnails
         const thumbnails = galeria.querySelectorAll('.gallery-thumbnail');
@@ -234,6 +673,18 @@ export class GalleryManager {
             }
             
             let indiceActual = indice;
+
+            const btnCerrarPrincipal = document.getElementById('btn-cerrar-modal-dinamico');
+            const prevDisplayCerrarPrincipal = btnCerrarPrincipal ? btnCerrarPrincipal.style.display : null;
+            if (btnCerrarPrincipal) {
+                btnCerrarPrincipal.style.display = 'none';
+            }
+
+            const restaurarBotonCerrarPrincipal = () => {
+                const btn = document.getElementById('btn-cerrar-modal-dinamico');
+                if (!btn) return;
+                btn.style.display = prevDisplayCerrarPrincipal ?? 'block';
+            };
             
             // Crear modal
             const modal = document.createElement('div');
@@ -288,7 +739,7 @@ export class GalleryManager {
                         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                         transition: all 0.2s ease;
                         z-index: 10001;
-                    " onmouseover="this.style.background='white'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.95)'; this.style.transform='scale(1)';" onclick="console.log('[Botón X Galería] Click en cerrar'); document.getElementById('modal-imagen-proceso-grande').remove(); const btnFactura = window.btnFacturaGlobal || document.getElementById('close-receipt-btn'); console.log('[Botón X Galería] Mostrando botón:', { btnFactura, encontrado: !!btnFactura }); if(btnFactura) { btnFactura.style.display = 'block'; console.log('[Botón X Galería] Display actualizado:', btnFactura.style.display); }">✕</button>
+                    " onmouseover="this.style.background='white'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.95)'; this.style.transform='scale(1)';" data-close-fullscreen="1">✕</button>
                     
                     <!-- Información y navegación - fija en la parte inferior -->
                     <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.8); padding: 16px 24px; backdrop-filter: blur(10px); box-sizing: border-box; flex-shrink: 0;">
@@ -335,6 +786,25 @@ export class GalleryManager {
             `;
             
             document.body.appendChild(modal);
+
+            const cerrarFullscreen = () => {
+                const currentModal = document.getElementById('modal-imagen-proceso-grande');
+                if (currentModal) currentModal.remove();
+                const btnFactura = window.btnFacturaGlobal || document.getElementById('close-receipt-btn');
+                if (btnFactura) {
+                    btnFactura.style.display = 'block';
+                }
+                restaurarBotonCerrarPrincipal();
+            };
+
+            const btnCerrarFullscreen = modal.querySelector('button[data-close-fullscreen="1"]');
+            if (btnCerrarFullscreen) {
+                btnCerrarFullscreen.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cerrarFullscreen();
+                });
+            }
             
             // Variables globales para navegación
             window.indiceModalImagenActual = indiceActual;
@@ -385,14 +855,7 @@ export class GalleryManager {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     console.log('[Click fuera modal] Cerrando modal de imagen');
-                    modal.remove();
-                    // Mostrar botón de cierre de factura
-                    const btnFactura = window.btnFacturaGlobal || document.getElementById('close-receipt-btn');
-                    console.log('[Click fuera modal] Mostrando botón:', { btnFactura, encontrado: !!btnFactura });
-                    if(btnFactura) { 
-                        btnFactura.style.display = 'block';
-                        console.log('[Click fuera modal] Display actualizado:', btnFactura.style.display);
-                    }
+                    cerrarFullscreen();
                 }
             });
             
@@ -411,14 +874,7 @@ export class GalleryManager {
                     window.mostrarImagenModal();
                 } else if (e.key === 'Escape') {
                     console.log('[Tecla ESC] Cerrando modal de imagen');
-                    modal.remove();
-                    // Mostrar botón de cierre de factura
-                    const btnFactura = window.btnFacturaGlobal || document.getElementById('close-receipt-btn');
-                    console.log('[Tecla ESC] Mostrando botón:', { btnFactura, encontrado: !!btnFactura });
-                    if(btnFactura) { 
-                        btnFactura.style.display = 'block';
-                        console.log('[Tecla ESC] Display actualizado:', btnFactura.style.display);
-                    }
+                    cerrarFullscreen();
                     document.removeEventListener('keydown', handleKeyPress);
                 }
             };
@@ -472,12 +928,45 @@ export class GalleryManager {
      */
     static cerrarGaleria() {
         const galeria = document.getElementById('galeria-modal-costura');
-        const modalWrapper = document.querySelector('#order-detail-modal-wrapper .order-detail-card');
+        const wrapperNormal = document.getElementById('order-detail-modal-wrapper');
+        const wrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
+
+        const wrapperActivo = (wrapperLogo && window.getComputedStyle(wrapperLogo).display !== 'none')
+            ? wrapperLogo
+            : wrapperNormal;
+
+        const modalCard = wrapperActivo ? wrapperActivo.querySelector('.order-detail-card') : null;
         
         if (galeria) galeria.style.display = 'none';
-        if (modalWrapper) modalWrapper.style.display = 'block';
+        if (modalCard) modalCard.style.display = 'block';
+
+        if (wrapperActivo) GalleryManager._restaurarTamanioGaleria(wrapperActivo);
         
         this.actualizarBotonesEstilo(false);
 
+    }
+
+    static _aplicarTamanioGaleria(modalWrapper) {
+        if (!modalWrapper || GalleryManager._prevWrapperStyles) return;
+        GalleryManager._prevWrapperStyles = {
+            maxWidth: modalWrapper.style.maxWidth,
+            width: modalWrapper.style.width,
+            top: modalWrapper.style.top,
+            height: modalWrapper.style.height,
+            maxHeight: modalWrapper.style.maxHeight
+        };
+        modalWrapper.style.top = '30%';
+        modalWrapper.style.height = '96vh';
+        modalWrapper.style.maxHeight = '96vh';
+    }
+
+    static _restaurarTamanioGaleria(modalWrapper) {
+        if (!modalWrapper || !GalleryManager._prevWrapperStyles) return;
+        modalWrapper.style.maxWidth = GalleryManager._prevWrapperStyles.maxWidth || '';
+        modalWrapper.style.width = GalleryManager._prevWrapperStyles.width || '';
+        modalWrapper.style.top = GalleryManager._prevWrapperStyles.top || '';
+        modalWrapper.style.height = GalleryManager._prevWrapperStyles.height || '';
+        modalWrapper.style.maxHeight = GalleryManager._prevWrapperStyles.maxHeight || '';
+        GalleryManager._prevWrapperStyles = null;
     }
 }

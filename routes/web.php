@@ -931,8 +931,21 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,diseñador
     
     // Pedidos Logo
     Route::get('/pedidos-logo', [App\Http\Controllers\VisualizadorLogoController::class, 'pedidosLogo'])->name('pedidos-logo');
-    Route::get('/pedidos-logo/data', [App\Http\Controllers\VisualizadorLogoController::class, 'getPedidosLogo'])->name('pedidos-logo.data');
-    Route::post('/pedidos-logo/area-novedad', [App\Http\Controllers\VisualizadorLogoController::class, 'guardarAreaNovedadPedidoLogo'])->name('pedidos-logo.area-novedad');
+    Route::get('/pedidos-logo/data', [App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController::class, 'data'])->name('pedidos-logo.data');
+    Route::post('/pedidos-logo/area-novedad', [App\Infrastructure\Http\Controllers\VisualizadorLogo\PedidosLogoController::class, 'guardarAreaNovedad'])->name('pedidos-logo.area-novedad');
+
+    // Diseños adjuntos del recibo (solo diseñador-logos/admin)
+    Route::post('/pedidos-logo/disenos', [App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController::class, 'store'])
+        ->middleware('role:admin,diseñador-logos')
+        ->name('pedidos-logo.disenos.store');
+
+    Route::get('/pedidos-logo/disenos', [App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController::class, 'index'])
+        ->middleware('role:admin,diseñador-logos,bordador,visualizador_cotizaciones_logo')
+        ->name('pedidos-logo.disenos.index');
+
+    Route::delete('/pedidos-logo/disenos/{diseno}', [App\Infrastructure\Http\Controllers\VisualizadorLogo\DisenosLogoPedidoController::class, 'destroy'])
+        ->middleware('role:admin,diseñador-logos')
+        ->name('pedidos-logo.disenos.destroy');
     
     // Estadísticas
     Route::get('/estadisticas', [App\Http\Controllers\VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');

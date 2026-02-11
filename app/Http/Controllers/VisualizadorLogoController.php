@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Application\PedidosLogo\UseCases\GuardarAreaNovedadPedidoLogoUseCase;
+use App\Application\PedidosLogo\UseCases\ListPedidosLogoUseCase;
 use App\Models\Cotizacion;
-use App\Models\PedidosProcesosPrendaDetalle;
-use App\Services\CalculadorDiasService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class VisualizadorLogoController extends Controller
 {
@@ -167,118 +164,12 @@ class VisualizadorLogoController extends Controller
      */
     public function getPedidosLogo(Request $request)
     {
-        \Log::info(' ===== INICIO getPedidosLogo =====');
+        $search = $request->filled('search') ? (string) $request->get('search') : null;
+        $filtro = (string) $request->get('filtro', 'bordado');
 
-        $user = Auth::user();
-        $isDisenadorLogos = $user && $user->hasRole('diseñador-logos');
-        $isBordador = $user && $user->hasRole('bordador');
-        $isMinimalLogoRole = $isDisenadorLogos || $isBordador;
-
-        $filtro = $request->get('filtro', 'bordado');
-        $tipoProcesoIds = $isMinimalLogoRole
-            ? [2]
-            : ($filtro === 'estampado' ? [3, 4, 5] : [2]);
-
-        // Listar RECIBOS individuales (procesos aprobados) en vez de pedidos
-        $query = PedidosProcesosPrendaDetalle::query()
-            ->select([
-                'pedidos_procesos_prenda_detalles.*',
-                'palp.area as area',
-                'palp.novedades as novedades',
-                'palp.fechas_areas as fechas_areas',
-            ])
-            ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'pedidos_procesos_prenda_detalles.id')
-            ->with([
-                'tipoProceso',
-                'prenda.pedidoProduccion.cliente',
-                'prenda.pedidoProduccion.asesora'
-            ])
-            ->whereIn('tipo_proceso_id', $tipoProcesoIds)
-            ->where('estado', 'APROBADO')
-            ->whereNotNull('numero_recibo');
-
-        if ($isMinimalLogoRole) {
-            $query->where('palp.area', $isBordador ? 'BORDANDO' : 'DISENO');
-        }
-
-        // Filtros
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('numero_recibo', 'like', "%{$search}%")
-                  ->orWhereHas('prenda.pedidoProduccion.cliente', function($subQ) use ($search) {
-                      $subQ->where('nombre', 'like', "%{$search}%");
-                  });
-            });
-            \Log::info('🔎 Filtro de búsqueda aplicado (recibos):', ['search' => $search]);
-        }
-
-        // Ordenar por más reciente (creación del recibo/proceso)
-        $query->orderBy('created_at', 'desc');
-
-        $recibos = $query->paginate(20);
-
-        \Log::info(' Total de recibos encontrados:', ['total' => $recibos->total()]);
-
-        // Normalizar items para el frontend
-        $recibos->getCollection()->transform(function($proceso) use ($isMinimalLogoRole) {
-            $pedido = $proceso->prenda?->pedidoProduccion;
-            $clienteNombre = $pedido?->cliente?->nombre
-                ?? $pedido?->cliente
-                ?? 'Sin cliente';
-
-            $numeroPedido = $pedido?->numero_pedido;
-            $asesoraNombre = $pedido?->asesora?->name
-                ?? $pedido?->asesor?->name
-                ?? '';
-
-            $fechasAreas = null;
-            $fechaEntrega = null;
-            if (!empty($proceso->fechas_areas)) {
-                $decoded = json_decode($proceso->fechas_areas, true);
-                if (is_array($decoded)) {
-                    $fechasAreas = $decoded;
-                    $fechaEntrega = $decoded['ENTREGADO'] ?? null;
-                }
-            }
-
-            $fechaFinDias = $fechaEntrega ? \Carbon\Carbon::parse($fechaEntrega) : now();
-            $totalDias = CalculadorDiasService::calcularDiasHabiles($proceso->created_at, $fechaFinDias) ?? 0;
-
-            if ($isMinimalLogoRole) {
-                return [
-                    'id' => $proceso->id,
-                    'numero_recibo' => $proceso->numero_recibo,
-                    'cliente' => $clienteNombre,
-                    'created_at' => $proceso->created_at,
-                    'area' => $proceso->area,
-                    'pedido_id' => $pedido?->id,
-                    'prenda_id' => $proceso->prenda_pedido_id,
-                    'tipo_proceso' => $proceso->tipoProceso?->nombre,
-                    'tipo_proceso_id' => $proceso->tipo_proceso_id,
-                ];
-            }
-
-            return [
-                'id' => $proceso->id,
-                'numero_recibo' => $proceso->numero_recibo,
-                'cliente' => $clienteNombre,
-                'created_at' => $proceso->created_at,
-                'fecha_entrega' => $fechaEntrega,
-                'fechas_areas' => $fechasAreas,
-                'pedido_id' => $pedido?->id,
-                'numero_pedido' => $numeroPedido,
-                'prenda_id' => $proceso->prenda_pedido_id,
-                'tipo_proceso' => $proceso->tipoProceso?->nombre,
-                'tipo_proceso_id' => $proceso->tipo_proceso_id,
-                'area' => $proceso->area,
-                'novedades' => $proceso->novedades,
-                'total_dias' => (int) $totalDias,
-                'asesora' => $asesoraNombre,
-            ];
-        });
-
-        \Log::info(' ===== FIN getPedidosLogo =====');
+        /** @var ListPedidosLogoUseCase $useCase */
+        $useCase = app(ListPedidosLogoUseCase::class);
+        $recibos = $useCase->execute($search, $filtro, 20);
 
         return response()->json([
             'success' => true,
@@ -288,87 +179,26 @@ class VisualizadorLogoController extends Controller
 
     public function guardarAreaNovedadPedidoLogo(Request $request)
     {
-        $areasPermitidas = [
-            'CREACION_DE_ORDEN',
-            'PENDIENTE_DISENO',
-            'DISENO',
-            'PENDIENTE_CONFIRMAR',
-            'CORTE_Y_APLIQUE',
-            'HACIENDO_MUESTRA',
-            'BORDANDO',
-            'ENTREGADO',
-            'ANULADO',
-            'PENDIENTE',
-        ];
+        /** @var GuardarAreaNovedadPedidoLogoUseCase $useCase */
+        $useCase = app(GuardarAreaNovedadPedidoLogoUseCase::class);
+        $result = $useCase->execute($request->all());
 
-        $data = $request->validate([
-            'proceso_prenda_detalle_id' => ['required', 'integer', 'exists:pedidos_procesos_prenda_detalles,id'],
-            'area' => ['required', 'string', Rule::in($areasPermitidas)],
-            'novedades' => ['nullable', 'string'],
-        ]);
-
-        $proceso = PedidosProcesosPrendaDetalle::query()->select(['id', 'prenda_pedido_id'])->findOrFail($data['proceso_prenda_detalle_id']);
-
-        $now = now();
-
-        DB::transaction(function () use ($proceso, $data, $now) {
-            $existente = DB::table('prenda_areas_logo_pedido')
-                ->where('proceso_prenda_detalle_id', $proceso->id)
-                ->first();
-
-            $fechasAreas = [];
-            if ($existente && !empty($existente->fechas_areas)) {
-                $decoded = json_decode($existente->fechas_areas, true);
-                if (is_array($decoded)) {
-                    $fechasAreas = $decoded;
-                }
+        if (!($result['ok'] ?? false)) {
+            $status = (int) ($result['status'] ?? 422);
+            if (isset($result['errors'])) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $result['errors'],
+                ], $status);
             }
 
-            $fechasAreas[$data['area']] = $now->toDateTimeString();
-
-            if ($existente) {
-                DB::table('prenda_areas_logo_pedido')
-                    ->where('proceso_prenda_detalle_id', $proceso->id)
-                    ->update([
-                        'prenda_pedido_id' => $proceso->prenda_pedido_id,
-                        'area' => $data['area'],
-                        'novedades' => $data['novedades'] ?? null,
-                        'fechas_areas' => json_encode($fechasAreas),
-                        'updated_at' => $now,
-                    ]);
-            } else {
-                DB::table('prenda_areas_logo_pedido')->insert([
-                    'proceso_prenda_detalle_id' => $proceso->id,
-                    'prenda_pedido_id' => $proceso->prenda_pedido_id,
-                    'area' => $data['area'],
-                    'novedades' => $data['novedades'] ?? null,
-                    'fechas_areas' => json_encode($fechasAreas),
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            }
-        });
-
-        $row = DB::table('prenda_areas_logo_pedido')
-            ->select(['fechas_areas'])
-            ->where('proceso_prenda_detalle_id', $proceso->id)
-            ->first();
-
-        $fechasAreas = null;
-        $fechaEntrega = null;
-        if ($row && !empty($row->fechas_areas)) {
-            $decoded = json_decode($row->fechas_areas, true);
-            if (is_array($decoded)) {
-                $fechasAreas = $decoded;
-                $fechaEntrega = $decoded['ENTREGADO'] ?? null;
-            }
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Error guardando Área/Novedad.',
+            ], $status);
         }
 
-        return response()->json([
-            'success' => true,
-            'fechas_areas' => $fechasAreas,
-            'fecha_entrega' => $fechaEntrega,
-        ]);
+        return response()->json($result['data'], 200);
     }
 
     /**

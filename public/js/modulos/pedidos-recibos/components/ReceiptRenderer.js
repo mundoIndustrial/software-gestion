@@ -29,7 +29,8 @@ export class ReceiptRenderer {
         modalManager.setState({
             prendaPedidoId: prendaData.prenda_pedido_id || prendaData.id,
             imagenesActuales: recibo.imagenes && Array.isArray(recibo.imagenes) ? recibo.imagenes : [],
-            prendaData: prendaData
+            prendaData: prendaData,
+            procesoPrendaDetalleId: recibo.id || recibo.proceso_prenda_detalle_id || null
         });
 
 
@@ -57,6 +58,11 @@ export class ReceiptRenderer {
             // Obtener el consecutivo para este tipo de recibo
             let consecutivo = '';
             let tipoReciboKey = '';
+
+            // Caso general: si el proceso/recibo ya trae numero_recibo, usarlo como fuente de verdad
+            if (recibo && (recibo.numero_recibo || recibo.numeroRecibo)) {
+                consecutivo = recibo.numero_recibo || recibo.numeroRecibo;
+            }
             
             // Definir mapa de tipos de recibo
             const tipoReciboMap = {
@@ -71,7 +77,7 @@ export class ReceiptRenderer {
                 'bordado-plano': 'BORDADO'
             };
             
-            if (prendaData && prendaData.recibos && Object.keys(prendaData.recibos).length > 0) {
+            if (!consecutivo && prendaData && prendaData.recibos && Object.keys(prendaData.recibos).length > 0) {
                 tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
                 consecutivo = prendaData.recibos[tipoReciboKey];
                 
@@ -81,7 +87,7 @@ export class ReceiptRenderer {
                     consecutivo,
                     recibos: prendaData.recibos
                 });
-            } else {
+            } else if (!consecutivo) {
                 tipoReciboKey = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
                 console.log(' [ReceiptRenderer] No hay datos de recibos o está vacío:', {
                     tieneRecibos: !!(prendaData && prendaData.recibos),
@@ -113,9 +119,16 @@ export class ReceiptRenderer {
                     pedidoNumberElement.textContent = '#' + consecutivo;
                     console.log(' [ReceiptRenderer] Número de pedido actualizado con consecutivo:', '#' + consecutivo);
                 } else {
-                    // Mantener el número de pedido original si no hay consecutivo
-                    pedidoNumberElement.textContent = '#' + (prendaData?.numero_pedido || prendaData?.numero || '-');
-                    console.log(' [ReceiptRenderer] Número de pedido mantenido sin consecutivo');
+                    const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+                    if (esVistaVisualizadorLogo) {
+                        // En visualizador-logo el número esperado es el de recibo, no el del pedido
+                        pedidoNumberElement.textContent = '';
+                        console.log(' [ReceiptRenderer] Visualizador-logo: sin consecutivo, no se muestra fallback de pedido');
+                    } else {
+                        // Mantener el número de pedido original si no hay consecutivo
+                        pedidoNumberElement.textContent = '#' + (prendaData?.numero_pedido || prendaData?.numero || '-');
+                        console.log(' [ReceiptRenderer] Número de pedido mantenido sin consecutivo');
+                    }
                 }
             } else {
                 console.warn(' [ReceiptRenderer] Elemento #order-pedido no encontrado');
@@ -127,6 +140,12 @@ export class ReceiptRenderer {
                     if (consecutivo) {
                         fallbackElement.textContent = '#' + consecutivo;
                         console.log(' [ReceiptRenderer] Número actualizado con fallback:', '#' + consecutivo);
+                    } else {
+                        const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+                        if (esVistaVisualizadorLogo) {
+                            fallbackElement.textContent = '';
+                            console.log(' [ReceiptRenderer] Visualizador-logo: sin consecutivo, no se muestra fallback de pedido (fallbackElement)');
+                        }
                     }
                 } else {
                     console.error(' [ReceiptRenderer] Ni #order-pedido ni .pedido-number encontrados');

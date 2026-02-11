@@ -6,12 +6,12 @@
  *          GalleryManager, ReceiptRenderer, y utilidades
  */
 
-import { ModalManager } from './components/ModalManager.js';
-import { CloseButtonManager } from './components/CloseButtonManager.js';
+import { ReceiptBuilder } from './utils/ReceiptBuilder.js';
+import { ReceiptRenderer } from './components/ReceiptRenderer.js';
 import { NavigationManager } from './components/NavigationManager.js';
 import { GalleryManager } from './components/GalleryManager.js';
-import { ReceiptRenderer } from './components/ReceiptRenderer.js';
-import { ReceiptBuilder } from './utils/ReceiptBuilder.js';
+import { CloseButtonManager } from './components/CloseButtonManager.js';
+import { ModalManager } from './components/ModalManager.js';
 import { Formatters } from './utils/Formatters.js';
 
 export class PedidosRecibosModule {
@@ -84,6 +84,9 @@ export class PedidosRecibosModule {
         });
 
         try {
+            // Resetear cualquier galería previa para evitar que quede pegada entre recibos
+            GalleryManager.resetGaleria(this.modalManager);
+
             // Mostrar modal
             this.modalManager.abrirModal();
 

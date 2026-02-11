@@ -21,6 +21,7 @@ return new class extends Migration
                 'PENDIENTE_CONFIRMAR',
                 'CORTE_Y_APLIQUE',
                 'HACIENDO_MUESTRA',
+                'ESTAMPANDO',
                 'BORDANDO',
                 'ENTREGADO',
                 'ANULADO',

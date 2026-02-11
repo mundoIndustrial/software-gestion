@@ -11,6 +11,7 @@
 @section('content')
 @php($isDisenadorLogos = Auth::user() && Auth::user()->hasRole('diseñador-logos'))
 @php($isBordador = Auth::user() && Auth::user()->hasRole('bordador'))
+@php($isVisualizadorLogo = Auth::user() && Auth::user()->hasRole('visualizador_cotizaciones_logo'))
 @php($isMinimalLogoRole = $isDisenadorLogos || $isBordador)
 <div style="padding: 1rem 1.25rem 2rem 0.25rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     <!-- Tabla de Pedidos Logo -->
@@ -161,6 +162,7 @@ window.__areasPermitidasLogo = [
     'PENDIENTE_CONFIRMAR',
     'CORTE_Y_APLIQUE',
     'HACIENDO_MUESTRA',
+    'ESTAMPANDO',
     'BORDANDO',
     'ENTREGADO',
     'ANULADO',
@@ -168,6 +170,9 @@ window.__areasPermitidasLogo = [
 ];
 
 window.__isDisenadorLogos = {{ $isMinimalLogoRole ? 'true' : 'false' }};
+window.__isDisenadorLogosRole = {{ $isDisenadorLogos ? 'true' : 'false' }};
+window.__isBordadorRole = {{ $isBordador ? 'true' : 'false' }};
+window.__isVisualizadorCotizacionesLogoRole = {{ $isVisualizadorLogo ? 'true' : 'false' }};
 
 window.__festivosLogo = @json(\App\Models\Festivo::pluck('fecha')->toArray());
 
@@ -719,7 +724,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
 
-            const optionsArea = (window.__areasPermitidasLogo || []).map((a) => {
+            const filtroActual = window.__filtroRecibosLogo || 'bordado';
+            const areasBase = Array.isArray(window.__areasPermitidasLogo) ? window.__areasPermitidasLogo : [];
+            const areasPermitidas = areasBase.filter((a) => {
+                if (filtroActual === 'estampado') {
+                    // En estampado: mostrar ESTAMPANDO y ocultar CORTE_Y_APLIQUE
+                    if (a === 'CORTE_Y_APLIQUE') return false;
+                    if (a === 'BORDANDO') return false;
+                    return true;
+                }
+                // En bordado: ocultar ESTAMPANDO
+                if (a === 'ESTAMPANDO') return false;
+                return true;
+            });
+
+            const optionsArea = areasPermitidas.map((a) => {
                 const selected = a === area ? 'selected' : '';
                 const label = a.replace(/_/g, ' ');
                 return `<option value="${a}" ${selected}>${label}</option>`;
