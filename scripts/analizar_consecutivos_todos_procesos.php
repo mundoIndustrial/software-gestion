@@ -27,7 +27,7 @@ echo str_repeat("─", 70) . "\n";
 $pedido = DB::table('pedidos_produccion')->where('id', $pedidoId)->first();
 
 if (!$pedido) {
-    echo "❌ ERROR: No se encontró el pedido con ID {$pedidoId}\n";
+    echo " ERROR: No se encontró el pedido con ID {$pedidoId}\n";
     exit(1);
 }
 
@@ -118,7 +118,7 @@ foreach ($prendas as $index => $prenda) {
 }
 
 // 3. Resumen de Prendas que Deberían Tener Consecutivo
-echo "📊 RESUMEN DE PRENDAS POR PROCESO\n";
+echo " RESUMEN DE PRENDAS POR PROCESO\n";
 echo str_repeat("─", 70) . "\n";
 foreach ($prendasPorProceso as $proceso => $prendasIds) {
     echo "  {$proceso}: " . count($prendasIds) . " prendas\n";
@@ -139,7 +139,7 @@ $consecutivos = DB::table('consecutivos_recibos_pedidos')
     ->get();
 
 if ($consecutivos->isEmpty()) {
-    echo "  ❌ No se encontraron consecutivos para este pedido\n\n";
+    echo "   No se encontraron consecutivos para este pedido\n\n";
 } else {
     echo "  Total de consecutivos: " . $consecutivos->count() . "\n\n";
     
@@ -165,7 +165,7 @@ if ($consecutivos->isEmpty()) {
 }
 
 // 5. Comparación y Diagnóstico por Proceso
-echo "🔍 DIAGNÓSTICO POR TIPO DE PROCESO\n";
+echo " DIAGNÓSTICO POR TIPO DE PROCESO\n";
 echo str_repeat("─", 70) . "\n";
 
 $problemasEncontrados = false;
@@ -184,7 +184,7 @@ foreach ($prendasPorProceso as $proceso => $prendasIds) {
     
     if ($consecutivosCount < $esperados) {
         $problemasEncontrados = true;
-        echo "    ⚠️  PROBLEMA: Faltan " . ($esperados - $consecutivosCount) . " consecutivos\n";
+        echo "      PROBLEMA: Faltan " . ($esperados - $consecutivosCount) . " consecutivos\n";
         
         // Identificar qué prendas NO tienen consecutivo
         $prendasConConsecutivo = $consecutivosProceso
@@ -195,10 +195,10 @@ foreach ($prendasPorProceso as $proceso => $prendasIds) {
         $prendasSinConsecutivo = array_diff($prendasIds, $prendasConConsecutivo);
         
         if (!empty($prendasSinConsecutivo)) {
-            echo "    Prendas sin consecutivo: " . implode(', ', $prendasSinConsecutivo) . " ❌\n";
+            echo "    Prendas sin consecutivo: " . implode(', ', $prendasSinConsecutivo) . " \n";
         }
     } else if ($consecutivosCount > $esperados) {
-        echo "    ⚠️  ADVERTENCIA: Hay más consecutivos de los esperados\n";
+        echo "      ADVERTENCIA: Hay más consecutivos de los esperados\n";
     } else {
         echo "    ✓ OK\n";
     }
@@ -224,7 +224,7 @@ echo "  ───────────────────────\n"
 echo "  case 'BORDADO':\n";
 echo "      if (!isset(\$procesosPorPedido['BORDADO'])) {\n";
 echo "          \$procesosPorPedido['BORDADO'] = true;\n";
-echo "          \$tiposRecibo['BORDADO'] = [...];  // Solo UNO por pedido ❌\n";
+echo "          \$tiposRecibo['BORDADO'] = [...];  // Solo UNO por pedido \n";
 echo "      }\n";
 echo "      break;\n\n";
 echo "  DESPUÉS (correcto):\n";

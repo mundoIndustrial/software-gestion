@@ -12,7 +12,7 @@ class CopiarImagenesAPublic extends Command
 
     public function handle()
     {
-        $this->info('🔄 Copiando imágenes a public/storage...');
+        $this->info(' Copiando imágenes a public/storage...');
 
         $rutaStorage = storage_path('app/public/cotizaciones');
         $rutaPublic = public_path('storage/cotizaciones');
@@ -38,7 +38,7 @@ class CopiarImagenesAPublic extends Command
     
     private function actualizarRutasEnBD()
     {
-        $this->info('🔄 Actualizando rutas en BD...');
+        $this->info(' Actualizando rutas en BD...');
         
         // Actualizar prenda_fotos_cot
         $fotosActualizadas = \DB::table('prenda_fotos_cot')

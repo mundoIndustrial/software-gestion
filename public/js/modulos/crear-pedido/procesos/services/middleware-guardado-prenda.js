@@ -23,7 +23,7 @@ class MiddlewareGuardadoPrenda {
      * @returns {Promise} 
      */
     async interceptarGuardado(prendaId, guardarPrendaOriginal) {
-        console.log('🔄 [MIDDLEWARE-GUARDADO] Interceptando guardado de prenda:', {
+        console.log(' [MIDDLEWARE-GUARDADO] Interceptando guardado de prenda:', {
             prendaId,
             hayGestorEdicion: !!window.gestorEditacionProcesos
         });
@@ -39,7 +39,7 @@ class MiddlewareGuardadoPrenda {
 
             // Si hay procesos editados, actualizarlos en el servidor PRIMERO
             if (procesosEditados.length > 0) {
-                console.log('🔄 [MIDDLEWARE-GUARDADO] Aplicando cambios de procesos editados...');
+                console.log(' [MIDDLEWARE-GUARDADO] Aplicando cambios de procesos editados...');
                 await this.aplicarCambiosProcesos(prendaId, procesosEditados);
                 console.log(' [MIDDLEWARE-GUARDADO] Cambios de procesos aplicados');
             }
@@ -55,7 +55,7 @@ class MiddlewareGuardadoPrenda {
             return resultado;
 
         } catch (error) {
-            console.error('❌ [MIDDLEWARE-GUARDADO] Error en proceso de guardado:', error);
+            console.error(' [MIDDLEWARE-GUARDADO] Error en proceso de guardado:', error);
             throw error;
         }
     }
@@ -83,7 +83,7 @@ class MiddlewareGuardadoPrenda {
 
         for (const procesoEditado of procesosEditados) {
             try {
-                console.log('🔄 [MIDDLEWARE-GUARDADO] Actualizando proceso:', {
+                console.log(' [MIDDLEWARE-GUARDADO] Actualizando proceso:', {
                     tipo: procesoEditado.tipo,
                     id: procesoEditado.id,
                     cambios: Object.keys(procesoEditado.cambios)
@@ -95,7 +95,7 @@ class MiddlewareGuardadoPrenda {
                 // Si tenemos información de que estamos en contexto de supervisor, usar ruta alternativa
                 if (window.usuarioAutenticado && window.usuarioAutenticado.rol === 'supervisor_pedidos') {
                     urlPatch = `/supervisor-pedidos/${prendaId}/procesos/${procesoEditado.id}`;
-                    console.log('🔄 [MIDDLEWARE-GUARDADO] Usando ruta de supervisor-pedidos:', urlPatch);
+                    console.log(' [MIDDLEWARE-GUARDADO] Usando ruta de supervisor-pedidos:', urlPatch);
                 }
 
                 // Hacer PATCH al servidor
@@ -133,7 +133,7 @@ class MiddlewareGuardadoPrenda {
                 });
 
             } catch (error) {
-                console.error(`❌ Error actualizando proceso ${procesoEditado.tipo}:`, error);
+                console.error(` Error actualizando proceso ${procesoEditado.tipo}:`, error);
                 errores.push({
                     tipo: procesoEditado.tipo,
                     error: error.message

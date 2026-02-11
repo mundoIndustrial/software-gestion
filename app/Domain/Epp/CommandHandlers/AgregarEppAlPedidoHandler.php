@@ -28,7 +28,7 @@ class AgregarEppAlPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('🔄 [AgregarEppAlPedidoHandler] Agregando EPP al pedido', [
+            Log::info(' [AgregarEppAlPedidoHandler] Agregando EPP al pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),
                 'cantidad' => $command->getCantidad(),

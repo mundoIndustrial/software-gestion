@@ -1302,7 +1302,7 @@ final class CotizacionController extends Controller
             // ===== PROCESAR FOTOS EXISTENTES DE TELAS (sin archivos nuevos) =====
             // Este bloque detecta cuando se envían telas sin archivos nuevos
             // y copia automáticamente las fotos existentes
-            Log::info('🔄 PROCESANDO FOTOS EXISTENTES DE TELAS - Verificando necesidad de copia');
+            Log::info(' PROCESANDO FOTOS EXISTENTES DE TELAS - Verificando necesidad de copia');
             
             try {
             foreach ($prendas as $index => $prenda) {
@@ -1469,7 +1469,7 @@ final class CotizacionController extends Controller
                             $tieneImagenes = !empty($prenda['imagenes']);
                             
                             // Debug: Log de validación de cada prenda
-                            \Log::info('🔍 DEBUG Validación prenda logo (SIN TALLAS)', [
+                            \Log::info(' DEBUG Validación prenda logo (SIN TALLAS)', [
                                 'nombre_prenda' => $prenda['nombre_prenda'] ?? 'Sin nombre',
                                 'tieneUbicaciones' => $tieneUbicaciones,
                                 'tieneImagenes' => $tieneImagenes,
@@ -1493,7 +1493,7 @@ final class CotizacionController extends Controller
             if (!$logoTieneInformacionValida) {
                 $imagenesP3Files = $request->file('logo.imagenes_paso3');
                 if ($imagenesP3Files && !empty($imagenesP3Files)) {
-                    \Log::info('🔍 DEBUG - Encontrados archivos reales de imágenes', [
+                    \Log::info(' DEBUG - Encontrados archivos reales de imágenes', [
                         'imagenesP3Files_type' => gettype($imagenesP3Files),
                         'imagenesP3Files_count' => is_array($imagenesP3Files) ? count($imagenesP3Files, COUNT_RECURSIVE) : 0
                     ]);
@@ -1987,7 +1987,7 @@ final class CotizacionController extends Controller
                     // Procesar FILES enviados por FormData - acceder directamente a logo.imagenes_paso3
                     $imagenesP3Files = $request->file('logo.imagenes_paso3');
                     
-                    Log::info('📦 DEBUG: Archivos paso3 recibidos', [
+                    Log::info(' DEBUG: Archivos paso3 recibidos', [
                         'imagenesP3Files' => $imagenesP3Files,
                         'tipo' => gettype($imagenesP3Files),
                         'es_array' => is_array($imagenesP3Files) ? 'SÍ' : 'NO'
@@ -2036,7 +2036,7 @@ final class CotizacionController extends Controller
                                         
                                         // Buscar el registro de LogoCotizacionTecnicaPrenda correspondiente
                                         $nombrePrendaBase = explode(' - ', $prendaData['nombre_prenda'])[0];
-                                        Log::info('🔍 Buscando prenda en BD', [
+                                        Log::info(' Buscando prenda en BD', [
                                             'nombre_prenda_raw' => $prendaData['nombre_prenda'],
                                             'nombre_prenda_base' => $nombrePrendaBase
                                         ]);
@@ -2287,10 +2287,10 @@ final class CotizacionController extends Controller
             }
 
             // Procesar PASO 4: REFLECTIVO
-            \Log::info('🔍 DEBUG PASO 4 - ALL REQUEST INPUTS', [
+            \Log::info(' DEBUG PASO 4 - ALL REQUEST INPUTS', [
                 'keys' => array_keys($request->all())
             ]);
-            \Log::info('🔍 DEBUG PASO 4 - REFLECTIVO REQUEST', [
+            \Log::info(' DEBUG PASO 4 - REFLECTIVO REQUEST', [
                 'reflectivo_data' => $request->input('reflectivo', [])
             ]);
             
@@ -2298,7 +2298,7 @@ final class CotizacionController extends Controller
             $reflectivoDescripcionRaw = $request->input('reflectivo.descripcion');
             $reflectivoDescripcion = (string)($reflectivoDescripcionRaw ?? '');  // Convertir null a string vacía
             
-            \Log::info('🔍 DEBUG PASO 4 REFLECTIVO - Inicio', [
+            \Log::info(' DEBUG PASO 4 REFLECTIVO - Inicio', [
                 'cotizacion_id' => $cotizacionId,
                 'reflectivo_descripcion_raw' => $reflectivoDescripcionRaw,
                 'reflectivo_descripcion' => $reflectivoDescripcion,
@@ -2363,14 +2363,14 @@ final class CotizacionController extends Controller
             // El backend intenta guardar reflectivo para CADA prenda del PASO 2
             $prendas = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
             
-            // 📦 Obtener datos de prendas del PASO 4 (reflectivo)
+            //  Obtener datos de prendas del PASO 4 (reflectivo)
             // Estos contienen ubicaciones específicas para cada prenda
             $prendasReflectivoPaso4 = $request->input('prendas_reflectivo_paso4', []);
             if (is_string($prendasReflectivoPaso4)) {
                 $prendasReflectivoPaso4 = json_decode($prendasReflectivoPaso4, true) ?? [];
             }
             
-            \Log::info('📦 Prendas reflectivo PASO 4 recibidas:', [
+            \Log::info(' Prendas reflectivo PASO 4 recibidas:', [
                 'count' => count($prendasReflectivoPaso4),
                 'prendasReflectivoPaso4' => json_encode($prendasReflectivoPaso4),
             ]);
@@ -2386,7 +2386,7 @@ final class CotizacionController extends Controller
             
             $reflectivoTieneInfoValida = $tieneInfoValidaDesdeP4 || $tieneUbicacionesReflectivo || ($tieneDescripcionReflectivo && $tieneImagenesReflectivo);
             
-            \Log::info('📦 Prendas encontradas PARA REFLECTIVO - VALIDACIÓN', [
+            \Log::info(' Prendas encontradas PARA REFLECTIVO - VALIDACIÓN', [
                 'prendas_count' => $prendas->count(),
                 'tieneInfoValidaDesdeP4' => $tieneInfoValidaDesdeP4,
                 'tieneUbicacionesReflectivo' => $tieneUbicacionesReflectivo,
@@ -2599,7 +2599,7 @@ final class CotizacionController extends Controller
                     //  PROCESAR IMÁGENES DEL PASO 4 (Reflectivo) - Guardar archivos en disco
                     // Las imágenes vienen en: reflectivo[imagenes_paso4][prendaIndex][imagenIndex]
                     
-                    // 🔍 DEBUG: Check all files in request
+                    //  DEBUG: Check all files in request
                     $allFilesInRequest = $request->allFiles();
                     \Log::debug('DEBUG - Todos los archivos en request:', $allFilesInRequest);
                     
@@ -2880,7 +2880,7 @@ final class CotizacionController extends Controller
             ]);
 
             // DEBUG: Log de todo lo que recibe
-            Log::info('🔍 DEBUG - Datos recibidos en storeReflectivo:', [
+            Log::info(' DEBUG - Datos recibidos en storeReflectivo:', [
                 'all_inputs' => $request->all(),
                 'prendas_input' => $request->input('prendas'),
                 'prendas_type' => gettype($request->input('prendas')),

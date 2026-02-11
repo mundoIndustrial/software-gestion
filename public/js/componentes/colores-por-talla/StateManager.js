@@ -11,7 +11,7 @@ window.StateManager = (function() {
         asignacionesColoresPorTalla: {},
         wizardState: {
             pasoActual: 1,
-            telaSeleccionada: null,  // ✅ NUEVA: tela seleccionada del wizard
+            telaSeleccionada: null,  //  NUEVA: tela seleccionada del wizard
             generoSeleccionado: null,
             tallasSeleccionadas: [],
             tipoTallaSel: null,
@@ -103,7 +103,7 @@ window.StateManager = (function() {
         resetWizardState() {
             state.wizardState = {
                 pasoActual: 1,
-                telaSeleccionada: null,  // ✅ Reset tela
+                telaSeleccionada: null,  //  Reset tela
                 generoSeleccionado: null,
                 tallasSeleccionadas: [],
                 tipoTallaSel: null,

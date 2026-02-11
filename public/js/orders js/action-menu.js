@@ -117,7 +117,7 @@
     if (typeof window.abrirSelectorRecibos === 'function') {
       window.abrirSelectorRecibos(ordenId);
     } else {
-      console.error('❌ [handleDetalle] abrirSelectorRecibos no disponible');
+      console.error(' [handleDetalle] abrirSelectorRecibos no disponible');
       alert('Error: Sistema de detalles no disponible');
     }
   }

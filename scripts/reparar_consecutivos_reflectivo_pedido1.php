@@ -14,7 +14,7 @@ echo "=======================================================\n\n";
 $pedidoId = 1;
 
 // 1. Identificar prendas que necesitan consecutivo REFLECTIVO
-echo "🔍 PASO 1: Identificando prendas afectadas...\n";
+echo " PASO 1: Identificando prendas afectadas...\n";
 echo str_repeat("-", 80) . "\n";
 
 $prendasConReflectivo = DB::table('prendas_pedido as pp')
@@ -42,23 +42,23 @@ foreach ($prendasConReflectivo as $prenda) {
     
     if (!$tieneConsecutivo) {
         $prendasSinConsecutivo[] = $prenda;
-        echo "⚠️  Prenda ID {$prenda->id} ({$prenda->nombre_prenda}) - SIN CONSECUTIVO\n";
+        echo "  Prenda ID {$prenda->id} ({$prenda->nombre_prenda}) - SIN CONSECUTIVO\n";
     } else {
-        echo "✅ Prenda ID {$prenda->id} ({$prenda->nombre_prenda}) - Ya tiene consecutivo\n";
+        echo " Prenda ID {$prenda->id} ({$prenda->nombre_prenda}) - Ya tiene consecutivo\n";
     }
 }
 
 echo "\n";
 
 if (empty($prendasSinConsecutivo)) {
-    echo "✅ No hay prendas sin consecutivo. Todo está correcto.\n";
+    echo " No hay prendas sin consecutivo. Todo está correcto.\n";
     exit(0);
 }
 
 echo "📝 Se encontraron " . count($prendasSinConsecutivo) . " prendas sin consecutivo REFLECTIVO.\n\n";
 
 // 2. Obtener el consecutivo global actual de REFLECTIVO
-echo "🔍 PASO 2: Obteniendo consecutivo global de REFLECTIVO...\n";
+echo " PASO 2: Obteniendo consecutivo global de REFLECTIVO...\n";
 echo str_repeat("-", 80) . "\n";
 
 $consecutivoGlobal = DB::table('consecutivos_recibos')
@@ -66,7 +66,7 @@ $consecutivoGlobal = DB::table('consecutivos_recibos')
     ->first();
 
 if (!$consecutivoGlobal) {
-    echo "❌ ERROR: No existe consecutivo global para REFLECTIVO\n";
+    echo " ERROR: No existe consecutivo global para REFLECTIVO\n";
     exit(1);
 }
 
@@ -100,7 +100,7 @@ try {
             'updated_at' => now()
         ]);
         
-        echo "✅ Creado consecutivo #{$nuevoConsecutivo} para Prenda ID {$prenda->id} ({$prenda->nombre_prenda})\n";
+        echo " Creado consecutivo #{$nuevoConsecutivo} para Prenda ID {$prenda->id} ({$prenda->nombre_prenda})\n";
         echo "   - Consecutivo ID: {$consecutivoId}\n";
         echo "   - Tipo: REFLECTIVO\n";
         echo "   - Número: {$nuevoConsecutivo}\n\n";
@@ -114,19 +114,19 @@ try {
             'updated_at' => now()
         ]);
     
-    echo "✅ Consecutivo global actualizado a: {$consecutivoActual}\n\n";
+    echo " Consecutivo global actualizado a: {$consecutivoActual}\n\n";
     
     DB::commit();
     
     echo "=======================================================\n";
-    echo "✅ REPARACIÓN COMPLETADA EXITOSAMENTE\n";
+    echo " REPARACIÓN COMPLETADA EXITOSAMENTE\n";
     echo "=======================================================\n";
     echo "Total consecutivos creados: " . count($prendasSinConsecutivo) . "\n";
     echo "Consecutivo global final: {$consecutivoActual}\n";
     
 } catch (\Exception $e) {
     DB::rollBack();
-    echo "\n❌ ERROR durante la reparación:\n";
+    echo "\n ERROR durante la reparación:\n";
     echo $e->getMessage() . "\n";
     echo "\nStack trace:\n";
     echo $e->getTraceAsString() . "\n";

@@ -20,7 +20,7 @@ class AssignBodegueroRoleSeeder extends Seeder
         $user = User::first();
 
         if (!$user) {
-            $this->command->error('❌ No hay usuarios en la base de datos');
+            $this->command->error(' No hay usuarios en la base de datos');
             return;
         }
 
@@ -28,7 +28,7 @@ class AssignBodegueroRoleSeeder extends Seeder
         $bodegueroRole = Role::where('name', 'bodeguero')->first();
 
         if (!$bodegueroRole) {
-            $this->command->error('❌ El rol "bodeguero" no existe. Ejecuta primero: php artisan db:seed --class=CrearRolesOperariosSeeder');
+            $this->command->error(' El rol "bodeguero" no existe. Ejecuta primero: php artisan db:seed --class=CrearRolesOperariosSeeder');
             return;
         }
 

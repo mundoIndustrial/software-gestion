@@ -1,4 +1,4 @@
-# 🔄 ACTUALIZACIÓN DE MODELOS Y RELACIONES
+#  ACTUALIZACIÓN DE MODELOS Y RELACIONES
 ## Sincronización con Cambios de Tablas Base de Datos
 
 **Fecha:** 16 de Enero, 2026  

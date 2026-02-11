@@ -14,20 +14,20 @@ Se han agregado **logs detallados con microtiming** en toda la cadena de creaci�
 **Archivo:** `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`
 
 #### Método: `crearNuevo()` (GET /crear-nuevo)
-- ⏱️ Tiempo total de carga de página
-- ⏱️ Tiempo de carga de tallas
-- ⏱️ Tiempo de carga de pedidos existentes
-- ⏱️ Tiempo de carga de clientes
-- ⏱️ Tiempo de renderizado de vista
+-  Tiempo total de carga de página
+-  Tiempo de carga de tallas
+-  Tiempo de carga de pedidos existentes
+-  Tiempo de carga de clientes
+-  Tiempo de renderizado de vista
 -  Resumen en una línea para comparación rápida
 
 #### Método: `crearDesdeCotizacion()` (GET /crear-desde-cotizacion)
-- ⏱️ Tiempo total de carga de página
-- ⏱️ Tiempo de carga de tallas
-- ⏱️ Tiempo de carga de cotizaciones (CON RELACIONES) **← CRÍTICO**
-- ⏱️ Tiempo de carga de pedidos existentes
-- ⏱️ Tiempo de carga de clientes
-- ⏱️ Tiempo de renderizado de vista
+-  Tiempo total de carga de página
+-  Tiempo de carga de tallas
+-  Tiempo de carga de cotizaciones (CON RELACIONES) **← CRÍTICO**
+-  Tiempo de carga de pedidos existentes
+-  Tiempo de carga de clientes
+-  Tiempo de renderizado de vista
 
 #### Método: `crearPedido()` (POST /crear)
 Desglose de 8 pasos:
@@ -48,15 +48,15 @@ Desglose de 8 pasos:
 **Archivo:** `app/Domain/Pedidos/Services/ResolutorImagenesService.php`
 
 #### Método: `extraerYProcesarImagenes()`
-- ⏱️ Tiempo de extracción de archivos anidados
-- ⏱️ Tiempo total de procesamiento
+-  Tiempo de extracción de archivos anidados
+-  Tiempo total de procesamiento
 -  Cuenta de imágenes procesadas vs esperadas
-- 🔴 Alerta si hay imágenes perdidas (FormData no llegó)
+-  Alerta si hay imágenes perdidas (FormData no llegó)
 
 #### Método: `procesarImagenesDeGrupo()`
-- ⏱️ Tiempo por grupo de imágenes
-- ⏱️ Tiempo de guardado individual de cada imagen
-- 📦 Desglose por prenda/tela/proceso
+-  Tiempo por grupo de imágenes
+-  Tiempo de guardado individual de cada imagen
+-  Desglose por prenda/tela/proceso
 
 ---
 
@@ -64,9 +64,9 @@ Desglose de 8 pasos:
 **Archivo:** `app/Domain/Pedidos/Services/MapeoImagenesService.php`
 
 #### Método: `mapearYCrearFotos()`
-- ⏱️ Tiempo de resolución de imágenes
-- ⏱️ Tiempo de creación de registros en BD
-- ⏱️ Tiempo total de mapeo
+-  Tiempo de resolución de imágenes
+-  Tiempo de creación de registros en BD
+-  Tiempo total de mapeo
 
 ---
 
@@ -74,10 +74,10 @@ Desglose de 8 pasos:
 **Archivo:** `app/Application/Services/ImageUploadService.php`
 
 #### Método: `guardarImagenDirecta()`
-- ⏱️ Tiempo de validación
-- ⏱️ Tiempo de carga de imagen en memoria
-- ⏱️ Tiempo de conversión a WebP
-- ⏱️ Tiempo total
+-  Tiempo de validación
+-  Tiempo de carga de imagen en memoria
+-  Tiempo de conversión a WebP
+-  Tiempo total
 -  Información de archivo (tamaño, nombre original)
 
 ---
@@ -86,9 +86,9 @@ Desglose de 8 pasos:
 
 ### Carga de Página
 ```
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA {"usuario_id":92}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  INICIANDO CARGA DE PÁGINA {"usuario_id":92}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas {"cantidad":50,"tiempo_ms":45.23}
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 👥 Clientes cargados {"cantidad":500,"tiempo_ms":850.42}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA {
   "tiempo_total_ms": 1234.56,
@@ -98,7 +98,7 @@ Desglose de 8 pasos:
 
 ### Creación de Pedido
 ```
-[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL
+[2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  INICIANDO CREACIÓN TRANSACCIONAL
 [2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 1: JSON decodificado {"tiempo_ms":5.12}
 [2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 2: Cliente obtenido/creado {"tiempo_ms":50.45}
 [2026-01-29 21:36:00] local.INFO: [CREAR-PEDIDO]  PASO 3: Pedido normalizado (DTO) {"tiempo_ms":30.78}
@@ -124,7 +124,7 @@ Desglose de 8 pasos:
 
 ---
 
-## 🔍 Cómo Usar
+##  Cómo Usar
 
 ### 1. **Opción Rápida: PowerShell Script**
 ```powershell
@@ -188,7 +188,7 @@ Buscar en logs: `[RESOLVER-IMAGENES]  Extracción completada`
 
 ---
 
-## 🚀 Próximos Pasos
+##  Próximos Pasos
 
 1. **Reproducir el problema** y guardar logs
 2. **Ejecutar:** `.\scripts\analizar-logs-pedidos.ps1`

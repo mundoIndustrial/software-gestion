@@ -12,7 +12,7 @@ class MigrarImagenesLogo extends Command
 
     public function handle()
     {
-        $this->info('🔄 MIGRANDO IMÁGENES DE LOGOS');
+        $this->info(' MIGRANDO IMÁGENES DE LOGOS');
         $this->newLine();
 
         try {

@@ -1,4 +1,4 @@
-# 🔍 ANÁLISIS RÁPIDO DE LOGS - Creación de Pedidos
+#  ANÁLISIS RÁPIDO DE LOGS - Creación de Pedidos
 
 ## ⚡ Resumen Ejecutivo
 
@@ -24,7 +24,7 @@ Se han agregado **logs detallados con microtiming** en todos los pasos críticos
 4. **[ImageUploadService.php](../app/Application/Services/ImageUploadService.php)**
    - `guardarImagenDirecta()` - Guardado de imágenes (validación, carga, conversión WebP)
 
-## 🚀 Cómo Usar Los Logs
+##  Cómo Usar Los Logs
 
 ### 1. Ejecutar acción en el navegador
 ```
@@ -45,7 +45,7 @@ Get-ChildItem "storage/logs/laravel.log" | tail -100
 ### 3. Filtrar por tipo de operación
 ```powershell
 # Ver carga de página
-Select-String "CREAR-PEDIDO-NUEVO.*⏱️|CREAR-PEDIDO-NUEVO.*✨" storage/logs/laravel.log
+Select-String "CREAR-PEDIDO-NUEVO.*|CREAR-PEDIDO-NUEVO.*✨" storage/logs/laravel.log
 
 # Ver creación de pedido
 Select-String "CREAR-PEDIDO.*✨" storage/logs/laravel.log
@@ -57,9 +57,9 @@ Select-String "IMAGE-UPLOAD|RESOLVER-IMAGENES|MAPEO-IMAGENES" storage/logs/larav
 ##  Ejemplo de Log Completo
 
 ```
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA {"usuario_id":92,"timestamp":"2026-01-29 21:35:10"}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  INICIANDO CARGA DE PÁGINA {"usuario_id":92,"timestamp":"2026-01-29 21:35:10"}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas {"cantidad":50,"tiempo_ms":45.23}
-[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
+[2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados {"cantidad":5,"tiempo_ms":120.56}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] 👥 Clientes cargados {"cantidad":500,"tiempo_ms":850.42}
 [2026-01-29 21:35:10] local.INFO: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA {
   "tiempo_total_ms": 1234.56,

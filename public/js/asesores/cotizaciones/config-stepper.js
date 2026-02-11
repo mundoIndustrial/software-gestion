@@ -40,10 +40,10 @@
                 // Forzar repaint
                 stepLine4.offsetHeight;
                 
-                console.log('✅ [asegurarLineaRevisarPrenda] Línea step-line-4 configurada para prenda');
-                console.log('🔍 [asegurarLineaRevisarPrenda] Estilos aplicados:', stepLine4.style.cssText);
+                console.log(' [asegurarLineaRevisarPrenda] Línea step-line-4 configurada para prenda');
+                console.log(' [asegurarLineaRevisarPrenda] Estilos aplicados:', stepLine4.style.cssText);
             } else {
-                console.error('❌ [asegurarLineaRevisarPrenda] No se encontró step-line-4');
+                console.error(' [asegurarLineaRevisarPrenda] No se encontró step-line-4');
             }
         }
     }
@@ -320,11 +320,11 @@
                 break;
         }
         
-        console.log(`🔄 [navegarARevisar] Navegando al paso ${pasoRevisar} para tipo ${tipo}`);
+        console.log(` [navegarARevisar] Navegando al paso ${pasoRevisar} para tipo ${tipo}`);
         
         if (typeof window.irAlPaso === 'function') {
             window.irAlPaso(pasoRevisar);
         } else {
-            console.error('❌ [navegarARevisar] La función irAlPaso no está disponible');
+            console.error(' [navegarARevisar] La función irAlPaso no está disponible');
         }
     };

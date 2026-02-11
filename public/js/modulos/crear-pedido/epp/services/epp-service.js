@@ -257,7 +257,7 @@ class EppService {
 
             // Si tiene pedidoEppId, es una edición (UPDATE)
             if (pedidoEppId) {
-                console.log('[EppService] 🔄 MODO EDICIÓN: Actualizando EPP en el pedido...');
+                console.log('[EppService]  MODO EDICIÓN: Actualizando EPP en el pedido...');
                 resultado = await this.apiService.actualizarEPPDelPedido(
                     pedidoId,
                     pedidoEppId,
@@ -289,11 +289,11 @@ class EppService {
             // Recargar página
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
-            console.error('[EppService] ❌ Error al guardar EPP:', error);
+            console.error('[EppService]  Error al guardar EPP:', error);
 
             if (window.eppNotificationService) {
                 window.eppNotificationService.mostrarErrorModal(
-                    '❌ Error al Guardar',
+                    ' Error al Guardar',
                     error.message
                 );
             } else {
@@ -312,7 +312,7 @@ class EppService {
 
             // Si estamos editando, actualizar en BD
             if (eppId && pedidoEppId) {
-                console.log('[EppService] 🔄 Actualizando pedido_epp en BD:', pedidoEppId);
+                console.log('[EppService]  Actualizando pedido_epp en BD:', pedidoEppId);
                 
                 // Actualizar en BD
                 this.apiService.actualizarPedidoEpp(pedidoEppId, {
@@ -351,10 +351,10 @@ class EppService {
                     this.cerrarModal();
                     this.stateManager.finalizarEdicion();
                 }).catch(error => {
-                    console.error('[EppService] ❌ Error al actualizar pedido_epp:', error);
+                    console.error('[EppService]  Error al actualizar pedido_epp:', error);
                     if (window.eppNotificationService) {
                         window.eppNotificationService.mostrarError(
-                            '❌ Error',
+                            ' Error',
                             'No se pudo guardar los cambios'
                         );
                     }
@@ -405,7 +405,7 @@ class EppService {
                         window.itemsPedido = [];
                     }
                     window.itemsPedido.push(eppData);
-                    console.log('[EppService] 📦 EPP agregado a window.itemsPedido. Total:', window.itemsPedido.length);
+                    console.log('[EppService]  EPP agregado a window.itemsPedido. Total:', window.itemsPedido.length);
                     
                     //  TAMBIÉN intentar agregar a gestionItemsUI.epps directamente como fallback
                     if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {
@@ -517,7 +517,7 @@ class EppService {
             if (epps.length === 0) {
                 container.innerHTML = `<div style="padding: 1rem; text-align: center; color: #6b7280;">No se encontraron resultados para "${valor}"</div>`;
             } else {
-                console.log('🔍 [EppService] Renderizando resultados:', epps.length);
+                console.log(' [EppService] Renderizando resultados:', epps.length);
                 const html = epps.map(epp => `
                     <div onclick="if(window.mostrarProductoEPP) { window.mostrarProductoEPP({id: ${epp.id}, nombre_completo: '${epp.nombre_completo || epp.nombre}', nombre: '${epp.nombre}', imagen: '${epp.imagen || ''}', tallas: ${JSON.stringify(epp.tallas || [])}}); } document.getElementById('resultadosBuscadorEPP').style.display = 'none'; document.getElementById('inputBuscadorEPP').value = '';" 
                          style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #e5e7eb; transition: background 0.2s ease;"
@@ -543,13 +543,13 @@ class EppService {
      * Búsqueda de EPP desde la base de datos
      */
     async _buscarEPPDesdeDB(valor) {
-        console.log('🔍 [EppService] _buscarEPPDesdeDB iniciado con término:', valor);
+        console.log(' [EppService] _buscarEPPDesdeDB iniciado con término:', valor);
         try {
             const url = `/api/epp?q=${encodeURIComponent(valor)}`;
-            console.log('🔍 [EppService] Realizando fetch a:', url);
+            console.log(' [EppService] Realizando fetch a:', url);
             
             const response = await fetch(url);
-            console.log('🔍 [EppService] Response status:', response.status, response.statusText);
+            console.log(' [EppService] Response status:', response.status, response.statusText);
             
             if (!response.ok) {
                 const errorText = await response.text();

@@ -72,7 +72,7 @@ Sistema modular desacoplado para el manejo de telas, colores, referencias e imá
   - `serializarDatosTelas()` - Serializar datos para almacenamiento
   - `restaurarDatosTelas()` - Restaurar datos desde almacenamiento
 
-## 🚀 Instalación y Uso
+##  Instalación y Uso
 
 ### Carga Automática (Recomendado)
 El módulo se carga automáticamente a través del archivo principal `gestion-telas.js`.
@@ -154,7 +154,7 @@ window.addEventListener('telasModuleLoaded', (e) => {
 
 ## 🎯 Características
 
-### ✅ Ventajas de la Arquitectura Modular
+###  Ventajas de la Arquitectura Modular
 - **Organización**: Código separado por responsabilidades
 - **Claridad**: Cada componente tiene un propósito específico
 - **Mantenibilidad**: Fácil modificar componentes individuales
@@ -170,7 +170,7 @@ window.addEventListener('telasModuleLoaded', (e) => {
 - **UI Dinámica**: Actualización optimizada del DOM
 - **Compatibilidad**: 100% compatible con el sistema existente
 
-### 🎨 Estado del Sistema
+###  Estado del Sistema
 ```javascript
 console.log(window.TelasModule);
 // {
@@ -187,7 +187,7 @@ console.log(window.TelasModule);
 // }
 ```
 
-## 🔄 Reemplazo del Sistema Antiguo
+##  Reemplazo del Sistema Antiguo
 
 ### Cambios Principales
 1. **Estructura Modular**: Archivos organizados por funcionalidad
@@ -241,7 +241,7 @@ console.log(window.TelasModule);
 - **Testing**: Testing unitario por componente
 - **Documentación**: README específico por componente
 
-### 🚀 Rendimiento
+###  Rendimiento
 - **Carga Eficiente**: Solo carga componentes necesarios
 - **Lazy Loading**: Posibilidad de carga bajo demanda
 - **Cache**: Mejor cacheo por componente

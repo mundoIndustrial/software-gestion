@@ -767,7 +767,7 @@
                 this.currentAbortController = new AbortController();
                 const timeoutId = setTimeout(() => {
                     this.currentAbortController.abort();
-                    console.warn('⏱️ Búsqueda cancelada por timeout (5s)');
+                    console.warn(' Búsqueda cancelada por timeout (5s)');
                 }, this.searchTimeout);
                 
                 try {

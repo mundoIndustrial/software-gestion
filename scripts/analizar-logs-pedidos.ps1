@@ -13,7 +13,7 @@ Write-Host "╚═════════════════════�
 
 # Verificar que el archivo existe
 if (-not (Test-Path $LogFile)) {
-    Write-Host "❌ Archivo de log no encontrado: $LogFile" -ForegroundColor Red
+    Write-Host " Archivo de log no encontrado: $LogFile" -ForegroundColor Red
     exit 1
 }
 
@@ -57,7 +57,7 @@ function Show-LogEntry {
         Write-Host "  🟠 CREAR-PEDIDO: " -ForegroundColor DarkYellow -NoNewline
     }
     elseif ($linea -match '\[RESOLVER-IMAGENES\]') {
-        Write-Host "  🔴 RESOLVER-IMAGENES: " -ForegroundColor Red -NoNewline
+        Write-Host "   RESOLVER-IMAGENES: " -ForegroundColor Red -NoNewline
     }
     elseif ($linea -match '\[IMAGE-UPLOAD\]') {
         Write-Host "  🟣 IMAGE-UPLOAD: " -ForegroundColor Magenta -NoNewline
@@ -82,7 +82,7 @@ if ($Operacion -eq "carga-inicial" -or $Operacion -eq "todas") {
     Write-Host "`n┌─ 📖 CARGA INICIAL (crear-nuevo o crear-desde-cotizacion)" -ForegroundColor Cyan
     Write-Host "└─" -ForegroundColor Cyan
     
-    $cargaInicial = $lineas | Select-String 'CREAR-PEDIDO.*⏱️ INICIANDO|CREAR-PEDIDO.*✨ PÁGINA'
+    $cargaInicial = $lineas | Select-String 'CREAR-PEDIDO.* INICIANDO|CREAR-PEDIDO.*✨ PÁGINA'
     if ($cargaInicial) {
         foreach ($linea in $cargaInicial) {
             Show-LogEntry $linea
@@ -169,9 +169,9 @@ if ($tiemposTotal.Count -gt 0) {
     $maximo = [math]::Round(($tiemposTotal | Measure-Object -Maximum).Maximum, 2)
     
     Write-Host "   Operaciones registradas: $($tiemposTotal.Count)" -ForegroundColor White
-    Write-Host "  ⏱️  Tiempo promedio: $promedio ms" -ForegroundColor White
+    Write-Host "    Tiempo promedio: $promedio ms" -ForegroundColor White
     Write-Host "  🟢 Tiempo mínimo: $minimo ms" -ForegroundColor Green
-    Write-Host "  🔴 Tiempo máximo: $maximo ms" -ForegroundColor Red
+    Write-Host "   Tiempo máximo: $maximo ms" -ForegroundColor Red
     
     if ($maximo -gt 5000) {
         Write-Host "`n    ALERTA: Hay operaciones tardando > 5 segundos" -ForegroundColor Red

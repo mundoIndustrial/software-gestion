@@ -323,7 +323,7 @@ class PedidoPrendaService
                         ]);
                     }
                 } catch (\Exception $e) {
-                    Log::error('[PedidoPrendaService] ❌ Error procesando color/tela', [
+                    Log::error('[PedidoPrendaService]  Error procesando color/tela', [
                         'error' => $e->getMessage(),
                         'prenda_data' => $prendaData,
                     ]);

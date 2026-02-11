@@ -155,7 +155,7 @@ class LogoCotizacionTecnicaController extends Controller
             $logosCompartidosGuardados = [];
             if ($request->has('logos_compartidos_guardados')) {
                 $logosCompartidosGuardados = json_decode($request->input('logos_compartidos_guardados', '{}'), true) ?? [];
-                Log::info('📦 Rutas de logos compartidos recibidas:', [
+                Log::info(' Rutas de logos compartidos recibidas:', [
                     'count' => count($logosCompartidosGuardados),
                     'claves' => array_keys($logosCompartidosGuardados)
                 ]);
@@ -376,7 +376,7 @@ class LogoCotizacionTecnicaController extends Controller
                             'tamaño_bytes' => $tamaño
                         ]);
                     } catch (\Exception $e) {
-                        Log::error('❌ Error vinculando imagen compartida a prenda', [
+                        Log::error(' Error vinculando imagen compartida a prenda', [
                             'error' => $e->getMessage(),
                             'prenda_id' => $prenda->id,
                             'clave' => $clave

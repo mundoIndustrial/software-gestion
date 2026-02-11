@@ -17,7 +17,7 @@ Se agregaron **logs detallados con medición de tiempo** en toda la cadena de cr
 
 ---
 
-## 🚀 Uso Rápido (30 segundos)
+##  Uso Rápido (30 segundos)
 
 ### 1. Hacer la acción en navegador
 ```
@@ -77,7 +77,7 @@ Si ves en el resumen:
 "resumen": "Tallas: 45ms | Pedidos: 120ms | Clientes: 500ms | View: 100ms | TOTAL: 1500ms"
 ```
 
-### 🔴 Caso Problema (Lento)
+###  Caso Problema (Lento)
 ```
 [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL
 "tiempo_total_ms": 12500,
@@ -120,7 +120,7 @@ Proporciona:
 
 ---
 
-## 🔍 Troubleshooting Rápido
+##  Troubleshooting Rápido
 
 ### "La página tarda 5 segundos en cargar"
 ```powershell
@@ -221,4 +221,4 @@ Los logs están **100% implementados** en:
 
 Solo hay que **ejecutar la acción y revisar los logs**.
 
-¡A buscar ese cuello de botella! 🚀
+¡A buscar ese cuello de botella! 

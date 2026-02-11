@@ -155,7 +155,7 @@ async function demoConstruirPedidoCompleto() {
         console.log(' NO contiene referencias a File objects:', !contieneFILE);
         
     } catch (error) {
-        console.error('❌ Error al serializar:', error.message);
+        console.error(' Error al serializar:', error.message);
     }
 
     // ========================================
@@ -205,7 +205,7 @@ async function demoConstruirPedidoCompleto() {
         });
         
     } catch (error) {
-        console.error('❌ Error al crear pedido:', error.message);
+        console.error(' Error al crear pedido:', error.message);
     }
 }
 

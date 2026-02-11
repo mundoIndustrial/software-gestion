@@ -1,6 +1,6 @@
 # Optimizaciones Adicionales para Factura - Nivel 2
 
-## 📊 Próximas Mejoras por Impacto
+##  Próximas Mejoras por Impacto
 
 | # | Optimización | Impacto | Dificultad | Tiempo | Estado |
 |---|--|--|--|--|--|
@@ -258,7 +258,7 @@ gzip_min_length 1000;
 
 ## 📈 Resumen de Optimizaciones
 
-### Implementadas (Fase 1) ✅
+### Implementadas (Fase 1) 
 ```
 - Eliminadas queries N+1
 - Reducido logging excesivo
@@ -282,11 +282,11 @@ gzip_min_length 1000;
 
 ---
 
-## 🚀 Plan de Implementación Recomendado
+##  Plan de Implementación Recomendado
 
 ### Día 1 (Hoy):
 ```
-✅ Fase 1: Ya completada (N+1 fixes + logging)
+ Fase 1: Ya completada (N+1 fixes + logging)
 - Ganancia esperada: 7-14x más rápido
 ```
 
@@ -316,7 +316,7 @@ gzip_min_length 1000;
 
 ---
 
-## 🔍 Cómo Medir la Mejora
+##  Cómo Medir la Mejora
 
 ### Antes de cambios:
 ```bash
@@ -340,7 +340,7 @@ include('test-factura-performance.php')
 
 ---
 
-## ⚠️ Consideraciones Importantes
+##  Consideraciones Importantes
 
 ### Caching:
 - Invalidar cuando se actualiza pedido

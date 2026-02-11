@@ -111,7 +111,7 @@ window.crearPedidoConBuilderUnificado = async function() {
                 throw new Error('No se recibió ID de pedido válido del servidor');
             }
             
-            console.log('[Builder] ✅ Pedido creado, navegando a:', pedidoId);
+            console.log('[Builder]  Pedido creado, navegando a:', pedidoId);
             window.location.href = `/asesores/pedidos-editable/${pedidoId}`;
         } else {
             throw new Error(response.message || 'Error desconocido al crear pedido');

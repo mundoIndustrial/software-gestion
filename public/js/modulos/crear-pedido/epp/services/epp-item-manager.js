@@ -114,7 +114,7 @@ class EppItemManager {
             item = document.querySelector(`.item-epp-card[data-epp-id="${id}"]`);
         }
         
-        console.log('[EppItemManager] 🔍 obtenerItem buscando ID:', id, 'encontrado:', !!item);
+        console.log('[EppItemManager]  obtenerItem buscando ID:', id, 'encontrado:', !!item);
         return item;
     }
 
@@ -128,7 +128,7 @@ class EppItemManager {
             return;
         }
 
-        console.log('[EppItemManager] 🔄 Actualizando item:', id, datos);
+        console.log('[EppItemManager]  Actualizando item:', id, datos);
 
         // Actualizar cantidad
         if (datos.cantidad !== undefined) {

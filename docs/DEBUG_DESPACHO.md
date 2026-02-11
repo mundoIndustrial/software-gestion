@@ -1,4 +1,4 @@
-# 🔍 GUÍA DE VERIFICACIÓN - MÓDULO DESPACHO
+#  GUÍA DE VERIFICACIÓN - MÓDULO DESPACHO
 
 ## Paso 1: Verificar Frontend (Consola del Navegador)
 

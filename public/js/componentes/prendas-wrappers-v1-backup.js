@@ -285,7 +285,7 @@ window.actualizarPreviewPrenda = function() {
         const contador = document.getElementById('nueva-prenda-foto-contador');
         const btn = document.getElementById('nueva-prenda-foto-btn');
         
-        console.log('[actualizarPreviewPrenda] 🔍 Elementos DOM:', {
+        console.log('[actualizarPreviewPrenda]  Elementos DOM:', {
             preview: preview ? 'ENCONTRADO' : 'NO ENCONTRADO',
             contador: contador ? 'ENCONTRADO' : 'NO ENCONTRADO',
             btn: btn ? 'ENCONTRADO' : 'NO ENCONTRADO'
@@ -304,7 +304,7 @@ window.actualizarPreviewPrenda = function() {
         
         // Obtener imágenes
         const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
-        console.log('[actualizarPreviewPrenda] 📦 Imágenes cargadas:', imagenes.length);
+        console.log('[actualizarPreviewPrenda]  Imágenes cargadas:', imagenes.length);
 
         
         // Si no hay imágenes, mostrar placeholder con drag & drop
@@ -406,7 +406,7 @@ window.setupDragAndDrop = function(previewElement) {
         newPreview.style.border = '';
         newPreview.style.opacity = '1';
         
-        console.log('[setupDragAndDrop] 📦 Archivos arrastrados:', e.dataTransfer.files.length);
+        console.log('[setupDragAndDrop]  Archivos arrastrados:', e.dataTransfer.files.length);
         
         // Verificar si hay archivos
         const files = e.dataTransfer.files;
@@ -421,7 +421,7 @@ window.setupDragAndDrop = function(previewElement) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragAndDrop] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragAndDrop]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen');
             return;
         }
@@ -435,7 +435,7 @@ window.setupDragAndDrop = function(previewElement) {
         if (typeof window.manejarImagenesPrenda === 'function') {
             window.manejarImagenesPrenda(tempInput);
         } else {
-            console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+            console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
         }
     });
     
@@ -451,11 +451,11 @@ window.setupDragAndDrop = function(previewElement) {
         if (inputFotos) {
             inputFotos.click();
         } else {
-            console.error('[setupDragAndDrop] ❌ Input de fotos no encontrado');
+            console.error('[setupDragAndDrop]  Input de fotos no encontrado');
         }
     });
     
-    console.log('[setupDragAndDrop] ✅ Event listeners configurados');
+    console.log('[setupDragAndDrop]  Event listeners configurados');
 }
 
 /**
@@ -506,7 +506,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         newPreview.style.border = '';
         newPreview.style.opacity = '1';
         
-        console.log('[setupDragAndDropConImagen] 📦 Archivos arrastrados:', e.dataTransfer.files.length);
+        console.log('[setupDragAndDropConImagen]  Archivos arrastrados:', e.dataTransfer.files.length);
         console.log('[setupDragAndDropConImagen] 📸 Imágenes actuales:', imagenesActuales.length);
         
         // Verificar si hay archivos
@@ -518,7 +518,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar límite de imágenes
         if (imagenesActuales.length >= 3) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
             mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
             return;
         }
@@ -529,7 +529,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragAndDropConImagen]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen');
             return;
         }
@@ -543,22 +543,22 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         if (typeof window.manejarImagenesPrenda === 'function') {
             window.manejarImagenesPrenda(tempInput);
         } else {
-            console.error('[setupDragAndDropConImagen] ❌ La función manejarImagenesPrenda no está disponible');
+            console.error('[setupDragAndDropConImagen]  La función manejarImagenesPrenda no está disponible');
         }
     });
     
-    console.log('[setupDragAndDropConImagen] ✅ Event listeners configurados con imagen existente');
+    console.log('[setupDragAndDropConImagen]  Event listeners configurados con imagen existente');
 }
 
 /**
  * Inicialización del drag & drop cuando el DOM está listo
  */
 window.inicializarDragDropPrenda = function() {
-    console.log('[inicializarDragDropPrenda] 🚀 Inicializando drag & drop');
+    console.log('[inicializarDragDropPrenda]  Inicializando drag & drop');
     
     const preview = document.getElementById('nueva-prenda-foto-preview');
     if (preview) {
-        console.log('[inicializarDragDropPrenda] ✅ Preview encontrado, configurando drag & drop');
+        console.log('[inicializarDragDropPrenda]  Preview encontrado, configurando drag & drop');
         
         // Verificar si ya hay imágenes
         if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes().length > 0) {
@@ -568,7 +568,7 @@ window.inicializarDragDropPrenda = function() {
             window.setupDragAndDrop(preview);
         }
     } else {
-        console.log('[inicializarDragDropPrenda] ⚠️ Preview no encontrado');
+        console.log('[inicializarDragDropPrenda]  Preview no encontrado');
     }
 };
 
@@ -587,7 +587,7 @@ window.setupDragDropTela = function(dropZone) {
     console.log('[setupDragDropTela] 🎬 Configurando drag & drop para imagen de tela');
     
     if (!dropZone) {
-        console.error('[setupDragDropTela] ❌ Drop zone no encontrado');
+        console.error('[setupDragDropTela]  Drop zone no encontrado');
         return;
     }
     
@@ -656,7 +656,7 @@ window.setupDragDropTela = function(dropZone) {
             button.style.transform = '';
         }
         
-        console.log('[setupDragDropTela] 📦 Archivos arrastrados a zona de tela:', e.dataTransfer.files.length);
+        console.log('[setupDragDropTela]  Archivos arrastrados a zona de tela:', e.dataTransfer.files.length);
         
         // Verificar si hay archivos
         const files = e.dataTransfer.files;
@@ -671,7 +671,7 @@ window.setupDragDropTela = function(dropZone) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragDropTela] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragDropTela]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen para la tela');
             return;
         }
@@ -685,11 +685,11 @@ window.setupDragDropTela = function(dropZone) {
         if (typeof window.manejarImagenTela === 'function') {
             window.manejarImagenTela(tempInput);
         } else {
-            console.error('[setupDragDropTela] ❌ La función manejarImagenTela no está disponible');
+            console.error('[setupDragDropTela]  La función manejarImagenTela no está disponible');
         }
     });
     
-    console.log('[setupDragDropTela] ✅ Drag & drop configurado para imagen de tela');
+    console.log('[setupDragDropTela]  Drag & drop configurado para imagen de tela');
 };
 
 /**
@@ -700,7 +700,7 @@ window.setupDragDropTelaPreview = function(previewElement) {
     console.log('[setupDragDropTelaPreview] 🎬 Configurando drag & drop para preview de imágenes de tela');
     
     if (!previewElement) {
-        console.error('[setupDragDropTelaPreview] ❌ Preview de tela no encontrado');
+        console.error('[setupDragDropTelaPreview]  Preview de tela no encontrado');
         return;
     }
     
@@ -748,7 +748,7 @@ window.setupDragDropTelaPreview = function(previewElement) {
         previewElement.style.opacity = '1';
         previewElement.style.transform = '';
         
-        console.log('[setupDragDropTelaPreview] 📦 Archivos arrastrados al preview de tela:', e.dataTransfer.files.length);
+        console.log('[setupDragDropTelaPreview]  Archivos arrastrados al preview de tela:', e.dataTransfer.files.length);
         
         // Verificar si hay archivos
         const files = e.dataTransfer.files;
@@ -763,7 +763,7 @@ window.setupDragDropTelaPreview = function(previewElement) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragDropTelaPreview] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragDropTelaPreview]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen para la tela');
             return;
         }
@@ -777,26 +777,26 @@ window.setupDragDropTelaPreview = function(previewElement) {
         if (typeof window.manejarImagenTela === 'function') {
             window.manejarImagenTela(tempInput);
         } else {
-            console.error('[setupDragDropTelaPreview] ❌ La función manejarImagenTela no está disponible');
+            console.error('[setupDragDropTelaPreview]  La función manejarImagenTela no está disponible');
         }
     });
     
-    console.log('[setupDragDropTelaPreview] ✅ Drag & drop configurado para preview de imágenes de tela');
+    console.log('[setupDragDropTelaPreview]  Drag & drop configurado para preview de imágenes de tela');
 };
 
 /**
  * Inicialización automática del drag & drop para imágenes de tela
  */
 window.inicializarDragDropTela = function() {
-    console.log('[inicializarDragDropTela] 🚀 Inicializando drag & drop para imágenes de tela');
+    console.log('[inicializarDragDropTela]  Inicializando drag & drop para imágenes de tela');
     
     // Configurar drag & drop en el botón
     const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
     if (dropZone) {
         window.setupDragDropTela(dropZone);
-        console.log('[inicializarDragDropTela] ✅ Drag & drop configurado en botón de tela');
+        console.log('[inicializarDragDropTela]  Drag & drop configurado en botón de tela');
     } else {
-        console.log('[inicializarDragDropTela] ⚠️ Drop zone de tela no encontrado');
+        console.log('[inicializarDragDropTela]  Drop zone de tela no encontrado');
     }
     
     // Configurar drag & drop en el preview si ya hay imágenes
@@ -804,7 +804,7 @@ window.inicializarDragDropTela = function() {
     if (preview && preview.style.display !== 'none') {
         if (typeof window.setupDragDropTelaPreview === 'function') {
             window.setupDragDropTelaPreview(preview);
-            console.log('[inicializarDragDropTela] ✅ Drag & drop configurado en preview de tela');
+            console.log('[inicializarDragDropTela]  Drag & drop configurado en preview de tela');
         }
     } else {
         console.log('[inicializarDragDropTela] 📭 Preview de tela no encontrado o está oculto');
@@ -982,7 +982,7 @@ window.actualizarPreviewTela = function() {
             // 🔥 IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
             if (typeof window.setupDragDropTelaPreview === 'function') {
                 window.setupDragDropTelaPreview(preview);
-                console.log('[actualizarPreviewTela] ✅ Drag & drop configurado en preview con imágenes');
+                console.log('[actualizarPreviewTela]  Drag & drop configurado en preview con imágenes');
             }
             
         } else {
@@ -1226,7 +1226,7 @@ if (!window.mostrarGaleriaImagenesPrenda) {
                 // Actualizar UI
                 actualizarUI();
                 
-                // 🔴 FIX: También actualizar el contador del preview principal
+                //  FIX: También actualizar el contador del preview principal
                 if (typeof window.actualizarPreviewPrenda === 'function') {
                     window.actualizarPreviewPrenda();
                     console.log(' [SYNC] Preview principal actualizado - contador debería cambiar a:', imagenes.length, 'fotos');

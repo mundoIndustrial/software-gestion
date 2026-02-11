@@ -13,7 +13,7 @@ class CambiarUserIdAAsesorId extends Command
 
     public function handle()
     {
-        $this->info('🔄 CAMBIANDO user_id A asesor_id EN TABLA cotizaciones');
+        $this->info(' CAMBIANDO user_id A asesor_id EN TABLA cotizaciones');
         $this->newLine();
 
         try {

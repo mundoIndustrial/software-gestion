@@ -317,8 +317,8 @@ class TestPedidoCompletoGuardadoSeeder extends Seeder
             if (empty($errores)) {
                 echo " ¡TEST EXITOSO! TODAS LAS TABLAS TIENEN DATOS\n";
                 echo "═══════════════════════════════════════════════════════\n\n";
-                echo "📦 Pedido de prueba creado: {$pedido->numero_pedido}\n";
-                echo "🔍 Ejecuta para ver detalles:\n";
+                echo " Pedido de prueba creado: {$pedido->numero_pedido}\n";
+                echo " Ejecuta para ver detalles:\n";
                 echo "   php verificar-guardado-pedido.php {$pedido->numero_pedido}\n\n";
             } else {
                 echo " TEST FALLIDO - TABLAS SIN DATOS:\n";

@@ -1,5 +1,5 @@
 /**
- * 🚀 LAZY LOADER: Módulos de Edición de Prendas
+ *  LAZY LOADER: Módulos de Edición de Prendas
  * 
  * Propósito: Cargar bajo demanda todos los módulos necesarios para editar prendas
  * Cuándo: Se carga cuando usuario hace clic en "Editar Pedido"

@@ -57,7 +57,7 @@ class GestionItemsUI {
             }
         });
         
-        console.log('[gestionItemsUI] 📦 Total items a renderizar:', itemsOrdenados.length);
+        console.log('[gestionItemsUI]  Total items a renderizar:', itemsOrdenados.length);
         return itemsOrdenados;
     }
 
@@ -211,7 +211,7 @@ class GestionItemsUI {
                 return;
             }
             
-            // 🔍 Buscar qué tipo de item es (prenda o epp)
+            //  Buscar qué tipo de item es (prenda o epp)
             const itemAEliminar = this.ordenItems.find((item, posicion) => {
                 if (item.tipo === 'prenda') {
                     return this.prendas[item.index] && this.prendas[item.index]._id === undefined && posicion === index;
@@ -221,7 +221,7 @@ class GestionItemsUI {
                 return false;
             });
             
-            // 🔍 ALTERNATIVA: buscar por posición en itemsOrdenados
+            //  ALTERNATIVA: buscar por posición en itemsOrdenados
             const itemsOrdenados = this.obtenerItemsOrdenados();
             if (index >= 0 && index < itemsOrdenados.length) {
                 const itemEnPosicion = itemsOrdenados[index];
@@ -239,7 +239,7 @@ class GestionItemsUI {
                     indiceBuscado = this.epps.findIndex(e => e === itemEnPosicion);
                 }
                 
-                console.log(`[eliminarItem] 🔍 Eliminando item en posición ${index}:`, {
+                console.log(`[eliminarItem]  Eliminando item en posición ${index}:`, {
                     tipo: tipoBuscado,
                     indiceEnArray: indiceBuscado,
                     item: itemEnPosicion
@@ -271,9 +271,9 @@ class GestionItemsUI {
                 
                 console.log(`[eliminarItem]  ordenItems actualizado:`, JSON.stringify(this.ordenItems));
                 
-                // 🔄 SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
+                //  SINCRONIZAR CON GESTOR: Eliminar también del gestorPrendaSinCotizacion si existe
                 if (tipoBuscado === 'prenda' && window.gestorPrendaSinCotizacion?.eliminar) {
-                    console.log(`[eliminarItem] 🔄 Sincronizando eliminación en gestorPrendaSinCotizacion (índice original: ${indiceBuscado})`);
+                    console.log(`[eliminarItem]  Sincronizando eliminación en gestorPrendaSinCotizacion (índice original: ${indiceBuscado})`);
                     window.gestorPrendaSinCotizacion.eliminar(indiceBuscado);
                 }
             }
@@ -305,7 +305,7 @@ class GestionItemsUI {
         if (esEdicion) {
             console.log('[abrirModalAgregarPrendaNueva] ✏️ EDICIÓN: Abriendo modal para editar prenda index', this.prendaEditIndex);
         } else {
-            console.log('[abrirModalAgregarPrendaNueva] ✅ CREACIÓN: Abriendo modal para crear nueva prenda');
+            console.log('[abrirModalAgregarPrendaNueva]  CREACIÓN: Abriendo modal para crear nueva prenda');
         }
         
         this.prendaEditor.abrirModal(esEdicion, this.prendaEditIndex);
@@ -316,7 +316,9 @@ class GestionItemsUI {
      */
     cerrarModalAgregarPrendaNueva() {
         try {
-            // 🔴 NUEVO: Resetear la bandera de nueva prenda desde cotización
+            console.log('[gestionItemsUI] 🔘 Cerrando modal de agregar/editar prenda...');
+            
+            //  NUEVO: Resetear la bandera de nueva prenda desde cotización
             if (this.prendaEditor) {
                 this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
             }
@@ -328,21 +330,19 @@ class GestionItemsUI {
             // - Resetear window.prendaEditIndex en TODAS las ubicaciones
             // - Ocultar el modal
             if (typeof ModalCleanup !== 'undefined') {
+                console.log('[gestionItemsUI]   → Ejecutando ModalCleanup.limpiarDespuésDeGuardar()...');
                 ModalCleanup.limpiarDespuésDeGuardar();
+                console.log('[gestionItemsUI]   ✓ ModalCleanup completado');
             } else {
                 // Fallback si ModalCleanup no está disponible
+                console.log('[gestionItemsUI]    ModalCleanup no disponible, usando fallback...');
                 this.prendaEditIndex = null;
                 if (this.prendaEditor) {
                     this.prendaEditor.prendaEditIndex = null;
                 }
                 window.prendaEditIndex = null;
-            }
-            
-            // Intentar cerrar con window.cerrarModalPrendaNueva
-            if (typeof window.cerrarModalPrendaNueva === 'function') {
-                window.cerrarModalPrendaNueva();
-            } else {
-                // Fallback: cerrar directamente el modal
+                
+                // Cerrar directamente el modal
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
                 if (modal) {
                     modal.style.display = 'none';
@@ -353,10 +353,13 @@ class GestionItemsUI {
             if (this.prendaEditor) {
                 this.prendaEditor.resetearEdicion();
             }
+            
+            console.log('[gestionItemsUI]  Modal de prenda cerrado exitosamente');
         } catch (error) {
-
+            console.error('[gestionItemsUI]  Error cerrando modal:', error);
         }
     }
+
 
     /**
      * Cargar datos de prenda en el modal para editar
@@ -372,7 +375,7 @@ class GestionItemsUI {
     async agregarPrendaNueva() {
         try {
             // 🔥 CRÍTICO: Verificar estado ANTES de hacer nada
-            console.log('[agregarPrendaNueva] 🚀 INICIO - Estado actual:');
+            console.log('[agregarPrendaNueva]  INICIO - Estado actual:');
             console.log('[agregarPrendaNueva]   - this.prendaEditIndex:', this.prendaEditIndex);
             console.log('[agregarPrendaNueva]   - this.prendas.length:', this.prendas.length);
             console.log('[agregarPrendaNueva]   - ¿Es edición?:', this.prendaEditIndex !== null && this.prendaEditIndex !== undefined);
@@ -383,7 +386,7 @@ class GestionItemsUI {
                 // Crear servicio de notificaciones temporal para este caso
                 this.notificationService = typeof NotificationService !== 'undefined' ? new NotificationService() : {
                     success: (msg) => console.log('', msg),
-                    error: (msg) => console.error('❌', msg),
+                    error: (msg) => console.error('', msg),
                     warning: (msg) => console.warn('', msg)
                 };
             }
@@ -407,7 +410,7 @@ class GestionItemsUI {
                     Object.keys(genero).length > 0
                 );
 
-            console.log('[gestion-items-pedido] 🔍 Validación de tallas:');
+            console.log('[gestion-items-pedido]  Validación de tallas:');
             console.log('[gestion-items-pedido]   - prendaData.cantidad_talla:', prendaData.cantidad_talla);
             console.log('[gestion-items-pedido]   - tieneTallas:', tieneTallas);
 
@@ -421,7 +424,7 @@ class GestionItemsUI {
 
             // PROCESAR TIPO DE MANGA: Crear si no existe
             if (prendaData.variantes?.tipo_manga_crear && prendaData.variantes?.tipo_manga) {
-                console.log('[gestion-items-pedido] 🔄 Creando tipo de manga:', prendaData.variantes.tipo_manga);
+                console.log('[gestion-items-pedido]  Creando tipo de manga:', prendaData.variantes.tipo_manga);
                 
                 try {
                     const response = await fetch('/api/public/tipos-manga', {
@@ -478,11 +481,11 @@ class GestionItemsUI {
             }
 
             // Si es edición (prendaEditIndex !== null), actualizar; si no, agregar nueva
-            // 🔴 NUEVO: Detectar si es nueva prenda desde cotización
+            //  NUEVO: Detectar si es nueva prenda desde cotización
             const esNuevaDesdeCotz = this.prendaEditor?.esNuevaPrendaDesdeCotizacion === true;
             const esEdicionReal = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
             
-            console.log('[guardarPrenda] 🔴 DETECCIÓN CRÍTICA:', {
+            console.log('[guardarPrenda]  DETECCIÓN CRÍTICA:', {
                 esNuevaDesdeCotz: esNuevaDesdeCotz,
                 esEdicionReal: esEdicionReal,
                 prendaEditIndex: this.prendaEditIndex,
@@ -503,8 +506,8 @@ class GestionItemsUI {
                     // Obtener la prenda original desde window.prendaEnEdicion (guardada por prenda-editor-modal.js)
                     const prendaOriginal = window.prendaEnEdicion?.prendaOriginal;
 
-                    // 🔍 DEBUG: Verificar qué contiene window.prendaEnEdicion
-                    console.log('[gestion-items-pedido] 🔍 DEBUG window.prendaEnEdicion:', {
+                    //  DEBUG: Verificar qué contiene window.prendaEnEdicion
+                    console.log('[gestion-items-pedido]  DEBUG window.prendaEnEdicion:', {
                         existe: !!window.prendaEnEdicion,
                         prendaOriginal: window.prendaEnEdicion?.prendaOriginal,
                         prendaOriginalId: window.prendaEnEdicion?.prendaOriginal?.prenda_pedido_id || window.prendaEnEdicion?.prendaOriginal?.id,
@@ -516,8 +519,8 @@ class GestionItemsUI {
                     // Agregar el ID de la prenda original a prendaData
                     prendaData.prenda_pedido_id = prendaOriginal?.prenda_pedido_id || prendaOriginal?.id;
 
-                    // 🔍 DEBUG: Verificar qué se asignó
-                    console.log('[gestion-items-pedido] 🔍 DEBUG asignación de ID:', {
+                    //  DEBUG: Verificar qué se asignó
+                    console.log('[gestion-items-pedido]  DEBUG asignación de ID:', {
                         prendaOriginalId: prendaOriginal?.prenda_pedido_id || prendaOriginal?.id,
                         prendaDataPrendaPedidoId: prendaData.prenda_pedido_id,
                         prendaDataId: prendaData.id
@@ -531,7 +534,7 @@ class GestionItemsUI {
                         const telasAIncluir = window.telasAgregadas?.length > 0 ? window.telasAgregadas : window.telasCreacion;
                         prendaData.telasAgregadas = telasAIncluir;
                         
-                        console.log('[gestion-items-pedido] 📦 Telas nuevas incluidas en prendaData:', {
+                        console.log('[gestion-items-pedido]  Telas nuevas incluidas en prendaData:', {
                             cantidad: telasAIncluir.length,
                             origen: window.telasAgregadas?.length > 0 ? 'telasAgregadas' : 'telasCreacion',
                             telas: telasAIncluir.map(t => ({ color: t.color, tela: t.tela, imagenes: t.imagenes?.length }))
@@ -568,7 +571,7 @@ class GestionItemsUI {
                             console.log(' [GESTION-ITEMS] Array de imágenes actualizado a [] en memoria y en prendaData');
                         }
                         
-                        // 🔴 ANTES: Estado de la prenda antes de actualizar
+                        //  ANTES: Estado de la prenda antes de actualizar
                         const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
                         
                         // Actualizar prenda con los datos modificados
@@ -593,7 +596,7 @@ class GestionItemsUI {
 
                         this.notificationService?.exito('Prenda actualizada correctamente');
                     } else {
-                        console.error('[guardarPrenda] ❌ ERROR: No existe prenda en index', this.prendaEditIndex);
+                        console.error('[guardarPrenda]  ERROR: No existe prenda en index', this.prendaEditIndex);
                     }
                     
                     //  Cerrar modal AQUÍ en modo edición
@@ -619,12 +622,12 @@ class GestionItemsUI {
 
                     this.notificationService?.exito('Prenda agregada correctamente');
                     
-                    // ✅ NORMALIZAR: cambiar tipo de 'prenda_nueva' a 'prenda' para que ItemFormCollector lo procese
+                    //  NORMALIZAR: cambiar tipo de 'prenda_nueva' a 'prenda' para que ItemFormCollector lo procese
                     if (prendaData.tipo === 'prenda_nueva') {
                         prendaData.tipo = 'prenda';
                     }
                     
-                    console.log('[gestionItemsUI] 🔄 Prenda normalizada antes de agregar:', {
+                    console.log('[gestionItemsUI]  Prenda normalizada antes de agregar:', {
                         tipo: prendaData.tipo,
                         nombre_prenda: prendaData.nombre_prenda,
                         cantidad_talla: prendaData.cantidad_talla,
@@ -700,7 +703,7 @@ class GestionItemsUI {
 
             const pedidoData = this.formCollector.recolectarDatosPedido();
             
-            console.log('[gestion-items-pedido] 🔍 PEDIDO DATA RECOLECTADA:', {
+            console.log('[gestion-items-pedido]  PEDIDO DATA RECOLECTADA:', {
                 prendas_total: pedidoData.prendas?.length || 0,
                 epps_total: pedidoData.epps?.length || 0,
                 primer_prenda_telas: pedidoData.prendas?.[0]?.telas?.length || 0,
@@ -745,7 +748,7 @@ class GestionItemsUI {
             console.log('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
 
             if (resultado.success) {
-                console.log('[gestion-items-pedido] ✅ ENTRANDO AL IF - Pedido creado exitosamente');
+                console.log('[gestion-items-pedido]  ENTRANDO AL IF - Pedido creado exitosamente');
                 this.datosPedidoCreado = {
                     pedido_id: resultado.pedido_id,
                     numero_pedido: resultado.numero_pedido
@@ -760,7 +763,7 @@ class GestionItemsUI {
                     this.mostrarModalExito();
                 }, 300);
             } else {
-                console.warn('[gestion-items-pedido] ⚠️ resultado.success es FALSE o undefined');
+                console.warn('[gestion-items-pedido]  resultado.success es FALSE o undefined');
             }
         } catch (error) {
             console.error('[gestion-items-pedido]  ERROR CAPTURADO:', error);
@@ -926,12 +929,12 @@ class GestionItemsUI {
         if (!modalElement) {
             console.log('[mostrarModalExito] 🔧 Creando modal desde HTML...');
             if (typeof MODAL_EXITO_PEDIDO_HTML === 'undefined') {
-                console.error('[mostrarModalExito] ❌ CRÍTICO: MODAL_EXITO_PEDIDO_HTML no está definido');
+                console.error('[mostrarModalExito]  CRÍTICO: MODAL_EXITO_PEDIDO_HTML no está definido');
                 throw new Error('MODAL_EXITO_PEDIDO_HTML no está disponible');
             }
             document.body.insertAdjacentHTML('beforeend', MODAL_EXITO_PEDIDO_HTML);
             modalElement = document.getElementById('modalExitoPedido');
-            console.log('[mostrarModalExito] ✅ Modal creado, elemento encontrado?', !!modalElement);
+            console.log('[mostrarModalExito]  Modal creado, elemento encontrado?', !!modalElement);
         }
 
         const btnVolverAPedidos = document.getElementById('btnVolverAPedidos');
@@ -945,10 +948,10 @@ class GestionItemsUI {
             };
         }
 
-        console.log('[mostrarModalExito] 🎨 Mostrando modal');
+        console.log('[mostrarModalExito]  Mostrando modal');
         modalElement.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        console.log('[mostrarModalExito] ✅ COMPLETADO');
+        console.log('[mostrarModalExito]  COMPLETADO');
     }
 
     renderizarProcesosDirectos() {

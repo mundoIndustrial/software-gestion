@@ -385,7 +385,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔍 Analizador de Artículos</h1>
+            <h1> Analizador de Artículos</h1>
             <p>Detecta duplicaciones y agrupa por color, marca, material, talla y medidas</p>
         </div>
 
@@ -424,7 +424,7 @@
                     <div style="margin-top: 15px;">
                         <label>
                             <input type="checkbox" id="autoDetect" checked> 
-                            <strong style="color: #667eea;">🔍 Detectar automáticamente formato</strong>
+                            <strong style="color: #667eea;"> Detectar automáticamente formato</strong>
                         </label>
                     </div>
                     
@@ -440,7 +440,7 @@
                     
                     <div class="button-group" style="margin-top: 15px;">
                         <button class="btn-primary" onclick="processData()"> Procesar Datos</button>
-                        <button class="btn-secondary" onclick="mostrarPreview()">👁️ Vista Previa</button>
+                        <button class="btn-secondary" onclick="mostrarPreview()"> Vista Previa</button>
                         <button class="btn-secondary" onclick="cargarExcelLocal()">📁 Cargar Excel del Servidor</button>
                         <button class="btn-secondary" onclick="clearAll()">🗑️ Limpiar</button>
                     </div>
@@ -454,7 +454,7 @@
 
                 <!-- Action Buttons -->
                 <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Limpiar Filtros</button>
+                    <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"> Limpiar Filtros</button>
                     <button onclick="guardarEnBD()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"> Guardar en BD</button>
                     <span id="filterStats" style="margin-left: auto; font-size: 13px; color: #666; font-weight: 500; align-self: center;">Mostrando 0 de 0 artículos</span>
                 </div>
@@ -468,7 +468,7 @@
                 <!-- Table Tab -->
                 <div id="tabla" class="tab-content active">
                     <div style="margin-bottom: 15px;">
-                        <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🔄 Limpiar Filtros</button>
+                        <button onclick="clearFilters()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"> Limpiar Filtros</button>
                         <span id="filterStats" style="margin-left: 20px; font-size: 13px; color: #666; font-weight: 500;">Mostrando 0 de 0 artículos</span>
                     </div>
                     <div id="tableContainer" class="table-wrapper"></div>
@@ -484,7 +484,7 @@
                         
                         <div style="padding: 20px;">
                             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <input type="text" id="searchModal" placeholder="🔍 Buscar valor..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" onkeyup="filterModalValues()">
+                                <input type="text" id="searchModal" placeholder=" Buscar valor..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" onkeyup="filterModalValues()">
                                 <button onclick="toggleSelectAll()" style="background: #667eea; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; white-space: nowrap;">✓ Sel. Todo</button>
                             </div>
                             
@@ -1263,7 +1263,7 @@
         function analyzeDuplicates() {
             if (allData.length === 0) return;
 
-            showMessage('🔍 Analizando duplicaciones...', 'info');
+            showMessage(' Analizando duplicaciones...', 'info');
 
             fetch(`${API_URL}/api/procesar`, {
                 method: 'POST',

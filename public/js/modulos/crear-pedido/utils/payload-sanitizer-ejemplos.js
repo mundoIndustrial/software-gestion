@@ -386,7 +386,7 @@ console.log(`
  USAR siempre el sanitizador:
    fetch('/api', { body: JSON.stringify(PayloadSanitizer.sanitizarPedido(data)) }); // BIEN
 
-📦 INCLUIR en tu HTML:
+ INCLUIR en tu HTML:
    <script src="/js/modulos/crear-pedido/utils/payload-sanitizer.js"></script>
 
  USAR en cualquier componente:

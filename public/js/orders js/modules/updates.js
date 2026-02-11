@@ -91,7 +91,7 @@ const UpdatesModule = {
                     this._updateDropdownColorClass(dropdown, newArea);
                 }
                 
-                // 🔴 COMENTADO: La actualización de estados de procesos está causando problemas
+                //  COMENTADO: La actualización de estados de procesos está causando problemas
                 // NO vamos a actualizar automáticamente procesos cuando se cambia el área
                 // El usuario es responsable de marcar los procesos como completados cuando corresponda
                 //

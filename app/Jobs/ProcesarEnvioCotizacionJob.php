@@ -90,7 +90,7 @@ class ProcesarEnvioCotizacionJob implements ShouldQueue
 
             // Reintentar si no es la última vez
             if ($this->attempts() < $this->tries) {
-                Log::info('🔄 Reintentando envío de cotización', [
+                Log::info(' Reintentando envío de cotización', [
                     'cotizacion_id' => $this->cotizacionId,
                     'intento' => $this->attempts() + 1,
                     'max_intentos' => $this->tries

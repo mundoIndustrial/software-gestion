@@ -8,7 +8,7 @@
 
 (function() {
     console.clear();
-    console.log('🔍 INICIANDO VERIFICACIÓN DE STORAGE Y HANDLERS...\n');
+    console.log(' INICIANDO VERIFICACIÓN DE STORAGE Y HANDLERS...\n');
     
     const checks = {
         passed: 0,
@@ -26,7 +26,7 @@
     
     function fail(name, error) {
         checks.failed++;
-        console.log(`❌ ${name}`);
+        console.log(` ${name}`);
         if (error) console.log(`     ${error}`);
         checks.results.push({ status: 'fail', name });
     }
@@ -40,7 +40,7 @@
     
     // ==================== VERIFICACIONES ====================
     
-    console.log('📦 VERIFICANDO MÓDULOS CARGADOS...\n');
+    console.log(' VERIFICANDO MÓDULOS CARGADOS...\n');
     
     // 1. Storage Proxy
     if (window.StorageProxyState) {
@@ -191,7 +191,7 @@
     console.log('\n' + '='.repeat(50));
     console.log(` RESUMEN:`);
     console.log(`    Pasadas: ${checks.passed}`);
-    console.log(`   ❌ Fallidas: ${checks.failed}`);
+    console.log(`    Fallidas: ${checks.failed}`);
     console.log(`     Advertencias: ${checks.warnings}`);
     console.log('='.repeat(50) + '\n');
     

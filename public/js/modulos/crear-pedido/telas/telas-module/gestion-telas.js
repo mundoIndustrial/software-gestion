@@ -15,7 +15,7 @@
  * @returns {Promise<boolean>} Resultado de la operación
  */
 window.agregarTelaNueva = async function() {
-    console.log('[agregarTelaNueva] 🚀 Iniciando agregación de nueva tela');
+    console.log('[agregarTelaNueva]  Iniciando agregación de nueva tela');
     
     try {
         // Obtener elementos del DOM
@@ -25,7 +25,7 @@ window.agregarTelaNueva = async function() {
         
         // Verificar que los elementos existan
         if (!colorElement || !telaElement || !referenciaElement) {
-            console.error('[agregarTelaNueva] ❌ Elementos del modal no encontrados. Verifica que el modal esté abierto.');
+            console.error('[agregarTelaNueva]  Elementos del modal no encontrados. Verifica que el modal esté abierto.');
             window.mostrarErrorTela('nueva-prenda-tela', 'Error: Modal no está activo');
             return false;
         }
@@ -41,7 +41,7 @@ window.agregarTelaNueva = async function() {
         const validacion = window.validarCamposTela(color, tela, referencia);
         
         if (!validacion.valido) {
-            console.warn('[agregarTelaNueva] ⚠️ Validación fallida:', validacion.errores);
+            console.warn('[agregarTelaNueva]  Validación fallida:', validacion.errores);
             
             // Mostrar errores
             validacion.errores.forEach(error => {
@@ -58,21 +58,31 @@ window.agregarTelaNueva = async function() {
         );
         
         if (telaExistente) {
-            console.warn('[agregarTelaNueva] ⚠️ Tela ya existe:', { color, tela });
+            console.warn('[agregarTelaNueva]  Tela ya existe:', { color, tela });
             window.mostrarErrorTela('nueva-prenda-tela', 'Esta tela ya está agregada');
             return false;
         }
         
         // Crear objeto de tela
+        const imagenesActuales = window.imagenesTelaModalNueva || [];
+        
+        // Debug: Verificar estado del array antes de guardar
+        console.log('[agregarTelaNueva]  Estado del array temporal:', {
+            arrayDefinido: !!window.imagenesTelaModalNueva,
+            arrayLength: window.imagenesTelaModalNueva?.length || 0,
+            arrayContenido: window.imagenesTelaModalNueva?.map(img => ({ name: img.name, size: img.size })) || []
+        });
+        
         const nuevaTela = {
             color: color,
             tela: tela,
             referencia: referencia,
-            imagenes: window.imagenesTelaModalNueva || [],
+            imagenes: [...imagenesActuales], // Copiar las imágenes actuales
             fechaCreacion: new Date().toISOString()
         };
         
-        console.log('[agregarTelaNueva] 📦 Nueva tela creada:', nuevaTela);
+        console.log('[agregarTelaNueva]  Nueva tela creada:', nuevaTela);
+        console.log('[agregarTelaNueva] 📸 Imágenes incluidas:', imagenesActuales.length);
         
         // Agregar al array
         window.telasCreacion.push(nuevaTela);
@@ -90,23 +100,24 @@ window.agregarTelaNueva = async function() {
                 previewDiv.style.display = 'none';
             }
         } catch (e) {
-            console.warn('[agregarTelaNueva] ⚠️ Error al limpiar preview:', e);
+            console.warn('[agregarTelaNueva]  Error al limpiar preview:', e);
         }
         
         // Limpiar errores
         window.limpiarTodosLosErroresTela();
         
-        // Limpiar imágenes temporales
+        // Limpiar imágenes temporales DESPUÉS de guardarlas en la tela
         window.imagenesTelaModalNueva = [];
+        console.log('[agregarTelaNueva] 🧹 Imágenes temporales limpiadas después de guardar en tela');
         
         // Actualizar tabla
         window.actualizarTablaTelas();
         
-        console.log('[agregarTelaNueva] ✅ Tela agregada exitosamente');
+        console.log('[agregarTelaNueva]  Tela agregada exitosamente con', imagenesActuales.length, 'imágenes');
         return true;
         
     } catch (error) {
-        console.error('[agregarTelaNueva] ❌ Error al agregar tela:', error);
+        console.error('[agregarTelaNueva]  Error al agregar tela:', error);
         window.mostrarErrorTela('nueva-prenda-tela', 'Error al agregar la tela');
         return false;
     }
@@ -129,7 +140,7 @@ window.eliminarTela = function(index, event) {
     try {
         const telas = window.telasCreacion;
         if (!telas || index < 0 || index >= telas.length) {
-            console.warn('[eliminarTela] ❌ Índice inválido:', index);
+            console.warn('[eliminarTela]  Índice inválido:', index);
             return;
         }
         
@@ -194,11 +205,11 @@ window.eliminarTela = function(index, event) {
             // Actualizar tabla
             window.actualizarTablaTelas();
             
-            console.log('[eliminarTela] ✅ Tela eliminada exitosamente');
+            console.log('[eliminarTela]  Tela eliminada exitosamente');
         };
         
     } catch (error) {
-        console.error('[eliminarTela] ❌ Error al eliminar tela:', error);
+        console.error('[eliminarTela]  Error al eliminar tela:', error);
     }
 };
 
@@ -209,12 +220,12 @@ window.eliminarTela = function(index, event) {
  * @returns {boolean} Resultado de la operación
  */
 window.actualizarTela = function(index, nuevosDatos) {
-    console.log('[actualizarTela] 🔄 Actualizando tela:', index);
+    console.log('[actualizarTela]  Actualizando tela:', index);
     
     try {
         const telas = window.telasCreacion;
         if (!telas || index < 0 || index >= telas.length) {
-            console.warn('[actualizarTela] ❌ Índice inválido:', index);
+            console.warn('[actualizarTela]  Índice inválido:', index);
             return false;
         }
         
@@ -226,11 +237,11 @@ window.actualizarTela = function(index, nuevosDatos) {
         Object.assign(telaActual, nuevosDatos);
         telaActual.fechaModificacion = new Date().toISOString();
         
-        console.log('[actualizarTela] ✅ Tela actualizada exitosamente');
+        console.log('[actualizarTela]  Tela actualizada exitosamente');
         return true;
         
     } catch (error) {
-        console.error('[actualizarTela] ❌ Error al actualizar tela:', error);
+        console.error('[actualizarTela]  Error al actualizar tela:', error);
         return false;
     }
 };

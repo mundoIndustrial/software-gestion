@@ -28,7 +28,7 @@ class ProcessPrendaImagenesJob implements ShouldQueue
     public function handle(ImagenProcesadorService $imagenService): void
     {
         try {
-            \Log::info('🔄 Iniciando procesamiento de imágenes', [
+            \Log::info(' Iniciando procesamiento de imágenes', [
                 'prenda_id' => $this->prendaId,
                 'pedido_id' => $this->pedidoId,
                 'cantidad_imagenes' => count($this->imagenesData),

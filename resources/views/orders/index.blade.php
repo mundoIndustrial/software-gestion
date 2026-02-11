@@ -536,7 +536,7 @@
                             prendaHtml = generarDescripcionSimple(prendaData);
                         }
                     } catch (e) {
-                        console.error('[abrirModalCeldaConFormato] ❌ Error al formatear prenda:', e);
+                        console.error('[abrirModalCeldaConFormato]  Error al formatear prenda:', e);
                         console.error('[abrirModalCeldaConFormato] Stack:', e.stack);
                         prendaHtml = generarDescripcionSimple(prendaData);
                     }
@@ -557,7 +557,7 @@
          * Genera descripción formateada sin Formatters (fallback)
          */
         function generarDescripcionSimple(prenda) {
-            console.log('[generarDescripcionSimple] 🎨 INPUT:', prenda);
+            console.log('[generarDescripcionSimple]  INPUT:', prenda);
             let html = '';
             
             // Título
@@ -1183,7 +1183,7 @@
                 if (typeof window.togglePrendaAccordion === 'function') {
                     console.log(`[GLOBAL-CLICK]  togglePrendaAccordion está disponible`);
                 } else {
-                    console.error(`[GLOBAL-CLICK] ❌ togglePrendaAccordion NO está disponible`);
+                    console.error(`[GLOBAL-CLICK]  togglePrendaAccordion NO está disponible`);
                 }
                 
                 // Intentar obtener el ID del accordion

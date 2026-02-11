@@ -64,7 +64,7 @@ class AnalizarCotizaciones extends Command
         $this->line('');
 
         // Análisis por estado
-        $this->line('🔄 ANÁLISIS POR ESTADO:');
+        $this->line(' ANÁLISIS POR ESTADO:');
         $estados = Cotizacion::select('estado', DB::raw('count(*) as total'))
             ->groupBy('estado')
             ->get();

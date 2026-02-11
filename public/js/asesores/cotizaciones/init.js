@@ -71,7 +71,7 @@
 
         }
 
-        // 🔄 AGREGAR EVENT LISTENERS PARA ACTUALIZAR RESUMEN EN TIEMPO REAL
+        //  AGREGAR EVENT LISTENERS PARA ACTUALIZAR RESUMEN EN TIEMPO REAL
         const camposAObservar = [
             'cliente',
             'fechaActual',

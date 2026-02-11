@@ -32,21 +32,21 @@ class AssignBodegaRole extends Command
         
         // Validar que el rol sea válido
         if (!in_array($roleName, ['Costura-Bodega', 'EPP-Bodega'])) {
-            $this->error("❌ Rol inválido. Debe ser 'Costura-Bodega' o 'EPP-Bodega'");
+            $this->error(" Rol inválido. Debe ser 'Costura-Bodega' o 'EPP-Bodega'");
             return;
         }
         
         // Buscar el usuario
         $user = User::where('email', $email)->first();
         if (!$user) {
-            $this->error("❌ Usuario con email '{$email}' no encontrado");
+            $this->error(" Usuario con email '{$email}' no encontrado");
             return;
         }
         
         // Buscar el rol
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
-            $this->error("❌ Rol '{$roleName}' no encontrado en la BD");
+            $this->error(" Rol '{$roleName}' no encontrado en la BD");
             return;
         }
         
@@ -57,7 +57,7 @@ class AssignBodegaRole extends Command
         
         // Verificar si ya tiene el rol
         if (in_array($role->id, $rolesIds)) {
-            $this->info("⚠️  Usuario '{$email}' ya tiene el rol '{$roleName}'");
+            $this->info("  Usuario '{$email}' ya tiene el rol '{$roleName}'");
             return;
         }
         
@@ -66,7 +66,7 @@ class AssignBodegaRole extends Command
         $user->roles_ids = $rolesIds;
         $user->save();
         
-        $this->info("✅ Rol '{$roleName}' asignado a '{$email}'");
+        $this->info(" Rol '{$roleName}' asignado a '{$email}'");
         $this->info("   Roles del usuario: " . implode(', ', 
             Role::whereIn('id', $rolesIds)->pluck('name')->toArray()
         ));

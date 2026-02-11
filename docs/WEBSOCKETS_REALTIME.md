@@ -1,4 +1,4 @@
-# 🚀 Sistema de Actualización en Tiempo Real - WebSockets con Fallback
+#  Sistema de Actualización en Tiempo Real - WebSockets con Fallback
 
 ## 📋 Overview
 
@@ -140,7 +140,7 @@ curl -i -N -H "Connection: Upgrade" \
 ### Indicadores Visuales
 - **🟢 WebSocket**: Conexión directa en tiempo real
 - **🟡 Polling**: Fallback activo
-- **🔴 Desconectado**: Sin conexión
+- ** Desconectado**: Sin conexión
 
 ### Logs Importantes
 ```javascript
@@ -148,13 +148,13 @@ curl -i -N -H "Connection: Upgrade" \
  [PedidosRealtime] WebSocket conectado
 
 // Fallback activado
-🔄 [PedidosRealtime] Fallback a polling activado
+ [PedidosRealtime] Fallback a polling activado
 
 // Actualización recibida
 📨 [PedidosRealtime] Mensaje WebSocket recibido
 
 // Cambio detectado
-🔄 [PedidosRealtime] Actualización de pedido por WebSocket: 123
+ [PedidosRealtime] Actualización de pedido por WebSocket: 123
 ```
 
 ## 🔒 Seguridad
@@ -170,7 +170,7 @@ curl -i -N -H "Connection: Upgrade" \
 - Campos sensibles filtrados
 - Timestamps para prevenir ataques de replay
 
-## 🚀 Optimizaciones
+##  Optimizaciones
 
 ### WebSocket Manager
 - **Reintentos exponenciales**: 1s, 2s, 4s, 8s, 16s máximo
@@ -184,7 +184,7 @@ curl -i -N -H "Connection: Upgrade" \
 - **Actualizaciones parciales**: Solo filas cambiadas en WebSocket
 - **Comparación eficiente**: Maps en lugar de arrays
 
-## 🔄 Compatibilidad
+##  Compatibilidad
 
 ### Backward Compatibility
 -  Sistema antiguo de polling sigue funcionando
@@ -238,13 +238,13 @@ realtime.start();
 
 #### 1. WebSocket no conecta
 ```
-❌ [WebSocketManager] Error al conectar: Faltan credenciales
+ [WebSocketManager] Error al conectar: Faltan credenciales
 ```
 **Solución**: Verificar meta tags en layout y variables .env
 
 #### 2. Fallback se activa inmediatamente
 ```
-🔄 [WebSocketManager] Activando fallback a polling
+ [WebSocketManager] Activando fallback a polling
 ```
 **Solución**: Verificar que servidor Reverb esté corriendo en puerto 8080
 

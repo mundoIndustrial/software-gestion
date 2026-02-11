@@ -120,7 +120,7 @@ class ModalNovedadEdicion {
             ? JSON.parse(JSON.stringify(window.imagenesPrendaStorage.snapshotOriginal)) 
             : (prendaData?.imagenes ? JSON.parse(JSON.stringify(prendaData.imagenes)) : []);
         
-        // 🔴 FIX: Limpiar imágenes vacías del snapshot (pueden ser placeholders sin datos)
+        //  FIX: Limpiar imágenes vacías del snapshot (pueden ser placeholders sin datos)
         this.imagenesOriginalesAlAbrirModal = snapshotRaw.filter(img => 
             img && Object.keys(img).length > 0 && (img.previewUrl || img.url || img.ruta_webp || img.ruta_original)
         );
@@ -145,7 +145,7 @@ class ModalNovedadEdicion {
         // Si el usuario eliminó imágenes en la galería ANTES de abrir el modal,
         // debemos preservar esos cambios en el storage.
         // Solo reinicializar si el storage está vacío.
-        console.log('[modal-novedad-edicion] 🔍 DEBUG prendaData.imagenes:', {
+        console.log('[modal-novedad-edicion]  DEBUG prendaData.imagenes:', {
             existe: !!prendaData.imagenes,
             esArray: Array.isArray(prendaData.imagenes),
             cantidad: prendaData.imagenes?.length || 0,
@@ -154,8 +154,8 @@ class ModalNovedadEdicion {
             primerImage_previewUrl: prendaData.imagenes?.[0]?.previewUrl
         });
         
-        // 🔴 DEBUG CRÍTICO: Comparación snapshot vs prendaData
-        console.log('[modal-novedad-edicion] 🔍 COMPARACION_SNAPSHOT_VS_PRENDADATA:', {
+        //  DEBUG CRÍTICO: Comparación snapshot vs prendaData
+        console.log('[modal-novedad-edicion]  COMPARACION_SNAPSHOT_VS_PRENDADATA:', {
             snapshot_cantidad: this.imagenesOriginalesAlAbrirModal?.length || 0,
             prendaData_cantidad: prendaData.imagenes?.length || 0,
             coinciden: (this.imagenesOriginalesAlAbrirModal?.length || 0) === (prendaData.imagenes?.length || 0),
@@ -166,13 +166,13 @@ class ModalNovedadEdicion {
         if (window.imagenesPrendaStorage && prendaData && prendaData.imagenes) {
             const imagenesActualesEnStorage = window.imagenesPrendaStorage.obtenerImagenes();
             
-            // 🔴 CRITICAL FIX: Actualizar snapshotOriginal con las imágenes actuales del servidor
+            //  CRITICAL FIX: Actualizar snapshotOriginal con las imágenes actuales del servidor
             // Esto asegura que cuando el usuario abre el modal por segunda vez,
             // las imágenes originales sean las correctas para detectar eliminaciones
             window.imagenesPrendaStorage.snapshotOriginal = JSON.parse(JSON.stringify(prendaData.imagenes));
             console.log('[modal-novedad-edicion]  [SNAPSHOT-SYNC-INICIAL] Snapshot sincronizado con', prendaData.imagenes.length, 'imágenes del servidor');
             
-            // 🔴 FIX CRÍTICO: No sobrescribir snapshot válido desde prenda-editor-modal.js
+            //  FIX CRÍTICO: No sobrescribir snapshot válido desde prenda-editor-modal.js
             // El snapshot debería tener IDs porque prendaData.imagenes ya viene mapeado
             const snapshotValido = window.imagenesPrendaStorage.snapshotOriginal && window.imagenesPrendaStorage.snapshotOriginal.length > 0;
             
@@ -245,7 +245,7 @@ class ModalNovedadEdicion {
                 });
             } else {
                 // Si viene como objeto, copiar directamente
-                console.log('[modal-novedad-edicion] 🔍 [CARGAR-PROCESOS-OBJETO] Estructura recibida:', {
+                console.log('[modal-novedad-edicion]  [CARGAR-PROCESOS-OBJETO] Estructura recibida:', {
                     procesosKeys: Object.keys(prendaData.procesos),
                     primerProcesoKeys: prendaData.procesos[Object.keys(prendaData.procesos)[0]] ? Object.keys(prendaData.procesos[Object.keys(prendaData.procesos)[0]]) : 'N/A',
                     primerProcesoStructure: prendaData.procesos[Object.keys(prendaData.procesos)[0]]
@@ -316,7 +316,7 @@ class ModalNovedadEdicion {
                 window.telasAgregadas = [];
             }
 
-            // 🔴 CRÍTICO: Solo cargar las telas existentes SI window.telasAgregadas está vacío
+            //  CRÍTICO: Solo cargar las telas existentes SI window.telasAgregadas está vacío
             // Si el usuario ya agregó telas nuevas, las conservamos sin limpiar
             if (window.telasAgregadas.length === 0) {
                 telasExistentes.forEach(telaDeserv => {
@@ -344,7 +344,7 @@ class ModalNovedadEdicion {
                             const esImagenNueva = img.file instanceof File || (img.previewUrl && img.previewUrl.startsWith('blob:'));
                             
                             if (esImagenNueva) {
-                                // ✅ IMAGEN NUEVA: Preservar previewUrl y file
+                                //  IMAGEN NUEVA: Preservar previewUrl y file
                                 return {
                                     id: img.id || undefined,
                                     previewUrl: img.previewUrl,  // Blob URL válida
@@ -357,7 +357,7 @@ class ModalNovedadEdicion {
                                     ruta_webp: img.ruta_webp
                                 };
                             } else {
-                                // ✅ IMAGEN DE BD: Los datos vienen del servidor
+                                //  IMAGEN DE BD: Los datos vienen del servidor
                                 return {
                                     id: img.id,
                                     url: img.url || img.ruta_webp || img.ruta_original,
@@ -567,7 +567,7 @@ class ModalNovedadEdicion {
                 formData.append('variantes', JSON.stringify(variantesArray));
                 console.log('[modal-novedad-edicion] ✏️ Variantes MODIFICADAS enviadas:', variantesArray);
             } else {
-                console.log('[modal-novedad-edicion] ℹ️ Variantes NO modificadas - no se envían');
+                console.log('[modal-novedad-edicion]  Variantes NO modificadas - no se envían');
             }
             
             // ========== NUEVO: LEER FILAS DE TELAS NUEVAS DEL MODAL ==========
@@ -664,7 +664,7 @@ class ModalNovedadEdicion {
                             const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
                             
                             if (fileObject) {
-                                // ✅ IMAGEN NUEVA: Subir File object real
+                                //  IMAGEN NUEVA: Subir File object real
                                 formData.append(`telas[${idx}][imagenes][${imgIdx}]`, fileObject);
                                 console.log('[modal-novedad-edicion]  📤 Imagen nueva de tela agregada a FormData:', {
                                     telaIdx: idx,
@@ -673,7 +673,7 @@ class ModalNovedadEdicion {
                                     fileSize: fileObject.size
                                 });
                             } else if (img.urlDesdeDB && img.url) {
-                                // ✅ IMAGEN DE BD: Solo guardar referencia (no es blob URL)
+                                //  IMAGEN DE BD: Solo guardar referencia (no es blob URL)
                                 obj.imagenes.push({
                                     url: img.url,
                                     nombre: img.nombre || '',
@@ -707,7 +707,7 @@ class ModalNovedadEdicion {
                             const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
                             
                             if (fileObject) {
-                                // ✅ NUEVA IMAGEN: Subir imagen a FormData
+                                //  NUEVA IMAGEN: Subir imagen a FormData
                                 formData.append(`fotos_tela[${fotoTelaFileIndex}]`, fileObject);
                                 
                                 // Registrar metadatos en array para backend
@@ -715,7 +715,7 @@ class ModalNovedadEdicion {
                                     color_id: tela.color_id || null,
                                     tela_id: tela.tela_id || null,
                                     orden: imgIdx + 1
-                                    // ⚠️ NO enviar 'id' para fotos nuevas - backend las creará
+                                    //  NO enviar 'id' para fotos nuevas - backend las creará
                                 });
                                 fotoTelaFileIndex++;
                                 
@@ -729,7 +729,7 @@ class ModalNovedadEdicion {
                                     tela_id: tela.tela_id
                                 });
                             } else if (img.id && (img.urlDesdeDB || (img.url && !img.url.startsWith('blob:')))) {
-                                // ✅ FOTO EXISTENTE: Preservar referencia
+                                //  FOTO EXISTENTE: Preservar referencia
                                 fotosTelaArray.push({
                                     id: img.id,
                                     prenda_pedido_colores_telas_id: tela.id,  // FK para encontrar la relación
@@ -739,7 +739,7 @@ class ModalNovedadEdicion {
                                     orden: imgIdx + 1
                                 });
                             } else {
-                                console.warn('[modal-novedad-edicion]  ⚠️ Imagen de tela ignorada (sin file ni datos válidos):', {
+                                console.warn('[modal-novedad-edicion]   Imagen de tela ignorada (sin file ni datos válidos):', {
                                     telaIdx: telaIdx,
                                     imgIdx: imgIdx,
                                     tieneFile: !!img.file,
@@ -770,7 +770,7 @@ class ModalNovedadEdicion {
                 formData.append('procesos', JSON.stringify(procesosArray));
                 console.log('[modal-novedad-edicion]  Procesos enviados (MERGE):', procesosArray);
                 
-                // 🔴 FIX CRÍTICO: Enviar imágenes de procesos nuevos
+                //  FIX CRÍTICO: Enviar imágenes de procesos nuevos
                 // Las imágenes se capturan en window.imagenesProcesoActual cuando el usuario las agrega
                 if (window.imagenesProcesoActual && Array.isArray(window.imagenesProcesoActual) && window.imagenesProcesoActual.length > 0) {
                     console.log('[modal-novedad-edicion] 📸 Imágenes de proceso nuevo detectadas:', {
@@ -795,7 +795,7 @@ class ModalNovedadEdicion {
                     formData.append('fotosProcesoNuevoCount', window.imagenesProcesoActual.filter(img => img instanceof File).length.toString());
                     console.log('[modal-novedad-edicion] 📸 Total imágenes de proceso nuevo a guardar:', window.imagenesProcesoActual.filter(img => img instanceof File).length);
                 } else {
-                    console.log('[modal-novedad-edicion] ⚠️ No hay imágenes de proceso nuevo para enviar');
+                    console.log('[modal-novedad-edicion]  No hay imágenes de proceso nuevo para enviar');
                 }
             } else {
                 console.log('[modal-novedad-edicion]  Usuario NO modificó procesos - no enviar procesos para preservar datos existentes');
@@ -818,19 +818,19 @@ class ModalNovedadEdicion {
 
             formData.append('prenda_id', prendaIdInt);
             
-            // 🔴 FIX CRÍTICO: Obtener imágenes del storage (donde se guardan las nuevas)
+            //  FIX CRÍTICO: Obtener imágenes del storage (donde se guardan las nuevas)
             // NO de this.prendaData.imagenes (que es estático y no refleja cambios de la galería)
             let imagenesActuales = [];
             if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.obtenerImagenes === 'function') {
                 imagenesActuales = window.imagenesPrendaStorage.obtenerImagenes() || [];
-                console.log('[modal-novedad-edicion] 📦 Imágenes desde STORAGE (incluye nuevas):', {
+                console.log('[modal-novedad-edicion]  Imágenes desde STORAGE (incluye nuevas):', {
                     cantidad: imagenesActuales.length,
                     datos: imagenesActuales
                 });
             } else {
                 // Fallback a this.prendaData.imagenes si el storage no existe
                 imagenesActuales = this.prendaData.imagenes || [];
-                console.log('[modal-novedad-edicion] ⚠️ Storage NO disponible, usando prendaData.imagenes:', {
+                console.log('[modal-novedad-edicion]  Storage NO disponible, usando prendaData.imagenes:', {
                     cantidad: imagenesActuales.length
                 });
             }
@@ -856,17 +856,17 @@ class ModalNovedadEdicion {
                     
                     // DEBUG: Log estructura completa de imágenes originales (snapshot)
                     console.log('[modal-novedad-edicion] 📸 ESTRUCTURA DE IMÁGENES ORIGINALES:');
-                    console.log('[modal-novedad-edicion] 📊 ANÁLISIS DE IMÁGENES:');
+                    console.log('[modal-novedad-edicion]  ANÁLISIS DE IMÁGENES:');
                     imagenesOriginales.forEach((img, idx) => {
                         const tieneContenido = Object.keys(img).length > 0;
                         const campos = Object.keys(img);
                         console.log(`  Imagen ${idx}: {tieneContenido: ${tieneContenido}, campos: ${JSON.stringify(campos)}}`, JSON.stringify(img, null, 2));
                         if (!tieneContenido) {
-                            console.warn(`  ⚠️ IMAGEN ${idx} ESTÁ VACÍA - Posible imagen borrada o sin datos`);
+                            console.warn(`   IMAGEN ${idx} ESTÁ VACÍA - Posible imagen borrada o sin datos`);
                         }
                     });
                     
-                    // 🔍 Detectar imágenes eliminadas comparando originales vs actuales
+                    //  Detectar imágenes eliminadas comparando originales vs actuales
                     if (imagenesOriginales.length > imagenesDelStorage.length) {
                         imagenesOriginales.forEach(imgOriginal => {
                             const existeEnActuales = imagenesDelStorage.some(imgActual => {
@@ -918,7 +918,7 @@ class ModalNovedadEdicion {
             
             if (imagenesActuales && imagenesActuales.length > 0) {
                 imagenesActuales.forEach((img, idx) => {
-                    // 🔴 CRITICAL FIX: ImageStorageService guarda { file, previewUrl, nombre, tamaño }
+                    //  CRITICAL FIX: ImageStorageService guarda { file, previewUrl, nombre, tamaño }
                     // El File REAL está en img.file, no en img directamente
                     let archivoReal = null;
                     
@@ -970,8 +970,8 @@ class ModalNovedadEdicion {
                             nombre: img.nombre || ''
                         });
                     } else {
-                        // 🔴 DEBUG: Imagen sin categorizar
-                        console.warn('[modal-novedad-edicion] ⚠️ Imagen NO CATEGORIZADA:', {
+                        //  DEBUG: Imagen sin categorizar
+                        console.warn('[modal-novedad-edicion]  Imagen NO CATEGORIZADA:', {
                             tipoDeObjeto: img?.constructor?.name,
                             esFile: img instanceof File,
                             tieneFile: !!(img?.file),
@@ -982,7 +982,7 @@ class ModalNovedadEdicion {
                 });
             }
             
-            console.log('[modal-novedad-edicion] 📊 RESUMEN DETALLADO DE IMÁGENES A GUARDAR:', {
+            console.log('[modal-novedad-edicion]  RESUMEN DETALLADO DE IMÁGENES A GUARDAR:', {
                 imagenesNuevas: {
                     cantidad: imagenesNuevas.length,
                     tipos: imagenesNuevas.map(img => `${img.name} (${Math.round(img.size/1024)}KB)`)
@@ -1036,7 +1036,7 @@ class ModalNovedadEdicion {
             // ANTES de guardar la prenda, aplicamos los PATCH de procesos editados
             const procesosEditados = window.gestorEditacionProcesos?.obtenerProcesosEditados();
             if (procesosEditados && procesosEditados.length > 0) {
-                console.log('[modal-novedad-edicion] 🔄 Aplicando cambios de procesos editados ANTES de guardar prenda:', procesosEditados);
+                console.log('[modal-novedad-edicion]  Aplicando cambios de procesos editados ANTES de guardar prenda:', procesosEditados);
                 
                 const prendaIdInt = parseInt(this.prendaData.prenda_pedido_id || this.prendaData.id);
                 
@@ -1129,7 +1129,7 @@ class ModalNovedadEdicion {
                         }).filter(u => u && u.length > 0);
                         
                         if (ubicacionesAEnviar && ubicacionesAEnviar.length > 0) {
-                            console.log('[modal-novedad-edicion] 🔍 Ubicaciones ANTES de stringify:', {
+                            console.log('[modal-novedad-edicion]  Ubicaciones ANTES de stringify:', {
                                 tipo: typeof ubicacionesAEnviar,
                                 esArray: Array.isArray(ubicacionesAEnviar),
                                 contenido: ubicacionesAEnviar,
@@ -1202,7 +1202,7 @@ class ModalNovedadEdicion {
                             ? `/supervisor-pedidos/${prendaIdInt}/procesos/${procesoEditado.id}`
                             : `/api/prendas-pedido/${prendaIdInt}/procesos/${procesoEditado.id}`;
                         
-                        console.log('[modal-novedad-edicion] 🔄 PATCH usando ruta según rol:', {
+                        console.log('[modal-novedad-edicion]  PATCH usando ruta según rol:', {
                             rol: rolUsuario,
                             urlUsada: urlPatch,
                             prendaId: prendaIdInt,
@@ -1241,7 +1241,7 @@ class ModalNovedadEdicion {
                         
                         console.log('[modal-novedad-edicion]  PATCH aplicado exitosamente para proceso:', procesoEditado.id);
                         
-                        // 🔴 CRITICAL FIX: Limpiar imágenes de proceso después de PATCH exitoso
+                        //  CRITICAL FIX: Limpiar imágenes de proceso después de PATCH exitoso
                         // Para evitar que se vuelvan a enviar al guardar la prenda (duplicación)
                         if (window.imagenesProcesoActual && Array.isArray(window.imagenesProcesoActual)) {
                             const imagenesFileCount = window.imagenesProcesoActual.filter(img => img instanceof File).length;
@@ -1251,11 +1251,11 @@ class ModalNovedadEdicion {
                                 });
                                 // Remover solo los archivos File, mantener las imágenes existentes de BD
                                 window.imagenesProcesoActual = window.imagenesProcesoActual.filter(img => !(img instanceof File));
-                                console.log('[modal-novedad-edicion] ✅ Imágenes de proceso limpiadas');
+                                console.log('[modal-novedad-edicion]  Imágenes de proceso limpiadas');
                             }
                         }
                     } catch (error) {
-                        console.error('[modal-novedad-edicion] ❌ Error al aplicar PATCH:', error);
+                        console.error('[modal-novedad-edicion]  Error al aplicar PATCH:', error);
                         throw error; // Detener el proceso si algún PATCH falla
                     }
                 }
@@ -1264,7 +1264,7 @@ class ModalNovedadEdicion {
                 window.gestorEditacionProcesos?.limpiar();
                 console.log('[modal-novedad-edicion] 🧹 Gestor de edición limpiado');
                 
-                // 🔴 CRITICAL FIX: Remover fotosProcesoNuevo_* del FormData después de PATCH exitoso
+                //  CRITICAL FIX: Remover fotosProcesoNuevo_* del FormData después de PATCH exitoso
                 // Ya fueron procesadas en el PATCH, no deben enviarse nuevamente en el POST final
                 try {
                     // Obtener todas las keys del FormData
@@ -1290,7 +1290,7 @@ class ModalNovedadEdicion {
                         });
                     }
                 } catch (error) {
-                    console.warn('[modal-novedad-edicion] ⚠️ No se pudo remover fotosProcesoNuevo del FormData (puede que no exista):', error.message);
+                    console.warn('[modal-novedad-edicion]  No se pudo remover fotosProcesoNuevo del FormData (puede que no exista):', error.message);
                 }
             }
 
@@ -1302,7 +1302,7 @@ class ModalNovedadEdicion {
                     await window.eliminarProcesossMarcadosDelBackend();
                     console.log('[modal-novedad-edicion]  Procesos marcados eliminados');
                 } catch (error) {
-                    console.error('[modal-novedad-edicion] ❌ Error eliminando procesos marcados:', error);
+                    console.error('[modal-novedad-edicion]  Error eliminando procesos marcados:', error);
                     throw error;
                 }
             }
@@ -1334,13 +1334,13 @@ class ModalNovedadEdicion {
                 throw new Error(resultado.message || 'Error desconocido al actualizar la prenda');
             }
             
-            // 🔴 FIX CRÍTICO: Actualizar snapshot con datos del servidor después de guardar
+            //  FIX CRÍTICO: Actualizar snapshot con datos del servidor después de guardar
             // Esto evita que imágenes eliminadas sigan siendo contadas en la próxima apertura
             if (resultado.prenda && resultado.prenda.fotos) {
                 const fotosActualizadas = resultado.prenda.fotos
                     .filter(foto => foto && Object.keys(foto).length > 0 && (foto.previewUrl || foto.url || foto.ruta_webp || foto.ruta_original));
                 
-                console.log('[modal-novedad-edicion] 🔄 SINCRONIZANDO SNAPSHOT CON RESPUESTA DEL SERVIDOR:', {
+                console.log('[modal-novedad-edicion]  SINCRONIZANDO SNAPSHOT CON RESPUESTA DEL SERVIDOR:', {
                     fotosAntes: window.imagenesPrendaStorage?.snapshotOriginal?.length || 0,
                     fotosAhora: fotosActualizadas.length,
                     datos: fotosActualizadas
@@ -1648,7 +1648,7 @@ class ModalNovedadEdicion {
             const tieneTipoProceso = proc.tipo_proceso_id && proc.tipo_proceso_id > 0;
             const tieneTipo = proc.tipo && proc.tipo.length > 0;
             
-            // 🔴 FIX CRÍTICO: El proceso es válido si tiene CUALQUIERA de estos:
+            //  FIX CRÍTICO: El proceso es válido si tiene CUALQUIERA de estos:
             // - ID de BD (existente)
             // - ID de tipo de proceso (nuevo pero con tipo asignado)
             // - Tipo formateado (nuevo agregado por usuario en edición)

@@ -854,7 +854,7 @@ class AsesoresController extends Controller
         \Log::warning(' [CONTROLLER-FACTURA] ENDPOINT LLAMADO ', ['pedido_id' => $id]);
         
         try {
-            // 🔍 LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
+            //  LOGS DE DIAGNÓSTICO - AUTENTICACIÓN Y AUTORIZACIÓN
             $usuarioAutenticado = \Auth::user();
             \Log::info('[DIAGNÓSTICO] Verificando autenticación y autorización', [
                 'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'NO_AUTENTICADO',
@@ -865,11 +865,11 @@ class AsesoresController extends Controller
                 'método_http' => \Request::getMethod(),
             ]);
             
-            // 🔍 OBTENER ROLES DEL USUARIO
+            //  OBTENER ROLES DEL USUARIO
             if ($usuarioAutenticado) {
                 $rolesUsuario = $usuarioAutenticado->roles()->pluck('name')->toArray();
                 
-                // 🔄 EXTENSIÓN: APLICAR JERARQUÍA DE ROLES (herencia)
+                //  EXTENSIÓN: APLICAR JERARQUÍA DE ROLES (herencia)
                 $rolesConHerencia = \App\Services\RoleHierarchyService::getEffectiveRoles($rolesUsuario);
                 
                 \Log::info('[DIAGNÓSTICO] Roles y permisos del usuario', [
@@ -911,7 +911,7 @@ class AsesoresController extends Controller
             
             \Log::info(' [CONTROLLER-FACTURA] Datos de factura obtenidos exitosamente');
             
-            // 🔍 LOG CRÍTICO: Verificar que las imágenes tienen IDs
+            //  LOG CRÍTICO: Verificar que las imágenes tienen IDs
             if (!empty($datos['prendas'])) {
                 $primeraPrend = $datos['prendas'][0];
                 if (!empty($primeraPrend['imagenes'])) {
@@ -926,7 +926,7 @@ class AsesoresController extends Controller
                 }
             }
             
-            // 🔍 LOG FINAL: Verificar estructura exacta antes de retornar
+            //  LOG FINAL: Verificar estructura exacta antes de retornar
             \Log::info('[CONTROLLER-FACTURA-JSON-RESPONSE] Estructura JSON final que se envía', [
                 'estructura_keys' => array_keys($datos),
                 'tiene_prendas' => isset($datos['prendas']),
@@ -942,7 +942,7 @@ class AsesoresController extends Controller
             ]);
         } catch (\Exception $e) {
             $usuarioAutenticado = \Auth::user();
-            \Log::error('❌ [CONTROLLER-FACTURA] ERROR obteniendo datos de factura', [
+            \Log::error(' [CONTROLLER-FACTURA] ERROR obteniendo datos de factura', [
                 'pedido_id' => $id,
                 'usuario_id' => $usuarioAutenticado ? $usuarioAutenticado->id : 'N/A',
                 'usuario_nombre' => $usuarioAutenticado ? $usuarioAutenticado->name : 'N/A',

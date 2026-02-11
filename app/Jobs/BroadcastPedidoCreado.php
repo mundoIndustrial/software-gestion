@@ -53,7 +53,7 @@ class BroadcastPedidoCreado implements ShouldQueue
             // Disparar evento desde la cola
             PedidoCreado::dispatch($pedido, $asesor);
 
-            Log::info('[BroadcastPedidoCreado] ✅ Event broadcasted exitosamente', [
+            Log::info('[BroadcastPedidoCreado]  Event broadcasted exitosamente', [
                 'pedido_id' => $this->pedidoId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'asesor_id' => $asesor->id,

@@ -17,7 +17,7 @@ class TestSecuenciaCartera extends Command
     {
         $numeroPedidos = (int) $this->argument('pedidos');
         
-        $this->info("🚀 Probando secuencia de números de pedido en Cartera");
+        $this->info(" Probando secuencia de números de pedido en Cartera");
         $this->info(" Pedidos a aprobar: {$numeroPedidos}");
         $this->info("⏰ " . date('Y-m-d H:i:s'));
         
@@ -79,7 +79,7 @@ class TestSecuenciaCartera extends Command
                     $this->line("   Pedido #{$pedido->id} → número {$numero}");
                     
                 } catch (\Exception $e) {
-                    $this->error("  ❌ Error aprobando pedido #{$pedido->id}: " . $e->getMessage());
+                    $this->error("   Error aprobando pedido #{$pedido->id}: " . $e->getMessage());
                     Log::error('[SECUENCIA_CARTERA] Error', [
                         'pedido_id' => $pedido->id,
                         'error' => $e->getMessage()
@@ -114,7 +114,7 @@ class TestSecuenciaCartera extends Command
             return $numerosGenerados === $esperado ? 0 : 1;
             
         } catch (\Exception $e) {
-            $this->error("❌ Error fatal: " . $e->getMessage());
+            $this->error(" Error fatal: " . $e->getMessage());
             Log::error('[SECUENCIA_CARTERA] Error fatal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -125,7 +125,7 @@ class TestSecuenciaCartera extends Command
     
     private function verificacionFinalBD(): void
     {
-        $this->line("\n🔍 VERIFICACIÓN FINAL EN BD:");
+        $this->line("\n VERIFICACIÓN FINAL EN BD:");
         $this->line("==========================");
         
         // Verificar secuencia actual

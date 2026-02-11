@@ -28,7 +28,7 @@ class ColorTelaService
         }
 
         try {
-            // 🔄 CAMBIO: Siempre crear un NUEVO color para este pedido
+            //  CAMBIO: Siempre crear un NUEVO color para este pedido
             // No reutilizar colores existentes - Cada pedido tiene sus propios colores
             // Esto asegura independencia entre pedidos
             
@@ -65,7 +65,7 @@ class ColorTelaService
         }
 
         try {
-            // 🔄 CAMBIO: Siempre crear una NUEVA tela para este pedido
+            //  CAMBIO: Siempre crear una NUEVA tela para este pedido
             // No reutilizar telas existentes - Cada pedido tiene sus propias telas
             // Esto asegura independencia: si no guardaste referencia, no toma la de otro pedido
             

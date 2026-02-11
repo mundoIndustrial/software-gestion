@@ -1,5 +1,5 @@
 /**
- * 🔍 MONITOREO DE PRECARGUÍA - Panel de Control
+ *  MONITOREO DE PRECARGUÍA - Panel de Control
  * 
  * Abre la consola y ejecuta:
  * window.PrendaEditorPreloader.showMonitor()
@@ -15,21 +15,21 @@
      */
     window.showPrendaPreloaderMonitor = function() {
         console.clear();
-        console.log('%c🚀 MONITOR DE PRECARGUÍA DE PRENDAS', 'font-size: 16px; font-weight: bold; color: #3498db;');
+        console.log('%c MONITOR DE PRECARGUÍA DE PRENDAS', 'font-size: 16px; font-weight: bold; color: #3498db;');
         console.log('═'.repeat(60));
 
         // Estado actual
         const status = window.PrendaEditorPreloader?.getStatus?.();
         
         if (!status) {
-            console.error('❌ PrendaEditorPreloader no encontrado');
+            console.error(' PrendaEditorPreloader no encontrado');
             return;
         }
 
         // Formato de estado
         const estados = {
-            preloading: status.isPreloading ? '🔄 PRECARGANDO...' : '⏹️  Inactivo',
-            preloaded: status.isPreloaded ? ' PRECARGADO' : '❌ No precargado',
+            preloading: status.isPreloading ? ' PRECARGANDO...' : '⏹️  Inactivo',
+            preloaded: status.isPreloaded ? ' PRECARGADO' : ' No precargado',
             error: status.preloadError ? ` ${status.preloadError}` : '✓ Sin errores'
         };
 
@@ -84,14 +84,14 @@
      * Auto-actualizar monitor cada N segundos
      */
     window.startPrendaPreloaderAutoMonitor = function(intervalMs = 2000) {
-        console.log(`%c⏱️ Actualizando estado cada ${intervalMs}ms...`, 'color: #16a085; font-weight: bold;');
+        console.log(`%c Actualizando estado cada ${intervalMs}ms...`, 'color: #16a085; font-weight: bold;');
         
         const interval = setInterval(() => {
             const status = window.PrendaEditorPreloader?.getStatus?.();
             if (status) {
                 const icons = {
-                    preloading: status.isPreloading ? '🔄' : '⏹️',
-                    preloaded: status.isPreloaded ? '' : '❌',
+                    preloading: status.isPreloading ? '' : '⏹️',
+                    preloaded: status.isPreloaded ? '' : '',
                     error: status.preloadError ? '' : '✓'
                 };
                 
@@ -119,7 +119,7 @@
 
     window.onPrendaEditorPreloadError = function(callback) {
         window.addEventListener('prendaEditorPreloadError', (e) => {
-            console.error(`%c❌ Error en precarguía: ${e.detail.error}`, 'color: #c0392b; font-weight: bold;');
+            console.error(`%c Error en precarguía: ${e.detail.error}`, 'color: #c0392b; font-weight: bold;');
             if (callback) callback(e.detail);
         });
     };

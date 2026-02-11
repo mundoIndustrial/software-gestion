@@ -70,7 +70,7 @@ class PedidoNormalizadorDTO
      */
     public static function fromFrontendJSON(array $json, int $clienteId): self
     {
-        Log::info('[PedidoNormalizadorDTO] 🚀 fromFrontendJSON - JSON crudo recibido:', [
+        Log::info('[PedidoNormalizadorDTO]  fromFrontendJSON - JSON crudo recibido:', [
             'cliente' => $json['cliente'] ?? '',
             'prendas_count' => count($json['prendas'] ?? []),
             'epps_count' => count($json['epps'] ?? []),
@@ -79,7 +79,7 @@ class PedidoNormalizadorDTO
         
         // Si hay prendas, mostrar la primera para debugging
         if (isset($json['prendas'][0])) {
-            Log::info('[PedidoNormalizadorDTO] 🔍 Primera prenda cruda:', [
+            Log::info('[PedidoNormalizadorDTO]  Primera prenda cruda:', [
                 'prenda_0' => $json['prendas'][0],
                 'telas_count' => count($json['prendas'][0]['telas'] ?? []),
                 'telas_0_raw' => json_encode($json['prendas'][0]['telas'][0] ?? []),
@@ -128,13 +128,13 @@ class PedidoNormalizadorDTO
      */
     private static function normalizarTelas(array $telas): array
     {
-        Log::info('[PedidoNormalizadorDTO] 🔍 normalizarTelas - Datos recibidos:', [
+        Log::info('[PedidoNormalizadorDTO]  normalizarTelas - Datos recibidos:', [
             'telas_count' => count($telas),
             'telas_raw' => json_encode($telas),
         ]);
         
         return array_map(function ($tela) {
-            Log::info('[PedidoNormalizadorDTO] 🔍 Procesando tela individual:', [
+            Log::info('[PedidoNormalizadorDTO]  Procesando tela individual:', [
                 'tela_raw' => $tela,
                 'keys' => array_keys($tela),
                 'tiene_tela' => isset($tela['tela']),

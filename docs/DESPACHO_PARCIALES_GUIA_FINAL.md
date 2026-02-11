@@ -158,7 +158,7 @@ Cantidad     → Cantidad total (visible en tabla)
 
 ---
 
-## 🔄 Flujo Completo (End-to-End)
+##  Flujo Completo (End-to-End)
 
 ### 1. Usuario Accede a Módulo de Despacho
 ```
@@ -316,7 +316,7 @@ id  │ pedido_id │ tipo_item │ item_id │ talla_id │ pendiente_inicial �
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 ### Acceder a Módulo
 ```
@@ -388,7 +388,7 @@ mysql> SELECT * FROM despacho_parciales WHERE pedido_id = 1;
 
 ---
 
-## 🔍 Logs de Éxito
+##  Logs de Éxito
 
 ```log
 [2026-01-29 08:18:22] local.DEBUG: Datos recibidos del frontend {

@@ -17,7 +17,7 @@ class AnalizarPedido45729Seeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🔍 ANÁLISIS COMPLETO: Pedido #45729\n";
+        echo " ANÁLISIS COMPLETO: Pedido #45729\n";
         echo "========================================\n\n";
 
         try {

@@ -20,7 +20,7 @@ class ServicioProcesos {
      * @returns {Promise} Resultado de la actualización
      */
     async actualizarProceso(prendaId, datosActualizacion) {
-        console.log('🔄 [SERVICIO-PROCESOS] Actualizando proceso:', {
+        console.log(' [SERVICIO-PROCESOS] Actualizando proceso:', {
             prendaId,
             procesoId: datosActualizacion.id,
             cambios: Object.keys(datosActualizacion.cambios || {})
@@ -49,7 +49,7 @@ class ServicioProcesos {
             return resultado;
 
         } catch (error) {
-            console.error('❌ [SERVICIO-PROCESOS] Error actualizando proceso:', error);
+            console.error(' [SERVICIO-PROCESOS] Error actualizando proceso:', error);
             throw error;
         }
     }
@@ -63,7 +63,7 @@ class ServicioProcesos {
      * @returns {Promise<array>} Resultados de todas las actualizaciones
      */
     async actualizarMultiplesProcesos(prendaId, procesosActualizacion) {
-        console.log('🔄 [SERVICIO-PROCESOS] Actualizando múltiples procesos:', {
+        console.log(' [SERVICIO-PROCESOS] Actualizando múltiples procesos:', {
             prendaId,
             cantidad: procesosActualizacion.length,
             tipos: procesosActualizacion.map(p => p.tipo)
@@ -82,7 +82,7 @@ class ServicioProcesos {
                     resultado
                 });
             } catch (error) {
-                console.error(`❌ Error actualizando proceso ${datosActualizacion.tipo}:`, error);
+                console.error(` Error actualizando proceso ${datosActualizacion.tipo}:`, error);
                 errores.push({
                     tipo: datosActualizacion.tipo,
                     error: error.message

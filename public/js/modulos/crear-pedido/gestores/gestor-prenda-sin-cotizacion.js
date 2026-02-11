@@ -99,7 +99,7 @@ class GestorPrendaSinCotizacion {
         
         // Si hay una prenda actual establecida, usarla como base
         if (this.prendaActual) {
-            console.log('[GestorPrendaSinCotizacion] 📦 Usando prenda actual como base:', this.prendaActual.nombre_prenda || this.prendaActual.nombre);
+            console.log('[GestorPrendaSinCotizacion]  Usando prenda actual como base:', this.prendaActual.nombre_prenda || this.prendaActual.nombre);
             nuevaPrenda = { ...this.prendaActual, ...datosOpcionales };
             // Limpiar prenda actual después de usarla
             this.prendaActual = null;

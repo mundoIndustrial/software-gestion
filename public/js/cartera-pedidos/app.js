@@ -144,7 +144,7 @@ function aplicarFiltroFecha() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 Cartera Pedidos APP - Inicializado');
+    console.log(' Cartera Pedidos APP - Inicializado');
     
     // Verificar que el header existe
     const tableHead = document.querySelector('.table-head');

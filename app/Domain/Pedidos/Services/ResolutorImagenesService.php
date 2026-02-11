@@ -63,7 +63,7 @@ class ResolutorImagenesService
         // Validación: Verificar que hay archivos en la request si hay imágenes en el DTO
         $totalImagenesEnDTO = $this->contarImagenesEnDTO($datosPrendas);
         if ($totalImagenesEnDTO > 0 && $archivosTotal === 0) {
-            Log::error('[RESOLVER-IMAGENES] ❌ ERROR CRÍTICO: Se esperan imágenes pero FormData vacío', [
+            Log::error('[RESOLVER-IMAGENES]  ERROR CRÍTICO: Se esperan imágenes pero FormData vacío', [
                 'imagenes_en_dto' => $totalImagenesEnDTO,
                 'archivos_en_request' => $archivosTotal,
                 'esto_explicaría_por_qué_no_se_guardan_imágenes' => 'Los archivos no llegaron en FormData'
@@ -276,7 +276,7 @@ class ResolutorImagenesService
                     $imagenesGrupoProcesadas++;
 
                 } catch (\Exception $e) {
-                    Log::error('[RESOLVER-IMAGENES] ❌ Error procesando imagen', [
+                    Log::error('[RESOLVER-IMAGENES]  Error procesando imagen', [
                         'imagen_uid' => $imagenUID,
                         'error' => $e->getMessage(),
                         'form_key' => $formKey ?? 'N/A',
@@ -295,7 +295,7 @@ class ResolutorImagenesService
         
         $tiempoGrupo = round((microtime(true) - $inicioGrupo) * 1000, 2);
         if ($imagenesGrupoProcesadas > 0) {
-            Log::debug('[RESOLVER-IMAGENES] 📦 Grupo completado', [
+            Log::debug('[RESOLVER-IMAGENES]  Grupo completado', [
                 'form_prefix' => $formPrefix,
                 'imagenes_procesadas' => $imagenesGrupoProcesadas,
                 'tiempo_grupo_ms' => $tiempoGrupo,

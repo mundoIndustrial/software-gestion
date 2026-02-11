@@ -68,7 +68,7 @@
             
             // Esperar un poco más para que invoice-preview-live se cargue completamente
             setTimeout(function() {
-                console.log('🔍 [FACTURA-EDITABLE] Buscando datos...');
+                console.log(' [FACTURA-EDITABLE] Buscando datos...');
                 console.log('   - generarHTMLFactura:', typeof window.generarHTMLFactura);
                 console.log('   - pedidoEdicionData:', typeof window.pedidoEdicionData);
                 console.log('   - pedidoEdicionData.pedido:', window.pedidoEdicionData?.pedido ? 'SÍ' : 'NO');
@@ -90,7 +90,7 @@
                             epps: window.pedidoEdicionData['epps_transformados'] || window.pedidoEdicionData.pedido.epps || []
                         };
                         
-                        console.log('📦 [FACTURA-EDITABLE] Datos preparados:', {
+                        console.log(' [FACTURA-EDITABLE] Datos preparados:', {
                             prendas: datos.prendas.length,
                             epps: datos.epps.length
                         });
@@ -103,11 +103,11 @@
                                 console.log(' [FACTURA-EDITABLE] FACTURA RENDERIZADA EXITOSAMENTE');
                                 return true;
                             } else {
-                                console.log('❌ [FACTURA-EDITABLE] Contenedor no encontrado');
+                                console.log(' [FACTURA-EDITABLE] Contenedor no encontrado');
                                 return false;
                             }
                         } catch (e) {
-                            console.error('❌ [FACTURA-EDITABLE] Error al renderizar:', e);
+                            console.error(' [FACTURA-EDITABLE] Error al renderizar:', e);
                             return false;
                         }
                     } else {
@@ -121,7 +121,7 @@
                 }
                 
                 // Ejecutar cada 300ms
-                console.log('⏱️ [FACTURA-EDITABLE] Iniciando intervalo de renderización');
+                console.log(' [FACTURA-EDITABLE] Iniciando intervalo de renderización');
                 let intentos = 0;
                 const intervalo = setInterval(function() {
                     intentos++;
@@ -130,7 +130,7 @@
                         console.log('🎉 [FACTURA-EDITABLE] Listo en intento ' + intentos);
                     } else if (intentos >= 50) {
                         clearInterval(intervalo);
-                        console.log('⏱️ [FACTURA-EDITABLE] Timeout después de ' + intentos + ' intentos');
+                        console.log(' [FACTURA-EDITABLE] Timeout después de ' + intentos + ' intentos');
                     }
                 }, 300);
             }, 1000); // Esperar 1 segundo después de que la página carga

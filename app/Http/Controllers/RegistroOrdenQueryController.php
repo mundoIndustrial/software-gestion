@@ -1015,7 +1015,7 @@ class RegistroOrdenQueryController extends Controller
         
         //  FALLBACK: Si descripción_prendas está vacía, generar dinámicamente desde las prendas
         if (empty($descripcionBase) && $order->prendas && $order->prendas->count() > 0) {
-            \Log::info('🔄 [buildDescripcionConTallas] Generando descripción dinámicamente', [
+            \Log::info(' [buildDescripcionConTallas] Generando descripción dinámicamente', [
                 'pedido' => $order->numero_pedido,
                 'total_prendas' => $order->prendas->count(),
             ]);

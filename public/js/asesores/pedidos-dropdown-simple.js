@@ -479,12 +479,12 @@ window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
         if (typeof window.abrirModalDetallePedido === 'function') {
             window.abrirModalDetallePedido(datos);
         } else {
-            console.error('❌ [abrirModalDetallePedidoDesdeAsesores] abrirModalDetallePedido no disponible');
+            console.error(' [abrirModalDetallePedidoDesdeAsesores] abrirModalDetallePedido no disponible');
             alert('Error: Sistema de modales no disponible');
         }
         
     } catch (error) {
-        console.error('❌ [abrirModalDetallePedidoDesdeAsesores] Error:', error);
+        console.error(' [abrirModalDetallePedidoDesdeAsesores] Error:', error);
         
         if (typeof Swal !== 'undefined') {
             Swal.close();

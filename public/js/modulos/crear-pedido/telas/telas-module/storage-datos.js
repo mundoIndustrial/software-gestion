@@ -15,7 +15,7 @@
  * @returns {Array} Array de telas para enviar
  */
 window.obtenerTelasParaEnvio = function() {
-    console.log('[obtenerTelasParaEnvio] 📦 Obteniendo telas para envío');
+    console.log('[obtenerTelasParaEnvio]  Obteniendo telas para envío');
     return window.telasCreacion;
 };
 
@@ -24,7 +24,7 @@ window.obtenerTelasParaEnvio = function() {
  * @returns {Array} Array de telas para edición
  */
 window.obtenerTelasParaEdicion = function() {
-    console.log('[obtenerTelasParaEdicion] 📦 Obteniendo telas para edición');
+    console.log('[obtenerTelasParaEdicion]  Obteniendo telas para edición');
     
     // Aquí se puede agregar lógica para obtener telas de diferentes fuentes
     // Por ahora, usamos el mismo array que para creación
@@ -41,7 +41,7 @@ window.obtenerImagenesTelaParaEnvio = function(telaIndex) {
     
     const telas = window.telasCreacion;
     if (!telas || telaIndex < 0 || telaIndex >= telas.length) {
-        console.warn('[obtenerImagenesTelaParaEnvio] ⚠️ Índice inválido:', telaIndex);
+        console.warn('[obtenerImagenesTelaParaEnvio]  Índice inválido:', telaIndex);
         return [];
     }
     
@@ -62,9 +62,9 @@ window.obtenerImagenesTemporales = function() {
  * @param {Array} telas - Array de telas a establecer
  */
 window.establecerTelasParaEdicion = function(telas) {
-    console.log('[establecerTelasParaEdicion] 📦 Estableciendo telas para edición');
+    console.log('[establecerTelasParaEdicion]  Estableciendo telas para edición');
     window.telasCreacion = [...telas];
-    console.log('[establecerTelasParaEdicion] ✅ Telas establecidas:', window.telasCreacion.length);
+    console.log('[establecerTelasParaEdicion]  Telas establecidas:', window.telasCreacion.length);
 };
 
 /**
@@ -72,9 +72,9 @@ window.establecerTelasParaEdicion = function(telas) {
  * @param {Array} imagenes - Array de imágenes temporales
  */
 window.establecerImagenesTemporales = function(imagenes) {
-    console.log('[establecerImagenesTemporales] 📦 Estableciendo imágenes temporales');
+    console.log('[establecerImagenesTemporales]  Estableciendo imágenes temporales');
     window.imagenesTelaModalNueva = [...imagenes];
-    console.log('[establecerImagenesTemporales] ✅ Imágenes temporales establecidas:', window.imagenesTelaModalNueva.length);
+    console.log('[establecerImagenesTemporales]  Imágenes temporales establecidas:', window.imagenesTelaModalNueva.length);
 };
 
 /**
@@ -96,7 +96,7 @@ window.limpiarTelas = function() {
     window.actualizarTablaTelas();
     window.actualizarContadorTelas();
     
-    console.log('[limpiarTelas] ✅ Telas limpiadas');
+    console.log('[limpiarTelas]  Telas limpiadas');
 };
 
 /**
@@ -111,7 +111,7 @@ window.limpiarImagenesTemporales = function() {
         window.actualizarPreviewTelaTemporal();
     }
     
-    console.log('[limpiarImagenesTemporales] ✅ Imágenes temporales limpiadas');
+    console.log('[limpiarImagenesTemporales]  Imágenes temporales limpiadas');
 };
 
 /**
@@ -131,7 +131,7 @@ window.obtenerResumenTelas = function() {
         referencias: telas.filter(t => t.referencia && t.referencia.trim() !== '').map(t => t.referencia)
     };
     
-    console.log('[obtenerResumenTelas] 📊 Resumen de telas:', resumen);
+    console.log('[obtenerResumenTelas]  Resumen de telas:', resumen);
     return resumen;
 };
 
@@ -208,7 +208,7 @@ window.exportarDatosTelas = function(contexto = 'creacion') {
 window.importarDatosTelas = function(telas) {
     console.log('[importarDatosTelas] 📥 Importando datos de telas');
     window.telasCreacion = [...telas];
-    console.log('[importarDatosTelas] ✅ ' + telas.length + ' telas importadas');
+    console.log('[importarDatosTelas]  ' + telas.length + ' telas importadas');
 };
 
 /**
@@ -237,8 +237,8 @@ window.restaurarDatosTelas = function(datosSerializados) {
         window.telasCreacion = datos.telasCreacion || [];
         window.imagenesTelaModalNueva = datos.imagenesTelaModalNueva || [];
         
-        console.log('[restaurarDatosTelas] 🔄 Datos de telas restaurados');
-        console.log('[restaurarDatosTelas] ✅ ' + window.telasCreacion.length + ' telas restauradas');
+        console.log('[restaurarDatosTelas]  Datos de telas restaurados');
+        console.log('[restaurarDatosTelas]  ' + window.telasCreacion.length + ' telas restauradas');
         
         // Actualizar UI
         window.actualizarTablaTelas();
@@ -246,7 +246,7 @@ window.restaurarDatosTelas = function(datosSerializados) {
         
         return true;
     } catch (error) {
-        console.error('[restaurarDatosTelas] ❌ Error al restaurar datos:', error);
+        console.error('[restaurarDatosTelas]  Error al restaurar datos:', error);
         return false;
     }
 }

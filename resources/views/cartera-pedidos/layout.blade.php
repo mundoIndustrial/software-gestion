@@ -486,11 +486,11 @@
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('sidebar');
             
-            console.log('🔄 sidebarToggle (FLECHA):', sidebarToggle ? ' Encontrado' : ' No encontrado');
+            console.log(' sidebarToggle (FLECHA):', sidebarToggle ? ' Encontrado' : ' No encontrado');
             console.log(' sidebar:', sidebar ? ' Encontrado' : ' No encontrado');
             
             if (sidebarToggle && sidebar) {
-                console.log('🔄 Event listener agregado al sidebarToggle (FLECHA)');
+                console.log(' Event listener agregado al sidebarToggle (FLECHA)');
                 sidebarToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
                     e.preventDefault();

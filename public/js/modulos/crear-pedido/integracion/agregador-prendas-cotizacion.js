@@ -14,7 +14,7 @@
      */
     window.agregarPrendasDesdeCotizacion = function(prendas) {
         if (!window.gestorPedidoSinCotizacion) {
-            console.error('[agregador-prendas-cotizacion] ❌ gestorPedidoSinCotizacion no disponible');
+            console.error('[agregador-prendas-cotizacion]  gestorPedidoSinCotizacion no disponible');
             return false;
         }
 
@@ -23,7 +23,7 @@
         
         // Agregar cada prenda al gestor
         prendas.forEach((prenda, index) => {
-            console.log(`[agregador-prendas-cotizacion] 📦 Agregando prenda ${index}:`, prenda.nombre_prenda || prenda.nombre);
+            console.log(`[agregador-prendas-cotizacion]  Agregando prenda ${index}:`, prenda.nombre_prenda || prenda.nombre);
             window.gestorPedidoSinCotizacion.setPrendaActual(prenda);
             window.gestorPedidoSinCotizacion.agregarPrenda();
         });
@@ -78,5 +78,5 @@
         // Aquí se puede agregar la lógica para editar la prenda
     };
 
-    console.log('[agregador-prendas-cotizacion] 🚀 Módulo de agregador de prendas desde cotización cargado');
+    console.log('[agregador-prendas-cotizacion]  Módulo de agregador de prendas desde cotización cargado');
 })();

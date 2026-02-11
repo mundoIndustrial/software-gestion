@@ -26,7 +26,7 @@ class VerifyBodegueroRole extends Command
      */
     public function handle()
     {
-        $this->info('🔍 Verificando configuración de rol bodeguero...');
+        $this->info(' Verificando configuración de rol bodeguero...');
         $this->newLine();
 
         // 1. Verificar rol en BD
@@ -37,7 +37,7 @@ class VerifyBodegueroRole extends Command
             $this->line("   - Nombre: {$role->name}");
             $this->line("   - Descripción: {$role->description}");
         } else {
-            $this->error('❌ Rol bodeguero NO existe en la BD');
+            $this->error(' Rol bodeguero NO existe en la BD');
             return;
         }
 

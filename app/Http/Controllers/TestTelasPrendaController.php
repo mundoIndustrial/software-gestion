@@ -80,7 +80,7 @@ class TestTelasPrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error en crear:', ['error' => $e->getMessage()]);
+            Log::error(' Error en crear:', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
                 'status' => 500
@@ -118,7 +118,7 @@ class TestTelasPrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error en listar:', ['error' => $e->getMessage()]);
+            Log::error(' Error en listar:', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
                 'status' => 500
@@ -143,7 +143,7 @@ class TestTelasPrendaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error en limpiar:', ['error' => $e->getMessage()]);
+            Log::error(' Error en limpiar:', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage(),
                 'status' => 500

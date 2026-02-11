@@ -17,7 +17,7 @@
         
         const container = document.getElementById('prendas-container-editable');
         if (!container) {
-            console.error('[renderizador-cotizaciones] ❌ Container no encontrado');
+            console.error('[renderizador-cotizaciones]  Container no encontrado');
             return;
         }
 
@@ -242,5 +242,5 @@
         // Aquí se puede agregar la lógica para eliminar la prenda
     };
 
-    console.log('[renderizador-cotizaciones] 🚀 Módulo de renderizador de cotizaciones cargado');
+    console.log('[renderizador-cotizaciones]  Módulo de renderizador de cotizaciones cargado');
 })();

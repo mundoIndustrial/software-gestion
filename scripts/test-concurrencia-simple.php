@@ -12,7 +12,7 @@ use App\Application\Services\Asesores\CrearPedidoService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-echo "🚀 Iniciando prueba de concurrencia simple\n";
+echo " Iniciando prueba de concurrencia simple\n";
 echo "⏰ " . date('Y-m-d H:i:s') . "\n\n";
 
 // Configurar timeout para evitar deadlocks
@@ -69,7 +69,7 @@ try {
             echo "   Pedido #{$pedido->id} creado por usuario {$index}\n";
             
         } catch (\Exception $e) {
-            echo "  ❌ Error usuario {$index}: " . $e->getMessage() . "\n";
+            echo "   Error usuario {$index}: " . $e->getMessage() . "\n";
             Log::error('[CONCURRENCIA_SIMPLE] Error', [
                 'usuario_index' => $index,
                 'error' => $e->getMessage()
@@ -90,7 +90,7 @@ try {
         $ids = array_column($resultados, 'id');
         $idsUnicos = array_unique($ids);
         
-        echo "\n🔍 VERIFICACIÓN DE INTEGRIDAD:\n";
+        echo "\n VERIFICACIÓN DE INTEGRIDAD:\n";
         
         if (count($ids) === count($idsUnicos)) {
             echo " Todos los IDs son únicos\n";
@@ -119,7 +119,7 @@ try {
     }
     
     // Verificación final en BD
-    echo "\n🔍 VERIFICACIÓN FINAL EN BD:\n";
+    echo "\n VERIFICACIÓN FINAL EN BD:\n";
     $totalPedidosBD = DB::table('pedidos_produccion')->count();
     echo "Total pedidos en BD: {$totalPedidosBD}\n";
     
@@ -144,7 +144,7 @@ try {
     echo "\n PRUEBA COMPLETADA\n";
     
 } catch (\Exception $e) {
-    echo "❌ Error fatal: " . $e->getMessage() . "\n";
+    echo " Error fatal: " . $e->getMessage() . "\n";
     Log::error('[CONCURRENCIA_SIMPLE] Error fatal', [
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString()

@@ -15,17 +15,17 @@
  * Evita múltiples reflows usando batch rendering
  */
 window.actualizarTablaTelas = function() {
-    console.log('[actualizarTablaTelas] 🔄 Actualizando tabla de telas');
+    console.log('[actualizarTablaTelas]  Actualizando tabla de telas');
     
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.warn('[actualizarTablasTelas] ⚠️ tbody-telas no encontrado');
+        console.warn('[actualizarTablasTelas]  tbody-telas no encontrado');
         return;
     }
     
     const telas = window.telasCreacion;
-    console.log('[actualizarTablasTelas] 📊 Telas a renderizar:', telas.length);
+    console.log('[actualizarTablasTelas]  Telas a renderizar:', telas.length);
     
     // Guardar la fila de entrada (primera fila con los inputs)
     const filaEntrada = tbody.querySelector('tr');
@@ -62,7 +62,7 @@ window.actualizarTablaTelas = function() {
     // Aplicar cambios en una sola operación
     tbody.appendChild(fragment);
     
-    console.log('[actualizarTablasTelas] ✅ Tabla actualizada con ' + telas.length + ' filas');
+    console.log('[actualizarTablasTelas]  Tabla actualizada con ' + telas.length + ' filas');
 };
 
 /**
@@ -75,48 +75,113 @@ function crearFilaTela(tela, index) {
     const tr = document.createElement('tr');
     tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
     
-    // Generar HTML de imágenes
+    // Procesar imágenes para mostrar en la tabla
     let imagenHTML = '';
-    let imagenConBlobUrl = [];
-    
     if (tela.imagenes && tela.imagenes.length > 0) {
-        // Crear blob URLs para las imágenes
-        imagenConBlobUrl = tela.imagenes.map((img, idx) => {
-            let blobUrl;
-            if (img.file instanceof File || img.file instanceof Blob) {
-                blobUrl = URL.createObjectURL(img.file);
-            } else if (img.blobUrl) {
-                blobUrl = img.blobUrl;
-            } else if (img.previewUrl) {
-                blobUrl = img.previewUrl;
-            } else {
-                // Crear blob URL desde base64 si está disponible
-                if (img.base64) {
-                    const byteCharacters = atob(img.base64);
-                    const byteNumbers = new Array(byteNumbers.length);
-                    for (let i = 0; i < byteNumbers.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    blobUrl = URL.createObjectURL(new Blob([byteArray], {type: 'image/jpeg'}));
-                }
+        console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Procesando ${tela.imagenes.length} imágenes`);
+        
+        // Usar directamente las URLs de preview que ya existen
+        const imagenConBlobUrl = tela.imagenes.map(img => {
+            // CASO 0: Si img es un File directamente, crear blob
+            if (img instanceof File) {
+                const blobUrl = URL.createObjectURL(img);
+                return { file: img, previewUrl: blobUrl, nombre: img.name };
             }
             
-            return { ...img, previewUrl: blobUrl };
-        });
+            // Para edición, las imágenes guardadas tienen diferentes estructura
+            // Si tiene ruta (URL del servidor), usarla
+            if (img.ruta) {
+                return { ...img, previewUrl: img.ruta };
+            }
+            
+            // Si tiene url, usarla
+            if (img.url) {
+                return { ...img, previewUrl: img.url };
+            }
+            
+            // Si tiene previewUrl y no es un blob temporal, usarla directamente
+            if (img.previewUrl && !img.previewUrl.startsWith('blob:')) {
+                return { ...img, previewUrl: img.previewUrl };
+            }
+            
+            // Si tiene file (solo para creación), crear blob
+            if (img.file) {
+                const blobUrl = URL.createObjectURL(img.file);
+                return { ...img, previewUrl: blobUrl };
+            }
+            
+            // Si tiene previewUrl pero es blob temporal, mantenerlo
+            if (img.previewUrl) {
+                return { ...img, previewUrl: img.previewUrl };
+            }
+            
+            // Si no tiene ninguna URL, marcar como inválida
+            console.warn('[actualizarTablaTelas]  Imagen sin URL válida:', img);
+            return { ...img, previewUrl: null, invalida: true };
+        }).filter(img => !img.invalida); // Filtrar imágenes inválidas
         
         console.log(`[actualizarTablaTelas] 📸 [Tela ${index}] Imágenes procesadas: ${imagenConBlobUrl.length}`);
         
-        imagenHTML = `
-            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                ${imagenConBlobUrl[0].previewUrl ? `
-                    <img src="${imagenConBlobUrl[0].previewUrl}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="mostrarGaleriaImagenesTela(${JSON.stringify(imagenConBlobUrl)}, ${index}, 0)">
-                    ${imagenConBlobUrl.length > 1 ? `<span style="background: #0066cc; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${imagenConBlobUrl.length - 1}</span>` : ''}
-                    ` : `
-                        <span style="color: #999; font-size: 0.875rem;">Sin foto</span>
-                    `}
+        if (imagenConBlobUrl.length === 0) {
+            console.warn(`[actualizarTablaTelas]  No hay imágenes válidas para la tela ${index}`);
+            imagenHTML = `
+                <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                    <span style="color: #999; font-size: 0.875rem;">Sin imágenes</span>
                 </div>
             `;
+        } else {
+            // Crear imagen con onclick seguro usando data attributes
+            const imgElement = document.createElement('img');
+            imgElement.src = imagenConBlobUrl[0].previewUrl;
+            imgElement.style.cssText = 'width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;';
+            imgElement.title = imagenConBlobUrl[0].name || 'Imagen de tela';
+        
+        // Agregar evento onclick de forma segura
+        imgElement.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[actualizarTablaTelas] 🖼️ Click en imagen de tela', { 
+                index: index, 
+                imagen: imagenConBlobUrl[0].name,
+                totalImagenes: imagenConBlobUrl.length
+            });
+            
+            // Verificar que la función exista
+            if (typeof window.mostrarGaleriaImagenesTela === 'function') {
+                window.mostrarGaleriaImagenesTela(imagenConBlobUrl, index, 0);
+            } else {
+                console.error('[actualizarTablaTelas]  La función mostrarGaleriaImagenesTela no está disponible');
+                alert('La función de galería no está disponible. Por favor recarga la página.');
+            }
+        };
+        
+        // Agregar evento de error por si acaso
+        imgElement.onerror = function() {
+            console.error('[actualizarTablaTelas]  Error cargando imagen:', imagenConBlobUrl[0].name);
+        };
+        
+        // Agregar evento de carga exitosa
+        imgElement.onload = function() {
+            console.log('[actualizarTablaTelas]  Imagen cargada exitosamente:', imagenConBlobUrl[0].name);
+        };
+        
+        // En lugar de usar outerHTML, vamos a crear el contenedor y agregar el elemento img directamente
+        const contenedor = document.createElement('div');
+        contenedor.style.cssText = 'display: flex; gap: 0.5rem; align-items: center; justify-content: center;';
+        
+        // Agregar la imagen directamente al contenedor
+        contenedor.appendChild(imgElement);
+        
+        // Agregar badge si hay más imágenes
+        if (imagenConBlobUrl.length > 1) {
+            const badge = document.createElement('span');
+            badge.textContent = `+${imagenConBlobUrl.length - 1}`;
+            badge.style.cssText = 'background: #0066cc; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;';
+            contenedor.appendChild(badge);
+        }
+        
+        imagenHTML = contenedor.outerHTML;
+        }
     } else {
         imagenHTML = `
             <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
@@ -215,7 +280,7 @@ window.animarEliminacionFila = function(fila) {
  * Actualizar vista de telas (función principal)
  */
 window.actualizarVistaTelas = function() {
-    console.log('[actualizarVistaTelas] 🔄 Actualizando vista completa de telas');
+    console.log('[actualizarVistaTelas]  Actualizando vista completa de telas');
     
     // Actualizar tabla
     window.actualizarTablaTelas();
@@ -226,7 +291,7 @@ window.actualizarVistaTelas = function() {
     // Actualizar botones
     window.actualizarBotonesTelas();
     
-    console.log('[actualizarVistaTelas] ✅ Vista de telas actualizada');
+    console.log('[actualizarVistaTelas]  Vista de telas actualizada');
 };
 
 /**
@@ -234,7 +299,7 @@ window.actualizarVistaTelas = function() {
  */
 window.actualizarBotonesTelas = function() {
     // Aquí se pueden agregar actualizaciones para botones específicos de telas
-    console.log('[actualizarBotonesTelas] 🔄 Botones actualizados');
+    console.log('[actualizarBotonesTelas]  Botones actualizados');
 };
 
 /**

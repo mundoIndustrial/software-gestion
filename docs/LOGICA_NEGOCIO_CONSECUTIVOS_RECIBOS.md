@@ -17,7 +17,7 @@ Este documento describe la lógica de negocio implementada para la generación a
 - Otros cambios de estado
 - El pedido ya tiene consecutivos generados
 
-## 🔍 Lógica por Prenda Individual
+##  Lógica por Prenda Individual
 
 Cada prenda del pedido genera sus propios consecutivos según las siguientes reglas:
 
@@ -63,24 +63,24 @@ Cada prenda del pedido genera sus propios consecutivos según las siguientes reg
 
 | de_bodega | Procesos | COSTURA | ESTAMPADO | BORDADO | DTF | SUBLIMADO | REFLECTIVO | Total Consecutivos |
 |-----------|----------|---------|-----------|---------|-----|-----------|------------|-------------------|
-| false | Ninguno | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | 1 |
-| false | Estampado | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | 2 |
-| false | DTF | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | 2 |
-| false | Sublimado | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | 2 |
-| false | Bordado, Reflectivo | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | 2 (Reflectivo NO genera) |
-| false | Estampado, DTF, Sublimado | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | 4 |
-| true | Ninguno | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0 |
-| true | Estampado | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | 1 |
-| true | DTF | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | 1 |
-| true | Sublimado | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | 1 |
-| true | Bordado, Reflectivo | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | 2 |
+| false | Ninguno |  |  |  |  |  |  | 1 |
+| false | Estampado |  |  |  |  |  |  | 2 |
+| false | DTF |  |  |  |  |  |  | 2 |
+| false | Sublimado |  |  |  |  |  |  | 2 |
+| false | Bordado, Reflectivo |  |  |  |  |  |  | 2 (Reflectivo NO genera) |
+| false | Estampado, DTF, Sublimado |  |  |  |  |  |  | 4 |
+| true | Ninguno |  |  |  |  |  |  | 0 |
+| true | Estampado |  |  |  |  |  |  | 1 |
+| true | DTF |  |  |  |  |  |  | 1 |
+| true | Sublimado |  |  |  |  |  |  | 1 |
+| true | Bordado, Reflectivo |  |  |  |  |  |  | 2 |
 
-⚠️ **IMPORTANTE**: 
+ **IMPORTANTE**: 
 - Cada proceso genera **UN consecutivo por cada prenda** que lo tenga.
 - **REFLECTIVO** es el único proceso que requiere `de_bodega = true`.
 - **BORDADO, ESTAMPADO, DTF, SUBLIMADO** generan consecutivo independientemente de `de_bodega`.
 
-## 🔄 Flujo de Generación
+##  Flujo de Generación
 
 ### 1. Detección del Cambio
 ```php

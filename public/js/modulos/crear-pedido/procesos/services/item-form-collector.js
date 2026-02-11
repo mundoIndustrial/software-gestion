@@ -26,7 +26,7 @@ class ItemFormCollector {
         if (window.gestionItemsUI && window.gestionItemsUI.obtenerItemsOrdenados) {
             const itemsOrdenados = window.gestionItemsUI.obtenerItemsOrdenados();
             items = items.concat(itemsOrdenados);
-            console.log('[ItemFormCollector] 📦 Items recolectados desde gestionItemsUI:', {
+            console.log('[ItemFormCollector]  Items recolectados desde gestionItemsUI:', {
                 total: itemsOrdenados.length,
                 prendas: itemsOrdenados.filter(i => i.tipo !== 'epp').length,
                 epps: itemsOrdenados.filter(i => i.tipo === 'epp').length
@@ -44,8 +44,8 @@ class ItemFormCollector {
                 return null; // Los EPPs se procesarán después
             }
             
-            // 🔍 DEBUG: Ver exactamente qué recibe
-            console.log('[ItemFormCollector] 🔍 Item CRUDO recibido:', {
+            //  DEBUG: Ver exactamente qué recibe
+            console.log('[ItemFormCollector]  Item CRUDO recibido:', {
                 itemIndex,
                 tipo: item.tipo,
                 nombre_prenda: item.nombre_prenda,
@@ -68,7 +68,7 @@ class ItemFormCollector {
                 telas: item.telas || item.telasAgregadas || [],
             };
             
-            console.log('[ItemFormCollector] 📦 baseItem CONSTRUIDO:', {
+            console.log('[ItemFormCollector]  baseItem CONSTRUIDO:', {
                 itemIndex,
                 nombre_prenda: baseItem.nombre_prenda,
                 cantidad_talla_keys: Object.keys(baseItem.cantidad_talla || {}).length,
@@ -78,7 +78,7 @@ class ItemFormCollector {
             
             // DEBUG: Log detallado de telasAgregadas vs telas
         // itemeIdx: índice del item (prenda)
-            console.log('[ItemFormCollector] 🔍 TELAS EN ITEM - DETALLADO:', {
+            console.log('[ItemFormCollector]  TELAS EN ITEM - DETALLADO:', {
                 itemIndex,
                 item_keys: Object.keys(item),
                 item_telas: item.telas?.length || 0,
@@ -89,7 +89,7 @@ class ItemFormCollector {
             });
             
             // DEBUG: Log para verificar valores de origen y de_bodega
-            console.log('[ItemFormCollector] 📦 Item procesado:', {
+            console.log('[ItemFormCollector]  Item procesado:', {
                 itemIndex,
                 nombre_prenda: baseItem.nombre_prenda,
                 origen_orig: item.origen,
@@ -329,8 +329,8 @@ class ItemFormCollector {
         this.agregarUIDsAlPedido(pedidoFinal);
         
         // DEBUG: Verificar estructura
-        console.group('🔍 ItemFormCollector - Estructura pedidoFinal:');
-        console.log('📦 Prendas:', prendas.length);
+        console.group(' ItemFormCollector - Estructura pedidoFinal:');
+        console.log(' Prendas:', prendas.length);
         prendas.forEach((item, idx) => {
             console.log(`  Prenda ${idx}:`, {
                 uid: item.uid,  // ← NUEVO: Mostrar UID

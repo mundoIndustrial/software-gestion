@@ -191,9 +191,9 @@ function abrirDetallesRecibos(prendaId, nombrePrenda) {
 
 ## Verificación de Sintaxis
 
-✅ `OperarioController.php` - Sin errores  
-✅ `ObtenerPrendasRecibosService.php` - Sin errores  
-✅ `dashboard.blade.php` - Sin errores  
+ `OperarioController.php` - Sin errores  
+ `ObtenerPrendasRecibosService.php` - Sin errores  
+ `dashboard.blade.php` - Sin errores  
 
 ---
 

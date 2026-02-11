@@ -10,7 +10,7 @@
  * @version 2.0.0
  */
 
-console.log('🚀 Manejo de Imágenes de Procesos cargado...');
+console.log(' Manejo de Imágenes de Procesos cargado...');
 
 /**
  * Manejar imagen de proceso individual
@@ -31,7 +31,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
         
         // Validar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn(`[manejarImagenProceso] ⚠️ El archivo no es una imagen:`, file.type);
+            console.warn(`[manejarImagenProceso]  El archivo no es una imagen:`, file.type);
             mostrarModalError('Por favor selecciona un archivo de imagen válido');
             return;
         }
@@ -39,7 +39,7 @@ window.manejarImagenProceso = function(input, procesoIndex) {
         // Validar tamaño (máximo 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-            console.warn(`[manejarImagenProceso] ⚠️ Archivo demasiado grande para proceso ${procesoIndex}:`, file.size);
+            console.warn(`[manejarImagenProceso]  Archivo demasiado grande para proceso ${procesoIndex}:`, file.size);
             mostrarModalError('El archivo es demasiado grande (máximo 5MB)');
             return;
         }
@@ -107,14 +107,14 @@ window.manejarImagenProceso = function(input, procesoIndex) {
                 previewElement.appendChild(imgElement);
                 previewElement.appendChild(btnEliminar);
                 
-                console.log(`[manejarImagenProceso] ✅ Preview actualizado para proceso ${procesoIndex}`);
+                console.log(`[manejarImagenProceso]  Preview actualizado para proceso ${procesoIndex}`);
                 
                 // Actualizar drag & drop si es necesario
                 if (typeof window.actualizarDragDropProceso === 'function') {
                     window.actualizarDragDropProceso(procesoIndex);
                 }
             } else {
-                console.warn(`[manejarImagenProceso] ⚠️ Preview del proceso ${procesoIndex} no encontrado`);
+                console.warn(`[manejarImagenProceso]  Preview del proceso ${procesoIndex} no encontrado`);
             }
             
             // Guardar la imagen en el storage si está disponible
@@ -127,19 +127,19 @@ window.manejarImagenProceso = function(input, procesoIndex) {
                     type: file.type,
                     fechaCreacion: new Date().toISOString()
                 });
-                console.log(`[manejarImagenProceso] 📦 Imagen guardada en storage para proceso ${procesoIndex}`);
+                console.log(`[manejarImagenProceso]  Imagen guardada en storage para proceso ${procesoIndex}`);
             }
         };
         
         reader.onerror = function() {
-            console.error(`[manejarImagenProceso] ❌ Error al leer el archivo para proceso ${procesoIndex}`);
+            console.error(`[manejarImagenProceso]  Error al leer el archivo para proceso ${procesoIndex}`);
             mostrarModalError('Error al leer el archivo de imagen');
         };
         
         reader.readAsDataURL(file);
         
     } catch (error) {
-        console.error(`[manejarImagenProceso] ❌ Error general al procesar imagen del proceso ${procesoIndex}:`, error);
+        console.error(`[manejarImagenProceso]  Error general al procesar imagen del proceso ${procesoIndex}:`, error);
         mostrarModalError('Error al procesar la imagen');
     }
     
@@ -171,13 +171,13 @@ window.eliminarImagenProceso = function(procesoIndex) {
             previewElement.style.transform = '';
             previewElement.style.boxShadow = '';
             
-            console.log(`[eliminarImagenProceso] ✅ Preview del proceso ${procesoIndex} restaurado`);
+            console.log(`[eliminarImagenProceso]  Preview del proceso ${procesoIndex} restaurado`);
         }
         
         // Eliminar del storage si está disponible
         if (window.procesosImagenesStorage) {
             window.procesosImagenesStorage.eliminarImagen(procesoIndex);
-            console.log(`[eliminarImagenProceso] 📦 Imagen eliminada del storage para proceso ${procesoIndex}`);
+            console.log(`[eliminarImagenProceso]  Imagen eliminada del storage para proceso ${procesoIndex}`);
         }
         
         // Reconfigurar drag & drop
@@ -186,7 +186,7 @@ window.eliminarImagenProceso = function(procesoIndex) {
         }
         
     } catch (error) {
-        console.error(`[eliminarImagenProceso] ❌ Error al eliminar imagen del proceso ${procesoIndex}:`, error);
+        console.error(`[eliminarImagenProceso]  Error al eliminar imagen del proceso ${procesoIndex}:`, error);
     }
 };
 
@@ -230,7 +230,7 @@ window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
     closeButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1.5rem;';
     closeButton.onclick = () => {
         modal.remove();
-        console.log(`[mostrarImagenAmpliada] ✅ Modal cerrado para proceso ${procesoIndex}`);
+        console.log(`[mostrarImagenAmpliada]  Modal cerrado para proceso ${procesoIndex}`);
     };
     
     contenido.appendChild(titulo);
@@ -256,7 +256,7 @@ window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
     document.addEventListener('keydown', cerrarConEsc);
     
     document.body.appendChild(modal);
-    console.log(`[mostrarImagenAmpliada] ✅ Modal abierto para proceso ${procesoIndex}`);
+    console.log(`[mostrarImagenAmpliada]  Modal abierto para proceso ${procesoIndex}`);
 };
 
 /**
@@ -272,10 +272,10 @@ window.limpiarImagenesProcesos = function() {
     // Limpiar storage si está disponible
     if (window.procesosImagenesStorage) {
         window.procesosImagenesStorage.limpiar();
-        console.log('[limpiarImagenesProcesos] 📦 Storage de imágenes de procesos limpiado');
+        console.log('[limpiarImagenesProcesos]  Storage de imágenes de procesos limpiado');
     }
     
-    console.log('[limpiarImagenesProcesos] ✅ Todas las imágenes de procesos limpiadas');
+    console.log('[limpiarImagenesProcesos]  Todas las imágenes de procesos limpiadas');
 };
 
 /**
@@ -299,6 +299,6 @@ window.obtenerImagenesProcesos = function() {
         }
     }
     
-    console.log('[obtenerImagenesProcesos] 📊 Imágenes encontradas:', imagenes.length);
+    console.log('[obtenerImagenesProcesos]  Imágenes encontradas:', imagenes.length);
     return imagenes;
 };

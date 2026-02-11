@@ -142,7 +142,7 @@ class OperarioController extends Controller
         ]);
 
         if (!$pedidoDB) {
-            \Log::warning('[OperarioController] ❌ Pedido no encontrado en BD');
+            \Log::warning('[OperarioController]  Pedido no encontrado en BD');
             return redirect()->route('operario.dashboard')
                 ->with('error', 'Pedido no encontrado');
         }
@@ -161,7 +161,7 @@ class OperarioController extends Controller
             $numeroReciboCostura = $reciboCostura->consecutivo_actual;
         }
 
-        \Log::info('[OperarioController] ✅ Renderizando ver-pedido', [
+        \Log::info('[OperarioController]  Renderizando ver-pedido', [
             'numero_pedido' => $numeroPedido,
             'total_fotos' => count($fotos),
             'numero_recibo_costura' => $numeroReciboCostura
@@ -288,7 +288,7 @@ class OperarioController extends Controller
     public function obtenerDatosRecibosOperario($numeroPedido)
     {
         try {
-            \Log::info('[OperarioController] 🚀 INICIO obtenerDatosRecibosOperario', [
+            \Log::info('[OperarioController]  INICIO obtenerDatosRecibosOperario', [
                 'numero_pedido' => $numeroPedido,
                 'tipo_numeroPedido' => gettype($numeroPedido)
             ]);
@@ -309,7 +309,7 @@ class OperarioController extends Controller
             ]);
 
             if (!$pedido) {
-                \Log::warning('[OperarioController] ❌ Pedido no encontrado', [
+                \Log::warning('[OperarioController]  Pedido no encontrado', [
                     'numero_pedido' => $numeroPedido
                 ]);
                 return response()->json([
@@ -323,12 +323,12 @@ class OperarioController extends Controller
             // Usar ObtenerPedidoUseCase para obtener todos los datos
             $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedido->id, false);
 
-            \Log::info('[OperarioController] ✅ Datos obtenidos del UseCase');
+            \Log::info('[OperarioController]  Datos obtenidos del UseCase');
 
             // Convertir a array
             $responseData = $datosPedido->toArray();
 
-            \Log::info('[OperarioController] ✅ Respuesta enviada', [
+            \Log::info('[OperarioController]  Respuesta enviada', [
                 'keys' => array_keys($responseData),
                 'tiene_prendas' => isset($responseData['prendas']),
                 'total_prendas' => count($responseData['prendas'] ?? [])
@@ -336,7 +336,7 @@ class OperarioController extends Controller
 
             return response()->json($responseData);
         } catch (\Exception $e) {
-            \Log::error('[OperarioController] ❌ ERROR en obtenerDatosRecibosOperario', [
+            \Log::error('[OperarioController]  ERROR en obtenerDatosRecibosOperario', [
                 'numero_pedido' => $numeroPedido,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -562,7 +562,7 @@ class OperarioController extends Controller
 
             // FILTRO POR TIPO DE RECIBO: Si se especifica un tipo de recibo, filtrar procesos para mostrar SOLO ese tipo
             $tipoReciboFiltro = request('tipo_recibo', '');
-            \Log::info('[OperarioController.getPedidoData] 🔍 Verificando filtro de tipo_recibo', [
+            \Log::info('[OperarioController.getPedidoData]  Verificando filtro de tipo_recibo', [
                 'numero_pedido' => $numeroPedido,
                 'tipo_recibo_solicitado' => $tipoReciboFiltro
             ]);

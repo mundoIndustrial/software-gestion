@@ -27,7 +27,7 @@
     // Debug: Log de z-index del modal
  
     /**
-     * 🔄 Recargar la tabla de pedidos sin recargar la página
+     *  Recargar la tabla de pedidos sin recargar la página
      */
     async function recargarTablaPedidos() {
         try {
@@ -64,7 +64,7 @@
             } else {
             }
         } catch (error) {
-            console.error('❌ [recargarTablaPedidos] Error:', error);
+            console.error(' [recargarTablaPedidos] Error:', error);
         }
     }
     
@@ -206,7 +206,7 @@
                 console.log(' [EDITAR-EPP-ESPECIFICO] Modal abierto exitosamente');
                 
             } catch (error) {
-                console.error('❌ [EDITAR-EPP-ESPECIFICO] Error:', error.message);
+                console.error(' [EDITAR-EPP-ESPECIFICO] Error:', error.message);
                 Swal.fire('Error', `No se pudieron cargar los datos: ${error.message}`, 'error');
             }
         });
@@ -279,7 +279,7 @@
         
         const modal = document.getElementById('modal-editar-epp-form');
         if (!modal) {
-            console.error('❌ Modal no encontrado en el DOM');
+            console.error(' Modal no encontrado en el DOM');
             return;
         }
         
@@ -319,7 +319,7 @@
         
         buscador.addEventListener('input', function(e) {
             const valor = e.target.value.trim();
-            console.log('🔍 Buscando EPP:', valor);
+            console.log(' Buscando EPP:', valor);
             
             if (valor.length < 2) {
                 document.getElementById('resultadosBuscadorEppEdicion').style.display = 'none';
@@ -347,7 +347,7 @@
             
             mostrarResultadosBuscador(resultados);
         } catch (error) {
-            console.error('❌ Error buscando EPPs:', error);
+            console.error(' Error buscando EPPs:', error);
             document.getElementById('resultadosBuscadorEppEdicion').innerHTML = '<div style="padding: 10px; color: #ef4444;">Error al buscar</div>';
         }
     }
@@ -516,7 +516,7 @@
             cerrarModalNovedad();
             cerrarModalEditarEppForm();
             
-            // 🔄 Recargar la tabla de pedidos sin recargar la página
+            //  Recargar la tabla de pedidos sin recargar la página
             await recargarTablaPedidos();
             
             Swal.fire({
@@ -535,7 +535,7 @@
             });
             
         } catch (error) {
-            console.error('❌ Error guardando cambios:', error);
+            console.error(' Error guardando cambios:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',

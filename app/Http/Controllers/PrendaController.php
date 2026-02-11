@@ -123,7 +123,7 @@ class PrendaController extends Controller
      */
     public function update(int $id, CrearPrendaRequest $request): JsonResponse
     {
-        \Log::info('🔄 Actualizando prenda', ['prenda_id' => $id]);
+        \Log::info(' Actualizando prenda', ['prenda_id' => $id]);
 
         try {
             $dto = CrearPrendaDTO::fromRequest($request->validated());

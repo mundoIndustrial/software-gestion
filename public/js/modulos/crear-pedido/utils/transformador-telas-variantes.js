@@ -8,7 +8,7 @@
  * @returns {Array} Array de telasAgregadas con estructura unificada
  */
 function transformarVariantesATelasAgregadas(prenda) {
-    console.log('🔄 [transformarVariantesATelasAgregadas] Iniciando transformación');
+    console.log(' [transformarVariantesATelasAgregadas] Iniciando transformación');
     console.log('📋 Prenda recibida:', {
         nombre: prenda.nombre_prenda || prenda.nombre,
         tiene_variantes: !!prenda.variantes,
@@ -25,7 +25,7 @@ function transformarVariantesATelasAgregadas(prenda) {
     // Asegurar que variantes sea un array
     const variantes = Array.isArray(prenda.variantes) ? prenda.variantes : [prenda.variantes];
     
-    console.log(`🔍 [transformarVariantesATelasAgregadas] Procesando ${variantes.length} variantes`);
+    console.log(` [transformarVariantesATelasAgregadas] Procesando ${variantes.length} variantes`);
 
     // Array para acumular todas las telas
     const telasAgregadas = [];
@@ -33,7 +33,7 @@ function transformarVariantesATelasAgregadas(prenda) {
 
     // Recorrer todas las variantes
     variantes.forEach((variante, varianteIndex) => {
-        console.log(`📦 [Variante ${varianteIndex}] Procesando variante:`, {
+        console.log(` [Variante ${varianteIndex}] Procesando variante:`, {
             tipo_manga: variante.tipo_manga,
             tiene_bolsillos: variante.tiene_bolsillos,
             tiene_telas_multiples: !!(variante.telas_multiples),
@@ -170,7 +170,7 @@ function procesarTelasDesdeVariantes(prenda) {
     
     // 3. Actualizar tabla de telas si existe la función
     if (typeof window.actualizarTablaTelas === 'function') {
-        console.log('🔄 [procesarTelasDesdeVariantes] Actualizando tabla de telas');
+        console.log(' [procesarTelasDesdeVariantes] Actualizando tabla de telas');
         window.actualizarTablaTelas();
     }
     

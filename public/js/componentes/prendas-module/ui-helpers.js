@@ -82,7 +82,7 @@ window.mostrarModalLimiteImagenes = function() {
     contenido.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;';
     
     contenido.innerHTML = `
-        <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;">⚠️</div>
+        <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></div>
         <h2 style="margin: 0 0 1rem 0; color: #1f2937;">Límite de imágenes alcanzado</h2>
         <p style="margin: 0 0 1.5rem 0; color: #6b7280;">Solo puedes agregar un máximo de 3 imágenes por prenda.</p>
         <button onclick="this.parentElement.parentElement.remove()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Entendido</button>
@@ -119,7 +119,7 @@ window.mostrarModalError = function(mensaje) {
     contenido.style.cssText = 'background: white; border-radius: 12px; padding: 2rem; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;';
     
     contenido.innerHTML = `
-        <div style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;">❌</div>
+        <div style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></div>
         <h2 style="margin: 0 0 1rem 0; color: #1f2937;">Error</h2>
         <p style="margin: 0 0 1.5rem 0; color: #6b7280;">${mensaje}</p>
         <button onclick="this.parentElement.parentElement.remove()" style="background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Cerrar</button>

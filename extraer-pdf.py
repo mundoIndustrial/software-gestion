@@ -126,7 +126,7 @@ def guardar_json(ruta_salida, encabezados, datos):
 
 def main():
     print("=" * 60)
-    print("🔄 EXTRACTOR DE DATOS PDF → CSV/JSON")
+    print(" EXTRACTOR DE DATOS PDF → CSV/JSON")
     print("=" * 60)
     
     # Ruta del PDF descargado

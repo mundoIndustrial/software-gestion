@@ -204,7 +204,7 @@ class MigrarDatosCompleto extends Command
             $this->migrarProcesos($dryRun);
 
             // PASO 6: Actualizar áreas y fechas
-            $this->info("🔄 PASO 6: Actualizando áreas y fechas...\n");
+            $this->info(" PASO 6: Actualizando áreas y fechas...\n");
             $this->actualizarAreasYFechas($dryRun);
 
             // Mostrar resumen

@@ -789,7 +789,7 @@ function agregarTallasSeleccionadas(btn) {
     
     const container = btn.closest('.producto-section');
     const productoCard = btn.closest('.producto-card'); // Buscar en toda la tarjeta
-    console.log('📦 Container encontrado:', !!container);
+    console.log(' Container encontrado:', !!container);
     console.log('🃏 Producto card encontrado:', !!productoCard);
     
     const botonesActivos = container.querySelectorAll('.talla-btn.activo');
@@ -797,7 +797,7 @@ function agregarTallasSeleccionadas(btn) {
     const tallasSection = container.querySelector('.tallas-section');
     const tallasHidden = productoCard.querySelector('.tallas-hidden'); // Buscar en toda la tarjeta
     
-    console.log('🔍 Elementos encontrados:');
+    console.log(' Elementos encontrados:');
     console.log('  - tallas-agregadas:', !!tallasAgregadas);
     console.log('  - tallas-section:', !!tallasSection);
     console.log('  - tallas-hidden (en producto-card):', !!tallasHidden, tallasHidden);
@@ -902,11 +902,11 @@ function agregarTallasSeleccionadas(btn) {
  * Actualiza el campo hidden con las tallas seleccionadas por género
  */
 function actualizarTallasHidden(container) {
-    console.log('🔄 Actualizando campo hidden de tallas');
+    console.log(' Actualizando campo hidden de tallas');
     console.log('📍 Container:', container);
     
     if (!container) {
-        console.warn('❌ Container no encontrado');
+        console.warn(' Container no encontrado');
         return;
     }
     
@@ -932,13 +932,13 @@ function actualizarTallasHidden(container) {
         }
     }
     
-    console.log('🔍 Elementos encontrados:');
+    console.log(' Elementos encontrados:');
     console.log('  - tallas-agregadas:', !!tallasAgregadas);
     console.log('🃏 Producto card:', !!productoCard);
     console.log('  - tallas-hidden:', !!tallasHidden, tallasHidden);
     
     if (!tallasAgregadas || !tallasHidden) {
-        console.warn('❌ No se encontraron elementos de tallas');
+        console.warn(' No se encontraron elementos de tallas');
         return;
     }
     

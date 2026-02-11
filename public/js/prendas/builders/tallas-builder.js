@@ -7,8 +7,8 @@
 
 class TallasBuilder {
     static construir(prenda, indice) {
-        console.log('[TallasBuilder.construir] 📦 ENTRADA - generosConTallas:', prenda.generosConTallas);
-        console.log('[TallasBuilder.construir] 📦 ENTRADA - cantidadesPorTalla:', prenda.cantidadesPorTalla);
+        console.log('[TallasBuilder.construir]  ENTRADA - generosConTallas:', prenda.generosConTallas);
+        console.log('[TallasBuilder.construir]  ENTRADA - cantidadesPorTalla:', prenda.cantidadesPorTalla);
 
         const generosConTallas = prenda.generosConTallas || {};
         const cantidadesPorTalla = prenda.cantidadesPorTalla || {};
@@ -31,7 +31,7 @@ class TallasBuilder {
         });
 
         const totalTallas = Object.values(tallasByGeneroMap).reduce((sum, tallas) => sum + tallas.length, 0);
-        console.log('[TallasBuilder.construir] 🔍 totalTallas:', totalTallas, 'tallasByGeneroMap:', tallasByGeneroMap);
+        console.log('[TallasBuilder.construir]  totalTallas:', totalTallas, 'tallasByGeneroMap:', tallasByGeneroMap);
 
         if (totalTallas === 0) {
             console.log('[TallasBuilder.construir]  SIN TALLAS - RETORNANDO VACÍO');

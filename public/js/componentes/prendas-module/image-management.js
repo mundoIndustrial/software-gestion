@@ -55,7 +55,7 @@ window.actualizarPreviewPrenda = function() {
         const preview = document.getElementById('nueva-prenda-foto-preview');
         const contador = document.getElementById('nueva-prenda-foto-contador');
         const btn = document.getElementById('nueva-prenda-foto-btn');
-        console.log('[actualizarPreviewPrenda] 🔍 Elementos DOM:', {
+        console.log('[actualizarPreviewPrenda]  Elementos DOM:', {
             preview: preview ? 'ENCONTRADO' : 'NO ENCONTRADO',
             contador: contador ? 'ENCONTRADO' : 'NO ENCONTRADO',
             btn: btn ? 'ENCONTRADO' : 'NO ENCONTRADO'
@@ -72,7 +72,7 @@ window.actualizarPreviewPrenda = function() {
         }
         
         const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
-        console.log('[actualizarPreviewPrenda] 📦 Imágenes cargadas:', imagenes.length);
+        console.log('[actualizarPreviewPrenda]  Imágenes cargadas:', imagenes.length);
         
         // Si no hay imágenes, mostrar placeholder con drag & drop
         if (imagenes.length === 0) {
@@ -118,7 +118,7 @@ window.actualizarPreviewPrenda = function() {
         }
         
     } catch (e) {
-        console.error('[actualizarPreviewPrenda] ❌ Error:', e);
+        console.error('[actualizarPreviewPrenda]  Error:', e);
     }
 };
 
@@ -241,7 +241,7 @@ window.actualizarPreviewTela = function() {
             // 🔥 IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
             if (typeof window.setupDragDropTelaPreview === 'function') {
                 window.setupDragDropTelaPreview(preview);
-                console.log('[actualizarPreviewTela] ✅ Drag & drop configurado en preview con imágenes');
+                console.log('[actualizarPreviewTela]  Drag & drop configurado en preview con imágenes');
             }
             
         } else {

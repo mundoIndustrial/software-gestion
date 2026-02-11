@@ -36,7 +36,7 @@ function integrarTransformadorEnCargarPrendas() {
 
             // NUEVO: Transformar variantes a telasAgregadas
             if (prenda.variantes && (prenda.variantes.telas_multiples || prenda.variantes.length > 0)) {
-                console.log('[transformarDatos] 🔄 Usando transformador para variantes');
+                console.log('[transformarDatos]  Usando transformador para variantes');
                 
                 // Usar el transformador
                 const telasDesdeVariantes = window.transformarVariantesATelasAgregadas(prenda);
@@ -59,7 +59,7 @@ function integrarTransformadorEnCargarPrendas() {
                         );
                         if (indice !== -1 && !telasFormato[indice].referencia && telaVariante.referencia) {
                             telasFormato[indice].referencia = telaVariante.referencia;
-                            console.log('[transformarDatos] 🔄 Enriquecida con referencia:', telaVariante.referencia);
+                            console.log('[transformarDatos]  Enriquecida con referencia:', telaVariante.referencia);
                         }
                     }
                 });
@@ -85,12 +85,12 @@ function integrarTransformadorEnPrendaEditor() {
     // En el método cargarTelas de PrendaEditor
     class PrendaEditor {
         cargarTelas(prenda) {
-            console.log('[cargarTelas] 🔄 Usando transformador mejorado');
+            console.log('[cargarTelas]  Usando transformador mejorado');
 
             // Si no hay telasAgregadas, usar el transformador
             if (!prenda.telasAgregadas || prenda.telasAgregadas.length === 0) {
                 if (prenda.variantes && (prenda.variantes.telas_multiples || prenda.variantes.length > 0)) {
-                    console.log('[cargarTelas] 🔄 Transformando variantes con el nuevo transformador');
+                    console.log('[cargarTelas]  Transformando variantes con el nuevo transformador');
                     
                     // Usar el transformador
                     const telasTransformadas = window.transformarVariantesATelasAgregadas(prenda);

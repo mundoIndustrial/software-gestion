@@ -16,7 +16,7 @@ class VerificacionGuardadoWebSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🔍 VERIFICACIÓN: Últimos Pedidos Guardados\n";
+        echo " VERIFICACIÓN: Últimos Pedidos Guardados\n";
         echo "========================================\n\n";
 
         try {

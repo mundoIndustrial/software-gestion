@@ -1,5 +1,5 @@
 /**
- * 🔍 SCRIPT DE VERIFICACIÓN - Precarguía Inteligente
+ *  SCRIPT DE VERIFICACIÓN - Precarguía Inteligente
  * 
  * Ejecuta esto en la consola del navegador:
  * 
@@ -9,7 +9,7 @@
  */
 
 (function() {
-    console.log('%c\n🔍 VERIFICACIÓN DE PRECARGUÍA\n', 'font-size: 18px; font-weight: bold; color: #3498db; background: #ecf0f1; padding: 10px;');
+    console.log('%c\n VERIFICACIÓN DE PRECARGUÍA\n', 'font-size: 18px; font-weight: bold; color: #3498db; background: #ecf0f1; padding: 10px;');
 
     const checks = {
         preloaderExists: false,
@@ -27,7 +27,7 @@
         console.log(' PrendaEditorPreloader disponible');
     } else {
         checks.errors.push('PrendaEditorPreloader no encontrado');
-        console.log('❌ PrendaEditorPreloader no encontrado');
+        console.log(' PrendaEditorPreloader no encontrado');
     }
 
     // 2. Verificar que el loader existe
@@ -36,7 +36,7 @@
         console.log(' PrendaEditorLoader disponible');
     } else {
         checks.errors.push('PrendaEditorLoader no encontrado');
-        console.log('❌ PrendaEditorLoader no encontrado');
+        console.log(' PrendaEditorLoader no encontrado');
     }
 
     // 3. Verificar métodos del preloader
@@ -73,8 +73,8 @@
     if (checks.preloaderFunctional) {
         const status = window.PrendaEditorPreloader.getStatus();
         console.log('\n ESTADO DE PRECARGA:');
-        console.log(`  ├─ Precargando: ${status.isPreloading ? '🔄 SÍ' : '❌ NO'}`);
-        console.log(`  ├─ Precargado: ${status.isPreloaded ? ' SÍ' : '❌ NO'}`);
+        console.log(`  ├─ Precargando: ${status.isPreloading ? ' SÍ' : ' NO'}`);
+        console.log(`  ├─ Precargado: ${status.isPreloaded ? ' SÍ' : ' NO'}`);
         console.log(`  ├─ Error: ${status.preloadError ? ` ${status.preloadError}` : '✓ NO'}`);
         console.log(`  ├─ Scripts en caché: ${status.scriptCacheSize}`);
         console.log(`  ├─ Módulos en caché: ${status.moduleCacheSize}`);
@@ -107,14 +107,14 @@
 
     if (allChecksPassed) {
         console.log('%c TODAS LAS VERIFICACIONES PASARON', 'color: #27ae60; font-weight: bold; font-size: 14px;');
-        console.log('La precarguía está lista para usar. 🚀');
+        console.log('La precarguía está lista para usar. ');
     } else {
         console.log('%c ALGUNAS VERIFICACIONES FALLARON', 'color: #e74c3c; font-weight: bold; font-size: 14px;');
     }
 
     // Errores
     if (checks.errors.length > 0) {
-        console.log('\n%c❌ ERRORES:', 'color: #c0392b; font-weight: bold;');
+        console.log('\n%c ERRORES:', 'color: #c0392b; font-weight: bold;');
         checks.errors.forEach(e => console.log(`   • ${e}`));
     }
 

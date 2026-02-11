@@ -50,7 +50,7 @@ class PrendaTelasService
     /**
      * Obtener o crear tela
      * 
-     * 🔄 Ahora SIEMPRE crea una NUEVA tela para esta variante
+     *  Ahora SIEMPRE crea una NUEVA tela para esta variante
      * No reutiliza telas existentes - Cada variante tiene sus propias telas
      */
     public function obtenerOCrearTela(TelaDTO $telaDTO): ?TelaPrenda

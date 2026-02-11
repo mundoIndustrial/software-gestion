@@ -57,7 +57,7 @@
 
     // Función para alternar submenús
     function toggleSubmenu(event, submenuId) {
-        console.log('🔄 [TOGGLESUBMENU] Alternando submenú:', submenuId);
+        console.log(' [TOGGLESUBMENU] Alternando submenú:', submenuId);
         event.preventDefault();
         const submenu = document.getElementById(submenuId);
         const arrow = event.currentTarget.querySelector('.submenu-arrow');
@@ -75,14 +75,14 @@
             submenu.style.display = 'block';
             if (arrow) {
                 arrow.style.transform = 'rotate(180deg)';
-                console.log('🔄 [TOGGLESUBMENU] Arrow rotado a 180deg');
+                console.log(' [TOGGLESUBMENU] Arrow rotado a 180deg');
             }
         } else {
             console.log(' [TOGGLESUBMENU] Cerrando submenú:', submenuId);
             submenu.style.display = 'none';
             if (arrow) {
                 arrow.style.transform = 'rotate(0deg)';
-                console.log('🔄 [TOGGLESUBMENU] Arrow rotado a 0deg');
+                console.log(' [TOGGLESUBMENU] Arrow rotado a 0deg');
             }
         }
     }
@@ -97,7 +97,7 @@
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
             const isCollapsed = sidebar.classList.contains('collapsed');
-            console.log('🔄 [SIDEBAR-TOGGLE] Toggling sidebar. Estado anterior:', isCollapsed);
+            console.log(' [SIDEBAR-TOGGLE] Toggling sidebar. Estado anterior:', isCollapsed);
             sidebar.classList.toggle('collapsed');
             const newState = sidebar.classList.contains('collapsed');
             console.log(' [SIDEBAR-TOGGLE] Nuevo estado collapsed:', newState);
@@ -125,7 +125,7 @@
         
         // Buscar por la nueva estructura
         const activeSubmenuItems = document.querySelectorAll('.nav-submenu .nav-submenu-item.active');
-        console.log('🔍 [DOM-LOADED] Items de submenú activos encontrados:', activeSubmenuItems.length);
+        console.log(' [DOM-LOADED] Items de submenú activos encontrados:', activeSubmenuItems.length);
         
         activeSubmenuItems.forEach((link, index) => {
             console.log(` [DOM-LOADED] Item activo ${index}:`, link.textContent.trim());
@@ -207,7 +207,7 @@
     });
 
     // Monitoreo de cambios en clases
-    console.log('👁️ [SIDEBAR-MONITOR] Configurando observador de cambios...');
+    console.log(' [SIDEBAR-MONITOR] Configurando observador de cambios...');
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {

@@ -89,14 +89,14 @@ GuardarDespachoUseCase (Application)
 -  Transacciones
 -  Manejo de errores
 -  Logging de aplicación
-- ❌ Lógica de negocio
+-  Lógica de negocio
 
 ### Infrastructure (Persistencia)
 -  Implementación de repositorios
 -  Modelos Eloquent
 -  Migraciones
 -  Queries complejas
-- ❌ Lógica de negocio
+-  Lógica de negocio
 
 ### HTTP (API)
 -  Recibir requests

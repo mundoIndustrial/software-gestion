@@ -935,7 +935,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
     // La información es válida si hay ubicaciones (imágenes son opcionales)
     tieneInformacionValida = tieneUbicaciones;
     
-    console.log('🔍 VALIDACIÓN PASO 3 - Información requerida:', {
+    console.log(' VALIDACIÓN PASO 3 - Información requerida:', {
         tieneUbicaciones,
         tieneImagenes,
         tieneInformacionValida

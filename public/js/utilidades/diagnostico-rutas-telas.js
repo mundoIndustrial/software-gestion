@@ -4,7 +4,7 @@
  */
 
 window.diagnosticarRutasTelas = async function() {
-    console.log('🔍 [DIAGNÓSTICO-RUTAS] Iniciando verificación de rutas de telas...');
+    console.log(' [DIAGNÓSTICO-RUTAS] Iniciando verificación de rutas de telas...');
     
     // Obtener telas disponibles
     const telas = window.telasAgregadas || window.telasEdicion || window.telasCreacion || [];
@@ -21,7 +21,7 @@ window.diagnosticarRutasTelas = async function() {
         console.log(`\n[DIAGNÓSTICO-RUTAS] 🧵 Tela ${i}: ${tela.nombre_tela || 'SIN NOMBRE'}`);
         
         if (!tela.imagenes || tela.imagenes.length === 0) {
-            console.warn(`[DIAGNÓSTICO-RUTAS]   ⚠️ Sin imágenes`);
+            console.warn(`[DIAGNÓSTICO-RUTAS]    Sin imágenes`);
             continue;
         }
         
@@ -39,7 +39,7 @@ window.diagnosticarRutasTelas = async function() {
             const urlAVerificar = img.ruta || img.ruta_webp || img.url || img.previewUrl;
             
             if (!urlAVerificar) {
-                console.error(`[DIAGNÓSTICO-RUTAS]     ❌ Ninguna URL válida encontrada`);
+                console.error(`[DIAGNÓSTICO-RUTAS]      Ninguna URL válida encontrada`);
                 continue;
             }
             
@@ -47,21 +47,21 @@ window.diagnosticarRutasTelas = async function() {
             try {
                 const response = await fetch(urlAVerificar, { method: 'HEAD' });
                 if (response.ok) {
-                    console.log(`[DIAGNÓSTICO-RUTAS]     ✅ URL accesible: ${urlAVerificar}`);
+                    console.log(`[DIAGNÓSTICO-RUTAS]      URL accesible: ${urlAVerificar}`);
                 } else {
-                    console.error(`[DIAGNÓSTICO-RUTAS]     ❌ Error ${response.status} en URL: ${urlAVerificar}`);
+                    console.error(`[DIAGNÓSTICO-RUTAS]      Error ${response.status} en URL: ${urlAVerificar}`);
                 }
             } catch (error) {
-                console.error(`[DIAGNÓSTICO-RUTAS]     ❌ Error de red: ${error.message}`);
+                console.error(`[DIAGNÓSTICO-RUTAS]      Error de red: ${error.message}`);
                 console.error(`[DIAGNÓSTICO-RUTAS]     URL intentada: ${urlAVerificar}`);
             }
         }
     }
     
-    console.log('\n[DIAGNÓSTICO-RUTAS] ✅ Diagnóstico completado');
+    console.log('\n[DIAGNÓSTICO-RUTAS]  Diagnóstico completado');
 };
 
 // Exponer globalmente
 window.runDiagnosticoTelas = window.diagnosticarRutasTelas;
 
-console.log('✅ [diagnostico-rutas-telas.js] Cargado - usa window.diagnosticarRutasTelas() para diagnosticar');
+console.log(' [diagnostico-rutas-telas.js] Cargado - usa window.diagnosticarRutasTelas() para diagnosticar');

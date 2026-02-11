@@ -381,7 +381,7 @@ const DataLoader = {
             'record_updated': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
             'record_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '🗑️' },
             'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
-            'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '🔄' },
+            'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
             'area_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '' },
             'delivery_registered': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '' },
             'order_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '' }
@@ -408,7 +408,7 @@ const DataLoader = {
                             <div class="title">${item.description}</div>
                             <div class="meta">
                                 <span class="user-badge">${item.user}</span>
-                                <span class="time-badge">🕐 ${item.created_at}</span>
+                                <span class="time-badge"> ${item.created_at}</span>
                                 ${item.pedido ? `<span class="pedido-badge"> #${item.pedido}</span>` : ''}
                                 ${detailsButton}
                             </div>

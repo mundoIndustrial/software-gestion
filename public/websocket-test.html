@@ -82,11 +82,11 @@
         
         <div class="metrics">
             <div class="metric">
-                <div class="metric-value" id="wsStatus">❌</div>
+                <div class="metric-value" id="wsStatus"></div>
                 <div class="metric-label">WebSocket</div>
             </div>
             <div class="metric">
-                <div class="metric-value" id="fallbackStatus">❌</div>
+                <div class="metric-value" id="fallbackStatus"></div>
                 <div class="metric-label">Fallback</div>
             </div>
             <div class="metric">
@@ -136,7 +136,7 @@
 
         // Inicializar sistema
         function initSystem() {
-            log('🚀 Inicializando sistema de WebSockets...');
+            log(' Inicializando sistema de WebSockets...');
             
             try {
                 pedidosRealtime = new PedidosRealtimeRefresh({
@@ -148,35 +148,35 @@
                 updateConfigInfo();
                 
             } catch (error) {
-                log('❌ Error inicializando sistema: ' + error.message);
+                log(' Error inicializando sistema: ' + error.message);
             }
         }
 
         // Probar WebSocket
         function testWebSocket() {
             if (!pedidosRealtime) {
-                log('❌ Sistema no inicializado');
+                log(' Sistema no inicializado');
                 return;
             }
             
-            log('🔄 Probando reconexión WebSocket...');
+            log(' Probando reconexión WebSocket...');
             pedidosRealtime.reconnect();
         }
 
         // Forzar fallback
         function testFallback() {
             if (!pedidosRealtime || !pedidosRealtime.wsManager) {
-                log('❌ WebSocket Manager no disponible');
+                log(' WebSocket Manager no disponible');
                 return;
             }
             
-            log('🔄 Forzando fallback a polling...');
+            log(' Forzando fallback a polling...');
             pedidosRealtime.wsManager.activateFallback();
         }
 
         // Simular actualización de pedido
         function simulatePedidoUpdate() {
-            log('🔄 Simulando actualización de pedido...');
+            log(' Simulando actualización de pedido...');
             
             // Simular mensaje WebSocket
             const simulatedMessage = {
@@ -227,11 +227,11 @@
             const status = pedidosRealtime.getStatus();
             
             // WebSocket Status
-            document.getElementById('wsStatus').textContent = status.usingWebSockets ? '' : '❌';
+            document.getElementById('wsStatus').textContent = status.usingWebSockets ? '' : '';
             
             // Fallback Status
             document.getElementById('fallbackStatus').textContent = 
-                (status.webSocketStatus && status.webSocketStatus.usingFallback) ? '' : '❌';
+                (status.webSocketStatus && status.webSocketStatus.usingFallback) ? '' : '';
             
             // Messages Count
             document.getElementById('messagesCount').textContent = messageCount;
@@ -289,7 +289,7 @@
         console.error = function(...args) {
             originalConsoleError.apply(console, args);
             if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
-                log('❌ ' + args.join(' '));
+                log(' ' + args.join(' '));
             }
         };
         

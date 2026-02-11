@@ -1,5 +1,5 @@
 /**
- * 🚀 PRENDA EDITOR PRELOADER - Precarga en Background
+ *  PRENDA EDITOR PRELOADER - Precarga en Background
  * 
  * Propósito: Cargar módulos de edición de prendas en background
  * después del DOMContentLoaded para evitar delays en primera apertura
@@ -126,7 +126,7 @@ window.PrendaEditorPreloader = (function() {
                     console.warn('[PrendaEditorPreloader]  Error de red en precarguía (se reintentará al usar):', error.message);
                     console.info('[PrendaEditorPreloader] 💡 La precarga falló pero los módulos se cargarán bajo demanda');
                 } else {
-                    console.error('[PrendaEditorPreloader] ❌ Error en precarguía:', error.message);
+                    console.error('[PrendaEditorPreloader]  Error en precarguía:', error.message);
                 }
                 
                 // Disparar evento de error (para debugging)
@@ -155,7 +155,7 @@ window.PrendaEditorPreloader = (function() {
         return new Promise((resolve, reject) => {
             // Verificar que el loader está disponible
             if (!window.PrendaEditorLoader || !window.PrendaEditorLoader.load) {
-                console.error('[PrendaEditorPreloader] ❌ PrendaEditorLoader no disponible');
+                console.error('[PrendaEditorPreloader]  PrendaEditorLoader no disponible');
                 reject(new Error('PrendaEditorLoader no está disponible'));
                 return;
             }
@@ -200,7 +200,7 @@ window.PrendaEditorPreloader = (function() {
             }
 
             // Caso: Aún no se ha iniciado precarguía (primera vez)
-            console.log('[PrendaEditorPreloader] 🔄 Iniciando carga inmediata...');
+            console.log('[PrendaEditorPreloader]  Iniciando carga inmediata...');
             showLoaderModal(opts);
 
             config.isPreloading = true;
@@ -309,7 +309,7 @@ window.PrendaEditorPreloader = (function() {
         config.preloadError = null;
         clearCache();
         
-        console.log('[PrendaEditorPreloader] 🔄 Reiniciando precarguía forzada...');
+        console.log('[PrendaEditorPreloader]  Reiniciando precarguía forzada...');
         return performPreload();
     }
 

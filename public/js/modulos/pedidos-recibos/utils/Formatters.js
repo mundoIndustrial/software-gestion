@@ -18,21 +18,21 @@ export class Formatters {
         console.log('[Formatters.construirDescripcionCostura] variantes:', prenda?.variantes);
         console.log('[Formatters.construirDescripcionCostura] tallas:', prenda?.tallas);
         
-        // 🔍 DEBUG: Verificar de_bodega y procesos
-        console.log('[Formatters.construirDescripcionCostura] 🔍 de_bodega:', prenda?.de_bodega);
-        console.log('[Formatters.construirDescripcionCostura] 🔍 procesos:', prenda?.procesos);
+        //  DEBUG: Verificar de_bodega y procesos
+        console.log('[Formatters.construirDescripcionCostura]  de_bodega:', prenda?.de_bodega);
+        console.log('[Formatters.construirDescripcionCostura]  procesos:', prenda?.procesos);
 
         // ⭐ DEBUG: Información detallada de variantes
         if (prenda.variantes && Array.isArray(prenda.variantes)) {
-            console.log('[Formatters] 📦 Variantes cantidad:', prenda.variantes.length);
+            console.log('[Formatters]  Variantes cantidad:', prenda.variantes.length);
             prenda.variantes.forEach((v, idx) => {
-                console.log(`[Formatters] 📦 Variante ${idx}:`, v);
-                console.log(`[Formatters] 📦 Variante ${idx} - manga:`, v.manga);
-                console.log(`[Formatters] 📦 Variante ${idx} - manga_obs:`, v.manga_obs);
-                console.log(`[Formatters] 📦 Variante ${idx} - bolsillos_obs:`, v.bolsillos_obs);
-                console.log(`[Formatters] 📦 Variante ${idx} - broche_obs:`, v.broche_obs);
-                console.log(`[Formatters] 📦 Variante ${idx} - broche:`, v.broche);
-                console.log(`[Formatters] 📦 Variante ${idx} - boton_obs:`, v.boton_obs);
+                console.log(`[Formatters]  Variante ${idx}:`, v);
+                console.log(`[Formatters]  Variante ${idx} - manga:`, v.manga);
+                console.log(`[Formatters]  Variante ${idx} - manga_obs:`, v.manga_obs);
+                console.log(`[Formatters]  Variante ${idx} - bolsillos_obs:`, v.bolsillos_obs);
+                console.log(`[Formatters]  Variante ${idx} - broche_obs:`, v.broche_obs);
+                console.log(`[Formatters]  Variante ${idx} - broche:`, v.broche);
+                console.log(`[Formatters]  Variante ${idx} - boton_obs:`, v.boton_obs);
                 // 🎯 DEBUG: Mostrar todos los campos disponibles
                 console.log(`[Formatters] 🔑 Todas las claves en Variante ${idx}:`, Object.keys(v));
             });
@@ -52,7 +52,7 @@ export class Formatters {
         
         // Verificar si hay múltiples telas
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
-            console.log('[Formatters] 🎨 Múltiples telas encontradas:', prenda.telas_array.length);
+            console.log('[Formatters]  Múltiples telas encontradas:', prenda.telas_array.length);
             
             // Construir string con todas las telas y colores
             const telasInfo = prenda.telas_array
@@ -90,12 +90,12 @@ export class Formatters {
         }
         
         // Manga desde variantes
-        console.log('[Formatters] 🔍 Buscando manga en variantes...');
+        console.log('[Formatters]  Buscando manga en variantes...');
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const primerVariante = prenda.variantes[0];
-            console.log('[Formatters] 🔍 Primer variante:', primerVariante);
-            console.log('[Formatters] 🔍 manga en variante:', primerVariante.manga);
-            console.log('[Formatters] 🔍 manga_obs en variante:', primerVariante.manga_obs);
+            console.log('[Formatters]  Primer variante:', primerVariante);
+            console.log('[Formatters]  manga en variante:', primerVariante.manga);
+            console.log('[Formatters]  manga_obs en variante:', primerVariante.manga_obs);
             
             // Intentar primero manga, luego manga_obs
             let mangaTexto = primerVariante.manga || primerVariante.manga_obs;
@@ -146,10 +146,10 @@ export class Formatters {
 
         // 4. Detalles técnicos
         const detalles = [];
-        console.log('[Formatters] 🔍 Buscando detalles en variantes...');
+        console.log('[Formatters]  Buscando detalles en variantes...');
         if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const primerVariante = prenda.variantes[0];
-            console.log('[Formatters] 🔍 Detalles disponibles en variante:', {
+            console.log('[Formatters]  Detalles disponibles en variante:', {
                 bolsillos_obs: primerVariante.bolsillos_obs,
                 broche_boton_obs: primerVariante.broche_boton_obs,
                 tipo_broche_boton_id: primerVariante.tipo_broche_boton_id
@@ -184,8 +184,8 @@ export class Formatters {
         }
 
         // 5. Tallas
-        console.log('[Formatters] 🔍 Procesando tallas...');
-        console.log('[Formatters] 🔍 Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
+        console.log('[Formatters]  Procesando tallas...');
+        console.log('[Formatters]  Tipo de tallas:', typeof prenda.tallas, 'Es array:', Array.isArray(prenda.tallas));
         
         if (prenda.tallas) {
             let tienesTallas = false;
@@ -213,7 +213,7 @@ export class Formatters {
 
         // 6. REFLECTIVO - Si existe un proceso reflectivo, agregarlo después de tallas
         // SOLO si la prenda NO es de bodega (de_bodega = false)
-        console.log('[Formatters] 🔍 Verificando REFLECTIVO:', {
+        console.log('[Formatters]  Verificando REFLECTIVO:', {
             de_bodega: prenda.de_bodega,
             no_es_de_bodega: !prenda.de_bodega,
             tieneProces: !!prenda.procesos,
@@ -222,12 +222,12 @@ export class Formatters {
         });
         
         if (!prenda.de_bodega && prenda.procesos && Array.isArray(prenda.procesos)) {
-            console.log('[Formatters] ✅ Condición de REFLECTIVO cumplida (de_bodega = false), buscando proceso...');
+            console.log('[Formatters]  Condición de REFLECTIVO cumplida (de_bodega = false), buscando proceso...');
             
             // DEBUG: Ver estructura completa del proceso
             if (prenda.procesos.length > 0) {
-                console.log('[Formatters] 🔍 Proceso completo objeto:', prenda.procesos[0]);
-                console.log('[Formatters] 🔍 Claves del proceso:', Object.keys(prenda.procesos[0]));
+                console.log('[Formatters]  Proceso completo objeto:', prenda.procesos[0]);
+                console.log('[Formatters]  Claves del proceso:', Object.keys(prenda.procesos[0]));
             }
             
             const procesoReflectivo = prenda.procesos.find(p => {
@@ -241,7 +241,7 @@ export class Formatters {
             });
             
             if (procesoReflectivo) {
-                console.log('[Formatters] ✅✅ Proceso REFLECTIVO encontrado:', procesoReflectivo);
+                console.log('[Formatters]  Proceso REFLECTIVO encontrado:', procesoReflectivo);
                 
                 lineas.push('');
                 lineas.push('<strong style="font-size: 13.4px;">PROCESO: REFLECTIVO</strong>');
@@ -304,18 +304,18 @@ export class Formatters {
                     if (!tallasIguales) {
                         lineas.push('<strong>TALLAS</strong>');
                         this._agregarTallasFormato(lineas, tallasAMostrar, prenda.genero);
-                        console.log('[Formatters] ℹ️ Tallas del reflectivo son DIFERENTES, mostrando');
+                        console.log('[Formatters]  Tallas del reflectivo son DIFERENTES, mostrando');
                     } else {
-                        console.log('[Formatters] ℹ️ Tallas del reflectivo son IGUALES a la prenda, omitiendo duplicado');
+                        console.log('[Formatters]  Tallas del reflectivo son IGUALES a la prenda, omitiendo duplicado');
                     }
                 }
                 
                 console.log('[Formatters]  Proceso REFLECTIVO agregado');
             } else {
-                console.log('[Formatters] ❌ No se encontró proceso REFLECTIVO en los procesos disponibles');
+                console.log('[Formatters]  No se encontró proceso REFLECTIVO en los procesos disponibles');
             }
         } else {
-            console.log('[Formatters] ❌ Condición de REFLECTIVO NO cumplida:', {
+            console.log('[Formatters]  Condición de REFLECTIVO NO cumplida:', {
                 razon: !prenda.de_bodega ? 'de_bodega es false (correcto)' : 'de_bodega es true (NO mostrar)',
                 tieneProc: prenda.procesos ? 'sí' : 'no',
                 esArray: Array.isArray(prenda.procesos) ? 'sí' : 'no'
@@ -473,7 +473,7 @@ export class Formatters {
         
         // Si es array, convertir a estructura procesable
         if (Array.isArray(tallas)) {
-            console.log('[Formatters._agregarTallasFormato] 🔄 Convirtiendo array a objeto...');
+            console.log('[Formatters._agregarTallasFormato]  Convirtiendo array a objeto...');
             tallas.forEach((item, idx) => {
                 console.log(`[Formatters._agregarTallasFormato] Array[${idx}]:`, item);
                 
@@ -493,9 +493,9 @@ export class Formatters {
             });
         } else {
             // Procesar como objeto normal
-            console.log('[Formatters._agregarTallasFormato] 🔄 Procesando como objeto...');
+            console.log('[Formatters._agregarTallasFormato]  Procesando como objeto...');
             Object.entries(tallas).forEach(([key, value]) => {
-                console.log(`[Formatters._agregarTallasFormato] 🔍 Procesando: key=${key}, value=${value}, type=${typeof value}`);
+                console.log(`[Formatters._agregarTallasFormato]  Procesando: key=${key}, value=${value}, type=${typeof value}`);
                 
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                     const genero = key.toLowerCase();

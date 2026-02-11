@@ -30,7 +30,7 @@ function agregarProductoFriendly() {
     
     // DEBUG: Verificar que el campo hidden existe en el template
     const hiddenEnTemplate = template.content.querySelector('.tallas-hidden');
-    console.log('🔍 Campo hidden en template:', !!hiddenEnTemplate, hiddenEnTemplate);
+    console.log(' Campo hidden en template:', !!hiddenEnTemplate, hiddenEnTemplate);
     
     clone.querySelector('.numero-producto').textContent = productosCount;
     const productoId = 'producto-' + Date.now() + '-' + productosCount;
@@ -47,8 +47,8 @@ function agregarProductoFriendly() {
     setTimeout(() => {
         const nuevoProducto = container.lastElementChild;
         const hiddenEnClon = nuevoProducto.querySelector('.tallas-hidden');
-        console.log('🔍 Campo hidden en clon:', !!hiddenEnClon, hiddenEnClon);
-        console.log('🔍 Todos los hidden en documento:', document.querySelectorAll('.tallas-hidden').length);
+        console.log(' Campo hidden en clon:', !!hiddenEnClon, hiddenEnClon);
+        console.log(' Todos los hidden en documento:', document.querySelectorAll('.tallas-hidden').length);
     }, 100);
     
     // Scroll automático a la nueva prenda agregada

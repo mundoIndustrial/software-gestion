@@ -93,7 +93,7 @@
             return;
         }
         
-        console.log('🔍 [INIT-BUSCADOR] Inicializando buscador de cotizaciones...');
+        console.log(' [INIT-BUSCADOR] Inicializando buscador de cotizaciones...');
         
         // ========== BUSCADOR DE COTIZACIONES ==========
         const searchInput = document.getElementById('cotizacion_search_editable');
@@ -146,8 +146,8 @@
         });
 
         console.log('📋 Cotizaciones cargadas:', cotizacionesFormateadas.length);
-        console.log('🔍 DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  //  Debug
-        console.log('🔍 DEBUG - Datos originales primero:', window.cotizacionesData[0]);  //  Debug
+        console.log(' DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  //  Debug
+        console.log(' DEBUG - Datos originales primero:', window.cotizacionesData[0]);  //  Debug
         
         let cotizacionSeleccionada = null;
         
@@ -222,7 +222,7 @@
                     // Guardar para usar en agregar prendas
                     window.cotizacionSeleccionadaActual = cot;
                     
-                    console.log('📦 Prendas disponibles:', cot.original?.prendas || []);
+                    console.log(' Prendas disponibles:', cot.original?.prendas || []);
                 });
                 
                 dropdown.appendChild(item);

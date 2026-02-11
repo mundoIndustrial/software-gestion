@@ -101,15 +101,15 @@ class LogoCotizacionCompartidaTest extends TestCase
         }
 
         // PASO 3: Verificar que se creó correctamente
-        $this->assertCount(1, $logosCompartidosMetadata, '❌ Debería haber 1 logo compartido');
-        $this->assertArrayHasKey('BORDADO-ESTAMPADO', $logosCompartidosMetadata, '❌ Debería tener clave BORDADO-ESTAMPADO');
+        $this->assertCount(1, $logosCompartidosMetadata, ' Debería haber 1 logo compartido');
+        $this->assertArrayHasKey('BORDADO-ESTAMPADO', $logosCompartidosMetadata, ' Debería tener clave BORDADO-ESTAMPADO');
 
         $metadata = $logosCompartidosMetadata['BORDADO-ESTAMPADO'];
-        $this->assertEquals('BORDADO-ESTAMPADO', $metadata['nombreCompartido'], '❌ Nombre correcto');
-        $this->assertCount(2, $metadata['tecnicasCompartidas'], '❌ Debería tener 2 técnicas');
-        $this->assertContains('BORDADO', $metadata['tecnicasCompartidas'], '❌ Debe incluir BORDADO');
-        $this->assertContains('ESTAMPADO', $metadata['tecnicasCompartidas'], '❌ Debe incluir ESTAMPADO');
-        $this->assertEquals('logo.jpg', $metadata['archivoNombre'], '❌ Nombre archivo correcto');
+        $this->assertEquals('BORDADO-ESTAMPADO', $metadata['nombreCompartido'], ' Nombre correcto');
+        $this->assertCount(2, $metadata['tecnicasCompartidas'], ' Debería tener 2 técnicas');
+        $this->assertContains('BORDADO', $metadata['tecnicasCompartidas'], ' Debe incluir BORDADO');
+        $this->assertContains('ESTAMPADO', $metadata['tecnicasCompartidas'], ' Debe incluir ESTAMPADO');
+        $this->assertEquals('logo.jpg', $metadata['archivoNombre'], ' Nombre archivo correcto');
 
         echo " Metadata formado correctamente:";
         echo "\n   - Clave: {$metadata['nombreCompartido']}";
@@ -176,8 +176,8 @@ class LogoCotizacionCompartidaTest extends TestCase
             }
         }
 
-        $this->assertCount(2, $logosEncontrados, '❌ Debería encontrar 2 logos compartidos');
-        $this->assertCount(1, $metadatosEncontrados, '❌ Debería encontrar 1 set de metadatos');
+        $this->assertCount(2, $logosEncontrados, ' Debería encontrar 2 logos compartidos');
+        $this->assertCount(1, $metadatosEncontrados, ' Debería encontrar 1 set de metadatos');
 
         echo " FormData parseado correctamente:";
         echo "\n   - Logos encontrados: " . count($logosEncontrados);
@@ -220,7 +220,7 @@ class LogoCotizacionCompartidaTest extends TestCase
                 break;
             }
         }
-        $this->assertTrue($tieneLogosCompartidos, '❌ Debería detectar logos compartidos');
+        $this->assertTrue($tieneLogosCompartidos, ' Debería detectar logos compartidos');
         echo "   ✓ Detectados logos compartidos\n";
 
         // Paso 2: Extraer metadatos
@@ -281,7 +281,7 @@ class LogoCotizacionCompartidaTest extends TestCase
             }
         }
         echo "   ✓ Logos agrupados por técnica\n";
-        $this->assertCount(2, $logosCompartidosAgrupados, '❌ Debería haber logos en 2 técnicas');
+        $this->assertCount(2, $logosCompartidosAgrupados, ' Debería haber logos en 2 técnicas');
 
         // Paso 2: Encontrar metadatos
         $metadatos_encontrados = [];
@@ -291,11 +291,11 @@ class LogoCotizacionCompartidaTest extends TestCase
             }
         }
         echo "   ✓ Metadatos encontrados\n";
-        $this->assertCount(1, $metadatos_encontrados, '❌ Debería encontrar 1 metadata');
+        $this->assertCount(1, $metadatos_encontrados, ' Debería encontrar 1 metadata');
 
         // Paso 3: Verificar que las técnicas comparten el logo
         $metadata = $metadatos_encontrados[0];
-        $this->assertCount(2, $metadata['tecnicasCompartidas'], '❌ Logo debe compartirse entre 2 técnicas');
+        $this->assertCount(2, $metadata['tecnicasCompartidas'], ' Logo debe compartirse entre 2 técnicas');
         echo "   ✓ Logo compartido entre: " . implode(' + ', $metadata['tecnicasCompartidas']) . "\n";
 
         // ============================================

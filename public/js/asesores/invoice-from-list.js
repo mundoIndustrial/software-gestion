@@ -206,7 +206,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
                 throw new Error('HTML vacío generado');
             }
         } catch (error) {
-            console.error('[GENERAR-FACTURA] ❌ ERROR al generar HTML:', {
+            console.error('[GENERAR-FACTURA]  ERROR al generar HTML:', {
                 error_mensaje: error.message,
                 error_stack: error.stack,
                 datos_prendas: datos.prendas,
@@ -215,7 +215,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
 
             htmlFactura = `
                 <div style="padding: 30px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #dc2626;">
-                    <h3>❌ Error al generar factura</h3>
+                    <h3> Error al generar factura</h3>
                     <p><strong>${error.message}</strong></p>
                     <hr>
                     <div style="font-size: 12px; color: #666; background: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace; max-height: 200px; overflow-y: auto;">
@@ -233,7 +233,7 @@ function crearModalFacturaDesdeListaPedidos(datos) {
             `;
         }
     } else {
-        console.error('[GENERAR-FACTURA] ❌ Función generarHTMLFactura NO existe');
+        console.error('[GENERAR-FACTURA]  Función generarHTMLFactura NO existe');
         htmlFactura = `<div style="padding: 30px; background: #f3f4f6; border-radius: 6px;"><h3>Información del Pedido</h3><p><strong>Pedido #${datos.numero_pedido}</strong></p><p>Cliente: ${datos.cliente}</p><p>Asesor: ${datos.asesora}</p><p><em style="color: #666;">Prendas: ${datos.prendas?.length || 0}</em></p></div>`;
     }
     
@@ -568,7 +568,7 @@ window.verRecibosDelPedido = async function(numeroPedido, pedidoId, prendasIndex
         
         const datos = await response.json();
 
-        console.log('📦 DATOS RECIBIDOS DEL BACKEND:');
+        console.log(' DATOS RECIBIDOS DEL BACKEND:');
         console.log('════════════════════════════════════════════════════════════');
         console.log('datos.cliente:', datos.data?.cliente || datos.cliente);
         console.log('datos.asesor:', datos.data?.asesor || datos.asesor);
@@ -720,7 +720,7 @@ function crearModalRecibosDesdeListaPedidos(datos, prendasIndex = null) {
     setTimeout(() => {
         // ===== DEBUG: Verificar datos justo antes de ReceiptManager =====
         console.group('[crearModalRecibosDesdeListaPedidos] ANTES DE CREAR ReceiptManager');
-        console.log('🔍 DATOS PARÁMETRO RECIBIDOS:');
+        console.log(' DATOS PARÁMETRO RECIBIDOS:');
         console.log('  cliente:', datosReales.cliente);
         console.log('  asesor:', datosReales.asesor);
         console.log('  asesora:', datosReales.asesora);
@@ -852,7 +852,7 @@ function cargarComponenteOrderDetailModal(contenedor, datos, prendasIndex = null
         
         // ===== DEBUG: Verificar datos justo antes de ReceiptManager =====
         console.group('[cargarComponenteOrderDetailModal] ANTES DE CREAR ReceiptManager');
-        console.log('🔍 DATOS PARÁMETRO RECIBIDOS:');
+        console.log(' DATOS PARÁMETRO RECIBIDOS:');
         console.log('  cliente:', datos.cliente);
         console.log('  asesor:', datos.asesor);
         console.log('  asesora:', datos.asesora);

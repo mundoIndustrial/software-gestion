@@ -439,7 +439,7 @@ function renderizarItemsCotizacionEnDOM() {
     const container = document.getElementById('lista-items-pedido');
     
     if (!container) {
-        console.error('❌ Contenedor lista-items-pedido no encontrado');
+        console.error(' Contenedor lista-items-pedido no encontrado');
         return;
     }
     
@@ -448,7 +448,7 @@ function renderizarItemsCotizacionEnDOM() {
         return;
     }
     
-    console.log('📦 Renderizando', window.itemsPedido.length, 'items en el DOM');
+    console.log(' Renderizando', window.itemsPedido.length, 'items en el DOM');
     
     // Renderizar cada item
     window.itemsPedido.forEach((item, idx) => {
@@ -510,7 +510,7 @@ function renderizarItemsCotizacionEnDOM() {
                 htmlVariaciones += `<li style="color: #374151;">👔 Manga: ${variaciones.obs_manga}</li>`;
             }
             if (variaciones.tiene_bolsillos && variaciones.obs_bolsillos) {
-                htmlVariaciones += `<li style="color: #374151;">📦 Bolsillos: ${variaciones.obs_bolsillos}</li>`;
+                htmlVariaciones += `<li style="color: #374151;"> Bolsillos: ${variaciones.obs_bolsillos}</li>`;
             }
             if (variaciones.aplica_broche && variaciones.obs_broche) {
                 htmlVariaciones += `<li style="color: #374151;">🔗 Broche: ${variaciones.obs_broche}</li>`;
@@ -530,7 +530,7 @@ function renderizarItemsCotizacionEnDOM() {
                     </h4>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
                         <span style="padding: 0.25rem 0.75rem; background: #f3f4f6; color: #374151; border-radius: 12px; font-size: 0.875rem;">
-                            📦 ${cantidad} unidades
+                             ${cantidad} unidades
                         </span>
                         <span style="padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem;">
                             ${procesosTexto}

@@ -39,7 +39,7 @@ class SimularLoginCosturero extends Command
         $user = User::where('email', $email)->first();
 
         if (!$user) {
-            $this->error("❌ Usuario NO encontrado: {$email}");
+            $this->error(" Usuario NO encontrado: {$email}");
             return;
         }
 
@@ -48,15 +48,15 @@ class SimularLoginCosturero extends Command
 
         // Verificar roles
         $this->info('Verificando roles:');
-        $this->line("   - hasRole('costurero'): " . ($user->hasRole('costurero') ? ' true' : '❌ false'));
-        $this->line("   - hasAnyRole(['cortador', 'costurero']): " . ($user->hasAnyRole(['cortador', 'costurero']) ? ' true' : '❌ false'));
+        $this->line("   - hasRole('costurero'): " . ($user->hasRole('costurero') ? ' true' : ' false'));
+        $this->line("   - hasAnyRole(['cortador', 'costurero']): " . ($user->hasAnyRole(['cortador', 'costurero']) ? ' true' : ' false'));
         $this->line('');
 
         // Simular el middleware OperarioAccess
         $this->info('Simulando middleware OperarioAccess:');
         
         if (!$user->hasAnyRole(['cortador', 'costurero'])) {
-            $this->error("   ❌ MIDDLEWARE BLOQUEADO: Usuario no tiene rol cortador ni costurero");
+            $this->error("    MIDDLEWARE BLOQUEADO: Usuario no tiene rol cortador ni costurero");
             $this->line("   Roles actuales: " . json_encode($user->roles()->pluck('name')->toArray()));
             return;
         }
@@ -68,7 +68,7 @@ class SimularLoginCosturero extends Command
         $this->info('Simulando AuthenticatedSessionController::store():');
         
         if (!$user || !$user->role) {
-            $this->error("   ❌ PROBLEMA: Usuario no tiene rol (role relationship)");
+            $this->error("    PROBLEMA: Usuario no tiene rol (role relationship)");
             $this->line("      user->role: " . json_encode($user->role));
             return;
         }
@@ -79,7 +79,7 @@ class SimularLoginCosturero extends Command
         if ($roleName === 'costurero') {
             $this->line("    REDIRECCIÓN: operario.dashboard");
         } else {
-            $this->error("   ❌ ERROR: Rol '{$roleName}' no tiene ruta de redirección");
+            $this->error("    ERROR: Rol '{$roleName}' no tiene ruta de redirección");
         }
 
         $this->line('');

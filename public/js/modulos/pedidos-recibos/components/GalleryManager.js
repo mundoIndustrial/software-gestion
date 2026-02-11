@@ -105,16 +105,16 @@ export class GalleryManager {
                     if (overlay) {
                         const buttonsInOverlay = overlay.querySelectorAll('button');
                         btnCerrarFactura = Array.from(buttonsInOverlay).find(btn => btn.textContent.includes('✕'));
-                        console.log('[GalleryManager.abrirGaleria] 🔍 Botón encontrado en overlay:', { btnCerrarFactura, encontrado: !!btnCerrarFactura });
+                        console.log('[GalleryManager.abrirGaleria]  Botón encontrado en overlay:', { btnCerrarFactura, encontrado: !!btnCerrarFactura });
                     }
                     
                     // Si aún no lo encuentra, buscar todos los botones "✕" y tomar el último (más reciente)
                     if (!btnCerrarFactura) {
                         const allXButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.includes('✕'));
-                        console.log('[GalleryManager.abrirGaleria] 🔍 Total botones "✕" encontrados:', allXButtons.length);
+                        console.log('[GalleryManager.abrirGaleria]  Total botones "✕" encontrados:', allXButtons.length);
                         if (allXButtons.length > 0) {
                             btnCerrarFactura = allXButtons[allXButtons.length - 1]; // Último (más reciente)
-                            console.log('[GalleryManager.abrirGaleria] 🔍 Usando botón más reciente');
+                            console.log('[GalleryManager.abrirGaleria]  Usando botón más reciente');
                         }
                     }
                 } else {

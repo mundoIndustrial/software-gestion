@@ -199,13 +199,13 @@ id | pedido_id | tipo_item | item_id | talla_id | pendiente_inicial | parcial_1 
    - NO calcula pendientes automáticamente
    - NO modifican valores del usuario
 
-### ❌ Lo que NO hace el sistema:
+###  Lo que NO hace el sistema:
 
-1. ❌ NO realiza cálculos automáticos de pendientes
-2. ❌ NO modifica valores ingresados por el usuario
-3. ❌ NO valida que parciales no excedan cantidad total
-4. ❌ NO calcula totales automáticamente
-5. ❌ NO combina filas de la misma talla
+1.  NO realiza cálculos automáticos de pendientes
+2.  NO modifica valores ingresados por el usuario
+3.  NO valida que parciales no excedan cantidad total
+4.  NO calcula totales automáticamente
+5.  NO combina filas de la misma talla
 
 ---
 

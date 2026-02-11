@@ -288,7 +288,7 @@
 
         <!-- Encabezado -->
         <div class="header">
-            <h1>📦 CONTROL DE ENTREGAS</h1>
+            <h1> CONTROL DE ENTREGAS</h1>
             <p>Documento de despacho y control de mercancía</p>
         </div>
 

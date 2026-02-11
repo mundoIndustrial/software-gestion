@@ -208,7 +208,7 @@ class EppApiService {
             console.log('[EppApiService]  EPP actualizado correctamente:', resultado);
             return resultado;
         } catch (error) {
-            console.error('[EppApiService] ❌ Error actualizarEPPDelPedido:', error);
+            console.error('[EppApiService]  Error actualizarEPPDelPedido:', error);
             throw error;
         }
     }

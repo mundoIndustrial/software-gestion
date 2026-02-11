@@ -83,7 +83,7 @@ class PrendaImagenService
                 elseif (is_string($foto)) {
                     $rutaAbsoluta = $foto && !str_starts_with($foto, '/') ? '/' . $foto : $foto;
                     
-                    // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                    //  COPIAR IMAGEN si viene de cotizaciones
                     if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
                         $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto, $prendaId, $pedidoId, $index, 'prenda');
                     }
@@ -107,7 +107,7 @@ class PrendaImagenService
                 elseif (is_array($foto) && isset($foto['ruta'])) {
                     $rutaAbsoluta = $foto['ruta'] && !str_starts_with($foto['ruta'], '/') ? '/' . $foto['ruta'] : $foto['ruta'];
                     
-                    // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                    //  COPIAR IMAGEN si viene de cotizaciones
                     if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
                         $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto['ruta'], $prendaId, $pedidoId, $index, 'prenda');
                     }

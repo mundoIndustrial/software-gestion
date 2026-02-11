@@ -23,7 +23,7 @@
         
         // Verificar si ImageStorageService está disponible
         if (typeof ImageStorageService === 'undefined') {
-            console.error('❌ [INIT-STORAGE] ImageStorageService no está disponible. Asegúrate de que image-storage-service.js esté cargado.');
+            console.error(' [INIT-STORAGE] ImageStorageService no está disponible. Asegúrate de que image-storage-service.js esté cargado.');
             return;
         }
         
@@ -34,7 +34,7 @@
             window.imagenesReflectivoStorage = new ImageStorageService(3);
             inicializado = true;
         } catch (error) {
-            console.error('❌ [INIT-STORAGE] Error al inicializar servicios:', error);
+            console.error(' [INIT-STORAGE] Error al inicializar servicios:', error);
         }
     }
 

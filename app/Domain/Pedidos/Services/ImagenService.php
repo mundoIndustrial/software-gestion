@@ -23,7 +23,7 @@ class ImagenService
     public function guardarImagenComoWebp(UploadedFile $file, $numeroPedido, string $tipo): string
     {
         $startTime = microtime(true);
-        \Log::info('[ImagenService] 🔄 Iniciando guardado de imagen', [
+        \Log::info('[ImagenService]  Iniciando guardado de imagen', [
             'tipo' => $tipo,
             'numero_pedido' => $numeroPedido,
             'archivo_size' => $file->getSize(),
@@ -90,7 +90,7 @@ class ImagenService
 
         } catch (\Exception $e) {
             $totalTime = (microtime(true) - $startTime) * 1000;
-            \Log::error('[ImagenService] ❌ Error guardando imagen como WebP', [
+            \Log::error('[ImagenService]  Error guardando imagen como WebP', [
                 'error' => $e->getMessage(),
                 'tipo' => $tipo,
                 'numero_pedido' => $numeroPedido,

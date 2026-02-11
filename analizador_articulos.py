@@ -218,7 +218,7 @@ class AnalizadorArticulos:
     
     def analizar_duplicaciones(self, datos: List[Dict]) -> Dict:
         """Analiza duplicaciones agrupadas por atributos"""
-        print("\n🔍 Analizando duplicaciones...")
+        print("\n Analizando duplicaciones...")
         
         self.articulos = datos
         
@@ -280,7 +280,7 @@ class AnalizadorArticulos:
         print("="*80)
         
         for idx, (criterios, articulos) in enumerate(self.duplicaciones.items(), 1):
-            print(f"\n🔴 DUPLICACIÓN #{idx} - {len(articulos)} artículos")
+            print(f"\n DUPLICACIÓN #{idx} - {len(articulos)} artículos")
             print(f"   Criterios: {' | '.join(f'{c}' for c in criterios if c != 'N/A')}")
             
             for i, art in enumerate(articulos, 1):
@@ -444,7 +444,7 @@ class AnalizadorArticulos:
 
 def main():
     print("="*80)
-    print("🔍 ANALIZADOR PROFESIONAL DE ARTÍCULOS")
+    print(" ANALIZADOR PROFESIONAL DE ARTÍCULOS")
     print("="*80)
     
     # Rutas

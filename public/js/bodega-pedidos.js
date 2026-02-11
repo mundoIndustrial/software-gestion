@@ -103,11 +103,11 @@ async function actualizarTabla() {
         }
     } catch (error) {
         console.error('Error al actualizar la tabla:', error);
-        mostrarToast('❌ Error al actualizar la tabla');
+        mostrarToast(' Error al actualizar la tabla');
     } finally {
         if (btnActualizar) {
             btnActualizar.disabled = false;
-            btnActualizar.innerHTML = '🔄 Actualizar';
+            btnActualizar.innerHTML = ' Actualizar';
         }
     }
 }
@@ -329,11 +329,11 @@ async function abrirModalFactura(pedidoId) {
             const htmlFactura = generarHTMLFactura(data);
             contenido.innerHTML = htmlFactura;
         } else {
-            contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error al cargar la factura</div>';
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error al cargar la factura</div>';
         }
     } catch (error) {
         console.error('Error cargando factura:', error);
-        contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error: ' + error.message + '</div>';
+        contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error: ' + error.message + '</div>';
     }
 }
 
@@ -353,7 +353,7 @@ function cerrarModalFactura() {
  */
 function generarHTMLFactura(datos) {
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
-        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido.</div>';
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
     // Generar las tarjetas de prendas

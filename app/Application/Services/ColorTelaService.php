@@ -29,7 +29,7 @@ class ColorTelaService
             return null;
         }
 
-        // 🔄 Siempre crear NUEVO color para este pedido
+        //  Siempre crear NUEVO color para este pedido
         $color = ColorPrenda::create([
             'nombre' => trim($nombreColor),
             'codigo' => strtoupper(substr(md5($nombreColor), 0, 6)),
@@ -54,7 +54,7 @@ class ColorTelaService
             return null;
         }
 
-        // 🔄 Siempre crear NUEVA tela para este pedido
+        //  Siempre crear NUEVA tela para este pedido
         $tela = TelaPrenda::create([
             'nombre' => trim($nombreTela),
             'referencia' => '',

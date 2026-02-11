@@ -25,7 +25,7 @@ class TestProcesosAutomaticos extends Command
         $pedidoPendiente = PedidoProduccion::where('estado', 'Pendiente')->first();
 
         if (!$pedidoPendiente) {
-            $this->error('❌ No se encontraron pedidos en estado "Pendiente" para probar');
+            $this->error(' No se encontraron pedidos en estado "Pendiente" para probar');
             $this->info('   Creando un pedido de prueba...');
             
             // Crear pedido de prueba si no existe
@@ -91,7 +91,7 @@ class TestProcesosAutomaticos extends Command
                 }
             }
         } else {
-            $this->error("❌ Error al crear procesos: {$resultado['message']}");
+            $this->error(" Error al crear procesos: {$resultado['message']}");
         }
 
         // 4. Verificar los procesos creados en la BD
@@ -126,7 +126,7 @@ class TestProcesosAutomaticos extends Command
             $this->line("   Estado actual del pedido: {$pedidoActualizado->estado}");
             $this->line("   Área actual del pedido: {$pedidoActualizado->area}");
         } else {
-            $this->error("❌ Error en flujo completo: {$resultadoCompleto['message']}");
+            $this->error(" Error en flujo completo: {$resultadoCompleto['message']}");
         }
 
         // 6. Limpiar datos de prueba si se solicita

@@ -24,7 +24,7 @@ class BodegaRealtimeRefresh {
     }
 
     init() {
-        if (this.debug) console.log('🔄 [BodegaRealtime] Sistema inicializado');
+        if (this.debug) console.log(' [BodegaRealtime] Sistema inicializado');
         
         // Esperar a que Echo esté disponible
         if (document.readyState === 'loading') {
@@ -60,7 +60,7 @@ class BodegaRealtimeRefresh {
             if (this.debug) console.log(' [BodegaRealtime] Sistema de tiempo real activo');
 
         } catch (error) {
-            console.error('❌ [BodegaRealtime] Error configurando WebSocket:', error);
+            console.error(' [BodegaRealtime] Error configurando WebSocket:', error);
         }
     }
 
@@ -87,7 +87,7 @@ class BodegaRealtimeRefresh {
         
         // Si ya estamos suscritos a este canal, no suscribir de nuevo
         if (this.channels.has(channelName)) {
-            if (this.debug) console.log(`🔄 [BodegaRealtime] Canal ${channelName} ya suscrito`);
+            if (this.debug) console.log(` [BodegaRealtime] Canal ${channelName} ya suscrito`);
             return;
         }
 
@@ -106,17 +106,17 @@ class BodegaRealtimeRefresh {
                     this.handleNotaGuardada(event, numeroPedido, talla);
                 })
                 .error((error) => {
-                    console.error(`❌ [BodegaRealtime] Error en canal ${channelName}:`, error);
+                    console.error(` [BodegaRealtime] Error en canal ${channelName}:`, error);
                 })
                 .subscribed(() => {
-                    if (this.debug) console.log(`✅ [BodegaRealtime] Suscrito a canal: ${channelName}`);
+                    if (this.debug) console.log(` [BodegaRealtime] Suscrito a canal: ${channelName}`);
                 });
 
             // Guardar referencia al canal
             this.channels.set(channelName, channel);
 
         } catch (error) {
-            console.error(`❌ [BodegaRealtime] Error suscribiendo a ${channelName}:`, error);
+            console.error(` [BodegaRealtime] Error suscribiendo a ${channelName}:`, error);
         }
     }
 
@@ -152,7 +152,7 @@ class BodegaRealtimeRefresh {
         }
 
         if (this.debug) {
-            console.log(`✅ [BodegaRealtime] Actualizado detalle ${numeroPedido}-${talla}`);
+            console.log(` [BodegaRealtime] Actualizado detalle ${numeroPedido}-${talla}`);
         }
     }
 

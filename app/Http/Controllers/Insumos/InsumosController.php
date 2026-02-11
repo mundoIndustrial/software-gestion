@@ -314,7 +314,7 @@ class InsumosController extends Controller
         // El acceso a $orden->materiales será eficiente sin queries adicionales
         
         $queryTime = microtime(true) - $queryStart;
-        \Log::info("⏱️ Consulta BD: {$queryTime}s, Total: " . $ordenes->total() . ", Búsqueda: '{$search}'");
+        \Log::info(" Consulta BD: {$queryTime}s, Total: " . $ordenes->total() . ", Búsqueda: '{$search}'");
         
         $viewStart = microtime(true);
         $response = view('insumos.materiales.index', [
@@ -323,7 +323,7 @@ class InsumosController extends Controller
             'search' => $search,
         ]);
         $viewTime = microtime(true) - $viewStart;
-        \Log::info("⏱️ Render vista: {$viewTime}s");
+        \Log::info(" Render vista: {$viewTime}s");
         
         $totalTime = microtime(true) - $startTime;
         \Log::info(" Total carga: {$totalTime}s");

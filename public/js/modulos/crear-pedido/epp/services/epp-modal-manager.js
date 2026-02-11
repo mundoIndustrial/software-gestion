@@ -233,7 +233,7 @@ class EppModalManager {
                     console.log(`    Imagen ${idx} agregada al DOM`);
 
                 } catch (e) {
-                    console.error(`   ❌ Error al crear card para imagen ${idx}:`, e);
+                    console.error(`    Error al crear card para imagen ${idx}:`, e);
                 }
             });
             console.log(` [ModalManager] ${imagenes.length} imagen(es) mostrada(s)`);

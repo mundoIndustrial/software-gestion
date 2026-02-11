@@ -175,7 +175,7 @@ class MapeoImagenesService
                 $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
                 $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
                 
-                Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE PRENDA', [
+                Log::debug('[MapeoImagenesService]  BUSCANDO IMAGEN DE PRENDA', [
                     'prenda_id' => $prenda->id,
                     'nombre_prenda' => $prendaDTO['nombre_prenda'] ?? 'N/A',
                     'imagen_uid' => $imagenUID,
@@ -213,7 +213,7 @@ class MapeoImagenesService
                 }
 
                 if (!$rutaFinal) {
-                    Log::warning('[MapeoImagenesService] ❌ IMAGEN SIN RUTA - MAPEO KEYS', [
+                    Log::warning('[MapeoImagenesService]  IMAGEN SIN RUTA - MAPEO KEYS', [
                         'imagen_uid' => $imagenUID,
                         'formdata_key' => $formDataKey,
                         'is_existing_from_cotizacion' => $isExistingFromCotizacion,
@@ -262,7 +262,7 @@ class MapeoImagenesService
                     $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
                     $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
                     
-                    Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE TELA', [
+                    Log::debug('[MapeoImagenesService]  BUSCANDO IMAGEN DE TELA', [
                         'prenda_id' => $prenda->id,
                         'tela_id' => $telaEnBD->id,
                         'imagen_uid' => $imagenUID,
@@ -299,7 +299,7 @@ class MapeoImagenesService
                     }
 
                     if (!$rutaFinal) {
-                        Log::warning('[MapeoImagenesService] ❌ IMAGEN TELA SIN RUTA', [
+                        Log::warning('[MapeoImagenesService]  IMAGEN TELA SIN RUTA', [
                             'imagen_uid' => $imagenUID,
                             'formdata_key' => $formDataKey,
                             'is_existing_from_cotizacion' => $isExistingFromCotizacion,
@@ -396,7 +396,7 @@ class MapeoImagenesService
                     $isExistingFromCotizacion = $imagenDTO['is_existing_from_cotizacion'] ?? false;
                     $rutaExistente = $imagenDTO['ruta_webp'] ?? null;
                     
-                    Log::debug('[MapeoImagenesService] 🔍 BUSCANDO IMAGEN DE PROCESO', [
+                    Log::debug('[MapeoImagenesService]  BUSCANDO IMAGEN DE PROCESO', [
                         'prenda_id' => $prenda->id,
                         'proceso_id' => $procesoEnBD->id,
                         'tipo_proceso' => $procesoDTO['tipo'] ?? 'desconocido',
@@ -434,7 +434,7 @@ class MapeoImagenesService
                     }
 
                     if (!$rutaFinal) {
-                        Log::warning('[MapeoImagenesService] ❌ IMAGEN PROCESO SIN RUTA', [
+                        Log::warning('[MapeoImagenesService]  IMAGEN PROCESO SIN RUTA', [
                             'imagen_uid' => $imagenUID,
                             'formdata_key' => $formDataKey,
                             'is_existing_from_cotizacion' => $isExistingFromCotizacion,

@@ -45,7 +45,7 @@ class PedidosRealtimeRefresh {
     }
 
     init() {
-        if (this.debug) console.log('🔄 [PedidosRealtime] Sistema inicializado');
+        if (this.debug) console.log(' [PedidosRealtime] Sistema inicializado');
         
         // Detectar actividad del usuario
         this.setupActivityDetection();
@@ -126,7 +126,7 @@ class PedidosRealtimeRefresh {
                     this.handlePedidoUpdate(event.pedido, 'pedido.creado', event.changedFields);
                 })
                 .error((error) => {
-                    console.error('❌ [PedidosRealtime] Error en canal Echo:', error);
+                    console.error(' [PedidosRealtime] Error en canal Echo:', error);
                     this.usingWebSockets = false;
                     this.showConnectionIndicator('Echo Error', 'error');
                     // Si WebSockets falla, iniciar polling fallback
@@ -137,7 +137,7 @@ class PedidosRealtimeRefresh {
             if (this.debug) console.log(' [PedidosRealtime] Conexión WebSocket establecida - SIN POLLING');
 
         } catch (error) {
-            console.error('❌ [PedidosRealtime] Error configurando WebSocket:', error);
+            console.error(' [PedidosRealtime] Error configurando WebSocket:', error);
             this.usingWebSockets = false;
             // Si hay error, usar polling fallback
             this.startPollingFallback();
@@ -148,7 +148,7 @@ class PedidosRealtimeRefresh {
      * Manejar actualización de pedido desde Echo
      */
     handlePedidoUpdate(pedido, action, changedFields) {
-        if (this.debug) console.log('🔄 [PedidosRealtime] Actualización:', pedido.id);
+        if (this.debug) console.log(' [PedidosRealtime] Actualización:', pedido.id);
         
         // Actualizar o agregar el pedido específico
         this.actualizarPedidoIndividual(pedido, changedFields);
@@ -177,7 +177,7 @@ class PedidosRealtimeRefresh {
         } else {
             // Nuevo pedido - para Cartera, recargar toda la tabla
             if (this.isCarteraPage) {
-                if (this.debug) console.log('🔄 [PedidosRealtime] Nuevo pedido, recargando');
+                if (this.debug) console.log(' [PedidosRealtime] Nuevo pedido, recargando');
                 if (window.cargarPedidos) {
                     window.cargarPedidos();
                 }
@@ -293,13 +293,13 @@ class PedidosRealtimeRefresh {
         
         // Si está inactivo, reactivar
         if (!this.isRunning) {
-            if (this.debug) console.log('🔄 [PedidosRealtime] Reactivando por actividad');
+            if (this.debug) console.log(' [PedidosRealtime] Reactivando por actividad');
             this.start();
         }
         
         // Marcar como activo por 5 minutos
         this.userActivityTimeout = setTimeout(() => {
-            if (this.debug) console.log('🔄 [PedidosRealtime] Usuario inactivo, pausando');
+            if (this.debug) console.log(' [PedidosRealtime] Usuario inactivo, pausando');
             this.pause();
         }, 300000); // 5 minutos
     }
@@ -310,7 +310,7 @@ class PedidosRealtimeRefresh {
         // Restaurar intervalo normal para producción
         let newInterval = this.isVisible && this.hasFocus ? 30000 : 60000; // 30s activo, 60s inactivo
         
-        if (this.debug) console.log('🔄 [PedidosRealtime] ⏱️ Intervalo ajustado a', newInterval, 'ms');
+        if (this.debug) console.log(' [PedidosRealtime]  Intervalo ajustado a', newInterval, 'ms');
         
         this.checkInterval = newInterval;
     }
@@ -320,15 +320,15 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        if (this.debug) console.log(`🔄 [PedidosRealtime]  Iniciando monitoreo`);
+        if (this.debug) console.log(` [PedidosRealtime]  Iniciando monitoreo`);
         this.isRunning = true;
         
         // Solo iniciar polling si WebSockets no está disponible
         if (!this.usingWebSockets) {
-            if (this.debug) console.log('🔄 [PedidosRealtime] WebSockets no disponible, usando polling fallback');
+            if (this.debug) console.log(' [PedidosRealtime] WebSockets no disponible, usando polling fallback');
             this.startPollingFallback();
         } else {
-            if (this.debug) console.log('🔄 [PedidosRealtime] Usando WebSockets, sin polling necesario');
+            if (this.debug) console.log(' [PedidosRealtime] Usando WebSockets, sin polling necesario');
         }
     }
     
@@ -341,8 +341,8 @@ class PedidosRealtimeRefresh {
         }
         
         if (this.debug) {
-            console.log('🔄 [PedidosRealtime] Iniciando polling fallback cada', this.checkInterval, 'ms');
-            console.log('🔄 [PedidosRealtime] API URL:', this.getApiUrl());
+            console.log(' [PedidosRealtime] Iniciando polling fallback cada', this.checkInterval, 'ms');
+            console.log(' [PedidosRealtime] API URL:', this.getApiUrl());
         }
         
         const checkForUpdates = async () => {
@@ -351,7 +351,7 @@ class PedidosRealtimeRefresh {
                 return;
             }
             
-            if (this.debug) console.log('🔄 [PedidosRealtime] 🔍 Verificando...');
+            if (this.debug) console.log(' [PedidosRealtime]  Verificando...');
             
             try {
                 const response = await fetch(this.getApiUrl(), {
@@ -364,7 +364,7 @@ class PedidosRealtimeRefresh {
                 if (!response.ok) {
                     if (this.debug) {
                         const errorText = await response.text();
-                        console.error('🔄 [PedidosRealtime] ❌ Error:', response.status);
+                        console.error(' [PedidosRealtime]  Error:', response.status);
                     }
                     return;
                 }
@@ -375,7 +375,7 @@ class PedidosRealtimeRefresh {
                     await this.checkForChanges(data.data);
                 }
             } catch (error) {
-                if (this.debug) console.error('❌ [PedidosRealtime] Error en polling:', error.message);
+                if (this.debug) console.error(' [PedidosRealtime] Error en polling:', error.message);
             }
             
             // Programar siguiente verificación solo si WebSockets sigue sin funcionar
@@ -391,14 +391,14 @@ class PedidosRealtimeRefresh {
     pause() {
         if (!this.isRunning) return;
         
-        if (this.debug) console.log('🔄 [PedidosRealtime] ⏸️ Pausado');
+        if (this.debug) console.log(' [PedidosRealtime] ⏸️ Pausado');
         this.isRunning = false;
     }
 
     stop() {
         if (!this.isRunning) return;
         
-        if (this.debug) console.log('🔄 [PedidosRealtime] ⏹️ Detenido');
+        if (this.debug) console.log(' [PedidosRealtime] ⏹️ Detenido');
         this.isRunning = false;
         clearTimeout(this.userActivityTimeout);
         
@@ -414,7 +414,7 @@ class PedidosRealtimeRefresh {
      * Destruir instancia completamente - limpiar todos los recursos
      */
     destroy() {
-        if (this.debug) console.log('🔄 [PedidosRealtime] 💥 Destruyendo instancia');
+        if (this.debug) console.log(' [PedidosRealtime] 💥 Destruyendo instancia');
         
         // Detener monitoreo
         this.stop();
@@ -464,7 +464,7 @@ class PedidosRealtimeRefresh {
      */
     async verificar() {
         // Este método ya no se usa directamente, pero se mantiene por compatibilidad
-        if (this.debug) console.log('🔄 [PedidosRealtime] Método verificar() legacy');
+        if (this.debug) console.log(' [PedidosRealtime] Método verificar() legacy');
         return;
     }
 
@@ -483,12 +483,12 @@ class PedidosRealtimeRefresh {
      * Verificar si hay cambios y actualizar tabla
      */
     async checkForChanges(pedidosNuevos) {
-        if (this.debug) console.log('🔄 [PedidosRealtime] 🔍 Analizando', pedidosNuevos.length, 'pedidos');
+        if (this.debug) console.log(' [PedidosRealtime]  Analizando', pedidosNuevos.length, 'pedidos');
         
         const hayCambios = this.detectarCambios(pedidosNuevos);
         
         if (hayCambios) {
-            if (this.debug) console.log('🔄 [PedidosRealtime] 🔄 Cambios detectados');
+            if (this.debug) console.log(' [PedidosRealtime]  Cambios detectados');
             this.lastChangeTime = new Date();
             
             // Recargar la tabla completa solo si las funciones existen
@@ -530,12 +530,12 @@ class PedidosRealtimeRefresh {
             
             // Comparar campos importantes
             if (anterior.estado !== pedido.estado) {
-                if (this.debug) console.log('🔄 [PedidosRealtime] Estado cambió #' + pedido.id);
+                if (this.debug) console.log(' [PedidosRealtime] Estado cambió #' + pedido.id);
                 hayCambios = true;
             }
             
             if (anterior.novedades !== pedido.novedades) {
-                if (this.debug) console.log('🔄 [PedidosRealtime] Novedades cambió #' + pedido.id);
+                if (this.debug) console.log(' [PedidosRealtime] Novedades cambió #' + pedido.id);
                 hayCambios = true;
             }
         }
@@ -562,7 +562,7 @@ class PedidosRealtimeRefresh {
         // Obtener contenedor de filas
         const tablasContainer = document.querySelector('.table-scroll-container');
         if (!tablasContainer) {
-            console.error('❌ [PedidosRealtime] No se encontró el contenedor de la tabla');
+            console.error(' [PedidosRealtime] No se encontró el contenedor de la tabla');
             return;
         }
         

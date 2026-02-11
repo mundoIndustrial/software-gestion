@@ -1125,7 +1125,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         // Buscar TODAS las filas de tela con clase .fila-tela-logo
         const filasTelaLogo = modal.querySelectorAll('.fila-tela-logo');
         
-        console.log('🔍 DEBUG: Buscando filas de tela. Encontradas:', filasTelaLogo.length);
+        console.log(' DEBUG: Buscando filas de tela. Encontradas:', filasTelaLogo.length);
         
         // Para cada fila de tela encontrada
         let telaCounter = 0;

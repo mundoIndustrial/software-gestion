@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Verificar si estamos en el flujo desde cotización (crear-desde-cotizacion)
         // En este flujo, las prendas se agregan individualmente, no se cargan todas desde backend
         if (window.location.pathname.includes('crear-desde-cotizacion')) {
-            console.log('[cargarPrendasDesdeCotizacion] 🔄 Flujo desde cotización detectado, omitiendo carga masiva');
+            console.log('[cargarPrendasDesdeCotizacion]  Flujo desde cotización detectado, omitiendo carga masiva');
             console.log('[cargarPrendasDesdeCotizacion]  Las prendas se agregan individualmente mediante el selector');
             return;
         }
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                console.log('[cargarPrendasDesdeCotizacion] 📦 Datos recibidos:', {
+                console.log('[cargarPrendasDesdeCotizacion]  Datos recibidos:', {
                     error: data.error,
                     prendas_count: data.prendas ? data.prendas.length : 0,
                     has_reflectivo: !!data.reflectivo,
@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (data.error) {
-                    console.error('[cargarPrendasDesdeCotizacion] ❌ Error del servidor:', data.error);
+                    console.error('[cargarPrendasDesdeCotizacion]  Error del servidor:', data.error);
                     prendasContainer.innerHTML = `<p style="color: #ef4444;">Error: ${data.error}</p>`;
                 } else {
                     window.prendasCargadas = data.prendas || [];
@@ -444,13 +444,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('[cargarPrendasDesdeCotizacion] ❌ Error en fetch:', error);
+                console.error('[cargarPrendasDesdeCotizacion]  Error en fetch:', error);
                 console.error('[cargarPrendasDesdeCotizacion] 📍 Stack trace:', error.stack);
                 
                 prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al cargar las prendas: ${error.message}</p>`;
                 
                 // Mostrar alerta más descriptiva
-                alert('❌ No se pudieron cargar las prendas de la cotización. Intenta recargar la página.\n\nError: ' + error.message);
+                alert(' No se pudieron cargar las prendas de la cotización. Intenta recargar la página.\n\nError: ' + error.message);
             });
     }
 
@@ -480,11 +480,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
             } else if (window.renderizarPrendasSinCotizacion) {
                 // Fallback: Usar el sistema específico para cotizaciones
-                console.log('[renderizarPrendasEditables] 🔄 Usando fallback específico para cotizaciones');
+                console.log('[renderizarPrendasEditables]  Usando fallback específico para cotizaciones');
                 
                 // Usar el nuevo agregador independiente para cotizaciones
                 if (window.agregarPrendasDesdeCotizacion) {
-                    console.log('[renderizarPrendasEditables] 🚀 Usando agregador independiente para cotizaciones');
+                    console.log('[renderizarPrendasEditables]  Usando agregador independiente para cotizaciones');
                     const exito = window.agregarPrendasDesdeCotizacion(prendas);
                     if (!exito) {
                         const prendasContainer = document.getElementById('prendas-container-editable');
@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     // Fallback al sistema original si el nuevo agregador no está disponible
-                    console.log('[renderizarPrendasEditables] 🔄 Usando fallback original');
+                    console.log('[renderizarPrendasEditables]  Usando fallback original');
                     
                     // Limpiar container
                     const prendasContainer = document.getElementById('prendas-container-editable');

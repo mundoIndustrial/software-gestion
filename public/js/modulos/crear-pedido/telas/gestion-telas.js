@@ -63,7 +63,7 @@ function loadComponent(component) {
         };
         
         script.onerror = () => {
-            console.error(`❌ Error cargando componente: ${component.name}`);
+            console.error(` Error cargando componente: ${component.name}`);
             reject(new Error(`Failed to load component: ${component.name}`));
         };
         
@@ -92,7 +92,7 @@ async function loadAllComponents() {
         }
         
     } catch (error) {
-        console.error('❌ Error cargando Telas Module:', error);
+        console.error(' Error cargando Telas Module:', error);
         window.TelasModule.error = error;
     }
 }

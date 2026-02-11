@@ -6,21 +6,21 @@
 // Función global para verificar estado
 window.verificarEstadoRealtime = function() {
     if (!window.pedidosRealtimeRefresh) {
-        console.error('❌ Sistema de realtime no inicializado');
+        console.error(' Sistema de realtime no inicializado');
         return;
     }
     
     const estado = window.pedidosRealtimeRefresh.getStatus();
     
-    console.group('🔍 Estado Sistema Pedidos Real-time');
+    console.group(' Estado Sistema Pedidos Real-time');
     console.log(' Tipo de Conexión:', estado.connectionType);
-    console.log('🔄 Estado:', estado.isRunning ? 'Activo' : 'Inactivo');
-    console.log('🌐 WebSockets:', estado.usingWebSockets ? ' Activo' : '❌ Inactivo');
-    console.log('👁️ Página Visible:', estado.isVisible ? '' : '❌');
-    console.log(' Foco:', estado.hasFocus ? '' : '❌');
+    console.log(' Estado:', estado.isRunning ? 'Activo' : 'Inactivo');
+    console.log('🌐 WebSockets:', estado.usingWebSockets ? ' Activo' : ' Inactivo');
+    console.log(' Página Visible:', estado.isVisible ? '' : '');
+    console.log(' Foco:', estado.hasFocus ? '' : '');
     console.log('📈 Pedidos Monitoreados:', estado.pedidosCount);
-    console.log('⏱️ Intervalo:', estado.checkInterval + 'ms');
-    console.log('🕐 Último Cambio:', estado.lastChangeTime);
+    console.log(' Intervalo:', estado.checkInterval + 'ms');
+    console.log(' Último Cambio:', estado.lastChangeTime);
     console.log('📡 Canal Echo:', estado.echoChannel);
     console.groupEnd();
     

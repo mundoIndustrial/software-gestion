@@ -21,7 +21,7 @@ window.manejarImagenTela = function(input) {
     if (!input) {
         input = document.getElementById('modal-agregar-prenda-nueva-file-input') || document.getElementById('nueva-prenda-tela-img-input');
         if (!input) {
-            console.error('[manejarImagenTela] ❌ No se encontró el elemento de input');
+            console.error('[manejarImagenTela]  No se encontró el elemento de input');
             return;
         }
     }
@@ -37,7 +37,7 @@ window.manejarImagenTela = function(input) {
         
         // Validar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[manejarImagenTela] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[manejarImagenTela]  El archivo no es una imagen:', file.type);
             window.mostrarErrorTela('nueva-prenda-tela', 'Por favor selecciona un archivo de imagen válido');
             return;
         }
@@ -45,14 +45,14 @@ window.manejarImagenTela = function(input) {
         // Validar tamaño (máximo 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-            console.warn('[manejarImagenTela] ⚠️ Archivo demasiado grande:', file.size);
+            console.warn('[manejarImagenTela]  Archivo demasiado grande:', file.size);
             window.mostrarErrorTela('nueva-prenda-tela', 'El archivo es demasiado grande (máximo 5MB)');
             return;
         }
         
         // Validar límite de imágenes (máximo 3 por tela)
         if (window.imagenesTelaModalNueva.length >= 3) {
-            console.warn('[manejarImagenTela] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[manejarImagenTela]  Límite de imágenes alcanzado');
             window.mostrarErrorTela('nueva-prenda-tela', 'Máximo 3 imágenes por tela');
             return;
         }
@@ -75,8 +75,8 @@ window.manejarImagenTela = function(input) {
             
             window.imagenesTelaModalNueva.push(imagen);
             
-            console.log('[manejarImagenTela] 📦 Imagen agregada al array temporal');
-            console.log('[maneImagenTela] 📊 Total imágenes temporales:', window.imagenesTelaModalNueva.length);
+            console.log('[manejarImagenTela]  Imagen agregada al array temporal');
+            console.log('[maneImagenTela]  Total imágenes temporales:', window.imagenesTelaModalNueva.length);
             
             // Actualizar preview si es necesario
             if (typeof window.actualizarPreviewTelaTemporal === 'function') {
@@ -85,14 +85,14 @@ window.manejarImagenTela = function(input) {
         };
         
         reader.onerror = function() {
-            console.error('[maneImagenTela] ❌ Error al leer el archivo');
+            console.error('[maneImagenTela]  Error al leer el archivo');
             window.mostrarErrorTela('nueva-prenda-tela', 'Error al leer el archivo de imagen');
         };
         
         reader.readAsDataURL(file);
         
     } catch (error) {
-        console.error('[manejarImagenTela] ❌ Error general:', error);
+        console.error('[manejarImagenTela]  Error general:', error);
         window.mostrarErrorTela('nueva-prenda-tela', 'Error al procesar la imagen');
     }
     
@@ -155,7 +155,7 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     closeButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1rem;';
     closeButton.onclick = () => {
         modal.remove();
-        console.log('[mostrarGaleriaImagenesTemporales] ✅ Galería cerrada');
+        console.log('[mostrarGaleriaImagenesTemporales]  Galería cerrada');
     };
     
     contenido.appendChild(titulo);
@@ -181,7 +181,136 @@ window.mostrarGaleriaImagenesTemporales = function(imagenes, indiceInicial = 0) 
     document.addEventListener('keydown', cerrarConEsc);
     
     document.body.appendChild(modal);
-    console.log('[mostrarGaleriaImagenesTemporales] ✅ Galería abierta con ' + imagenes.length + ' imágenes');
+    console.log('[mostrarGaleriaImagenesTemporales]  Galería abierta con ' + imagenes.length + ' imágenes');
+};
+
+/**
+ * Mostrar galería de imágenes de una tela específica
+ * @param {Array} imagenes - Array de imágenes de la tela
+ * @param {number} telaIndex - Índice de la tela
+ * @param {number} indiceInicial - Índice inicial para mostrar
+ */
+window.mostrarGaleriaImagenesTela = function(imagenes, telaIndex, indiceInicial = 0) {
+    console.log('[mostrarGaleriaImagenesTela] 🖼️ Abriendo galería de imágenes de tela', { 
+        telaIndex: telaIndex, 
+        totalImagenes: imagenes.length, 
+        indiceInicial: indiceInicial 
+    });
+    
+    if (!imagenes || imagenes.length === 0) {
+        console.warn('[mostrarGaleriaImagenesTela]  No hay imágenes para mostrar');
+        return;
+    }
+    
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const contenido = document.createElement('div');
+    contenido.style.cssText = `
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90%;
+        overflow-y: auto;
+        position: relative;
+    `;
+    
+    const titulo = document.createElement('h2');
+    titulo.textContent = `Imágenes de Tela #${telaIndex + 1}`;
+    titulo.style.cssText = 'margin: 0 0 1rem 0; color: #1f2937;';
+    
+    const imageContainer = document.createElement('div');
+    imageContainer.style.cssText = 'display: flex; gap: 10px; margin: 1rem 0; justify-content: center; flex-wrap: wrap;';
+    
+    // Mostrar imagen actual destacada
+    const imagenActual = imagenes[indiceInicial];
+    const imgPrincipal = document.createElement('img');
+    imgPrincipal.src = imagenActual.previewUrl || imagenActual.url || imagenActual.blobUrl;
+    imgPrincipal.style.cssText = 'width: 300px; height: 300px; object-fit: cover; border-radius: 8px; border: 2px solid #3b82f6;';
+    imageContainer.appendChild(imgPrincipal);
+    
+    // Mostrar miniaturas
+    if (imagenes.length > 1) {
+        const miniaturasContainer = document.createElement('div');
+        miniaturasContainer.style.cssText = 'display: flex; gap: 5px; margin-top: 1rem; justify-content: center; flex-wrap: wrap;';
+        
+        imagenes.forEach((img, index) => {
+            const miniatura = document.createElement('img');
+            miniatura.src = img.previewUrl || img.url || img.blobUrl;
+            miniatura.style.cssText = `width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${index === indiceInicial ? '#3b82f6' : '#e5e7eb'};`;
+            miniatura.title = `${img.name || 'Imagen'} (${index + 1}/${imagenes.length})`;
+            
+            miniatura.onclick = () => {
+                // Actualizar imagen principal
+                imgPrincipal.src = img.previewUrl || img.url || img.blobUrl;
+                
+                // Actualizar bordes de miniaturas
+                miniaturasContainer.querySelectorAll('img').forEach((mini, i) => {
+                    mini.style.border = `2px solid ${i === index ? '#3b82f6' : '#e5e7eb'}`;
+                });
+                
+                console.log(`[mostrarGaleriaImagenesTela] 🖼️ Cambiando a imagen ${index + 1}: ${img.name || 'sin nombre'}`);
+            };
+            
+            miniaturasContainer.appendChild(miniatura);
+        });
+        
+        contenido.appendChild(miniaturasContainer);
+    }
+    
+    const infoImagen = document.createElement('div');
+    infoImagen.style.cssText = 'color: #6b7280; font-size: 0.9rem; margin: 1rem 0; text-align: center;';
+    infoImagen.innerHTML = `
+        <div>Imagen ${indiceInicial + 1} de ${imagenes.length}</div>
+        <div>${imagenActual.name || 'Sin nombre'}</div>
+        <div>Tamaño: ${(imagenActual.size || 0)} bytes</div>
+    `;
+    
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕ Cerrar';
+    closeButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1rem;';
+    closeButton.onclick = () => {
+        modal.remove();
+        console.log('[mostrarGaleriaImagenesTela]  Galería cerrada');
+    };
+    
+    contenido.appendChild(titulo);
+    contenido.appendChild(imageContainer);
+    contenido.appendChild(infoImagen);
+    contenido.appendChild(closeButton);
+    modal.appendChild(contenido);
+    
+    // Cerrar al hacer click fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    // Cerrar con Escape
+    const cerrarConEsc = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', cerrarConEsc);
+        }
+    };
+    document.addEventListener('keydown', cerrarConEsc);
+    
+    document.body.appendChild(modal);
+    console.log('[mostrarGaleriaImagenesTela]  Galería abierta con ' + imagenes.length + ' imágenes');
 };
 
 /**
@@ -192,7 +321,7 @@ window.eliminarImagenTemporal = function(index) {
     console.log('[eliminarImagenTemporal] 🗑️ Eliminando imagen temporal:', index);
     
     if (!window.imagenesTelaModalNueva || index < 0 || index >= window.imagenesTelaModalNueva.length) {
-        console.warn('[eliminarImagenTemporal] ❌ Índice inválido:', index);
+        console.warn('[eliminarImagenTemporal]  Índice inválido:', index);
         return;
     }
     
@@ -207,7 +336,7 @@ window.eliminarImagenTemporal = function(index) {
         window.actualizarPreviewTelaTemporal();
     }
     
-    console.log('[eliminarImagenTemporal] ✅ Imagen eliminada, total restante:', window.imagenesTelaModalNueva.length);
+    console.log('[eliminarImagenTemporal]  Imagen eliminada, total restante:', window.imagenesTelaModalNueva.length);
 };
 
 /**
@@ -218,7 +347,7 @@ window.actualizarPreviewTelaTemporal = function() {
     
     const preview = document.getElementById('nueva-prenda-tela-preview');
     if (!preview) {
-        console.warn('[actualizarPreviewTelaTemporal] ⚠️ Preview no encontrado');
+        console.warn('[actualizarPreviewTelaTemporal]  Preview no encontrado');
         return;
     }
     
@@ -274,7 +403,7 @@ window.actualizarPreviewTelaTemporal = function() {
         preview.appendChild(container);
     });
     
-    console.log('[actualizarTelaTemporal] ✅ Preview actualizado con ' + imagenes.length + ' imágenes');
+    console.log('[actualizarTelaTemporal]  Preview actualizado con ' + imagenes.length + ' imágenes');
 };
 
 /**
@@ -316,5 +445,5 @@ window.limpiarImagenesTemporales = function() {
         window.actualizarPreviewTelaTemporal();
     }
     
-    console.log('[limpiarImagenesTemporales] ✅ Imágenes temporales limpiadas');
+    console.log('[limpiarImagenesTemporales]  Imágenes temporales limpiadas');
 };

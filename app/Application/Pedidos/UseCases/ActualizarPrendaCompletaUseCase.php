@@ -85,7 +85,7 @@ final class ActualizarPrendaCompletaUseCase
             $prenda->load('procesos');
         }
         
-        // 🔴 FIX CRÍTICO: Cargar fotos (imágenes) para que la respuesta JSON las incluya
+        //  FIX CRÍTICO: Cargar fotos (imágenes) para que la respuesta JSON las incluya
         // Esto es necesario para que el frontend pueda sincronizar el snapshot después de guardar
         if (!$prenda->relationLoaded('fotos')) {
             $prenda->load('fotos');
@@ -134,7 +134,7 @@ final class ActualizarPrendaCompletaUseCase
 
     private function actualizarFotos(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
-        // 🔍 DEBUG: Log detallado de lo que se recibe
+        //  DEBUG: Log detallado de lo que se recibe
         \Log::info('[ActualizarPrendaCompletaUseCase] actualizarFotos - Iniciando', [
             'prenda_id' => $prenda->id,
             'dto->fotos' => $dto->fotos,
@@ -625,7 +625,7 @@ final class ActualizarPrendaCompletaUseCase
                     ->first();
                 
                 if (!$existente) {
-                    // ⚠️ IMPORTANTE: fotosTelas es HasManyThrough, no permite create() directo
+                    //  IMPORTANTE: fotosTelas es HasManyThrough, no permite create() directo
                     // Usar PrendaFotoTelaPedido::create() directamente
                     $fotoCreada = \App\Models\PrendaFotoTelaPedido::create($datosFoto);
                     \Log::info('[ActualizarPrendaCompletaUseCase] Foto creada', [
@@ -756,7 +756,7 @@ final class ActualizarPrendaCompletaUseCase
                 }
             } else {
                 //  CREAR: Nuevo proceso
-                // 🔴 FIX CRÍTICO: Si no hay tipo_proceso_id, buscarlo por el tipo/nombre que viene del frontend
+                //  FIX CRÍTICO: Si no hay tipo_proceso_id, buscarlo por el tipo/nombre que viene del frontend
                 $tipoProceso = $proceso['tipo_proceso_id'] ?? null;
                 
                 if (!$tipoProceso && isset($proceso['tipo'])) {
@@ -780,7 +780,7 @@ final class ActualizarPrendaCompletaUseCase
                     }
                 }
                 
-                // 🔴 FIX CRÍTICO: Verificar si el proceso YA EXISTE antes de crear
+                //  FIX CRÍTICO: Verificar si el proceso YA EXISTE antes de crear
                 // Evita violación de constraint unique (prenda_pedido_id, tipo_proceso_id)
                 if ($tipoProceso) {
                     $procesoExistente = $prenda->procesos()
@@ -839,7 +839,7 @@ final class ActualizarPrendaCompletaUseCase
             'fotosProcesoNuevo_count' => count($dto->fotosProcesoNuevo ?? []),
         ]);
 
-        // 🔴 IMPORTANTE: Si hay fotosProcesoNuevo, SIEMPRE usarlas
+        //  IMPORTANTE: Si hay fotosProcesoNuevo, SIEMPRE usarlas
         // Sin importar si es un proceso nuevo o si estamos actualizando uno existente
         // El usuario acaba de cargar estas imágenes en esto request
         if (!empty($dto->fotosProcesoNuevo)) {

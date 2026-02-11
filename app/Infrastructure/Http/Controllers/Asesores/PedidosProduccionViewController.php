@@ -702,8 +702,8 @@ class PedidosProduccionViewController
             $prenda = $cotizacion->prendas[0];
             $procesosFormato = [];
 
-            // 🔴 DEBUG: Ver estructura de prenda antes de procesar telas
-            \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PRENDA CARGADA:', [
+            //  DEBUG: Ver estructura de prenda antes de procesar telas
+            \Log::info('[OBTENER-PRENDA-COMPLETA]  PRENDA CARGADA:', [
                 'prenda_id' => $prenda->id,
                 'tiene_telas_relation' => !!$prenda->telas,
                 'telas_count' => count($prenda->telas ?? []),
@@ -757,7 +757,7 @@ class PedidosProduccionViewController
                     'tiene_logo_telas' => !!($prenda->logoCotizacionTelasPrenda && count($prenda->logoCotizacionTelasPrenda) > 0)
                 ]);
                 
-                \Log::info('[OBTENER-PRENDA-COMPLETA] 🔍 PROCESANDO TELAS:', [
+                \Log::info('[OBTENER-PRENDA-COMPLETA]  PROCESANDO TELAS:', [
                     'prenda_id' => $prenda->id,
                     'tiene_telas' => !!$prenda->telas,
                     'telas_count' => count($prenda->telas ?? []),
@@ -941,7 +941,7 @@ class PedidosProduccionViewController
                     
                     // Si no se cargaron en eager loading, intentar cargarlas directamente
                     if (!$fotosRelacion || ($fotosRelacion instanceof \Illuminate\Database\Eloquent\Collection && count($fotosRelacion) === 0)) {
-                        \Log::warning('[OBTENER-PRENDA-COMPLETA] ⚠️ Fotos no cargadas en eager loading, intentando fallback:', [
+                        \Log::warning('[OBTENER-PRENDA-COMPLETA]  Fotos no cargadas en eager loading, intentando fallback:', [
                             'logo_tecnica_id' => $logoTecnica->id
                         ]);
                         

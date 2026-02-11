@@ -19,7 +19,7 @@ echo str_repeat("-", 80) . "\n";
 
 $pedido = DB::table('pedidos_produccion')->where('id', $pedidoId)->first();
 if (!$pedido) {
-    echo "❌ ERROR: No se encontró el pedido #$pedidoId\n";
+    echo " ERROR: No se encontró el pedido #$pedidoId\n";
     exit(1);
 }
 
@@ -41,7 +41,7 @@ $prendas = DB::table('prendas_pedido')
 echo "Total prendas: " . $prendas->count() . "\n\n";
 
 foreach ($prendas as $prenda) {
-    $deBodega = $prenda->de_bodega ? '✅ SÍ' : '❌ NO';
+    $deBodega = $prenda->de_bodega ? ' SÍ' : ' NO';
     echo "  Prenda ID: {$prenda->id}\n";
     echo "  Nombre: {$prenda->nombre_prenda}\n";
     echo "  De Bodega: $deBodega\n";
@@ -53,7 +53,7 @@ foreach ($prendas as $prenda) {
         ->where('tp.nombre', 'REFLECTIVO')
         ->exists();
     
-    echo "  Tiene Proceso REFLECTIVO: " . ($tieneReflectivo ? '✅ SÍ' : '❌ NO') . "\n";
+    echo "  Tiene Proceso REFLECTIVO: " . ($tieneReflectivo ? ' SÍ' : ' NO') . "\n";
     
     // Verificar consecutivos existentes para esta prenda
     $consecutivos = DB::table('consecutivos_recibos_pedidos')
@@ -68,7 +68,7 @@ foreach ($prendas as $prenda) {
             echo "    - ID: {$cons->id} | Consecutivo: {$cons->consecutivo_inicial} | Activo: " . ($cons->activo ? 'SÍ' : 'NO') . "\n";
         }
     } else {
-        echo "  ⚠️ NO tiene consecutivos REFLECTIVO\n";
+        echo "   NO tiene consecutivos REFLECTIVO\n";
     }
     
     echo "\n";
@@ -98,7 +98,7 @@ foreach ($procesosPorPrenda as $prendaId => $procesosP) {
 }
 
 // 4. Todos los consecutivos creados
-echo "\n📊 CONSECUTIVOS DE RECIBOS CREADOS:\n";
+echo "\n CONSECUTIVOS DE RECIBOS CREADOS:\n";
 echo str_repeat("-", 80) . "\n";
 
 $consecutivos = DB::table('consecutivos_recibos_pedidos')
@@ -119,11 +119,11 @@ if ($consecutivos->count() > 0) {
         echo "\n";
     }
 } else {
-    echo "⚠️ No hay consecutivos creados para este pedido\n\n";
+    echo " No hay consecutivos creados para este pedido\n\n";
 }
 
 // 5. Análisis del problema
-echo "\n🔍 ANÁLISIS DEL PROBLEMA:\n";
+echo "\n ANÁLISIS DEL PROBLEMA:\n";
 echo str_repeat("-", 80) . "\n";
 
 $prendasConReflectivo = DB::table('prendas_pedido as pp')
@@ -138,7 +138,7 @@ $prendasConReflectivo = DB::table('prendas_pedido as pp')
     ->distinct()
     ->get();
 
-echo "✅ Prendas que DEBERÍAN tener consecutivo REFLECTIVO:\n";
+echo " Prendas que DEBERÍAN tener consecutivo REFLECTIVO:\n";
 echo "   (de_bodega = true Y tiene proceso REFLECTIVO)\n\n";
 
 if ($prendasConReflectivo->count() > 0) {
@@ -152,9 +152,9 @@ if ($prendasConReflectivo->count() > 0) {
             ->exists();
         
         if ($tieneConsecutivo) {
-            echo "    ✅ Tiene consecutivo REFLECTIVO\n";
+            echo "     Tiene consecutivo REFLECTIVO\n";
         } else {
-            echo "    ❌ NO tiene consecutivo REFLECTIVO (PROBLEMA!)\n";
+            echo "     NO tiene consecutivo REFLECTIVO (PROBLEMA!)\n";
         }
     }
 } else {
@@ -172,9 +172,9 @@ $consecutivosActuales = DB::table('consecutivos_recibos_pedidos')
 echo "📌 ACTUAL: $consecutivosActuales consecutivos REFLECTIVO\n";
 
 if ($prendasConReflectivo->count() > $consecutivosActuales) {
-    echo "\n⚠️ PROBLEMA CONFIRMADO: Faltan " . ($prendasConReflectivo->count() - $consecutivosActuales) . " consecutivos!\n";
+    echo "\n PROBLEMA CONFIRMADO: Faltan " . ($prendasConReflectivo->count() - $consecutivosActuales) . " consecutivos!\n";
 } else {
-    echo "\n✅ Los consecutivos están correctos\n";
+    echo "\n Los consecutivos están correctos\n";
 }
 
 echo "\n=================================================\n";

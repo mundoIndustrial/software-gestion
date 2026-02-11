@@ -161,7 +161,7 @@ class PedidoWebService
             $this->crearVariantesPrenda($prenda, $itemData['variaciones']);
         }
 
-        // 🔍 DEBUG: Verificar telas
+        //  DEBUG: Verificar telas
         $tieneTelas = isset($itemData['telas']) && is_array($itemData['telas']) && count($itemData['telas']) > 0;
         $tieneTelasAntiguo = isset($itemData['prenda_pedido_colores_telas']) && is_array($itemData['prenda_pedido_colores_telas']) && count($itemData['prenda_pedido_colores_telas']) > 0;
         
@@ -188,7 +188,7 @@ class PedidoWebService
         //     $this->guardarImagenesPrenda($prenda, $itemData['imagenes']);
         // }
 
-        // 🔍 DEBUG: Verificar procesos
+        //  DEBUG: Verificar procesos
         $tieneProc = isset($itemData['procesos']) && is_array($itemData['procesos']) && count($itemData['procesos']) > 0;
         if ($tieneProc) {
             \Log::info('[PedidoWebService]  Creando procesos', [
@@ -298,7 +298,7 @@ class PedidoWebService
                 'tiene_bolsillos' => $variaciones['tiene_bolsillos'] ?? 0,
             ]);
         } catch (\Exception $e) {
-            Log::error('[PedidoWebService] ❌ Error creando variantes', [
+            Log::error('[PedidoWebService]  Error creando variantes', [
                 'prenda_id' => $prenda->id,
                 'error' => $e->getMessage(),
                 'variaciones' => $variaciones
@@ -336,7 +336,7 @@ class PedidoWebService
         $telasCreadasCount = 0;
 
         foreach ($telas as $telaData) {
-            Log::info('[PedidoWebService] 🔍 Procesando tela individual', [
+            Log::info('[PedidoWebService]  Procesando tela individual', [
                 'tela_data_original' => $telaData,
                 'tiene_tela_id' => isset($telaData['tela_id']),
                 'tiene_color_id' => isset($telaData['color_id']),
@@ -404,7 +404,7 @@ class PedidoWebService
                         ]);
                     }
                 } catch (\Exception $e) {
-                    Log::error('[PedidoWebService] ❌ Error procesando color/tela con servicio', [
+                    Log::error('[PedidoWebService]  Error procesando color/tela con servicio', [
                         'error' => $e->getMessage(),
                         'tela_data' => $telaData,
                     ]);
@@ -437,7 +437,7 @@ class PedidoWebService
                             }
                         }
                     } catch (\Exception $fallbackError) {
-                        Log::error('[PedidoWebService] ❌ Error en fallback también', [
+                        Log::error('[PedidoWebService]  Error en fallback también', [
                             'error' => $fallbackError->getMessage(),
                             'tela_data' => $telaData,
                         ]);
@@ -447,7 +447,7 @@ class PedidoWebService
                 //  MEJORADO: Crear tela si solo hay nombre (sin requerir color) - PERO NO crear genérica si solo hay color
                 $telaNombreGeneral = $telaData['nombre'] ?? $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
                 
-                Log::info('[PedidoWebService] 🔍 DIAGNÓSTICO - Verificando búsqueda de tela', [
+                Log::info('[PedidoWebService]  DIAGNÓSTICO - Verificando búsqueda de tela', [
                     'colorId' => $colorId,
                     'telaId' => $telaId,
                     'tiene_nombre_tela' => !empty($telaNombreGeneral),
@@ -485,8 +485,8 @@ class PedidoWebService
                 }
 
                 // Crear registro de tela con color si hay telaId (color es opcional)
-                // ✅ Si solo hay color sin tela → se crea el registro con tela_id = NULL
-                // ✅ Si hay tela con o sin color → se crea el registro
+                //  Si solo hay color sin tela → se crea el registro con tela_id = NULL
+                //  Si hay tela con o sin color → se crea el registro
                 if ($telaId || $colorId) {
                     $colorTela = PrendaPedidoColorTela::create([
                         'prenda_pedido_id' => $prenda->id,
@@ -646,7 +646,7 @@ class PedidoWebService
                 continue;
             }
 
-            \Log::info('[PedidoWebService] 🔍 Procesando tipo: ' . $tipoProceso, [
+            \Log::info('[PedidoWebService]  Procesando tipo: ' . $tipoProceso, [
                 'estructura_procesar' => array_keys($procesoData),
                 'tiene_datos_key' => isset($procesoData['datos']) ? 'SÍ' : 'NO',
                 'tiene_tallas_en_datos' => isset($procesoData['datos']['tallas']) ? 'SÍ' : 'NO',

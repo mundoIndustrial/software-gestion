@@ -1,5 +1,5 @@
 /**
- * 🔄 REFACTORIZACIÓN: orders-table-v2.js
+ *  REFACTORIZACIÓN: orders-table-v2.js
  * 
  * Este archivo integra los módulos SOLID creados eliminando código duplicado de orders-table.js
  * Mantiene compatibilidad con código existente mientras delega responsabilidades a los módulos
@@ -393,11 +393,11 @@ async function viewDetail(pedido) {
         if (typeof window.abrirSelectorRecibos === 'function') {
             window.abrirSelectorRecibos(pedido);
         } else {
-            console.error('❌ [viewDetail] abrirSelectorRecibos no disponible');
+            console.error(' [viewDetail] abrirSelectorRecibos no disponible');
             alert('Error: Sistema de detalles no disponible');
         }
     } catch (error) {
-        console.error('❌ [viewDetail] Error:', error);
+        console.error(' [viewDetail] Error:', error);
     }
     
     return;

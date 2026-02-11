@@ -759,7 +759,7 @@ window.abrirEditorTallasEspecificas = function() {
     // Mostrar modal editor
     modalEditor.style.display = 'flex';
     
-    // 🔍 DIAGNÓSTICO Z-INDEX
+    //  DIAGNÓSTICO Z-INDEX
     console.log('📌 [EDITOR-TALLAS] Abriendo modal de edición de tallas...');
     console.log('📌 [EDITOR-TALLAS] Z-index INICIAL (style.zIndex):', modalEditor.style.zIndex || 'NO DEFINIDO');
     console.log('📌 [EDITOR-TALLAS] Z-index COMPUTADO (getComputedStyle):', window.getComputedStyle(modalEditor).zIndex);
@@ -845,13 +845,13 @@ window.actualizarCantidadTallaProceso = function(input) {
     const generoKey = genero.toLowerCase();
     const cantidadDisponibleEnPrenda = tallasPrenda[generoKey]?.[talla] || 0;
     
-    // 🔄 LÓGICA CORREGIDA: Las mismas prendas pueden recibir MÚLTIPLES procesos
+    //  LÓGICA CORREGIDA: Las mismas prendas pueden recibir MÚLTIPLES procesos
     // NO hay límite entre procesos. Solo validamos contra la cantidad total de la prenda.
     // Ejemplo: 20 camisas talla S pueden tener:
     //   - 10 con Bordado
     //   - 15 con Estampado (son las MISMAS u OTRAS camisas, lo importante es que NO superen 20 total)
     
-    console.log(`🔍 [actualizarCantidadTallaProceso] Validación para ${talla}/${genero}:`, {
+    console.log(` [actualizarCantidadTallaProceso] Validación para ${talla}/${genero}:`, {
         cantidadIntentada: cantidad,
         cantidadDisponibleEnPrenda: cantidadDisponibleEnPrenda,
         procesoActual: procesoActual,
@@ -868,11 +868,11 @@ window.actualizarCantidadTallaProceso = function(input) {
         
         // Buscar el label padre que contiene todo
         const label = input.closest('label');
-        console.log('🔍 [ERROR-CSS] Label encontrado:', !!label);
+        console.log(' [ERROR-CSS] Label encontrado:', !!label);
         
         // Buscar o crear wrapper para mantener el grid ordenado
         let wrapper = label?.closest('.talla-error-wrapper');
-        console.log('🔍 [ERROR-CSS] Wrapper existente:', !!wrapper);
+        console.log(' [ERROR-CSS] Wrapper existente:', !!wrapper);
         
         if (!wrapper) {
             wrapper = document.createElement('div');
@@ -901,12 +901,12 @@ window.actualizarCantidadTallaProceso = function(input) {
             }
         }
         
-        console.log('🔍 [ERROR-CSS] ErrorDiv después de crear:');
+        console.log(' [ERROR-CSS] ErrorDiv después de crear:');
         console.log('   - Existe:', !!errorDiv);
         console.log('   - Display (style):', errorDiv.style.display);
         console.log('   - Display (computed):', window.getComputedStyle(errorDiv).display);
         
-        errorDiv.textContent = `❌ Máximo: ${cantidadDisponibleEnPrenda} unidades`;
+        errorDiv.textContent = ` Máximo: ${cantidadDisponibleEnPrenda} unidades`;
         errorDiv.style.display = 'block';
         
         console.log(' [ERROR-CSS] Mensaje asignado');
@@ -932,7 +932,7 @@ window.actualizarCantidadTallaProceso = function(input) {
             confirmButtonColor: '#dc2626',
             allowOutsideClick: false,
             didOpen: (modal) => {
-                // 🔍 DESPUÉS DE ABRIR
+                //  DESPUÉS DE ABRIR
                 console.log(' [MODAL-CANTIDAD-EXCEDIDA] ABIERTO');
                 
                 // Buscar elemento Swal2
@@ -940,14 +940,14 @@ window.actualizarCantidadTallaProceso = function(input) {
                 const backdrop = document.querySelector('.swal2-backdrop-show');
                 const swalModal = document.querySelector('.swal2-popup');
                 
-                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] DIAGNÓSTICO INICIAL:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] DIAGNÓSTICO INICIAL:');
                 console.log('   - swalContainer encontrado:', !!swalContainer);
                 console.log('   - backdrop encontrado:', !!backdrop);
                 console.log('   - swalModal encontrado:', !!swalModal);
                 
                 if (!swalContainer) {
-                    console.error('❌ [MODAL-CANTIDAD-EXCEDIDA] NO SE ENCONTRÓ .swal2-container');
-                    console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] Elementos en DOM:');
+                    console.error(' [MODAL-CANTIDAD-EXCEDIDA] NO SE ENCONTRÓ .swal2-container');
+                    console.log(' [MODAL-CANTIDAD-EXCEDIDA] Elementos en DOM:');
                     document.querySelectorAll('[class*="swal"]').forEach((el, idx) => {
                         console.log(`   ${idx}. ${el.className} - display: ${window.getComputedStyle(el).display}, z-index: ${window.getComputedStyle(el).zIndex}`);
                     });
@@ -956,14 +956,14 @@ window.actualizarCantidadTallaProceso = function(input) {
                 
                 // Z-index ANTES
                 const zindexAntes = window.getComputedStyle(swalContainer).zIndex;
-                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX ANTES DE FORZAR:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] Z-INDEX ANTES DE FORZAR:');
                 console.log('   - Swal2 Container zIndex:', zindexAntes);
                 console.log('   - Swal2 Container display:', window.getComputedStyle(swalContainer).display);
                 console.log('   - Swal2 Container position:', window.getComputedStyle(swalContainer).position);
                 console.log('   - Backdrop zIndex:', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
                 
                 // Verificar padres
-                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] PADRES DE SWAL2:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] PADRES DE SWAL2:');
                 let padre = swalContainer.parentElement;
                 let nivel = 0;
                 while (padre && nivel < 5) {
@@ -997,7 +997,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 console.log('   - Backdrop zIndex (computed):', window.getComputedStyle(backdrop || {}).zIndex || 'NO ENCONTRADO');
                 
                 // Buscar si algo está ENCIMA
-                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] BÚSQUEDA DE ELEMENTOS ENCIMA:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] BÚSQUEDA DE ELEMENTOS ENCIMA:');
                 document.querySelectorAll('*').forEach(el => {
                     const zIdx = window.getComputedStyle(el).zIndex;
                     if (zIdx && zIdx !== 'auto' && parseInt(zIdx) > parseInt(nuevoZindex)) {
@@ -1031,7 +1031,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                 // Verificar si modal-editor-tallas está creando stacking context
                 const editorTallas = document.getElementById('modal-editor-tallas');
                 if (editorTallas) {
-                    console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] STACKING CONTEXT EDITOR-TALLAS:');
+                    console.log(' [MODAL-CANTIDAD-EXCEDIDA] STACKING CONTEXT EDITOR-TALLAS:');
                     console.log('   - Encontrado: SI');
                     console.log('   - Z-index:', window.getComputedStyle(editorTallas).zIndex);
                     console.log('   - Position:', window.getComputedStyle(editorTallas).position);
@@ -1040,7 +1040,7 @@ window.actualizarCantidadTallaProceso = function(input) {
                     console.log('   - Opacity:', window.getComputedStyle(editorTallas).opacity);
                 }
                 
-                console.log('🔍 [MODAL-CANTIDAD-EXCEDIDA] CSS PROPERTIES SWAL2:');
+                console.log(' [MODAL-CANTIDAD-EXCEDIDA] CSS PROPERTIES SWAL2:');
                 console.log('   - Visibility:', window.getComputedStyle(swalContainer).visibility);
                 console.log('   - Opacity:', window.getComputedStyle(swalContainer).opacity);
                 console.log('   - Pointer-events:', window.getComputedStyle(swalContainer).pointerEvents);
@@ -1094,8 +1094,8 @@ window.actualizarCantidadTallaProceso = function(input) {
 window.cerrarEditorTallas = function() {
     const modal = document.getElementById('modal-editor-tallas');
     if (modal) {
-        console.log('🔍 [EDITOR-TALLAS] Cerrando modal...');
-        console.log('🔍 [EDITOR-TALLAS] Z-index ANTES de cerrar:', window.getComputedStyle(modal).zIndex);
+        console.log(' [EDITOR-TALLAS] Cerrando modal...');
+        console.log(' [EDITOR-TALLAS] Z-index ANTES de cerrar:', window.getComputedStyle(modal).zIndex);
         modal.style.display = 'none';
         console.log(' [EDITOR-TALLAS] Modal cerrado. Display:', window.getComputedStyle(modal).display);
     }
@@ -1156,7 +1156,7 @@ window.actualizarResumenTallasProceso = function() {
     console.log('[actualizarResumenTallasProceso] 🎬 Iniciando renderización de resumen...');
     
     const resumen = document.getElementById('proceso-tallas-resumen');
-    console.log('[actualizarResumenTallasProceso] 🔍 Elemento resumen encontrado?:', !!resumen);
+    console.log('[actualizarResumenTallasProceso]  Elemento resumen encontrado?:', !!resumen);
     
     if (!resumen) {
         console.warn('[actualizarResumenTallasProceso]  NO SE ENCONTRÓ elemento #proceso-tallas-resumen');
@@ -1180,7 +1180,7 @@ window.actualizarResumenTallasProceso = function() {
     
     // Obtener cantidades desde tallasCantidadesProceso (ESTRUCTURA DEL PROCESO, NO DE LA PRENDA)
     const tallasProceso = window.tallasCantidadesProceso || { dama: {}, caballero: {} };
-    console.log('[actualizarResumenTallasProceso] 📦 tallasProceso para renderizar:', tallasProceso);
+    console.log('[actualizarResumenTallasProceso]  tallasProceso para renderizar:', tallasProceso);
     
     if (window.tallasSeleccionadasProceso.dama.length > 0) {
         console.log('[actualizarResumenTallasProceso] 👩 Renderizando DAMA:', window.tallasSeleccionadasProceso.dama);
@@ -1233,7 +1233,7 @@ window.actualizarResumenTallasProceso = function() {
         console.log('[actualizarResumenTallasProceso] 📐 Renderizando SOBREMEDIDA:', window.tallasCantidadesProceso.sobremedida);
         
         const sobremedidaHTML = Object.entries(window.tallasCantidadesProceso.sobremedida).map(([genero, cantidad]) => {
-            console.log(`[actualizarResumenTallasProceso] 📦 SOBREMEDIDA ${genero}: ${cantidad}`);
+            console.log(`[actualizarResumenTallasProceso]  SOBREMEDIDA ${genero}: ${cantidad}`);
             const colorMap = {
                 'DAMA': { bg: '#fce7f3', text: '#be185d' },
                 'CABALLERO': { bg: '#dbeafe', text: '#1d4ed8' },
@@ -1260,8 +1260,8 @@ window.actualizarResumenTallasProceso = function() {
     }
     
     html += '</div>';
-    console.log('[actualizarResumenTallasProceso] 🎨 HTML generado (length):', html.length);
-    console.log('[actualizarResumenTallasProceso] 🎨 HTML preview:', html.substring(0, 200) + '...');
+    console.log('[actualizarResumenTallasProceso]  HTML generado (length):', html.length);
+    console.log('[actualizarResumenTallasProceso]  HTML preview:', html.substring(0, 200) + '...');
     
     resumen.innerHTML = html;
     console.log('[actualizarResumenTallasProceso]  HTML inyectado en DOM');
@@ -1276,7 +1276,7 @@ window.agregarProcesoAlPedido = function() {
     }
     
     try {
-        // 🔴 FIX CRÍTICO: Combinar imágenes nuevas (File) + existentes (URLs)
+        //  FIX CRÍTICO: Combinar imágenes nuevas (File) + existentes (URLs)
         // IMPORTANTE: Filtrar null de ambos arrays para soportar eliminación de imágenes
         const imagenesNuevas = imagenesProcesoActual.filter(img => img !== null);
         const imagenesExistentes = (window.imagenesProcesoExistentes || []).filter(img => img !== null);
@@ -1338,7 +1338,7 @@ window.agregarProcesoAlPedido = function() {
             // EDICIÓN: Usar el nuevo sistema de ProcesosEditor
             console.log('✏️ [EDICIÓN] Guardando cambios del proceso con ProcesosEditor');
             
-            // 🔴 FIX CRÍTICO: Si es un NUEVO proceso en modo edición, agregarlo a window.procesosSeleccionados
+            //  FIX CRÍTICO: Si es un NUEVO proceso en modo edición, agregarlo a window.procesosSeleccionados
             // Esto ocurre cuando el usuario agrega un proceso que no existía previamente
             if (!window.procesosSeleccionados) {
                 window.procesosSeleccionados = {};
@@ -1351,7 +1351,7 @@ window.agregarProcesoAlPedido = function() {
                     tipo: procesoActual,
                     datos: datos
                 };
-                console.log('✅ [EDICIÓN] Nuevo proceso agregado:', {
+                console.log(' [EDICIÓN] Nuevo proceso agregado:', {
                     tipo: procesoActual,
                     datos: window.procesosSeleccionados[procesoActual].datos
                 });

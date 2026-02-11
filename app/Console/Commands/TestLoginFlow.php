@@ -40,7 +40,7 @@ class TestLoginFlow extends Command
         $user = User::where('email', $email)->first();
         
         if (!$user) {
-            $this->error("   ❌ Usuario NO encontrado: {$email}");
+            $this->error("    Usuario NO encontrado: {$email}");
             return;
         }
         
@@ -54,7 +54,7 @@ class TestLoginFlow extends Command
         if (Auth::attempt($credentials)) {
             $this->line('    Autenticación exitosa');
         } else {
-            $this->error('   ❌ Autenticación fallida');
+            $this->error('    Autenticación fallida');
             $this->line('   Posibles causas:');
             $this->line('   - Contraseña incorrecta');
             $this->line('   - Usuario inactivo');
@@ -78,7 +78,7 @@ class TestLoginFlow extends Command
         if ($authenticatedUser) {
             $this->line("    Usuario autenticado: {$authenticatedUser->name}");
         } else {
-            $this->error('   ❌ No hay usuario autenticado');
+            $this->error('    No hay usuario autenticado');
             return;
         }
         
@@ -90,7 +90,7 @@ class TestLoginFlow extends Command
         if ($authenticatedUser->hasRole('costurero')) {
             $this->line('    Usuario tiene rol costurero');
         } else {
-            $this->error('   ❌ Usuario NO tiene rol costurero');
+            $this->error('    Usuario NO tiene rol costurero');
         }
         
         $this->line('');
@@ -101,7 +101,7 @@ class TestLoginFlow extends Command
         if ($authenticatedUser->hasAnyRole(['cortador', 'costurero'])) {
             $this->line('    Middleware OperarioAccess permitiría acceso');
         } else {
-            $this->error('   ❌ Middleware OperarioAccess rechazaría acceso');
+            $this->error('    Middleware OperarioAccess rechazaría acceso');
         }
         
         $this->line('');
@@ -118,7 +118,7 @@ class TestLoginFlow extends Command
             $this->line("      Tipo: {$datosOperario->tipo}");
             
         } catch (\Exception $e) {
-            $this->error("   ❌ Error al obtener datos: {$e->getMessage()}");
+            $this->error("    Error al obtener datos: {$e->getMessage()}");
             return;
         }
         

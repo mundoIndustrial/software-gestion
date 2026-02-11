@@ -8,6 +8,7 @@ use App\Http\Controllers\Api_temp\PedidoController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Modules\Pedidos\Infrastructure\Http\Controllers\PedidoEppController;
 use App\Infrastructure\Http\Controllers\AsistenciaPersonalController;
+use App\Infrastructure\Http\Controllers\PrendaEditorController;
 
 /**
  * RUTAS PÚBLICAS - DATOS GENERALES (SIN AUTENTICACIÓN)
@@ -346,14 +347,104 @@ Route::post('test-image', [\App\Http\Controllers\TestImageController::class, 'pr
  */
 Route::prefix('cartera')->name('cartera.')->middleware(['auth'])->group(function () {
     Route::get('pedidos', function () {
-        $pedidos = \App\Models\PedidoProduccion::where('estado', 'pendiente_cartera')
-            ->select('id', 'numero_pedido', 'cliente', 'estado', 'area', 'novedades', 'forma_pago', 'fecha_creacion', 'fecha_estimada')
-            ->orderBy('fecha_creacion', 'desc')
-            ->get();
-            
-        return response()->json([
-            'success' => true,
-            'data' => $pedidos->toArray()
-        ]);
-    })->name('pedidos.list');
+        return response()->json(['data' => []]);
+    });
+});
+
+/**
+ * API Routes for Prenda Editor (DDD Architecture)
+ * 
+ * Prefix: /api/prendas
+ * Auth: middleware('auth')
+ * Controller: App\Infrastructure\Http\Controllers\PrendaEditorController
+ * 
+ * Implementa DDD con separación de responsabilidades:
+ * - Domain: ValueObjects, Entities, Services
+ * - Application: DTOs, Services, Handlers
+ * - Infrastructure: Controllers, Repositories
+ */
+Route::prefix('prendas')->name('prendas.')->middleware(['auth'])->group(function () {
+    
+    // Edición de prendas
+    Route::get('{id}/editar', [PrendaEditorController::class, 'editar'])
+        ->name('editar');
+    
+    // Preparar datos para guardar
+    Route::post('preparar-guardar', [PrendaEditorController::class, 'prepararGuardar'])
+        ->name('preparar-guardar');
+    
+    // Validación de prendas
+    Route::post('validar', [PrendaEditorController::class, 'validar'])
+        ->name('validar');
+    
+    // Tipos de manga disponibles
+    Route::get('tipos-manga', [PrendaEditorController::class, 'tiposManga'])
+        ->name('tipos-manga');
+    
+    // Debug endpoint
+    Route::get('debug/{id}', [PrendaEditorController::class, 'debug'])
+        ->name('debug');
+});
+
+/**
+ * API Routes for Cotización Prenda (Reflectivo/Logo)
+ */
+Route::prefix('cotizaciones')->name('cotizaciones.')->middleware(['auth'])->group(function () {
+    
+    // Datos específicos de cotización para prendas
+    Route::get('{cotizacionId}/prendas/{prendaId}/datos-cotizacion', [PrendaEditorController::class, 'datosCotizacion'])
+        ->name('prendas.datos-cotizacion');
+});
+
+/**
+ * API Routes for ColoresPorTalla System
+ * Gestiona asignaciones de colores a tallas de prendas
+ */
+Route::prefix('colores-por-talla')->name('colores-por-talla.')->middleware(['auth'])->group(function () {
+    
+    // Obtener asignaciones existentes
+    Route::get('asignaciones', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'index'])
+        ->name('asignaciones.index');
+    
+    // Guardar asignación de colores
+    Route::post('asignaciones', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'store'])
+        ->name('asignaciones.store');
+    
+    // Actualizar asignación específica
+    Route::patch('asignaciones/{id}', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'update'])
+        ->name('asignaciones.update');
+    
+    // Eliminar asignación
+    Route::delete('asignaciones/{id}', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'destroy'])
+        ->name('asignaciones.destroy');
+    
+    // Obtener colores disponibles para talla
+    Route::get('colores-disponibles/{genero}/{talla}', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'coloresDisponibles'])
+        ->name('colores-disponibles');
+    
+    // Obtener tallas disponibles para género
+    Route::get('tallas-disponibles/{genero}', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'tallasDisponibles'])
+        ->name('tallas-disponibles');
+    
+    // Procesar asignación del wizard (múltiples tallas)
+    Route::post('procesar-asignacion-wizard', [App\Infrastructure\Http\Controllers\ColoresPorTallaController::class, 'procesarAsignacionWizard'])
+        ->name('procesar-asignacion-wizard');
+});
+
+/**
+ * API Routes for Prenda Tallas Processing (DDD)
+ */
+Route::prefix('prendas')->name('prendas.')->middleware(['auth'])->group(function () {
+    
+    // Procesamiento de tallas con DDD
+    Route::post('{id}/procesar-tallas', [PrendaEditorController::class, 'procesarTallas'])
+        ->name('procesar-tallas');
+    
+    // Procesamiento de variaciones con DDD
+    Route::post('{id}/procesar-variaciones', [PrendaEditorController::class, 'procesarVariaciones'])
+        ->name('procesar-variaciones');
+    
+    // Procesamiento de procesos con DDD
+    Route::post('{id}/procesar-procesos', [PrendaEditorController::class, 'procesarProcesos'])
+        ->name('procesar-procesos');
 });

@@ -51,20 +51,20 @@ const components = [
 // Función para cargar un componente
 function loadComponent(component) {
     return new Promise((resolve, reject) => {
-        console.log(`📦 Cargando componente: ${component.name}`);
+        console.log(` Cargando componente: ${component.name}`);
         
         const script = document.createElement('script');
         script.src = component.path;
         script.async = true;
         
         script.onload = () => {
-            console.log(`✅ Componente cargado: ${component.name}`);
+            console.log(` Componente cargado: ${component.name}`);
             window.PrendasModule.components[component.name] = true;
             resolve();
         };
         
         script.onerror = () => {
-            console.error(`❌ Error cargando componente: ${component.name}`);
+            console.error(` Error cargando componente: ${component.name}`);
             reject(new Error(`Failed to load component: ${component.name}`));
         };
         
@@ -75,7 +75,7 @@ function loadComponent(component) {
 // Cargar todos los componentes
 async function loadAllComponents() {
     try {
-        console.log('🔄 Iniciando carga de componentes del módulo de prendas...');
+        console.log(' Iniciando carga de componentes del módulo de prendas...');
         
         for (const component of components) {
             await loadComponent(component);
@@ -85,9 +85,9 @@ async function loadAllComponents() {
         window.PrendasModule.loaded = true;
         
         console.log('🎉 Módulo de prendas completamente cargado');
-        console.log('📦 Componentes disponibles:');
+        console.log(' Componentes disponibles:');
         components.forEach(comp => {
-            console.log(`  ✅ ${comp.name}: ${comp.description}`);
+            console.log(`   ${comp.name}: ${comp.description}`);
         });
         
         // Disparar evento de carga completa
@@ -108,7 +108,7 @@ async function loadAllComponents() {
         return true;
         
     } catch (error) {
-        console.error('❌ Error cargando módulo de prendas:', error);
+        console.error(' Error cargando módulo de prendas:', error);
         window.PrendasModule.error = error;
         return false;
     }

@@ -1219,13 +1219,13 @@
         });
         
         if (!containerMobile) {
-            console.error('❌ ERROR: No se encontró #factura-container-mobile');
+            console.error(' ERROR: No se encontró #factura-container-mobile');
             console.log('📋 IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
             return;
         }
         
         // Mostrar el contenedor
-        console.log('📦 Mostrando containerMobile');
+        console.log(' Mostrando containerMobile');
         containerMobile.style.display = 'block';
         
         const numeroPedido = containerMobile.dataset.numeroPedido;
@@ -1234,7 +1234,7 @@
         console.log('📌 Tipo de recibo del dataset:', tipoRecibo);
         
         if (!numeroPedido) {
-            console.error('❌ ERROR: numeroPedido no encontrado en dataset');
+            console.error(' ERROR: numeroPedido no encontrado en dataset');
             return;
         }
         
@@ -1246,7 +1246,7 @@
         }
         console.log('🌐 URL API (nuevo endpoint operario):', apiUrl);
         
-        console.log('🚀 Iniciando fetch a:', apiUrl);
+        console.log(' Iniciando fetch a:', apiUrl);
         fetch(apiUrl)
             .then(function(response) {
                 console.log('📨 Respuesta del servidor:', {
@@ -1257,24 +1257,24 @@
                 });
                 
                 if (!response.ok) {
-                    console.error('❌ ERROR: Status no OK:', response.status);
+                    console.error(' ERROR: Status no OK:', response.status);
                     throw new Error('API error: ' + response.status);
                 }
                 return response.json();
             })
             .then(function(response) {
-                console.log('📦 Datos JSON recibidos:', response);
-                console.log('✅ ¿Tiene success?', response.success);
-                console.log('✅ ¿Tiene data?', !!response.data);
+                console.log(' Datos JSON recibidos:', response);
+                console.log(' ¿Tiene success?', response.success);
+                console.log(' ¿Tiene data?', !!response.data);
                 
                 // El endpoint retorna {success: true, data: {...}}
                 if (!response.success || !response.data) {
-                    console.error('❌ ERROR: Respuesta inválida');
+                    console.error(' ERROR: Respuesta inválida');
                     throw new Error('Respuesta inválida del API');
                 }
 
                 const data = response.data;
-                console.log('✅ Datos válidos:', data);
+                console.log(' Datos válidos:', data);
                 
                 // Procesar prendas para construir descripción formateada
                 let descripcionFormateada = '';
@@ -1419,7 +1419,7 @@
 
             })
             .catch(function(error) {
-                console.error('❌ ERROR en fetch/then:', {
+                console.error(' ERROR en fetch/then:', {
                     mensaje: error.message,
                     stack: error.stack,
                     error: error

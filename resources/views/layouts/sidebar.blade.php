@@ -193,7 +193,7 @@
             <a href="{{ route('gestion-bodega.pedidos') }}"
                class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
                aria-label="Gestión de pedidos - Bodega">
-              <span class="menu-label">📦 Gestión Pedidos</span>
+              <span class="menu-label"> Gestión Pedidos</span>
             </a>
           </li>
           @endif

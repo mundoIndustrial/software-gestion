@@ -92,7 +92,7 @@ ColoresPorTalla.limpiarAsignaciones()
 - Traduce llamadas antiguas a la nueva arquitectura
 - Facilita migración gradual
 
-## 🔄 Flujo de Datos
+##  Flujo de Datos
 
 ```
 Usuario → ColoresPorTalla → [StateManager, AsignacionManager, WizardManager, UIRenderer] → DOM
@@ -141,7 +141,7 @@ En los archivos Blade, cargar en este orden específico:
 - Más fácil identificar el origen de problemas
 - Mejor trazabilidad de errores
 
-## 🔄 Migración desde API Antigua
+##  Migración desde API Antigua
 
 ### Para código existente que usa la API antigua:
 
@@ -202,7 +202,7 @@ window.ColoresPorTalla.toggleVistaAsignacion();
 - Traduce API antigua a nueva
 - Mantiene compatibilidad hacia atrás
 
-## 🚀 Futuras Mejoras
+##  Futuras Mejoras
 
 1. **TypeScript**: Migrar a TypeScript para mejor tipado
 2. **Unit Tests**: Agregar suite de pruebas unitarias

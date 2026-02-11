@@ -477,7 +477,7 @@
         <input 
             type="text" 
             id="searchInput" 
-            placeholder="🔍 Buscar por cliente, número de pedido..." 
+            placeholder=" Buscar por cliente, número de pedido..." 
             style="flex: 1; min-width: 250px; max-width: 600px;"
         />
         <button 

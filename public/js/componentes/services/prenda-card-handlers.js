@@ -14,8 +14,8 @@ window.PrendaCardHandlers = {
         document.addEventListener('click', (e) => {
             if (e.target.closest('.btn-menu-tres-puntos')) {
                 console.log('[DEBUG GLOBAL] 🖱️ Click capturado en listener global - btn-menu-tres-puntos');
-                console.log('[DEBUG GLOBAL] 📦 Target:', e.target);
-                console.log('[DEBUG GLOBAL] 📦 Closest:', e.target.closest('.btn-menu-tres-puntos'));
+                console.log('[DEBUG GLOBAL]  Target:', e.target);
+                console.log('[DEBUG GLOBAL]  Closest:', e.target.closest('.btn-menu-tres-puntos'));
             }
         }, true); // Use capture phase
         
@@ -30,8 +30,8 @@ window.PrendaCardHandlers = {
                 
                 const submenu = btn.nextElementSibling;
                 
-                console.log('[PrendaCardHandlers] 📦 Botón:', btn);
-                console.log('[PrendaCardHandlers] 📦 Submenú:', submenu);
+                console.log('[PrendaCardHandlers]  Botón:', btn);
+                console.log('[PrendaCardHandlers]  Submenú:', submenu);
                 
                 document.querySelectorAll('.submenu-prenda').forEach(menu => {
                     if (menu !== submenu) menu.style.display = 'none';
@@ -39,9 +39,9 @@ window.PrendaCardHandlers = {
                 
                 if (submenu) {
                     submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-                    console.log('[PrendaCardHandlers] 🔄 Submenú display cambiado a:', submenu.style.display);
+                    console.log('[PrendaCardHandlers]  Submenú display cambiado a:', submenu.style.display);
                 } else {
-                    console.error('[PrendaCardHandlers] ❌ No se encontró el submenú');
+                    console.error('[PrendaCardHandlers]  No se encontró el submenú');
                 }
                 return; // Salir para no procesar otros listeners
             }
@@ -67,8 +67,8 @@ window.PrendaCardHandlers = {
                 }, 300); // 300ms de protección
                 
                 console.log('[PrendaCardHandlers] 🖱️ CLICK detectado en sección expandible');
-                console.log('[PrendaCardHandlers] 📦 Target:', e.target);
-                console.log('[PrendaCardHandlers] 📦 Closest header:', header);
+                console.log('[PrendaCardHandlers]  Target:', e.target);
+                console.log('[PrendaCardHandlers]  Closest header:', header);
 
                 const content = header.nextElementSibling;
                 
@@ -83,7 +83,7 @@ window.PrendaCardHandlers = {
                     header.classList.toggle('active');
                     
                     const isActive = content.classList.contains('active');
-                    console.log('[PrendaCardHandlers] 🔄 Toggle completado:', { wasActive, isActive });
+                    console.log('[PrendaCardHandlers]  Toggle completado:', { wasActive, isActive });
                     console.log('[PrendaCardHandlers] 📄 Nuevas clases content:', content.className);
                     console.log('[PrendaCardHandlers] 📄 Nuevas clases header:', header.className);
                     
@@ -186,12 +186,12 @@ window.PrendaCardHandlers = {
                         });
                         
                         // Verificar contenido de la sección
-                        console.log('[PrendaCardHandlers] 📦 Contenido HTML de la sección:', content.innerHTML.substring(0, 200) + '...');
-                        console.log('[PrendaCardHandlers] 📦 Contenido HTML completo:', content.innerHTML);
-                        console.log('[PrendaCardHandlers] 📦 Número de elementos hijos:', content.children.length);
-                        console.log('[PrendaCardHandlers] 📦 Altura scrollHeight:', content.scrollHeight);
-                        console.log('[PrendaCardHandlers] 📦 Altura clientHeight:', content.clientHeight);
-                        console.log('[PrendaCardHandlers] 📦 OffsetHeight:', content.offsetHeight);
+                        console.log('[PrendaCardHandlers]  Contenido HTML de la sección:', content.innerHTML.substring(0, 200) + '...');
+                        console.log('[PrendaCardHandlers]  Contenido HTML completo:', content.innerHTML);
+                        console.log('[PrendaCardHandlers]  Número de elementos hijos:', content.children.length);
+                        console.log('[PrendaCardHandlers]  Altura scrollHeight:', content.scrollHeight);
+                        console.log('[PrendaCardHandlers]  Altura clientHeight:', content.clientHeight);
+                        console.log('[PrendaCardHandlers]  OffsetHeight:', content.offsetHeight);
                         
                         // Verificar si hay elementos específicos según el tipo de sección
                         const section = header.getAttribute('data-section');
@@ -223,8 +223,8 @@ window.PrendaCardHandlers = {
                             console.log('[PrendaCardHandlers] ⚙️ Procesos encontrados:', procesos.length);
                         }
                         
-                        // 🔍 DIAGNÓSTICO AVANZADO - Verificar elementos padres
-                        console.log('[PrendaCardHandlers] 🔍 DIAGNÓSTICO DE PADRES:');
+                        //  DIAGNÓSTICO AVANZADO - Verificar elementos padres
+                        console.log('[PrendaCardHandlers]  DIAGNÓSTICO DE PADRES:');
                         let parent = content.parentElement;
                         let level = 0;
                         while (parent && level < 8) { // Aumenté a 8 niveles
@@ -253,8 +253,8 @@ window.PrendaCardHandlers = {
                                 parentStyle.visibility === 'hidden' || 
                                 parentStyle.opacity === '0' ||
                                 parentRect.height === 0) {
-                                console.error(`[PrendaCardHandlers] ❌ PADRE OCULTO EN NIVEL ${level}:`, parent);
-                                console.error(`[PrendaCardHandlers] ❌ Razón: display=${parentStyle.display}, visibility=${parentStyle.visibility}, opacity=${parentStyle.opacity}, height=${parentRect.height}`);
+                                console.error(`[PrendaCardHandlers]  PADRE OCULTO EN NIVEL ${level}:`, parent);
+                                console.error(`[PrendaCardHandlers]  Razón: display=${parentStyle.display}, visibility=${parentStyle.visibility}, opacity=${parentStyle.opacity}, height=${parentRect.height}`);
                             }
                             
                             parent = parent.parentElement;
@@ -274,7 +274,7 @@ window.PrendaCardHandlers = {
                         });
                     }, 50);
                 } else {
-                    console.log('[PrendaCardHandlers] ❌ Content no válido o no tiene clase seccion-expandible-content');
+                    console.log('[PrendaCardHandlers]  Content no válido o no tiene clase seccion-expandible-content');
                 }
             }
 
@@ -367,8 +367,8 @@ window.PrendaCardHandlers = {
                 const btn = e.target.closest('.btn-eliminar-prenda');
                 const prendaIndex = parseInt(btn.dataset.prendaIndex);
 
-                console.log('🔍 [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
-                console.log('🔍 [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
+                console.log(' [ELIMINAR-PRENDA] Iniciando eliminación de prenda:', prendaIndex);
+                console.log(' [ELIMINAR-PRENDA] window.gestionItemsUI existe:', !!window.gestionItemsUI);
                 
                 // Usar el método eliminarItem de GestionItemsUI que maneja correctamente la lógica
                 // (incluyendo confirmación, re-indexación y renderización)

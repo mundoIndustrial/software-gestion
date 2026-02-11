@@ -397,7 +397,7 @@ function renderizarTablaEPP() {
     console.log('📋 [renderizarTablaEPP] Iniciado. Total items:', eppAgregadosList.length);
     const tbody = document.getElementById('cuerpoTablaEPP');
     if (!tbody) {
-        console.error('❌ [renderizarTablaEPP] tbody no encontrado');
+        console.error(' [renderizarTablaEPP] tbody no encontrado');
         return;
     }
     
@@ -582,7 +582,7 @@ async function guardarNuevoEPP() {
         }
 
     } catch (error) {
-        console.error('❌ [guardarNuevoEPP] Error:', error);
+        console.error(' [guardarNuevoEPP] Error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -700,7 +700,7 @@ function editarEPPAgregado(eppData) {
 
 function guardarEdicionEPP() {
     if (!eppEnEdicion) {
-        console.error('❌ No hay EPP en edición');
+        console.error(' No hay EPP en edición');
         return;
     }
 
@@ -864,7 +864,7 @@ function finalizarAgregarEPP() {
             imagenes: []
         };
         window.itemsPedido.push(eppData);
-        console.log(`📦 [finalizarAgregarEPP] EPP guardado en window.itemsPedido:`, epp);
+        console.log(` [finalizarAgregarEPP] EPP guardado en window.itemsPedido:`, epp);
         
         //  CRÍTICO: También registrar en gestionItemsUI para mantener sincronizado
         if (window.gestionItemsUI && typeof window.gestionItemsUI.agregarEPPAlOrden === 'function') {

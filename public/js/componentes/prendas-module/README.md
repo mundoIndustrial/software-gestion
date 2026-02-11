@@ -76,7 +76,7 @@ public/js/componentes/prendas-module/
 - `mostrarModalError()`
 - `mostrarGaleriaImagenesPrenda()`
 
-## 🚀 Instalación y Uso
+##  Instalación y Uso
 
 ### Carga Automática (Recomendado)
 
@@ -99,7 +99,7 @@ public/js/componentes/prendas-module/
 <script src="/js/componentes/prendas-module/prendas-wrappers-v2.js"></script>
 ```
 
-## 🔄 Eventos del Módulo
+##  Eventos del Módulo
 
 ### Eventos Disponibles
 
@@ -112,7 +112,7 @@ window.addEventListener('prendasModuleLoaded', (e) => {
 
 // Evento legacy para compatibilidad
 window.addEventListener('prendasWrappersLoaded', () => {
-    console.log('🔄 Sistema legacy cargado');
+    console.log(' Sistema legacy cargado');
 });
 ```
 
@@ -136,7 +136,7 @@ console.log(window.PrendasModule);
 
 ## 🎯 Características
 
-### ✅ Ventajas de la Estructura Modular
+###  Ventajas de la Estructura Modular
 
 - **Organización**: Archivos agrupados por funcionalidad
 - **Claridad**: Fácil identificar a qué pertenece cada archivo
@@ -160,11 +160,11 @@ console.log(window.PrendasModule);
 El módulo incluye logs detallados con emojis:
 
 ```
-🚀 Prendas Module v2.0.0 - Iniciando carga de componentes...
-📦 Cargando componente: ui-helpers
-✅ Componente cargado: ui-helpers
-📦 Cargando componente: image-management
-✅ Componente cargado: image-management
+ Prendas Module v2.0.0 - Iniciando carga de componentes...
+ Cargando componente: ui-helpers
+ Componente cargado: ui-helpers
+ Cargando componente: image-management
+ Componente cargado: image-management
 🎉 Prendas Module completamente cargado
 ```
 
@@ -173,9 +173,9 @@ El módulo incluye logs detallados con emojis:
 - **📁 Carpeta clara**: Todo en `prendas-module/`
 - **🏷️ Nombres descriptivos**: Cada archivo indica su propósito
 - **📋 Documentación**: README en cada nivel
-- **🔍 Búsqueda fácil**: Encuentra rápidamente lo que necesitas
+- ** Búsqueda fácil**: Encuentra rápidamente lo que necesitas
 
-## 🔄 Migración desde Sistema Antiguo
+##  Migración desde Sistema Antiguo
 
 ### Cambios Principales
 
@@ -218,7 +218,7 @@ El módulo incluye logs detallados con emojis:
 - **Testing**: Testing unitario por componente
 - **Documentación**: README específico por componente
 
-### 🚀 Rendimiento
+###  Rendimiento
 - **Carga Eficiente**: Solo carga componentes necesarios
 - **Lazy Loading**: Posibilidad de carga bajo demanda
 - **Cache**: Mejor cacheo por componente

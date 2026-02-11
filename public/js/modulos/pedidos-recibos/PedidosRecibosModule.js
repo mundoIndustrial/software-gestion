@@ -97,7 +97,7 @@ export class PedidosRecibosModule {
                 endpoint = `/pedidos-public/${pedidoId}/recibos-datos`;
             }
 
-            console.log('🔍 [PedidosRecibosModule] Endpoint seleccionado:', endpoint);
+            console.log(' [PedidosRecibosModule] Endpoint seleccionado:', endpoint);
 
             // Obtener datos del servidor
             const response = await fetch(endpoint);
@@ -130,7 +130,7 @@ export class PedidosRecibosModule {
             if (!prendaData) throw new Error(`Prenda ${prendaId} no encontrada`);
 
             // Debug: Verificar si los recibos están llegando desde el backend
-            console.log('🔍 [PedidosRecibosModule] Prenda encontrada:', {
+            console.log(' [PedidosRecibosModule] Prenda encontrada:', {
                 prendaId,
                 prendaData: prendaData,
                 recibos: prendaData.recibos,

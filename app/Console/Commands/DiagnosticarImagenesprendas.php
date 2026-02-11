@@ -17,7 +17,7 @@ class DiagnosticarImagenesPrendas extends Command
 
     public function handle()
     {
-        $this->info('🔍 INICIANDO DIAGNÓSTICO DE IMÁGENES DE PRENDAS');
+        $this->info(' INICIANDO DIAGNÓSTICO DE IMÁGENES DE PRENDAS');
         $this->info('═════════════════════════════════════════════════');
 
         $pedidoId = $this->option('pedido-id');

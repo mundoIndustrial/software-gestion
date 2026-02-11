@@ -59,7 +59,7 @@
                 <!-- Buscador -->
                 <div class="flex-1">
                     <label class="block text-xs font-black text-slate-700 mb-3 uppercase tracking-wider">
-                        🔍 Buscar Pedido
+                         Buscar Pedido
                     </label>
                     <input
                         type="text"
@@ -88,7 +88,7 @@
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded transition border-2 border-blue-600"
                     title="Actualizar tabla"
                 >
-                    🔄 Actualizar
+                     Actualizar
                 </button>
             </div>
         </div>
@@ -142,7 +142,7 @@
                                                     {{ \Carbon\Carbon::parse($items[0]['fecha_pedido'])->format('d-m-Y') }}
                                                     @if($esAnulada)
                                                         <span class="ml-2 inline-flex items-center px-2 py-1 text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider rounded-full">
-                                                            ❌ Anulado 
+                                                             Anulado 
                                                             @if($items[0]['nombre_asesor_anulacion'])
                                                                 por el asesor {{ $items[0]['nombre_asesor_anulacion'] }}
                                                             @endif
@@ -175,7 +175,7 @@
                                             
                                             @if($tuvoCambios)
                                                 <span class="inline-flex items-center px-3 py-1.5 text-[11px] font-semibold bg-cyan-50 text-cyan-700 uppercase tracking-wider rounded" title="Este pedido ha sido modificado recientemente">
-                                                    🔄 Actualizado
+                                                     Actualizado
                                                 </span>
                                             @endif
                                             
@@ -878,7 +878,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
             }
         } else if (data.conflict) {
             // Conflicto de edición
-            alert('⚠️ Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
+            alert(' Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
             location.reload();
         } else {
             alert('Error: ' + (data.message || 'No se pudieron guardar los cambios'));

@@ -848,7 +848,7 @@ class CotizacionPrendaController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('❌ Error obteniendo telas de cotización', [
+            Log::error(' Error obteniendo telas de cotización', [
                 'error' => $e->getMessage(),
                 'cotizacion_id' => $cotizacionId,
                 'prenda_id' => $prendaId,

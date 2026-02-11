@@ -175,14 +175,14 @@ class EppController extends Controller
                 'data' => $epp,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('[EppController] ❌ Validation error:', ['errors' => $e->errors()]);
+            \Log::error('[EppController]  Validation error:', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Validación fallida',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('[EppController] ❌ Error creating EPP', [
+            \Log::error('[EppController]  Error creating EPP', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

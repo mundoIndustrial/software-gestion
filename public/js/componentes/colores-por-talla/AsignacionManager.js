@@ -8,7 +8,7 @@ window.AsignacionManager = (function() {
 
     // Verificar dependencias
     if (!window.StateManager) {
-        console.error('[AsignacionManager] ❌ StateManager no está disponible. Asegúrate de cargar StateManager.js antes que AsignacionManager.js');
+        console.error('[AsignacionManager]  StateManager no está disponible. Asegúrate de cargar StateManager.js antes que AsignacionManager.js');
         return {};
     }
 
@@ -68,7 +68,7 @@ window.AsignacionManager = (function() {
             }
             
             StateManager.setAsignaciones(asignaciones);
-            console.log('[AsignacionManager] ✅ Color personalizado agregado:', asignaciones[clave]);
+            console.log('[AsignacionManager]  Color personalizado agregado:', asignaciones[clave]);
             
             return true;
         },
@@ -295,7 +295,7 @@ window.AsignacionManager = (function() {
             
             // Fallback: buscar en la tabla del DOM
             if (colores.length === 0) {
-                console.log('[AsignacionManager] 🔄 Fallback: Buscando en tabla DOM');
+                console.log('[AsignacionManager]  Fallback: Buscando en tabla DOM');
                 
                 const tbody = document.getElementById('tbody-telas');
                 if (tbody) {
@@ -323,7 +323,7 @@ window.AsignacionManager = (function() {
                 }
             }
             
-            console.log('[AsignacionManager] ✅ Colores encontrados:', colores);
+            console.log('[AsignacionManager]  Colores encontrados:', colores);
             return colores;
         },
 

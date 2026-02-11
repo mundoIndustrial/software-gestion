@@ -60,7 +60,7 @@ window.notifyEchoReady = function() {
         try {
             callback();
         } catch (error) {
-            console.error('[Echo] ❌ Error ejecutando callback:', error);
+            console.error('[Echo]  Error ejecutando callback:', error);
         }
     }
 };
@@ -93,7 +93,7 @@ function initializeEcho() {
             wsPort,
             wssPort: wsPort,
             forceTLS,
-            enabledTransports: ['ws', 'wss'], // ✅ Habilitar WebSockets
+            enabledTransports: ['ws', 'wss'], //  Habilitar WebSockets
             disableStats: true,
             authEndpoint: '/broadcasting/auth',
             auth: {
@@ -110,7 +110,7 @@ function initializeEcho() {
         }, 100);
         
     } catch (error) {
-        console.error('[Echo] ❌ Error inicializando Echo:', error);
+        console.error('[Echo]  Error inicializando Echo:', error);
     }
 }
 

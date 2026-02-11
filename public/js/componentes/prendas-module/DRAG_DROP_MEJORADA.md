@@ -29,12 +29,12 @@ He modificado el área de drag & drop para imágenes de tela para que sea mucho 
 
 ## 🎯 Nueva Experiencia
 
-### ✅ **Área de Arrastre Ampliada**
+###  **Área de Arrastre Ampliada**
 - **Toda la celda**: Ahora puedes arrastrar en cualquier parte de la celda
 - **Más visible**: El área es mucho más grande y evidente
 - **Feedback claro**: Texto e icono que indican la funcionalidad
 
-### 🎨 **Botón Centrado y Mejorado**
+###  **Botón Centrado y Mejorado**
 - **Más grande**: Botón con padding aumentado
 - **Texto descriptivo**: "Agregar imagen" en lugar de solo el ícono
 - **Efectos visuales**: Sombra y transform al arrastrar
@@ -44,7 +44,7 @@ He modificado el área de drag & drop para imágenes de tela para que sea mucho 
 - **Icono visual**: Icono de nube que se ilumina al arrastrar
 - **Color dinámico**: El texto cambia de color al arrastrar archivos
 
-### 🔄 **Feedback Visual Mejorado**
+###  **Feedback Visual Mejorado**
 - **Drag Over**: Fondo azul claro, borde visible, ligera escala
 - **Drag Leave**: Restauración suave de todos los estilos
 - **Drop**: Restauración completa con feedback de estado
@@ -56,7 +56,7 @@ He modificado el área de drag & drop para imágenes de tela para que sea mucho 
 - **Menos precisión**: No necesitas apuntar exactamente al botón
 - **Intuitivo**: El área completa indica que puedes arrastrar
 
-### 🎨 **Mejor UX**
+###  **Mejor UX**
 - **Feedback claro**: El usuario sabe exactamente qué hacer
 - **Visual consistente**: Mismo comportamiento en todas las áreas
 - **Accesibilidad**: Más fácil para usuarios con dificultades motoras
@@ -66,7 +66,7 @@ He modificado el área de drag & drop para imágenes de tela para que sea mucho 
 - **Claridad**: El diseño indica claramente la funcionalidad
 - **Consistencia**: Mismo comportamiento en botón y preview
 
-## 🔄 Compatibilidad Mantenida
+##  Compatibilidad Mantenida
 
 - **100% Compatible**: Código existente sigue funcionando
 - **Sin cambios requeridos**: No necesita modificar otros archivos

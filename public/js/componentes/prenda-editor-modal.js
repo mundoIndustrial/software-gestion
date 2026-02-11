@@ -138,11 +138,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             throw new Error('No se recibieron datos válidos del servidor');
         }
         
-        // 🔍 DEBUG: Mostrar todas las prendas disponibles para comparación
-        console.log('🔍 [EDITAR-PRENDA] Prendas disponibles en respuesta:', resultado.data.prendas?.length || 0);
+        //  DEBUG: Mostrar todas las prendas disponibles para comparación
+        console.log(' [EDITAR-PRENDA] Prendas disponibles en respuesta:', resultado.data.prendas?.length || 0);
         if (resultado.data.prendas && resultado.data.prendas.length > 0) {
             resultado.data.prendas.forEach((p, idx) => {
-                console.log(`🔍 [EDITAR-PRENDA] Prenda[${idx}]:`, {
+                console.log(` [EDITAR-PRENDA] Prenda[${idx}]:`, {
                     id: p.id,
                     prenda_pedido_id: p.prenda_pedido_id,
                     nombre: p.nombre,
@@ -156,8 +156,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         }
         
-        // 🔍 DEBUG: Mostrar qué estamos buscando
-        console.log('🔍 [EDITAR-PRENDA] Buscando prenda con:', {
+        //  DEBUG: Mostrar qué estamos buscando
+        console.log(' [EDITAR-PRENDA] Buscando prenda con:', {
             buscar_id: prenda.id,
             buscar_prenda_pedido_id: prenda.prenda_pedido_id || prenda.id,
             buscar_nombre: prenda.nombre,
@@ -167,7 +167,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         });
         
         // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL MEJORADA
-        // 🔴 FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
+        //  FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
         const prendaCompleta = resultado.data.prendas?.find(p => {
             // Coincidencia por prenda_pedido_id (PRIORIDAD MÁXIMA - es el ID único de la BD)
             const coincidePrendaPedidoId = (p.prenda_pedido_id === prenda.prenda_pedido_id || 
@@ -181,7 +181,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                                    resultado.data.prendas.indexOf(p) === prendasIndex);
             
             // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES) - baja prioridad
-            // 🔴 FIX: Evitar comparar undefined === undefined (siempre es true)
+            //  FIX: Evitar comparar undefined === undefined (siempre es true)
             const coincideNombre = (
                 // Caso 1: nombre_prenda local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
                 (prenda.nombre_prenda && p.nombre_prenda && p.nombre_prenda === prenda.nombre_prenda) ||
@@ -203,7 +203,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si coincide por prenda_pedido_id, es la más confiable (prioridad máxima)
             if (coincidePrendaPedidoId) {
-                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por prenda_pedido_id encontrada (ÓPTIMA):', {
+                console.log(' [EDITAR-PRENDA]  Coincidencia por prenda_pedido_id encontrada (ÓPTIMA):', {
                     encontrado_id: p.id,
                     encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_id: prenda.id,
@@ -216,7 +216,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si coincide por índice, es confiable (segunda prioridad)
             if (coincideIndice) {
-                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por índice encontrada:', {
+                console.log(' [EDITAR-PRENDA]  Coincidencia por índice encontrada:', {
                     encontrado_id: p.id,
                     encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_id: prenda.id,
@@ -229,7 +229,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si coincide por ID, es suficiente (tercera prioridad)
             if (coincideId) {
-                console.log(' [EDITAR-PRENDA] ✅ Coincidencia por ID encontrada:', {
+                console.log(' [EDITAR-PRENDA]  Coincidencia por ID encontrada:', {
                     encontrado_id: p.id,
                     encontrado_prenda_pedido_id: p.prenda_pedido_id,
                     buscado_id: prenda.id,
@@ -241,7 +241,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
             // Si no coincide por ID, requerir coincidencia por nombre (baja prioridad)
             if (coincideNombre) {
-                console.log(' [EDITAR-PRENDA] ⚠️  Coincidencia por nombre encontrada (validar que sea correcta):', {
+                console.log(' [EDITAR-PRENDA]   Coincidencia por nombre encontrada (validar que sea correcta):', {
                     encontrado_nombre: p.nombre || p.nombre_prenda || p.nombre_producto,
                     encontrado_nombre_prenda: p.nombre_prenda,
                     encontrado_nombre_producto: p.nombre_producto,
@@ -262,7 +262,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         });
         
         if (!prendaCompleta) {
-            console.error('❌ [EDITAR-PRENDA] No se encontró la prenda. Datos de búsqueda:', {
+            console.error(' [EDITAR-PRENDA] No se encontró la prenda. Datos de búsqueda:', {
                 buscar: {
                     id: prenda.id,
                     nombre_prenda: prenda.nombre_prenda,
@@ -278,8 +278,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             throw new Error('Prenda no encontrada en los datos del pedido');
         }
         
-        // 🔍 DEBUG CRÍTICO: Ver exactamente qué propiedades tiene prendaCompleta del servidor
-        console.log('🔍 [EDITAR-PRENDA-ESTRUCTURA-COMPLETA] prendaCompleta del servidor tiene:', {
+        //  DEBUG CRÍTICO: Ver exactamente qué propiedades tiene prendaCompleta del servidor
+        console.log(' [EDITAR-PRENDA-ESTRUCTURA-COMPLETA] prendaCompleta del servidor tiene:', {
             claves_principales: Object.keys(prendaCompleta),
             tiene_imagenes: !!prendaCompleta.imagenes,
             tiene_fotos: !!prendaCompleta.fotos,
@@ -289,8 +289,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             primerItemFotos: prendaCompleta.fotos?.[0]
         });
         
-        // 🔍 DEBUG: Verificar IDs de prendaCompleta
-        console.log('🔍 [EDITAR-PRENDA] IDs en prendaCompleta:', {
+        //  DEBUG: Verificar IDs de prendaCompleta
+        console.log(' [EDITAR-PRENDA] IDs en prendaCompleta:', {
             id: prendaCompleta.id,
             prenda_pedido_id: prendaCompleta.prenda_pedido_id,
             nombre_prenda: prendaCompleta.nombre_prenda,
@@ -307,7 +307,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         });
         
         // TRANSFORMAR DATOS PARA EL MODAL
-        console.log('🔄 [EDITAR-PRENDA] Transformando datos para el modal...');
+        console.log(' [EDITAR-PRENDA] Transformando datos para el modal...');
         
         // Función auxiliar para manejar URLs de imágenes (robusta para ambos casos)
         const agregarStorage = (url) => {
@@ -347,15 +347,15 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // DETECTAR FORMATO DE TALLAS
         if (prendaCompleta.generosConTallas && typeof prendaCompleta.generosConTallas === 'object') {
             formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}, SOBREMEDIDA: {DAMA: 34}}
-            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: NUEVO (generosConTallas)');
+            console.log(' [DETECCIÓN] Formato de tallas detectado: NUEVO (generosConTallas)');
         } else if (prendaCompleta.tallas && typeof prendaCompleta.tallas === 'object' && 
             Object.keys(prendaCompleta.tallas).some(g => ['DAMA', 'CABALLERO', 'UNISEX', 'SOBREMEDIDA'].includes(g.toUpperCase()))) {
             formatoDetectado.tallas = 'nuevo'; // {DAMA: {L: 20}, SOBREMEDIDA: {DAMA: 34}}
-            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: NUEVO (objeto por género)');
+            console.log(' [DETECCIÓN] Formato de tallas detectado: NUEVO (objeto por género)');
         } else if ((prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) || 
                    (prendaCompleta.tallas_caballero && Array.isArray(prendaCompleta.tallas_caballero))) {
             formatoDetectado.tallas = 'antiguo'; // {tallas_dama: [{talla: "L", cantidad: 20}]}
-            console.log('🔍 [DETECCIÓN] Formato de tallas detectado: ANTIGUO (arrays por género)');
+            console.log(' [DETECCIÓN] Formato de tallas detectado: ANTIGUO (arrays por género)');
         } else {
             console.warn(' [DETECCIÓN] Formato de tallas no reconocido, usando defaults');
         }
@@ -364,11 +364,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         if (prendaCompleta.telas_array && Array.isArray(prendaCompleta.telas_array) && 
             prendaCompleta.telas_array.length > 0) {
             formatoDetectado.telas = 'nuevo'; // {telas_array: [{id: 1, tela_id: 19, color_id: 61}]}
-            console.log('🔍 [DETECCIÓN] Formato de telas detectado: NUEVO (telas_array)');
+            console.log(' [DETECCIÓN] Formato de telas detectado: NUEVO (telas_array)');
         } else if (prendaCompleta.colores_telas && Array.isArray(prendaCompleta.colores_telas) && 
                    prendaCompleta.colores_telas.length > 0) {
             formatoDetectado.telas = 'antiguo'; // {colores_telas: [{id: 1, color_id: 61}]}
-            console.log('🔍 [DETECCIÓN] Formato de telas detectado: ANTIGUO (colores_telas)');
+            console.log(' [DETECCIÓN] Formato de telas detectado: ANTIGUO (colores_telas)');
         } else {
             console.warn(' [DETECCIÓN] Formato de telas no reconocido, usando defaults');
         }
@@ -379,13 +379,13 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             const v = prendaCompleta.variantes[0];
             if (v.manga || v.broche || v.bolsillos) {
                 formatoDetectado.variantes = 'nuevo'; // {manga: "Larga", broche: "Botón"}
-                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: NUEVO (campos directos)');
+                console.log(' [DETECCIÓN] Formato de variantes detectado: NUEVO (campos directos)');
             } else if (v.tipo_manga || v.tipo_broche_boton || v.tiene_bolsillos !== undefined) {
                 formatoDetectado.variantes = 'antiguo'; // {tipo_manga: "Larga", tipo_broche_boton: "Botón"}
-                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: ANTIGUO (campos prefijados)');
+                console.log(' [DETECCIÓN] Formato de variantes detectado: ANTIGUO (campos prefijados)');
             } else {
                 formatoDetectado.variantes = 'mixto'; // Mezcla de formatos
-                console.log('🔍 [DETECCIÓN] Formato de variantes detectado: MIXTO');
+                console.log(' [DETECCIÓN] Formato de variantes detectado: MIXTO');
             }
         } else {
             console.warn(' [DETECCIÓN] Formato de variantes no reconocido, usando defaults');
@@ -398,14 +398,14 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         if (formatoDetectado.telas === 'nuevo') {
             // Formato nuevo: {telas_array: [{id: 1, tela_id: 19, color_id: 61, nombre: "ALFONSO"}]}
-            console.log('🔄 [TELAS] Procesando formato NUEVO (telas_array):', prendaCompleta.telas_array);
+            console.log(' [TELAS] Procesando formato NUEVO (telas_array):', prendaCompleta.telas_array);
             
             prendaCompleta.telas_array.forEach((ct) => {
-                // 🔴 FIX: Permitir que color_id sea null (es opcional en la BD)
+                //  FIX: Permitir que color_id sea null (es opcional en la BD)
                 // Solo requerimos id y tela_id que son obligatorios
                 if (ct && typeof ct === 'object' && ct.id && ct.tela_id) {
                     // DEBUG: Ver TODOS los campos que vienen del servidor
-                    console.log('🔍 [TELAS-DEBUG] Estructura COMPLETA de ct del servidor:', {
+                    console.log(' [TELAS-DEBUG] Estructura COMPLETA de ct del servidor:', {
                         ...ct,
                         tiene_tela_object: typeof ct.tela === 'object',
                         tiene_color_object: typeof ct.color === 'object',
@@ -454,10 +454,10 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         } else if (formatoDetectado.telas === 'antiguo') {
             // Formato antiguo: {colores_telas: [{id: 1, color_id: 61, tela_id: 19}]}
-            console.log('🔄 [TELAS] Procesando formato ANTIGUO (colores_telas):', prendaCompleta.colores_telas);
+            console.log(' [TELAS] Procesando formato ANTIGUO (colores_telas):', prendaCompleta.colores_telas);
             
             prendaCompleta.colores_telas.forEach((ct) => {
-                // 🔴 FIX: Permitir que color_id sea null (es opcional en la BD)
+                //  FIX: Permitir que color_id sea null (es opcional en la BD)
                 if (ct && typeof ct === 'object' && ct.id && ct.tela_id) {
                     // Validación segura de objetos anidados para evitar null reference
                     const color = ct.color || {};
@@ -492,7 +492,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         } else {
             // Sin datos - array vacío para no romper el flujo
-            console.log('🔄 [TELAS] Sin datos, usando array vacío');
+            console.log(' [TELAS] Sin datos, usando array vacío');
         }
         
         // TRANSFORMAR VARIANTES - Basado en detección automática
@@ -502,9 +502,9 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             Array.isArray(prendaCompleta.variantes) && prendaCompleta.variantes.length > 0) {
             
             const v = prendaCompleta.variantes[0];
-            console.log('🔄 [VARIANTES] Procesando formato detectado:', formatoDetectado.variantes, v);
+            console.log(' [VARIANTES] Procesando formato detectado:', formatoDetectado.variantes, v);
             
-            // 🔴 FIX: Si tipo_manga_id existe pero tipo_manga está vacío, buscar el nombre
+            //  FIX: Si tipo_manga_id existe pero tipo_manga está vacío, buscar el nombre
             // Prioridad: 1. v.manga (string directo), 2. v.tipo_manga (string), 3. v.manga (objeto)
             let nombreTipoManga = '';
             
@@ -522,7 +522,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             }
             
             if ((v.tipo_manga_id || v.manga_id) && !nombreTipoManga) {
-                console.log('🔍 [VARIANTES] tipo_manga_id encontrado pero sin nombre, buscando...');
+                console.log(' [VARIANTES] tipo_manga_id encontrado pero sin nombre, buscando...');
                 try {
                     // Intentar cargar tipos de manga si está disponible la función
                     if (typeof cargarTiposMangaDisponibles === 'function') {
@@ -535,11 +535,11 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                         }
                     }
                 } catch (error) {
-                    console.warn('⚠️ [VARIANTES] Error buscando nombre de manga:', error);
+                    console.warn(' [VARIANTES] Error buscando nombre de manga:', error);
                 }
             }
             
-            // 🔴 FIX: Si tipo_broche_boton_id existe pero tipo_broche_boton está vacío, buscar el nombre
+            //  FIX: Si tipo_broche_boton_id existe pero tipo_broche_boton está vacío, buscar el nombre
             // Prioridad: 1. v.broche (string directo), 2. v.tipo_broche (string), 3. v.tipo_broche_boton (objeto)
             let nombreTipoBroche = '';
             
@@ -557,7 +557,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             }
             
             if ((v.tipo_broche_boton_id || v.broche_id || v.tipo_broche_id) && !nombreTipoBroche) {
-                console.log('🔍 [VARIANTES] tipo_broche_boton_id encontrado pero sin nombre, buscando...');
+                console.log(' [VARIANTES] tipo_broche_boton_id encontrado pero sin nombre, buscando...');
                 try {
                     // Intentar cargar tipos de broche si está disponible la función
                     if (typeof cargarTiposBrocheBotonDisponibles === 'function') {
@@ -570,7 +570,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                         }
                     }
                 } catch (error) {
-                    console.warn('⚠️ [VARIANTES] Error buscando nombre de broche:', error);
+                    console.warn(' [VARIANTES] Error buscando nombre de broche:', error);
                 }
             }
             
@@ -610,7 +610,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             
         } else {
             // Sin datos - defaults seguros para no romper el flujo
-            console.log('🔄 [VARIANTES] Sin datos válidos, usando defaults seguros');
+            console.log(' [VARIANTES] Sin datos válidos, usando defaults seguros');
             variantes = {
                 tipo_manga: '',
                 tipo_manga_id: undefined,
@@ -630,7 +630,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         
         if (formatoDetectado.tallas === 'nuevo') {
             // Formato nuevo: {DAMA: {L: 20, M: 10}, SOBREMEDIDA: {DAMA: 34}}
-            console.log('🔄 [TALLAS] Procesando formato NUEVO:', prendaCompleta.tallas || prendaCompleta.generosConTallas);
+            console.log(' [TALLAS] Procesando formato NUEVO:', prendaCompleta.tallas || prendaCompleta.generosConTallas);
             
             // Usar generosConTallas si existe, si no usar tallas
             const fuente = prendaCompleta.generosConTallas || prendaCompleta.tallas || {};
@@ -670,7 +670,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             });
         } else if (formatoDetectado.tallas === 'antiguo') {
             // Formato antiguo: {tallas_dama: [{talla: "L", cantidad: 20}]}
-            console.log('🔄 [TALLAS] Procesando formato ANTIGUO');
+            console.log(' [TALLAS] Procesando formato ANTIGUO');
             
             if (prendaCompleta.tallas_dama && Array.isArray(prendaCompleta.tallas_dama)) {
                 tallasPorGenero.DAMA = {};
@@ -691,7 +691,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             }
         } else {
             // Sin datos - estructura vacía para no romper el flujo
-            console.log('🔄 [TALLAS] Sin datos, usando estructura vacía');
+            console.log(' [TALLAS] Sin datos, usando estructura vacía');
             tallasPorGenero.DAMA = {};
             tallasPorGenero.CABALLERO = {};
             tallasPorGenero.UNISEX = {};
@@ -728,7 +728,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                     });
                     
                     // Usar mayúsculas para consistencia con el procesamiento en prenda-editor.js
-                    // ✅ IMPORTANTE: Pasar directamente SIN envoltura .cantidades
+                    //  IMPORTANTE: Pasar directamente SIN envoltura .cantidades
                     generosConTallasEstructura[genero] = cantidadesValidadas;
                     
                     console.log(` [EDITAR-PRENDA] Género ${genero} procesado:`, cantidadesValidadas);
@@ -748,8 +748,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         }
         
         console.log(' [EDITAR-PRENDA] Tallas como array:', tallasArray);
-        console.log('🔍 [EDITAR-PRENDA] generosConTallasEstructura:', generosConTallasEstructura);
-        console.log('🔍 [EDITAR-PRENDA] tallasPorGenero (crudo):', tallasPorGenero);
+        console.log(' [EDITAR-PRENDA] generosConTallasEstructura:', generosConTallasEstructura);
+        console.log(' [EDITAR-PRENDA] tallasPorGenero (crudo):', tallasPorGenero);
         
         // Preparar datos para el modal
         // Transformar imágenes de la prenda
@@ -763,7 +763,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             hayImagenes: !!prendaCompleta.imagenes
         });
         
-        // 🔍 LOG CRÍTICO: Ver EXACTAMENTE qué hay en la primera imagen RAW
+        //  LOG CRÍTICO: Ver EXACTAMENTE qué hay en la primera imagen RAW
         if (prendaImagenesRaw.length > 0) {
             console.log('🖼️ [EDITAR-PRENDA-RAW-DETAIL] ESTRUCTURA DE PRIMERA IMAGEN RAW:', {
                 primerImg: prendaImagenesRaw[0],
@@ -781,7 +781,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             const url = typeof img === 'string' ? img : (img.ruta_webp || img.ruta_original || img.url);
             const urlFinal = agregarStorage(url);
             
-            // 🔴 FIX CRÍTICO: Si no tiene ID, crear uno basado en la ruta (workaround)
+            //  FIX CRÍTICO: Si no tiene ID, crear uno basado en la ruta (workaround)
             // Esto asegura que cada imagen tiene un identificador único incluso si el servidor no lo envía
             let imagenId = img.id;
             if (!imagenId || imagenId === null || imagenId === undefined) {
@@ -826,7 +826,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             datos: prendaImagenesMapeadas
         });
         
-        // 🔍 LOG CRÍTICO: Comparar ANTES vs DESPUÉS del mapeo
+        //  LOG CRÍTICO: Comparar ANTES vs DESPUÉS del mapeo
         if (prendaImagenesMapeadas.length > 0 && prendaImagenesRaw.length > 0) {
             console.log('🖼️ [EDITAR-PRENDA-MAPEO-COMPARACION] ANTES vs DESPUÉS:', {
                 raw_tiene_id: prendaImagenesRaw[0].id !== undefined,
@@ -846,7 +846,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
                            prendaCompleta.nombre_producto || 
                            '';
         
-        console.log('🔍 [EDITAR-PRENDA] Extracción de nombre:', {
+        console.log(' [EDITAR-PRENDA] Extracción de nombre:', {
             nombre: prendaCompleta.nombre,
             nombre_prenda: prendaCompleta.nombre_prenda,
             nombre_producto: prendaCompleta.nombre_producto,
@@ -868,10 +868,10 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             nombre_prenda: nombrePrenda,
             nombre_producto: nombrePrenda,
             descripcion: prendaCompleta.descripcion || '',
-            // 🔴 CRÍTICO: Incluir imágenes MAPEADAS (con IDs) para que prendaData las tenga
+            //  CRÍTICO: Incluir imágenes MAPEADAS (con IDs) para que prendaData las tenga
             // Esto asegura que modal-novedad-edicion.js reciba imágenes con id/ruta_original/ruta_webp
             imagenes: prendaImagenesMapeadas,
-            // 🔴 LÓGICA CORRECTA DE ORIGEN:
+            //  LÓGICA CORRECTA DE ORIGEN:
             // Prioridad 1: prendaCompleta.origen (si viene establecido)
             // Prioridad 2: prenda.origen (origen anterior)
             // Prioridad 3: Convertir de_bodega a origen (verificar ambos prendaCompleta y prenda)
@@ -954,7 +954,7 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
             origen: prendaCompleta.origen
         });
         
-        console.log('🔴🔴🔴 [EDITAR-PRENDA] LÓGICA DE ORIGEN APLICADA 🔴🔴🔴', {
+        console.log(' [EDITAR-PRENDA] LÓGICA DE ORIGEN APLICADA ', {
             'prendaCompleta.origen': prendaCompleta.origen,
             'prenda.origen': prenda.origen,
             'prendaCompleta.de_bodega': prendaCompleta.de_bodega,
@@ -976,8 +976,8 @@ async function abrirEditarPrendaEspecifica(prendasIndex) {
         // Cerrar el modal de seleccionar prenda
         Swal.close();
         
-        // 🔍 DEBUG: Verificar qué se va a guardar en window.prendaEnEdicion
-        console.log('🔍 [EDITAR-PRENDA] Guardando en window.prendaEnEdicion:', {
+        //  DEBUG: Verificar qué se va a guardar en window.prendaEnEdicion
+        console.log(' [EDITAR-PRENDA] Guardando en window.prendaEnEdicion:', {
             prendaCompletaId: prenda.id,
             prendaCompletaPrendaPedidoId: prenda.prenda_pedido_id,
             prendaCompletaNombre: prenda.nombre_prenda,
@@ -1186,51 +1186,84 @@ function eliminarFilaTela(btn) {
  * Cerrar modal de prendas
  */
 function cerrarModalPrendaNueva() {
-    // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
-    if (window.gestionItemsUI) {
-        window.gestionItemsUI.prendaEditIndex = null;
-    }
-    window.prendaEditIndex = null;
+    const inicioTiempo = performance.now();
+    console.log(' [cerrarModalPrendaNueva] INICIANDO cierre del modal...');
     
-    // Cerrar el modal directamente
-    const modal = document.getElementById('modal-agregar-prenda-nueva');
-    if (modal) {
-        modal.style.setProperty('display', 'none', 'important');
-        modal.classList.remove('active');
-    }
-    
-    // Resetear botón de guardar
-    const btnGuardar = document.getElementById('btn-guardar-prenda');
-    if (btnGuardar) {
-        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
-    }
-    
-    // Limpiar formulario del modal
-    const form = document.getElementById('form-prenda-nueva');
-    if (form) {
-        form.reset();
-    }
-    
-    // 🔥 CRÍTICO: Limpiar TELAS - Array y DOM
-    // Array en memoria
-    if (window.telasAgregadas) {
-        window.telasAgregadas = [];
-    }
-    // También limpiar telasCreacion si existe
-    if (window.telasCreacion) {
-        window.telasCreacion = [];
-    }
-    // 🔥 Limpiar tabla DOM de telas
-    const tbodyTelas = document.getElementById('tbody-telas');
-    if (tbodyTelas) {
-        tbodyTelas.innerHTML = '';
-    }
-    
-    // 🔥 CRÍTICO: Limpiar ASIGNACIONES DE COLORES POR TALLA
-    if (typeof limpiarAsignacionesColores === 'function') {
-        limpiarAsignacionesColores();
+    try {
+        // PASO 1: Resetear prendaEditIndex
+        console.log('→ PASO 1: Reseteando prendaEditIndex...');
+        if (window.gestionItemsUI) {
+            window.gestionItemsUI.prendaEditIndex = null;
+        }
+        window.prendaEditIndex = null;
+        console.log('✓ PASO 1 completado');
+        
+        // PASO 2: Ocultar el modal
+        console.log('→ PASO 2: Ocultando modal...');
+        const modal = document.getElementById('modal-agregar-prenda-nueva');
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+            modal.classList.remove('active');
+        }
+        console.log('✓ PASO 2 completado - Modal debe estar invisible ahora');
+        
+        // PASO 3: Resetear botón de guardar
+        console.log('→ PASO 3: Reseteando botón guardar...');
+        const btnGuardar = document.getElementById('btn-guardar-prenda');
+        if (btnGuardar) {
+            btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
+        }
+        console.log('✓ PASO 3 completado');
+        
+        // PASO 4: Limpiar formulario
+        console.log('→ PASO 4: Limpiando formulario...');
+        const form = document.getElementById('form-prenda-nueva');
+        if (form) {
+            form.reset();
+        }
+        console.log('✓ PASO 4 completado');
+        
+        // PASO 5: Limpiar telas
+        console.log('→ PASO 5: Limpiando arrays de telas...');
+        if (window.telasAgregadas) {
+            window.telasAgregadas = [];
+        }
+        if (window.telasCreacion) {
+            window.telasCreacion = [];
+        }
+        const tbodyTelas = document.getElementById('tbody-telas');
+        if (tbodyTelas) {
+            tbodyTelas.innerHTML = '';
+        }
+        console.log('✓ PASO 5 completado');
+        
+        const tiempoTotalMs = performance.now() - inicioTiempo;
+        console.log(` [cerrarModalPrendaNueva] Modal cerrado SINCRONAMENTE en ${tiempoTotalMs.toFixed(2)}ms`);
+        console.log(` Si ves este mensaje en menos de 100ms, el cierre fue instantáneo`);
+        
+        // PASO 6: Limpiar asignaciones de colores SIN BLOQUEAR (completamente asíncrono)
+        console.log('→ PASO 6: Programando limpieza asíncrona de asignaciones de colores...');
+        setTimeout(() => {
+            try {
+                if (typeof limpiarAsignacionesColores === 'function') {
+                    const inicioAsincronoTiempo = performance.now();
+                    limpiarAsignacionesColores();
+                    const tiempoAsincronoMs = performance.now() - inicioAsincronoTiempo;
+                    console.log(`✓ Limpieza asíncrona de colores completada en ${tiempoAsincronoMs.toFixed(2)}ms`);
+                }
+            } catch (error) {
+                console.error(' Error en limpieza asíncrona de colores:', error);
+            }
+        }, 50);
+        console.log('✓ PASO 6 completado (programado para ejecutarse después)');
+        
+    } catch (error) {
+        console.error(' [cerrarModalPrendaNueva] Error:', error);
+        console.error('Stack:', error.stack);
     }
 }
+
+
 
 /**
  * Actualizar título del modal dinámicamente según modo (crear/editar)
@@ -1602,3 +1635,116 @@ window.habilitarControlsTelasEdicion = function() {
         console.log('[habilitarControlsTelasEdicion] ✓ Todos los controles de telas están habilitados');
     }, 200);
 };
+
+// ============================================================
+// CONFIGURAR LISTENERS DEL MODAL AL INICIALIZAR
+// ============================================================
+
+// Función para configurar los listeners
+function configurarListenersModalPrenda() {
+    const btnCerrar = document.querySelector('#modal-agregar-prenda-nueva .modal-close-btn');
+    const modalOverlay = document.getElementById('modal-agregar-prenda-nueva');
+    
+    if (!btnCerrar) {
+        console.warn(' [Modal] Botón cerrar no encontrado');
+        return;
+    }
+    
+    console.log('🔧 [Modal] Configurando listeners...');
+    
+    // LISTENER DEL BOTÓN CERRAR
+    btnCerrar.onclick = function(e) {
+        const clickStart = performance.now();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        console.log('🔘 [Modal] Botón cerrar clickeado → Ejecutando cerrarModalPrendaNueva()');
+        console.log(' [Debug] Ejecutando cerrarModalPrendaNueva() ahora...');
+        cerrarModalPrendaNueva();
+        const clickDuration = performance.now() - clickStart;
+        console.log(` [Debug] cerrarModalPrendaNueva() tardó ${clickDuration.toFixed(2)}ms`);
+    };
+    console.log('✓ Listener del botón cerrar configurado');
+    
+    // LISTENER PARA CLICK FUERA DEL MODAL
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                console.log('📍 [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
+                cerrarModalPrendaNueva();
+            }
+        });
+        console.log('✓ Listener del overlay configurado');
+    }
+    
+    // LISTENER PARA ESC
+    window._escListenerModal = function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modal-agregar-prenda-nueva');
+            if (modal && modal.style.display !== 'none') {
+                console.log('⌨️ [Modal] ESC presionado → Ejecutando cerrarModalPrendaNueva()');
+                cerrarModalPrendaNueva();
+            }
+        }
+    };
+    document.addEventListener('keydown', window._escListenerModal);
+    console.log('✓ Listener de ESC configurado');
+    
+    console.log(' [Modal] Todos los listeners configurados exitosamente');
+}
+
+// Ejecutar cuando el documento está listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', configurarListenersModalPrenda);
+} else {
+    // Si el documento ya está listo, ejecutar inmediatamente
+    setTimeout(configurarListenersModalPrenda, 100);
+}
+
+// ============================================================
+// HERRAMIENTA DE DIAGNÓSTICO: DETECTOR DE DELAYS
+// ============================================================
+
+// Crear herramienta para diagnosticar qué causa los 3 segundos
+window.diagnosticarDelayModalCierre = function() {
+    console.log('\n ==================== DIAGNÓSTICO DE DELAY ====================');
+    console.log('Para identificar el causante del delay de 3 segundos:\n');
+    
+    // Listar todos los timers activos
+    console.log('📋 Verificando procesos activos...\n');
+    
+    // Buscar listeners de eventos en el documento
+    const modalOverlay = document.getElementById('modal-agregar-prenda-nueva');
+    console.log('1️⃣ Modal Overlay:', modalOverlay ? '✓ EXISTE' : ' NO EXISTE');
+    
+    // Verificar si hay algún setInterval activo
+    console.log('2️⃣ setInterval():', '(No se puede listar directamente desde consola)');
+    console.log('   → RECOMENDACIÓN: Abre DevTools → Performance → Record y luego intenta cerrar el modal');
+    console.log('   → Busca barras largas en la timeline que duren ~3 segundos\n');
+    
+    // Verificar fetch/XHR pendientes
+    console.log('3️⃣ Requests pendientes:');
+    // Por desgracia, no podemos acceder directamente a los XHR/fetch pendientes desde consola
+    console.log('   → Abre DevTools → Network tab');
+    console.log('   → Intenta cerrar el modal');
+    console.log('   → Busca alguna request que tarde ~3000ms\n');
+    
+    // Sugerir pasos de depuración
+    console.log(' PASOS DE DEPURACIÓN RECOMENDADOS:\n');
+    console.log('1. Abre el archivo gestion-items-pedido.js');
+    console.log('2. Busca "setTimeout" y "setInterval"');
+    console.log('3. Busca "fetch" y verifica si alguno demora 3 segundos');
+    console.log('4. Busca "3000" para encontrar timeouts de 3 segundos\n');
+    
+    console.log('💡 POSIBLES CULPABLES:\n');
+    console.log('- Una petición fetch que espera respuesta');
+    console.log('- Un setTimeout de 3000ms programado al abrir el modal');
+    console.log('- Un interval que se ejecuta cada 3 segundos');
+    console.log('- Validación síncrona que tarda 3 segundos\n');
+    
+    console.log('===========================================================\n');
+};
+
+console.log('💡 Tip: Ejecuta "diagnosticarDelayModalCierre()" en la consola para ver recomendaciones');
+

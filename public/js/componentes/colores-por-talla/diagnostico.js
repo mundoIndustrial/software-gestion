@@ -45,7 +45,7 @@ window.diagnosticarSistema = function() {
     };
     
     Object.entries(elementosCruciales).forEach(([nombre, elemento]) => {
-        console.log(`  ${nombre}: ${elemento ? '✅ Encontrado' : '❌ NO ENCONTRADO'}`);
+        console.log(`  ${nombre}: ${elemento ? ' Encontrado' : ' NO ENCONTRADO'}`);
     });
     
     // 4. Verificar estado del display
@@ -67,9 +67,9 @@ window.diagnosticarSistema = function() {
                     typeof window.toggleVistaAsignacionColores === 'function';
     
     if (todosOK) {
-        console.log('%c✅ SISTEMA LISTO - El modal está cargado y funcional', 'color: #22c55e; font-weight: bold;');
+        console.log('%c SISTEMA LISTO - El modal está cargado y funcional', 'color: #22c55e; font-weight: bold;');
     } else {
-        console.log('%c⚠️ COMPONENTES FALTANTES - Verifica arriba qué no está disponible', 'color: #f59e0b; font-weight: bold;');
+        console.log('%c COMPONENTES FALTANTES - Verifica arriba qué no está disponible', 'color: #f59e0b; font-weight: bold;');
     }
     
     console.log('\n%c========== FIN DEL DIAGNÓSTICO ==========', 'color: #0066cc; font-weight: bold; font-size: 14px;');
@@ -100,7 +100,7 @@ window.pruebaToggle = function() {
             });
         }, 100);
     } else {
-        console.error('❌ toggleVistaAsignacionColores NO es una función');
+        console.error(' toggleVistaAsignacionColores NO es una función');
     }
 };
 
@@ -112,7 +112,7 @@ window.hacerToggleManual = function() {
     const vistaAsignacion = document.getElementById('vista-asignacion-colores');
     
     if (!vistaTablaTelas || !vistaAsignacion) {
-        console.error('❌ Elementos no encontrados');
+        console.error(' Elementos no encontrados');
         return;
     }
     
@@ -121,17 +121,17 @@ window.hacerToggleManual = function() {
     if (esVistaAsignacionActiva) {
         vistaTablaTelas.style.display = 'block';
         vistaAsignacion.style.display = 'none';
-        console.log('✅ Toggle realizado: Tabla VISIBLE, Asignación OCULTA');
+        console.log(' Toggle realizado: Tabla VISIBLE, Asignación OCULTA');
     } else {
         vistaTablaTelas.style.display = 'none';
         vistaAsignacion.style.display = 'block';
-        console.log('✅ Toggle realizado: Tabla OCULTA, Asignación VISIBLE');
+        console.log(' Toggle realizado: Tabla OCULTA, Asignación VISIBLE');
     }
 };
 
 // Función para verificar solo DOM
 window.verificarDOM = function() {
-    console.log('\n%c🔍 VERIFICACIÓN RÁPIDA DE DOM:', 'color: #0066cc; font-weight: bold;');
+    console.log('\n%c VERIFICACIÓN RÁPIDA DE DOM:', 'color: #0066cc; font-weight: bold;');
     console.log({
         'vista-tabla-telas': !!document.getElementById('vista-tabla-telas'),
         'vista-asignacion-colores': !!document.getElementById('vista-asignacion-colores'),
@@ -141,5 +141,5 @@ window.verificarDOM = function() {
 };
 
 // Registrar cuando los scripts cargan
-console.log('%c✅ Diagnóstico.js cargado. Comandos disponibles: diagnosticarSistema(), pruebaToggle(), hacerToggleManual(), verificarDOM()', 'color: #22c55e; font-weight: bold;');
+console.log('%c Diagnóstico.js cargado. Comandos disponibles: diagnosticarSistema(), pruebaToggle(), hacerToggleManual(), verificarDOM()', 'color: #22c55e; font-weight: bold;');
 

@@ -26,9 +26,9 @@ if ($roleName === 'bodeguero') {
 
 Si bodeguero intenta acceder a otras vistas:
 ```
-GET /vistas?tipo=corte        ❌ BLOQUEADO
-GET /vistas?tipo=costura      ❌ BLOQUEADO
-GET /vistas?origen=bodega     ❌ BLOQUEADO (sin tipo=bodega)
+GET /vistas?tipo=corte         BLOQUEADO
+GET /vistas?tipo=costura       BLOQUEADO
+GET /vistas?origen=bodega      BLOQUEADO (sin tipo=bodega)
 ```
 
 **Comportamiento**:
@@ -80,9 +80,9 @@ Bodeguero ve **SOLO** estas opciones en menú:
 -  Costura Bodega
 
 **No ve**:
-- ❌ Corte (pedidos)
-- ❌ Costura (pedidos)
-- ❌ Control de Calidad
+-  Corte (pedidos)
+-  Costura (pedidos)
+-  Control de Calidad
 
 ## Flujo de Acceso Bodeguero
 
@@ -143,7 +143,7 @@ Bodeguero ve **SOLO** estas opciones en menú:
 
 ## Escenarios de Bloqueo
 
-### ❌ Intento 1: Acceder directamente a `/vistas?tipo=corte`
+###  Intento 1: Acceder directamente a `/vistas?tipo=corte`
 ```
 GET /vistas?tipo=corte
 ↓
@@ -156,7 +156,7 @@ Redirige a: /vistas?tipo=bodega
 Log: "Intento de acceso bloqueado para bodeguero"
 ```
 
-### ❌ Intento 2: Manipular parámetro origen
+###  Intento 2: Manipular parámetro origen
 ```
 GET /vistas?tipo=bodega&origen=otras
 ↓
@@ -167,7 +167,7 @@ Valida: origen !== 'pedido' → BLOQUEAR
 Redirige a: /vistas?tipo=bodega
 ```
 
-### ❌ Intento 3: Acceder sin tipo
+###  Intento 3: Acceder sin tipo
 ```
 GET /vistas
 ↓

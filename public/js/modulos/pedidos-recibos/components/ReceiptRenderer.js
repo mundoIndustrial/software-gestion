@@ -44,7 +44,7 @@ export class ReceiptRenderer {
             const nombreRecibo = String(tipoProceso || recibo.tipo_proceso || recibo.nombre_proceso || 'Recibo').toUpperCase();
             
             // Debug: Verificar qué datos llegan
-            console.log('🔍 [ReceiptRenderer] Datos recibidos:', {
+            console.log(' [ReceiptRenderer] Datos recibidos:', {
                 tipoProceso,
                 prendaData: prendaData,
                 recibos: prendaData?.recibos,
@@ -101,7 +101,7 @@ export class ReceiptRenderer {
             
             // Actualizar el número de pedido/consecutivo (elemento order-pedido)
             const pedidoNumberElement = document.querySelector('#order-pedido');
-            console.log('🔍 [ReceiptRenderer] Buscando elemento #order-pedido:', {
+            console.log(' [ReceiptRenderer] Buscando elemento #order-pedido:', {
                 encontrado: !!pedidoNumberElement,
                 elemento: pedidoNumberElement,
                 todosLosPedidoNumber: document.querySelectorAll('.pedido-number'),
@@ -123,13 +123,13 @@ export class ReceiptRenderer {
                 // Intentar con .pedido-number como fallback
                 const fallbackElement = document.querySelector('.pedido-number');
                 if (fallbackElement) {
-                    console.log('🔄 [ReceiptRenderer] Usando fallback .pedido-number');
+                    console.log(' [ReceiptRenderer] Usando fallback .pedido-number');
                     if (consecutivo) {
                         fallbackElement.textContent = '#' + consecutivo;
                         console.log(' [ReceiptRenderer] Número actualizado con fallback:', '#' + consecutivo);
                     }
                 } else {
-                    console.error('❌ [ReceiptRenderer] Ni #order-pedido ni .pedido-number encontrados');
+                    console.error(' [ReceiptRenderer] Ni #order-pedido ni .pedido-number encontrados');
                 }
             }
             
@@ -224,7 +224,7 @@ export class ReceiptRenderer {
             return;
         }
 
-        console.log('🔍 [ReceiptRenderer._llenarDescripcion] prendaData completo:', {
+        console.log(' [ReceiptRenderer._llenarDescripcion] prendaData completo:', {
             nombre: prendaData.nombre,
             numero: prendaData.numero,
             tela: prendaData.tela,

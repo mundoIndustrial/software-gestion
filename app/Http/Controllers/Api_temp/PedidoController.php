@@ -592,7 +592,7 @@ class PedidoController extends Controller
             // FILTRO INSUMOS: Si es insumos, filtrar prendas para mostrar SOLO de_bodega = false
             $esInsumos = auth()->check() && auth()->user()->hasRole('insumos');
             if ($esInsumos && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
-                \Log::info('[PedidoController] 📦 FILTRO INSUMOS: Mostrando solo prendas con de_bodega = false', [
+                \Log::info('[PedidoController]  FILTRO INSUMOS: Mostrando solo prendas con de_bodega = false', [
                     'pedido_id' => $pedido->id,
                     'usuario_id' => auth()->id(),
                     'total_prendas_antes' => count($responseData['prendas'])
@@ -610,7 +610,7 @@ class PedidoController extends Controller
                 
                 $responseData['prendas'] = array_values($prendasFiltradas); // Reindexar array
                 
-                \Log::info('[PedidoController] 📦 Prendas filtradas para insumos', [
+                \Log::info('[PedidoController]  Prendas filtradas para insumos', [
                     'pedido_id' => $pedido->id,
                     'total_prendas_antes' => count($responseData['prendas'] ?? []) + count($prendasFiltradas),
                     'total_prendas_despues' => count($prendasFiltradas),
@@ -624,7 +624,7 @@ class PedidoController extends Controller
                 
                 // Validar que insumos tenga al menos UNA prenda después del filtrado
                 if (empty($prendasFiltradas)) {
-                    \Log::warning('[PedidoController] 📦 Insumos intenta ver pedido sin prendas de_bodega=false', [
+                    \Log::warning('[PedidoController]  Insumos intenta ver pedido sin prendas de_bodega=false', [
                         'pedido_id' => $pedido->id,
                         'numero_pedido' => $pedido->numero_pedido,
                         'usuario_id' => auth()->id()
@@ -1134,7 +1134,7 @@ class PedidoController extends Controller
                 ], 400);
             }
 
-            // ✅ BÚSQUEDA EXACTA: Solo coincidencia perfecta
+            //  BÚSQUEDA EXACTA: Solo coincidencia perfecta
             // NO usar case-insensitive - debe ser EXACTAMENTE lo que el usuario escribe
             $tela = \App\Models\TelaPrenda::where('nombre', $nombre)
                 ->first();
@@ -1142,7 +1142,7 @@ class PedidoController extends Controller
             // Si no existe, crearla
             if (!$tela) {
                 $tela = \App\Models\TelaPrenda::create([
-                    'nombre' => $nombre,  // ✅ Guardar exactamente como enviadas
+                    'nombre' => $nombre,  //  Guardar exactamente como enviadas
                     'referencia' => $referencia,
                     'activo' => true
                 ]);
@@ -1219,7 +1219,7 @@ class PedidoController extends Controller
                 ], 400);
             }
 
-            // ✅ BÚSQUEDA EXACTA: Solo coincidencia perfecta
+            //  BÚSQUEDA EXACTA: Solo coincidencia perfecta
             // NO usar case-insensitive - debe ser EXACTAMENTE lo que el usuario escribe
             $color = \App\Models\ColorPrenda::where('nombre', $nombre)
                 ->first();
@@ -1227,7 +1227,7 @@ class PedidoController extends Controller
             // Si no existe, crearlo
             if (!$color) {
                 $color = \App\Models\ColorPrenda::create([
-                    'nombre' => $nombre,  // ✅ Guardar exactamente como enviadas
+                    'nombre' => $nombre,  //  Guardar exactamente como enviadas
                     'codigo' => $codigo,
                     'activo' => true
                 ]);

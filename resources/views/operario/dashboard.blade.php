@@ -700,7 +700,7 @@
 
     // Función para filtrar prendas por tipo de recibo
     window.filtrarPrendasPorRecibo = function(filtro) {
-        console.log('🔍 [FILTRO] Iniciando filtro:', filtro);
+        console.log(' [FILTRO] Iniciando filtro:', filtro);
         
         // Actualizar estado de botones
         document.querySelectorAll('.badge-filtro').forEach(btn => {
@@ -711,12 +711,12 @@
         // Filtrar tarjetas
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) {
-            console.error('❌ ordenesList no encontrado');
+            console.error(' ordenesList no encontrado');
             return;
         }
 
         const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
-        console.log('📊 Total de tarjetas:', ordenCards.length);
+        console.log(' Total de tarjetas:', ordenCards.length);
         
         let mostradas = 0;
         let ocultadas = 0;
@@ -744,13 +744,13 @@
             }
         });
         
-        console.log(`✅ Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
+        console.log(` Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     };
 
     // Función para abrir detalles de recibos
     function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo) {
-        console.log('🔍 [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
-        console.log('📊 Parámetros recibidos:', {
+        console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
+        console.log(' Parámetros recibidos:', {
             numeroPedido: numeroPedido,
             prendaId: prendaId,
             nombrePrenda: nombrePrenda,
@@ -762,7 +762,7 @@
         
         // Validar que tengamos el número de pedido
         if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
-            console.error('❌ ERROR: numeroPedido está vacío o undefined', numeroPedido);
+            console.error(' ERROR: numeroPedido está vacío o undefined', numeroPedido);
             alert('Error: No se pudo determinar el número de pedido');
             return false;
         }
@@ -785,10 +785,10 @@
         try {
             console.log('⏳ Iniciando navegación...');
             window.location.href = url;
-            console.log('✅ Navegación iniciada exitosamente');
+            console.log(' Navegación iniciada exitosamente');
             return false;
         } catch (error) {
-            console.error('❌ Error al navegar:', error);
+            console.error(' Error al navegar:', error);
             return false;
         }
     }

@@ -42,7 +42,7 @@ class PedidoProduccionObserver
      */
     public function created(PedidoProduccion $pedido): void
     {
-        Log::info('🔴 [PedidoProduccionObserver] ⚠️ OBSERVER CREATED EJECUTÁNDOSE', [
+        Log::info(' [PedidoProduccionObserver]  OBSERVER CREATED EJECUTÁNDOSE', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'auth_id' => Auth::id(),
@@ -52,14 +52,14 @@ class PedidoProduccionObserver
             $userId = Auth::id();
             
             if (!$userId) {
-                Log::warning('[PedidoProduccionObserver] ⚠️ No authenticated user when pedido created', [
+                Log::warning('[PedidoProduccionObserver]  No authenticated user when pedido created', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
                 ]);
                 return;
             }
 
-            Log::info('[PedidoProduccionObserver] ✅ Pedido creado, disparando evento broadcast síncrono', [
+            Log::info('[PedidoProduccionObserver]  Pedido creado, disparando evento broadcast síncrono', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'asesor_id' => $userId,
@@ -76,18 +76,18 @@ class PedidoProduccionObserver
                     'user_name' => $user->name,
                 ]);
                 PedidoCreado::dispatch($pedido, $user);
-                Log::info('[PedidoProduccionObserver] ✅ PedidoCreado::dispatch completado', [
+                Log::info('[PedidoProduccionObserver]  PedidoCreado::dispatch completado', [
                     'pedido_id' => $pedido->id,
                 ]);
             } else {
-                Log::warning('[PedidoProduccionObserver] ⚠️ User no encontrado', [
+                Log::warning('[PedidoProduccionObserver]  User no encontrado', [
                     'pedido_id' => $pedido->id,
                     'user_id' => $userId,
                 ]);
             }
 
         } catch (\Exception $e) {
-            Log::error('[PedidoProduccionObserver] ❌ Error al disparar evento en observer created', [
+            Log::error('[PedidoProduccionObserver]  Error al disparar evento en observer created', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

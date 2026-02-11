@@ -125,8 +125,12 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed transparent; border-radius: 6px; padding: 8px; cursor: pointer;">
-                                            <button type="button" onclick="document.getElementById('modal-agregar-prenda-nueva-file-input').click()" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px;" title="Agregar imagen (opcional) o arrastra una imagen aquí">
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed transparent; border-radius: 6px; padding: 8px; cursor: pointer;"
+                                             ondrop="handleDropTela(event)" 
+                                             ondragover="handleDragOver(event)"
+                                             ondragleave="handleDragLeave(event)"
+                                             onclick="document.getElementById('modal-agregar-prenda-nueva-file-input').click()">
+                                            <button type="button" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px;" title="Agregar imagen (opcional) o arrastra una imagen aquí">
                                                 <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
                                                 <span style="font-size: 0.7rem;">Agregar imagen</span>
                                             </button>
@@ -139,7 +143,18 @@
                                             </div>
                                         </div>
                                         <!-- Preview temporal dentro de la celda - EN EL FLUJO VISUAL Y VISIBLE -->
-                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"></div>
+                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"
+                                             ondrop="handleDropTela(event)" 
+                                             ondragover="handleDragOver(event)"
+                                             ondragleave="handleDragLeave(event)"
+                                             onclick="document.getElementById('modal-agregar-prenda-nueva-file-input').click()">
+                                            
+                                            <!-- Texto de ayuda -->
+                                            <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
+                                                <div class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.5;">cloud_upload</div>
+                                                <div>Arrastra o Ctrl+V para pegar</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; width: 20%;">
                                         <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
@@ -572,6 +587,74 @@ if (window.actualizarTablaTelas) {
         }, 50);
     };
 }
+</script>
+
+<script>
+// Funciones para drag & drop de imágenes de tela
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.style.borderColor = '#3b82f6';
+    event.currentTarget.style.backgroundColor = '#eff6ff';
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.style.borderColor = '#d1d5db';
+    event.currentTarget.style.backgroundColor = '#f9fafb';
+}
+
+function handleDropTela(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Restaurar estilos
+    event.currentTarget.style.borderColor = '#d1d5db';
+    event.currentTarget.style.backgroundColor = '#f9fafb';
+    
+    // Obtener archivos
+    const files = event.dataTransfer.files;
+    if (files.length === 0) return;
+    
+    // Simular input change
+    const input = document.getElementById('nueva-prenda-tela-imagen-input');
+    input.files = files;
+    manejarImagenTela(input);
+}
+
+// Función para manejar paste de imágenes
+document.addEventListener('paste', function(event) {
+    const activeElement = document.activeElement;
+    
+    // Verificar si estamos en un campo de tela
+    if (activeElement && (
+        activeElement.id === 'nueva-prenda-color' || 
+        activeElement.id === 'nueva-prenda-tela' || 
+        activeElement.id === 'nueva-prenda-referencia'
+    )) {
+        
+        const items = event.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    const input = document.getElementById('nueva-prenda-tela-imagen-input');
+                    
+                    // Crear un nuevo FileList
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                    
+                    manejarImagenTela(input);
+                    break;
+                }
+            }
+        }
+    }
+});
 </script>
 
 <!-- Scripts: Módulos desacoplados de Colores por Talla -->

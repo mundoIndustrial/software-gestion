@@ -60,7 +60,7 @@ function loadComponent(component) {
         };
         
         script.onerror = () => {
-            console.error(`❌ Error cargando componente: ${component.name}`);
+            console.error(` Error cargando componente: ${component.name}`);
             reject(new Error(`Failed to load component: ${component.name}`));
         };
         
@@ -96,7 +96,7 @@ async function loadAllComponents() {
         return true;
         
     } catch (error) {
-        console.error('❌ Error cargando Prendas Module:', error);
+        console.error(' Error cargando Prendas Module:', error);
         window.PrendasModule.error = error;
         return false;
     }

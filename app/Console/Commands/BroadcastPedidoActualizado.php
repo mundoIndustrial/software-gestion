@@ -66,7 +66,7 @@ class BroadcastPedidoActualizado extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            Log::error('❌ Error en BroadcastPedidoActualizado', [
+            Log::error(' Error en BroadcastPedidoActualizado', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

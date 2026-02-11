@@ -45,6 +45,6 @@ class CreateBodegaRoles extends Command
             $this->info("✓ Rol '{$roleData['name']}' creado o ya existente");
         }
 
-        $this->info("\n✅ Todos los roles de bodega han sido creados exitosamente");
+        $this->info("\n Todos los roles de bodega han sido creados exitosamente");
     }
 }

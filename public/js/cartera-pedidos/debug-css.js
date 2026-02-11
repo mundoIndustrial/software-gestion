@@ -40,7 +40,7 @@ debugElement('.modern-table-wrapper', 'Table Wrapper');
 console.groupEnd();
 
 // Verificar orden de elementos en el DOM
-console.group('%c🔍 ORDEN EN EL DOM (children del main-content)', 'color: #7c3aed; font-weight: bold; font-size: 13px;');
+console.group('%c ORDEN EN EL DOM (children del main-content)', 'color: #7c3aed; font-weight: bold; font-size: 13px;');
 const mainContent = document.querySelector('.main-content');
 if (mainContent) {
     const children = mainContent.children;
@@ -124,7 +124,7 @@ console.log(`Total de elementos en la página: ${allElements.length}`);
 console.groupEnd();
 
 // Mostrar tabla y header específicamente
-console.group('%c🔴 ANÁLISIS TABLA vs HEADER', 'color: #991b1b; font-weight: bold; font-size: 13px;');
+console.group('%c ANÁLISIS TABLA vs HEADER', 'color: #991b1b; font-weight: bold; font-size: 13px;');
 const header = document.querySelector('header.top-nav');
 const tableWrapper = document.querySelector('.modern-table-wrapper');
 if (header && tableWrapper) {

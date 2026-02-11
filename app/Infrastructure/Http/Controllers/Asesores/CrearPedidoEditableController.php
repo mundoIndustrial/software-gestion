@@ -62,7 +62,7 @@ class CrearPedidoEditableController extends Controller
     public function crearDesdeCotizacion(Request $request): View
     {
         $inicioTotal = microtime(true);
-        Log::info('[CREAR-DESDE-COTIZACION] ⏱️ INICIANDO CARGA DE PÁGINA', [
+        Log::info('[CREAR-DESDE-COTIZACION]  INICIANDO CARGA DE PÁGINA', [
             'usuario_id' => Auth::id(),
             'timestamp' => now(),
         ]);
@@ -153,7 +153,7 @@ class CrearPedidoEditableController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         $tiempoPedidos = round((microtime(true) - $inicioPedidos) * 1000, 2);
-        Log::info('[CREAR-DESDE-COTIZACION] 📦 Pedidos existentes cargados', [
+        Log::info('[CREAR-DESDE-COTIZACION]  Pedidos existentes cargados', [
             'cantidad' => $pedidos->count(),
             'tiempo_ms' => $tiempoPedidos,
             'usuario_id' => $user->id,
@@ -214,7 +214,7 @@ class CrearPedidoEditableController extends Controller
     public function crearNuevo(Request $request): View
     {
         $inicioTotal = microtime(true);
-        Log::info('[CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA', [
+        Log::info('[CREAR-PEDIDO-NUEVO]  INICIANDO CARGA DE PÁGINA', [
             'usuario_id' => Auth::id(),
             'timestamp' => now(),
         ]);
@@ -278,7 +278,7 @@ class CrearPedidoEditableController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         $tiempoPedidos = round((microtime(true) - $inicioPedidos) * 1000, 2);
-        Log::info('[CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados', [
+        Log::info('[CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados', [
             'cantidad' => $pedidos->count(),
             'tiempo_ms' => $tiempoPedidos,
             'usuario_id' => $user->id,
@@ -570,7 +570,7 @@ class CrearPedidoEditableController extends Controller
         $inicioTotal = microtime(true);
 
         try {
-            Log::info('[CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL', [
+            Log::info('[CREAR-PEDIDO]  INICIANDO CREACIÓN TRANSACCIONAL', [
                 'has_pedido_json' => !!$request->input('pedido'),
                 'archivos_count' => count($request->allFiles()),
                 'timestamp' => now(),
@@ -636,7 +636,7 @@ class CrearPedidoEditableController extends Controller
 
             // ====== PASO 4: Iniciar transacción ======
             DB::beginTransaction();
-            Log::debug('[CREAR-PEDIDO] 🔄 Transacción DB iniciada');
+            Log::debug('[CREAR-PEDIDO]  Transacción DB iniciada');
 
             // ====== PASO 5: Crear pedido base ======
             $inicioPaso5 = microtime(true);
@@ -901,7 +901,7 @@ class CrearPedidoEditableController extends Controller
                                     }
                                 }
                             } catch (\Exception $e) {
-                                Log::error('[CrearPedidoEditableController] ❌ Error al procesar color/tela', [
+                                Log::error('[CrearPedidoEditableController]  Error al procesar color/tela', [
                                     'error' => $e->getMessage(),
                                     'tela_data' => $tela,
                                 ]);
@@ -1036,7 +1036,7 @@ class CrearPedidoEditableController extends Controller
      */
     private function procesarYAsignarEpps(Request $request, int $pedidoId, array $epps): void
     {
-        Log::info('[CrearPedidoEditableController] 📦 Procesando EPPs', [
+        Log::info('[CrearPedidoEditableController]  Procesando EPPs', [
             'pedido_id' => $pedidoId,
             'epps_count' => count($epps),
         ]);
@@ -1488,7 +1488,7 @@ class CrearPedidoEditableController extends Controller
             $telaCount = isset($item['telas']) && is_array($item['telas']) ? count($item['telas']) : 0;
             $procesosKeys = isset($item['procesos']) && is_array($item['procesos']) ? array_keys($item['procesos']) : [];
             
-            \Log::info('[CrearPedidoEditableController] 🔍 Estructura item ' . $itemIdx, [
+            \Log::info('[CrearPedidoEditableController]  Estructura item ' . $itemIdx, [
                 'nombre_prenda' => $item['nombre_prenda'] ?? 'SIN NOMBRE',
                 'tiene_telas' => $telaCount > 0 ? 'SÍ (' . $telaCount . ')' : 'NO',
                 'telas_estructura' => $telaCount > 0 ? array_keys($item['telas'][0] ?? []) : [],

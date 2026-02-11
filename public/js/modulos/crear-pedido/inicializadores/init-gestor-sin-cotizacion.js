@@ -12,7 +12,7 @@
      * Inicializar GestorPrendaSinCotizacion
      */
     window.inicializarGestorSinCotizacion = function() {
-        console.log('[init-gestor-sin-cotizacion.js] 🔍 Verificando disponibilidad de clase:', {
+        console.log('[init-gestor-sin-cotizacion.js]  Verificando disponibilidad de clase:', {
             'GestorPrendaSinCotizacion': typeof window.GestorPrendaSinCotizacion,
             'gestorPedidoSinCotizacion': typeof window.gestorPedidoSinCotizacion
         });

@@ -63,7 +63,7 @@ function loadComponent(component) {
         };
         
         script.onerror = () => {
-            console.error(`❌ Error cargando componente: ${component.name}`);
+            console.error(` Error cargando componente: ${component.name}`);
             reject(new Error(`Failed to load component: ${component.name}`));
         };
         
@@ -94,7 +94,7 @@ async function loadAllComponents() {
         return true;
         
     } catch (error) {
-        console.error('❌ Error cargando Telas Module:', error);
+        console.error(' Error cargando Telas Module:', error);
         window.TelasModule.error = error;
         return false;
     }
@@ -132,4 +132,4 @@ window.importarDatosTelas = window.importarDatosTelas;
 window.serializarDatosTelas = window.serializarDatosTelas;
 window.restaurarDatosTelas = window.restaurarDatosTelas;
 
-console.log('📦 Telas Module v2.0.0 - Sistema modular de gestión de telas listo');
+console.log(' Telas Module v2.0.0 - Sistema modular de gestión de telas listo');

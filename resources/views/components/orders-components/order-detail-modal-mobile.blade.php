@@ -341,18 +341,18 @@ function previousImageMobile() {
 // Función para cargar recibos dinámicamente cuando se navega entre procesos
 window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
     try {
-        console.log('🔄 [CARGAR DINAMICO] ========== INICIANDO ==========');
-        console.log('🔄 [CARGAR DINAMICO] Datos:', { pedidoId, tipoProceso });
-        console.log('🔄 [CARGAR DINAMICO] Índice actual:', window.procesoCarouselIndex);
-        console.log('🔄 [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
+        console.log(' [CARGAR DINAMICO] ========== INICIANDO ==========');
+        console.log(' [CARGAR DINAMICO] Datos:', { pedidoId, tipoProceso });
+        console.log(' [CARGAR DINAMICO] Índice actual:', window.procesoCarouselIndex);
+        console.log(' [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
         
         // Hacer fetch a la API para obtener datos actualizados
         const url = `/api/operario/pedido/${pedidoId}`;
-        console.log('🔄 [CARGAR DINAMICO] URL API:', url);
+        console.log(' [CARGAR DINAMICO] URL API:', url);
         
         const response = await fetch(url);
         
-        console.log('🔄 [CARGAR DINAMICO] Respuesta HTTP:', {
+        console.log(' [CARGAR DINAMICO] Respuesta HTTP:', {
             ok: response.ok,
             status: response.status,
             statusText: response.statusText,
@@ -365,38 +365,38 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
         
         const result = await response.json();
         
-        console.log('🔄 [CARGAR DINAMICO] JSON recibido:', {
+        console.log(' [CARGAR DINAMICO] JSON recibido:', {
             success: result.success,
             tieneData: !!result.data,
             dataKeys: result.data ? Object.keys(result.data).slice(0, 10) : null
         });
         
         if (result.success && result.data) {
-            console.log('✅ [CARGAR DINAMICO] Datos válidos obtenidos');
-            console.log('✅ [CARGAR DINAMICO] Data.prendas:', result.data.prendas?.length);
+            console.log(' [CARGAR DINAMICO] Datos válidos obtenidos');
+            console.log(' [CARGAR DINAMICO] Data.prendas:', result.data.prendas?.length);
             
             // Resetear prendaCarouselIndex para que muestre desde el principio
             window.prendaCarouselIndex = 0;
             
-            console.log('✅ [CARGAR DINAMICO] Llamando a llenarReciboCosturaMobile...');
+            console.log(' [CARGAR DINAMICO] Llamando a llenarReciboCosturaMobile...');
             
             // Llenar con los nuevos datos
             window.llenarReciboCosturaMobile(result.data);
             
-            console.log('✅ [CARGAR DINAMICO] llenarReciboCosturaMobile completado');
+            console.log(' [CARGAR DINAMICO] llenarReciboCosturaMobile completado');
         } else {
             throw new Error('Respuesta inválida de la API: ' + JSON.stringify(result));
         }
     } catch (error) {
-        console.error('❌ [CARGAR DINAMICO] Error:', error);
-        console.error('❌ [CARGAR DINAMICO] Stack:', error.stack);
+        console.error(' [CARGAR DINAMICO] Error:', error);
+        console.error(' [CARGAR DINAMICO] Stack:', error.stack);
         alert('Error al cargar el recibo: ' + error.message);
     }
 };
 
 // Función para llenar el recibo móvil
 window.llenarReciboCosturaMobile = function(data) {
-    console.log('📱 [RECIBO MOBILE] 🚀 ========== INICIANDO llenarReciboCosturaMobile ==========');
+    console.log('📱 [RECIBO MOBILE]  ========== INICIANDO llenarReciboCosturaMobile ==========');
     console.log('📱 [RECIBO MOBILE] Datos recibidos:', data);
     console.log('📱 [RECIBO MOBILE] procesoCarouselIndex ACTUAL:', window.procesoCarouselIndex);
     console.log('📱 [RECIBO MOBILE] todosProcesosDisponibles ACTUAL:', window.todosProcesosDisponibles);
@@ -438,8 +438,8 @@ window.llenarReciboCosturaMobile = function(data) {
     
     // Filtrar procesos según el rol del usuario
     let procesosFiltrados = todosProcesos;
-    console.log('🔍 [FILTRO PROCESOS] Rol del usuario:', userRole);
-    console.log('🔍 [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
+    console.log(' [FILTRO PROCESOS] Rol del usuario:', userRole);
+    console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
     
     if (userRole === 'costura-reflectivo') {
         // Para costura-reflectivo, mostrar COSTURA y REFLECTIVO en ese orden
@@ -449,13 +449,13 @@ window.llenarReciboCosturaMobile = function(data) {
         if (tieneCostu) procesosFiltrados.push('COSTURA');
         if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
         
-        console.log('🔍 [FILTRO PROCESOS] tieneCostu:', tieneCostu);
-        console.log('🔍 [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
+        console.log(' [FILTRO PROCESOS] tieneCostu:', tieneCostu);
+        console.log(' [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
     }
     
-    console.log('🔍 [FILTRO PROCESOS] Procesos filtrados FINAL:', procesosFiltrados);
-    console.log('🔍 [FILTRO PROCESOS] Índice actual (procesoCarouselIndex):', window.procesoCarouselIndex);
-    console.log('🔍 [FILTRO PROCESOS] Proceso que se debe mostrar:', procesosFiltrados[window.procesoCarouselIndex || 0]);
+    console.log(' [FILTRO PROCESOS] Procesos filtrados FINAL:', procesosFiltrados);
+    console.log(' [FILTRO PROCESOS] Índice actual (procesoCarouselIndex):', window.procesoCarouselIndex);
+    console.log(' [FILTRO PROCESOS] Proceso que se debe mostrar:', procesosFiltrados[window.procesoCarouselIndex || 0]);
     
     // Mostrar navegación de procesos si hay al menos 1 proceso
     if (procesosFiltrados.length >= 1) {
@@ -648,10 +648,10 @@ window.llenarReciboCosturaMobile = function(data) {
     if (encargado) {
         if (mostraEncargado) {
             encargado.textContent = data.encargado;
-            console.log('📱 [ENCARGADO] ✅ Mostrando encargado:', data.encargado);
+            console.log('📱 [ENCARGADO]  Mostrando encargado:', data.encargado);
         } else {
             encargado.textContent = '-';
-            console.log('📱 [ENCARGADO] ❌ No aplican las condiciones para mostrar encargado', {
+            console.log('📱 [ENCARGADO]  No aplican las condiciones para mostrar encargado', {
                 area: data.area,
                 estado: data.estado,
                 userRole: userRole,
@@ -1020,7 +1020,7 @@ window.llenarReciboCosturaMobile = function(data) {
                 });
             }
             
-            // ❌ COMENTADO: Las tallas ya se muestran en la sección de DATOS ESPECÍFICOS DEL PROCESO
+            //  COMENTADO: Las tallas ya se muestran en la sección de DATOS ESPECÍFICOS DEL PROCESO
             // const tallasFormateadas = [];
             // prenda.tallas.forEach((tallaObj) => {
             //     if (tallaObj.cantidad > 0) {
@@ -1108,7 +1108,7 @@ window.llenarReciboCosturaMobile = function(data) {
                         
                         if (numeroRecibo !== null && numeroRecibo !== undefined) {
                             numeroPedidoElement.textContent = '#' + numeroRecibo;
-                            console.log('✅ [NUMERO RECIBO ACTUALIZADO]', procesoActualSeleccionado, '→ #' + numeroRecibo);
+                            console.log(' [NUMERO RECIBO ACTUALIZADO]', procesoActualSeleccionado, '→ #' + numeroRecibo);
                             reciboBuscado = reciboProceso;
                             break;
                         }
@@ -1118,7 +1118,7 @@ window.llenarReciboCosturaMobile = function(data) {
             
             // Si no encontró recibo específico, mantener el numero inicial
             if (!reciboBuscado) {
-                console.log('⚠️ [NUMERO RECIBO] No se encontró recibo para', procesoActualSeleccionado);
+                console.log(' [NUMERO RECIBO] No se encontró recibo para', procesoActualSeleccionado);
             }
         }
     }

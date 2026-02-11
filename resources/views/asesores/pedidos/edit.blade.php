@@ -277,6 +277,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor-legacy.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
 
@@ -351,13 +352,13 @@
         
         // Esperar un poco para que todo esté listo
         setTimeout(function() {
-            console.log('🔍 [FACTURA-EDITABLE-EDIT] Buscando datos del pedido...');
+            console.log(' [FACTURA-EDITABLE-EDIT] Buscando datos del pedido...');
             
             // Los datos vienen en $pedidoData desde el servidor
             // Necesito obtener los datos del formulario
             const formElement = document.getElementById('formEditarPedido');
             if (!formElement) {
-                console.log('❌ [FACTURA-EDITABLE-EDIT] Formulario no encontrado');
+                console.log(' [FACTURA-EDITABLE-EDIT] Formulario no encontrado');
                 return;
             }
             
@@ -383,7 +384,7 @@
                             epps: resultado.data['epps_transformados'] || resultado.data.pedido?.epps || []
                         };
                         
-                        console.log('📦 [FACTURA-EDITABLE-EDIT] Datos preparados:', {
+                        console.log(' [FACTURA-EDITABLE-EDIT] Datos preparados:', {
                             prendas: datos.prendas.length,
                             epps: datos.epps.length
                         });
@@ -408,14 +409,14 @@
                             contenedor.innerHTML = htmlFactura;
                             console.log(' [FACTURA-EDITABLE-EDIT] FACTURA RENDERIZADA EXITOSAMENTE');
                         } catch (e) {
-                            console.error('❌ [FACTURA-EDITABLE-EDIT] Error al renderizar factura:', e);
+                            console.error(' [FACTURA-EDITABLE-EDIT] Error al renderizar factura:', e);
                         }
                     } else {
                         console.log(' [FACTURA-EDITABLE-EDIT] No se pudieron obtener datos o generarHTMLFactura no está disponible');
                     }
                 })
                 .catch(error => {
-                    console.error('❌ [FACTURA-EDITABLE-EDIT] Error en fetch:', error);
+                    console.error(' [FACTURA-EDITABLE-EDIT] Error en fetch:', error);
                 });
         }, 500);
     });

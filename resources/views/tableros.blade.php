@@ -824,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function saveCellEdit() {
-        // 🕐 TIMING: Inicio del proceso
+        //  TIMING: Inicio del proceso
         const startTime = performance.now();
         const timings = {};
         
@@ -1000,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
             const totalTime = performance.now() - startTime;
-            console.log(`⏱️ TIMINGS TOTALES:
+            console.log(` TIMINGS TOTALES:
             - Búsqueda: ${timings.searchRequest?.toFixed(2) || 'N/A'}ms
             - Cache hit: ${timings.cacheHit?.toFixed(2) || 'N/A'}ms
             - PATCH request: ${timings.patchRequest?.toFixed(2) || 'N/A'}ms
@@ -2012,7 +2012,7 @@ function updateActiveButtonImmediately(clickedElement, section, page) {
             // Si no encuentra la sección específica, usar la primera
             if (!fallbackNav) {
                 fallbackNav = allPaginations[0];
-                console.log('🔄 Usando paginación fallback (primera encontrada):', fallbackNav);
+                console.log(' Usando paginación fallback (primera encontrada):', fallbackNav);
             }
             
             // PASO 1: Quitar estilos de TODOS los elementos

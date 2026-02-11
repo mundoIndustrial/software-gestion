@@ -536,7 +536,7 @@
             const topNav = document.querySelector('.top-nav');
             
             if (!topNav) {
-                console.error('❌ .top-nav no encontrado');
+                console.error(' .top-nav no encontrado');
                 return;
             }
 

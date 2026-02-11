@@ -983,7 +983,7 @@ function abrirModalLogoCompartido(tecnicas, logosCompartidos) {
         const clave = tecnicasSeleccionadas.sort().join('-');
         logosCompartidos[clave] = imagenSeleccionada;
         
-        console.log('🔍 DEBUG - Logo guardado en modal:', {
+        console.log(' DEBUG - Logo guardado en modal:', {
             clave: clave,
             imagen: imagenSeleccionada,
             imagenNombre: imagenSeleccionada.name,
@@ -1361,12 +1361,12 @@ function guardarTecnicaSimple() {
 function guardarTecnicaCombinada(datosForm) {
     const tecnicas = window.tecnicasCombinadas;
     
-    console.log('🔍 DEBUG - guardarTecnicaCombinada() llamado con datosForm:', !!datosForm);
+    console.log(' DEBUG - guardarTecnicaCombinada() llamado con datosForm:', !!datosForm);
 
     
     // Si no se pasa datosForm, construirlo desde el formulario actual
     if (!datosForm) {
-        console.log('🔍 DEBUG - Construyendo datosForm desde formulario...');
+        console.log(' DEBUG - Construyendo datosForm desde formulario...');
         // Validar que haya nombre de prenda
         const nombrePrenda = document.querySelector('.nombre_prenda')?.value.trim();
         if (!nombrePrenda) {
@@ -1404,14 +1404,14 @@ function guardarTecnicaCombinada(datosForm) {
         // Obtener telas (COLOR, TELA, REFERENCIA E IMAGEN)
         const telas = [];
         const tbodyTelas = document.getElementById('dTablaTelasMulti');
-        console.log('🔍 DEBUG - Buscando tabla de telas:', {
+        console.log(' DEBUG - Buscando tabla de telas:', {
             tbodyTelasEncontrado: !!tbodyTelas,
             elementId: 'dTablaTelasMulti'
         });
         
         if (tbodyTelas) {
             const filasTelaMulti = tbodyTelas.querySelectorAll('.fila-tela-multi');
-            console.log(`🔍 DEBUG - Filas de telas encontradas: ${filasTelaMulti.length}`);
+            console.log(` DEBUG - Filas de telas encontradas: ${filasTelaMulti.length}`);
             
             filasTelaMulti.forEach((filaTela, telaIdx) => {
                 const color = filaTela.querySelector('.input-color-multi')?.value?.trim();
@@ -1549,7 +1549,7 @@ function guardarTecnicaCombinada(datosForm) {
                     logosCompartidos: datosForm.logosCompartidos  // Pasar logos compartidos para envío al backend
                 };
                 
-                console.log('🔍 DEBUG - nuevaTecnica armada:', {
+                console.log(' DEBUG - nuevaTecnica armada:', {
                     tecnica: tipo.nombre,
                     logosCompartidos: datosForm.logosCompartidos,
                     claves: Object.keys(datosForm.logosCompartidos || {})
@@ -1708,7 +1708,7 @@ async function guardarTecnicasEnBD() {
             
             // PASO 1: Procesar logos compartidos (si existen) - SOLO UNA VEZ
             const logosCompartidos = tecnica.logosCompartidos || {};
-            console.log('🔍 DEBUG - Logos compartidos recibidos:', {
+            console.log(' DEBUG - Logos compartidos recibidos:', {
                 tecnica: tecnica.tipo_logo.nombre,
                 logosCompartidos: logosCompartidos,
                 claves: Object.keys(logosCompartidos),
@@ -2351,7 +2351,7 @@ function abrirModalEditarPrenda(tecnicaIndices, nombrePrenda) {
     const tecnicasDelGrupo = tecnicaIndices.map(idx => tecnicasAgregadas[idx]);
     
     if (tecnicasDelGrupo.length === 0) {
-        console.error('❌ No se encontraron las técnicas para editar');
+        console.error(' No se encontraron las técnicas para editar');
         return;
     }
     
@@ -2434,7 +2434,7 @@ function abrirModalEditarPrenda(tecnicaIndices, nombrePrenda) {
     });
     
     if (!datosPrenda) {
-        console.error('❌ No se encontró la prenda:', nombrePrenda);
+        console.error(' No se encontró la prenda:', nombrePrenda);
         Swal.fire({
             icon: 'error',
             title: 'Error',

@@ -8,7 +8,7 @@
  * FUNCIÓN PRINCIPAL: Actualizar todo el resumen del Paso 4
  */
 function actualizarResumenPaso4Completo() {
-    console.log('🔄 [actualizarResumenPaso4Completo] Iniciando actualización del resumen');
+    console.log(' [actualizarResumenPaso4Completo] Iniciando actualización del resumen');
     
     // 1. Actualizar información del cliente
     actualizarResumenClientePaso4();
@@ -52,7 +52,7 @@ function actualizarResumenClientePaso4() {
         
         let tipoDetectado = '� Cotización';
         if (tienePrendas && tieneLogo) {
-            tipoDetectado = '📦 Combinada (Prendas + Logo)';
+            tipoDetectado = ' Combinada (Prendas + Logo)';
         } else if (tienePrendas) {
             tipoDetectado = 'Solo Prendas';
         } else if (tieneLogo) {
@@ -227,8 +227,8 @@ function generarTablaVariacionesPaso2(prenda, index) {
  */
 function generarTablaLogoPaso3(nombrePrenda) {
     // DEBUG
-    console.log('🔍 generarTablaLogoPaso3 - Buscando prenda:', nombrePrenda);
-    console.log('📦 window.tecnicasAgregadasPaso3 =', window.tecnicasAgregadasPaso3);
+    console.log(' generarTablaLogoPaso3 - Buscando prenda:', nombrePrenda);
+    console.log(' window.tecnicasAgregadasPaso3 =', window.tecnicasAgregadasPaso3);
     
     // BUSCAR EN window.tecnicasAgregadasPaso3 las técnicas y ubicaciones de esta prenda
     let tecnicasUbicaciones = {}; // {tecnica: [ubicaciones...]}
@@ -266,7 +266,7 @@ function generarTablaLogoPaso3(nombrePrenda) {
     
     // Si no hay técnicas ni ubicaciones, no renderizar
     if (Object.keys(tecnicasUbicaciones).length === 0) {
-        console.log('❌ Sin técnicas para esta prenda, no renderizando tabla');
+        console.log(' Sin técnicas para esta prenda, no renderizando tabla');
         return '';
     }
     
@@ -301,8 +301,8 @@ function generarTablaLogoPaso3(nombrePrenda) {
  */
 function generarTablaReflectivoPaso4(nombrePrenda) {
     // DEBUG
-    console.log('🔍 generarTablaReflectivoPaso4 - Buscando prenda:', nombrePrenda);
-    console.log('📦 window.prendas_reflectivo_paso4 =', window.prendas_reflectivo_paso4);
+    console.log(' generarTablaReflectivoPaso4 - Buscando prenda:', nombrePrenda);
+    console.log(' window.prendas_reflectivo_paso4 =', window.prendas_reflectivo_paso4);
     
     let reflectivoDatos = [];
     
@@ -333,7 +333,7 @@ function generarTablaReflectivoPaso4(nombrePrenda) {
     
     // Si no hay datos, no renderizar
     if (reflectivoDatos.length === 0) {
-        console.log('❌ Sin reflectivo para esta prenda, no renderizando tabla');
+        console.log(' Sin reflectivo para esta prenda, no renderizando tabla');
         return '';
     }
     

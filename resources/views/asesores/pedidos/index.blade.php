@@ -81,7 +81,7 @@
 
 @section('content')
 
-    <!-- 🔄 LOADING OVERLAY - Se muestra mientras carga la página -->
+    <!--  LOADING OVERLAY - Se muestra mientras carga la página -->
     <div id="page-loading-overlay">
         <div class="loading-container">
             <div class="spinner"></div>
@@ -371,9 +371,9 @@
         
         try {
             etapas.inicio = performance.now();
-            console.log(`[editarPedido] ⏱️ Iniciando apertura modal - Pedido: ${pedidoId}`);
+            console.log(`[editarPedido]  Iniciando apertura modal - Pedido: ${pedidoId}`);
             // 🔥 PASO 1: Abrir modal pequeño de carga centrado
-            console.log('[editarPedido] 🚀 Abriendo modal de carga...');
+            console.log('[editarPedido]  Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
             console.log(`[editarPedido]  Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
@@ -412,7 +412,7 @@
             // Si ya está precargado, esto es casi instantáneo (<1ms)
             // Si no, muestra el loader mientras termina
             if (!window.PrendaEditorPreloader?.isReady?.()) {
-                console.log('[editarPedido] 📦 Cargando módulos de edición (con preloader)...');
+                console.log('[editarPedido]  Cargando módulos de edición (con preloader)...');
                 try {
                     await window.PrendaEditorPreloader.loadWithLoader({
                         title: 'Cargando datos',
@@ -424,7 +424,7 @@
                     etapas.modulosCargados = performance.now();
                     console.log(`[editarPedido]  Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
                 } catch (error) {
-                    console.error('[editarPedido] ❌ Error cargando módulos:', error);
+                    console.error('[editarPedido]  Error cargando módulos:', error);
                     Swal.close();
                     UI.error('Error', 'No se pudieron cargar los módulos de edición');
                     window.edicionEnProgreso = false;
@@ -459,8 +459,8 @@
 
             const datos = respuesta.data || respuesta.datos;
             
-            // 🔍 DEBUG: Verificar qué datos están llegando
-            console.log('🔍 [editarPedido] Datos recibidos del servidor:', {
+            //  DEBUG: Verificar qué datos están llegando
+            console.log(' [editarPedido] Datos recibidos del servidor:', {
                 datos_keys: Object.keys(datos),
                 tiene_id: !!datos.id,
                 id_valor: datos.id,
@@ -506,7 +506,7 @@
             
             etapas.fin = performance.now();
             console.log(`
-[editarPedido] ⏱️ RESUMEN DE TIEMPOS:
+[editarPedido]  RESUMEN DE TIEMPOS:
   └─ Swal Ready: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms
   └─ Módulos: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms
   └─ Fetch: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms
@@ -516,7 +516,7 @@
 
         } catch (err) {
             Swal.close();
-            console.error('[editarPedido] ❌ Error:', err);
+            console.error('[editarPedido]  Error:', err);
             UI.error('Error', 'No se pudo cargar el pedido: ' + err.message);
             
         } finally {
@@ -892,7 +892,7 @@
     }
 </style>
 
-<!-- 🔄 SCRIPT: Ocultar loading cuando la página está lista -->
+<!--  SCRIPT: Ocultar loading cuando la página está lista -->
 <script>
     (function() {
         
@@ -1171,7 +1171,7 @@
      */
     async function refrescarTablaPedidos() {
         try {
-            console.log('[asesores/pedidos] 🔄 Refrescando tabla de pedidos...');
+            console.log('[asesores/pedidos]  Refrescando tabla de pedidos...');
             
             // Mantener los parámetros de filtro/búsqueda actuales
             const params = new URLSearchParams(window.location.search);
@@ -1202,7 +1202,7 @@
                 }
             }
         } catch (error) {
-            console.error('[asesores/pedidos] ❌ Error refrescando tabla:', error);
+            console.error('[asesores/pedidos]  Error refrescando tabla:', error);
         }
     }
 
@@ -1300,7 +1300,7 @@
             const originalAbrirEPP = window.abrirModalEditarEPP;
             window.abrirModalEditarEPP = async function(...args) {
                 if (window.EPPManagerLoader && !window.EPPManagerLoader.isLoaded()) {
-                    console.log('[PedidosInit] 📦 Cargando EPP manager antes de abrir...');
+                    console.log('[PedidosInit]  Cargando EPP manager antes de abrir...');
                     try {
                         await window.EPPManagerLoader.load();
                     } catch (e) {
@@ -1317,7 +1317,7 @@
             const originalAgregar = window.abrirAgregarPrenda;
             window.abrirAgregarPrenda = async function(...args) {
                 if (window.PrendaEditorLoader && !window.PrendaEditorLoader.isLoaded()) {
-                    console.log('[PedidosInit] 📦 Cargando prenda editor antes de agregar...');
+                    console.log('[PedidosInit]  Cargando prenda editor antes de agregar...');
                     try {
                         await window.PrendaEditorLoader.load();
                     } catch (e) {

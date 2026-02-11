@@ -18,9 +18,9 @@ class TestConcurrenciaPedidos extends Command
         $numeroUsuarios = (int) $this->argument('usuarios');
         $numeroRondas = (int) $this->argument('rondas');
         
-        $this->info("🚀 Iniciando prueba de concurrencia");
+        $this->info(" Iniciando prueba de concurrencia");
         $this->info(" Usuarios: {$numeroUsuarios}");
-        $this->info("🔄 Rondas: {$numeroRondas}");
+        $this->info(" Rondas: {$numeroRondas}");
         $this->info("⏰ " . date('Y-m-d H:i:s'));
         
         // Configurar timeout para evitar deadlocks
@@ -40,8 +40,8 @@ class TestConcurrenciaPedidos extends Command
                 $totalErrores += $resultados['errores'];
                 
                 $this->info("    Pedidos creados: {$resultados['pedidos']}");
-                $this->info("   ❌ Errores: {$resultados['errores']}");
-                $this->info("   ⏱️  Duración: {$resultados['duracion']}s");
+                $this->info("    Errores: {$resultados['errores']}");
+                $this->info("     Duración: {$resultados['duracion']}s");
                 
                 // Pequeña pausa entre rondas
                 if ($ronda < $numeroRondas) {
@@ -55,7 +55,7 @@ class TestConcurrenciaPedidos extends Command
             $this->mostrarResultadosFinales($totalPedidos, $totalErrores, $duracionTotal);
             
         } catch (\Exception $e) {
-            $this->error("❌ Error fatal: " . $e->getMessage());
+            $this->error(" Error fatal: " . $e->getMessage());
             Log::error('[CONCURRENCIA_COMMAND] Error fatal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -119,7 +119,7 @@ class TestConcurrenciaPedidos extends Command
                 
             } catch (\Exception $e) {
                 $errores++;
-                $this->error("     ❌ Error usuario {$index}: " . $e->getMessage());
+                $this->error("      Error usuario {$index}: " . $e->getMessage());
                 Log::error('[CONCURRENCIA_COMMAND] Error', [
                     'ronda' => $ronda,
                     'usuario_index' => $index,
@@ -202,7 +202,7 @@ class TestConcurrenciaPedidos extends Command
         if ($totalErrores === 0) {
             $this->info("\n PRUEBA EXITOSA - Sin errores de concurrencia");
         } else {
-            $this->error("\n❌ PRUEBA CON ERRORES - Revisar logs");
+            $this->error("\n PRUEBA CON ERRORES - Revisar logs");
         }
         
         // Verificación final en BD
@@ -211,7 +211,7 @@ class TestConcurrenciaPedidos extends Command
     
     private function verificacionFinalBD(): void
     {
-        $this->line("\n🔍 VERIFICACIÓN FINAL EN BD");
+        $this->line("\n VERIFICACIÓN FINAL EN BD");
         $this->line("==========================");
         
         // Contar pedidos creados

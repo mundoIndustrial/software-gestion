@@ -23,7 +23,7 @@ class ProcesoPrendaObserver
     {
         // Si cambió estado_proceso, created_at, fecha_inicio o fecha_fin, actualizar el área
         if ($procesoPrenda->isDirty(['estado_proceso', 'created_at', 'fecha_inicio', 'fecha_fin', 'proceso'])) {
-            \Log::info('🔄 [Observer] Cambio detectado en proceso', [
+            \Log::info(' [Observer] Cambio detectado en proceso', [
                 'proceso_id' => $procesoPrenda->id,
                 'numero_pedido' => $procesoPrenda->numero_pedido,
                 'campos_modificados' => $procesoPrenda->getDirty(),

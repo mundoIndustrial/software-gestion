@@ -614,7 +614,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 function configurarWebSocketsPedidos() {
   // Verificar que Echo esté disponible
   if (typeof window.Echo === 'undefined') {
-    console.warn('⚠️ [CarteraPedidos] Echo no está disponible. WebSockets desactivados.');
+    console.warn(' [CarteraPedidos] Echo no está disponible. WebSockets desactivados.');
     return;
   }
 
@@ -633,12 +633,12 @@ function configurarWebSocketsPedidos() {
         mostrarNotificacion('Nuevo Pedido', `Se ha creado un nuevo pedido: ${event.pedido.numero_pedido}`, 'success');
       })
       .error((error) => {
-        console.error('❌ [CarteraPedidos] Error al suscribirse al canal pedidos.creados:', error);
+        console.error(' [CarteraPedidos] Error al suscribirse al canal pedidos.creados:', error);
       });
 
-    console.log('✅ [CarteraPedidos] WebSockets configurado exitosamente');
+    console.log(' [CarteraPedidos] WebSockets configurado exitosamente');
   } catch (error) {
-    console.error('❌ [CarteraPedidos] Error configurando WebSockets:', error);
+    console.error(' [CarteraPedidos] Error configurando WebSockets:', error);
   }
 }
 

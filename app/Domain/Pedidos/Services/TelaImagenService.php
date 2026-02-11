@@ -101,7 +101,7 @@ class TelaImagenService
                         elseif (is_string($foto)) {
                             $rutaAbsoluta = $foto && !str_starts_with($foto, '/') ? '/' . $foto : $foto;
                             
-                            // 🔄 COPIAR IMAGEN si viene de cotizaciones
+                            //  COPIAR IMAGEN si viene de cotizaciones
                             if (str_contains($rutaAbsoluta, '/storage/cotizaciones/')) {
                                 $rutaAbsoluta = $this->copiarImagenDesdeCotizacion($foto, $prendaId, $pedidoId, $telaIndex, $fotoIndex, 'tela');
                             }

@@ -31,7 +31,7 @@ class VerificarImagenesTelas extends Command
         $pedido = PedidoProduccion::find($pedidoId);
 
         if (!$pedido) {
-            $this->error("❌ Pedido {$pedidoId} no encontrado");
+            $this->error(" Pedido {$pedidoId} no encontrado");
             return;
         }
 
@@ -43,7 +43,7 @@ class VerificarImagenesTelas extends Command
         ");
 
         $prendas = $pedido->prendas;
-        $this->info("📦 Total de prendas: {$prendas->count()}\n");
+        $this->info(" Total de prendas: {$prendas->count()}\n");
 
         $totalTelas = 0;
         $totalImagenes = 0;
@@ -89,7 +89,7 @@ class VerificarImagenesTelas extends Command
                         $this->line("│  │  │   En disco ({$tamaño} bytes)");
                         $imagenesEnDisco++;
                     } else {
-                        $this->error("│  │  │  ❌ NO en disco");
+                        $this->error("│  │  │   NO en disco");
                     }
                 }
 

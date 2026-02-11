@@ -13,7 +13,7 @@ class VerificarTelasLogo extends Command
 
     public function handle()
     {
-        $this->info('🔍 VERIFICANDO TABLA: logo_cotizacion_telas_prenda');
+        $this->info(' VERIFICANDO TABLA: logo_cotizacion_telas_prenda');
         $this->newLine();
 
         $telas = LogoCotizacionTelasPrenda::all();
@@ -41,14 +41,14 @@ class VerificarTelasLogo extends Command
                     $this->line("     RUTA RELATIVA (comienza con storage/)");
                     $this->line("    → Debería ser: /{$tela->img}");
                 } else {
-                    $this->line("    ❌ RUTA NO ESTÁNDAR");
+                    $this->line("     RUTA NO ESTÁNDAR");
                 }
             }
 
             $this->newLine();
             $this->line(str_repeat("=", 120));
 
-            $this->info('🔍 QUERY DIRECTA SQL:');
+            $this->info(' QUERY DIRECTA SQL:');
             $resultado = DB::select("SELECT id, logo_cotizacion_id, prenda_cot_id, tela, color, ref, img FROM logo_cotizacion_telas_prenda");
             foreach ($resultado as $row) {
                 $this->newLine();

@@ -693,10 +693,10 @@
         
         try {
             etapas.inicio = performance.now();
-            console.log(`[editarPedido] ⏱️ Iniciando apertura modal - Pedido: ${pedidoId}`);
+            console.log(`[editarPedido]  Iniciando apertura modal - Pedido: ${pedidoId}`);
             
             // 🔥 PASO 1: Abrir modal pequeño de carga centrado
-            console.log('[editarPedido] 🚀 Abriendo modal de carga...');
+            console.log('[editarPedido]  Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
             console.log(`[editarPedido]  Swal listo: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms`);
@@ -733,7 +733,7 @@
 
             // 🔥 PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
             if (!window.PrendaEditorPreloader?.isReady?.()) {
-                console.log('[editarPedido] 📦 Cargando módulos de edición (con preloader)...');
+                console.log('[editarPedido]  Cargando módulos de edición (con preloader)...');
                 try {
                     await window.PrendaEditorPreloader.loadWithLoader({
                         title: 'Cargando datos',
@@ -745,7 +745,7 @@
                     etapas.modulosCargados = performance.now();
                     console.log(`[editarPedido]  Módulos cargados: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms`);
                 } catch (error) {
-                    console.error('[editarPedido] ❌ Error cargando módulos:', error);
+                    console.error('[editarPedido]  Error cargando módulos:', error);
                     Swal.close();
                     alert('Error: No se pudieron cargar los módulos de edición');
                     window.edicionEnProgreso = false;
@@ -814,7 +814,7 @@
             
             etapas.fin = performance.now();
             console.log(`
-[editarPedido] ⏱️ RESUMEN DE TIEMPOS:
+[editarPedido]  RESUMEN DE TIEMPOS:
   └─ Swal Ready: ${(etapas.swalReady - etapas.inicio).toFixed(2)}ms
   └─ Módulos: ${(etapas.modulosCargados - etapas.swalReady).toFixed(2)}ms
   └─ Fetch: ${(etapas.fetchCompleto - etapas.modulosCargados).toFixed(2)}ms
@@ -824,7 +824,7 @@
 
         } catch (err) {
             Swal.close();
-            console.error('[editarPedido] ❌ Error:', err);
+            console.error('[editarPedido]  Error:', err);
             alert('Error: No se pudo cargar el pedido: ' + err.message);
             
         } finally {
@@ -1709,8 +1709,8 @@
         function mostrarNotificacionEnTiempoReal(orden, action) {
             const mensajes = {
                 'created': `✨ Nueva orden creada: #${orden.numero_pedido}`,
-                'updated': `🔄 Orden actualizada: #${orden.numero_pedido}`,
-                'deleted': `❌ Orden eliminada: #${orden.numero_pedido}`
+                'updated': ` Orden actualizada: #${orden.numero_pedido}`,
+                'deleted': ` Orden eliminada: #${orden.numero_pedido}`
             };
 
             const mensaje = mensajes[action] || `Orden #${orden.numero_pedido} modificada`;
@@ -1792,10 +1792,10 @@
                 return;
             }
             
-            console.log('[Realtime Supervisor] ✅ window.waitForEcho está disponible, inicializando listener...');
+            console.log('[Realtime Supervisor]  window.waitForEcho está disponible, inicializando listener...');
             
             window.waitForEcho(() => {
-                console.log('[Realtime Supervisor] 🚀 Echo está listo, inicializando suscripción...');
+                console.log('[Realtime Supervisor]  Echo está listo, inicializando suscripción...');
                 
                 try {
                     window.Echo.channel('supervisor-pedidos')
@@ -1803,7 +1803,7 @@
                             console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
                             
                             if (!data.orden) {
-                                console.warn('[Realtime Supervisor] ⚠️ Evento sin datos de orden');
+                                console.warn('[Realtime Supervisor]  Evento sin datos de orden');
                                 return;
                             }
 
@@ -1811,7 +1811,7 @@
                             const numeroPedido = orden.numero_pedido || orden.numero_pedido || orden.pedido;
                             const action = data.action || 'updated';
                             
-                            console.log(`[Realtime Supervisor] 📦 Procesando ${action}: Pedido #${numeroPedido}`);
+                            console.log(`[Realtime Supervisor]  Procesando ${action}: Pedido #${numeroPedido}`);
 
                             // Buscar la fila en la tabla correspondiente al pedido
                             const filas = document.querySelectorAll('[data-pedido-id]');
@@ -1826,10 +1826,10 @@
                             }
 
                             if (filaEncontrada) {
-                                console.log('[Realtime Supervisor] ✅ Fila encontrada, actualizando...');
+                                console.log('[Realtime Supervisor]  Fila encontrada, actualizando...');
                                 actualizarFilaEnTabla(filaEncontrada, orden, action);
                             } else {
-                                console.log('[Realtime Supervisor] ℹ️ Fila no encontrada, agregando nueva fila...');
+                                console.log('[Realtime Supervisor]  Fila no encontrada, agregando nueva fila...');
                                 agregarNuevaFilaATabla(orden, action);
                             }
 
@@ -1842,15 +1842,15 @@
                             }
                         })
                         .on('pusher:subscription_succeeded', () => {
-                            console.log('[Realtime Supervisor] ✅ Subscripción exitosa al canal supervisor-pedidos');
+                            console.log('[Realtime Supervisor]  Subscripción exitosa al canal supervisor-pedidos');
                         })
                         .on('pusher:subscription_error', (error) => {
-                            console.error('[Realtime Supervisor] ❌ Error en subscripción:', error);
+                            console.error('[Realtime Supervisor]  Error en subscripción:', error);
                         });
                     
-                    console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
+                    console.log('[Realtime Supervisor]  Sistema de tiempo real inicializado correctamente');
                 } catch (error) {
-                    console.error('[Realtime Supervisor] ❌ Error inicializando listener:', error);
+                    console.error('[Realtime Supervisor]  Error inicializando listener:', error);
                 }
             });
         }

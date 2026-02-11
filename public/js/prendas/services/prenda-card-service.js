@@ -14,12 +14,12 @@ class PrendaCardService {
      */
     static generar(prendaRaw, indice) {
         try {
-            console.log('[PrendaCardService.generar] 🚀 INICIA GENERACIÓN DE TARJETA');
-            console.log('[PrendaCardService.generar] 📦 ENTRADA - prendaRaw:', prendaRaw);
+            console.log('[PrendaCardService.generar]  INICIA GENERACIÓN DE TARJETA');
+            console.log('[PrendaCardService.generar]  ENTRADA - prendaRaw:', prendaRaw);
             console.log('[PrendaCardService.generar] 📍 ÍNDICE:', indice);
             
             // Verificar estructura específica de datos
-            console.log('[PrendaCardService.generar] 🔍 ESTRUCTURA DE DATOS:');
+            console.log('[PrendaCardService.generar]  ESTRUCTURA DE DATOS:');
             console.log('[PrendaCardService.generar]   - tipo:', prendaRaw.tipo);
             console.log('[PrendaCardService.generar]   - nombre_prenda:', prendaRaw.nombre_prenda);
             console.log('[PrendaCardService.generar]   - tela (directo):', prendaRaw.tela);
@@ -31,12 +31,12 @@ class PrendaCardService {
             console.log('[PrendaCardService.generar]   - fotos:', prendaRaw.fotos);
 
             // 1. Transformar datos
-            console.log('[PrendaCardService.generar] 🔍 Verificando PrendaDataTransformer:', !!PrendaDataTransformer);
+            console.log('[PrendaCardService.generar]  Verificando PrendaDataTransformer:', !!PrendaDataTransformer);
             const prenda = PrendaDataTransformer.transformar(prendaRaw);
-            console.log('[PrendaCardService.generar] 🔄 DESPUÉS TRANSFORMAR - prenda:', prenda);
+            console.log('[PrendaCardService.generar]  DESPUÉS TRANSFORMAR - prenda:', prenda);
             
             if (!prenda) {
-                console.log('[PrendaCardService.generar] ❌ TRANSFORMACIÓN RETORNÓ NULL');
+                console.log('[PrendaCardService.generar]  TRANSFORMACIÓN RETORNÓ NULL');
                 return '';
             }
 
@@ -52,7 +52,7 @@ class PrendaCardService {
 
             // 3. Construir secciones expandibles
             console.log('[PrendaCardService.generar] 🏗️ CONSTRUYENDO SECCIONES...');
-            console.log('[PrendaCardService.generar] 🔍 Verificando builders:');
+            console.log('[PrendaCardService.generar]  Verificando builders:');
             console.log('[PrendaCardService.generar]   - VariacionesBuilder:', !!VariacionesBuilder);
             console.log('[PrendaCardService.generar]   - TallasBuilder:', !!TallasBuilder);
             console.log('[PrendaCardService.generar]   - ProcesosBuilder:', !!ProcesosBuilder);

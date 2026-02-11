@@ -11,19 +11,19 @@ Identificar cuellos de botella y latencias en la creación de pedidos en:
 storage/logs/laravel.log
 ```
 
-## 🚀 Flujo de Logs Instrumentados
+##  Flujo de Logs Instrumentados
 
 ### 1️⃣ CARGA DE PÁGINA - `crearNuevo()` o `crearDesdeCotizacion()`
 
 **Log inicial:**
 ```
-[CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA DE PÁGINA
-[CREAR-DESDE-COTIZACION] ⏱️ INICIANDO CARGA DE PÁGINA
+[CREAR-PEDIDO-NUEVO]  INICIANDO CARGA DE PÁGINA
+[CREAR-DESDE-COTIZACION]  INICIANDO CARGA DE PÁGINA
 ```
 
 **Componentes medidos:**
 -  `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
--  `[CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes cargados` → tiempo_ms
+-  `[CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados` → tiempo_ms
 -  `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
 -  `[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
 
@@ -51,7 +51,7 @@ storage/logs/laravel.log
 
 **Log inicial:**
 ```
-[CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL
+[CREAR-PEDIDO]  INICIANDO CREACIÓN TRANSACCIONAL
 ```
 
 **Pasos desglosados con microtiming:**
@@ -186,7 +186,7 @@ storage/logs/laravel.log
 
 ---
 
-## 🔍 Cómo Analizar los Logs
+##  Cómo Analizar los Logs
 
 ### 📋 Comando para filtrar logs de creación
 
@@ -198,10 +198,10 @@ tail -f storage/logs/laravel.log | grep "CREAR-PEDIDO"
 tail -f storage/logs/laravel.log | grep "IMAGE-UPLOAD\|RESOLVER-IMAGENES\|MAPEO-IMAGENES"
 
 # Ver resumen rápido (sin debug)
-tail -100 storage/logs/laravel.log | grep "✨\|⏱️\|" | tail -20
+tail -100 storage/logs/laravel.log | grep "✨\|\|" | tail -20
 ```
 
-### 🔴 Escenarios de Problemas Comunes
+###  Escenarios de Problemas Comunes
 
 #### 1. **Página tarda mucho en cargar inicialmente**
 ```
@@ -225,7 +225,7 @@ Si tiempo_total_ms > 10000ms:
 ```
 Buscar: [RESOLVER-IMAGENES]  Extracción completada
 Si imagenes_esperadas > imagenes_procesadas:
-  → Imagen superior: [RESOLVER-IMAGENES] ❌ ERROR CRÍTICO
+  → Imagen superior: [RESOLVER-IMAGENES]  ERROR CRÍTICO
   → Problema en FormData del frontend o archivos perdidos
 ```
 
@@ -291,4 +291,4 @@ Si guardado_webp_ms > 300ms (promedio):
 4. **Aplicar optimizaciones** según la sección "Cómo Optimizar"
 5. **Verificar mejoras** comparando logs antes/después
 
-¡Éxito en el debugging! 🚀
+¡Éxito en el debugging! 

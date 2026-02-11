@@ -15,7 +15,7 @@ class StorageDiagnoseCommand extends Command
 
     public function handle(): int
     {
-        $this->info('🔍 DIAGNÓSTICO DE STORAGE - LARAVEL');
+        $this->info(' DIAGNÓSTICO DE STORAGE - LARAVEL');
         $this->newLine();
 
         $fix = $this->option('fix');

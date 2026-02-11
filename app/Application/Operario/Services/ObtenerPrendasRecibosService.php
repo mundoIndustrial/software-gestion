@@ -37,7 +37,7 @@ class ObtenerPrendasRecibosService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        \Log::info('🔍 [ObtenerPrendasRecibosService] Recibos encontrados', [
+        \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
             'total_recibos' => $recibos->count(),
             'tipos_buscados' => $tiposRecibo,
             'prenda_ids' => $recibos->pluck('prenda_id')->toArray()
@@ -63,17 +63,17 @@ class ObtenerPrendasRecibosService
                 $pedido = $primeRecibo->pedido;
                 $prenda = $pedido->prendas->first();
             } else {
-                \Log::info('🔍 [Filtro 0] No se pudo obtener prenda o pedido');
+                \Log::info(' [Filtro 0] No se pudo obtener prenda o pedido');
                 return [];
             }
             
             // Validar que prenda y pedido existan
             if (!$prenda || !$pedido) {
-                \Log::info('🔍 [Filtro 1] Prenda o pedido no existe');
+                \Log::info(' [Filtro 1] Prenda o pedido no existe');
                 return [];
             }
             
-            \Log::info('✅ [Prenda Validada]', [
+            \Log::info(' [Prenda Validada]', [
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'area' => $pedido->area
@@ -88,7 +88,7 @@ class ObtenerPrendasRecibosService
                 if (strtoupper($tipoRecibo) === 'REFLECTIVO') {
                     // REFLECTIVO: Área debe ser "insumos" y estado PENDIENTE_INSUMOS
                     if (strtolower($pedido->area) !== 'insumos') {
-                        \Log::info('🔍 [Filtro REFLECTIVO] Área no es "insumos"', [
+                        \Log::info(' [Filtro REFLECTIVO] Área no es "insumos"', [
                             'prenda_id' => $prenda->id,
                             'numero_pedido' => $pedido->numero_pedido,
                             'area_actual' => $pedido->area
@@ -98,7 +98,7 @@ class ObtenerPrendasRecibosService
                     
                     // Validar que el estado del pedido sea PENDIENTE_INSUMOS
                     if ($pedido->estado !== 'PENDIENTE_INSUMOS') {
-                        \Log::info('🔍 [Filtro REFLECTIVO] Estado del pedido no es PENDIENTE_INSUMOS', [
+                        \Log::info(' [Filtro REFLECTIVO] Estado del pedido no es PENDIENTE_INSUMOS', [
                             'prenda_id' => $prenda->id,
                             'numero_pedido' => $pedido->numero_pedido,
                             'estado_actual' => $pedido->estado
@@ -112,14 +112,14 @@ class ObtenerPrendasRecibosService
                         ->first();
                     
                     if (!$detalleAprobado) {
-                        \Log::info('🔍 [Filtro REFLECTIVO] Detalle no está APROBADO', [
+                        \Log::info(' [Filtro REFLECTIVO] Detalle no está APROBADO', [
                             'prenda_id' => $prenda->id,
                             'numero_pedido' => $pedido->numero_pedido
                         ]);
                         continue; // Skip REFLECTIVO si no tiene detalle APROBADO
                     }
                     
-                    \Log::info('✅ [REFLECTIVO VÁLIDO]', [
+                    \Log::info(' [REFLECTIVO VÁLIDO]', [
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_id' => $prenda->id,
                         'area' => $pedido->area,
@@ -129,7 +129,7 @@ class ObtenerPrendasRecibosService
                 } else if (strtoupper($tipoRecibo) === 'COSTURA' || strtoupper($tipoRecibo) === 'COSTURA-BODEGA') {
                     // COSTURA: Área debe ser "costura" y estado "En Ejecución"
                     if (strtolower($pedido->area) !== 'costura') {
-                        \Log::info('🔍 [Filtro COSTURA] Área no es "costura"', [
+                        \Log::info(' [Filtro COSTURA] Área no es "costura"', [
                             'prenda_id' => $prenda->id,
                             'numero_pedido' => $pedido->numero_pedido,
                             'area_actual' => $pedido->area,
@@ -139,7 +139,7 @@ class ObtenerPrendasRecibosService
                     }
                     
                     if ($pedido->estado !== 'En Ejecución') {
-                        \Log::info('🔍 [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
+                        \Log::info(' [Filtro COSTURA] Estado del pedido no es "En Ejecución"', [
                             'prenda_id' => $prenda->id,
                             'numero_pedido' => $pedido->numero_pedido,
                             'estado_actual' => $pedido->estado,

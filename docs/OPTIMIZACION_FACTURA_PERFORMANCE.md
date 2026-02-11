@@ -5,10 +5,10 @@ La solicitud de factura (~14 segundos) estaba demorando debido a múltiples cons
 
 ## Cambios Realizados
 
-### 1. **Eliminación de Consultas N+1** ✅
+### 1. **Eliminación de Consultas N+1** 
 **Antes:** El código hacía 1+ consulta directa a la BD por cada prenda/variante/proceso
 ```php
-// ❌ LENTO: Hace queries por cada elemento
+//  LENTO: Hace queries por cada elemento
 $manga = \DB::table('tipos_manga')->where('id', $id)->value('nombre');
 $broche = \DB::table('tipos_broche_boton')->where('id', $id)->value('nombre');
 $telaData = \DB::table('telas_prenda')->where('id', $id)->...->first();
@@ -17,13 +17,13 @@ $color = \DB::table('colores_prenda')->where('id', $id)->value('nombre');
 
 **Ahora:** Usa relaciones precargadas (eager loading) en `obtenerPorId()`:
 ```php
-// ✅ RÁPIDO: Datos ya están en memoria
+//  RÁPIDO: Datos ya están en memoria
 $manga = $primeraVariante->tipoManga->nombre;
 $broche = $primeraVariante->tipoBroche->nombre;
 // Las telas y colores ya están precargadas desde coloresTelas
 ```
 
-### 2. **Reducción de Logging Innecesario** ✅
+### 2. **Reducción de Logging Innecesario** 
 **Antes:**
 - `\Log::info()` por cada prenda
 - `\Log::debug()` por cada talla
@@ -38,7 +38,7 @@ $broche = $primeraVariante->tipoBroche->nombre;
 - Eliminados `JSON_PRETTY_PRINT` (la serialización JSON es cara)
 - Solo logs de errores reales
 
-### 3. **Simplificación de Variables Intermedias** ✅
+### 3. **Simplificación de Variables Intermedias** 
 **Antes:**
 ```php
 $foto = null;
@@ -50,7 +50,7 @@ $tallasSimples = [];
 
 **Ahora:** Variables se crean bajo demanda directamente en el array final
 
-### 4. **Mejora en Procesamiento de Imágenes** ✅
+### 4. **Mejora en Procesamiento de Imágenes** 
 **Antes:**
 ```php
 if ($proc->imagenes && $proc->imagenes->count() > 0) {
@@ -139,12 +139,12 @@ Ahora ves:
 
 ## Notas Importantes
 
-### ✅ Sin cambios de comportamiento
+###  Sin cambios de comportamiento
 - Todos los datos retornados son idénticos
 - La estructura JSON es la misma
 - Frontend no necesita cambios
 
-### ✅ Relaciones precargadas en `obtenerPorId()`
+###  Relaciones precargadas en `obtenerPorId()`
 El método ya está configurado para cargar todas las relaciones:
 ```php
 return PedidoProduccion::with([
@@ -161,7 +161,7 @@ return PedidoProduccion::with([
 ])->find($id);
 ```
 
-### ⚠️ Si sigue siendo lento
+###  Si sigue siendo lento
 Si la mejora no es suficiente y sigue demorando:
 
 1. **Verificar índices en BD:**

@@ -72,7 +72,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-                    console.error('[ItemRenderer] ❌ Error renderizando prenda:', error);
+                    console.error('[ItemRenderer]  Error renderizando prenda:', error);
                 }
             }
         }
@@ -89,7 +89,7 @@ class ItemRenderer {
                     tempDiv.innerHTML = html;
                     container.appendChild(tempDiv.firstElementChild);
                 } catch (error) {
-                    console.error('[ItemRenderer] ❌ Error renderizando EPP:', error);
+                    console.error('[ItemRenderer]  Error renderizando EPP:', error);
                 }
             }
         }
@@ -384,10 +384,10 @@ class ItemRenderer {
         
         const nombre = item.nombre_prenda || item.prenda?.nombre || item.nombre || 'Prenda';
         const cantidadTotal = item.cantidad || (item.cantidad_talla ? Object.values(item.cantidad_talla).reduce((sum, cant) => sum + (cant || 0), 0) : 0) || (item.tallas?.reduce((sum, t) => sum + (t.cantidad || 0), 0) || 0);
-        const origen = item.origen === 'bodega' ? '📦 BODEGA' : '🏭 CONFECCIÓN';
+        const origen = item.origen === 'bodega' ? ' BODEGA' : '🏭 CONFECCIÓN';
         
         // Helper para validar y renderizar procesos
-        console.log('[item-renderer] 🔍 Procesando procesos para item:', {
+        console.log('[item-renderer]  Procesando procesos para item:', {
             nombre: nombre,
             tieneProcesos: !!item.procesos,
             tipoProcesos: typeof item.procesos,
@@ -401,7 +401,7 @@ class ItemRenderer {
                 console.log('[item-renderer] 📋 Procesos es array:', item.procesos);
                 procesosHTML = `<span>Procesos: ${item.procesos.join(', ')}</span>`;
             } else if (!Array.isArray(item.procesos) && typeof item.procesos === 'object') {
-                console.log('[item-renderer] 📦 Procesos es objeto, extrayendo keys...');
+                console.log('[item-renderer]  Procesos es objeto, extrayendo keys...');
                 const todasLasKeys = Object.keys(item.procesos);
                 console.log('[item-renderer]   - Todas las keys:', todasLasKeys);
                 

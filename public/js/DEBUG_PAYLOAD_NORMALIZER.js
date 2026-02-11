@@ -15,7 +15,7 @@ setTimeout(() => {
     console.log('  - window.PayloadNormalizer:', window.PayloadNormalizer ? ' EXISTE' : ' NO EXISTE');
     
     if (window.PayloadNormalizer) {
-        console.log('\n🔍 MÉTODOS DISPONIBLES EN PayloadNormalizer:');
+        console.log('\n MÉTODOS DISPONIBLES EN PayloadNormalizer:');
         Object.keys(window.PayloadNormalizer).forEach(metodo => {
             const tipo = typeof window.PayloadNormalizer[metodo];
             console.log(`    ${metodo}: ${tipo}`);

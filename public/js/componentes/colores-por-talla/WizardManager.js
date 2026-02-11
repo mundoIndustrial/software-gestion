@@ -8,7 +8,7 @@ window.WizardManager = (function() {
 
     // Verificar solo StateManager como dependencia
     if (!window.StateManager) {
-        console.error('[WizardManager] ❌ StateManager no está disponible');
+        console.error('[WizardManager]  StateManager no está disponible');
         return {};
     }
 
@@ -17,7 +17,7 @@ window.WizardManager = (function() {
          * PASO 0 (opcional): Seleccionar tela (solo si hay múltiples)
          */
         seleccionarTela(tela) {
-            console.log('[WizardManager] 📦 Tela seleccionada:', tela);
+            console.log('[WizardManager]  Tela seleccionada:', tela);
             StateManager.setTelaSeleccionada(tela);
             
             // Mostrar botón siguiente
@@ -25,7 +25,7 @@ window.WizardManager = (function() {
             if (btnSiguiente) {
                 btnSiguiente.disabled = false;
                 btnSiguiente.style.display = 'flex';
-                console.log('[WizardManager] ✅ Botón Siguiente mostrado');
+                console.log('[WizardManager]  Botón Siguiente mostrado');
             }
         },
 
@@ -34,16 +34,16 @@ window.WizardManager = (function() {
          */
         seleccionarGenero(genero) {
             StateManager.setGeneroSeleccionado(genero);
-            console.log('[WizardManager] ✅ Género seleccionado:', genero);
+            console.log('[WizardManager]  Género seleccionado:', genero);
             
             // Mostrar y habilitar el botón siguiente
             const btnSiguiente = document.getElementById('wzd-btn-siguiente');
             if (btnSiguiente) {
                 btnSiguiente.disabled = false;
                 btnSiguiente.style.display = 'flex';
-                console.log('[WizardManager] ✅ Botón Siguiente mostrado');
+                console.log('[WizardManager]  Botón Siguiente mostrado');
             } else {
-                console.error('[WizardManager] ❌ Botón wzd-btn-siguiente no encontrado');
+                console.error('[WizardManager]  Botón wzd-btn-siguiente no encontrado');
             }
             
             // Resaltar el botón seleccionado
@@ -55,7 +55,7 @@ window.WizardManager = (function() {
                     btn.style.borderColor = '#3b82f6';
                     btn.style.color = '#1f2937';
                     btn.style.fontWeight = '600';
-                    console.log('[WizardManager] ✅ Botón', genero, 'resaltado');
+                    console.log('[WizardManager]  Botón', genero, 'resaltado');
                 } else {
                     btn.style.background = 'white';
                     btn.style.borderColor = '#d1d5db';
@@ -69,7 +69,7 @@ window.WizardManager = (function() {
          * PASO 2: Ir al siguiente paso
          */
         pasoSiguiente() {
-            console.log('[WizardManager] 🔄 pasoSiguiente() llamado...');
+            console.log('[WizardManager]  pasoSiguiente() llamado...');
             
             const pasoActual = StateManager.getPasoActual();
             const telaSeleccionada = StateManager.getTelaSeleccionada();
@@ -87,11 +87,11 @@ window.WizardManager = (function() {
             if (pasoActual === 0) {
                 console.log('[WizardManager] ↪️ En PASO 0 - Validando tela...');
                 if (!telaSeleccionada) {
-                    console.warn('[WizardManager] ⚠️ No hay tela seleccionada');
+                    console.warn('[WizardManager]  No hay tela seleccionada');
                     alert('Por favor selecciona una tela antes de continuar');
                     return false;
                 }
-                console.log('[WizardManager] ✅ Tela validada:', telaSeleccionada);
+                console.log('[WizardManager]  Tela validada:', telaSeleccionada);
                 console.log('[WizardManager] ➜ Avanzando a PASO 1...');
                 this.irPaso(1);
                 return true;
@@ -100,11 +100,11 @@ window.WizardManager = (function() {
             else if (pasoActual === 1) {
                 console.log('[WizardManager] ↪️ En PASO 1 - Validando género...');
                 if (!generoSeleccionado) {
-                    console.warn('[WizardManager] ⚠️ No hay género seleccionado');
+                    console.warn('[WizardManager]  No hay género seleccionado');
                     alert('Por favor selecciona un género antes de continuar');
                     return false;
                 }
-                console.log('[WizardManager] ✅ Género validado:', generoSeleccionado);
+                console.log('[WizardManager]  Género validado:', generoSeleccionado);
                 console.log('[WizardManager] ➜ Avanzando a PASO 2...');
                 this.irPaso(2);
                 return true;
@@ -113,24 +113,40 @@ window.WizardManager = (function() {
             else if (pasoActual === 2) {
                 console.log('[WizardManager] ↪️ En PASO 2 - Validando tallas...');
                 if (!tallasSeleccionadas || tallasSeleccionadas.length === 0) {
-                    console.warn('[WizardManager] ⚠️ No hay tallas seleccionadas');
+                    console.warn('[WizardManager]  No hay tallas seleccionadas');
                     alert('Por favor selecciona al menos una talla antes de continuar');
                     return false;
                 }
-                console.log('[WizardManager] ✅ Tallas validadas:', tallasSeleccionadas);
+                console.log('[WizardManager]  Tallas validadas:', tallasSeleccionadas);
                 console.log('[WizardManager] ➜ Avanzando a PASO 3...');
+                
+                // 🔥 BLOQUEAR LLAMADAS MÚLTIPLES
+                if (this._avanzandoAPaso3) {
+                    console.warn('[WizardManager]  Ya estamos avanzando al paso 3, ignorando llamada duplicada');
+                    return false;
+                }
+                this._avanzandoAPaso3 = true;
+                
+                console.log('[WizardManager]  Ejecutando irPaso(3)...');
                 this.irPaso(3);
+                
+                // 🔥 LIMPIAR BLOQUEO DESPUÉS DE UN TIEMPO
+                setTimeout(() => {
+                    this._avanzandoAPaso3 = false;
+                    console.log('[WizardManager] 🔓 Bloqueo de avance a paso 3 liberado');
+                }, 1000);
+                
                 return true;
             } 
             // PASO 3: No se puede avanzar más
             else if (pasoActual === 3) {
                 console.log('[WizardManager] ↪️ En PASO 3 - Este es el último paso');
-                console.log('[WizardManager] ℹ️ Ya estás en paso 3. Usa el botón "Guardar Asignación" para guardar.');
+                console.log('[WizardManager]  Ya estás en paso 3. Usa el botón "Guardar Asignación" para guardar.');
                 return false;
             } 
             // Estado inválido
             else {
-                console.error('[WizardManager] ❌ Paso no válido:', pasoActual);
+                console.error('[WizardManager]  Paso no válido:', pasoActual);
                 alert('Error: Estado del wizard inválido. Por favor recarga la página.');
                 return false;
             }
@@ -148,22 +164,26 @@ window.WizardManager = (function() {
         },
 
         /**
-         * Obtener el número total de pasos (3 o 4 dependiendo de si hay múltiples telas)
+         * Obtener el número total de pasos (4 siempre)
          */
         obtenerTotalPasos() {
-            const telas = window.telasCreacion || [];
-            return telas.length > 1 ? 4 : 3;  // 4 pasos si múltiples, 3 si simple
+            // Siempre devolvemos 4 porque los pasos son:
+            // 0: Selección de tela (solo si hay múltiples telas)
+            // 1: Género
+            // 2: Tallas  
+            // 3: Colores
+            return 4;
         },
 
         /**
          * Inicializar el wizard y determinar paso inicial
          */
         inicializarWizard() {
-            console.log('[WizardManager] 🚀 Inicializando wizard...');
+            console.log('[WizardManager]  Inicializando wizard...');
             const telas = window.telasCreacion || [];
             const totalPasos = this.obtenerTotalPasos();
             
-            console.log('[WizardManager] 📊 Total de telas:', telas.length, '| Total pasos:', totalPasos);
+            console.log('[WizardManager]  Total de telas:', telas.length, '| Total pasos:', totalPasos);
             
             // Mostrar/ocultar indicador paso 0 y su contenedor
             const paso0Wrapper = document.getElementById('paso-0-wrapper');
@@ -171,20 +191,20 @@ window.WizardManager = (function() {
             
             if (telas.length > 1) {
                 // Múltiples telas: mostrar paso 0 y empezar ahí
-                console.log('[WizardManager] 📦 Múltiples telas detectadas - mostrar paso 0');
+                console.log('[WizardManager]  Múltiples telas detectadas - mostrar paso 0');
                 if (paso0Wrapper) paso0Wrapper.style.display = 'block';
                 if (paso0Linea) paso0Linea.style.display = 'block';
                 this.irPaso(0);
             } else {
                 // Una sola tela: ocultar paso 0 y empezar en paso 1
-                console.log('[WizardManager] 📦 Una sola tela - ocultar paso 0, empezar en paso 1');
+                console.log('[WizardManager]  Una sola tela - ocultar paso 0, empezar en paso 1');
                 if (paso0Wrapper) paso0Wrapper.style.display = 'none';
                 if (paso0Linea) paso0Linea.style.display = 'none';
                 // Auto-seleccionar la tela única
                 if (telas.length === 1) {
                     const nombreTela = telas[0].tela_nombre || telas[0].nombre_tela || telas[0].tela;
                     StateManager.setTelaSeleccionada(nombreTela);
-                    console.log('[WizardManager] ✅ Tela única auto-seleccionada:', nombreTela);
+                    console.log('[WizardManager]  Tela única auto-seleccionada:', nombreTela);
                 }
                 this.irPaso(1);
             }
@@ -194,51 +214,80 @@ window.WizardManager = (function() {
          * Navegar a un paso específico (0, 1, 2 ó 3)
          */
         irPaso(numeroPaso) {
+            console.log('[WizardManager] 🎯 irPaso() llamado con:', numeroPaso);
+            
             const totalPasos = this.obtenerTotalPasos();
+            console.log('[WizardManager]  Total de pasos disponibles:', totalPasos);
+            
             // Validar paso
-            if (numeroPaso < 0 || numeroPaso >= totalPasos) return;
+            if (numeroPaso < 0 || numeroPaso >= totalPasos) {
+                console.error('[WizardManager]  Paso inválido:', numeroPaso, 'Total pasos:', totalPasos);
+                return;
+            }
+            
+            console.log('[WizardManager]  Paso validado, procediendo a cambiar...');
             
             // Ocultar todos los pasos
+            console.log('[WizardManager] 🙈 Ocultando todos los pasos...');
             ['wizard-paso-0', 'wizard-paso-1', 'wizard-paso-2', 'wizard-paso-3'].forEach(id => {
                 const elemento = document.getElementById(id);
                 if (elemento) {
+                    console.log(`[WizardManager] Ocultando: ${id}`);
                     elemento.style.display = 'none';
+                } else {
+                    console.warn(`[WizardManager]  Elemento no encontrado: ${id}`);
                 }
             });
             
             // Mostrar el paso actual
             const pasoActual = document.getElementById(`wizard-paso-${numeroPaso}`);
             if (pasoActual) {
+                console.log(`[WizardManager]  Mostrando paso: wizard-paso-${numeroPaso}`);
                 pasoActual.style.display = 'block';
+                
+                // Verificar que realmente se mostró
+                setTimeout(() => {
+                    const displayReal = window.getComputedStyle(pasoActual).display;
+                    console.log(`[WizardManager]  Paso ${numeroPaso} mostrado. Display real: ${displayReal}`);
+                }, 100);
+            } else {
+                console.error(`[WizardManager]  Elemento del paso ${numeroPaso} no encontrado`);
+                return;
             }
             
-            // Actualizar indicadores de progreso
+            console.log('[WizardManager]  Actualizando indicadores de progreso...');
             this.actualizarIndicadoresProgreso(numeroPaso);
             
-            // Actualizar botones de navegación
+            console.log('[WizardManager]  Actualizando botones de navegación...');
             this.actualizarBotonesNavegacion(numeroPaso);
             
             // Si es paso 0, cargar las telas disponibles
             if (numeroPaso === 0) {
+                console.log('[WizardManager] 📋 Cargando telas disponibles...');
                 this.cargarTelasDisponibles();
             }
             
             // Si es paso 1, cargar los géneros (no hace falta, ya están)
             if (numeroPaso === 1) {
-                // Géneros ya están cargados en HTML
+                console.log('[WizardManager] 👥 Paso 1 - géneros ya cargados');
             }
             
             // Si es paso 2, cargar las tallas disponibles
             if (numeroPaso === 2) {
+                console.log('[WizardManager] 📏 Cargando tallas para género...');
                 this.cargarTallasParaGenero(StateManager.getGeneroSeleccionado());
             }
             
             // Si es paso 3, cargar los colores disponibles
             if (numeroPaso === 3) {
+                console.log('[WizardManager]  Cargando colores para talla...');
                 this.cargarColoresParaTalla();
             }
             
+            console.log('[WizardManager] 💾 Guardando paso actual en StateManager...');
             StateManager.setPasoActual(numeroPaso);
+            
+            console.log(`[WizardManager]  irPaso(${numeroPaso}) completado exitosamente`);
         },
 
         /**
@@ -247,17 +296,17 @@ window.WizardManager = (function() {
         cargarTelasDisponibles() {
             const contenedor = document.getElementById('wizard-telas-selector');
             if (!contenedor) {
-                console.error('[WizardManager] ❌ wizard-telas-selector no encontrado');
+                console.error('[WizardManager]  wizard-telas-selector no encontrado');
                 return;
             }
             
             const telas = window.telasCreacion || [];
             if (telas.length <= 1) {
-                console.log('[WizardManager] ℹ️ No hay múltiples telas para mostrar selector');
+                console.log('[WizardManager]  No hay múltiples telas para mostrar selector');
                 return;
             }
             
-            console.log('[WizardManager] ✅ Cargando telas disponibles:', telas.length);
+            console.log('[WizardManager]  Cargando telas disponibles:', telas.length);
             contenedor.innerHTML = '';
             
             telas.forEach((tela, index) => {
@@ -389,15 +438,16 @@ window.WizardManager = (function() {
                 const totalPasos = this.obtenerTotalPasos();
                 
                 if (btnAtras) {
+                    // Mostrar botón atrás solo si hay paso 0 (múltiples telas)
                     if (totalPasos > 3) {
                         btnAtras.style.display = 'flex';
                         btnAtras.style.alignItems = 'center';
                         btnAtras.style.justifyContent = 'center';
                         btnAtras.style.gap = '0.25rem';
-                        console.log('[WizardManager] Botón Atrás visible (hay múltiples telas)');
+                        console.log('[WizardManager] Botón Atrás visible (hay paso 0 - múltiples telas)');
                     } else {
                         btnAtras.style.display = 'none';
-                        console.log('[WizardManager] Botón Atrás oculto (simple)');
+                        console.log('[WizardManager] Botón Atrás oculto (no hay paso 0 - una sola tela)');
                     }
                 }
                 if (btnSiguiente) {
@@ -454,7 +504,7 @@ window.WizardManager = (function() {
                     btnGuardar.style.justifyContent = 'center';
                     btnGuardar.style.gap = '0.25rem';
                     btnGuardar.disabled = false;
-                    console.log('[WizardManager] ✅ Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
+                    console.log('[WizardManager]  Botón Guardar VISIBLE en paso 3. Display:', btnGuardar.style.display);
                 }
                 
                 // Actualizar etiquetas del resumen
@@ -536,11 +586,11 @@ window.WizardManager = (function() {
         mostrarTiposTalla(genero, tiposDisponibles) {
             const contenedor = document.getElementById('wizard-tallas-contenedor');
             if (!contenedor) {
-                console.error('[WizardManager] ❌ No se encontró wizard-tallas-contenedor');
+                console.error('[WizardManager]  No se encontró wizard-tallas-contenedor');
                 return;
             }
             
-            console.log('[WizardManager] 🔍 Contenedor estado antes:', {
+            console.log('[WizardManager]  Contenedor estado antes:', {
                 display: contenedor.style.display,
                 offsetHeight: contenedor.offsetHeight,
                 parentDisplay: window.getComputedStyle(contenedor.parentElement).display
@@ -622,7 +672,7 @@ window.WizardManager = (function() {
                     btn.style.color = '#1f2937';
                     btn.style.fontWeight = '600';
                     
-                    console.log('[WizardManager] ✅ Llamando mostrarTallasPorTipo con:', genero, tipo);
+                    console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
                     this.mostrarTallasPorTipo(genero, tipo);
                 });
                 
@@ -630,8 +680,8 @@ window.WizardManager = (function() {
                 contadorBotones++;
             });
             
-            console.log('[WizardManager] ✅ Se crearon', contadorBotones, 'botones de tipo de talla');
-            console.log('[WizardManager] 🔍 Contenedor después:', {
+            console.log('[WizardManager]  Se crearon', contadorBotones, 'botones de tipo de talla');
+            console.log('[WizardManager]  Contenedor después:', {
                 display: contenedor.style.display,
                 offsetHeight: contenedor.offsetHeight,
                 childrenCount: contenedor.children.length
@@ -644,7 +694,7 @@ window.WizardManager = (function() {
         mostrarTallasPorTipo(genero, tipo) {
             const contenedor = document.getElementById('wizard-tallas-contenedor');
             if (!contenedor) {
-                console.error('[WizardManager] ❌ Contenedor wizard-tallas-contenedor no encontrado');
+                console.error('[WizardManager]  Contenedor wizard-tallas-contenedor no encontrado');
                 return;
             }
             
@@ -745,28 +795,57 @@ window.WizardManager = (function() {
          * Cargar colores disponibles para cada talla seleccionada en Paso 3
          */
         cargarColoresParaTalla() {
+            console.log('[WizardManager]  Iniciando carga de colores para Paso 3...');
+            
             const genero = StateManager.getGeneroSeleccionado();
             const tallas = StateManager.getTallasSeleccionadas();
             const tipo = StateManager.getTipoTallaSel();
             
-            console.log('[WizardManager] Cargando interfaz para', genero, 'tallas:', tallas);
+            console.log('[WizardManager]  Datos para colores:', {
+                genero: genero,
+                tallas: tallas,
+                tipo: tipo,
+                pasoActual: StateManager.getPasoActual()
+            });
             
-            // Actualizar etiquetas del resumen
-            this.actualizarEtiquetasResumen();
-            
-            // Generar interfaz de colores por talla
-            UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
+            try {
+                // Actualizar etiquetas del resumen
+                console.log('[WizardManager] 🏷️ Actualizando etiquetas del resumen...');
+                this.actualizarEtiquetasResumen();
+                
+                // Generar interfaz de colores por talla
+                console.log('[WizardManager]  Generando interfaz de colores...');
+                if (window.UIRenderer && typeof window.UIRenderer.generarInterfazColoresPorTalla === 'function') {
+                    window.UIRenderer.generarInterfazColoresPorTalla(genero, tallas, tipo);
+                    console.log('[WizardManager]  Interfaz de colores generada exitosamente');
+                } else {
+                    console.error('[WizardManager]  UIRenderer.generarInterfazColoresPorTalla no disponible');
+                }
+                
+                console.log('[WizardManager]  Paso 3 cargado completamente');
+                
+            } catch (error) {
+                console.error('[WizardManager]  Error cargando colores para Paso 3:', error);
+                console.error('[WizardManager] Stack trace:', error.stack);
+                
+                // Mostrar error al usuario
+                alert('Error cargando la interfaz de colores. Por favor intente nuevamente.');
+                
+                // Volver al paso 2 en caso de error
+                console.log('[WizardManager]  Volviendo al Paso 2 debido a error...');
+                this.irPaso(2);
+            }
         },
 
         /**
          * Resetear wizard completamente
          */
         resetWizard() {
-            console.log('[WizardManager] 🔄 Iniciando RESET completo del wizard...');
+            console.log('[WizardManager]  Iniciando RESET completo del wizard...');
             
             // Paso 1: Resetear estado en StateManager
             StateManager.resetWizardState();
-            console.log('[WizardManager] ✅ Estado del StateManager reseteado');
+            console.log('[WizardManager]  Estado del StateManager reseteado');
             console.log('[WizardManager] 📋 Verificación de estado:', {
                 pasoActual: StateManager.getPasoActual(),
                 generoSeleccionado: StateManager.getGeneroSeleccionado(),
@@ -777,7 +856,7 @@ window.WizardManager = (function() {
             // (porque si hay múltiples telas, mostrarSelectoreTelasSiNecesario() ocultará paso 1)
             console.log('[WizardManager] ⏳ Esperando que toggleVistaAsignacion maneje los pasos...');
             
-            console.log('[WizardManager] ✅ Wizard reseteado y listo');
+            console.log('[WizardManager]  Wizard reseteado y listo');
         }
     };
 })();

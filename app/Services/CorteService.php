@@ -139,7 +139,7 @@ class CorteService extends BaseService
     {
         $startTime = microtime(true);
 
-        $this->log('🔴 CorteService::store INICIADO', [
+        $this->log(' CorteService::store INICIADO', [
             'all_data' => $request->all(),
             'method' => $request->method()
         ]);

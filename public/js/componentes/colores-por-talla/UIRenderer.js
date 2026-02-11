@@ -179,7 +179,7 @@ window.UIRenderer = (function() {
             const inputColor = document.createElement('input');
             inputColor.type = 'text';
             inputColor.className = 'color-input-wizard';
-            inputColor.setAttribute('list', datalistId);  // ✅ Usar setAttribute en lugar de .list
+            inputColor.setAttribute('list', datalistId);  //  Usar setAttribute en lugar de .list
             inputColor.placeholder = 'ROJO, AZUL, VERDE...';
             Object.assign(inputColor.style, {
                 padding: '0.5rem 0.75rem',
@@ -346,7 +346,7 @@ window.UIRenderer = (function() {
                     const tr = document.createElement('tr');
                     Object.assign(tr.style, { borderBottom: '1px solid #e5e7eb;' });
                     
-                    const tallaDisplay = asignacion.tipo ? `${asignacion.tipo} - ${asignacion.talla}` : asignacion.talla;
+                    const tallaDisplay = asignacion.talla; // Solo mostrar la talla, sin el tipo
                     
                     tr.innerHTML = `
                         <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;">
@@ -381,7 +381,7 @@ window.UIRenderer = (function() {
          * Actualizar el resumen de asignaciones
          */
         actualizarResumenAsignaciones() {
-            console.log('[UIRenderer.actualizarResumenAsignaciones] 🔍 Iniciando actualización de resumen...');
+            console.log('[UIRenderer.actualizarResumenAsignaciones]  Iniciando actualización de resumen...');
             
             const tbodyResumen = document.getElementById('tabla-resumen-asignaciones-cuerpo');
             const msgResumenVacio = document.getElementById('msg-resumen-vacio');
@@ -394,7 +394,7 @@ window.UIRenderer = (function() {
             });
             
             if (!tbodyResumen) {
-                console.error('[UIRenderer.actualizarResumenAsignaciones] ❌ No se encontró tabla-resumen-asignaciones-cuerpo');
+                console.error('[UIRenderer.actualizarResumenAsignaciones]  No se encontró tabla-resumen-asignaciones-cuerpo');
                 return;
             }
             
@@ -405,26 +405,26 @@ window.UIRenderer = (function() {
             const asignaciones = StateManager.getAsignaciones();
             const asignacionesArray = Object.values(asignaciones);
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones] 📦 Asignaciones en StateManager:', {
+            console.log('[UIRenderer.actualizarResumenAsignaciones]  Asignaciones en StateManager:', {
                 cantidad: asignacionesArray.length,
                 datos: asignacionesArray
             });
             
             if (asignacionesArray.length === 0) {
-                console.log('[UIRenderer.actualizarResumenAsignaciones] ℹ️ Sin asignaciones - mostrando mensaje vacío');
+                console.log('[UIRenderer.actualizarResumenAsignaciones]  Sin asignaciones - mostrando mensaje vacío');
                 if (msgResumenVacio) msgResumenVacio.style.display = 'block';
                 if (totalResumen) totalResumen.textContent = '0';
                 return;
             }
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones] ✅ Hay asignaciones - ocultando mensaje vacío');
+            console.log('[UIRenderer.actualizarResumenAsignaciones]  Hay asignaciones - ocultando mensaje vacío');
             if (msgResumenVacio) msgResumenVacio.style.display = 'none';
             
             let totalUnidades = 0;
             let filaCount = 0;
             
             asignacionesArray.forEach((asignacion, asigIndex) => {
-                console.log(`[UIRenderer.actualizarResumenAsignaciones] 🔄 Procesando asignación #${asigIndex}:`, asignacion);
+                console.log(`[UIRenderer.actualizarResumenAsignaciones]  Procesando asignación #${asigIndex}:`, asignacion);
                 
                 if (!asignacion.colores || asignacion.colores.length === 0) {
                     console.log(`[UIRenderer.actualizarResumenAsignaciones] ⏭️ Sin colores en asignación #${asigIndex}, saltando`);
@@ -441,7 +441,7 @@ window.UIRenderer = (function() {
                     const tr = document.createElement('tr');
                     Object.assign(tr.style, { borderBottom: '1px solid #e5e7eb;' });
                     
-                    const tallaDisplay = asignacion.tipo ? `${asignacion.tipo} - ${asignacion.talla}` : asignacion.talla;
+                    const tallaDisplay = asignacion.talla; // Solo mostrar la talla, sin el tipo
                     const tela = asignacion.tela || '--';
                     
                     tr.innerHTML = `
@@ -468,7 +468,7 @@ window.UIRenderer = (function() {
                     `;
                     
                     tbodyResumen.appendChild(tr);
-                    console.log(`[UIRenderer.actualizarResumenAsignaciones] ✅ Fila #${filaCount} añadida a la tabla`);
+                    console.log(`[UIRenderer.actualizarResumenAsignaciones]  Fila #${filaCount} añadida a la tabla`);
                 });
             });
             
@@ -477,14 +477,14 @@ window.UIRenderer = (function() {
                 console.log('[UIRenderer.actualizarResumenAsignaciones] 🎯 Total actualizado a:', totalUnidades);
             }
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones] ✅ COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
+            console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
         },
 
         /**
          * Actualizar visibilidad de secciones de resumen
          */
         actualizarVisibilidadSeccionesResumen() {
-            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] 🔍 Verificando visibilidad de secciones...');
+            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Verificando visibilidad de secciones...');
             
             const seccionTallasCantidades = document.getElementById('seccion-tallas-cantidades');
             const seccionResumenAsignaciones = document.getElementById('seccion-resumen-asignaciones');
@@ -497,30 +497,30 @@ window.UIRenderer = (function() {
             });
             
             if (tieneAsignaciones) {
-                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ Hay asignaciones - mostrando resumen, ocultando tallas');
+                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Hay asignaciones - mostrando resumen, ocultando tallas');
                 // Si hay asignaciones, mostrar resumen y ocultar TALLAS Y CANTIDADES
                 if (seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'none';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ seccion-tallas-cantidades ocultada');
+                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-tallas-cantidades ocultada');
                 }
                 if (seccionResumenAsignaciones) {
                     seccionResumenAsignaciones.style.display = 'block';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ seccion-resumen-asignaciones mostrada');
+                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-resumen-asignaciones mostrada');
                 }
             } else {
-                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ℹ️ Sin asignaciones - mostrando tallas, ocultando resumen');
+                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Sin asignaciones - mostrando tallas, ocultando resumen');
                 // Si no hay asignaciones, mostrar TALLAS Y CANTIDADES y ocultar resumen
                 if (seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'block';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ seccion-tallas-cantidades mostrada');
+                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-tallas-cantidades mostrada');
                 }
                 if (seccionResumenAsignaciones) {
                     seccionResumenAsignaciones.style.display = 'none';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ seccion-resumen-asignaciones ocultada');
+                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-resumen-asignaciones ocultada');
                 }
             }
             
-            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] ✅ COMPLETADO');
+            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  COMPLETADO');
         },
 
         /**
@@ -539,26 +539,26 @@ window.UIRenderer = (function() {
                 });
                 
                 if (!contenedor) {
-                    console.error('[UIRenderer] ❌ No se encontró elemento lista-colores-checkboxes');
+                    console.error('[UIRenderer]  No se encontró elemento lista-colores-checkboxes');
                     return;
                 }
                 
                 // Limpiar contenedor
                 contenedor.innerHTML = '';
-                console.log('[UIRenderer] ✅ Contenedor limpiado');
+                console.log('[UIRenderer]  Contenedor limpiado');
                 
                 // Siempre mostrar sección de color personalizado
                 if (seccionPersonalizado) {
                     seccionPersonalizado.style.display = 'block';
-                    console.log('[UIRenderer] ✅ Sección personalizado MOSTRADA');
+                    console.log('[UIRenderer]  Sección personalizado MOSTRADA');
                 } else {
-                    console.error('[UIRenderer] ❌ seccionPersonalizado no existe');
+                    console.error('[UIRenderer]  seccionPersonalizado no existe');
                 }
                 
-                console.log('[UIRenderer] ✅ Completado');
+                console.log('[UIRenderer]  Completado');
                 
             } catch (error) {
-                console.error('[UIRenderer] ❌ ERROR FATAL:', error.message);
+                console.error('[UIRenderer]  ERROR FATAL:', error.message);
                 console.error('[UIRenderer] Stack:', error.stack);
             }
         }

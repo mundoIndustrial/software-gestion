@@ -47,7 +47,7 @@ class ObtenerPedidoDetalleService
         $pedido = PedidoProduccion::findOrFail($this->obtenerPedido($pedidoIdentifier)->id);
         $pedido->load(['prendas' => function ($q) {
             $q->with(['procesos' => function ($q2) {
-                $q2->with(['tipoProceso', 'imagenes'])  // 📦 Cargar tipoProceso e imagenes de procesos
+                $q2->with(['tipoProceso', 'imagenes'])  //  Cargar tipoProceso e imagenes de procesos
                    ->orderBy('created_at', 'desc');
             }]);
         }]);
@@ -494,7 +494,7 @@ class ObtenerPedidoDetalleService
      */
     public function obtenerPrendaConProcesos($pedidoId, $prendaId): array
     {
-        Log::info('🔍 [PRENDA-DETALLE] Obteniendo prenda con procesos', [
+        Log::info(' [PRENDA-DETALLE] Obteniendo prenda con procesos', [
             'pedido_id' => $pedidoId,
             'prenda_id' => $prendaId
         ]);
@@ -550,7 +550,7 @@ class ObtenerPedidoDetalleService
      */
     private function transformarPrendaParaEdicion($prenda): array
     {
-        Log::info('🔄 [TRANSFORMAR-INICIO] Iniciando transformación de prenda', [
+        Log::info(' [TRANSFORMAR-INICIO] Iniciando transformación de prenda', [
             'prenda_id' => $prenda->id,
             'prenda_nombre' => $prenda->nombre_prenda,
             'has_fotos_relation' => isset($prenda->fotos),
@@ -572,10 +572,10 @@ class ObtenerPedidoDetalleService
         }
         $prendaArray['procesos'] = $procesos;
 
-        Log::info('📦 [PROCESOS-TRANSFORMADOS] ' . count($procesos) . ' procesos transformados');
+        Log::info(' [PROCESOS-TRANSFORMADOS] ' . count($procesos) . ' procesos transformados');
 
         // Fotos - usar ruta_webp (o ruta_original si no existe)
-        Log::info('🔍 [FOTOS-DEBUG] Intentando acceder a fotos', [
+        Log::info(' [FOTOS-DEBUG] Intentando acceder a fotos', [
             'has_fotos_in_model' => isset($prenda->fotos),
             'fotos_count' => $prenda->fotos ? $prenda->fotos->count() : 0,
             'has_fotos_in_array' => isset($prendaArray['fotos']),

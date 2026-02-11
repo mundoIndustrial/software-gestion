@@ -1,5 +1,5 @@
 /**
- * 🚀 LAZY LOADER: Módulos de Gestión EPP
+ *  LAZY LOADER: Módulos de Gestión EPP
  * 
  * Propósito: Cargar bajo demanda todos los módulos necesarios para editar EPP
  * Cuándo: Se carga cuando usuario hace clic en "Editar EPP"
@@ -84,7 +84,7 @@ window.EPPManagerLoader = (function() {
                 script.onerror = () => {
                     clearTimeout(timeout);
                     const error = `Failed to load: ${filename}`;
-                    console.error(`[EPPManagerLoader] ❌ ${error}`);
+                    console.error(`[EPPManagerLoader]  ${error}`);
                     reject(new Error(error));
                 };
                 
@@ -166,8 +166,8 @@ window.EPPManagerLoader = (function() {
             loadError = null;
             
             try {
-                console.log('[EPPManagerLoader] 🚀 Iniciando carga de módulos de gestión EPP');
-                console.log(`[EPPManagerLoader] 📦 ${scriptsToLoad.length} scripts a cargar`);
+                console.log('[EPPManagerLoader]  Iniciando carga de módulos de gestión EPP');
+                console.log(`[EPPManagerLoader]  ${scriptsToLoad.length} scripts a cargar`);
                 
                 // Cargar scripts en orden
                 await loadScriptsSequentially();
@@ -194,7 +194,7 @@ window.EPPManagerLoader = (function() {
                 isLoading = false;
                 loadError = error;
                 
-                console.error('[EPPManagerLoader] ❌ ERROR CARGANDO MÓDULOS:', error.message);
+                console.error('[EPPManagerLoader]  ERROR CARGANDO MÓDULOS:', error.message);
                 console.error('[EPPManagerLoader] Stack:', error.stack);
                 
                 // Disparar evento de error

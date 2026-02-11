@@ -132,7 +132,7 @@ class CotizacionBordadoController extends Controller
         $resultado = DB::transaction(function () use ($request, $id, $esEnvio) {
             try {
                 
-                Log::info('🔄 CotizacionBordadoController@updateBorrador - Actualizando borrador', [
+                Log::info(' CotizacionBordadoController@updateBorrador - Actualizando borrador', [
                     'cotizacion_id' => $id,
                     'id_type' => gettype($id),
                     'method' => $request->method(),
@@ -755,7 +755,7 @@ class CotizacionBordadoController extends Controller
             // DEBUG: Ver qué metadatos llegaron al request
             $todasLasClavesRequest = array_keys($request->all());
             $clavesConMetadata = array_filter($todasLasClavesRequest, fn($k) => str_contains($k, 'logo_compartido_metadata'));
-            Log::info('🔍 METADATA en Request->all():', [
+            Log::info(' METADATA en Request->all():', [
                 'todas_las_claves' => $todasLasClavesRequest,
                 'claves_con_metadata' => $clavesConMetadata,
                 'count_metadata' => count($clavesConMetadata),
@@ -798,7 +798,7 @@ class CotizacionBordadoController extends Controller
                     
                     $logosCompartidosAgrupados[$tecnicaIdx][$claveLogo] = $archivo;
                     
-                    Log::info('🎨 Logo compartido encontrado', [
+                    Log::info(' Logo compartido encontrado', [
                         'fieldName' => $fieldName,
                         'tecnica_idx' => $tecnicaIdx,
                         'clave' => $claveLogo,
@@ -831,7 +831,7 @@ class CotizacionBordadoController extends Controller
                 }
             }
             
-            Log::info('🎨 Metadatos de logos compartidos encontrados:', [
+            Log::info(' Metadatos de logos compartidos encontrados:', [
                 'count' => count($imagenesCompartidas),
                 'claves' => array_keys($imagenesCompartidas)
             ]);
@@ -858,7 +858,7 @@ class CotizacionBordadoController extends Controller
                 
                 if ($archivoEncontrado) {
                     try {
-                        Log::info('🎨 Guardando logo compartido', [
+                        Log::info(' Guardando logo compartido', [
                             'clave' => $clave,
                             'tecnicas' => implode(' + ', $tecnicasCompartidas),
                             'archivo' => $archivoEncontrado->getClientOriginalName()
@@ -880,7 +880,7 @@ class CotizacionBordadoController extends Controller
                             'tecnicas' => implode(' + ', $tecnicasCompartidas)
                         ]);
                     } catch (\Exception $e) {
-                        Log::error('❌ Error guardando logo compartido', [
+                        Log::error(' Error guardando logo compartido', [
                             'clave' => $clave,
                             'error' => $e->getMessage()
                         ]);
@@ -1047,7 +1047,7 @@ class CotizacionBordadoController extends Controller
                 $prendas = $tecnicaData['prendas'] ?? [];
                 
                 foreach ($prendas as $prendaIdx => $prendaData) {
-                    Log::info("    📦 Prenda [{$prendaIdx}]", [
+                    Log::info("     Prenda [{$prendaIdx}]", [
                         'nombre' => $prendaData['nombre_prenda'] ?? 'sin nombre'
                     ]);
 
@@ -1107,7 +1107,7 @@ class CotizacionBordadoController extends Controller
                         $nombreTela = $tela['tela'] ?? null;
                         $referencia = $tela['referencia'] ?? null;
                         
-                        Log::info("      🎨 Tela [{$telaIdx}]", [
+                        Log::info("       Tela [{$telaIdx}]", [
                             'color' => $color,
                             'tela' => $nombreTela,
                             'referencia' => $referencia
@@ -1160,7 +1160,7 @@ class CotizacionBordadoController extends Controller
                                         'ruta' => $rutaImagen
                                     ]);
                                 } catch (\Exception $e) {
-                                    Log::error('        ❌ Error guardando imagen', [
+                                    Log::error('         Error guardando imagen', [
                                         'fieldName' => $fieldName,
                                         'error' => $e->getMessage()
                                     ]);
@@ -1186,7 +1186,7 @@ class CotizacionBordadoController extends Controller
                                     'ref' => $referencia
                                 ]);
                             } catch (\Exception $e) {
-                                Log::error('        ❌ Error en BD', [
+                                Log::error('         Error en BD', [
                                     'error' => $e->getMessage()
                                 ]);
                             }
@@ -1200,7 +1200,7 @@ class CotizacionBordadoController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error en procesarTelasDelFormulario()', [
+            Log::error(' Error en procesarTelasDelFormulario()', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
@@ -1218,7 +1218,7 @@ class CotizacionBordadoController extends Controller
     {
         return DB::transaction(function () use ($request, $cotizacionId) {
             try {
-                Log::info('🎨 Iniciando guardado de Tela, Color, Ref para prenda', [
+                Log::info(' Iniciando guardado de Tela, Color, Ref para prenda', [
                     'cotizacion_id' => $cotizacionId,
                     'logo_cotizacion_id' => $request->input('logo_cotizacion_id'),
                     'prenda_cot_id' => $request->input('prenda_cot_id'),
@@ -1304,7 +1304,7 @@ class CotizacionBordadoController extends Controller
                 ], 201);
 
             } catch (\Illuminate\Validation\ValidationException $e) {
-                Log::warning('❌ Validación fallida en guardarTelaPrenda', [
+                Log::warning(' Validación fallida en guardarTelaPrenda', [
                     'errores' => $e->errors()
                 ]);
                 return response()->json([
@@ -1313,7 +1313,7 @@ class CotizacionBordadoController extends Controller
                     'errors' => $e->errors()
                 ], 422);
             } catch (\Exception $e) {
-                Log::error('❌ Error al guardar tela, color y referencia', [
+                Log::error(' Error al guardar tela, color y referencia', [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine()
@@ -1378,7 +1378,7 @@ class CotizacionBordadoController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al obtener telas de prendas', [
+            Log::error(' Error al obtener telas de prendas', [
                 'cotizacion_id' => $cotizacionId,
                 'error' => $e->getMessage()
             ]);
@@ -1418,7 +1418,7 @@ class CotizacionBordadoController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al eliminar tela', [
+            Log::error(' Error al eliminar tela', [
                 'id' => $telaId,
                 'error' => $e->getMessage()
             ]);

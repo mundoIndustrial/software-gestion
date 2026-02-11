@@ -106,7 +106,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     console.log('[GALERIA-DEBUG] Abriendo galería:', { titulo, cantidadImagenes: imagenes?.length });
     
     if (!Array.isArray(imagenes) || imagenes.length === 0) {
-        console.warn('[GALERIA-DEBUG] ❌ Array de imágenes vacío o inválido');
+        console.warn('[GALERIA-DEBUG]  Array de imágenes vacío o inválido');
         return;
     }
     
@@ -356,7 +356,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
     };
     
     imagen.onerror = function() {
-        console.error('[GALERIA-DEBUG] ❌ Error cargando imagen:', this.src);
+        console.error('[GALERIA-DEBUG]  Error cargando imagen:', this.src);
     };
     
     imagenWrapper.appendChild(imagen);
@@ -415,7 +415,7 @@ window._abrirGaleriaImagenes = function(imagenes, titulo = 'Galería') {
         imagen.src = imagenesNormalizadas[indiceActual];
         contador.textContent = `${indiceActual + 1} / ${imagenesNormalizadas.length}`;
         
-        console.log('[GALERIA-DEBUG] 🔄 Actualizando galería:', {
+        console.log('[GALERIA-DEBUG]  Actualizando galería:', {
             indice: indiceActual,
             url: imagenesNormalizadas[indiceActual]
         });
@@ -1059,8 +1059,8 @@ function registrarFontSizesFactura() {
  */
 function generarHTMLFactura(datos) {
     try {
-        // 🔍 DEBUG: Verificar qué datos están llegando
-        console.log('🔍 [generarHTMLFactura] Datos recibidos:', {
+        //  DEBUG: Verificar qué datos están llegando
+        console.log(' [generarHTMLFactura] Datos recibidos:', {
             datos_existe: !!datos,
             datos_keys: datos ? Object.keys(datos) : 'null',
             prendas_existe: !!(datos && datos.prendas),

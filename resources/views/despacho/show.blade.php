@@ -464,14 +464,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         fila = document.querySelector(
                             `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-talla-id="${despacho.talla_id}"]`
                         );
-                        console.log(`🔍 Buscando: tipo=${despacho.tipo}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
+                        console.log(` Buscando: tipo=${despacho.tipo}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
                     } else {
                         // Para items sin talla (EPPs), buscar solo por tipo e id
                         const filas = document.querySelectorAll(
                             `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-id="${despacho.id}"]`
                         );
                         fila = filas[0];
-                        console.log(`🔍 Buscando EPP: tipo=${despacho.tipo}, id=${despacho.id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
+                        console.log(` Buscando EPP: tipo=${despacho.tipo}, id=${despacho.id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
                     }
 
                     if (fila) {
@@ -578,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data = await response.json();
             } else {
                 const text = await response.text();
-                console.error('❌ Respuesta no es JSON:', text);
+                console.error(' Respuesta no es JSON:', text);
                 throw new Error('La respuesta del servidor no es JSON válido');
             }
 
@@ -602,14 +602,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
                 
             } else {
-                alert('❌ Error: ' + data.message);
+                alert(' Error: ' + data.message);
                 if (data.errors) {
                     console.error('Errores:', data.errors);
                 }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error al guardar: ' + error.message);
+            alert(' Error al guardar: ' + error.message);
         } finally {
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = '💾 Guardar Despacho';
@@ -649,11 +649,11 @@ async function abrirModalFactura(pedidoId) {
             const htmlFactura = generarHTMLFactura(data);
             contenido.innerHTML = htmlFactura;
         } else {
-            contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error al cargar la factura</div>';
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error al cargar la factura</div>';
         }
     } catch (error) {
         console.error('Error cargando factura:', error);
-        contenido.innerHTML = '<div class="text-center text-red-600 py-6">❌ Error: ' + error.message + '</div>';
+        contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error: ' + error.message + '</div>';
     }
 }
 
@@ -670,7 +670,7 @@ function cerrarModalFactura() {
  */
 function generarHTMLFactura(datos) {
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
-        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;">❌ Error: No se pudieron cargar las prendas del pedido.</div>';
+        return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
     // Generar las tarjetas de prendas

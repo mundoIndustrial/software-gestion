@@ -12,7 +12,7 @@ class ActualizarEstadosCotizaciones extends Command
 
     public function handle()
     {
-        $this->info('🔄 ACTUALIZANDO ESTADOS DE COTIZACIONES');
+        $this->info(' ACTUALIZANDO ESTADOS DE COTIZACIONES');
         $this->line('');
 
         // Mapeo de estados inválidos a válidos

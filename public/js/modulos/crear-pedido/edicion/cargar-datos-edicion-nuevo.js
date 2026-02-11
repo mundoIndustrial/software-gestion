@@ -536,7 +536,7 @@ window.addEventListener('prendaActualizada', (event) => {
             // Actualizar prendasEdicion con los datos del servidor
             // Esto asegura que tenemos la prenda actualizada
             if (window.prendasEdicion && typeof window.prendasEdicion === 'object') {
-                console.log('[cargar-datos-edicion-nuevo] 🔄 Actualizando prendasEdicion desde servidor...');
+                console.log('[cargar-datos-edicion-nuevo]  Actualizando prendasEdicion desde servidor...');
                 
                 // Re-renderizar las prendas (se cargarán desde window.datosEdicionPedido)
                 if (typeof window.renderizarPrendasSinCotizacion === 'function') {
@@ -550,7 +550,7 @@ window.addEventListener('prendaActualizada', (event) => {
         
         // Re-renderizar EPPs manteniéndolos intactos
         if (eppsPersistentes.length > 0) {
-            console.log('[cargar-datos-edicion-nuevo] 🔄 Re-renderizando EPPs (preservados)...');
+            console.log('[cargar-datos-edicion-nuevo]  Re-renderizando EPPs (preservados)...');
             
             // Restaurar los EPPs
             window.eppsPedido = eppsPersistentes;
@@ -566,7 +566,7 @@ window.addEventListener('prendaActualizada', (event) => {
         
         console.log('[cargar-datos-edicion-nuevo]  Actualización completada sin perder items');
     } catch (error) {
-        console.error('[cargar-datos-edicion-nuevo] ❌ Error al procesar prendaActualizada:', error);
+        console.error('[cargar-datos-edicion-nuevo]  Error al procesar prendaActualizada:', error);
     }
 });
 

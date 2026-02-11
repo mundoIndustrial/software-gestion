@@ -84,7 +84,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
     console.log('   - imagenesActuales finales:', imagenesActuales?.length || 0);
     
     if (!imagenesActuales || imagenesActuales.length === 0) {
-        console.warn('❌ [galeria-imagenes-prenda] No hay imágenes para mostrar');
+        console.warn(' [galeria-imagenes-prenda] No hay imágenes para mostrar');
         window.__galeriaPrendaAbierta = false;
         return;
     }

@@ -647,7 +647,7 @@
 
                     // Debug en consola (solo primera celda)
                     if (idx === 0) {
-                        console.log('🔍 [DESCRIPCION] Datos de la celda:', {
+                        console.log(' [DESCRIPCION] Datos de la celda:', {
                             nombre: prendaData.nombre,
                             color: prendaData.color,
                             tela: prendaData.tela,

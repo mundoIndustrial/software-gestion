@@ -46,7 +46,7 @@ class ProcesosEditor {
         });
 
         if (!datosProceso) {
-            console.error('❌ [PROCESO-EDITOR] No hay datos del proceso para editar');
+            console.error(' [PROCESO-EDITOR] No hay datos del proceso para editar');
             return false;
         }
 
@@ -296,7 +296,7 @@ class ProcesosEditor {
             return true;
         }
 
-        console.error('❌ [PROCESO-EDITOR] No se encontró proceso en window.procesosSeleccionados:', tipo);
+        console.error(' [PROCESO-EDITOR] No se encontró proceso en window.procesosSeleccionados:', tipo);
         return false;
     }
 
@@ -318,7 +318,7 @@ class ProcesosEditor {
             ...cambios
         };
 
-        console.log('📦 [PROCESO-EDITOR] Payload para actualización:', payload);
+        console.log(' [PROCESO-EDITOR] Payload para actualización:', payload);
         return payload;
     }
 
@@ -326,7 +326,7 @@ class ProcesosEditor {
      * Cancelar edición y limpiar buffer
      */
     cancelarEdicion() {
-        console.log('❌ [PROCESO-EDITOR] Cancelando edición del proceso:', {
+        console.log(' [PROCESO-EDITOR] Cancelando edición del proceso:', {
             tipo: this.procesoEnEdicion?.tipo
         });
 

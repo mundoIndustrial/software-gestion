@@ -51,10 +51,10 @@ class ModalCleanup {
             const element = DOMUtils.getElement(id);
             if (element) {
                 if (element.type === 'select-one') {
-                    // 🔴 IMPORTANTE: NO resetear origen-select en modo edición
+                    //  IMPORTANTE: NO resetear origen-select en modo edición
                     // Se cargará correctamente en llenarCamposBasicos()
                     if (id === 'nueva-prenda-origen-select' && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
-                        console.log('🔴🔴🔴 [limpiarFormulario]  SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) 🔴🔴🔴', {
+                        console.log(' [limpiarFormulario]  SALTANDO LIMPIAR SELECT ORIGEN (MODO EDICIÓN) ', {
                             prendaEditIndex: window.prendaEditIndex,
                             selectId: id,
                             valorActual: element.value,
@@ -64,7 +64,7 @@ class ModalCleanup {
                     }
                     element.value = element.querySelector('option')?.value || '';
                 } else {
-                    // 🔴 IMPORTANTE: NO resetear inputs de telas en modo edición
+                    //  IMPORTANTE: NO resetear inputs de telas en modo edición
                     // Se necesitan para permitir agregar nuevas telas durante la edición
                     if ((id === 'nueva-prenda-tela' || id === 'nueva-prenda-color' || id === 'nueva-prenda-referencia') 
                         && window.prendaEditIndex !== null && window.prendaEditIndex !== undefined) {
@@ -549,13 +549,13 @@ class ModalCleanup {
         // Cuando editamos una prenda que fue agregada desde creación, telasCreacion podría tener datos viejos
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
-            console.log('🔄 [prepararParaEditar] telasCreacion limpiado para modo edición');
+            console.log(' [prepararParaEditar] telasCreacion limpiado para modo edición');
         }
         
         // 🔥 CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
         if (!window.telasAgregadas) {
             window.telasAgregadas = [];
-            console.log('🔄 [prepararParaEditar] telasAgregadas inicializado como array vacío');
+            console.log(' [prepararParaEditar] telasAgregadas inicializado como array vacío');
         }
         
         // 🔥 Cargar opciones de telas y colores para las datalist
@@ -583,27 +583,78 @@ class ModalCleanup {
      * Limpiar modal completamente (después de guardar)
      */
     static limpiarDespuésDeGuardar() {
+        const inicioTiempo = performance.now();
+        console.log('🔧 [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza...');
+        
+        try {
+            // PASO 1: Limpiar formulario
+            console.log('  → PASO 1: limpiarFormulario()...');
+            const paso1 = performance.now();
+            this.limpiarFormulario();
+            console.log(`  ✓ PASO 1 completado en ${(performance.now() - paso1).toFixed(2)}ms`);
+            
+            // PASO 2: Resetear edición
+            console.log('  → PASO 2: resetearEdicion()...');
+            const paso2 = performance.now();
+            this.resetearEdicion();
+            console.log(`  ✓ PASO 2 completado en ${(performance.now() - paso2).toFixed(2)}ms`);
+            
+            // PASO 3: Resetear prendaEditIndex en gestionItemsUI
+            console.log('  → PASO 3: Reseteando window.gestionItemsUI.prendaEditIndex...');
+            const paso3 = performance.now();
+            if (window.gestionItemsUI) {
+                window.gestionItemsUI.prendaEditIndex = null;
+            }
+            if (window.gestionItemsUI?.prendaEditor) {
+                window.gestionItemsUI.prendaEditor.prendaEditIndex = null;
+            }
+            console.log(`  ✓ PASO 3 completado en ${(performance.now() - paso3).toFixed(2)}ms`);
+            
+            // PASO 4: Ocultar modal
+            console.log('  → PASO 4: Ocultando modal...');
+            const paso4 = performance.now();
+            const modal = DOMUtils.getElement('modal-agregar-prenda-nueva');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            console.log(`  ✓ PASO 4 completado en ${(performance.now() - paso4).toFixed(2)}ms`);
+            
+            const tiempoTotal = performance.now() - inicioTiempo;
+            console.log(` [ModalCleanup.limpiarDespuésDeGuardar] COMPLETADO EN ${tiempoTotal.toFixed(2)}ms`);
+            
+            // PASO 5: Limpiar el resto de forma ASÍNCRONA (no bloqueante)
+            console.log('  → PASO 5 (ASÍNCRONO): Programando limpiezas adicionales...');
+            setTimeout(() => {
+                try {
+                    console.log('    → Limpiando storages...');
+                    const pasoS1 = performance.now();
+                    this.limpiarStorages();
+                    console.log(`    ✓ Storages en ${(performance.now() - pasoS1).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando checkboxes...');
+                    const pasoS2 = performance.now();
+                    this.limpiarCheckboxes();
+                    console.log(`    ✓ Checkboxes en ${(performance.now() - pasoS2).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando procesos...');
+                    const pasoS3 = performance.now();
+                    this.limpiarProcesos();
+                    console.log(`    ✓ Procesos en ${(performance.now() - pasoS3).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando contenedores...');
+                    const pasoS4 = performance.now();
+                    this.limpiarContenedores();
+                    console.log(`    ✓ Contenedores en ${(performance.now() - pasoS4).toFixed(2)}ms`);
+                    
+                    console.log('  ✓ PASO 5 (ASÍNCRONO) completado');
+                } catch (error) {
+                    console.error('   Error en limpieza asíncrona:', error);
+                }
+            }, 10);
 
-        
-        this.limpiarTodo();
-        this.resetearEdicion();
-        
-        // 🔥 CRÍTICO: También resetear en las instancias de clases
-        // Evita que queden restos de prendaEditIndex en diferentes ubicaciones
-        if (window.gestionItemsUI) {
-            window.gestionItemsUI.prendaEditIndex = null;
+        } catch (error) {
+            console.error(' [ModalCleanup.limpiarDespuésDeGuardar] Error:', error);
         }
-        if (window.gestionItemsUI?.prendaEditor) {
-            window.gestionItemsUI.prendaEditor.prendaEditIndex = null;
-        }
-        
-        // Ocultar modal
-        const modal = DOMUtils.getElement('modal-agregar-prenda-nueva');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-        
-
     }
 }
 

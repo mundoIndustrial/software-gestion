@@ -28,7 +28,7 @@ class TestConsecutivosCommand extends Command
                 ->first();
 
             if (!$pedido) {
-                $this->error('❌ No hay pedidos en estado PENDIENTE_SUPERVISOR');
+                $this->error(' No hay pedidos en estado PENDIENTE_SUPERVISOR');
                 $this->info('📋 Estados disponibles:');
                 
                 $estados = PedidoProduccion::distinct()->pluck('estado');
@@ -38,7 +38,7 @@ class TestConsecutivosCommand extends Command
                 return 1;
             }
 
-            $this->info('📦 Pedido encontrado:');
+            $this->info(' Pedido encontrado:');
             $this->info("   ID: {$pedido->id}");
             $this->info("   Número: " . ($pedido->numero_pedido ?? 'SIN NÚMERO'));
             $this->info("   Cliente: {$pedido->cliente}");
@@ -51,7 +51,7 @@ class TestConsecutivosCommand extends Command
 
             if ($consecutivosExistentes > 0) {
                 $this->warn("  El pedido ya tiene {$consecutivosExistentes} consecutivos generados");
-                $this->info('🔍 Mostrando consecutivos existentes:');
+                $this->info(' Mostrando consecutivos existentes:');
                 
                 $existentes = DB::table('consecutivos_recibos_pedidos')
                     ->where('pedido_produccion_id', $pedido->id)
@@ -63,7 +63,7 @@ class TestConsecutivosCommand extends Command
             }
 
             // 3. Simular el cambio de estado
-            $this->info('🔄 Simulando cambio de estado: PENDIENTE_SUPERVISOR → PENDIENTE_INSUMOS');
+            $this->info(' Simulando cambio de estado: PENDIENTE_SUPERVISOR → PENDIENTE_INSUMOS');
             
             $estadoAnterior = $pedido->estado;
             $estadoNuevo = 'PENDIENTE_INSUMOS';
@@ -97,7 +97,7 @@ class TestConsecutivosCommand extends Command
             }
 
         } catch (\Exception $e) {
-            $this->error("❌ Error: " . $e->getMessage());
+            $this->error(" Error: " . $e->getMessage());
             $this->error("📍 Línea: " . $e->getLine());
             $this->error("📁 Archivo: " . $e->getFile());
             return 1;

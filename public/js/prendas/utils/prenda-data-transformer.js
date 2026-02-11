@@ -12,11 +12,11 @@ class PrendaDataTransformer {
      * @returns {Object} Prenda transformada
      */
     static transformar(prendaRaw) {
-        console.log('[PrendaDataTransformer] 🔍 INICIANDO TRANSFORMACIÓN');
-        console.log('[PrendaDataTransformer] 📦 DATOS DE ENTRADA:', prendaRaw);
+        console.log('[PrendaDataTransformer]  INICIANDO TRANSFORMACIÓN');
+        console.log('[PrendaDataTransformer]  DATOS DE ENTRADA:', prendaRaw);
         
         if (!prendaRaw) {
-            console.log('[PrendaDataTransformer] ❌ prendaRaw es null/undefined');
+            console.log('[PrendaDataTransformer]  prendaRaw es null/undefined');
             return null;
         }
 
@@ -28,7 +28,7 @@ class PrendaDataTransformer {
         if (prendaRaw.cantidad_talla && typeof prendaRaw.cantidad_talla === 'object') {
             const relacional = prendaRaw.cantidad_talla;
             
-            console.log('[PrendaDataTransformer] 🔄 Transformando cantidad_talla:', relacional);
+            console.log('[PrendaDataTransformer]  Transformando cantidad_talla:', relacional);
             
             // Construir generosConTallas y cantidadesPorTalla desde relacional
             generosConTallas = {};
@@ -152,11 +152,11 @@ class PrendaDataTransformer {
      * @returns {Object} {tela, color, referencia}
      */
     static obtenerInfoTela(prenda) {
-        console.log('[PrendaDataTransformer.obtenerInfoTela] 🔍 INICIANDO OBTENCIÓN DE INFO TELA');
-        console.log('[PrendaDataTransformer.obtenerInfoTela] 📦 PRENDA RECIBIDA:', prenda);
+        console.log('[PrendaDataTransformer.obtenerInfoTela]  INICIANDO OBTENCIÓN DE INFO TELA');
+        console.log('[PrendaDataTransformer.obtenerInfoTela]  PRENDA RECIBIDA:', prenda);
         
         if (!prenda) {
-            console.log('[PrendaDataTransformer.obtenerInfoTela] ❌ prenda es null/undefined');
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  prenda es null/undefined');
             return { tela: 'N/A', color: 'N/A', referencia: 'N/A' };
         }
 
@@ -259,8 +259,8 @@ class PrendaDataTransformer {
      * @returns {string}
      */
     static _extraerTela(prendaRaw) {
-        console.log('[PrendaDataTransformer._extraerTela] 🔍 Buscando tela...');
-        console.log('[PrendaDataTransformer._extraerTela] 📦 prendaRaw.telas:', prendaRaw.telas);
+        console.log('[PrendaDataTransformer._extraerTela]  Buscando tela...');
+        console.log('[PrendaDataTransformer._extraerTela]  prendaRaw.telas:', prendaRaw.telas);
         
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
@@ -286,8 +286,8 @@ class PrendaDataTransformer {
      * @returns {string}
      */
     static _extraerColor(prendaRaw) {
-        console.log('[PrendaDataTransformer._extraerColor] 🔍 Buscando color...');
-        console.log('[PrendaDataTransformer._extraerColor] 📦 prendaRaw.telas:', prendaRaw.telas);
+        console.log('[PrendaDataTransformer._extraerColor]  Buscando color...');
+        console.log('[PrendaDataTransformer._extraerColor]  prendaRaw.telas:', prendaRaw.telas);
         
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
@@ -313,8 +313,8 @@ class PrendaDataTransformer {
      * @returns {string}
      */
     static _extraerReferencia(prendaRaw) {
-        console.log('[PrendaDataTransformer._extraerReferencia] 🔍 Buscando referencia...');
-        console.log('[PrendaDataTransformer._extraerReferencia] 📦 prendaRaw.telas:', prendaRaw.telas);
+        console.log('[PrendaDataTransformer._extraerReferencia]  Buscando referencia...');
+        console.log('[PrendaDataTransformer._extraerReferencia]  prendaRaw.telas:', prendaRaw.telas);
         
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
@@ -340,8 +340,8 @@ class PrendaDataTransformer {
      * @returns {Array}
      */
     static _extraerTelasAgregadas(prendaRaw) {
-        console.log('[PrendaDataTransformer._extraerTelasAgregadas] 🔍 Buscando telas agregadas...');
-        console.log('[PrendaDataTransformer._extraerTelasAgregadas] 📦 prendaRaw.telas:', prendaRaw.telas);
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas]  Buscando telas agregadas...');
+        console.log('[PrendaDataTransformer._extraerTelasAgregadas]  prendaRaw.telas:', prendaRaw.telas);
         
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas)) {
             const telasFormateadas = prendaRaw.telas.map(tela => ({

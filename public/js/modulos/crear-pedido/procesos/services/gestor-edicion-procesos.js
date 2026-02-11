@@ -151,7 +151,7 @@ class GestorEditacionProcesos {
      */
     cancelar() {
         if (this.procesoEnEdicionActual) {
-            console.log('❌ [GESTOR-EDICION] Cancelando edición de:', this.procesoEnEdicionActual.tipo);
+            console.log(' [GESTOR-EDICION] Cancelando edición de:', this.procesoEnEdicionActual.tipo);
             
             // Cancelar en el editor si no es nuevo
             if (!this.procesoEnEdicionActual.esNuevo && window.procesosEditor) {

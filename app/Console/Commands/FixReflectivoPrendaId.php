@@ -51,6 +51,6 @@ class FixReflectivoPrendaId extends Command
             $this->line("  ✓ Recibo ID {$recibo->id}: Asignado prenda_id = {$prenda->id} ({$prenda->nombre_prenda})");
         }
         
-        $this->info("\n✅ Proceso completado");
+        $this->info("\n Proceso completado");
     }
 }

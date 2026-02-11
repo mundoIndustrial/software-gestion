@@ -211,15 +211,15 @@ function irAlPaso(paso) {
     // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
     if (paso === 5) {
 
-        console.log('🔄 [irAlPaso] Navegando al paso 5 (Revisar)');
+        console.log(' [irAlPaso] Navegando al paso 5 (Revisar)');
         
         setTimeout(() => {
             // Usar la nueva función de resumen completo si está disponible
             if (typeof actualizarResumenPaso5Completo === 'function') {
-                console.log('✅ [irAlPaso] Llamando a actualizarResumenPaso5Completo()');
+                console.log(' [irAlPaso] Llamando a actualizarResumenPaso5Completo()');
                 actualizarResumenPaso5Completo();
             } else {
-                console.log('⚠️ [irAlPaso] actualizarResumenPaso5Completo no disponible, usando fallback');
+                console.log(' [irAlPaso] actualizarResumenPaso5Completo no disponible, usando fallback');
                 // Fallback a la función antigua
                 actualizarResumenFriendly();
             }
@@ -1132,7 +1132,7 @@ function recopilarDatos() {
 
         }
         
-        // 🔍 DEBUG ADICIONAL: Verificar si el contenedor existe
+        //  DEBUG ADICIONAL: Verificar si el contenedor existe
         const container = item.querySelector('.tipo-jean-pantalon-inline-container');
 
         if (container) {

@@ -221,12 +221,12 @@ class FormModule {
         }
 
         // REFLECTIVO - Capturar datos de paso 4
-        console.log('🔍 FormModule - Intentando capturar reflectivo...');
+        console.log(' FormModule - Intentando capturar reflectivo...');
         console.log('   ✓ typeof capturePrendasReflectivoPaso4:', typeof capturePrendasReflectivoPaso4);
         
         if (typeof capturePrendasReflectivoPaso4 === 'function') {
             const prendasReflectivo = capturePrendasReflectivoPaso4();
-            console.log('📦 Reflectivo capturado:', prendasReflectivo);
+            console.log(' Reflectivo capturado:', prendasReflectivo);
             
             if (prendasReflectivo && prendasReflectivo.length > 0) {
                 // Enviar datos JSON sin imágenes
@@ -252,17 +252,17 @@ class FormModule {
                 console.log(' Reflectivo vacío');
             }
         } else {
-            console.warn('❌ capturePrendasReflectivoPaso4 no es función');
+            console.warn(' capturePrendasReflectivoPaso4 no es función');
             formData.append('reflectivo', JSON.stringify([]));
         }
 
         // LOGO TÉCNICAS - Capturar datos de paso 3
-        console.log('🔍 FormModule - Intentando capturar logo técnicas...');
+        console.log(' FormModule - Intentando capturar logo técnicas...');
         console.log('   ✓ typeof capturarLogotecnicasPaso3:', typeof capturarLogotecnicasPaso3);
         
         if (typeof capturarLogotecnicasPaso3 === 'function') {
             const logoTecnicas = capturarLogotecnicasPaso3();
-            console.log('📦 Logo técnicas capturado:', logoTecnicas);
+            console.log(' Logo técnicas capturado:', logoTecnicas);
             
             if (logoTecnicas && logoTecnicas.length > 0) {
                 formData.append('logo_tecnicas', JSON.stringify(logoTecnicas));
@@ -272,7 +272,7 @@ class FormModule {
                 console.log(' Logo técnicas vacío');
             }
         } else {
-            console.warn('❌ capturarLogotecnicasPaso3 no es función');
+            console.warn(' capturarLogotecnicasPaso3 no es función');
             formData.append('logo_tecnicas', JSON.stringify([]));
         }
 

@@ -557,7 +557,7 @@ class ReceiptManager {
         }
         
         // Si Formatters no está disponible, mostrar error
-        console.error('[ReceiptManager.construirDescripcionCostura] ❌ Formatters no disponible');
+        console.error('[ReceiptManager.construirDescripcionCostura]  Formatters no disponible');
         return '<em style="color: red;">Error: No se pudo cargar el formateador de descripciones</em>';
     }
 
@@ -575,7 +575,7 @@ class ReceiptManager {
         }
         
         // Si Formatters no está disponible, mostrar error
-        console.error('[ReceiptManager.contenidoProceso] ❌ Formatters no disponible');
+        console.error('[ReceiptManager.contenidoProceso]  Formatters no disponible');
         return '<em style="color: red;">Error: No se pudo cargar el formateador de procesos</em>';
     }
 

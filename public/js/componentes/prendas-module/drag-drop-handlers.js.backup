@@ -78,7 +78,7 @@ window.setupDragAndDrop = function(previewElement) {
         if (typeof window.manejarImagenesPrenda === 'function') {
             window.manejarImagenesPrenda(tempInput);
         } else {
-            console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+            console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
         }
     });
     
@@ -145,7 +145,7 @@ window.setupDragAndDrop = function(previewElement) {
                     if (typeof window.manejarImagenesPrenda === 'function') {
                         window.manejarImagenesPrenda(tempInput);
                     } else {
-                        console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+                        console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
                     }
                     
                     // Salir después de procesar la primera imagen
@@ -206,7 +206,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         newPreview.style.border = '';
         newPreview.style.opacity = '1';
         
-        console.log('[setupDragAndDropConImagen] 📦 Archivos arrastrados:', e.dataTransfer.files.length);
+        console.log('[setupDragAndDropConImagen]  Archivos arrastrados:', e.dataTransfer.files.length);
         console.log('[setupDragAndDropConImagen] 📸 Imágenes actuales:', imagenesActuales.length);
         
         // Verificar si hay archivos
@@ -218,7 +218,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar límite de imágenes
         if (imagenesActuales.length >= 3) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
             mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
             return;
         }
@@ -229,7 +229,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragAndDropConImagen]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen');
             return;
         }
@@ -283,7 +283,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar límite de imágenes
         if (imagenesActuales.length >= 3) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
             mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
             return;
         }

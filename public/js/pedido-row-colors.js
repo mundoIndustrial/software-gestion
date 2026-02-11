@@ -216,13 +216,13 @@
      * Inicialización cuando el DOM está listo
      */
     function inicializar() {
-        console.log('[🎨 Colores Pedidos] Inicializando sistema de colores...');
+        console.log('[ Colores Pedidos] Inicializando sistema de colores...');
         
         // Aplicar colores a filas existentes
         aplicarColoresTodosFilas();
         
         const filasColoreadas = document.querySelectorAll('.pedido-row[class*="estado-"]').length;
-        console.log('[🎨 Colores Pedidos] Filas coloreadas:', filasColoreadas);
+        console.log('[ Colores Pedidos] Filas coloreadas:', filasColoreadas);
 
         // Observar cambios en datos-estado
         observarCambios();
@@ -233,7 +233,7 @@
         // Observar mutaciones del DOM
         observarMutacionesDOM();
         
-        console.log('[🎨 Colores Pedidos] Sistema inicializado correctamente');
+        console.log('[ Colores Pedidos] Sistema inicializado correctamente');
     }
 
     /**

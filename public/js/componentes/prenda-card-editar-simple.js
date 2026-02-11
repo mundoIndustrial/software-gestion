@@ -226,7 +226,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                 });
                 
                 // Encontrar la prenda específica en los datos del pedido - BÚSQUEDA BIDIRECCIONAL MEJORADA
-                // 🔴 FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
+                //  FIX: Priorizar búsqueda por prenda_pedido_id que es el identificador más confiable
                 const prendaDelPedido = resultado.data?.prendas?.find(p => {
                     // Coincidencia por prenda_pedido_id (PRIORIDAD MÁXIMA - es el ID único de la BD)
                     const coincidePrendaPedidoId = (p.prenda_pedido_id === prenda.prenda_pedido_id || 
@@ -236,7 +236,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                     const coincideId = (p.id === prenda.id);
                     
                     // Coincidencia por nombre (TODAS LAS COMBINACIONES POSIBLES) - baja prioridad
-                    // 🔴 FIX: Evitar comparar undefined === undefined (siempre es true)
+                    //  FIX: Evitar comparar undefined === undefined (siempre es true)
                     const coincideNombre = (
                         // Caso 1: nombre_prenda local == nombre_prenda servidor (AMBOS DEBEN SER VÁLIDOS)
                         (prenda.nombre_prenda && p.nombre_prenda && p.nombre_prenda === prenda.nombre_prenda) ||
@@ -272,7 +272,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
                 
                 if (prendaDelPedido) {
                     console.log(' [PRENDA-ENCONTRADA] Prenda encontrada en datos del pedido:', prendaDelPedido.nombre_prenda);
-                    console.log('📦 [DATOS-RECIBIDOS]', {
+                    console.log(' [DATOS-RECIBIDOS]', {
                         procesos: prendaDelPedido.procesos?.length ?? 0,
                         tallas: Object.keys(prendaDelPedido.tallas || {}).length,
                         variantes: prendaDelPedido.variantes?.length ?? 0,

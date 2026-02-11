@@ -258,6 +258,7 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor-legacy.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
     
@@ -356,7 +357,7 @@
         // Función para verificar si hay cotización seleccionada
         function verificarCotizacionSeleccionada() {
             const cotizacion = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
-            console.log('🔍 [verificarCotizacionSeleccionada] Verificando cotización:', cotizacion);
+            console.log(' [verificarCotizacionSeleccionada] Verificando cotización:', cotizacion);
             return cotizacion && cotizacion.id;
         }
         
@@ -394,13 +395,13 @@
                 if (typeof window.abrirSelectorPrendasCotizacion === 'function') {
                     // Obtener la cotización seleccionada (usar la variable correcta)
                     const cotizacionSeleccionada = window.cotizacionSeleccionadaActual || window.cotizacionSeleccionada;
-                    console.log('🔍 [btn-agregar-prenda] Variable cotizacionSeleccionada:', cotizacionSeleccionada);
+                    console.log(' [btn-agregar-prenda] Variable cotizacionSeleccionada:', cotizacionSeleccionada);
                     
                     if (cotizacionSeleccionada && cotizacionSeleccionada.id) {
                         console.log(' [btn-agregar-prenda] ID de cotización encontrado:', cotizacionSeleccionada.id);
                         window.abrirSelectorPrendasCotizacion(cotizacionSeleccionada);
                     } else {
-                        console.error('❌ [btn-agregar-prenda] No hay cotización seleccionada o no tiene ID');
+                        console.error(' [btn-agregar-prenda] No hay cotización seleccionada o no tiene ID');
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -410,7 +411,7 @@
                         });
                     }
                 } else {
-                    console.error('❌ [btn-agregar-prenda] La función abrirSelectorPrendasCotizacion no está disponible');
+                    console.error(' [btn-agregar-prenda] La función abrirSelectorPrendasCotizacion no está disponible');
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -435,7 +436,7 @@
                 if (typeof window.abrirModalAgregarEPP === 'function') {
                     window.abrirModalAgregarEPP();
                 } else {
-                    console.error('❌ [btn-agregar-epp] La función abrirModalAgregarEPP no está disponible');
+                    console.error(' [btn-agregar-epp] La función abrirModalAgregarEPP no está disponible');
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -493,7 +494,7 @@
 
     // Usar window.addEventListener('load') como fallback
     window.addEventListener('load', function() {
-        console.log('📦 [LOADING] Evento load disparado');
+        console.log(' [LOADING] Evento load disparado');
         const loadingOverlay = document.getElementById('loading-overlay');
         if (loadingOverlay && loadingOverlay.style.display !== 'none') {
             setTimeout(() => {

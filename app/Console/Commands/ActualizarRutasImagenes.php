@@ -12,7 +12,7 @@ class ActualizarRutasImagenes extends Command
 
     public function handle()
     {
-        $this->info('🔄 Actualizando rutas de imágenes en la BD...');
+        $this->info(' Actualizando rutas de imágenes en la BD...');
 
         // Actualizar prenda_fotos_cot
         $fotosActualizadas = DB::table('prenda_fotos_cot')

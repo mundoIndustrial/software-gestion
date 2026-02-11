@@ -24,7 +24,7 @@ function mostrarModalError(mensaje) {
         });
     } else {
         // Fallback a alert si Swal no está disponible
-        alert('❌ Error: ' + mensaje);
+        alert(' Error: ' + mensaje);
     }
 }
 
@@ -48,7 +48,7 @@ function obtenerContenedorOverlay() {
             overflow: visible;
         `;
         document.body.appendChild(container);
-        console.log('[drag-drop-handlers] ✅ Contenedor overlay creado');
+        console.log('[drag-drop-handlers]  Contenedor overlay creado');
     }
     return container;
 }
@@ -122,7 +122,7 @@ window.setupDragAndDrop = function(previewElement) {
         if (typeof window.manejarImagenesPrenda === 'function') {
             window.manejarImagenesPrenda(tempInput);
         } else {
-            console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+            console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
         }
     });
     
@@ -300,10 +300,10 @@ window.setupDragAndDrop = function(previewElement) {
                                     console.log('[setupDragAndDrop] 📋 Llamando a manejarImagenesPrenda...');
                                     window.manejarImagenesPrenda(tempInput);
                                 } else {
-                                    console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+                                    console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
                                 }
                             }).catch(err => {
-                                console.error('[setupDragAndDrop] ❌ Error al obtener blob:', err);
+                                console.error('[setupDragAndDrop]  Error al obtener blob:', err);
                                 mostrarModalError('No se pudo procesar la imagen del portapapeles');
                             });
                             break;
@@ -314,7 +314,7 @@ window.setupDragAndDrop = function(previewElement) {
                     if (items.length > 0 && !items.some(item => 
                         item.types.some(type => type.includes('image/'))
                     )) {
-                        console.warn('[setupDragAndDrop] ⚠️ No hay imágenes en el portapapeles');
+                        console.warn('[setupDragAndDrop]  No hay imágenes en el portapapeles');
                         mostrarModalError('El portapapeles no contiene imágenes. Por favor copia una imagen primero.');
                     }
                     
@@ -410,13 +410,13 @@ window.setupDragAndDrop = function(previewElement) {
                         console.log('[setupDragAndDrop] 📋 Llamando a manejarImagenesPrenda...');
                         window.manejarImagenesPrenda(tempInput);
                     } else {
-                        console.error('[setupDragAndDrop] ❌ La función manejarImagenesPrenda no está disponible');
+                        console.error('[setupDragAndDrop]  La función manejarImagenesPrenda no está disponible');
                     }
                     
                     // Salir después de procesar la primera imagen
                     break;
                 } else {
-                    console.warn('[setupDragAndDrop] ⚠️ No se pudo obtener el archivo del item');
+                    console.warn('[setupDragAndDrop]  No se pudo obtener el archivo del item');
                 }
             }
         }
@@ -424,7 +424,7 @@ window.setupDragAndDrop = function(previewElement) {
         // Si no se encontraron imágenes
         const hasImages = Array.from(items).some(item => item.type.startsWith('image/'));
         if (!hasImages) {
-            console.warn('[setupDragAndDrop] ⚠️ No se encontraron imágenes en el portapapeles');
+            console.warn('[setupDragAndDrop]  No se encontraron imágenes en el portapapeles');
             mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
         }
     });
@@ -480,7 +480,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         newPreview.style.border = '';
         newPreview.style.opacity = '1';
         
-        console.log('[setupDragAndDropConImagen] 📦 Archivos arrastrados:', e.dataTransfer.files.length);
+        console.log('[setupDragAndDropConImagen]  Archivos arrastrados:', e.dataTransfer.files.length);
         console.log('[setupDragAndDropConImagen] 📸 Imágenes actuales:', imagenesActuales.length);
         
         // Verificar si hay archivos
@@ -492,7 +492,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar límite de imágenes
         if (imagenesActuales.length >= 3) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
             mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
             return;
         }
@@ -503,7 +503,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ El archivo no es una imagen:', file.type);
+            console.warn('[setupDragAndDropConImagen]  El archivo no es una imagen:', file.type);
             mostrarModalError('Por favor arrastra solo archivos de imagen');
             return;
         }
@@ -649,7 +649,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         pasteOption.addEventListener('click', () => {
             // Verificar límite de imágenes
             if (imagenesActuales.length >= 3) {
-                console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+                console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
                 mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
                 document.body.removeChild(menu);
                 return;
@@ -727,7 +727,7 @@ window.setupDragAndDropConImagen = function(previewElement, imagenesActuales) {
         
         // Verificar límite de imágenes
         if (imagenesActuales.length >= 3) {
-            console.warn('[setupDragAndDropConImagen] ⚠️ Límite de imágenes alcanzado');
+            console.warn('[setupDragAndDropConImagen]  Límite de imágenes alcanzado');
             mostrarModalError('Solo se permiten máximo 3 imágenes por prenda');
             return;
         }
@@ -1053,10 +1053,10 @@ window.setupDragDropTela = function(dropZone) {
                                 console.log('[setupDragDropTela] 📋 Llamando a manejarImagenTela...');
                                 window.manejarImagenTela(tempInput);
                             } else {
-                                console.error('[setupDragDropTela] ❌ La función manejarImagenTela no está disponible');
+                                console.error('[setupDragDropTela]  La función manejarImagenTela no está disponible');
                             }
                         }).catch(err => {
-                            console.error('[setupDragDropTela] ❌ Error al obtener blob:', err);
+                            console.error('[setupDragDropTela]  Error al obtener blob:', err);
                             mostrarModalError('No se pudo procesar la imagen del portapapeles');
                         });
                         break;
@@ -1067,7 +1067,7 @@ window.setupDragDropTela = function(dropZone) {
                 if (items.length > 0 && !items.some(item => 
                     item.types.some(type => type.includes('image/'))
                 )) {
-                    console.warn('[setupDragDropTela] ⚠️ No hay imágenes en el portapapeles');
+                    console.warn('[setupDragDropTela]  No hay imágenes en el portapapeles');
                     mostrarModalError('El portapapeles no contiene imágenes. Por favor copia una imagen primero.');
                 }
                 
@@ -1159,13 +1159,13 @@ window.setupDragDropTela = function(dropZone) {
                         console.log('[setupDragDropTela] 📋 Llamando a manejarImagenTela...');
                         window.manejarImagenTela(tempInput);
                     } else {
-                        console.error('[setupDragDropTela] ❌ La función manejarImagenTela no está disponible');
+                        console.error('[setupDragDropTela]  La función manejarImagenTela no está disponible');
                     }
                     
                     // Salir después de procesar la primera imagen
                     break;
                 } else {
-                    console.warn('[setupDragDropTela] ⚠️ No se pudo obtener el archivo del item');
+                    console.warn('[setupDragDropTela]  No se pudo obtener el archivo del item');
                 }
             }
         }
@@ -1173,7 +1173,7 @@ window.setupDragDropTela = function(dropZone) {
         // Si no se encontraron imágenes
         const hasImages = Array.from(items).some(item => item.type.startsWith('image/'));
         if (!hasImages) {
-            console.warn('[setupDragDropTela] ⚠️ No se encontraron imágenes en el portapapeles');
+            console.warn('[setupDragDropTela]  No se encontraron imágenes en el portapapeles');
             mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
         }
     });
@@ -1306,17 +1306,17 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
     console.log(`[setupDragDropProceso] 🎯 Configurando proceso ${procesoNumero}...`);
     
     if (!previewElement) {
-        console.error(`[setupDragDropProceso] ❌ Preview element es null para proceso ${procesoNumero}`);
+        console.error(`[setupDragDropProceso]  Preview element es null para proceso ${procesoNumero}`);
         return;
     }
     
-    console.log(`[setupDragDropProceso] ✅ Preview element encontrado para proceso ${procesoNumero}`);
+    console.log(`[setupDragDropProceso]  Preview element encontrado para proceso ${procesoNumero}`);
     
     // Limpiar event listeners anteriores clonando el elemento
     const newPreview = previewElement.cloneNode(true);
     previewElement.parentNode.replaceChild(newPreview, previewElement);
     
-    console.log(`[setupDragDropProceso] 🔄 Element clonado y reemplazado para proceso ${procesoNumero}`);
+    console.log(`[setupDragDropProceso]  Element clonado y reemplazado para proceso ${procesoNumero}`);
     
     // Prevenir comportamiento por defecto para todos los eventos
     const preventDefaults = (e) => {
@@ -1382,7 +1382,7 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
         if (typeof window.manejarImagenProceso === 'function') {
             window.manejarImagenProceso(tempInput, procesoNumero);
         } else {
-            console.error(`[setupDragDropProceso] ❌ La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
+            console.error(`[setupDragDropProceso]  La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
         }
     });
     
@@ -1407,7 +1407,7 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
             console.log(`[setupDragDropProceso] 📁 Abriendo input ${inputId}`);
             inputElement.click();
         } else {
-            console.error(`[setupDragDropProceso] ❌ Input ${inputId} no encontrado`);
+            console.error(`[setupDragDropProceso]  Input ${inputId} no encontrado`);
         }
     });
     
@@ -1427,16 +1427,6 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
         newPreview.style.border = '';
     });
     
-    // Prevenir menú contextual del navegador - múltiples formas
-    newPreview.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.log(`[setupDragDropProceso] 🚫 Evento contextmenu bloqueado`);
-        return false;
-    }, true); // Usar captura para que se ejecute primero
-    
-    // Bloquear también en mouseup para mayor efectividad
     // Evento contextmenu: prevenir menú del navegador Y mostrar menú personalizado
     newPreview.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -1589,10 +1579,10 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
                                 console.log(`[setupDragDropProceso] 📋 Llamando a manejarImagenProceso...`);
                                 window.manejarImagenProceso(tempInput, procesoNumero);
                             } else {
-                                console.error(`[setupDragDropProceso] ❌ La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
+                                console.error(`[setupDragDropProceso]  La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
                             }
                         }).catch(err => {
-                            console.error(`[setupDragDropProceso] ❌ Error al obtener blob:`, err);
+                            console.error(`[setupDragDropProceso]  Error al obtener blob:`, err);
                             mostrarModalError('No se pudo procesar la imagen del portapapeles');
                         });
                         break;
@@ -1603,7 +1593,7 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
                 if (items.length > 0 && !items.some(item => 
                     item.types.some(type => type.includes('image/'))
                 )) {
-                    console.warn(`[setupDragDropProceso] ⚠️ No hay imágenes en el portapapeles`);
+                    console.warn(`[setupDragDropProceso]  No hay imágenes en el portapapeles`);
                     mostrarModalError('El portapapeles no contiene imágenes. Por favor copia una imagen primero.');
                 }
                 
@@ -1621,7 +1611,7 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
         overlayContainer.style.pointerEvents = 'auto';
         overlayContainer.appendChild(menu);
         
-        console.log(`[setupDragDropProceso] ✅ Menú agregado al OVERLAY en posición (${left}, ${top})`);
+        console.log(`[setupDragDropProceso]  Menú agregado al OVERLAY en posición (${left}, ${top})`);
         
         // Cerrar menú al hacer clic fuera (pero NO dentro del menú)
         const closeMenu = (e) => {
@@ -1718,13 +1708,13 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
                         console.log(`[setupDragDropProceso] 📋 Llamando a manejarImagenProceso...`);
                         window.manejarImagenProceso(tempInput, procesoNumero);
                     } else {
-                        console.error(`[setupDragDropProceso] ❌ La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
+                        console.error(`[setupDragDropProceso]  La función manejarImagenProceso no está disponible para proceso ${procesoNumero}`);
                     }
                     
                     // Salir después de procesar la primera imagen
                     break;
                 } else {
-                    console.warn(`[setupDragDropProceso] ⚠️ No se pudo obtener el archivo del item`);
+                    console.warn(`[setupDragDropProceso]  No se pudo obtener el archivo del item`);
                 }
             }
         }
@@ -1732,7 +1722,7 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
         // Si no se encontraron imágenes
         const hasImages = Array.from(items).some(item => item.type.startsWith('image/'));
         if (!hasImages) {
-            console.warn(`[setupDragDropProceso] ⚠️ No se encontraron imágenes en el portapapeles`);
+            console.warn(`[setupDragDropProceso]  No se encontraron imágenes en el portapapeles`);
             mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
         }
     });
@@ -1746,18 +1736,18 @@ window.setupDragDropProceso = function(previewElement, procesoNumero) {
  * Inicialización automática del drag & drop para imágenes de procesos
  */
 window.inicializarDragDropProcesos = function() {
-    console.log('[inicializarDragDropProcesos] 🚀 Iniciando configuración de drag & drop para procesos...');
+    console.log('[inicializarDragDropProcesos]  Iniciando configuración de drag & drop para procesos...');
     
     // Configurar drag & drop para los 3 previews de procesos
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
-        console.log(`[inicializarDragDropProcesos] 🔍 Buscando preview ${i}:`, preview ? '✅ encontrado' : '❌ no encontrado');
+        console.log(`[inicializarDragDropProcesos]  Buscando preview ${i}:`, preview ? ' encontrado' : ' no encontrado');
         
         if (preview) {
             window.setupDragDropProceso(preview, i);
-            console.log(`[inicializarDragDropProcesos] ✅ Drag & drop configurado para proceso ${i}`);
+            console.log(`[inicializarDragDropProcesos]  Drag & drop configurado para proceso ${i}`);
         } else {
-            console.log(`[inicializarDragDropProcesos] ⚠️ Preview ${i} no encontrado`);
+            console.log(`[inicializarDragDropProcesos]  Preview ${i} no encontrado`);
         }
     }
     

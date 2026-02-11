@@ -15,7 +15,7 @@ class RepararImagenesPrendas extends Command
 
     public function handle()
     {
-        $this->info('🔍 DIAGNÓSTICO Y REPARACIÓN DE IMÁGENES DE PRENDAS');
+        $this->info(' DIAGNÓSTICO Y REPARACIÓN DE IMÁGENES DE PRENDAS');
         $this->info('════════════════════════════════════════════════════');
 
         $pedidoId = $this->option('pedido-id');

@@ -33,9 +33,9 @@ class ConcurrenciaTest
         $this->numeroUsuarios = $numeroUsuarios;
         $this->numeroRondas = $numeroRondas;
         
-        echo "🚀 Iniciando prueba de concurrencia\n";
+        echo " Iniciando prueba de concurrencia\n";
         echo " Usuarios: {$this->numeroUsuarios}\n";
-        echo "🔄 Rondas: {$this->numeroRondas}\n";
+        echo " Rondas: {$this->numeroRondas}\n";
         echo "⏰ " . date('Y-m-d H:i:s') . "\n\n";
     }
     
@@ -58,7 +58,7 @@ class ConcurrenciaTest
             $this->mostrarResultados();
             
         } catch (\Exception $e) {
-            echo "❌ Error fatal: " . $e->getMessage() . "\n";
+            echo " Error fatal: " . $e->getMessage() . "\n";
             Log::error('[CONCURRENCIA_TEST] Error fatal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -108,8 +108,8 @@ class ConcurrenciaTest
         $this->errores = array_merge($this->errores, $erroresRonda);
         
         echo "    Pedidos creados: " . count($resultadosRonda) . "\n";
-        echo "   ❌ Errores: " . count($erroresRonda) . "\n";
-        echo "   ⏱️  Duración: " . round($duracion, 3) . "s\n\n";
+        echo "    Errores: " . count($erroresRonda) . "\n";
+        echo "     Duración: " . round($duracion, 3) . "s\n\n";
         
         // Verificar integridad inmediata
         $this->verificarIntegridad($resultadosRonda, $ronda);
@@ -223,7 +223,7 @@ class ConcurrenciaTest
         if ($totalErrores === 0) {
             echo "\n PRUEBA EXITOSA - Sin errores de concurrencia\n";
         } else {
-            echo "\n❌ PRUEBA CON ERRORES - Revisar logs\n";
+            echo "\n PRUEBA CON ERRORES - Revisar logs\n";
             foreach ($this->errores as $error) {
                 echo "  - " . $error['error'] . "\n";
             }
@@ -235,7 +235,7 @@ class ConcurrenciaTest
     
     private function verificacionFinalBD(): void
     {
-        echo "\n🔍 VERIFICACIÓN FINAL EN BD\n";
+        echo "\n VERIFICACIÓN FINAL EN BD\n";
         echo "==========================\n";
         
         // Contar pedidos creados

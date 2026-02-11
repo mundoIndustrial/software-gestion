@@ -17,7 +17,7 @@ class ObtenerFacturaUseCase
 
     public function ejecutar(ObtenerFacturaDTO $dto): array
     {
-        \Log::info('🔄 [USECASE-FACTURA] ===== INICIO DE EJECUCIÓN =====', [
+        \Log::info(' [USECASE-FACTURA] ===== INICIO DE EJECUCIÓN =====', [
             'pedido_id' => $dto->pedidoId,
             'usuario_id' => \Auth::id(),
             'usuario_nombre' => \Auth::user()?->name ?? 'No autenticado',
@@ -55,7 +55,7 @@ class ObtenerFacturaUseCase
             \Log::info(' [USECASE-FACTURA] Retornando datos exitosamente');
             return $datos;
         } catch (\Exception $e) {
-            \Log::error('❌ [USECASE-FACTURA] ERROR EN USECASE', [
+            \Log::error(' [USECASE-FACTURA] ERROR EN USECASE', [
                 'pedido_id' => $dto->pedidoId,
                 'usuario_id' => \Auth::id(),
                 'error_mensaje' => $e->getMessage(),

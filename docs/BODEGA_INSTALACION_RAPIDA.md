@@ -1,4 +1,4 @@
-# 🚀 GUÍA RÁPIDA DE INSTALACIÓN - MÓDULO BODEGA
+#  GUÍA RÁPIDA DE INSTALACIÓN - MÓDULO BODEGA
 
 ## ⚡ 5 Pasos para Poner en Funcionamiento
 
@@ -74,7 +74,7 @@ http://tuapp.local/bodega/pedidos
 
 ---
 
-## ✅ Checklist de Instalación
+##  Checklist de Instalación
 
 - [ ] Rutas registradas en `routes/web.php`
 - [ ] Migración ejecutada (`php artisan migrate`)
@@ -91,7 +91,7 @@ http://tuapp.local/bodega/pedidos
 
 ---
 
-## 🔍 Verificar Que Todo Está Funcionando
+##  Verificar Que Todo Está Funcionando
 
 ### 1. Verificar Rutas
 
@@ -244,7 +244,7 @@ APP_DEBUG=true
 
 ---
 
-## 📊 Datos de Prueba
+##  Datos de Prueba
 
 Para cargar datos de ejemplo:
 
@@ -261,11 +261,11 @@ Esto crea 6 pedidos con múltiples items.
 ### Middleware Recomendado
 
 El módulo incluye:
-- ✅ Validación CSRF
-- ✅ Autorización por rol
-- ✅ Validación de permisos
-- ✅ Logging de actividades
-- ✅ Sanitización de inputs
+-  Validación CSRF
+-  Autorización por rol
+-  Validación de permisos
+-  Logging de actividades
+-  Sanitización de inputs
 
 ---
 

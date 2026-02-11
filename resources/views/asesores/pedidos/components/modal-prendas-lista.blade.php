@@ -30,7 +30,7 @@
                 `;
             } else {
                 prendas.forEach((item, idx) => {
-                    console.log('🔍 [PRENDA-DEBUG] Estructura de la prenda:', {
+                    console.log(' [PRENDA-DEBUG] Estructura de la prenda:', {
                         idx: idx,
                         item_keys: Object.keys(item),
                         id: item.id,

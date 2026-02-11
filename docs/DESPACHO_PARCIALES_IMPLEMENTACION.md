@@ -99,7 +99,7 @@ El usuario **debe escribir manualmente** estos valores sin cálculos automático
 
 ---
 
-## 📦 Mapeo a Tabla `despacho_parciales`
+##  Mapeo a Tabla `despacho_parciales`
 
 ```
 Por cada fila de la tabla (prenda/EPP + talla):
@@ -129,7 +129,7 @@ Cada registro es INDEPENDIENTE:
 
 ---
 
-## 🔄 Flujo Completo
+##  Flujo Completo
 
 ### 1️⃣ Frontend: Cargar Tabla
 ```javascript
@@ -274,7 +274,7 @@ php artisan test tests/Feature/DespachoParcialesTest.php
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 ### Para Despachar un Pedido
 
@@ -374,7 +374,7 @@ CREATE TABLE despacho_parciales (
 
 ---
 
-## 🔍 Validación de Requisitos
+##  Validación de Requisitos
 
 | Requisito | Estado | Detalles |
 |-----------|--------|----------|

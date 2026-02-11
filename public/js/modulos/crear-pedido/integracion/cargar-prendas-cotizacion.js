@@ -5,7 +5,7 @@ class CargadorPrendasCotizacion {
     }
     async cargarPrendaCompletaDesdeCotizacion(cotizacionId, prendaId) {
         try {
-            console.log('[CargadorPrendasCotizacion] 📦 Cargando prenda completa...');
+            console.log('[CargadorPrendasCotizacion]  Cargando prenda completa...');
             console.log('  - Cotización ID:', cotizacionId);
             console.log('  - Prenda ID:', prendaId);
 
@@ -39,7 +39,7 @@ class CargadorPrendasCotizacion {
             });
             
             // DEBUG: Ver procesos completos - DIAGNÓSTICO DETALLADO
-            console.log('[CargadorPrendasCotizacion] 🔍 PROCESOS COMPLETOS DEL BACKEND:');
+            console.log('[CargadorPrendasCotizacion]  PROCESOS COMPLETOS DEL BACKEND:');
             console.log(data.procesos);
             
             // Análisis detallado de procesos
@@ -51,19 +51,19 @@ class CargadorPrendasCotizacion {
             console.log('  - Contenido completo JSON:', JSON.stringify(data.procesos, null, 2));
             
             // Ver estructura completa de data
-            console.log('[CargadorPrendasCotizacion] 🔍 ESTRUCTURA COMPLETA DE DATA:');
+            console.log('[CargadorPrendasCotizacion]  ESTRUCTURA COMPLETA DE DATA:');
             console.log('  - Keys principales:', Object.keys(data));
             console.log('  - ¿Tiene procesos?', 'procesos' in data);
             console.log('  - ¿Tiene prenda?', 'prenda' in data);
             console.log('  - ¿Tiene cotizacion_id?', 'cotizacion_id' in data);
             
-            console.log('[CargadorPrendasCotizacion] 🔍 TELAS RECIBIDAS DEL BACKEND:', data.prenda?.telas);
+            console.log('[CargadorPrendasCotizacion]  TELAS RECIBIDAS DEL BACKEND:', data.prenda?.telas);
 
             // Transformar datos al formato esperado por GestionItemsUI
             return this.transformarDatos(data, cotizacionId);
 
         } catch (error) {
-            console.error('[CargadorPrendasCotizacion] ❌ Error cargando prenda:', error);
+            console.error('[CargadorPrendasCotizacion]  Error cargando prenda:', error);
             throw error;
         }
     }
@@ -75,7 +75,7 @@ class CargadorPrendasCotizacion {
         const prenda = data.prenda || {};
         const procesos = data.procesos || {};
 
-        console.log('[CargadorPrendasCotizacion] 🔄 Transformando datos para prenda:', prenda.nombre_producto);
+        console.log('[CargadorPrendasCotizacion]  Transformando datos para prenda:', prenda.nombre_producto);
 
         // Preparar estructura de procesos con TODA la información
         const procesosCompletos = {};
@@ -178,7 +178,7 @@ class CargadorPrendasCotizacion {
         }).filter(f => f.ruta);  // Filtrar fotos sin ruta válida
         
         console.log('[transformarDatos] 📸 FOTOS RECIBIDAS DEL BACKEND:', prenda.fotos);
-        console.log('[transformarDatos] 📦 FOTOS PROCESADAS:', fotosFormato);
+        console.log('[transformarDatos]  FOTOS PROCESADAS:', fotosFormato);
 
         // Preparar telas CON TODAS LAS REFERENCIAS
         console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
@@ -194,7 +194,7 @@ class CargadorPrendasCotizacion {
             });
             
             telasDesdeLogo = data.prenda.logoCotizacionTelasPrenda.map((telaLogo, idx) => {
-                console.log(`[transformarDatos] 🎨 [Tela Logo ${idx}]`, {
+                console.log(`[transformarDatos]  [Tela Logo ${idx}]`, {
                     id: telaLogo.id,
                     tela: telaLogo.tela,
                     color: telaLogo.color,
@@ -272,7 +272,7 @@ class CargadorPrendasCotizacion {
                 
                 // Solo devolver si tenemos AL MENOS una ruta válida
                 if (!ruta && !ruta_webp) {
-                    console.warn(`[transformarDatos] ⚠️ Imagen tela ${idx}-${imgIdx} SIN NINGUNA RUTA VÁLIDA:`, img);
+                    console.warn(`[transformarDatos]  Imagen tela ${idx}-${imgIdx} SIN NINGUNA RUTA VÁLIDA:`, img);
                     return null;  // Saltar imagen sin rutas
                 }
                 
@@ -305,12 +305,12 @@ class CargadorPrendasCotizacion {
         const telasAgregadasTemp = [];
         
         if (prenda.variantes && Array.isArray(prenda.variantes)) {
-            console.log('[transformarDatos] 🔄 Recorriendo TODAS las variantes para extraer telas');
+            console.log('[transformarDatos]  Recorriendo TODAS las variantes para extraer telas');
             console.log('[transformarDatos] � Total de variantes a procesar:', prenda.variantes.length);
             
             // Recorremos todas las variantes
             prenda.variantes.forEach((variante, varianteIndex) => {
-                console.log(`[transformarDatos] 📦 [Variante ${varianteIndex}] Procesando variante:`, {
+                console.log(`[transformarDatos]  [Variante ${varianteIndex}] Procesando variante:`, {
                     tipo_manga: variante.tipo_manga,
                     tiene_bolsillos: variante.tiene_bolsillos,
                     tiene_telas_multiples: !!(variante.telas_multiples),
@@ -423,11 +423,11 @@ class CargadorPrendasCotizacion {
             });
         } else if (telasDesdeVariantes && telasDesdeVariantes.length > 0) {
             // Última opción: usar telas desde variantes
-            console.log('[transformarDatos] 🔄 USANDO TELAS DESDE VARIANTES (fallback):', telasDesdeVariantes.length);
+            console.log('[transformarDatos]  USANDO TELAS DESDE VARIANTES (fallback):', telasDesdeVariantes.length);
             telasFormato = [...telasDesdeVariantes];
         }
         
-        console.log('[transformarDatos] 📦 TELAS FINALES PROCESADAS:', telasFormato);
+        console.log('[transformarDatos]  TELAS FINALES PROCESADAS:', telasFormato);
 
         // Estructura de tallas - SOLO OBTENER TALLAS DISPONIBLES (sin cantidades)
         // El usuario digitará las cantidades manualmente
@@ -601,7 +601,7 @@ class CargadorPrendasCotizacion {
         console.log('[CargadorPrendasCotizacion] 📋 Agregando prenda a GestionItemsUI');
 
         if (!window.gestionItemsUI) {
-            console.error('❌ GestionItemsUI no disponible');
+            console.error(' GestionItemsUI no disponible');
             return false;
         }
 
@@ -626,7 +626,7 @@ window.cargadorPrendasCotizacion = new CargadorPrendasCotizacion();
  * Usar el mismo modal-agregar-prenda-nueva que en crear sin cotización
  */
 window.abrirSelectorPrendasCotizacion = function(cotizacion) {
-    console.log('[abrirSelectorPrendasCotizacion] 📦 Abriendo selector de prendas');
+    console.log('[abrirSelectorPrendasCotizacion]  Abriendo selector de prendas');
     console.log('  Cotización:', cotizacion);
 
     // Manejar ambos casos:
@@ -641,12 +641,12 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
         // Caso 2: Objeto original directo (prendas está en el nivel superior)
         prendas = cotizacion.prendas;
     } else {
-        alert('❌ Error: No hay prendas disponibles en esta cotización');
+        alert(' Error: No hay prendas disponibles en esta cotización');
         return;
     }
 
     if (!prendas || !Array.isArray(prendas) || prendas.length === 0) {
-        alert('❌ Error: No hay prendas disponibles en esta cotización');
+        alert(' Error: No hay prendas disponibles en esta cotización');
         return;
     }
 
@@ -845,7 +845,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                 // Abrir el modal modal-agregar-prenda-nueva con la prenda PRECARGADA
                 // Esto permite al usuario ver todos los campos llenos desde la cotización
                 if (window.gestionItemsUI && window.gestionItemsUI.prendaEditor) {
-                    // 🔴 ASIGNAR COTIZACIÓN AL PRENDAEDITOR (para origen automático)
+                    //  ASIGNAR COTIZACIÓN AL PRENDAEDITOR (para origen automático)
                     // Usar el objeto original si existe, para tener acceso a tipo_cotizacion_id y tipo_cotizacion
                     const cotizacionParaPrendaEditor = cotizacion.original || cotizacion;
                     
@@ -872,8 +872,8 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                         console.log('[abrirSelectorPrendasCotizacion]  No hay procesos definidos para esta prenda');
                     }
                 } else {
-                    console.error('[abrirSelectorPrendasCotizacion] ❌ PrendaEditor no disponible');
-                    alert('❌ Error: No se pudo abrir el editor de prendas');
+                    console.error('[abrirSelectorPrendasCotizacion]  PrendaEditor no disponible');
+                    alert(' Error: No se pudo abrir el editor de prendas');
                 }
 
                 // Notificar éxito
@@ -885,7 +885,7 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
 
             } catch (error) {
                 console.error('[abrirSelectorPrendasCotizacion] Error:', error);
-                alert('❌ Error al cargar la prenda: ' + error.message);
+                alert(' Error al cargar la prenda: ' + error.message);
             }
         });
 

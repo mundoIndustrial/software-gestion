@@ -38,7 +38,7 @@ class DiagnosticarLoginCosturero extends Command
             $this->line("    Rol encontrado: ID={$costureroRole->id}, Name={$costureroRole->name}");
             $this->line('');
         } else {
-            $this->error('   ❌ Rol NO encontrado');
+            $this->error('    Rol NO encontrado');
             $this->line('');
             return;
         }
@@ -80,9 +80,9 @@ class DiagnosticarLoginCosturero extends Command
             // Recargar el usuario
             $userReloaded = User::find($user->id);
             
-            $this->line("      - hasRole('costurero'): " . ($userReloaded->hasRole('costurero') ? ' true' : '❌ false'));
-            $this->line("      - hasRole({$costureroRole->id}): " . ($userReloaded->hasRole($costureroRole->id) ? ' true' : '❌ false'));
-            $this->line("      - hasAnyRole(['costurero']): " . ($userReloaded->hasAnyRole(['costurero']) ? ' true' : '❌ false'));
+            $this->line("      - hasRole('costurero'): " . ($userReloaded->hasRole('costurero') ? ' true' : ' false'));
+            $this->line("      - hasRole({$costureroRole->id}): " . ($userReloaded->hasRole($costureroRole->id) ? ' true' : ' false'));
+            $this->line("      - hasAnyRole(['costurero']): " . ($userReloaded->hasAnyRole(['costurero']) ? ' true' : ' false'));
             
             // Obtener roles actuales
             $roles = $userReloaded->roles;
@@ -101,7 +101,7 @@ class DiagnosticarLoginCosturero extends Command
             
             // Simular el middleware
             if (!$testUser->hasAnyRole(['cortador', 'costurero'])) {
-                $this->error("   ❌ PROBLEMA: El middleware rechazaría al usuario {$testUser->name}");
+                $this->error("    PROBLEMA: El middleware rechazaría al usuario {$testUser->name}");
             } else {
                 $this->line("    El middleware permitiría al usuario {$testUser->name}");
             }

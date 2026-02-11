@@ -798,7 +798,7 @@ class PedidosProduccionController
         try {
             Log::info('[PedidosProduccionController] POST /asesores/pedidos/{id}/actualizar-prenda', ['id' => $id]);
 
-            // 🔍 DEBUG: Ver qué datos recibe el request
+            //  DEBUG: Ver qué datos recibe el request
             Log::info('[PedidosProduccionController] Request raw data', [
                 'origen' => $request->input('origen'),
                 'de_bodega' => $request->input('de_bodega'),
@@ -1018,11 +1018,11 @@ class PedidosProduccionController
                 'prenda_id' => $prenda->id,
             ]);
 
-            // 🔴 FIX CRÍTICO: Recargar fotos y relaciones después de actualizar
+            //  FIX CRÍTICO: Recargar fotos y relaciones después de actualizar
             // Esto evita que Eloquent devuelva fotos cacheadas que fueron eliminadas
             $prenda = $prenda->fresh(['fotos', 'coloresTelas', 'fotosTelas', 'variantes', 'procesos', 'tallas']);
 
-            // 🔴 FIX CRÍTICO: Transformar procesos para asegurar que incluyan el ID
+            //  FIX CRÍTICO: Transformar procesos para asegurar que incluyan el ID
             // Cuando se retorna toArray(), algunos procesos podrían no tener su ID
             $prendaArray = $prenda->toArray();
             

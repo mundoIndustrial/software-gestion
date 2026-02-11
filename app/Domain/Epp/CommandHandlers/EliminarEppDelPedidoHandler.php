@@ -28,7 +28,7 @@ class EliminarEppDelPedidoHandler implements CommandHandler
         }
 
         try {
-            Log::info('🔄 [EliminarEppDelPedidoHandler] Eliminando EPP del pedido', [
+            Log::info(' [EliminarEppDelPedidoHandler] Eliminando EPP del pedido', [
                 'pedido_id' => $command->getPedidoId(),
                 'epp_id' => $command->getEppId(),
             ]);

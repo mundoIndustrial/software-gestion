@@ -144,7 +144,7 @@ window.obtenerEstadoTelas = function() {
 window.resetearEstadoTelas = function() {
     window.telasCreacion = [];
     window.imagenesTelaModalNueva = [];
-    console.log('[resetearEstadoTelas] 🔄 Estado de telas reseteado');
+    console.log('[resetearEstadoTelas]  Estado de telas reseteado');
 };
 
 // Inicializar cuando el DOM esté listo

@@ -174,7 +174,7 @@ class CarteraPedidosController extends Controller
             // 🔥 Si la transacción fue exitosa, dispara el broadcast FUERA de la transacción
             if ($resultado['success'] && $resultado['pedido']) {
                 broadcast(new \App\Events\OrdenUpdated($resultado['pedido'], 'created', ['numero_pedido', 'estado']));
-                \Log::info("✅ Broadcast enviado para pedido {$resultado['numero_pedido']} desde CARTERA", [
+                \Log::info(" Broadcast enviado para pedido {$resultado['numero_pedido']} desde CARTERA", [
                     'evento' => 'created',
                     'numero_pedido' => $resultado['numero_pedido'],
                     'timestamp' => now()

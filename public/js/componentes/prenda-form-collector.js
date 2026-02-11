@@ -138,7 +138,7 @@ class PrendaFormCollector {
             };
 
             // DEBUG: Log para ver qué se capturó
-            console.log('[prenda-form-collector] 📦 Datos capturados en prendaData:');
+            console.log('[prenda-form-collector]  Datos capturados en prendaData:');
             console.log('[prenda-form-collector]   - nombre_prenda:', prendaData.nombre_prenda);
             console.log('[prenda-form-collector]   - origen:', prendaData.origen);
             console.log('[prenda-form-collector]   - de_bodega:', prendaData.de_bodega);
@@ -155,14 +155,14 @@ class PrendaFormCollector {
             // ============================================
             // 4. PROCESAR TELAS AGREGADAS (FLUJO CREACIÓN)
             // ============================================
-            console.log('[prenda-form-collector] 🔍 INICIANDO PROCESAMIENTO DE TELAS:', {
+            console.log('[prenda-form-collector]  INICIANDO PROCESAMIENTO DE TELAS:', {
                 window_telasCreacion_exists: !!window.telasCreacion,
                 window_telasCreacion_isArray: Array.isArray(window.telasCreacion),
                 window_telasCreacion_length: window.telasCreacion?.length || 0
             });
 
             if (window.telasCreacion && Array.isArray(window.telasCreacion) && window.telasCreacion.length > 0) {
-                console.log('[prenda-form-collector] 🔍 ANTES DE MAPEAR window.telasCreacion:', {
+                console.log('[prenda-form-collector]  ANTES DE MAPEAR window.telasCreacion:', {
                     length: window.telasCreacion.length,
                     primer_elemento: window.telasCreacion[0]
                 });
@@ -206,7 +206,7 @@ class PrendaFormCollector {
                     primer_elemento: prendaData.telasAgregadas?.[0]
                 });
             } else {
-                console.log('[prenda-form-collector] ⚠️ NO HAY TELAS EN window.telasCreacion, mantiendo array vacío:', {
+                console.log('[prenda-form-collector]  NO HAY TELAS EN window.telasCreacion, mantiendo array vacío:', {
                     telasAgregadas_iniciales: prendaData.telasAgregadas
                 });
             }
@@ -376,11 +376,11 @@ class PrendaFormCollector {
                 console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla (API antigua):', prendaData.asignacionesColoresPorTalla);
             } else {
                 prendaData.asignacionesColoresPorTalla = {};
-                console.warn('[prenda-form-collector] ⚠️ Función obtenerDatosAsignaciones no disponible');
+                console.warn('[prenda-form-collector]  Función obtenerDatosAsignaciones no disponible');
             }
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
-            console.log('[prenda-form-collector] 🔍 VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
+            console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {
                 telasAgregadas_exist: !!prendaData.telasAgregadas,
                 telasAgregadas_isArray: Array.isArray(prendaData.telasAgregadas),
                 telasAgregadas_length: prendaData.telasAgregadas?.length || 0,

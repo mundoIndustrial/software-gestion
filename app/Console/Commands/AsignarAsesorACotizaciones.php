@@ -15,7 +15,7 @@ class AsignarAsesorACotizaciones extends Command
         $asesorId = $this->argument('asesor_id');
         $cotizacionIds = $this->option('cotizacion_ids');
 
-        $this->info("🔄 ASIGNANDO ASESOR_ID A COTIZACIONES");
+        $this->info(" ASIGNANDO ASESOR_ID A COTIZACIONES");
         $this->line('');
 
         // Validar que el asesor existe

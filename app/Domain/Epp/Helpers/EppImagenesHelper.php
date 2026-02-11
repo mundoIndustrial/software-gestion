@@ -52,7 +52,7 @@ class EppImagenesHelper
      */
     public static function logBuscarEpp(string $termino, int $total): void
     {
-        Log::debug('🔍 [EPP-IMAGENES] Búsqueda de EPP sin tabla epp_imagenes', [
+        Log::debug(' [EPP-IMAGENES] Búsqueda de EPP sin tabla epp_imagenes', [
             'termino' => $termino,
             'total_encontrados' => $total,
             'imagenes_source' => 'pedido_epp_imagenes (si aplica contexto de pedido)',

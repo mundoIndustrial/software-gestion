@@ -1,4 +1,4 @@
-# 📦 Setup Rol Bodeguero
+#  Setup Rol Bodeguero
 
 ## Descripción
 

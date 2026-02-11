@@ -317,7 +317,7 @@
 
     <!-- ESTADO VACÍO -->
     <div id="emptyState" class="empty-state" style="display: none;">
-        <div class="empty-icon">📦</div>
+        <div class="empty-icon"></div>
         <h3 class="empty-title">No hay pedidos pendientes</h3>
         <p class="empty-description">No hay pedidos en estado "Pendiente Cartera" para revisar</p>
     </div>

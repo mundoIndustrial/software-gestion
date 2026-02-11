@@ -9,23 +9,23 @@ NAVEGADOR
    │
    └─→ CrearPedidoEditableController::crearNuevo()
          │
-         ├─ ⏱️ START: [CREAR-PEDIDO-NUEVO] ⏱️ INICIANDO CARGA
+         ├─  START: [CREAR-PEDIDO-NUEVO]  INICIANDO CARGA
          │
          ├─ 📏 Talla::all() 
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas {tiempo_ms: X}
          │
-         ├─ 📦 PedidoProduccion::where() ... ->get()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO-NUEVO] 📦 Pedidos existentes {tiempo_ms: X}
+         ├─  PedidoProduccion::where() ... ->get()
+         │  └─  LOG: [CREAR-PEDIDO-NUEVO]  Pedidos existentes {tiempo_ms: X}
          │
          ├─ 👥 Cliente::orderBy()->get() ← POSIBLE CUELLO DE BOTELLA
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO-NUEVO] 👥 Clientes cargados {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO-NUEVO] 👥 Clientes cargados {tiempo_ms: X}
          │                                                           ↑
          │                                                  Si > 1000ms = PROBLEMA
          │
          ├─ view('crear-pedido-nuevo', [...])
-         │  └─ ⏱️ LOG: TIEMPO DE RENDERIZADO
+         │  └─  LOG: TIEMPO DE RENDERIZADO
          │
-         └─ ⏱️ END: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
+         └─  END: [CREAR-PEDIDO-NUEVO] ✨ PÁGINA COMPLETADA
             └─ RESUMEN: "Tallas: Xms | Pedidos: Xms | Clientes: Xms | TOTAL: Xms"
                          └─ Si TOTAL > 2000ms = LENTO
                          └─ Si Clientes > 1000ms = ÍNDICES EN BD
@@ -46,27 +46,27 @@ NAVEGADOR
    │
    └─→ CrearPedidoEditableController::crearDesdeCotizacion()
          │
-         ├─ ⏱️ START: [CREAR-DESDE-COTIZACION] ⏱️ INICIANDO CARGA
+         ├─  START: [CREAR-DESDE-COTIZACION]  INICIANDO CARGA
          │
          ├─ 📏 Talla::all() 
-         │  └─ ⏱️ LOG: {tiempo_ms: X}
+         │  └─  LOG: {tiempo_ms: X}
          │
          ├─ 📋 Cotizacion::with(['cliente', 'prendas', 'fotos', ...]) ←  CRÍTICO
          │  │   WHERE asesor_id = X
          │  │   WHERE estado IN ['APROBADA', 'APROBADO_PEDIDO']
          │  │
-         │  └─ ⏱️ LOG: [CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas {
+         │  └─  LOG: [CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas {
          │         tiempo_ms: X,  ← Si > 2000ms = OPTIMIZAR QUERY
          │         nota: "Este es el tiempo MÁS CRÍTICO"
          │     }
          │
-         ├─ 📦 PedidoProduccion::where() ... ->get()
-         │  └─ ⏱️ LOG: {tiempo_ms: X}
+         ├─  PedidoProduccion::where() ... ->get()
+         │  └─  LOG: {tiempo_ms: X}
          │
          ├─ 👥 Cliente::orderBy()->get()
-         │  └─ ⏱️ LOG: {tiempo_ms: X}
+         │  └─  LOG: {tiempo_ms: X}
          │
-         └─ ⏱️ END: [CREAR-DESDE-COTIZACION] ✨ PÁGINA COMPLETADA
+         └─  END: [CREAR-DESDE-COTIZACION] ✨ PÁGINA COMPLETADA
             └─ RESUMEN con desglose
 
    │
@@ -86,81 +86,81 @@ NAVEGADOR (FormData)
    │
    └─→ CrearPedidoEditableController::crearPedido()
          │
-         ├─ ⏱️ START: [CREAR-PEDIDO] ⏱️ INICIANDO CREACIÓN TRANSACCIONAL
+         ├─  START: [CREAR-PEDIDO]  INICIANDO CREACIÓN TRANSACCIONAL
          │
          ├─ ═══ PASO 1: JSON ═══
          │  ├─ json_decode($request->input('pedido'))
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 1: JSON decodificado {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 1: JSON decodificado {tiempo_ms: X}
          │
          ├─ ═══ PASO 2: CLIENTE ═══
          │  ├─ obtenerOCrearCliente()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 2: Cliente obtenido {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 2: Cliente obtenido {tiempo_ms: X}
          │
          ├─ ═══ PASO 3: DTO ═══
          │  ├─ PedidoNormalizadorDTO::fromFrontendJSON()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 3: Pedido normalizado {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 3: Pedido normalizado {tiempo_ms: X}
          │
          ├─ ═══ PASO 4: TRANSACCIÓN ═══
          │  └─ DB::beginTransaction()
          │
          ├─ ═══ PASO 5: PEDIDO BASE ═══
          │  ├─ $this->pedidoWebService->crearPedidoCompleto()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 5: Pedido base creado {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 5: Pedido base creado {tiempo_ms: X}
          │                                                             ↑
          │                                                    Si > 500ms = TRIGGERS
          │
          ├─ ═══ PASO 6: CARPETAS ═══
          │  ├─ crearCarpetasPedido()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 6: Carpetas creadas {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 6: Carpetas creadas {tiempo_ms: X}
          │
          ├─ ═══ PASO 7: IMÁGENES ═══ ←  CUELLO DE BOTELLA TÍPICO
          │  │
          │  └─→ MapeoImagenesService::mapearYCrearFotos()
          │       │
-         │       ├─ ⏱️ LOG: [MAPEO-IMAGENES] 📸 INICIANDO MAPEO
+         │       ├─  LOG: [MAPEO-IMAGENES] 📸 INICIANDO MAPEO
          │       │
          │       └─→ ResolutorImagenesService::extraerYProcesarImagenes()
          │            │
-         │            ├─ ⏱️ LOG: [RESOLVER-IMAGENES] 📸 INICIANDO EXTRACCIÓN
+         │            ├─  LOG: [RESOLVER-IMAGENES] 📸 INICIANDO EXTRACCIÓN
          │            │
          │            ├─ foreach imagen in FormData
          │            │  │
          │            │  └─→ ImageUploadService::guardarImagenDirecta()
          │            │       │
-         │            │       ├─ ⏱️ LOG: [IMAGE-UPLOAD] 📤 Iniciando guardado
+         │            │       ├─  LOG: [IMAGE-UPLOAD] 📤 Iniciando guardado
          │            │       ├─ • Validación → X ms
          │            │       ├─ • Carga imagen → X ms
          │            │       ├─ • Conversión WebP → X ms ← Si > 200ms = LENTO
          │            │       │
-         │            │       └─ ⏱️ LOG: [IMAGE-UPLOAD]  Imagen guardada {
+         │            │       └─  LOG: [IMAGE-UPLOAD]  Imagen guardada {
          │            │              tiempo_total_ms: X,
          │            │              desglose: {...}
          │            │          }
          │            │
-         │            └─ ⏱️ LOG: [RESOLVER-IMAGENES]  Extracción completada {
+         │            └─  LOG: [RESOLVER-IMAGENES]  Extracción completada {
          │                   imagenes_procesadas: X,
          │                   imagenes_esperadas: X,
          │                   diferencia: Y  ← Si > 0 = IMÁGENES PERDIDAS
          │               }
          │
-         │       └─ ⏱️ LOG: [MAPEO-IMAGENES] ✨ MAPEO COMPLETADO {tiempo_ms: X}
+         │       └─  LOG: [MAPEO-IMAGENES] ✨ MAPEO COMPLETADO {tiempo_ms: X}
          │
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 7: Imágenes mapeadas {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 7: Imágenes mapeadas {tiempo_ms: X}
          │                                                              ↑
          │                                                     Si > 3000ms = PROBLEMA
          │
          ├─ ═══ PASO 7B: EPPs ═══
          │  ├─ procesarYAsignarEpps()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 7B: EPPs procesados {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 7B: EPPs procesados {tiempo_ms: X}
          │
          ├─ ═══ PASO 8: CÁLCULO Y COMMIT ═══
          │  ├─ calcularCantidadTotalPrendas()
          │  ├─ calcularCantidadTotalEpps()
          │  ├─ $pedido->update(['cantidad_total' => X])
          │  ├─ DB::commit()
-         │  └─ ⏱️ LOG: [CREAR-PEDIDO]  PASO 8: Cálculo {tiempo_ms: X}
+         │  └─  LOG: [CREAR-PEDIDO]  PASO 8: Cálculo {tiempo_ms: X}
          │
-         └─ ⏱️ END: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
+         └─  END: [CREAR-PEDIDO] ✨ TRANSACCIÓN EXITOSA - RESUMEN TOTAL {
                 tiempo_total_ms: X,
                 desglose_pasos: {
                   paso_1_json_ms: X,
@@ -204,7 +204,7 @@ NAVEGADOR (FormData)
 
 ---
 
-## 🔄 Ciclo Completo de Diagnóstico
+##  Ciclo Completo de Diagnóstico
 
 ```
 ┌─────────────────────────────────────┐
@@ -258,10 +258,10 @@ NAVEGADOR (FormData)
 
 | Símbolo | Significa |
 |---|---|
-| `⏱️` | Medición de tiempo |
+| `` | Medición de tiempo |
 | `` | Operación completada |
 | `` | Atención, posible cuello de botella |
-| `🔴` | Crítico, esperar aquí |
+| `` | Crítico, esperar aquí |
 | `→` | Flujo de ejecución |
 | `└─` | Final de rama |
 | `│` | Continuación |

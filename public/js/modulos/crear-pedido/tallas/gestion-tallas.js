@@ -565,11 +565,11 @@ window.crearTarjetaGenero = function(genero, tallas) {
         return () => {
             // DETECTAR si es SOBREMEDIDA o tallas normales
             if (tallasDelGenero && typeof tallasDelGenero === 'object' && tallasDelGenero.SOBREMEDIDA) {
-                // ✅ ES SOBREMEDIDA - Abrir modal especial de sobremedida
+                //  ES SOBREMEDIDA - Abrir modal especial de sobremedida
                 console.log(`[crearTarjetaGenero] 📐 Detectado SOBREMEDIDA en ${genero}, abriendo modal especial`);
                 abrirModalSobremedida();
             } else {
-                // ❌ SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)
+                //  SON TALLAS NORMALES - Abrir modal de seleccionar tallas (letra/número)
                 console.log(`[crearTarjetaGenero] 📏 Tallas normales en ${genero}, abriendo selector`);
                 abrirModalSeleccionarTallas(genero);
             }
@@ -680,7 +680,7 @@ window.actualizarTotalPrendas = function() {
     const totalElement = document.getElementById('total-prendas');
     if (totalElement) {
         totalElement.textContent = total;
-        console.log(`[gestion-tallas] 📦 Total de prendas actualizado: ${total}`);
+        console.log(`[gestion-tallas]  Total de prendas actualizado: ${total}`);
     }
 };
 
@@ -691,7 +691,7 @@ window.obtenerTallasYCantidades = function() {
     // Retornar directamente la estructura relacional: { GENERO: { TALLA: CANTIDAD } }
     const resultado = {};
     
-    console.log('[gestion-tallas] 🔍 Diagnóstico antes de procesar:');
+    console.log('[gestion-tallas]  Diagnóstico antes de procesar:');
     console.log('[gestion-tallas] Estado completo de tallasRelacionales:', window.tallasRelacionales);
     
     Object.entries(window.tallasRelacionales).forEach(([genero, tallasObj]) => {

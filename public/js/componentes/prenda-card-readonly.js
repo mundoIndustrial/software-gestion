@@ -20,9 +20,9 @@ function generarTarjetaPrendaReadOnly(prenda, indice) {
     console.log('[generarTarjetaPrendaReadOnly]', prenda);
     
     // Verificar que servicios estén disponibles
-    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿PrendaCardService existe?', !!window.PrendaCardService);
-    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿PrendaDataTransformer existe?', !!window.PrendaDataTransformer);
-    console.log('[generarTarjetaPrendaReadOnly] 🔍 ¿TallasBuilder existe?', !!window.TallasBuilder);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaCardService existe?', !!window.PrendaCardService);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿PrendaDataTransformer existe?', !!window.PrendaDataTransformer);
+    console.log('[generarTarjetaPrendaReadOnly]  ¿TallasBuilder existe?', !!window.TallasBuilder);
     
     if (!window.PrendaCardService) {
         console.log('[generarTarjetaPrendaReadOnly]  ERROR: PrendaCardService NO está disponible');

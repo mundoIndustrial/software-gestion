@@ -23,11 +23,11 @@ class DebugProcesosCommand extends Command
         $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
         
         if (!$pedidoProduccion) {
-            $this->error("   ❌ Pedido #{$numeroPedido} no encontrado");
+            $this->error("    Pedido #{$numeroPedido} no encontrado");
             return;
         }
         
-        $this->line("   ✅ Encontrado - ID: {$pedidoProduccion->id}");
+        $this->line("    Encontrado - ID: {$pedidoProduccion->id}");
 
         // 1. Verificar prendas del pedido
         $this->line("\n1️⃣ Prendas del Pedido #{$numeroPedido}:");
@@ -80,11 +80,11 @@ class DebugProcesosCommand extends Command
         // 5. Resumen
         $this->line("\n5️⃣ RESUMEN:");
         if ($procesosBD->count() === 0) {
-            $this->error("   ❌ NO HAY PROCESOS en procesos_prenda para este pedido");
+            $this->error("    NO HAY PROCESOS en procesos_prenda para este pedido");
         } elseif ($prenda && $prenda->procesosPrenda()->count() === 0) {
-            $this->error("   ❌ RELACION QUEBRADA: Hay datos pero la relación no los carga!");
+            $this->error("    RELACION QUEBRADA: Hay datos pero la relación no los carga!");
         } else {
-            $this->info("   ✅ RELACION OK: Los procesos se cargan correctamente");
+            $this->info("    RELACION OK: Los procesos se cargan correctamente");
         }
 
         $this->info("\n========== FIN DIAGNOSTICO ==========\n");

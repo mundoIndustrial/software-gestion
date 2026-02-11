@@ -16,7 +16,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
     public function run(): void
     {
         echo "\n========================================\n";
-        echo "🔍 DIAGNÓSTICO: Transformación de Datos Frontend -> Backend\n";
+        echo " DIAGNÓSTICO: Transformación de Datos Frontend -> Backend\n";
         echo "========================================\n\n";
 
         try {
@@ -211,7 +211,7 @@ class DiagnosticoTransformacionDatosSeeder extends Seeder
 
             // 9. Resumen del problema
             echo "========================================\n";
-            echo "🔴 PROBLEMA IDENTIFICADO:\n";
+            echo " PROBLEMA IDENTIFICADO:\n";
             echo "========================================\n";
             echo "1. Frontend envía: 'imagenes' con {file: null}\n";
             echo "2. Backend espera: 'fotos' con UploadedFile o strings\n";
