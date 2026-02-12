@@ -1042,6 +1042,19 @@
         });
     }
 
+    window.AdvancedSizeVariationManager = {
+        setVariationsByProductoId: function(productoId, variations) {
+            ensureStore();
+            window.advancedVariationsByProductoId[String(productoId)] = Array.isArray(variations) ? variations : [];
+        },
+        renderForProductoCard: function(productoCard) {
+            renderVariationsBelowTable(productoCard);
+        },
+        disableOriginalTallasFlow: function(productoCard) {
+            disableOriginalTallasFlow(productoCard);
+        }
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

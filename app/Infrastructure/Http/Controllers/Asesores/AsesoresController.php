@@ -223,10 +223,6 @@ class AsesoresController extends Controller
                 return redirect()->route('asesores.cotizaciones-prenda.create');
             }
             
-            if ($tipo === 'RF') {
-                return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
-            }
-            
             return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
 
         } catch (\Exception $e) {

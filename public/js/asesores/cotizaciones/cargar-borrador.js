@@ -143,15 +143,27 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
                 }
 
                 // Imagen principal prenda (paso2) para card (formato esperado por render: {ruta, tipo:'paso2'})
+                // IMPORTANTE: marcar origen para poder editar/eliminar correctamente en modal Paso 3.
                 const fotosPrenda = prendaCot.fotos || [];
                 const imagenesPrenda = Array.isArray(fotosPrenda)
-                    ? fotosPrenda.map(f => ({ ruta: normalizarUrl(f), tipo: 'paso2' })).filter(i => i.ruta)
+                    ? fotosPrenda.map(f => ({
+                        ruta: normalizarUrl(f),
+                        tipo: 'paso2',
+                        origen: 'prenda',
+                        foto_id: (typeof f === 'object' && f && f.id) ? f.id : null,
+                    })).filter(i => i.ruta)
                     : [];
 
-                // Imágenes de logo guardadas en técnica+prenda (también se pasan como {ruta, tipo:'paso2'} para que el render las muestre)
+                // Imágenes de logo guardadas en técnica+prenda
+                // IMPORTANTE: marcar origen para poder eliminarlas desde el modal y persistir el borrado.
                 const fotosLogo = tp.fotos || [];
                 const imagenesLogo = Array.isArray(fotosLogo)
-                    ? fotosLogo.map(f => ({ ruta: normalizarUrl(f), tipo: 'paso2' })).filter(i => i.ruta)
+                    ? fotosLogo.map(f => ({
+                        ruta: normalizarUrl(f),
+                        tipo: 'paso2',
+                        origen: 'tecnica',
+                        foto_id: (typeof f === 'object' && f && f.id) ? f.id : null,
+                    })).filter(i => i.ruta)
                     : [];
 
                 // Ubicaciones pueden venir como array, objetos, o string JSON
@@ -547,6 +559,7 @@ function cargarBorrador(cotizacion) {
                 // Soportar relación Eloquent: prenda.tallas[] = {talla, genero_id, cantidad}
                 let tallasValores = [];
                 let tallasPorGenero = { dama: [], caballero: [] };
+                let tallasConColor = [];
 
                 if (prenda.tallas && Array.isArray(prenda.tallas)) {
                     prenda.tallas.forEach(t => {
@@ -554,6 +567,14 @@ function cargarBorrador(cotizacion) {
                         const tallaValor = typeof t === 'string' ? t : (t.talla || null);
                         if (!tallaValor) return;
                         tallasValores.push(tallaValor);
+
+                        if (typeof t === 'object' && t.color) {
+                            tallasConColor.push({
+                                talla: tallaValor,
+                                genero_id: t.genero_id ?? null,
+                                color: t.color,
+                            });
+                        }
 
                         const generoId = typeof t === 'object' ? (t.genero_id ?? null) : null;
                         // Regla negocio/UI: 1 = caballero, 2 = dama
@@ -567,6 +588,13 @@ function cargarBorrador(cotizacion) {
                     prenda.prendas_tallas.forEach(pt => {
                         if (!pt || !pt.talla) return;
                         tallasValores.push(pt.talla);
+                        if (pt.color) {
+                            tallasConColor.push({
+                                talla: pt.talla,
+                                genero_id: pt.genero_id ?? null,
+                                color: pt.color,
+                            });
+                        }
                         const generoId = pt.genero_id ?? null;
                         // Regla negocio/UI: 1 = caballero, 2 = dama
                         if (generoId === 2 || generoId === '2') {
@@ -577,6 +605,88 @@ function cargarBorrador(cotizacion) {
                     });
                 }
                 tallasValores = Array.from(new Set(tallasValores));
+
+                // ====== REHIDRATAR TALLAS CON COLOR (FLUJO AVANZADO) ======
+                // Si existen tallas con color guardadas en BD, NO deben cargarse en el flujo normal.
+                // Deben rehidratarse en window.advancedVariationsByProductoId para que guardado.js las envíe como tallas_color.
+                try {
+                    if (tallasConColor.length > 0 && typeof window.AdvancedSizeVariationManager !== 'undefined') {
+                        const productoId = productoActual?.dataset?.productoId;
+
+                        if (productoId) {
+                            const colorUnicos = Array.from(new Set(tallasConColor.map(x => (x.color || '').trim()).filter(Boolean)));
+                            const esLetra = tallasConColor.some(x => ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'].includes(String(x.talla).toUpperCase()));
+
+                            let varianteTmp = prenda.variantes;
+                            if (Array.isArray(varianteTmp) && varianteTmp.length > 0) varianteTmp = varianteTmp[0];
+                            if (!varianteTmp && prenda.prendas_variantes && Array.isArray(prenda.prendas_variantes) && prenda.prendas_variantes.length > 0) {
+                                varianteTmp = prenda.prendas_variantes[0];
+                            }
+
+                            const primeraTela = (varianteTmp && Array.isArray(varianteTmp.telas_multiples) && varianteTmp.telas_multiples.length > 0)
+                                ? varianteTmp.telas_multiples[0]
+                                : null;
+
+                            const fabricIdx = primeraTela?.indice ?? 0;
+                            const fabricColor = primeraTela?.color ?? '';
+                            const fabricTela = primeraTela?.tela ?? '';
+                            const fabricReferencia = primeraTela?.referencia ?? '';
+
+                            const tieneDama = tallasConColor.some(x => x.genero_id === 2 || x.genero_id === '2');
+                            const tieneCaballero = tallasConColor.some(x => x.genero_id === 1 || x.genero_id === '1');
+                            const genders = [];
+                            if (tieneDama) genders.push('DAMA');
+                            if (tieneCaballero) genders.push('CABALLERO');
+                            if (genders.length === 0) genders.push('DAMA');
+
+                            const sizesByGender = {};
+                            if (genders.includes('DAMA')) {
+                                sizesByGender['DAMA'] = Array.from(new Set(tallasConColor.filter(x => x.genero_id === 2 || x.genero_id === '2').map(x => x.talla)));
+                            }
+                            if (genders.includes('CABALLERO')) {
+                                sizesByGender['CABALLERO'] = Array.from(new Set(tallasConColor.filter(x => x.genero_id === 1 || x.genero_id === '1').map(x => x.talla)));
+                            }
+
+                            const variations = colorUnicos.map(c => {
+                                const item = {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    fabricIdx,
+                                    fabricColor,
+                                    fabricTela,
+                                    fabricReferencia,
+                                    assignmentType: 'Género',
+                                    genders,
+                                    system: esLetra ? 'LETRAS' : 'NÚMEROS',
+                                    sizes: null,
+                                    sizesByGender: null,
+                                    color: c,
+                                };
+
+                                if (genders.length > 1) {
+                                    item.sizesByGender = {
+                                        DAMA: (sizesByGender['DAMA'] || []).slice(),
+                                        CABALLERO: (sizesByGender['CABALLERO'] || []).slice(),
+                                    };
+                                } else {
+                                    const g = genders[0];
+                                    item.sizes = (sizesByGender[g] || []).slice();
+                                }
+
+                                return item;
+                            });
+
+                            window.AdvancedSizeVariationManager.setVariationsByProductoId(productoId, variations);
+                            window.AdvancedSizeVariationManager.renderForProductoCard(productoActual);
+                            window.AdvancedSizeVariationManager.disableOriginalTallasFlow(productoActual);
+
+                            // Evitar que el flujo normal re-marque tallas (ya se maneja por el avanzado)
+                            tallasValores = [];
+                            tallasPorGenero = { dama: [], caballero: [] };
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error rehidratando tallas_color en borrador:', e);
+                }
                     
 
                     

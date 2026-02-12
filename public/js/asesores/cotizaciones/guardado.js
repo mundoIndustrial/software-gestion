@@ -537,7 +537,11 @@ async function procederEnviarCotizacion(esBorrador = false) {
             const tieneInfoValida = tienenInformacionValida(window.tecnicasAgregadasPaso3);
             
             if (!tieneInfoValida) {
-
+                // En UPDATE (borrador), igual enviar las técnicas para que el backend pueda sincronizar y
+                // eliminar fotos anteriores (por ejemplo cuando el usuario eliminó todas las imágenes).
+                if (window.cotizacionIdActual) {
+                    formData.append('logo[tecnicas_agregadas]', JSON.stringify(window.tecnicasAgregadasPaso3));
+                }
             } else {
 
                 

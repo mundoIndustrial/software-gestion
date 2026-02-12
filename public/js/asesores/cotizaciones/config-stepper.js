@@ -8,7 +8,7 @@
 
     /**
      * Obtener el tipo de cotización desde URL
-     * @returns {string} 'P', 'B', 'RF', 'PB'
+     * @returns {string} 'P', 'B', 'PB'
      */
     function obtenerTipoCotizacionDesdeLaURL() {
         const params = new URLSearchParams(window.location.search);
@@ -95,30 +95,6 @@
                 }
                 break;
 
-            case 'RF':
-                // REFLECTIVO SOLO: Paso 1, 2, Reflectivo (visualmente es 3), Revisar (visualmente es 4)
-                console.log('  → Tipo REFLECTIVO: Pasos 1, 2, 3(Reflectivo) y revisar');
-                
-                // Ocultamos el paso 3 (logo) pero mostramos el paso 4 (reflectivo)
-                if (step3) step3.style.display = 'none';
-                if (stepLine3) stepLine3.style.display = 'none';
-                if (paso3) paso3.style.display = 'none';
-
-                if (step4) step4.style.display = '';
-                if (stepLine4) stepLine4.style.display = '';
-                if (paso4) paso4.style.display = '';
-
-                // Renombrar el paso 4 a "Reflectivo" visualmente (cambiar número a 3)
-                const step4NumberElement = step4?.querySelector('.step-number');
-                const step4Label = step4?.querySelector('.step-label');
-                if (step4NumberElement) step4NumberElement.textContent = '3';
-                if (step4Label) step4Label.textContent = 'REFLECTIVO';
-
-                if (step4Number) {
-                    step4Number.textContent = '4'; // Para reflectivo: paso 4 es revisar
-                }
-                break;
-
             case 'PB':
             default:
                 // COMBINADA: Paso 1, 2, 3 (Logo), Revisar
@@ -158,9 +134,6 @@
             } else if (tipo === 'B') {
                 // Para logo: pasos 1, 2, 3(logo), 4(revisar)
                 if (paso === 4) paso = 5; // Reflectivo -> Revisar
-            } else if (tipo === 'RF') {
-                // Para reflectivo: pasos 1, 2, 3(reflectivo), 4(revisar)
-                if (paso === 3) paso = 4; // Logo -> Reflectivo
             }
             // Para PB (combinada), no hay restricciones
 
@@ -187,10 +160,6 @@
             } else if (tipo === 'B') {
                 // Para logo: va al paso 3 (logo)
                 btnNextPaso2.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(3)');
-                btnNextPaso2.textContent = 'SIGUIENTE ➜';
-            } else if (tipo === 'RF') {
-                // Para reflectivo: va al paso 4 (reflectivo)
-                btnNextPaso2.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(4)');
                 btnNextPaso2.textContent = 'SIGUIENTE ➜';
             }
         }
@@ -232,21 +201,12 @@
 
         const btnPrevPaso4 = document.querySelector('.form-step[data-step="4"] .btn-prev');
         if (btnPrevPaso4) {
-            if (tipo === 'RF') {
-                // Para reflectivo: anterior va al paso 2 (saltando paso 3)
-                btnPrevPaso4.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(2)');
-            }
             // Para combinada, se queda con onclick="irAlPaso(3)" que es lo por defecto
         }
 
         // Ajustar botón siguiente
         const btnNextPaso4 = document.querySelector('.form-step[data-step="4"] .btn-next');
         if (btnNextPaso4) {
-            if (tipo === 'RF') {
-                // Para reflectivo: siguiente va al paso 5 (revisar)
-                btnNextPaso4.setAttribute('onclick', 'if(typeof irAlPaso === "function") irAlPaso(5)');
-                btnNextPaso4.textContent = 'REVISAR ➜';
-            }
             // Para combinada, se queda con onclick="irAlPaso(5)" que es lo por defecto
         }
     }
@@ -262,8 +222,6 @@
             if (tipo === 'P') {
                 paso5Header.textContent = 'PASO 3: REVISAR COTIZACIÓN';
             } else if (tipo === 'B') {
-                paso5Header.textContent = 'PASO 4: REVISAR COTIZACIÓN';
-            } else if (tipo === 'RF') {
                 paso5Header.textContent = 'PASO 4: REVISAR COTIZACIÓN';
             } else {
                 // PB (combinada)

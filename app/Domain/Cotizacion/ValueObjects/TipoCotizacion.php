@@ -10,7 +10,6 @@ namespace App\Domain\Cotizacion\ValueObjects;
  * - LOGO (L): Solo logo/bordado
  * - COMBINADO (PL): Prendas con logo/bordado
  * - PRENDA_BORDADO (PB): Alias para Combinado (Prenda + Bordado)
- * - REFLECTIVO (RF): Solo reflectivo
  */
 enum TipoCotizacion: string
 {
@@ -18,7 +17,6 @@ enum TipoCotizacion: string
     case LOGO = 'L';
     case COMBINADO = 'PL';
     case PRENDA_BORDADO = 'PB';
-    case REFLECTIVO = 'RF';
 
     /**
      * Obtener etiqueta legible del tipo
@@ -30,7 +28,6 @@ enum TipoCotizacion: string
             self::LOGO => 'Logo/Bordado',
             self::COMBINADO => 'Combinado (Prenda + Logo/Bordado)',
             self::PRENDA_BORDADO => 'Combinado (Prenda + Bordado)',
-            self::REFLECTIVO => 'Reflectivo',
         };
     }
 
@@ -93,7 +90,6 @@ enum TipoCotizacion: string
             self::LOGO => 'Cotización de logo, bordado o diseño',
             self::COMBINADO => 'Cotización de prendas con logo o bordado',
             self::PRENDA_BORDADO => 'Cotización de prendas con bordado',
-            self::REFLECTIVO => 'Cotización de reflectivo',
         };
     }
 }

@@ -1521,6 +1521,7 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
         tecnicasConPrenda,
         ubicacionesPorTecnica: {},
         imagenesPorTecnica: {},
+        imagenesExistentesPorTecnica: {},
         logoCompartido: {
             enabled: false,
             items: {},
@@ -1743,12 +1744,49 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
                 ev.preventDefault();
                 const clave = b.getAttribute('data-logo-clave');
                 if (!clave) return;
+
+                const itemAntesDeEliminar = window.p3EdicionContexto.logoCompartido.items
+                    ? window.p3EdicionContexto.logoCompartido.items[clave]
+                    : null;
+                const rutaCompartida = itemAntesDeEliminar && (itemAntesDeEliminar.ruta || itemAntesDeEliminar.previewUrl)
+                    ? String(itemAntesDeEliminar.ruta || itemAntesDeEliminar.previewUrl)
+                    : '';
+                const tecnicasCompartidas = itemAntesDeEliminar && Array.isArray(itemAntesDeEliminar.tecnicasCompartidas)
+                    ? itemAntesDeEliminar.tecnicasCompartidas.map(t => String(t))
+                    : [];
+
                 if (window.p3EdicionContexto.logoCompartido.items) {
                     delete window.p3EdicionContexto.logoCompartido.items[clave];
                 }
                 if (window.p3EdicionContexto.logoCompartido.files) {
                     delete window.p3EdicionContexto.logoCompartido.files[clave];
                 }
+
+                // IMPORTANTE (borrador): el logo compartido por URL normalmente viene repetido como imágenes existentes
+                // en cada técnica. Si el usuario elimina el logo compartido, debemos quitar esa URL también de las
+                // imágenes existentes de las técnicas afectadas para que el card se actualice al guardar.
+                if (rutaCompartida && tecnicasCompartidas.length > 0) {
+                    tecnicasConPrenda.forEach((t) => {
+                        const tecnicaKey = `${t.tecnicaIndex}`;
+                        const tecnicaNombre = (t.tecnicaData && t.tecnicaData.tipo_logo && t.tecnicaData.tipo_logo.nombre)
+                            ? t.tecnicaData.tipo_logo.nombre
+                            : (t.tecnicaData ? t.tecnicaData.tipo : '');
+
+                        if (!tecnicaNombre || !tecnicasCompartidas.includes(String(tecnicaNombre))) {
+                            return;
+                        }
+
+                        const arr = window.p3EdicionContexto.imagenesExistentesPorTecnica && Array.isArray(window.p3EdicionContexto.imagenesExistentesPorTecnica[tecnicaKey])
+                            ? window.p3EdicionContexto.imagenesExistentesPorTecnica[tecnicaKey]
+                            : [];
+
+                        window.p3EdicionContexto.imagenesExistentesPorTecnica[tecnicaKey] = arr.filter((img) => {
+                            const r = img && img.ruta ? String(img.ruta) : '';
+                            return r !== rutaCompartida;
+                        });
+                    });
+                }
+
                 if (Object.keys(window.p3EdicionContexto.logoCompartido.items || {}).length === 0) {
                     window.p3EdicionContexto.logoCompartido.enabled = false;
                     if (checkboxLogoCompartido) checkboxLogoCompartido.checked = false;
@@ -1918,6 +1956,41 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
 
         // IMÁGENES
         const imagenesIniciales = Array.isArray(item.prenda.imagenes) ? [...item.prenda.imagenes] : [];
+        // Guardar imágenes existentes de técnica (URL) para permitir eliminar en edición
+        // Compatibilidad: en borradores antiguos puede venir sin `origen`. En ese caso,
+        // asumimos que la 1ra imagen paso2 es de prenda y el resto son de técnica.
+        const paso2 = imagenesIniciales.filter(img => img && img.tipo === 'paso2' && img.ruta);
+        let rutaPaso2Prenda = null;
+
+        const paso2MarcadasPrenda = paso2.filter(img => img.origen === 'prenda');
+        if (paso2MarcadasPrenda.length > 0) {
+            rutaPaso2Prenda = paso2MarcadasPrenda[0].ruta;
+        } else {
+            const paso2SinOrigen = paso2.filter(img => !img.origen);
+            if (paso2SinOrigen.length > 0) {
+                rutaPaso2Prenda = paso2SinOrigen[0].ruta;
+            }
+        }
+
+        const existentesTecnica = paso2
+            .filter((img, idx) => {
+                if (!img || !img.ruta) return false;
+                if (img.origen === 'tecnica') return true;
+                if (img.origen === 'prenda') return false;
+                // sin origen: excluir la ruta estimada como prenda
+                if (rutaPaso2Prenda && String(img.ruta) === String(rutaPaso2Prenda)) return false;
+                // si no pudimos estimar, mantener desde el segundo en adelante
+                return idx > 0;
+            })
+            .map(img => ({
+                ruta: img.ruta,
+                tipo: 'paso2',
+                origen: 'tecnica',
+                foto_id: img.foto_id || null,
+            }));
+
+        window.p3EdicionContexto.imagenesExistentesPorTecnica[key] = existentesTecnica;
+
         // solo permitir editar/agregar imágenes del paso3 (File) + mantener paso2 tal cual
         const archivosPaso3 = imagenesIniciales
             .filter(img => img && img.tipo === 'paso3' && img.file instanceof File && !img.nombreCompartido)
@@ -1929,6 +2002,7 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
         blockImg.style.cssText = 'padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;';
         blockImg.innerHTML = `
             <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Imágenes - ${tecnicaNombre} (máx. 3)</div>
+            <div class="p3-edit-existentes" data-tecnica-key="${key}" style="display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
             <div class="p3-edit-drop" data-tecnica-key="${key}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
                 <div style="font-size: 1.2rem; margin-bottom: 6px;">📁</div>
                 <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
@@ -1941,7 +2015,37 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
 
         const drop = blockImg.querySelector(`.p3-edit-drop[data-tecnica-key="${key}"]`);
         const fileInput = blockImg.querySelector(`.p3-edit-file[data-tecnica-key="${key}"]`);
+        const existentesWrap = blockImg.querySelector(`.p3-edit-existentes[data-tecnica-key="${key}"]`);
         const previews = blockImg.querySelector(`.p3-edit-previews[data-tecnica-key="${key}"]`);
+
+        const renderExistentes = () => {
+            if (!existentesWrap) return;
+            existentesWrap.innerHTML = '';
+            const existentes = window.p3EdicionContexto.imagenesExistentesPorTecnica[key] || [];
+            existentes.forEach((it, i) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #1e40af; background: #fff;';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = '×';
+                btn.style.cssText = 'position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:999px; border:none; cursor:pointer; background: rgba(185,28,28,0.85); color:#fff; font-weight:900;';
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    const arr = window.p3EdicionContexto.imagenesExistentesPorTecnica[key] || [];
+                    arr.splice(i, 1);
+                    window.p3EdicionContexto.imagenesExistentesPorTecnica[key] = arr;
+                    renderExistentes();
+                });
+
+                const img = document.createElement('img');
+                img.style.cssText = 'width:100%; height:100%; object-fit: cover;';
+                img.src = it.ruta;
+
+                wrap.appendChild(img);
+                wrap.appendChild(btn);
+                existentesWrap.appendChild(wrap);
+            });
+        };
 
         const renderImgs = () => {
             if (!previews) return;
@@ -1975,13 +2079,15 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
         };
 
         renderImgs();
+        renderExistentes();
 
         const addFiles = (files) => {
             const imagenes = (files || []).filter(ff => ff && ff.type && ff.type.startsWith('image/'));
             if (imagenes.length === 0) return;
             const arr = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
+            const existentes = window.p3EdicionContexto.imagenesExistentesPorTecnica[key] || [];
             for (const f of imagenes) {
-                if (arr.length >= 3) break;
+                if ((arr.length + existentes.length) >= 3) break;
                 arr.push(f);
             }
             window.p3EdicionContexto.imagenesPorTecnica[key] = arr;
@@ -2021,7 +2127,7 @@ function guardarEdicionPrendaPaso3DesdeModal() {
         return;
     }
 
-    const { nombrePrenda, tecnicasConPrenda, ubicacionesPorTecnica, imagenesPorTecnica, logoCompartido } = window.p3EdicionContexto;
+    const { nombrePrenda, tecnicasConPrenda, ubicacionesPorTecnica, imagenesPorTecnica, imagenesExistentesPorTecnica, logoCompartido } = window.p3EdicionContexto;
     const obs = document.getElementById('p3EditarObservaciones') ? document.getElementById('p3EditarObservaciones').value.trim() : '';
 
     tecnicasConPrenda.forEach((item) => {
@@ -2034,7 +2140,24 @@ function guardarEdicionPrendaPaso3DesdeModal() {
 
             // Mantener imágenes del paso2 + reemplazar las del paso3 por las del modal
             const prevImgs = Array.isArray(p.imagenes) ? p.imagenes : [];
-            const soloPaso2 = prevImgs.filter(img => img && img.tipo === 'paso2');
+            // Mantener SIEMPRE imágenes paso2 de prenda. Las de técnica se controlan desde el modal.
+            const existentesTecnica = Array.isArray(imagenesExistentesPorTecnica[tecnicaKey])
+                ? imagenesExistentesPorTecnica[tecnicaKey]
+                : [];
+            const rutasExistentesTecnica = existentesTecnica
+                .map(it => (it && it.ruta) ? String(it.ruta) : '')
+                .filter(Boolean);
+
+            // Compatibilidad: borradores antiguos pueden no traer `origen`.
+            // En ese caso, conservar como foto de prenda la primera imagen paso2 cuya ruta NO esté en existentesTecnica.
+            let paso2Prenda = prevImgs.filter(img => img && img.tipo === 'paso2' && img.origen === 'prenda');
+            if (paso2Prenda.length === 0) {
+                const candidatos = prevImgs.filter(img => img && img.tipo === 'paso2' && img.ruta && img.origen !== 'tecnica');
+                const elegido = candidatos.find(img => !rutasExistentesTecnica.includes(String(img.ruta))) || candidatos[0];
+                paso2Prenda = elegido && elegido.ruta
+                    ? [{ ruta: elegido.ruta, tipo: 'paso2', origen: 'prenda', foto_id: elegido.foto_id || null }]
+                    : [];
+            }
             const archivosPaso3 = Array.isArray(imagenesPorTecnica[tecnicaKey]) ? imagenesPorTecnica[tecnicaKey] : [];
             const nuevasPaso3 = archivosPaso3.map(f => ({ file: f, tipo: 'paso3' }));
 
@@ -2078,7 +2201,7 @@ function guardarEdicionPrendaPaso3DesdeModal() {
                 ...p,
                 observaciones: obs,
                 ubicaciones: Array.isArray(ubicacionesPorTecnica[tecnicaKey]) ? ubicacionesPorTecnica[tecnicaKey] : (p.ubicaciones || []),
-                imagenes: [...soloPaso2, ...nuevasPaso3, ...sharedImgs]
+                imagenes: [...paso2Prenda, ...existentesTecnica, ...nuevasPaso3, ...sharedImgs]
             };
         });
     });
