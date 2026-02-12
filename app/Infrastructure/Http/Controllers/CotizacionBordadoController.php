@@ -37,7 +37,10 @@ class CotizacionBordadoController extends Controller
             $cotizacion = Cotizacion::with([
                 'cliente',
                 'logoCotizacion',
-                'logoCotizacion.fotos'
+                'logoCotizacion.fotos',
+                'logoCotizacion.prendas.tipoLogo',
+                'logoCotizacion.prendas.prendaCot.fotos',
+                'logoCotizacion.prendas.fotos'
             ])->findOrFail($id);
 
             // Verificar que sea un borrador y del asesor autenticado
@@ -50,7 +53,13 @@ class CotizacionBordadoController extends Controller
                 'cliente_id' => $cotizacion->cliente_id,
                 'cliente_nombre' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'NULL',
                 'tiene_cliente' => $cotizacion->cliente ? 'SI' : 'NO',
-                'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO'
+                'tiene_logo_cotizacion' => $cotizacion->logoCotizacion ? 'SI' : 'NO',
+                'logo_prendas_count' => $cotizacion->logoCotizacion && $cotizacion->logoCotizacion->relationLoaded('prendas')
+                    ? $cotizacion->logoCotizacion->prendas->count()
+                    : null,
+                'logo_prendas_loaded' => $cotizacion->logoCotizacion
+                    ? ($cotizacion->logoCotizacion->relationLoaded('prendas') ? 'SI' : 'NO')
+                    : 'NO_LOGO',
             ]);
         } else {
             //  NO CREAR COTIZACIÓN AUTOMÁTICAMENTE
@@ -125,6 +134,11 @@ class CotizacionBordadoController extends Controller
         // Determinar si es envío o guardado como borrador
         $action = $request->input('action') ?? $request->input('accion');
         $esEnvio = $action === 'enviar';
+
+        $tecnicasFotosABorrar = $request->input('tecnicas_fotos_a_borrar', '[]');
+        if (is_string($tecnicasFotosABorrar)) {
+            $tecnicasFotosABorrar = json_decode($tecnicasFotosABorrar, true) ?? [];
+        }
         
         Log::info('📤 Acción detectada:', ['action' => $action, 'es_envio' => $esEnvio]);
         
@@ -271,6 +285,17 @@ class CotizacionBordadoController extends Controller
                     $this->procesarImagenesCotizacion($request, $id);
                 }
 
+                // Sincronizar técnicas/prendas (Paso 3) en edición: eliminar faltantes y actualizar ubicaciones/tallas/obs
+                $tecnicas = $request->input('tecnicas', '[]');
+                if (is_string($tecnicas)) {
+                    $tecnicas = json_decode($tecnicas, true) ?? [];
+                }
+                if (is_array($tecnicas)) {
+                    $mapaPrendasTecnica = $this->syncTecnicasPrendasDesdeFormulario($tecnicas, (int) $logoCotizacion->id);
+                    $this->adjuntarNuevasFotosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                    $this->vincularLogosCompartidosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                }
+
                 // Recargar la cotización con todos sus datos actualizados
                 // IMPORTANTE: Recargar DESPUÉS de borrar imágenes para obtener la lista actualizada
                 $cotizacionActualizada = Cotizacion::with([
@@ -359,14 +384,29 @@ class CotizacionBordadoController extends Controller
                 Log::error(' Error al borrar imágenes DESPUÉS de transacción:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             }
         }
+
+        // DESPUÉS de la transacción, borrar fotos de técnicas (Paso 3) por IDs explícitos
+        if (!empty($tecnicasFotosABorrar)) {
+            $ids = array_values(array_unique(array_map(fn($x) => (int) $x, (array) $tecnicasFotosABorrar)));
+            $fotos = \App\Models\LogoCotizacionTecnicaPrendaFoto::whereIn('id', $ids)->get();
+            foreach ($fotos as $foto) {
+                $this->borrarArchivoPublicSiExiste($foto->ruta_webp);
+                $this->borrarArchivoPublicSiExiste($foto->ruta_original);
+                $this->borrarArchivoPublicSiExiste($foto->ruta_miniatura);
+                $foto->forceDelete();
+            }
+        }
         
         $mensaje = $esEnvio 
             ? 'Cotización enviada - Número: ' . ($resultado['numero_cotizacion'] ?? 'N/A')
             : 'Borrador actualizado exitosamente';
         
-        $redirect = $esEnvio 
-            ? route('asesores.cotizaciones.index')
-            : route('asesores.cotizaciones-bordado.create', ['editar' => $id]);
+        $redirect = route('asesores.cotizaciones.index')
+            . '?'
+            . http_build_query([
+                'tab' => $esEnvio ? 'cotizaciones' : 'borradores',
+                'highlight' => $id,
+            ]);
         
         return response()->json([
             'success' => true,
@@ -374,6 +414,314 @@ class CotizacionBordadoController extends Controller
             'data' => $resultado,
             'redirect' => $redirect
         ]);
+    }
+
+    private function borrarArchivoPublicSiExiste(?string $ruta): void
+    {
+        if (!$ruta) return;
+        $path = $ruta;
+        if (str_starts_with($path, '/storage/')) {
+            $path = substr($path, strlen('/storage/'));
+        }
+        $path = ltrim($path, '/');
+        try {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        } catch (\Exception $e) {
+            Log::warning('No se pudo borrar archivo físico', ['ruta' => $ruta, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function syncTecnicasPrendasDesdeFormulario(array $tecnicas, int $logoCotizacionId): array
+    {
+        $mapaNuevas = [];
+        $prendaCotCache = [];
+
+        $existentes = \App\Models\LogoCotizacionTecnicaPrenda::with('fotos')
+            ->where('logo_cotizacion_id', $logoCotizacionId)
+            ->get();
+
+        $logoCotizacion = \App\Models\LogoCotizacion::find($logoCotizacionId);
+        $cotizacionId = $logoCotizacion ? (int) $logoCotizacion->cotizacion_id : 0;
+
+        $idsIncoming = [];
+        foreach ($tecnicas as $tecnica) {
+            foreach (($tecnica['prendas'] ?? []) as $p) {
+                if (!empty($p['id'])) {
+                    $idsIncoming[] = (int) $p['id'];
+                }
+            }
+        }
+        $idsIncoming = array_values(array_unique($idsIncoming));
+
+        // Eliminar prendas técnicas que ya no vienen (prenda completa)
+        $aEliminar = $existentes->filter(fn($m) => !in_array((int) $m->id, $idsIncoming, true));
+        foreach ($aEliminar as $prendaTecnica) {
+            foreach ($prendaTecnica->fotos as $foto) {
+                $this->borrarArchivoPublicSiExiste($foto->ruta_webp);
+                $this->borrarArchivoPublicSiExiste($foto->ruta_original);
+                $this->borrarArchivoPublicSiExiste($foto->ruta_miniatura);
+                $foto->forceDelete();
+            }
+
+            $prendaCotId = (int) $prendaTecnica->prenda_cot_id;
+            $prendaTecnica->delete();
+
+            // Intentar borrar también la prenda base (si existe)
+            if ($prendaCotId) {
+                $prendaCot = \App\Models\PrendaCot::with(['fotos', 'telaFotos'])->find($prendaCotId);
+                if ($prendaCot) {
+                    foreach ($prendaCot->fotos as $f) {
+                        $this->borrarArchivoPublicSiExiste($f->ruta_webp ?? $f->ruta_original ?? null);
+                        $f->forceDelete();
+                    }
+                    foreach ($prendaCot->telaFotos as $tf) {
+                        $this->borrarArchivoPublicSiExiste($tf->ruta_webp ?? $tf->ruta_original ?? null);
+                        $tf->forceDelete();
+                    }
+                    $prendaCot->forceDelete();
+                }
+            }
+        }
+
+        // Actualizar prendas existentes (ubicaciones, obs, tallas, variaciones)
+        foreach ($tecnicas as $tecnicaIdx => $tecnica) {
+            $tipoLogoId = $tecnica['tipo_logo']['id'] ?? null;
+            $grupo = $tecnica['grupo_combinado'] ?? null;
+            foreach (($tecnica['prendas'] ?? []) as $prendaIdx => $p) {
+                $idPrendaTecnica = $p['id'] ?? null;
+
+                // Si no viene id, es una prenda nueva: crearla
+                if (!$idPrendaTecnica) {
+                    if (!$cotizacionId || !$tipoLogoId) {
+                        continue;
+                    }
+
+                    $nombrePrenda = (string) ($p['nombre_prenda'] ?? '');
+                    $variacionesKey = is_string($p['variaciones_prenda'] ?? null)
+                        ? ($p['variaciones_prenda'] ?? '')
+                        : json_encode($p['variaciones_prenda'] ?? null);
+                    $cacheKey = $cotizacionId . '|' . $nombrePrenda . '|' . ((string) ($grupo ?? '')) . '|' . ((string) ($variacionesKey ?? ''));
+
+                    $prendaCotId = $prendaCotCache[$cacheKey] ?? null;
+                    if (!$prendaCotId) {
+                        $prendaCot = \App\Models\PrendaCot::create([
+                            'cotizacion_id' => $cotizacionId,
+                            'nombre_producto' => $nombrePrenda,
+                            'descripcion' => $p['observaciones'] ?? '',
+                            'cantidad' => $p['cantidad'] ?? 1,
+                            'texto_personalizado_tallas' => $p['texto_personalizado_tallas'] ?? null,
+                        ]);
+                        $prendaCotId = (int) $prendaCot->id;
+                        $prendaCotCache[$cacheKey] = $prendaCotId;
+                    }
+
+                    $nueva = \App\Models\LogoCotizacionTecnicaPrenda::create([
+                        'logo_cotizacion_id' => $logoCotizacionId,
+                        'tipo_logo_id' => (int) $tipoLogoId,
+                        'prenda_cot_id' => (int) $prendaCotId,
+                        'observaciones' => $p['observaciones'] ?? null,
+                        'ubicaciones' => $p['ubicaciones'] ?? [],
+                        'talla_cantidad' => $p['talla_cantidad'] ?? [],
+                        'variaciones_prenda' => $p['variaciones_prenda'] ?? null,
+                        'grupo_combinado' => $grupo,
+                    ]);
+
+                    $mapaNuevas[$tecnicaIdx] = $mapaNuevas[$tecnicaIdx] ?? [];
+                    $mapaNuevas[$tecnicaIdx][$prendaIdx] = (int) $nueva->id;
+                    continue;
+                }
+
+                $model = $existentes->firstWhere('id', (int) $idPrendaTecnica);
+                if (!$model) {
+                    continue;
+                }
+                $model->update([
+                    'tipo_logo_id' => $tipoLogoId ?? $model->tipo_logo_id,
+                    'observaciones' => $p['observaciones'] ?? $model->observaciones,
+                    'ubicaciones' => $p['ubicaciones'] ?? $model->ubicaciones,
+                    'talla_cantidad' => $p['talla_cantidad'] ?? $model->talla_cantidad,
+                    'variaciones_prenda' => $p['variaciones_prenda'] ?? $model->variaciones_prenda,
+                ]);
+            }
+        }
+
+        return $mapaNuevas;
+    }
+
+    private function adjuntarNuevasFotosTecnicasDesdeRequest(array $tecnicas, int $logoCotizacionId, Request $request, array $mapaPrendasTecnica = []): void
+    {
+        // Archivos vienen como tecnica_X_prenda_Y_img_Z
+        $imagenService = new TecnicaImagenService();
+
+        foreach ($request->files->all() as $fieldName => $archivo) {
+            if (!preg_match('/^tecnica_(\d+)_prenda_(\d+)_img_(\d+)$/', $fieldName, $m)) {
+                continue;
+            }
+            $tecnicaIdx = (int) $m[1];
+            $prendaIdx = (int) $m[2];
+            $imgIdx = (int) $m[3];
+
+            $tecnica = $tecnicas[$tecnicaIdx] ?? null;
+            $prenda = $tecnica['prendas'][$prendaIdx] ?? null;
+            if (!$tecnica || !$prenda) continue;
+
+            $prendaTecnicaId = $prenda['id'] ?? null;
+            if (!$prendaTecnicaId) {
+                $prendaTecnicaId = $mapaPrendasTecnica[$tecnicaIdx][$prendaIdx] ?? null;
+            }
+            if (!$prendaTecnicaId) continue;
+
+            $tipoNombre = $tecnica['tipo_logo']['nombre'] ?? 'TÉCNICA';
+            $grupo = $tecnica['grupo_combinado'] ?? null;
+
+            $rutas = $imagenService->guardarImagen($archivo, $logoCotizacionId, $tipoNombre, $grupo);
+            $rutaFinal = $rutas['ruta_webp'] ?? null;
+            if (!$rutaFinal) continue;
+
+            \App\Models\LogoCotizacionTecnicaPrendaFoto::create([
+                'logo_cotizacion_tecnica_prenda_id' => (int) $prendaTecnicaId,
+                'ruta_original' => $rutaFinal,
+                'ruta_webp' => $rutaFinal,
+                'ruta_miniatura' => $rutaFinal,
+                'orden' => $imgIdx,
+                'ancho' => $rutas['ancho'] ?? 0,
+                'alto' => $rutas['alto'] ?? 0,
+                'tamaño' => $rutas['tamaño'] ?? 0,
+            ]);
+        }
+    }
+
+    private function vincularLogosCompartidosTecnicasDesdeRequest(array $tecnicas, int $logoCotizacionId, Request $request, array $mapaPrendasTecnica = []): void
+    {
+        // Misma estrategia que Paso 3:
+        // 1) leer metadatos logo_compartido_metadata_*
+        // 2) guardar cada logo UNA sola vez (archivo tecnica_X_logo_compartido_<clave>)
+        // 3) vincular como foto a cada prenda técnica cuya técnica esté incluida en tecnicasCompartidas
+        $imagenService = new TecnicaImagenService();
+
+        $imagenesCompartidas = [];
+        foreach ($request->all() as $key => $value) {
+            if (preg_match('/^logo_compartido_metadata_(\d+)$/', $key) && is_string($value)) {
+                $metadatos = json_decode($value, true);
+                if ($metadatos && isset($metadatos['nombreCompartido'])) {
+                    $imagenesCompartidas[$metadatos['nombreCompartido']] = $metadatos;
+                }
+            }
+        }
+        if (empty($imagenesCompartidas)) {
+            return;
+        }
+
+        $logosCompartidosGuardados = [];
+        foreach ($imagenesCompartidas as $clave => $metadatos) {
+            $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
+            if (empty($tecnicasCompartidas)) {
+                continue;
+            }
+
+            $archivoEncontrado = null;
+            foreach ($request->files->all() as $fieldName => $archivo) {
+                if (preg_match('/^tecnica_(\d+)_logo_compartido_(.+)$/', $fieldName, $matches)) {
+                    $claveEnCampo = $matches[2];
+                    if ($claveEnCampo === $clave) {
+                        $archivoEncontrado = $archivo;
+                        break;
+                    }
+                }
+            }
+            if (!$archivoEncontrado) {
+                continue;
+            }
+
+            try {
+                $rutasImagen = $imagenService->guardarImagen(
+                    $archivoEncontrado,
+                    $logoCotizacionId,
+                    implode('-', $tecnicasCompartidas),
+                    null
+                );
+                $rutaFinal = $rutasImagen['ruta_webp'] ?? null;
+                if ($rutaFinal) {
+                    $logosCompartidosGuardados[$clave] = $rutaFinal;
+                }
+            } catch (\Exception $e) {
+                Log::error(' Error guardando logo compartido (updateBorrador)', [
+                    'clave' => $clave,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (empty($logosCompartidosGuardados)) {
+            return;
+        }
+
+        foreach ($tecnicas as $tecnicaIdx => $tecnica) {
+            $tipoNombre = $tecnica['tipo_logo']['nombre'] ?? null;
+            if (!$tipoNombre) {
+                continue;
+            }
+
+            foreach (($tecnica['prendas'] ?? []) as $prendaIdx => $p) {
+                $prendaTecnicaId = $p['id'] ?? null;
+                if (!$prendaTecnicaId) {
+                    $prendaTecnicaId = $mapaPrendasTecnica[$tecnicaIdx][$prendaIdx] ?? null;
+                }
+                if (!$prendaTecnicaId) {
+                    continue;
+                }
+
+                foreach ($imagenesCompartidas as $clave => $metadatos) {
+                    $tecnicasCompartidas = $metadatos['tecnicasCompartidas'] ?? [];
+                    if (!in_array($tipoNombre, $tecnicasCompartidas, true)) {
+                        continue;
+                    }
+                    $rutaCompartida = $logosCompartidosGuardados[$clave] ?? null;
+                    if (!$rutaCompartida) {
+                        continue;
+                    }
+
+                    $yaExiste = \App\Models\LogoCotizacionTecnicaPrendaFoto::where([
+                        'logo_cotizacion_tecnica_prenda_id' => (int) $prendaTecnicaId,
+                        'ruta_webp' => $rutaCompartida,
+                    ])->exists();
+                    if ($yaExiste) {
+                        continue;
+                    }
+
+                    $ancho = 0;
+                    $alto = 0;
+                    $tam = 0;
+                    try {
+                        $path = $rutaCompartida;
+                        if (str_starts_with($path, '/storage/')) {
+                            $path = substr($path, strlen('/storage/'));
+                        }
+                        $path = ltrim($path, '/');
+                        $full = storage_path('app/public/' . $path);
+                        $dim = @getimagesize($full);
+                        $ancho = $dim[0] ?? 0;
+                        $alto = $dim[1] ?? 0;
+                        $tam = @filesize($full) ?: 0;
+                    } catch (\Exception $e) {
+                        // no-op
+                    }
+
+                    \App\Models\LogoCotizacionTecnicaPrendaFoto::create([
+                        'logo_cotizacion_tecnica_prenda_id' => (int) $prendaTecnicaId,
+                        'ruta_original' => $rutaCompartida,
+                        'ruta_webp' => $rutaCompartida,
+                        'ruta_miniatura' => $rutaCompartida,
+                        'orden' => 999,
+                        'ancho' => $ancho,
+                        'alto' => $alto,
+                        'tamaño' => $tam,
+                    ]);
+                }
+            }
+        }
     }
 
     /**
@@ -568,6 +916,11 @@ class CotizacionBordadoController extends Controller
                     'logoCotizacionId' => $logoCotizacion->id,
                     'cotizacionId' => $cotizacion->id,
                     'redirect' => route('asesores.cotizaciones.index')
+                        . '?'
+                        . http_build_query([
+                            'tab' => $esBorrador ? 'borradores' : 'cotizaciones',
+                            'highlight' => $cotizacion->id,
+                        ])
                 ], 201);
 
             } catch (\Exception $e) {

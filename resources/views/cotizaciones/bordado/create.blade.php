@@ -1188,6 +1188,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         action: action,
         observaciones_tecnicas: observacionesTecnicas,
         tecnicas: tecnicasAEnviar,
+        tecnicas_fotos_a_borrar: JSON.stringify(window.tecnicasFotosAEliminar || []),
         observaciones_generales: observacionesDelDOM,
         tipo_venta_bordado: headerTipoVentaElement?.value || '',
         telas_prendas_json: JSON.stringify(telasPrendas),
@@ -1265,6 +1266,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                     })) : null;
                     
                     return {
+                        id: prenda.id || null,
                         nombre_prenda: prenda.nombre_prenda,
                         observaciones: prenda.observaciones,
                         ubicaciones: prenda.ubicaciones,
@@ -1460,7 +1462,15 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos del borrador si existe (antes de cualquier limpieza)
     @if(isset($cotizacion) && $cotizacion)
-        cargarDatosBorrador(@json($cotizacion));
+        window.__debugCotizacionBorrador = @json($cotizacion);
+        console.log('[BorradorLogo] DOMContentLoaded: borrador detectado', {
+            id: window.__debugCotizacionBorrador?.id,
+            tieneLogo: !!window.__debugCotizacionBorrador?.logo_cotizacion,
+            prendasCount: Array.isArray(window.__debugCotizacionBorrador?.logo_cotizacion?.prendas)
+                ? window.__debugCotizacionBorrador.logo_cotizacion.prendas.length
+                : null,
+        });
+        cargarDatosBorrador(window.__debugCotizacionBorrador);
     @endif
 
     // Crear función de guardado para bordado
@@ -1492,6 +1502,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Función para cargar datos del borrador
 function cargarDatosBorrador(cotizacion) {
     try {
+        console.log('[BorradorLogo] cargarDatosBorrador() inicio', {
+            id: cotizacion?.id,
+            tieneLogo: !!cotizacion?.logo_cotizacion,
+            prendasCount: Array.isArray(cotizacion?.logo_cotizacion?.prendas) ? cotizacion.logo_cotizacion.prendas.length : null,
+        });
         // Cargar cliente
         let nombreCliente = null;
         
@@ -1572,10 +1587,101 @@ function cargarDatosBorrador(cotizacion) {
             imagenesSeleccionadas = imagenesNuevas;
             // IMPORTANTE: NO limpiar imagenesABorrar aquí
             // Se mantiene para rastrear imágenes que el usuario quiera borrar
-            renderizarImagenes();
+            if (typeof renderizarImagenes === 'function') {
+                renderizarImagenes();
+            } else {
+                setTimeout(() => {
+                    if (typeof renderizarImagenes === 'function') {
+                        renderizarImagenes();
+                    }
+                }, 0);
+            }
+        }
+
+        // Cargar prendas/técnicas (Paso 3) para cotización tipo Logo/Bordado
+        // Fuente: logo_cotizacion.prendas (tabla logo_cotizacion_tecnica_prendas)
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.prendas && Array.isArray(cotizacion.logo_cotizacion.prendas)) {
+            console.log('[BorradorLogo] logo_cotizacion.prendas count:', cotizacion.logo_cotizacion.prendas.length);
+            const tecnicasMap = {};
+
+            const construirUrlFoto = (foto) => {
+                if (!foto || typeof foto !== 'object') return null;
+                const ruta = foto.url || foto.url_miniatura || foto.urlMiniatura || foto.ruta_webp || foto.ruta_miniatura || foto.ruta_original;
+                if (!ruta) return null;
+                if (typeof ruta === 'string' && (ruta.startsWith('http') || ruta.startsWith('/storage/') || ruta.startsWith('data:image'))) {
+                    return ruta;
+                }
+                if (typeof ruta === 'string') {
+                    return '/storage/' + ruta.replace(/^\/+/, '');
+                }
+                return null;
+            };
+
+            cotizacion.logo_cotizacion.prendas.forEach((tp) => {
+                if (!tp || typeof tp !== 'object') return;
+
+                const tipoLogo = tp.tipo_logo || tp.tipoLogo || null;
+                const tipoLogoId = tp.tipo_logo_id || (tipoLogo ? tipoLogo.id : null);
+                if (!tipoLogoId) return;
+
+                if (!tecnicasMap[tipoLogoId]) {
+                    tecnicasMap[tipoLogoId] = {
+                        tipo_logo: {
+                            id: tipoLogoId,
+                            nombre: (tipoLogo && tipoLogo.nombre) ? tipoLogo.nombre : (tp.tipo_logo_nombre || 'TÉCNICA'),
+                            color: (tipoLogo && tipoLogo.color) ? tipoLogo.color : '#1e40af'
+                        },
+                        prendas: [],
+                        logosCompartidos: {}
+                    };
+                }
+
+                const prendaCot = tp.prenda_cot || tp.prendaCot || null;
+                const nombrePrenda = (prendaCot && prendaCot.nombre_producto) ? prendaCot.nombre_producto : (tp.nombre_prenda || 'SIN NOMBRE');
+
+                const fotos = Array.isArray(tp.fotos) ? tp.fotos : [];
+                const imagenesDataUrls = fotos
+                    .map((f) => {
+                        const u = construirUrlFoto(f);
+                        if (!u) return null;
+                        return {
+                            id: f && typeof f === 'object' ? (f.id || null) : null,
+                            data_url: u
+                        };
+                    })
+                    .filter((x) => !!x);
+
+                tecnicasMap[tipoLogoId].prendas.push({
+                    id: tp.id || null,
+                    nombre_prenda: String(nombrePrenda || '').trim().toUpperCase(),
+                    observaciones: tp.observaciones || '',
+                    ubicaciones: Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [],
+                    talla_cantidad: Array.isArray(tp.talla_cantidad) ? tp.talla_cantidad : [],
+                    variaciones_prenda: tp.variaciones_prenda || null,
+                    imagenes_data_urls: imagenesDataUrls,
+                    imagenes_files: [],
+                    telas: null
+                });
+            });
+
+            const tecnicasHidratadas = Object.values(tecnicasMap);
+            console.log('[BorradorLogo] tecnicasHidratadas count:', tecnicasHidratadas.length);
+            if (tecnicasHidratadas.length > 0) {
+                // logo-cotizacion-tecnicas.js consume tecnicasAgregadas (global) y window.tecnicasAgregadas
+                window.tecnicasAgregadas = tecnicasHidratadas;
+                try {
+                    tecnicasAgregadas = tecnicasHidratadas;
+                } catch (e) {
+                    // noop
+                }
+                if (typeof renderizarTecnicasAgregadas === 'function') {
+                    renderizarTecnicasAgregadas();
+                }
+            }
         }
 
     } catch (error) {
+        console.error('[BorradorLogo] Error en cargarDatosBorrador():', error);
     }
 }
 
