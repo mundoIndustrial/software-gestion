@@ -30,6 +30,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ========================================
+           CORRECCIÓN DE LAYOUT PARA CARTERA
+           Sobreescribir CSS de asesores que interfiere
+        ======================================== */
+        
+        /* Resetear main-content para cartera */
+        .main-content {
+            display: flex !important;
+            flex-direction: column !important;
+            margin-left: var(--sidebar-width) !important;
+            min-height: 100vh !important;
+            transition: margin-left var(--transition-normal);
+        }
+
+        .sidebar.collapsed ~ .main-content {
+            margin-left: var(--sidebar-collapsed) !important;
+        }
+
+        /* Asegurar estructura correcta de main-content */
+        .main-content > .top-nav {
+            order: 1 !important;
+            flex-shrink: 0 !important;
+            height: var(--topnav-height) !important;
+            background: var(--bg-secondary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .main-content > .content-area {
+            order: 2 !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: auto !important;
+            min-height: 0 !important;
+        }
+
+        /* Asegurar posicionamiento del sidebar */
+        .sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: var(--sidebar-width) !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            background: var(--bg-sidebar) !important;
+            border-right: 1px solid var(--border-color) !important;
+            transition: transform var(--transition-normal) !important;
+        }
+
+        .sidebar.collapsed {
+            width: 80px !important;
+            transform: none !important;
+            left: 0 !important;
+        }
+
         /* Configuración del main-content como flex */
         .main-content {
             display: flex;
@@ -58,6 +113,81 @@
             width: 100%;
             min-width: 0;
             min-height: 0;
+            padding: 20px;
+            background: var(--bg-primary);
+        }
+
+        /* Estilos específicos para tabla de cartera */
+        .table-container-cartera {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin: 0 auto;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* Estilos para filas y celdas de tabla */
+        .table-row-cartera {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            min-height: 60px;
+            padding: 8px 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .table-row-cartera:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .table-cell-cartera {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0;
+        }
+
+        /* Estilos para encabezados */
+        .table-head {
+            background: var(--primary-color) !important;
+            border-bottom: 2px solid var(--accent-color) !important;
+            padding: 0 !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            display: flex !important;
+            width: 100% !important;
+        }
+
+        .table-header-row {
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 0 !important;
+            padding: 14px 8px !important;
+            background: var(--primary-color) !important;
+        }
+
+        .table-header-cell-cartera {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-weight: 600 !important;
+            color: white !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            user-select: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .table-header-cell-cartera:hover {
+            opacity: 0.8;
         }
 
         .nav-left {
@@ -276,6 +406,8 @@
         /* Mejoras para sidebar colapsado */
         .sidebar.collapsed {
             width: 80px !important;
+            transform: none !important;
+            left: 0 !important;
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -431,103 +563,36 @@
 
     <!-- Scripts básicos solo para funcionalidad esencial -->
     <script>
-        // Log de inicio para verificar que el layout se está cargando
-        console.clear();
-        console.log('%c CARTERA LAYOUT CARGADO', 'color: #10b981; font-size: 16px; font-weight: bold; background: #d1fae5; padding: 10px;');
-        
         // Función para inicializar controles
         function inicializarControles() {
-            console.log('%c Inicializando controles de navegación', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
-            
             // DROPDOWN DE USUARIO
             const userBtn = document.getElementById('userBtn');
             const userMenu = document.getElementById('userMenu');
             
-            console.log('userBtn:', userBtn ? ' Encontrado' : ' No encontrado');
-            console.log('userMenu:', userMenu ? ' Encontrado' : ' No encontrado');
-            
             if (userBtn && userMenu) {
                 userBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const isActive = userMenu.classList.toggle('active');
-                    console.log('%c👤 Usuario Menú Dropdown:', 'color: #1e40af; font-weight: bold;', isActive ? ' ABIERTO' : ' CERRADO');
-                    console.log('   Classes:', userMenu.className);
-                    console.log('   Display:', window.getComputedStyle(userMenu).display);
-                    console.log('   Opacity:', window.getComputedStyle(userMenu).opacity);
-                    console.log('   Visibility:', window.getComputedStyle(userMenu).visibility);
-                    console.log('   Z-index:', window.getComputedStyle(userMenu).zIndex);
-                    console.log('   Position:', window.getComputedStyle(userMenu).position);
-                    
-                    // Debug detallado
-                    if (isActive) {
-                        console.log('%c ESTRUCTURA DEL MENÚ:', 'color: #06b6d4; font-weight: bold;');
-                        console.log('   innerHTML length:', userMenu.innerHTML.length);
-                        console.log('   Children count:', userMenu.children.length);
-                        console.log('   Parent:', userMenu.parentElement.className);
-                        const rect = userMenu.getBoundingClientRect();
-                        console.log('   Position:', `top: ${rect.top}px, left: ${rect.left}px, width: ${rect.width}px`);
-                        console.log('   Visible area:', `height: ${rect.height}px`);
-                    }
+                    userMenu.classList.toggle('active');
                 });
                 
                 // Cerrar cuando se hace click fuera
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.user-dropdown')) {
-                        if (userMenu.classList.contains('active')) {
-                            userMenu.classList.remove('active');
-                            console.log('%c👤 Usuario Menú Dropdown:  CERRADO (click fuera)', 'color: #ef4444;');
-                        }
+                        userMenu.classList.remove('active');
                     }
                 });
-                console.log(' Dropdown del usuario inicializado');
             }
             
             // TOGGLE DEL SIDEBAR - FLECHA DENTRO DEL SIDEBAR
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('sidebar');
             
-            console.log(' sidebarToggle (FLECHA):', sidebarToggle ? ' Encontrado' : ' No encontrado');
-            console.log(' sidebar:', sidebar ? ' Encontrado' : ' No encontrado');
-            
             if (sidebarToggle && sidebar) {
-                console.log(' Event listener agregado al sidebarToggle (FLECHA)');
                 sidebarToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
                     e.preventDefault();
-                    console.log('%c🔘 CLICK EN FLECHA DE SIDEBAR DETECTADO', 'color: #06b6d4; font-weight: bold; font-size: 14px;');
-                    
-                    // Log antes de cambios
-                    console.log('   Estado ANTES:');
-                    console.log('   - Classes:', sidebar.className);
-                    console.log('   - Has collapsed:', sidebar.classList.contains('collapsed'));
-                    
-                    // Realizar cambios
                     sidebar.classList.toggle('collapsed');
-                    
-                    // Log después de cambios
-                    console.log('   Estado DESPUÉS:');
-                    console.log('   - Classes:', sidebar.className);
-                    console.log('   - Has collapsed:', sidebar.classList.contains('collapsed'));
-                    
-                    // Log visual del estado
-                    const isCollapsed = sidebar.classList.contains('collapsed');
-                    console.log('%c Sidebar:', isCollapsed ? ' COLAPSADO' : ' EXPANDIDO', 'color: ' + (isCollapsed ? '#ef4444' : '#10b981') + '; font-weight: bold; font-size: 12px;');
-                    
-                    // Debug de estilos computados
-                    const computedStyle = window.getComputedStyle(sidebar);
-                    console.log('   Estilos computados:');
-                    console.log('   - Width:', computedStyle.width);
-                    console.log('   - Transform:', computedStyle.transform);
-                    
-                    // Debug de posición
-                    const rect = sidebar.getBoundingClientRect();
-                    console.log('   Posición en pantalla:');
-                    console.log('   - Width:', rect.width);
-                    console.log('   - Visible:', rect.width > 0);
                 });
-                console.log(' Sidebar toggle (FLECHA) inicializado');
-            } else {
-                console.warn(' No se encontró sidebarToggle o sidebar');
             }
         }
         
@@ -538,43 +603,53 @@
             // Si el DOM ya está listo (script cargó tarde)
             inicializarControles();
         }
-        
-        // Debug inmediato
-        setTimeout(() => {
-            console.group('%c DEBUG ESTRUCTURA INMEDIATO', 'color: #ef4444; font-weight: bold; font-size: 14px;');
-            
-            const header = document.querySelector('header.top-nav');
-            const container = document.querySelector('.cartera-pedidos-container');
-            const table = document.querySelector('.modern-table-wrapper');
-            const mainContent = document.querySelector('.main-content');
-            
-            console.log('Header:', header ? ' Encontrado' : ' No encontrado');
-            if (header) {
-                const rect = header.getBoundingClientRect();
-                console.log(`  Position: top ${rect.top}px, bottom ${rect.bottom}px`);
-                console.log(`  Z-index: ${window.getComputedStyle(header).zIndex}`);
-            }
-            
-            console.log('Main Content:', mainContent ? ' Encontrado' : ' No encontrado');
-            console.log('Container:', container ? ' Encontrado' : ' No encontrado');
-            console.log('Table:', table ? ' Encontrado' : ' No encontrado');
-            if (table) {
-                const rect = table.getBoundingClientRect();
-                console.log(`  Position: top ${rect.top}px`);
-                console.log(`  Z-index: ${window.getComputedStyle(table).zIndex}`);
-            }
-            
-            console.groupEnd();
-        }, 100);
     </script>
 
     <!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->
     @vite(['resources/js/app.js'])
 
-    <!-- Laravel Echo - Para actualizaciones en tiempo real -->
+    <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para usuarios autorizados) -->
     @auth
+    @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos') || auth()->user()->hasRole('despacho'))
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    @endif
     @endauth
+
+    <!-- Scripts de Facturas para vistas de cartera -->
+    @if(request()->is(['cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
+    <script src="{{ asset('js/modulos/invoice/InvoiceDataFetcher.js') }}"></script>
+    <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
+    <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
+    <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
+    @endif
+
+    <!-- Scripts individuales para vistas específicas -->
+    @if(request()->is('cartera/aprobados'))
+    <!-- Sistema de filtros compartido -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-filtros-compartidos.js') }}"></script>
+    <!-- Script específico de la vista (versión limpia) -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-aprobados-limpio.js') }}"></script>
+    @endif
+    
+    @if(request()->is('cartera/rechazados'))
+    <!-- Sistema de filtros compartido -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-filtros-compartidos.js') }}"></script>
+    <!-- Script específico de la vista (versión limpia) -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-rechazados-limpio.js') }}"></script>
+    @endif
+    
+    @if(request()->is('cartera/anulados'))
+    <!-- Sistema de filtros compartido -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-filtros-compartidos.js') }}"></script>
+    <!-- Script específico de la vista (versión limpia) -->
+    <script src="{{ asset('js/cartera-pedidos/cartera-anulados-limpio.js') }}"></script>
+    @endif
+
+    <!-- Modal de Cotización Global -->
+    <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+
+    <!-- Notifications realtime system (loaded once) -->
+    <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
 
     @stack('scripts')
 </body>

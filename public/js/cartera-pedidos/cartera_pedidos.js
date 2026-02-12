@@ -8,7 +8,7 @@
  */
 
 // ===== VARIABLES GLOBALES =====
-let pedidosData = [];
+let pedidosDataGlobal = [];
 let pedidoSeleccionado = null;
 const API_BASE = '/api/cartera/pedidos';
 const ESTADO_FILTRO = 'pendiente_cartera';
@@ -107,22 +107,22 @@ async function cargarPedidos() {
     
     // Verificar estructura de datos
     if (data.data && Array.isArray(data.data)) {
-      pedidosData = data.data;
+      pedidosDataGlobal = data.data;
     } else if (Array.isArray(data)) {
-      pedidosData = data;
+      pedidosDataGlobal = data;
     } else {
-      pedidosData = [];
+      pedidosDataGlobal = [];
     }
     
     // Renderizar tabla
-    if (pedidosData.length > 0) {
-      renderizarTabla(pedidosData);
+    if (pedidosDataGlobal.length > 0) {
+      renderizarTabla(pedidosDataGlobal);
       tablaPedidosBody.style.display = 'flex';
       if (emptyState) {
         emptyState.style.display = 'none';
       }
-      actualizarInfoPaginacion(pedidosData.length);
-      mostrarNotificacion('Pedidos cargados correctamente', 'success');
+      actualizarInfoPaginacion(pedidosDataGlobal.length);
+      // No mostrar notificación al cargar, solo al realizar acciones
     } else {
       mostrarEstadoVacio(tablaPedidosBody);
       tablaPedidosBody.style.display = 'none';
@@ -257,7 +257,7 @@ function abrirModalAprobacion(pedidoId, numeroPedido) {
   };
   
   // Buscar datos completos del pedido
-  const pedido = pedidosData.find(p => p.id === pedidoId);
+  const pedido = pedidosDataGlobal.find(p => p.id === pedidoId);
   if (pedido) {
     pedidoSeleccionado.datos = pedido;
   }

@@ -123,5 +123,5 @@
         console.log('%c SCRIPTS SECTION EJECUTÁNDOSE', 'color: #3b82f6; font-size: 14px; font-weight: bold;');
     </script>
     <script src="{{ asset('js/cartera-pedidos/debug-css.js') }}"></script>
-    <script src="{{ asset('js/cartera-pedidos/cartera_pedidos.js') }}"></script>
+    <!-- cartera_pedidos.js eliminado para evitar conflictos -->
 @endpush

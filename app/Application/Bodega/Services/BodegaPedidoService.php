@@ -67,6 +67,15 @@ class BodegaPedidoService
         $primerRecibo = ReciboPrenda::findOrFail($pedidoId);
         $numeroPedido = $primerRecibo->numero_pedido;
         
+        // Validar que el recibo tenga número de pedido
+        if (empty($numeroPedido)) {
+            \Log::error('ReciboPrenda sin numero_pedido', [
+                'recibo_id' => $pedidoId,
+                'recibo_data' => $primerRecibo->toArray()
+            ]);
+            throw new \Exception('El recibo (ID: ' . $pedidoId . ') no tiene número de pedido asociado');
+        }
+        
         // Obtener todos los recibos del pedido
         $recibos = $this->bodegaRepository->obtenerRecibosPedido($numeroPedido, $estadosPermitidos);
         
@@ -372,18 +381,22 @@ class BodegaPedidoService
     {
         $items = [];
         
+        // Obtener info del pedido para usar en los items
+        $numeroPedido = $recibos->first()->numero_pedido;
+        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        
         foreach ($recibos as $recibo) {
             try {
                 $datosCompletos = $this->obtenerPedidoUseCase->ejecutar($recibo->id);
                 
                 // Procesar prendas
                 if (isset($datosCompletos->prendas) && is_array($datosCompletos->prendas)) {
-                    $items = array_merge($items, $this->procesarPrendas($datosCompletos->prendas, $recibo, $rolesDelUsuario, $areasPermitidas));
+                    $items = array_merge($items, $this->procesarPrendas($datosCompletos->prendas, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion));
                 }
                 
                 // Procesar EPPs
                 if (isset($datosCompletos->epps) && is_array($datosCompletos->epps)) {
-                    $items = array_merge($items, $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas));
+                    $items = array_merge($items, $this->procesarEpps($datosCompletos->epps, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion));
                 }
                 
             } catch (\Exception $e) {
@@ -397,7 +410,7 @@ class BodegaPedidoService
         return $items;
     }
 
-    private function procesarPrendas(array $prendas, $recibo, array $rolesDelUsuario, array $areasPermitidas): array
+    private function procesarPrendas(array $prendas, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion): array
     {
         $items = [];
         
@@ -405,25 +418,25 @@ class BodegaPedidoService
             $variantes = $prendaEnriquecida['variantes'] ?? [];
             
             foreach ($variantes as $variante) {
-                $items[] = $this->crearItemPrenda($variante, $prendaEnriquecida, $recibo, $rolesDelUsuario, $areasPermitidas);
+                $items[] = $this->crearItemPrenda($variante, $prendaEnriquecida, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
             }
         }
         
         return $items;
     }
 
-    private function procesarEpps(array $epps, $recibo, array $rolesDelUsuario, array $areasPermitidas): array
+    private function procesarEpps(array $epps, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion): array
     {
         $items = [];
         
         foreach ($epps as $eppEnriquecido) {
-            $items[] = $this->crearItemEpp($eppEnriquecido, $recibo, $rolesDelUsuario, $areasPermitidas);
+            $items[] = $this->crearItemEpp($eppEnriquecido, $recibo, $rolesDelUsuario, $areasPermitidas, $pedidoProduccion);
         }
         
         return $items;
     }
 
-    private function crearItemPrenda(array $variante, array $prendaEnriquecida, $recibo, array $rolesDelUsuario, array $areasPermitidas): array
+    private function crearItemPrenda(array $variante, array $prendaEnriquecida, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion): array
     {
         $talla = $variante['talla'] ?? '';
         $prendaNombre = $prendaEnriquecida['nombre'] ?? null;
@@ -432,12 +445,31 @@ class BodegaPedidoService
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $talla, $prendaNombre, $cantidad, $rolesDelUsuario);
         
+        // Obtener asesor de forma segura
+        $asesor = 'N/A';
+        if ($recibo->asesor) {
+            $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? 'N/A';
+        }
+        
+        // Obtener empresa
+        $empresa = $recibo->cliente ?? 'N/A';
+        
+        \Log::debug('[crearItemPrenda] Datos', [
+            'numero_pedido' => $recibo->numero_pedido,
+            'asesor_id' => $recibo->asesor_id,
+            'asesor' => $asesor,
+            'empresa' => $empresa,
+            'cliente' => $recibo->cliente
+        ]);
+        
         return [
             'id' => $recibo->id,
             'tipo' => 'prenda',
             'numero_pedido' => $recibo->numero_pedido,
-            'asesor' => $recibo->asesor->nombre ?? $recibo->asesor->name ?? 'N/A',
-            'empresa' => $recibo->cliente ?? 'N/A',
+            'pedido_produccion_id' => $pedidoProduccion?->id,
+            'recibo_prenda_id' => $recibo->id,
+            'asesor' => $asesor,
+            'empresa' => $empresa,
             'descripcion' => $prendaEnriquecida,
             'talla' => $talla,
             'cantidad_total' => $cantidad,
@@ -452,7 +484,7 @@ class BodegaPedidoService
         ];
     }
 
-    private function crearItemEpp(array $eppEnriquecido, $recibo, array $rolesDelUsuario, array $areasPermitidas): array
+    private function crearItemEpp(array $eppEnriquecido, $recibo, array $rolesDelUsuario, array $areasPermitidas, $pedidoProduccion): array
     {
         $eppNombre = $eppEnriquecido['nombre'] ?? 'EPP';
         $eppCantidad = $eppEnriquecido['cantidad'] ?? 0;
@@ -461,12 +493,31 @@ class BodegaPedidoService
         // Obtener datos de bodega
         $bodegaData = $this->obtenerDatosBodega($recibo->numero_pedido, $eppId, null, $eppCantidad, $rolesDelUsuario);
         
+        // Obtener asesor de forma segura
+        $asesor = 'N/A';
+        if ($recibo->asesor) {
+            $asesor = $recibo->asesor->name ?? $recibo->asesor->nombre ?? 'N/A';
+        }
+        
+        // Obtener empresa
+        $empresa = $recibo->cliente ?? 'N/A';
+        
+        \Log::debug('[crearItemEpp] Datos', [
+            'numero_pedido' => $recibo->numero_pedido,
+            'asesor_id' => $recibo->asesor_id,
+            'asesor' => $asesor,
+            'empresa' => $empresa,
+            'cliente' => $recibo->cliente
+        ]);
+        
         return [
             'id' => $recibo->id,
             'tipo' => 'epp',
             'numero_pedido' => $recibo->numero_pedido,
-            'asesor' => $recibo->asesor->nombre ?? $recibo->asesor->name ?? 'N/A',
-            'empresa' => $recibo->cliente ?? 'N/A',
+            'pedido_produccion_id' => $pedidoProduccion?->id,
+            'recibo_prenda_id' => $recibo->id,
+            'asesor' => $asesor,
+            'empresa' => $empresa,
             'descripcion' => $eppEnriquecido,
             'talla' => $eppId,
             'cantidad_total' => $eppCantidad,
@@ -570,6 +621,8 @@ class BodegaPedidoService
     private function guardarDatosBasicos(array $validatedData, $pedido, $usuario, array $rolesDelUsuario)
     {
         $datosBasicos = [
+            'pedido_produccion_id' => $pedido->id,
+            'recibo_prenda_id' => $validatedData['recibo_prenda_id'] ?? null,
             'prenda_nombre' => $validatedData['prenda_nombre'] ?? null,
             'asesor' => $validatedData['asesor'] ?? null,
             'empresa' => $validatedData['empresa'] ?? null,
@@ -629,6 +682,9 @@ class BodegaPedidoService
             'cantidad' => $validatedData['cantidad'] ?? 0,
             'pendientes' => $validatedData['pendientes'] ?? null,
             'observaciones_bodega' => $validatedData['observaciones_bodega'] ?? null,
+            'fecha_pedido' => $validatedData['fecha_pedido'] ?? null,
+            'fecha_entrega' => $validatedData['fecha_entrega'] ?? null,
+            'area' => $validatedData['area'] ?? 'EPP',
             'estado_bodega' => $estadoNuevo,
             'usuario_bodega_id' => $usuario->id,
             'usuario_bodega_nombre' => $usuario->name,
@@ -658,6 +714,9 @@ class BodegaPedidoService
             'cantidad' => $validatedData['cantidad'] ?? 0,
             'pendientes' => $validatedData['pendientes'] ?? null,
             'observaciones_bodega' => $validatedData['observaciones_bodega'] ?? null,
+            'fecha_pedido' => $validatedData['fecha_pedido'] ?? null,
+            'fecha_entrega' => $validatedData['fecha_entrega'] ?? null,
+            'area' => $validatedData['area'] ?? 'Costura',
             'estado_bodega' => $estadoNuevo,
             'usuario_bodega_id' => $usuario->id,
             'usuario_bodega_nombre' => $usuario->name,

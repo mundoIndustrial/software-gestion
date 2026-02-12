@@ -35,6 +35,14 @@ class PedidosRealtimeRefresh {
         
         // Detección de página
         this.isCarteraPage = window.location.pathname.includes('/cartera/pedidos');
+        this.isAnyCarteraPage = window.location.pathname.includes('/cartera/');
+        
+        // No ejecutar realtime en páginas de cartera (excepto /cartera/pedidos)
+        if (this.isAnyCarteraPage && !this.isCarteraPage) {
+            console.log('[PedidosRealtime] Página de cartera detectada, desactivando realtime');
+            this.isRunning = false;
+            return;
+        }
         
         // Elementos DOM
         this.tableContainer = this.isCarteraPage ? 

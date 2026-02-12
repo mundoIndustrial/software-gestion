@@ -18,6 +18,231 @@ Route::prefix('asistencia-personal')->group(function () {
 });
 
 /**
+ * RUTAS DE CARTERA - SUGERENCIAS DE FILTROS
+ */
+Route::middleware(['web', 'auth'])->prefix('api/cartera')->group(function () {
+    Route::prefix('rechazados')->group(function () {
+        // Endpoint de prueba
+        Route::get('/test', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'TEST_ENDPOINT_WORKING',
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        })->name('cartera.rechazados.test');
+        
+        Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // DEBUG: Verificar qué clientes existen con RECHAZADO_CARTERA
+                $todosLosRechazados = \DB::table('pedidos_produccion')
+                    ->select('cliente', 'estado')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->distinct()
+                    ->get();
+                
+                $debugRechazados = $todosLosRechazados->toArray();
+                
+                // DEBUG: Verificar si MINCIVIL existe en la tabla
+                $mincivilExists = \DB::table('pedidos_produccion')
+                    ->where('cliente', 'LIKE', '%MINCIVIL%')
+                    ->get();
+                
+                $debugMincivil = $mincivilExists->toArray();
+                
+                // DEBUG: Verificar si MINCIVIL tiene RECHAZADO_CARTERA
+                $mincivilRechazados = \DB::table('pedidos_produccion')
+                    ->where('cliente', 'LIKE', '%MINCIVIL%')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->get();
+                
+                $debugMincivilRechazados = $mincivilRechazados->toArray();
+                
+                // Obtener clientes únicos de pedidos con estado RECHAZADO_CARTERA
+                $clientes = \DB::table('pedidos_produccion')
+                    ->select('cliente')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('cliente')
+                    ->toArray();
+                
+                $debugClientesFiltrados = $clientes;
+                
+                // Ordenar por relevancia: primero coincidencias exactas al principio
+                usort($clientes, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Orden alfabético
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $clientes,
+                    'debug' => [
+                        'busqueda' => $busqueda,
+                        'todos_rechazados' => $debugRechazados,
+                        'mincivil_exists' => $debugMincivil,
+                        'mincivil_rechazados' => $debugMincivilRechazados,
+                        'clientes_filtrados' => $debugClientesFiltrados
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.rechazados.clientes.sugerencias');
+        
+        Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener números de pedido únicos
+                $numeros = \DB::table('pedidos')
+                    ->select('numero_pedido')
+                    ->whereNotNull('numero_pedido')
+                    ->where('numero_pedido', '!=', '')
+                    ->whereRaw('LOWER(numero_pedido) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($numeros, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Orden alfabético
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $numeros
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.rechazados.numeros.sugerencias');
+        
+        // Endpoint específico para fechas de rechazo reales
+        Route::post('/fechas-rechazo', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Consulta directa a la tabla pedidos_produccion para obtener fechas de rechazo reales
+                $fechas = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->select('rechazado_por_cartera_en')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('rechazado_por_cartera_en')
+                    ->where('rechazado_por_cartera_en', '!=', '')
+                    ->where('rechazado_por_cartera_en', '!=', '1970-01-01 00:00:00')
+                    ->whereRaw('LOWER(rechazado_por_cartera_en) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('rechazado_por_cartera_en')
+                    ->toArray();
+                
+                // Formatear fechas a dd/mm/yyyy
+                $fechasFormateadas = [];
+                foreach ($fechas as $fecha) {
+                    try {
+                        $date = new \DateTime($fecha);
+                        $fechasFormateadas[] = $date->format('d/m/Y');
+                    } catch (\Exception $e) {
+                        // Si hay error al formatear, intentar extraer solo la parte de la fecha
+                        $fechaLimpia = explode(' ', $fecha)[0]; // Quitar la parte de la hora si existe
+                        if (preg_match('/\d{4}-\d{2}-\d{2}/', $fechaLimpia, $matches)) {
+                            $date = new \DateTime($matches[0]);
+                            $fechasFormateadas[] = $date->format('d/m/Y');
+                        }
+                    }
+                }
+                
+                // Ordenar por fecha (más reciente primero)
+                usort($fechasFormateadas, function ($a, $b) {
+                    try {
+                        $dateA = \DateTime::createFromFormat('d/m/Y', $a);
+                        $dateB = \DateTime::createFromFormat('d/m/Y', $b);
+                        return $dateB <=> $dateA;
+                    } catch (\Exception $e) {
+                        return strcmp($b, $a);
+                    }
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $fechasFormateadas,
+                    'debug' => [
+                        'busqueda' => $busqueda,
+                        'total_registros' => count($fechas),
+                        'fechas_formateadas' => $fechasFormateadas
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar fechas de rechazo: ' . $e->getMessage(),
+                    'debug' => [
+                        'exception' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]
+                ]);
+            }
+        });
+    });
+});
+
+/**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)
  * 
  * Prefix: /api/v1
@@ -346,8 +571,56 @@ Route::post('test-image', [\App\Http\Controllers\TestImageController::class, 'pr
  * API Routes for Cartera de Pedidos (Tiempo Real)
  */
 Route::prefix('cartera')->name('cartera.')->middleware(['auth'])->group(function () {
-    Route::get('pedidos', function () {
-        return response()->json(['data' => []]);
+    Route::get('pedidos', function (\Illuminate\Http\Request $request) {
+        try {
+            // Obtener parámetros de filtro
+            $fecha = $request->get('fecha');
+            $cliente = $request->get('cliente');
+            $numero = $request->get('numero');
+            
+            // Construir consulta base
+            $query = \DB::table('pedidos_produccion')
+                ->where('estado', '=', 'RECHAZADO_CARTERA');
+            
+            // Aplicar filtros si existen
+            if ($fecha) {
+                // Convertir fecha de dd/mm/yyyy a yyyy-mm-dd para comparar
+                $fechaParts = explode('/', $fecha);
+                if (count($fechaParts) === 3) {
+                    $fechaFormateada = $fechaParts[2] . '-' . $fechaParts[1] . '-' . $fechaParts[0];
+                    $query->whereDate('rechazado_por_cartera_en', '=', $fechaFormateada);
+                }
+            }
+            
+            if ($cliente) {
+                $query->where('cliente', 'LIKE', '%' . $cliente . '%');
+            }
+            
+            if ($numero) {
+                $query->where('numero_pedido', '=', $numero);
+            }
+            
+            // Ordenar por fecha de rechazo (más reciente primero)
+            $pedidos = $query->orderBy('rechazado_por_cartera_en', 'desc')
+                ->limit(100)
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedidos,
+                'pagination' => [
+                    'total' => $pedidos->count(),
+                    'per_page' => 100,
+                    'current_page' => 1
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al cargar pedidos: ' . $e->getMessage()
+            ], 500);
+        }
     });
 });
 

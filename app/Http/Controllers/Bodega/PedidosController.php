@@ -18,6 +18,8 @@ use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Application\Bodega\CQRS\CQRSManager;
 use App\Application\Bodega\CQRS\Commands\EntregarPedidoCommand;
 use App\Application\Bodega\CQRS\Commands\ActualizarEstadoPedidoCommand;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App\Application\Bodega\CQRS\Queries\ObtenerPedidosPorAreaQuery;
 use App\Application\Bodega\CQRS\Queries\ObtenerEstadisticasPedidosQuery;
 use App\Domain\Bodega\ValueObjects\AreaBodega;
@@ -26,7 +28,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
-use Carbon\Carbon;
 
 class PedidosController extends Controller
 {
@@ -88,16 +89,55 @@ class PedidosController extends Controller
     public function showPendienteEpp(Request $request, $pedidoId)
     {
         try {
-            // Obtener el ReciboPrenda para conseguir el numero_pedido
-            $reciboPrenda = ReciboPrenda::findOrFail($pedidoId);
-            $numeroPedido = $reciboPrenda->numero_pedido;
+            // Obtener el detalle específico para conseguir el numero_pedido
+            $detalle = DB::table('bodega_detalles_talla')->find($pedidoId);
             
-            // Marcar pedido como visto usando el numero_pedido
+            if (!$detalle) {
+                return back()->with('error', 'No se encontró el detalle del pedido.');
+            }
+            
+            $numeroPedido = $detalle->numero_pedido;
+            
+            // Buscar el pedido principal en pedidos_produccion
+            $pedidoProduccion = DB::table('pedidos_produccion')
+                ->where('numero_pedido', $numeroPedido)
+                ->first();
+            
+            if (!$pedidoProduccion) {
+                return back()->with('error', 'No se encontró el pedido principal.');
+            }
+            
+            \Log::info('Accediendo desde bodega_detalles_talla', [
+                'detalle_id' => $pedidoId,
+                'numero_pedido' => $numeroPedido,
+                'pedido_produccion_id' => $pedidoProduccion->id,
+                'prenda' => $detalle->prenda_nombre,
+                'area' => $detalle->area
+            ]);
+            
+            // Marcar pedido como visto usando el numero_pedido (como show())
             PedidoProduccion::where('numero_pedido', $numeroPedido)
                 ->update(['viewed_at' => Carbon::now()]);
             
-            // Obtener datos completos del pedido usando el mismo servicio que show.blade.php
-            $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
+            // Obtener datos usando el ID de pedidos_produccion (como show())
+            // Pero necesitamos simular un ReciboPrenda para el servicio
+            try {
+                // Crear un objeto ReciboPrenda simulado para el servicio
+                $reciboSimulado = (object) [
+                    'id' => $pedidoProduccion->id,
+                    'numero_pedido' => $pedidoProduccion->numero_pedido,
+                    'cliente' => $pedidoProduccion->cliente,
+                    'asesor' => $detalle->asesor,
+                    'empresa' => $detalle->empresa,
+                ];
+                
+                // Usar el servicio con el ID correcto de pedidos_produccion
+                $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoProduccion->id);
+                
+            } catch (\Exception $e) {
+                \Log::warning('No se pudo usar bodegaPedidoService, usando método alternativo: ' . $e->getMessage());
+                $datos = $this->obtenerDatosDesdeBodegaDetalles($numeroPedido);
+            }
             
             // Filtrar para mostrar solo artículos de EPP con estado_bodega 'Pendiente'
             if (isset($datos['items']) && is_array($datos['items'])) {
@@ -114,17 +154,97 @@ class PedidosController extends Controller
                 }
             }
             
-            // Agregar información del filtro aplicado
-            $datos['filtro_aplicado'] = [
-                'area' => 'EPP',
-                'estado' => 'Pendiente',
-                'descripcion' => 'Mostrando solo artículos de EPP con estado Pendiente'
-            ];
-            
             return view('bodega.pendiente-epp-show', $datos);
             
         } catch (\Exception $e) {
             \Log::error('Error en PedidosController@showPendienteEpp: ' . $e->getMessage());
+            
+            return back()->with('error', 'Error al cargar los detalles del pedido: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar detalles de un pedido específico (solo Costura Pendiente)
+     */
+    public function showPendienteCostura(Request $request, $pedidoId)
+    {
+        try {
+            // Obtener el detalle específico para conseguir el numero_pedido
+            $detalle = DB::table('bodega_detalles_talla')->find($pedidoId);
+            
+            if (!$detalle) {
+                return back()->with('error', 'No se encontró el detalle del pedido.');
+            }
+            
+            $numeroPedido = $detalle->numero_pedido;
+            
+            // Buscar el pedido principal en pedidos_produccion
+            $pedidoProduccion = DB::table('pedidos_produccion')
+                ->where('numero_pedido', $numeroPedido)
+                ->first();
+            
+            if (!$pedidoProduccion) {
+                return back()->with('error', 'No se encontró el pedido principal.');
+            }
+            
+            \Log::info('Accediendo desde bodega_detalles_talla - Costura', [
+                'detalle_id' => $pedidoId,
+                'numero_pedido' => $numeroPedido,
+                'pedido_produccion_id' => $pedidoProduccion->id,
+                'prenda' => $detalle->prenda_nombre,
+                'area' => $detalle->area
+            ]);
+            
+            // Marcar pedido como visto usando el numero_pedido (como show())
+            PedidoProduccion::where('numero_pedido', $numeroPedido)
+                ->update(['viewed_at' => Carbon::now()]);
+            
+            // Obtener datos usando el ID de pedidos_produccion (como show())
+            // Pero necesitamos simular un ReciboPrenda para el servicio
+            try {
+                // Crear un objeto ReciboPrenda simulado para el servicio
+                $reciboSimulado = (object) [
+                    'id' => $pedidoProduccion->id,
+                    'numero_pedido' => $pedidoProduccion->numero_pedido,
+                    'cliente' => $pedidoProduccion->cliente,
+                    'asesor' => $detalle->asesor,
+                    'empresa' => $detalle->empresa,
+                ];
+                
+                // Usar el servicio con el ID correcto de pedidos_produccion
+                $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoProduccion->id);
+                
+            } catch (\Exception $e) {
+                \Log::warning('No se pudo usar bodegaPedidoService, usando método alternativo: ' . $e->getMessage());
+                $datos = $this->obtenerDatosDesdeBodegaDetalles($numeroPedido);
+            }
+            
+            // Filtrar para mostrar solo artículos de Costura con estado_bodega 'Pendiente'
+            if (isset($datos['items']) && is_array($datos['items'])) {
+                $datos['items'] = array_filter($datos['items'], function($item) {
+                    return ($item['area'] ?? '') === 'Costura' && ($item['estado_bodega'] ?? '') === 'Pendiente';
+                });
+                
+                // Reindexar el array después del filtro
+                $datos['items'] = array_values($datos['items']);
+                
+                // Actualizar contadores si existen
+                if (isset($datos['estadisticas'])) {
+                    $datos['estadisticas']['total_costura_pendientes'] = count($datos['items']);
+                }
+            }
+            
+            // Agregar información del filtro aplicado
+            $datos['filtro_aplicado'] = [
+                'area' => 'Costura',
+                'estado' => 'Pendiente',
+                'descripcion' => 'Mostrando solo artículos de Costura con estado Pendiente'
+            ];
+            
+            return view('bodega.pendiente-costura-show', $datos);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@showPendienteCostura: ' . $e->getMessage());
             
             return back()->with('error', 'Error al cargar los detalles del pedido: ' . $e->getMessage());
         }
@@ -272,8 +392,13 @@ class PedidosController extends Controller
 
             // Preparar datos para la vista (similar formato a los pedidos existentes)
             $pedidosFormateados = $pedidosPorPagina->map(function($detalle) {
+                // Buscar el ID del pedido principal
+                $pedidoProduccion = DB::table('pedidos_produccion')
+                    ->where('numero_pedido', $detalle->numero_pedido)
+                    ->first();
+                
                 return [
-                    'id' => $detalle->id,
+                    'id' => $pedidoProduccion ? $pedidoProduccion->id : $detalle->id, // Usar ID de pedidos_produccion si existe
                     'numero_pedido' => $detalle->numero_pedido,
                     'cliente' => $detalle->empresa,
                     'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
@@ -451,8 +576,13 @@ class PedidosController extends Controller
 
             // Preparar datos para la vista (similar formato a los pedidos existentes)
             $pedidosFormateados = $pedidosPorPagina->map(function($detalle) {
+                // Buscar el ID del pedido principal
+                $pedidoProduccion = DB::table('pedidos_produccion')
+                    ->where('numero_pedido', $detalle->numero_pedido)
+                    ->first();
+                
                 return [
-                    'id' => $detalle->id,
+                    'id' => $pedidoProduccion ? $pedidoProduccion->id : $detalle->id, // Usar ID de pedidos_produccion si existe
                     'numero_pedido' => $detalle->numero_pedido,
                     'cliente' => $detalle->empresa,
                     'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
@@ -835,7 +965,7 @@ class PedidosController extends Controller
                 'observaciones_bodega' => 'nullable|string',
                 'fecha_entrega' => 'nullable|date',
                 'fecha_pedido' => 'nullable|date',
-                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado',
+                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
                 'last_updated_at' => 'nullable|string',
             ]);
@@ -1675,6 +1805,100 @@ class PedidosController extends Controller
             \Log::error('Error en obtenerFechasEpp: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
             return collect();
+        }
+    }
+
+    /**
+     * Método temporal para obtener datos desde bodega_detalles_talla
+     * ya que la tabla recibo_prenda no existe
+     */
+    private function obtenerDatosDesdeBodegaDetalles($numeroPedido)
+    {
+        try {
+            \Log::info('Obteniendo datos desde bodega_detalles_talla', ['numero_pedido' => $numeroPedido]);
+            
+            // Obtener todos los detalles para este pedido
+            $detalles = DB::table('bodega_detalles_talla')
+                ->where('numero_pedido', $numeroPedido)
+                ->get();
+            
+            \Log::info('Detalles encontrados', ['count' => $detalles->count()]);
+            
+            // Formatear los datos como los espera la vista
+            $items = [];
+            foreach ($detalles as $detalle) {
+                $items[] = [
+                    'id' => $detalle->id,
+                    'numero_pedido' => $detalle->numero_pedido,
+                    'prenda_nombre' => $detalle->prenda_nombre,
+                    'talla' => $detalle->talla,
+                    'cantidad' => $detalle->cantidad,
+                    'area' => $detalle->area,
+                    'estado_bodega' => $detalle->estado_bodega,
+                    'observaciones_bodega' => $detalle->observaciones_bodega,
+                    'fecha_pedido' => $detalle->fecha_pedido,
+                    'fecha_entrega' => $detalle->fecha_entrega,
+                    'usuario_bodega_nombre' => $detalle->usuario_bodega_nombre,
+                    'asesor' => $detalle->asesor,
+                    'empresa' => $detalle->empresa,
+                ];
+            }
+            
+            // Obtener información del pedido principal
+            $pedidoInfo = DB::table('pedidos_produccion')
+                ->where('numero_pedido', $numeroPedido)
+                ->first();
+            
+            // Si no encontramos el pedido principal, crear datos básicos desde bodega_detalles_talla
+            if (!$pedidoInfo && !empty($detalles)) {
+                $primerDetalle = $detalles->first();
+                $pedidoInfo = (object) [
+                    'id' => $primerDetalle->id,
+                    'numero_pedido' => $primerDetalle->numero_pedido,
+                    'cliente' => $primerDetalle->empresa ?? 'Cliente no especificado',
+                    'estado' => 'Desconocido',
+                    'area' => 'Múltiple',
+                    'descripcion' => 'Pedido desde bodega',
+                    'asesor' => $primerDetalle->asesor ?? 'No especificado',
+                ];
+            }
+            
+            $datos = [
+                'pedido' => $pedidoInfo ? [
+                    'id' => $pedidoInfo->id,
+                    'numero_pedido' => $pedidoInfo->numero_pedido,
+                    'cliente' => $pedidoInfo->cliente,
+                    'estado' => $pedidoInfo->estado,
+                    'area' => $pedidoInfo->area,
+                    'descripcion' => $pedidoInfo->descripcion ?? $pedidoInfo->novedades ?? 'Sin descripción',
+                    'asesor' => $pedidoInfo->asesor ?? null,
+                ] : [
+                    'id' => null,
+                    'numero_pedido' => $numeroPedido,
+                    'cliente' => 'No especificado',
+                    'estado' => 'Desconocido',
+                    'area' => 'Desconocida',
+                    'descripcion' => 'Pedido no encontrado',
+                    'asesor' => null,
+                ],
+                'items' => $items,
+                'estadisticas' => [
+                    'total_items' => count($items),
+                    'total_epp_pendientes' => count(array_filter($items, fn($item) => $item['area'] === 'EPP' && $item['estado_bodega'] === 'Pendiente')),
+                ]
+            ];
+            
+            \Log::info('Datos formateados correctamente', ['items_count' => count($items)]);
+            
+            return $datos;
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerDatosDesdeBodegaDetalles: ' . $e->getMessage());
+            return [
+                'pedido' => null,
+                'items' => [],
+                'estadisticas' => ['total_items' => 0, 'total_epp_pendientes' => 0]
+            ];
         }
     }
 

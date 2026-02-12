@@ -66,6 +66,8 @@
                             @forelse($items as $item)
                                 <tr class="hover:bg-slate-50 transition-colors"
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
+                                    data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
+                                    data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
                                     @if($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
@@ -147,7 +149,8 @@
                                     </td>
                                     
                                     <!-- CANTIDAD -->
-                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">                                        {{ $item['cantidad_total'] }}
+                                    <td class="px-4 py-3 text-center text-xs font-bold text-black border-r border-slate-300" style="width: 6%;">
+                                        {{ $item['cantidad_total'] ?? 0 }}
                                     </td>
                                     
                                     <!-- PENDIENTES -->
@@ -162,6 +165,8 @@
                                             style="font-family: 'Poppins', sans-serif;"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
+                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                             placeholder="Pendientes..."
                                             rows="1"
                                         >{{ $item['pendientes'] ?? '' }}</textarea>
@@ -204,9 +209,11 @@
                                                 @else
                                                     bg-slate-50
                                                 @endif"
-                                            value="{{ $item['fecha_pedido'] ?? '' }}"
+                                            value="{{ $item['fecha_pedido'] ? $item['fecha_pedido'] : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                         >
                                     </td>
                                     
@@ -220,9 +227,11 @@
                                                 @else
                                                     bg-slate-50
                                                 @endif"
-                                            value="{{ $item['fecha_entrega'] ?? '' }}"
+                                            value="{{ $item['fecha_entrega'] ? $item['fecha_entrega'] : '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
+                                            data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
+                                            data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                             @if($item['estado_bodega'] === 'Entregado')
                                                 disabled
                                             @endif
@@ -236,6 +245,8 @@
                                                 class="area-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
+                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                 data-original-area="{{ $item['area'] ?? '' }}"
                                             >
                                                 <option value="">ÁREA</option>
@@ -247,6 +258,10 @@
                                                 class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
+                                                data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
+                                                data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                                data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '' }}"
+                                                data-cantidad="{{ $item['cantidad_total'] }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
                                             >
                                                 <option value="">ESTADO</option>

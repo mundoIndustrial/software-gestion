@@ -41,15 +41,22 @@ class CarteraPedidosController extends Controller
             $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
             
             // Estados que deben estar listos para cartera
+            // Excluyendo explícitamente 'Anulada' y otros estados no deseados
             $estadosPendientes = ['pendiente_cartera'];
             
-            // Si se especifica un estado específico, usarlo
-            if ($request->has('estado') && in_array($request->estado, $estadosPendientes)) {
+            // Estados que NUNCA deben mostrarse en cartera (excepto en la sección de anulados)
+            $estadosExcluidos = ['Entregado', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
+            
+            // Si se especifica un estado específico, usarlo solo si no está excluido
+            if ($request->has('estado') && 
+                in_array($request->estado, $estadosPendientes) && 
+                !in_array($request->estado, $estadosExcluidos)) {
                 $estadosPendientes = [$request->estado];
             }
             
-            // Construir query
-            $query = PedidoProduccion::whereIn('estado', $estadosPendientes);
+            // Construir query con doble seguridad: incluir permitidos Y excluir no deseados
+            $query = PedidoProduccion::whereIn('estado', $estadosPendientes)
+                                   ->whereNotIn('estado', $estadosExcluidos);
             
             // Aplicar búsqueda general
             if (!empty($search)) {
@@ -270,23 +277,327 @@ class CarteraPedidosController extends Controller
     }
     
     /**
+     * Obtener pedidos aprobados por cartera (PENDIENTE_SUPERVISOR)
+     */
+    public function obtenerAprobados(Request $request)
+    {
+        try {
+            // Parámetros de paginación
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 15);
+            $search = $request->get('search', '');
+            $cliente = $request->get('cliente', '');
+            $fechaDesde = $request->get('fecha_desde', '');
+            $fechaHasta = $request->get('fecha_hasta', '');
+            $sortBy = $request->get('sort_by', 'fecha');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            // Validar valores
+            $page = max(1, $page);
+            $perPage = max(1, min($perPage, 100));
+            $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
+            
+            // Estados de aprobados
+            $estadosAprobados = ['PENDIENTE_SUPERVISOR'];
+            
+            // Construir query
+            $query = PedidoProduccion::whereIn('estado', $estadosAprobados);
+            
+            // Aplicar búsqueda general
+            if (!empty($search)) {
+                $search = '%' . $search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('cliente', 'like', $search)
+                      ->orWhere('numero_pedido', 'like', $search)
+                      ->orWhere('id', 'like', $search);
+                });
+            }
+            
+            // Aplicar filtro de cliente
+            if (!empty($cliente)) {
+                $clientePattern = '%' . $cliente . '%';
+                $query->where('cliente', 'like', $clientePattern);
+            }
+            
+            // Aplicar filtro de fechas
+            if (!empty($fechaDesde)) {
+                $query->whereDate('aprobado_por_cartera_en', '>=', $fechaDesde);
+            }
+            if (!empty($fechaHasta)) {
+                $query->whereDate('aprobado_por_cartera_en', '<=', $fechaHasta);
+            }
+            
+            // Aplicar ordenamiento
+            if ($sortBy === 'cliente') {
+                $query->orderBy('cliente', $sortOrder);
+            } else {
+                $query->orderBy('aprobado_por_cartera_en', $sortOrder);
+            }
+            
+            // Obtener total
+            $total = $query->count();
+            
+            // Aplicar paginación
+            $pedidos = $query->forPage($page, $perPage)->get();
+            
+            // Mapear respuesta
+            $data = $pedidos->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero' => $pedido->numero_pedido,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_nombre' => $pedido->cliente,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'created_at' => $pedido->aprobado_por_cartera_en ?? $pedido->created_at,
+                    'aprobado_por_cartera_en' => $pedido->aprobado_por_cartera_en,
+                    'aprobado_por_usuario_cartera' => $pedido->aprobado_por_usuario_cartera
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                    'from' => ($page - 1) * $perPage + 1,
+                    'to' => min($page * $perPage, $total)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en CarteraPedidosController::obtenerAprobados: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos aprobados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Obtener pedidos rechazados por cartera (RECHAZADO_CARTERA)
+     */
+    public function obtenerRechazados(Request $request)
+    {
+        try {
+            // Parámetros de paginación
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 15);
+            $search = $request->get('search', '');
+            $cliente = $request->get('cliente', '');
+            $fechaDesde = $request->get('fecha_desde', '');
+            $fechaHasta = $request->get('fecha_hasta', '');
+            $sortBy = $request->get('sort_by', 'fecha');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            // Validar valores
+            $page = max(1, $page);
+            $perPage = max(1, min($perPage, 100));
+            $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
+            
+            // Estados de rechazados
+            $estadosRechazados = ['RECHAZADO_CARTERA'];
+            
+            // Construir query
+            $query = PedidoProduccion::whereIn('estado', $estadosRechazados);
+            
+            // Aplicar búsqueda general
+            if (!empty($search)) {
+                $search = '%' . $search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('cliente', 'like', $search)
+                      ->orWhere('numero_pedido', 'like', $search)
+                      ->orWhere('id', 'like', $search);
+                });
+            }
+            
+            // Aplicar filtro de cliente
+            if (!empty($cliente)) {
+                $clientePattern = '%' . $cliente . '%';
+                $query->where('cliente', 'like', $clientePattern);
+            }
+            
+            // Aplicar filtro de fechas
+            if (!empty($fechaDesde)) {
+                $query->whereDate('rechazado_por_cartera_en', '>=', $fechaDesde);
+            }
+            if (!empty($fechaHasta)) {
+                $query->whereDate('rechazado_por_cartera_en', '<=', $fechaHasta);
+            }
+            
+            // Aplicar ordenamiento
+            if ($sortBy === 'cliente') {
+                $query->orderBy('cliente', $sortOrder);
+            } else {
+                $query->orderBy('rechazado_por_cartera_en', $sortOrder);
+            }
+            
+            // Obtener total
+            $total = $query->count();
+            
+            // Aplicar paginación
+            $pedidos = $query->forPage($page, $perPage)->get();
+            
+            // Mapear respuesta
+            $data = $pedidos->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero' => $pedido->numero_pedido,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_nombre' => $pedido->cliente,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'created_at' => $pedido->rechazado_por_cartera_en ?? $pedido->created_at,
+                    'rechazado_por_cartera_en' => $pedido->rechazado_por_cartera_en,
+                    'rechazado_por_usuario_cartera' => $pedido->rechazado_por_usuario_cartera,
+                    'motivo_rechazo_cartera' => $pedido->motivo_rechazo_cartera
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                    'from' => ($page - 1) * $perPage + 1,
+                    'to' => min($page * $perPage, $total)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en CarteraPedidosController::obtenerRechazados: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos rechazados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Obtener pedidos anulados (Anulada)
+     */
+    public function obtenerAnulados(Request $request)
+    {
+        try {
+            // Parámetros de paginación
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 15);
+            $search = $request->get('search', '');
+            $cliente = $request->get('cliente', '');
+            $fechaDesde = $request->get('fecha_desde', '');
+            $fechaHasta = $request->get('fecha_hasta', '');
+            $sortBy = $request->get('sort_by', 'fecha');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            // Validar valores
+            $page = max(1, $page);
+            $perPage = max(1, min($perPage, 100));
+            $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
+            
+            // Estados de anulados
+            $estadosAnulados = ['Anulada'];
+            
+            // Construir query
+            $query = PedidoProduccion::whereIn('estado', $estadosAnulados);
+            
+            // Aplicar búsqueda general
+            if (!empty($search)) {
+                $search = '%' . $search . '%';
+                $query->where(function($q) use ($search) {
+                    $q->where('cliente', 'like', $search)
+                      ->orWhere('numero_pedido', 'like', $search)
+                      ->orWhere('id', 'like', $search);
+                });
+            }
+            
+            // Aplicar filtro de cliente
+            if (!empty($cliente)) {
+                $clientePattern = '%' . $cliente . '%';
+                $query->where('cliente', 'like', $clientePattern);
+            }
+            
+            // Aplicar filtro de fechas
+            if (!empty($fechaDesde)) {
+                $query->whereDate('updated_at', '>=', $fechaDesde);
+            }
+            if (!empty($fechaHasta)) {
+                $query->whereDate('updated_at', '<=', $fechaHasta);
+            }
+            
+            // Aplicar ordenamiento
+            if ($sortBy === 'cliente') {
+                $query->orderBy('cliente', $sortOrder);
+            } else {
+                $query->orderBy('updated_at', $sortOrder);
+            }
+            
+            // Obtener total
+            $total = $query->count();
+            
+            // Aplicar paginación
+            $pedidos = $query->forPage($page, $perPage)->get();
+            
+            // Mapear respuesta
+            $data = $pedidos->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero' => $pedido->numero_pedido,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_nombre' => $pedido->cliente,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'created_at' => $pedido->updated_at,
+                    'updated_at' => $pedido->updated_at,
+                    'novedades' => $pedido->novedades
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                    'from' => ($page - 1) * $perPage + 1,
+                    'to' => min($page * $perPage, $total)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en CarteraPedidosController::obtenerAnulados: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos anulados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Obtener opciones de filtro (clientes únicos y fechas)
      */
     public function obtenerOpcionesFiltro(Request $request)
     {
         try {
             $estadosPendientes = ['pendiente_cartera'];
+            $estadosExcluidos = ['Entregado', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
             
-            // Obtener clientes únicos
+            // Obtener clientes únicos con doble seguridad
             $clientes = PedidoProduccion::whereIn('estado', $estadosPendientes)
+                ->whereNotIn('estado', $estadosExcluidos)
                 ->select('cliente')
                 ->distinct()
                 ->orderBy('cliente')
                 ->pluck('cliente')
                 ->toArray();
             
-            // Obtener fechas únicas (formateadas como YYYY-MM-DD)
+            // Obtener fechas únicas con doble seguridad
             $fechas = PedidoProduccion::whereIn('estado', $estadosPendientes)
+                ->whereNotIn('estado', $estadosExcluidos)
                 ->selectRaw('DATE(fecha_de_creacion_de_orden) as fecha')
                 ->distinct()
                 ->orderBy('fecha', 'desc')

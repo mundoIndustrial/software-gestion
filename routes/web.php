@@ -25,6 +25,1141 @@ use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
 
+// Ruta temporal para verificar datos de la base de datos
+Route::get('/verificar-datos-bd', function () {
+    echo '<h1>=== VERIFICACIÓN DE DATOS EN BASE DE DATOS ===</h1>';
+    
+    try {
+        // 1. Verificar tabla pedidos
+        $tables = DB::select('SHOW TABLES LIKE "pedidos"');
+        if (empty($tables)) {
+            echo '<p>❌ La tabla pedidos no existe</p>';
+        } else {
+            echo '<p>✅ Tabla pedidos encontrada</p>';
+        }
+        
+        // 2. Verificar columnas
+        $columns = Schema::getColumnListing('pedidos');
+        $columnasRelevantes = ['cliente', 'numero_pedido', 'rechazado_por_cartera_en'];
+        echo '<h2>Columnas:</h2>';
+        foreach ($columnasRelevantes as $columna) {
+            if (in_array($columna, $columns)) {
+                echo "<p>✅ Columna {$columna} encontrada</p>";
+            } else {
+                echo "<p>❌ Columna {$columna} NO encontrada</p>";
+            }
+        }
+        
+        // 3. Conteo total
+        $total = DB::table('pedidos')->count();
+        echo "<p>📊 Total de registros: {$total}</p>";
+        
+        // 4. Clientes
+        $clientesConDatos = DB::table('pedidos')->whereNotNull('cliente')->where('cliente', '!=', '')->count();
+        $clientesUnicos = DB::table('pedidos')->whereNotNull('cliente')->where('cliente', '!=', '')->distinct('cliente')->count();
+        echo "<p>👥 Clientes con datos: {$clientesConDatos}</p>";
+        echo "<p>👥 Clientes únicos: {$clientesUnicos}</p>";
+        
+        // 5. Números
+        $numerosConDatos = DB::table('pedidos')->whereNotNull('numero_pedido')->where('numero_pedido', '!=', '')->count();
+        $numerosUnicos = DB::table('pedidos')->whereNotNull('numero_pedido')->where('numero_pedido', '!=', '')->distinct('numero_pedido')->count();
+        echo "<p>📋 Números con datos: {$numerosConDatos}</p>";
+        echo "<p>📋 Números únicos: {$numerosUnicos}</p>";
+        
+        // 6. Fechas
+        $fechasConDatos = DB::table('pedidos')->whereNotNull('rechazado_por_cartera_en')->where('rechazado_por_cartera_en', '!=', '')->count();
+        $fechasUnicas = DB::table('pedidos')->whereNotNull('rechazado_por_cartera_en')->where('rechazado_por_cartera_en', '!=', '')->distinct('rechazado_por_cartera_en')->count();
+        echo "<p>📅 Fechas con datos: {$fechasConDatos}</p>";
+        echo "<p>📅 Fechas únicas: {$fechasUnicas}</p>";
+        
+        // 7. Prueba de búsqueda
+        echo '<h2>Prueba de búsqueda (ejemplo: "hornos"):</h2>';
+        $busquedaEjemplo = 'hornos';
+        $resultadosClientes = DB::table('pedidos')
+            ->whereNotNull('cliente')
+            ->where('cliente', '!=', '')
+            ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busquedaEjemplo) . '%'])
+            ->distinct('cliente')
+            ->orderBy('cliente')
+            ->limit(3)
+            ->pluck('cliente');
+        
+        if (!empty($resultadosClientes)) {
+            echo "<p>✅ Búsqueda '{$busquedaEjemplo}' encontró " . count($resultadosClientes) . " resultados:</p>";
+            echo '<ul>';
+            foreach ($resultadosClientes as $resultado) {
+                echo "<li>{$resultado}</li>";
+            }
+            echo '</ul>';
+        } else {
+            echo "<p>❌ Búsqueda '{$busquedaEjemplo}' no encontró resultados</p>";
+        }
+        
+        // 8. Ejemplos de datos
+        echo '<h2>Ejemplos de datos:</h2>';
+        
+        // Ejemplos de clientes
+        $ejemplosClientes = DB::table('pedidos')
+            ->whereNotNull('cliente')
+            ->where('cliente', '!=', '')
+            ->distinct('cliente')
+            ->orderBy('cliente')
+            ->limit(5)
+            ->pluck('cliente');
+        
+        echo '<h3>Clientes:</h3>';
+        echo '<ul>';
+        foreach ($ejemplosClientes as $cliente) {
+            echo "<li>{$cliente}</li>";
+        }
+        echo '</ul>';
+        
+        // Ejemplos de números
+        $ejemplosNumeros = DB::table('pedidos')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
+            ->distinct('numero_pedido')
+            ->orderBy('numero_pedido')
+            ->limit(5)
+            ->pluck('numero_pedido');
+        
+        echo '<h3>Números de pedido:</h3>';
+        echo '<ul>';
+        foreach ($ejemplosNumeros as $numero) {
+            echo "<li>{$numero}</li>";
+        }
+        echo '</ul>';
+        
+        // Ejemplos de fechas
+        $ejemplosFechas = DB::table('pedidos')
+            ->whereNotNull('rechazado_por_cartera_en')
+            ->where('rechazado_por_cartera_en', '!=', '')
+            ->distinct('rechazado_por_cartera_en')
+            ->orderBy('rechazado_por_cartera_en', 'desc')
+            ->limit(5)
+            ->pluck('rechazado_por_cartera_en');
+        
+        echo '<h3>Fechas de rechazo:</h3>';
+        echo '<ul>';
+        foreach ($ejemplosFechas as $fecha) {
+            $carbon = \Carbon\Carbon::parse($fecha);
+            echo "<li>" . $carbon->format('d/m/Y') . "</li>";
+        }
+        echo '</ul>';
+        
+        echo '<h2>=== VERIFICACIÓN COMPLETADA ===</h2>';
+        echo '<p>✅ Todos los datos necesarios para el autocompletar están disponibles</p>';
+        echo '<p>🚀 El sistema de sugerencias debería funcionar correctamente</p>';
+        
+    } catch (\Exception $e) {
+        echo '<p>❌ Error: ' . $e->getMessage() . '</p>';
+    }
+})->name('verificar.datos.bd');
+
+// Ruta para ver todas las tablas de la base de datos
+Route::get('/verificar-tablas-bd', function () {
+    echo '<h1>=== TABLAS DISPONIBLES EN BASE DE DATOS ===</h1>';
+    
+    try {
+        // Obtener todas las tablas
+        $tables = DB::select('SHOW TABLES');
+        
+        echo '<h2>Tablas encontradas:</h2>';
+        echo '<ul>';
+        foreach ($tables as $table) {
+            $tableName = array_values($table)[0];
+            echo "<li><strong>{$tableName}</strong></li>";
+        }
+        echo '</ul>';
+        
+        // Buscar tablas que podrían contener datos de pedidos
+        echo '<h2>Posibles tablas de pedidos:</h2>';
+        $possibleTables = [];
+        
+        foreach ($tables as $table) {
+            $tableName = array_values($table)[0];
+            if (stripos($tableName, 'pedido') !== false || 
+                stripos($tableName, 'order') !== false ||
+                stripos($tableName, 'sale') !== false ||
+                stripos($tableName, 'venta') !== false) {
+                $possibleTables[] = $tableName;
+            }
+        }
+        
+        if (!empty($possibleTables)) {
+            echo '<ul>';
+            foreach ($possibleTables as $tableName) {
+                echo "<li><strong>{$tableName}</strong> (posible tabla de pedidos)</li>";
+                
+                // Verificar columnas de esta tabla
+                try {
+                    $columns = Schema::getColumnListing($tableName);
+                    $relevantColumns = ['cliente', 'numero_pedido', 'rechazado_por_cartera_en', 'customer', 'order_number', 'order_id', 'pedido_id', 'numero', 'cliente_nombre'];
+                    
+                    echo '<ul>';
+                    foreach ($relevantColumns as $column) {
+                        if (in_array($column, $columns)) {
+                            echo "<li>✅ Columna '{$column}' encontrada</li>";
+                        }
+                    }
+                    echo '</ul>';
+                    
+                    // Mostrar conteo de registros
+                    $count = DB::table($tableName)->count();
+                    echo "<li>📊 Registros: {$count}</li>";
+                    
+                } catch (\Exception $e) {
+                    echo "<li>❌ Error al verificar columnas: {$e->getMessage()}</li>";
+                }
+                
+                echo '</li>';
+            }
+            echo '</ul>';
+        } else {
+            echo '<p>No se encontraron tablas que parezcan contener datos de pedidos.</p>';
+        }
+        
+        echo '<h2>Recomendación:</h2>';
+        echo '<p>Busca en la lista anterior una tabla que contenga las columnas necesarias para el autocompletar.</p>';
+        echo '<p>Una vez identificada la tabla correcta, actualiza las rutas API para usar esa tabla.</p>';
+        
+    } catch (\Exception $e) {
+        echo '<p>❌ Error: ' . $e->getMessage() . '</p>';
+    }
+})->name('verificar.tablas.bd');
+
+// ========================================
+// RUTAS DE SUGERENCIAS DE CARTERA - PEDIDOS (pendiente_cartera)
+// ========================================
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::prefix('cartera/pedidos')->group(function () {
+        Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener clientes únicos de pedidos con estado pendiente_cartera
+                $clientes = \DB::table('pedidos_produccion')
+                    ->select('cliente')
+                    ->where('estado', '=', 'pendiente_cartera')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('cliente')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($clientes, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $clientes
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.pedidos.clientes.sugerencias');
+        
+        Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener números únicos de pedidos con estado pendiente_cartera
+                $numeros = \DB::table('pedidos_produccion')
+                    ->select('numero_pedido')
+                    ->where('estado', '=', 'pendiente_cartera')
+                    ->whereNotNull('numero_pedido')
+                    ->where('numero_pedido', '!=', '')
+                    ->whereRaw('CAST(numero_pedido AS CHAR) LIKE ?', ['%' . $busqueda . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($numeros, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return $a - $b;
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $numeros
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.pedidos.numeros.sugerencias');
+        
+        Route::post('/fechas/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Usar created_at para fechas de pedidos pendientes
+                $query = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->select('created_at')
+                    ->where('estado', '=', 'pendiente_cartera')
+                    ->whereNotNull('created_at');
+                
+                // Debug: contar total de registros
+                $totalCount = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->where('estado', '=', 'pendiente_cartera')
+                    ->whereNotNull('created_at')
+                    ->count();
+                
+                // Solo agregar condición de búsqueda si hay texto
+                if (!empty($busqueda) && $busqueda !== null) {
+                    $query->whereRaw('DATE_FORMAT(created_at, "%d/%m/%Y") LIKE ?', ['%' . strtolower($busqueda) . '%']);
+                }
+                
+                $fechas = $query->distinct()
+                    ->limit(10)
+                    ->pluck('created_at')
+                    ->toArray();
+                
+                // Formatear fechas a dd/mm/yyyy
+                $fechasFormateadas = array_map(function($fecha) {
+                    $date = new \DateTime($fecha);
+                    return $date->format('d/m/Y');
+                }, $fechas);
+                
+                // Ordenar por relevancia y luego por fecha (más reciente primero)
+                usort($fechasFormateadas, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Ordenar por fecha (más reciente primero)
+                    $dateA = \DateTime::createFromFormat('d/m/Y', $a);
+                    $dateB = \DateTime::createFromFormat('d/m/Y', $b);
+                    if ($dateA && $dateB) {
+                        return $dateB <=> $dateA;
+                    }
+                    
+                    return strcmp($b, $a);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $fechasFormateadas,
+                    'debug' => [
+                        'test' => 'WEB_MODE_ACTIVE',
+                        'busqueda' => $busqueda,
+                        'fechas_originales_count' => count($fechas),
+                        'fechas_formateadas_count' => count($fechasFormateadas),
+                        'total_count' => $totalCount
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage(),
+                    'debug' => [
+                        'exception' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]
+                ]);
+            }
+        })->name('cartera.pedidos.fechas.sugerencias');
+    });
+});
+
+// ========================================
+// RUTAS DE SUGERENCIAS DE CARTERA
+// ========================================
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::prefix('cartera/rechazados')->group(function () {
+        // Endpoint de prueba
+        Route::get('/test', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'TEST_ENDPOINT_WORKING',
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        })->name('cartera.rechazados.test');
+        
+        Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // DEBUG: Verificar qué clientes existen con RECHAZADO_CARTERA
+                $todosLosRechazados = \DB::table('pedidos_produccion')
+                    ->select('cliente', 'estado')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->distinct()
+                    ->get();
+                
+                $debugRechazados = $todosLosRechazados->toArray();
+                
+                // DEBUG: Verificar si MINCIVIL existe en la tabla
+                $mincivilExists = \DB::table('pedidos_produccion')
+                    ->where('cliente', 'LIKE', '%MINCIVIL%')
+                    ->get();
+                
+                $debugMincivil = $mincivilExists->toArray();
+                
+                // DEBUG: Verificar si MINCIVIL tiene RECHAZADO_CARTERA
+                $mincivilRechazados = \DB::table('pedidos_produccion')
+                    ->where('cliente', 'LIKE', '%MINCIVIL%')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->get();
+                
+                $debugMincivilRechazados = $mincivilRechazados->toArray();
+                
+                // Obtener clientes únicos de pedidos con estado RECHAZADO_CARTERA
+                $clientes = \DB::table('pedidos_produccion')
+                    ->select('cliente')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('cliente')
+                    ->toArray();
+                
+                $debugClientesFiltrados = $clientes;
+                
+                // Ordenar por relevancia: primero coincidencias exactas al principio
+                usort($clientes, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Orden alfabético
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $clientes,
+                    'debug' => [
+                        'busqueda' => $busqueda,
+                        'todos_rechazados' => $debugRechazados,
+                        'mincivil_exists' => $debugMincivil,
+                        'mincivil_rechazados' => $debugMincivilRechazados,
+                        'clientes_filtrados' => $debugClientesFiltrados
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.rechazados.clientes.sugerencias');
+        
+        Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener números únicos de pedidos con estado RECHAZADO_CARTERA
+                $numeros = \DB::table('pedidos_produccion')
+                    ->select('numero_pedido')
+                    ->where('estado', '=', 'RECHAZADO_CARTERA')
+                    ->whereNotNull('numero_pedido')
+                    ->where('numero_pedido', '!=', '')
+                    ->whereRaw('CAST(numero_pedido AS CHAR) LIKE ?', ['%' . $busqueda . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($numeros, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Orden numérico
+                    return $a - $b;
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $numeros
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.rechazados.numeros.sugerencias');
+        
+        Route::post('/fechas/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Versión simplificada sin dependencias problemáticas
+                try {
+                    // Log inicial para debug
+                    \Log::info('DEBUG_FECHAS: Iniciando consulta', [
+                        'busqueda' => $busqueda,
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ]);
+                    
+                    // DEBUG: Verificar qué valores hay realmente en la tabla
+                    $rawData = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                        ->select('id', 'estado', 'rechazado_por_cartera_en', 'motivo_rechazo_cartera')
+                        ->where('estado', 'RECHAZADO_CARTERA')
+                        ->limit(5)
+                        ->get();
+                    
+                    \Log::info('DEBUG_FECHAS: Datos crudos en pedidos_produccion', [
+                        'raw_data_count' => count($rawData),
+                        'raw_data' => $rawData->toArray()
+                    ]);
+                    
+                    // Usar la tabla correcta: pedidos_produccion
+                    $query = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                        ->select('rechazado_por_cartera_en')
+                        ->whereNotNull('rechazado_por_cartera_en');
+                    
+                    // Debug: contar total de registros primero
+                    $totalCount = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                        ->whereNotNull('rechazado_por_cartera_en')
+                        ->count();
+                    
+                    // Debug: ver qué valores tienen los registros RECHAZADO_CARTERA
+                    $rechazadosValues = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                        ->select('id', 'estado', 'rechazado_por_cartera_en')
+                        ->where('estado', 'RECHAZADO_CARTERA')
+                        ->get();
+                    
+                    \Log::info('DEBUG_FECHAS: Valores RECHAZADO_CARTERA', [
+                        'rechazados_count' => count($rechazadosValues),
+                        'rechazados_values' => $rechazadosValues->toArray()
+                    ]);
+                    
+                    \Log::info('DEBUG_FECHAS: Total registros encontrados', [
+                        'total_count' => $totalCount,
+                        'busqueda' => $busqueda
+                    ]);
+                    
+                    // Solo agregar condición de búsqueda si hay texto
+                    if (!empty($busqueda) && $busqueda !== null) {
+                        // Simplificar: solo buscar en formato DD/MM/YYYY que es más intuitivo
+                        $query->whereRaw('DATE_FORMAT(rechazado_por_cartera_en, "%d/%m/%Y") LIKE ?', ['%' . strtolower($busqueda) . '%']);
+                    }
+                    
+                    $fechas = $query->distinct()
+                        ->limit(10)
+                        ->pluck('rechazado_por_cartera_en')
+                        ->toArray();
+                    
+                    \Log::info('DEBUG_FECHAS: Fechas obtenidas', [
+                        'fechas_count' => count($fechas),
+                        'fechas' => $fechas,
+                        'busqueda' => $busqueda
+                    ]);
+                        
+                } catch (\Exception $dbError) {
+                    // Si hay error en la consulta, devolver vacío con info de error
+                    return response()->json([
+                        'success' => true,
+                        'sugerencias' => [],
+                        'debug' => [
+                            'error_db' => $dbError->getMessage(),
+                            'busqueda' => $busqueda,
+                            'total_count' => $totalCount ?? 0
+                        ]
+                    ]);
+                }
+                
+                // Formatear fechas a dd/mm/yyyy
+                $fechasFormateadas = [];
+                foreach ($fechas as $fecha) {
+                    try {
+                        $date = new \DateTime($fecha);
+                        $fechasFormateadas[] = $date->format('d/m/Y');
+                    } catch (\Exception $dateError) {
+                        // Si hay error al formatear, usar la fecha original
+                        $fechasFormateadas[] = $fecha;
+                    }
+                }
+                
+                // Ordenar por fecha (más reciente primero)
+                usort($fechasFormateadas, function ($a, $b) {
+                    try {
+                        $dateA = \DateTime::createFromFormat('d/m/Y', $a);
+                        $dateB = \DateTime::createFromFormat('d/m/Y', $b);
+                        return $dateB <=> $dateA;
+                    } catch (\Exception $e) {
+                        // Si hay error en el formato, ordenar como string
+                        return strcmp($b, $a);
+                    }
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $fechasFormateadas,
+                    'debug' => [
+                        'busqueda' => $busqueda,
+                        'fechas_originales_count' => count($fechas),
+                        'fechas_formateadas_count' => count($fechasFormateadas),
+                        'total_count' => $totalCount ?? 0,
+                        'fechas_originales' => $fechas,
+                        'fechas_formateadas' => $fechasFormateadas,
+                        'timestamp' => date('Y-m-d H:i:s'),
+                        'test' => 'WEB_MODE_ACTIVE'
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage(),
+                    'debug' => [
+                        'exception' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]
+                ]);
+            }
+        })->name('cartera.rechazados.fechas.sugerencias');
+    });
+});
+
+// ========================================
+// RUTAS DE SUGERENCIAS DE CARTERA - APROBADOS
+// ========================================
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::prefix('cartera/aprobados')->group(function () {
+        Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener clientes únicos de pedidos con estado PENDIENTE_SUPERVISOR
+                $clientes = \DB::table('pedidos_produccion')
+                    ->select('cliente')
+                    ->where('estado', '=', 'PENDIENTE_SUPERVISOR')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('cliente')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($clientes, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $clientes
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.aprobados.clientes.sugerencias');
+        
+        Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener números únicos de pedidos con estado PENDIENTE_SUPERVISOR
+                $numeros = \DB::table('pedidos_produccion')
+                    ->select('numero_pedido')
+                    ->where('estado', '=', 'PENDIENTE_SUPERVISOR')
+                    ->whereNotNull('numero_pedido')
+                    ->where('numero_pedido', '!=', '')
+                    ->whereRaw('CAST(numero_pedido AS CHAR) LIKE ?', ['%' . $busqueda . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($numeros, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return $a - $b;
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $numeros
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.aprobados.numeros.sugerencias');
+        
+        Route::post('/fechas/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Log inicial para debug
+                \Log::info('DEBUG_FECHAS_APROBADOS: Iniciando consulta', [
+                    'busqueda' => $busqueda,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+                
+                // DEBUG: Verificar qué valores hay realmente en la tabla
+                $rawData = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->select('id', 'estado', 'aprobado_por_cartera_en', 'aprobado_por_supervisor_en')
+                    ->whereIn('estado', ['PENDIENTE_SUPERVISOR', 'pendiente_cartera'])
+                    ->limit(5)
+                    ->get();
+                
+                \Log::info('DEBUG_FECHAS_APROBADOS: Datos crudos en pedidos_produccion', [
+                    'raw_data_count' => count($rawData),
+                    'raw_data' => $rawData->toArray()
+                ]);
+                
+                // Usar la tabla correcta: pedidos_produccion
+                $query = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->select('aprobado_por_cartera_en')
+                    ->whereNotNull('aprobado_por_cartera_en');
+                
+                // Debug: contar total de registros primero
+                $totalCount = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->whereNotNull('aprobado_por_cartera_en')
+                    ->count();
+                
+                \Log::info('DEBUG_FECHAS_APROBADOS: Total registros encontrados', [
+                    'total_count' => $totalCount,
+                    'busqueda' => $busqueda
+                ]);
+                
+                // Solo agregar condición de búsqueda si hay texto
+                if (!empty($busqueda) && $busqueda !== null) {
+                    // Simplificar: solo buscar en formato DD/MM/YYYY que es más intuitivo
+                    $query->whereRaw('DATE_FORMAT(aprobado_por_cartera_en, "%d/%m/%Y") LIKE ?', ['%' . strtolower($busqueda) . '%']);
+                }
+                
+                $fechas = $query->distinct()
+                    ->limit(10)
+                    ->pluck('aprobado_por_cartera_en')
+                    ->toArray();
+                
+                \Log::info('DEBUG_FECHAS_APROBADOS: Fechas obtenidas', [
+                    'fechas_count' => count($fechas),
+                    'fechas' => $fechas,
+                    'busqueda' => $busqueda
+                ]);
+                
+                // Formatear fechas a dd/mm/yyyy
+                $fechasFormateadas = array_map(function($fecha) {
+                    $date = new \DateTime($fecha);
+                    return $date->format('d/m/Y');
+                }, $fechas);
+                
+                // Ordenar por relevancia y luego por fecha (más reciente primero)
+                usort($fechasFormateadas, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Ordenar por fecha (más reciente primero)
+                    $dateA = \DateTime::createFromFormat('d/m/Y', $a);
+                    $dateB = \DateTime::createFromFormat('d/m/Y', $b);
+                    if ($dateA && $dateB) {
+                        return $dateB <=> $dateA;
+                    }
+                    
+                    return strcmp($b, $a);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $fechasFormateadas,
+                    'debug' => [
+                        'test' => 'WEB_MODE_ACTIVE',
+                        'busqueda' => $busqueda,
+                        'fechas_originales_count' => count($fechas),
+                        'fechas_formateadas_count' => count($fechasFormateadas),
+                        'total_count' => $totalCount
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.aprobados.fechas.sugerencias');
+    });
+});
+
+// ========================================
+// RUTAS DE SUGERENCIAS DE CARTERA - ANULADOS
+// ========================================
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::prefix('cartera/anulados')->group(function () {
+        Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener clientes únicos de pedidos con estado Anulada
+                $clientes = \DB::table('pedidos_produccion')
+                    ->select('cliente')
+                    ->where('estado', '=', 'Anulada')
+                    ->whereNotNull('cliente')
+                    ->where('cliente', '!=', '')
+                    ->whereRaw('LOWER(cliente) LIKE ?', ['%' . strtolower($busqueda) . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('cliente')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($clientes, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return strcasecmp($a, $b);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $clientes
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.anulados.clientes.sugerencias');
+        
+        Route::post('/numeros/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Obtener números únicos de pedidos con estado Anulada
+                $numeros = \DB::table('pedidos_produccion')
+                    ->select('numero_pedido')
+                    ->where('estado', '=', 'Anulada')
+                    ->whereNotNull('numero_pedido')
+                    ->where('numero_pedido', '!=', '')
+                    ->whereRaw('CAST(numero_pedido AS CHAR) LIKE ?', ['%' . $busqueda . '%'])
+                    ->distinct()
+                    ->limit(10)
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                // Ordenar por relevancia
+                usort($numeros, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    return $a - $b;
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $numeros
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('cartera.anulados.numeros.sugerencias');
+        
+        Route::post('/fechas/sugerencias', function (\Illuminate\Http\Request $request) {
+            try {
+                $busqueda = $request->input('busqueda', '');
+                
+                // Log inicial para debug
+                \Log::info('DEBUG_FECHAS_ANULADOS: Iniciando consulta', [
+                    'busqueda' => $busqueda,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+                
+                // Usar la tabla correcta: pedidos_produccion
+                // Para anulados, usamos updated_at ya que no hay campo anulado_en específico
+                $query = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->select('updated_at')
+                    ->where('estado', '=', 'Anulada')
+                    ->whereNotNull('updated_at');
+                
+                // Debug: contar total de registros primero
+                $totalCount = \Illuminate\Support\Facades\DB::table('pedidos_produccion')
+                    ->where('estado', '=', 'Anulada')
+                    ->whereNotNull('updated_at')
+                    ->count();
+                
+                \Log::info('DEBUG_FECHAS_ANULADOS: Total registros encontrados', [
+                    'total_count' => $totalCount,
+                    'busqueda' => $busqueda
+                ]);
+                
+                // Solo agregar condición de búsqueda si hay texto
+                if (!empty($busqueda) && $busqueda !== null) {
+                    // Simplificar: solo buscar en formato DD/MM/YYYY que es más intuitivo
+                    $query->whereRaw('DATE_FORMAT(updated_at, "%d/%m/%Y") LIKE ?', ['%' . strtolower($busqueda) . '%']);
+                }
+                
+                $fechas = $query->distinct()
+                    ->limit(10)
+                    ->pluck('updated_at')
+                    ->toArray();
+                
+                \Log::info('DEBUG_FECHAS_ANULADOS: Fechas obtenidas', [
+                    'fechas_count' => count($fechas),
+                    'fechas' => $fechas,
+                    'busqueda' => $busqueda
+                ]);
+                
+                // Formatear fechas a dd/mm/yyyy
+                $fechasFormateadas = array_map(function($fecha) {
+                    $date = new \DateTime($fecha);
+                    return $date->format('d/m/Y');
+                }, $fechas);
+                
+                // Ordenar por relevancia y luego por fecha (más reciente primero)
+                usort($fechasFormateadas, function ($a, $b) use ($busqueda) {
+                    $aLower = strtolower($a);
+                    $bLower = strtolower($b);
+                    $busquedaLower = strtolower($busqueda);
+                    
+                    // Coincidencia exacta al principio
+                    if (str_starts_with($aLower, $busquedaLower) && !str_starts_with($bLower, $busquedaLower)) {
+                        return -1;
+                    }
+                    if (str_starts_with($bLower, $busquedaLower) && !str_starts_with($aLower, $busquedaLower)) {
+                        return 1;
+                    }
+                    
+                    // Coincidencia exacta
+                    if ($aLower === $busquedaLower && $bLower !== $busquedaLower) {
+                        return -1;
+                    }
+                    if ($bLower === $busquedaLower && $aLower !== $busquedaLower) {
+                        return 1;
+                    }
+                    
+                    // Ordenar por fecha (más reciente primero)
+                    $dateA = \DateTime::createFromFormat('d/m/Y', $a);
+                    $dateB = \DateTime::createFromFormat('d/m/Y', $b);
+                    if ($dateA && $dateB) {
+                        return $dateB <=> $dateA;
+                    }
+                    
+                    return strcmp($b, $a);
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'sugerencias' => $fechasFormateadas,
+                    'debug' => [
+                        'test' => 'WEB_MODE_ACTIVE',
+                        'busqueda' => $busqueda,
+                        'fechas_originales_count' => count($fechas),
+                        'fechas_formateadas_count' => count($fechasFormateadas),
+                        'total_count' => $totalCount
+                    ]
+                ]);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error al cargar sugerencias: ' . $e->getMessage(),
+                    'debug' => [
+                        'exception' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]
+                ]);
+            }
+        })->name('cartera.anulados.fechas.sugerencias');
+    });
+});
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -1298,18 +2433,42 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos'])->prefix('ase
 // RUTAS PARA CARTERA - PEDIDOS
 // ========================================
 Route::middleware(['auth', 'role:cartera,admin'])->prefix('cartera')->name('cartera.')->group(function () {
-    // Gestión de pedidos por aprobar
+    // Gestión de pedidos por aprobar (pendientes)
     Route::get('/pedidos', function () {
         return view('cartera-pedidos.cartera-pedidos-supervisor');
     })->name('pedidos');
+    
+    // Gestión de pedidos aprobados por cartera
+    Route::get('/aprobados', function () {
+        return view('cartera-pedidos.cartera-aprobados');
+    })->name('aprobados');
+    
+    // Gestión de pedidos rechazados por cartera
+    Route::get('/rechazados', function () {
+        return view('cartera-pedidos.cartera-rechazados');
+    })->name('rechazados');
+    
+    // Gestión de pedidos anulados
+    Route::get('/anulados', function () {
+        return view('cartera-pedidos.cartera-anulados');
+    })->name('anulados');
 });
 
 // ========================================
 // API CARTERA - PEDIDOS
 // ========================================
 Route::middleware(['auth', 'role:cartera,admin'])->prefix('api/cartera')->name('api.cartera.')->group(function () {
-    // GET pedidos por estado (cartera)
+    // GET pedidos por estado (cartera) - principal para pendientes
     Route::get('/pedidos', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerPedidos'])->name('list');
+    
+    // GET pedidos aprobados (PENDIENTE_SUPERVISOR)
+    Route::get('/aprobados', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerAprobados'])->name('aprobados');
+    
+    // GET pedidos rechazados (RECHAZADO_CARTERA)
+    Route::get('/rechazados', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerRechazados'])->name('rechazados');
+    
+    // GET pedidos anulados (Anulada)
+    Route::get('/anulados', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerAnulados'])->name('anulados');
     
     // GET opciones de filtro (clientes y fechas únicos)
     Route::get('/opciones-filtro', [App\Http\Controllers\CarteraPedidosController::class, 'obtenerOpcionesFiltro'])->name('opciones-filtro');

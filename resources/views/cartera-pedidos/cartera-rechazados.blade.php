@@ -1,7 +1,7 @@
 @extends('cartera-pedidos.layout')
 
-@section('title', 'Cartera de Pedidos')
-@section('page-title', 'Cartera de Pedidos')
+@section('title', 'Cartera - Pedidos Cancelados')
+@section('page-title', 'Pedidos Cancelados por Cartera')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/index.css') }}">
@@ -10,13 +10,14 @@
         .cartera-container {
             display: flex;
             flex-direction: column;
-            height: 100%;
+            flex: 1;
             gap: 16px;
-            padding: 0;
+            padding: 20px;
             align-items: center;
             max-width: 1400px;
             margin: 0 auto;
             width: 100%;
+            min-height: 0;
         }
 
         .cartera-toolbar {
@@ -91,10 +92,6 @@
             font-size: 0.95rem;
             min-height: 60px;
             padding: 8px 4px;
-        }
-            padding: 14px 8px;
-            border-bottom: 1px solid #f3f4f6;
-            transition: background-color 0.2s;
         }
 
         .table-row-cartera:hover {
@@ -315,45 +312,71 @@
             animation: spin 1s linear infinite;
         }
 
-        /* Modal Filtro */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Estado badges */
+        .estado-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .estado-rechazado {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+
+        /* Estilos para modales de filtro simples */
         .modal-filter {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
             align-items: center;
             justify-content: center;
+            z-index: 9998;
         }
 
-        .modal-filter.open {
+        .modal-filter.active {
             display: flex;
         }
 
         .modal-filter-content {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
             width: 90%;
-            animation: slideUp 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-filter-header {
-            padding: 16px;
-            border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .modal-filter-header h3 {
             margin: 0;
-            color: #1f2937;
             font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
         }
 
         .modal-filter-close {
@@ -362,155 +385,177 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #6b7280;
-            transition: color 0.2s;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
         }
 
         .modal-filter-close:hover {
+            background: #f3f4f6;
             color: #1f2937;
         }
 
         .modal-filter-body {
-            padding: 20px;
+            padding: 1rem;
         }
 
         .modal-filter-body .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 1rem;
         }
 
-        .modal-filter-body label {
+        .modal-filter-body .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
             font-weight: 500;
             color: #374151;
-            font-size: 0.95rem;
         }
 
-        .modal-filter-body input,
-        .modal-filter-body select {
+        .modal-filter-body .form-control {
             width: 100%;
-            padding: 10px 12px;
+            padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 6px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            box-sizing: border-box;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
         }
 
-        .modal-filter-body input:focus,
-        .modal-filter-body select:focus {
+        .modal-filter-body .form-control:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .modal-filter-footer {
-            padding: 16px;
-            border-top: 1px solid #e5e7eb;
             display: flex;
-            gap: 12px;
             justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
         }
 
-        .modal-filter-footer button {
-            padding: 10px 24px;
+        .modal-filter-footer .button {
+            padding: 0.5rem 1rem;
             border: none;
             border-radius: 6px;
+            font-size: 0.9rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.95rem;
         }
 
-        .btn-filter-cancel {
+        .modal-filter-footer .btn-filter-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-filter-footer .btn-filter-cancel:hover {
             background: #e5e7eb;
-            color: #1f2937;
         }
 
-        .btn-filter-cancel:hover {
-            background: #d1d5db;
-        }
-
-        .btn-filter-apply {
+        .modal-filter-footer .btn-filter-apply {
             background: #3b82f6;
             color: white;
         }
 
-        .btn-filter-apply:hover {
+        .modal-filter-footer .btn-filter-apply:hover {
             background: #2563eb;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .filter-icon:hover {
+            opacity: 1;
+            color: #3b82f6;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        /* Estilos para autocompletar */
+        .sugerencias-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
         }
 
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .cartera-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
+        .sugerencias-container.active {
+            display: block;
+        }
 
-            .cartera-toolbar input,
-            .cartera-toolbar select {
-                width: 100%;
-            }
+        .sugerencia-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s;
+            font-size: 0.9rem;
+        }
 
-            .table-row-cartera {
-                font-size: 0.9rem;
-            }
+        .sugerencia-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .sugerencia-item:last-child {
+            border-bottom: none;
+        }
+
+        .sugerencia-item .sugerencia-text {
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .sugerencia-item .sugerencia-coincidencia {
+            color: #6b7280;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .sugerencia-item.seleccionada {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .form-group {
+            position: relative;
         }
     </style>
 @endpush
 
 @section('content')
-<div class="cartera-container">
-    <!-- CONTENEDOR DE NOTIFICACIONES -->
-    <div id="notificacionesContainer"></div>
-
-    <!-- TOOLBAR DE FILTROS -->
-    <div class="cartera-toolbar">
-        <input 
-            type="text" 
-            id="searchInput" 
-            placeholder=" Buscar por cliente, número de pedido..." 
-            style="flex: 1; min-width: 250px; max-width: 600px;"
-        />
-        <button 
-            id="btnActualizar" 
-            onclick="cargarPedidos()" 
-            style="padding: 10px 16px; border: none; border-radius: 6px; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.95rem;"
-            title="Actualizar tabla"
-        >
-            <span class="material-symbols-rounded" style="font-size: 1.2rem;">refresh</span>
-            Actualizar
-        </button>
-    </div>
-
+<!-- Contenedor principal para centrado -->
+<div style="display: flex; flex-direction: column; flex: 1; padding: 20px; background: var(--bg-primary);">
     <!-- TABLA DE PEDIDOS -->
     <div class="table-container-cartera">
         <div class="table-scroll-container-cartera">
-            <!-- ENCABEZADOS CON FILTROS -->
+            <!-- ENCABEZADOS -->
             <div class="table-head">
                 <div class="table-header-row">
                     <div class="table-header-cell-cartera" style="flex: 0 0 180px; justify-content: center; border-right: 6px solid rgba(255,255,255,0.4); box-sizing: border-box; padding: 0 12px;">
                         <span>Acciones</span>
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 310px; padding: 0 14px 0 32px; box-sizing: border-box;" data-sort="cliente">
+                    <div class="table-header-cell-cartera" style="flex: 0 0 250px; padding: 0 14px 0 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
                         <span>Cliente</span>
                         <span class="filter-icon" title="Filtrar cliente" onclick="abrirModalFiltro('cliente', event)">
                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
                         </span>
                     </div>
-                    <div class="table-header-cell-cartera sortable" style="flex: 0 0 150px; padding: 0 10px; box-sizing: border-box;" data-sort="fecha">
-                        <span>Fecha</span>
+                    <div class="table-header-cell-cartera" style="flex: 0 0 150px; padding: 0 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Fecha Rechazo</span>
                         <span class="filter-icon" title="Filtrar fecha" onclick="abrirModalFiltro('fecha', event)">
                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">filter_alt</span>
                         </span>
+                    </div>
+                    <div class="table-header-cell-cartera" style="flex: 1 1 auto; padding: 0 10px; box-sizing: border-box;">
+                        <span>Motivo</span>
                     </div>
                 </div>
             </div>
@@ -523,135 +568,137 @@
 
                 <!-- ESTADO VACÍO -->
                 <div id="emptyState" class="empty-state-cartera" style="display: none;">
-                    <span class="material-symbols-rounded">shopping_cart</span>
-                    <p>No hay pedidos pendientes de cartera</p>
+                    <span class="material-symbols-rounded">block</span>
+                    <p>No hay pedidos cancelados</p>
                 </div>
 
                 <!-- ESTADO DE CARGA -->
                 <div id="loadingState" class="loading-state-cartera" style="display: none;">
                     <div class="spinner"></div>
-                    <span>Cargando pedidos...</span>
+                    <span>Cargando pedidos cancelados...</span>
                 </div>
             </div>
         </div>
 
         <!-- PAGINACIÓN -->
         <div class="pagination-container" id="paginationContainer" style="display: none;">
-            <button class="pagination-btn" id="btnFirstPage" title="Primera página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">first_page</span>
+            <button class="pagination-btn" id="btnPrevPage" onclick="goToPage(currentPage - 1)">
+                <span class="material-symbols-rounded">chevron_left</span>
             </button>
-            <button class="pagination-btn" id="btnPrevPage" title="Página anterior">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_left</span>
+            
+            <div id="pageNumbers"></div>
+            
+            <button class="pagination-btn" id="btnNextPage" onclick="goToPage(currentPage + 1)">
+                <span class="material-symbols-rounded">chevron_right</span>
             </button>
-            <span class="pagination-info">
-                <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">article</span>
-                Pág. <span id="currentPage">1</span> de <span id="totalPages">1</span> 
-                (<span id="showingFrom">0</span>-<span id="showingTo">0</span> de <span id="totalRecords">0</span>)
-            </span>
-            <button class="pagination-btn" id="btnNextPage" title="Próxima página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">chevron_right</span>
-            </button>
-            <button class="pagination-btn" id="btnLastPage" title="Última página">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">last_page</span>
-            </button>
+            
+            <span class="pagination-info" id="paginationInfo">Mostrando 0 pedidos</span>
         </div>
     </div>
 </div>
-
-<!-- MODAL APROBACIÓN -->
-<div id="modalAprobacion" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Aprobar Pedido</h3>
-        </div>
-        <div class="modal-body">
-            <p>¿Está seguro de que desea <strong>aprobar</strong> este pedido?</p>
-        </div>
-        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" class="btn" onclick="cerrarModalAprobacion()" style="padding: 10px 24px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; background-color: #e5e7eb; color: #1f2937; transition: background-color 0.2s;">Cancelar</button>
-            <button type="button" id="btnConfirmarAprobacion" class="btn" style="padding: 10px 24px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; background-color: #10b981; color: white; transition: background-color 0.2s;">Aprobar</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL RECHAZO -->
-<div id="modalRechazo" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Rechazar Pedido</h3>
-        </div>
-        <form id="formRechazo" onsubmit="confirmarRechazo(event)">
-            <div class="modal-body">
-                <div class="form-group" style="margin: 16px 0;">
-                    <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Motivo del rechazo *</label>
-                    <textarea id="motivoRechazo" class="form-textarea" placeholder="Explique el motivo..." required style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical; min-height: 120px; box-sizing: border-box;"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                <button type="button" class="btn" onclick="cerrarModalRechazo()" style="padding: 10px 24px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; background-color: #e5e7eb; color: #1f2937; transition: background-color 0.2s;">Cancelar</button>
-                <button type="submit" id="btnConfirmarRechazo" class="btn" style="padding: 10px 24px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; background-color: #ef4444; color: white; transition: background-color 0.2s;">Rechazar</button>
-            </div>
-        </form>
-    </div>
-</div>
+@endsection
 
 <!-- Incluir modales compartidos -->
 @include('cartera-pedidos.partials.modales-filtro')
 
-@endsection
+<!-- Modal Ver Pedido -->
+<div id="modalVerPedido" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-ver-pedido">
+        <div class="modal-header">
+            <div class="header-icon info">
+                <span class="material-symbols-rounded">visibility</span>
+            </div>
+            <h2>Ver Pedido Cancelado</h2>
+        </div>
+        <div class="modal-body">
+            <div id="pedidoDetalles">
+                <!-- Los detalles del pedido se cargarán aquí -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalVerPedido()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- MODAL FILTRO CLIENTE -->
+<div id="modalFiltroCliente" class="modal-filter">
+    <div class="modal-filter-content">
+        <div class="modal-filter-header">
+            <h3>Filtrar por Cliente</h3>
+            <button type="button" class="modal-filter-close" onclick="cerrarModalFiltro('cliente')">&times;</button>
+        </div>
+        <div class="modal-filter-body">
+            <div class="form-group">
+                <label for="filtroClienteInput">Buscar cliente:</label>
+                <input type="text" id="filtroClienteInput" class="form-control" placeholder="Escriba el nombre del cliente..." autocomplete="off" onkeyup="buscarSugerenciasCliente()">
+                <!-- Contenedor de sugerencias -->
+                <div id="sugerenciasCliente" class="sugerencias-container" style="display: none;">
+                    <!-- Las sugerencias se cargarán dinámicamente -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-filter-footer">
+            <button type="button" class="modal-filter-footer button btn-filter-cancel" onclick="cerrarModalFiltro('cliente')">Cancelar</button>
+            <button type="button" class="modal-filter-footer button btn-filter-apply" onclick="aplicarFiltroCliente()">Aplicar Filtro</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL FILTRO NÚMERO -->
+<div id="modalFiltroNumero" class="modal-filter">
+    <div class="modal-filter-content">
+        <div class="modal-filter-header">
+            <h3>Filtrar por N° Pedido</h3>
+            <button type="button" class="modal-filter-close" onclick="cerrarModalFiltro('numero')">&times;</button>
+        </div>
+        <div class="modal-filter-body">
+            <div class="form-group">
+                <label for="filtroNumeroInput">Buscar número de pedido:</label>
+                <input type="text" id="filtroNumeroInput" class="form-control" placeholder="Escriba el número de pedido..." autocomplete="off" onkeyup="buscarSugerenciasNumero()">
+                <!-- Contenedor de sugerencias -->
+                <div id="sugerenciasNumero" class="sugerencias-container" style="display: none;">
+                    <!-- Las sugerencias se cargarán dinámicamente -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-filter-footer">
+            <button type="button" class="modal-filter-footer button btn-filter-cancel" onclick="cerrarModalFiltro('numero')">Cancelar</button>
+            <button type="button" class="modal-filter-footer button btn-filter-apply" onclick="aplicarFiltroNumero()">Aplicar Filtro</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL FILTRO FECHA -->
+<div id="modalFiltroFecha" class="modal-filter">
+    <div class="modal-filter-content">
+        <div class="modal-filter-header">
+            <h3>Filtrar por Fecha de Rechazo</h3>
+            <button type="button" class="modal-filter-close" onclick="cerrarModalFiltro('fecha')">&times;</button>
+        </div>
+        <div class="modal-filter-body">
+            <div class="form-group">
+                <label for="filtroFechaInputRechazados">Buscar fecha:</label>
+                <input type="text" id="filtroFechaInputRechazados" class="form-control" placeholder="Escriba la fecha (dd/mm/yyyy)..." autocomplete="off" onkeyup="buscarSugerenciasFecha()">
+                <!-- Contenedor de sugerencias -->
+                <div id="sugerenciasFecha" class="sugerencias-container" style="display: none;">
+                    <!-- Las sugerencias se cargarán dinámicamente -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-filter-footer">
+            <button type="button" class="modal-filter-footer button btn-filter-cancel" onclick="cerrarModalFiltro('fecha')">Cancelar</button>
+            <button type="button" class="modal-filter-footer button btn-filter-apply" onclick="aplicarFiltroFecha()">Aplicar Filtro</button>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
-<script>
-    // Flag para indicar que estamos en cartera
-    const isCartera = true;
-    
-    // Ocultar elemento "Pendientes Logo" del sidebar (no se usa en cartera)
-    document.addEventListener('DOMContentLoaded', function() {
-        const logoMenuItem = document.querySelector('a[href*="tipo=logo"]')?.closest('.menu-item');
-        if (logoMenuItem) {
-            logoMenuItem.style.display = 'none';
-        }
-        
-        // Cerrar modales de filtro al hacer click fuera
-        const modalFiltroCliente = document.getElementById('modalFiltroCliente');
-        const modalFiltroFecha = document.getElementById('modalFiltroFecha');
-        
-        if (modalFiltroCliente) {
-            modalFiltroCliente.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    cerrarModalFiltro('cliente');
-                }
-            });
-        }
-        
-        if (modalFiltroFecha) {
-            modalFiltroFecha.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    cerrarModalFiltro('fecha');
-                }
-            });
-        }
-    });
-    
-    // Deshabilitar funciones de supervisores que no aplican a cartera
-    function cargarNotificacionesPendientes() {
-        // Deshabilitado para cartera
-        console.log(' Notificaciones deshabilitadas en cartera');
-    }
-    
-    function cargarContadorOrdenesPendientes() {
-        // Deshabilitado para cartera
-        console.log(' Contador de órdenes deshabilitado en cartera');
-    }
-</script>
-<!-- Scripts para ver facturas (desde asesores) - Módulos Desacoplados -->
-<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/invoice-preview-live.js') }}"></script>
-<!-- Scripts de Filtros Compartidos -->
-<script src="{{ asset('js/cartera-pedidos/cartera-filtros-compartidos.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/cartera-pedidos/app.js') }}"></script>
+    <script>
+        console.log('%c CARRERA RECHAZADOS - SCRIPTS SECTION', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+    </script>
+    <!-- cartera-rechazados.js se carga en el layout, no aquí -->
 @endpush

@@ -26,6 +26,30 @@
                         <span class="menu-label">Pedidos Pendientes</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('cartera.aprobados') }}"
+                       class="menu-link {{ Route::currentRouteName() === 'cartera.aprobados' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        <span class="menu-label">Aprobados</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('cartera.rechazados') }}"
+                       class="menu-link {{ Route::currentRouteName() === 'cartera.rechazados' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">block</span>
+                        <span class="menu-label">Cancelados</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('cartera.anulados') }}"
+                       class="menu-link {{ Route::currentRouteName() === 'cartera.anulados' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">cancel</span>
+                        <span class="menu-label">Anulador por Asesor</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

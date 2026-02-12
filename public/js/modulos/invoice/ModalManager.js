@@ -11,7 +11,6 @@ class ModalManager {
     init() {
         // Hacer métodos disponibles globalmente para compatibilidad
         window.crearModalPreviewFactura = this.crearModalPreviewFactura.bind(this);
-        window.registrarFontSizesFactura = this.registrarFontSizesFactura.bind(this);
     }
 
     /**
@@ -87,13 +86,6 @@ class ModalManager {
         
         document.body.appendChild(modal);
         
-        try {
-            // Registrar los font-sizes de la factura
-            this.registrarFontSizesFactura();
-        } catch (e) {
-            // Ignorar errores de logging
-        }
-        
         // Cerrar al hacer click en el fondo
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
@@ -103,15 +95,6 @@ class ModalManager {
         
         // Configurar atajos de teclado
         this.configurarAtajosTeclado(modal);
-    }
-
-    /**
-     * Registra y loguea todos los font-sizes de los elementos de la factura
-     * (Función deshabilitada - logging removido)
-     */
-    registrarFontSizesFactura() {
-        // Función deshabilitada - logging removido
-        console.log('[ModalManager] Función registrarFontSizesFactura deshabilitada');
     }
 
     /**

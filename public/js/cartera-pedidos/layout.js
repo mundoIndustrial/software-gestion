@@ -6,7 +6,6 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' Cartera Layout - Inicializado');
     
     // Elementos
     const sidebar = document.getElementById('sidebar');
@@ -19,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');
-            console.log('Sidebar toggled');
         });
     }
     
@@ -27,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (menuToggle) {
         menuToggle.addEventListener('click', function() {
             sidebar.classList.toggle('open');
-            console.log('📱 Sidebar mobile toggle');
         });
     }
     

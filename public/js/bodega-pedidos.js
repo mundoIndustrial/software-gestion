@@ -728,6 +728,135 @@ function mostrarModalExito(mensaje) {
     }
 }
 
+/**
+ * Guardar fila completa de bodega_detalles_talla
+ */
+function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
+    // Obtener todos los valores de la fila
+    const pendientesInput = document.querySelector(
+        `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const observacionesInput = document.querySelector(
+        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaPedidoInput = document.querySelector(
+        `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const fechaEntregaInput = document.querySelector(
+        `.fecha-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const areaSelect = document.querySelector(
+        `.area-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+    const estadoSelect = document.querySelector(
+        `.estado-select[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
+    );
+
+    // Validar que existan los elementos
+    if (!pendientesInput || !estadoSelect) {
+        alert('Error: No se encontraron los campos de la fila');
+        return;
+    }
+
+    // Obtener la fila para extraer otros campos
+    const fila = pendientesInput.closest('tr');
+    const asesor = (fila.getAttribute('data-asesor') || '').trim();
+    const empresa = (fila.getAttribute('data-empresa') || '').trim();
+    
+    // Obtener CANTIDAD desde el atributo data-cantidad del estado-select
+    const cantidad = parseInt(estadoSelect.getAttribute('data-cantidad') || '0');
+
+    // Obtener los datos de los IDs
+    const pedidoProduccionId = pendientesInput.getAttribute('data-pedido-produccion-id');
+    const reciboPrendaId = pendientesInput.getAttribute('data-recibo-prenda-id');
+    
+    // Obtener PRENDA_NOMBRE desde el select
+    const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
+    
+    const lastUpdatedAt = observacionesInput?.dataset?.updatedAt || new Date().toISOString();
+
+    console.log(`[GUARDAR] numeroPedido=${numeroPedido}, talla=${talla}`);
+    console.log(`[GUARDAR] asesor='${asesor}' (largo: ${asesor.length})`);
+    console.log(`[GUARDAR] empresa='${empresa}' (largo: ${empresa.length})`);
+    console.log(`[GUARDAR] data-asesor=${fila.getAttribute('data-asesor')}`);
+    console.log(`[GUARDAR] data-empresa=${fila.getAttribute('data-empresa')}`);
+    console.log(`[GUARDAR] cantidad final: ${cantidad}`);
+
+    const datosAGuardar = {
+        numero_pedido: numeroPedido,
+        talla: talla,
+        prenda_nombre: prendaNombre,
+        cantidad: cantidad,
+        asesor: asesor,
+        empresa: empresa,
+        pendientes: pendientesInput.value.trim(),
+        observaciones_bodega: observacionesInput?.value?.trim() || '',
+        fecha_pedido: fechaPedidoInput?.value || null,
+        fecha_entrega: fechaEntregaInput?.value || null,
+        area: areaSelect?.value || null,
+        estado_bodega: estadoSelect?.value || null,
+        pedido_produccion_id: pedidoProduccionId,
+        recibo_prenda_id: reciboPrendaId,
+        last_updated_at: lastUpdatedAt,
+    };
+
+    // Mostrar spinner de carga
+    const textoOriginal = btnGuardar.textContent;
+    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.disabled = true;
+
+    fetch('/gestion-bodega/detalles-talla/guardar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+        body: JSON.stringify(datosAGuardar)
+    })
+    .then(response => response.json())
+    .then(data => {
+        btnGuardar.textContent = textoOriginal;
+        btnGuardar.disabled = false;
+
+        if (data.success) {
+            btnGuardar.textContent = '✅ Guardado';
+            setTimeout(() => {
+                btnGuardar.textContent = textoOriginal;
+            }, 2000);
+            
+            if (window.mostrarModalExito) {
+                mostrarModalExito('✓ Cambios guardados exitosamente');
+            }
+            
+            if (data.data?.updated_at) {
+                if (observacionesInput) observacionesInput.dataset.updatedAt = data.data.updated_at;
+                if (fechaPedidoInput) fechaPedidoInput.dataset.updatedAt = data.data.updated_at;
+                if (fechaEntregaInput) fechaEntregaInput.dataset.updatedAt = data.data.updated_at;
+            }
+
+            if (data.data && data.data.estado_bodega && estadoSelect) {
+                estadoSelect.value = data.data.estado_bodega;
+                estadoSelect.setAttribute('data-original-estado', data.data.estado_bodega);
+            }
+        } else if (data.conflict) {
+            alert('Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
+            location.reload();
+        } else {
+            btnGuardar.textContent = '❌ Error';
+            setTimeout(() => {
+                btnGuardar.textContent = textoOriginal;
+            }, 2000);
+            alert('Error: ' + (data.message || 'No se pudieron guardar los cambios'));
+        }
+    })
+    .catch(error => {
+        btnGuardar.textContent = textoOriginal;
+        btnGuardar.disabled = false;
+        console.error('Error:', error);
+        alert('Error al guardar: ' + error.message);
+    });
+}
+
 
 
 

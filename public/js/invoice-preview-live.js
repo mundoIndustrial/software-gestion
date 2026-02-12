@@ -62,7 +62,7 @@ class InvoicePreviewOrchestrator {
         } else {
             // Solo mostrar el éxito una vez para evitar spam
             if (!this.modulosCargados) {
-                console.log('[InvoicePreview] ✅ Todos los módulos cargados correctamente');
+                // Módulos cargados correctamente
             }
             this.modulosCargados = true;
             this.reintentos = 0; // Resetear contador

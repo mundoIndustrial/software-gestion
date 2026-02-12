@@ -7,7 +7,7 @@
  */
 
 // ===== VARIABLES GLOBALES =====
-let pedidosData = [];
+let carteraMainPedidosData = [];
 let pedidoSeleccionado = null;
 const API_BASE = '/api/cartera/pedidos';
 let currentPage = 1;
@@ -92,87 +92,90 @@ function cargarOpcionesFiltro() {
 }
 
 function abrirModalFiltro(tipo, event) {
-    event.stopPropagation();
-    const modal = elById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    if (event) {
+        event.stopPropagation();
+    }
+    console.log('🔍 abrirModalFiltro en app.js:', tipo);
+    const modal = document.getElementById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
     if (modal) {
-        cargarOpcionesFiltro();
-        modal.classList.add('open');
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        
+        // Enfocar el input si existe
+        const input = document.getElementById(`filtro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}Input`);
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
     }
 }
 
 function cerrarModalFiltro(tipo) {
-    const modal = elById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    console.log('🔍 cerrarModalFiltro en app.js:', tipo);
+    const modal = document.getElementById(`modalFiltro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
     if (modal) {
-        modal.classList.remove('open');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
     }
 }
 
 function aplicarFiltroCliente() {
-    const select = elById('filtroClienteSelect');
-    if (select) {
-        filtroCliente = select.value.trim();
+    console.log('🔍 APLICAR FILTRO CLIENTE desde app.js');
+    const input = document.getElementById('filtroClienteInput');
+    const valor = input ? input.value.trim() : '';
+    
+    if (valor) {
+        filtroCliente = valor;
         currentPage = 1;
         cargarPedidos();
         cerrarModalFiltro('cliente');
-        mostrarNotificacion(`Filtro de cliente aplicado: "${filtroCliente || 'todos'}"`, 'info');
+        mostrarNotificacion(`Filtro de cliente aplicado: "${valor}"`, 'info');
+    } else {
+        mostrarNotificacion('Por favor selecciona un cliente', 'warning');
     }
 }
 
 function aplicarFiltroFecha() {
-    const select = elById('filtroFechaSelect');
+    console.log('🔍 APLICAR FILTRO FECHA desde app.js');
+    const input = document.getElementById('filtroFechaInput');
+    const valor = input ? input.value.trim() : '';
     
-    if (select) {
-        const fecha = select.value;
-        if (fecha) {
-            // Si se selecciona una fecha, usa la misma para desde y hasta (para filtrar solo ese día)
-            filtroFechaDesde = fecha;
-            filtroFechaHasta = fecha;
-        } else {
-            // Si se limpia la selección, limpia ambos filtros
-            filtroFechaDesde = '';
-            filtroFechaHasta = '';
-        }
-        
+    if (valor) {
+        // Si se selecciona una fecha, usa la misma para desde y hasta (para filtrar solo ese día)
+        filtroFechaDesde = valor;
+        filtroFechaHasta = valor;
         currentPage = 1;
         cargarPedidos();
         cerrarModalFiltro('fecha');
-        
-        const mensaje = fecha ? `Filtro de fecha aplicado: ${fecha}` : 'Filtro de fecha removido';
-        mostrarNotificacion(mensaje, 'info');
+        mostrarNotificacion(`Filtro de fecha aplicado: ${valor}`, 'info');
+    } else {
+        // Si se limpia la selección, limpia ambos filtros
+        filtroFechaDesde = '';
+        filtroFechaHasta = '';
+        currentPage = 1;
+        cargarPedidos();
+        cerrarModalFiltro('fecha');
+        mostrarNotificacion('Filtro de fecha removido', 'info');
+    }
+}
+
+function aplicarFiltroNumero() {
+    console.log('🔍 APLICAR FILTRO NÚMERO desde app.js');
+    const input = document.getElementById('filtroNumeroInput');
+    const valor = input ? input.value.trim() : '';
+    
+    if (valor) {
+        currentSearch = valor;
+        currentPage = 1;
+        cargarPedidos();
+        cerrarModalFiltro('numero');
+        mostrarNotificacion(`Filtro de número aplicado: "${valor}"`, 'info');
+    } else {
+        mostrarNotificacion('Por favor ingresa un número de pedido', 'warning');
     }
 }
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(' Cartera Pedidos APP - Inicializado');
-    
-    // Verificar que el header existe
-    const tableHead = document.querySelector('.table-head');
-    console.log('📍 .table-head elemento:', tableHead);
-    if (tableHead) {
-        console.log('   - Display:', window.getComputedStyle(tableHead).display);
-        console.log('   - Background:', window.getComputedStyle(tableHead).backgroundColor);
-        console.log('   - Clases:', tableHead.className);
-    }
-    
-    const tableHeaderRow = document.querySelector('.table-header-row');
-    console.log('📍 .table-header-row elemento:', tableHeaderRow);
-    if (tableHeaderRow) {
-        console.log('   - Display:', window.getComputedStyle(tableHeaderRow).display);
-        console.log('   - Background:', window.getComputedStyle(tableHeaderRow).backgroundColor);
-        console.log('   - Clases:', tableHeaderRow.className);
-    }
-    
-    const headerCells = document.querySelectorAll('.table-header-cell-cartera');
-    console.log('📍 .table-header-cell-cartera elementos encontrados:', headerCells.length);
-    headerCells.forEach((cell, idx) => {
-        console.log(`   Celda ${idx}:`, {
-            color: window.getComputedStyle(cell).color,
-            fontWeight: window.getComputedStyle(cell).fontWeight,
-            padding: window.getComputedStyle(cell).padding
-        });
-    });
-    
     // Cargar pedidos por primera vez
     cargarPedidos();
     
@@ -298,11 +301,11 @@ async function cargarPedidos() {
         
         // Procesar datos
         if (data.data && Array.isArray(data.data)) {
-            pedidosData = data.data;
+            carteraMainPedidosData = data.data;
         } else if (Array.isArray(data)) {
-            pedidosData = data;
+            carteraMainPedidosData = data;
         } else {
-            pedidosData = [];
+            carteraMainPedidosData = [];
         }
         
         // Actualizar información de paginación
@@ -315,13 +318,12 @@ async function cargarPedidos() {
             updatePaginationControls(data.pagination);
         }
         
-        console.log('✓ Pedidos cargados:', pedidosData.length);
         
         // Renderizar tabla
         if (loadingState) loadingState.style.display = 'none';
         
-        if (pedidosData.length > 0) {
-            renderizarTabla(pedidosData);
+        if (carteraMainPedidosData.length > 0) {
+            renderizarTabla(carteraMainPedidosData);
             if (modernTable) modernTable.style.display = 'flex';
             if (emptyState) emptyState.style.display = 'none';
             if (paginationContainer) paginationContainer.style.display = 'flex';
@@ -342,11 +344,18 @@ async function cargarPedidos() {
 }
 
 function updatePaginationControls(pagination) {
-    elById('currentPage').textContent = pagination.page;
-    elById('totalPages').textContent = pagination.last_page;
-    elById('showingFrom').textContent = pagination.from;
-    elById('showingTo').textContent = pagination.to;
-    elById('totalRecords').textContent = pagination.total;
+    // Verificar si los elementos de paginación existen antes de actualizarlos
+    const currentPageEl = elById('currentPage');
+    const totalPagesEl = elById('totalPages');
+    const showingFromEl = elById('showingFrom');
+    const showingToEl = elById('showingTo');
+    const totalRecordsEl = elById('totalRecords');
+    
+    if (currentPageEl) currentPageEl.textContent = pagination.page;
+    if (totalPagesEl) totalPagesEl.textContent = pagination.last_page;
+    if (showingFromEl) showingFromEl.textContent = pagination.from;
+    if (showingToEl) showingToEl.textContent = pagination.to;
+    if (totalRecordsEl) totalRecordsEl.textContent = pagination.total;
     
     const btnFirst = elById('btnFirstPage');
     const btnPrev = elById('btnPrevPage');
@@ -364,7 +373,6 @@ function renderizarTabla(pedidos) {
     const tablaPedidosBody = elById('tablaPedidosBody');
     if (!tablaPedidosBody) return;
     
-    console.log(' Renderizando tabla con pedidos:', pedidos.length);
     
     tablaPedidosBody.innerHTML = '';
     
@@ -376,18 +384,39 @@ function renderizarTabla(pedidos) {
         
         const fechaFormato = new Date(pedido.created_at).toLocaleDateString('es-CO');
         
+        // Detectar la página actual para mostrar los botones correctos
+        const currentPath = window.location.pathname;
+        let botonesHTML = '';
+        
+        if (currentPath.includes('/cartera/pedidos')) {
+            // Vista de pendientes: 3 botones (aprobar, rechazar, factura)
+            botonesHTML = `
+                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">check_circle</span>
+                </button>
+                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">cancel</span>
+                </button>
+                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
+                </button>
+            `;
+        } else {
+            // Vistas de estados (aprobados, rechazados, anulados): solo botón de factura
+            botonesHTML = `
+                <button class="btn-action-cartera btn-info-cartera" 
+                        title="Ver factura" 
+                        onclick="verFactura(${pedido.id}, '${pedido.numero_pedido || pedido.numero || 'N/A'}')"
+                        style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
+                </button>
+            `;
+        }
+        
         row.innerHTML = `
             <!-- Acciones -->
             <div class="table-cell-cartera" style="flex: 0 0 180px; display: flex; gap: 8px; align-items: center; justify-content: center; padding: 0 12px; border-right: 6px solid #e5e7eb; box-sizing: border-box; margin-right: 8px;">
-                <button class="btn-action-cartera btn-success-cartera" title="Aprobar pedido" onclick="abrirModalAprobacion(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">check_circle</span>
-                </button>
-                <button class="btn-action-cartera btn-danger-cartera" title="Rechazar pedido" onclick="abrirModalRechazo(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">cancel</span>
-                </button>
-                <button class="btn-action-cartera btn-info-cartera" title="Ver factura" onclick="verFactura(${pedido.id}, '${pedido.numero}')" style="padding: 8px 10px; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">receipt</span>
-                </button>
+                ${botonesHTML}
             </div>
             
             <!-- Cliente -->
@@ -403,73 +432,11 @@ function renderizarTabla(pedidos) {
         tablaPedidosBody.appendChild(row);
     });
     
-    console.log('✓ Tabla renderizada con ' + pedidos.length + ' filas');
-    
-    // DEBUG: Inspeccionar estilos de la tabla
-    console.log('');
-    console.log('=== DEBUG ESTILOS TABLA ===');
-    
-    // Inspeccionar header
-    const headerCells = document.querySelectorAll('.table-header-cell-cartera');
-    console.log(`📍 Headers encontrados: ${headerCells.length}`);
-    headerCells.forEach((cell, idx) => {
-        const styles = window.getComputedStyle(cell);
-        console.log(`   Header ${idx}:`, {
-            flex: cell.style.flex,
-            padding: cell.style.padding,
-            paddingLeft: cell.style.paddingLeft,
-            paddingRight: cell.style.paddingRight,
-            borderRight: cell.style.borderRight,
-            borderRightComputed: styles.borderRight,
-            boxSizing: cell.style.boxSizing,
-            innerHTML: cell.innerHTML.substring(0, 30)
-        });
-    });
-    
-    // Inspeccionar primera fila de datos
-    const firstRow = document.querySelector('.table-row-cartera');
-    if (firstRow) {
-        console.log('');
-        console.log('📍 Primera fila de datos:');
-        const cells = firstRow.querySelectorAll('.table-cell-cartera');
-        cells.forEach((cell, idx) => {
-            const styles = window.getComputedStyle(cell);
-            console.log(`   Cell ${idx}:`, {
-                flex: cell.style.flex,
-                padding: cell.style.padding,
-                paddingLeft: cell.style.paddingLeft,
-                paddingRight: cell.style.paddingRight,
-                borderRight: cell.style.borderRight,
-                borderRightComputed: styles.borderRight,
-                marginRight: cell.style.marginRight,
-                marginRightComputed: styles.marginRight,
-                boxSizing: cell.style.boxSizing,
-                width: styles.width,
-                innerHTML: cell.innerHTML.substring(0, 30)
-            });
-        });
-    }
-    
-    // DEBUG: Mostrar ancho calculado del contenedor
-    console.log('');
-    console.log(' Ancho total de columnas:');
-    let totalWidth = 0;
-    const allCells = document.querySelectorAll('.table-cell-cartera');
-    allCells.forEach((cell, idx) => {
-        const styles = window.getComputedStyle(cell);
-        const flexMatch = cell.style.flex.match(/\d+px/);
-        const flexWidth = flexMatch ? flexMatch[0] : '?';
-        console.log(`   Cell ${idx}: flex=${flexWidth}, computed width=${styles.width}`);
-    });
-    
-    console.log('=== FIN DEBUG ===');
-    console.log('');
 }
 
 // ===== MODAL APROBACIÓN =====
 function verFactura(pedidoId, numeroPedido) {
     // Abre la factura del pedido usando la ruta de cartera
-    console.log(`📄 Ver factura del pedido #${numeroPedido}`);
     
     // Usar fetch para obtener datos desde la ruta de cartera
     mostrarCargando('Cargando factura...');
@@ -487,19 +454,16 @@ function verFactura(pedidoId, numeroPedido) {
     })
     .then(datos => {
         ocultarCargando();
-        console.log(' Datos de factura obtenidos:', datos);
         
         // Usar la función profesional de factura que tiene la asesora
         if (typeof crearModalPreviewFactura === 'function') {
             crearModalPreviewFactura(datos);
         } else {
-            console.error(' crearModalPreviewFactura no está disponible');
             mostrarNotificacion('Error: Sistema de factura no disponible', 'danger');
         }
     })
     .catch(error => {
         ocultarCargando();
-        console.error(' Error cargando factura:', error);
         mostrarNotificacion('Error al cargar factura: ' + error.message, 'danger');
     });
    
@@ -559,7 +523,6 @@ async function confirmarAprobacion() {
             throw new Error(data.message || `Error: ${response.status}`);
         }
         
-        console.log(' Pedido aprobado:', data);
         
         // Mostrar notificación temporal de éxito
         const notifSuccess = document.createElement('div');
@@ -580,7 +543,6 @@ async function confirmarAprobacion() {
         cargarPedidos();
         
     } catch (error) {
-        console.error(' Error aprobando:', error);
         mostrarNotificacion('Error al aprobar: ' + error.message, 'danger');
     } finally {
         if (btnConfirmar) {
@@ -666,7 +628,6 @@ async function confirmarRechazo(event) {
             throw new Error(data.message || `Error: ${response.status}`);
         }
         
-        console.log(' Pedido rechazado:', data);
         
         // Mostrar notificación temporal de éxito
         const notifSuccess = document.createElement('div');
@@ -687,7 +648,6 @@ async function confirmarRechazo(event) {
         cargarPedidos();
         
     } catch (error) {
-        console.error(' Error rechazando:', error);
         mostrarNotificacion('Error al rechazar: ' + error.message, 'danger');
     } finally {
         if (btnConfirmar) {

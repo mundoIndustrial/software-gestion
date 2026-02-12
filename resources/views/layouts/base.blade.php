@@ -444,6 +444,13 @@
     <!-- Notifications realtime system (loaded once) -->
     <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
     
+    <!-- Scripts de Facturas (solo para vistas que lo necesiten) -->
+    @if(request()->is(['cartera/pedidos', 'cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
+    <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
+    <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
+    <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
+    @endif
+    
     <!-- Page-specific scripts -->
     @stack('scripts')
     
