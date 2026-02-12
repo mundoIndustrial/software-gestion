@@ -23,9 +23,10 @@ class StoreCotizacionRequest extends FormRequest
     {
         return [
             'cliente' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s\-\.]+$/',
-            'tipo' => 'required|in:borrador,enviada',
+            'accion' => 'nullable|string|in:guardar,enviar',
+            'es_borrador' => 'nullable|boolean',
             'tipo_venta' => 'nullable|string|in:M,D,X',
-            'tipo_cotizacion' => 'nullable|string|in:P,B,PB,M,D,X',
+            'tipo_cotizacion' => 'nullable|string|in:P,L,PL,PB,RF,B,M,D,X',
             'cotizacion_id' => 'nullable|integer|exists:cotizaciones,id',
             
             'productos' => 'nullable|array',
@@ -81,6 +82,9 @@ class StoreCotizacionRequest extends FormRequest
             'observaciones_generales' => 'array',
             'observaciones_check' => 'array',
             'observaciones_valor' => 'array',
+
+            'prendas' => 'nullable|array',
+            'productos_friendly' => 'nullable|array',
         ];
     }
 
@@ -92,11 +96,7 @@ class StoreCotizacionRequest extends FormRequest
         return [
             'cliente.required' => 'El nombre del cliente es requerido',
             'cliente.regex' => 'El cliente contiene caracteres no permitidos',
-            'tipo.required' => 'El tipo de cotización es requerido',
-            'tipo.in' => 'Tipo de cotización inválido (debe ser "borrador" o "enviada")',
-            'tipo_venta.required_if' => 'El tipo de venta (M/D/X) es requerido para cotizaciones enviadas',
             'tipo_venta.in' => 'El tipo de venta debe ser M (Mayoreo), D (Detalle) o X (Otra)',
-            'productos.required_if' => 'Los productos son requeridos para cotizaciones enviadas',
             'productos.*.nombre_producto.required' => 'Cada producto debe tener un nombre',
             'productos.*.variantes.genero.in' => 'El género debe ser: hombre, mujer, niño, unisex, caballero o dama',
             'imagenes.*.url' => 'Las imágenes deben ser URLs válidas',
@@ -112,6 +112,18 @@ class StoreCotizacionRequest extends FormRequest
         if (is_string($this->productos ?? null)) {
             $this->merge([
                 'productos' => json_decode($this->productos, true) ?? []
+            ]);
+        }
+
+        if (is_string($this->prendas ?? null)) {
+            $this->merge([
+                'prendas' => json_decode($this->prendas, true) ?? []
+            ]);
+        }
+
+        if (is_string($this->productos_friendly ?? null)) {
+            $this->merge([
+                'productos_friendly' => json_decode($this->productos_friendly, true) ?? []
             ]);
         }
         

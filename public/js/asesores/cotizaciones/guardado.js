@@ -768,15 +768,15 @@ async function procederEnviarCotizacion(esBorrador = false) {
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
-                title: '¡Cotización enviada!',
+                title: esBorrador ? '¡Borrador guardado!' : '¡Cotización enviada!',
                 showConfirmButton: false,
                 timer: 3000,
                 timerProgressBar: true
             });
-            
+
             setTimeout(() => {
-                // Redirigir a la vista de cotizaciones
-                window.location.href = '/asesores/cotizaciones?tab=cotizaciones';
+                const tabDestino = esBorrador ? 'borradores' : 'cotizaciones';
+                window.location.href = `/asesores/cotizaciones?tab=${tabDestino}&highlight=${encodeURIComponent(cotizacionId)}`;
             }, 2000);
         } else {
             // Construir mensaje de error detallado

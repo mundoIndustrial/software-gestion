@@ -5,21 +5,25 @@ namespace App\Application\Services\Cotizacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Infrastructure\Http\Mappers\SyncLogoTecnicasRequestMapper;
+use App\Infrastructure\Http\Mappers\ProcesarImagenesCotizacionRequestMapper;
 
 final class ProcesarImagenesCotizacionOrchestratorService
 {
     public function __construct(
         private readonly ProcesarImagenesCotizacionRequestService $procesarImagenesCotizacionRequestService,
         private readonly ProcesarLogoTecnicasCotizacionRequestService $procesarLogoTecnicasCotizacionRequestService,
+        private readonly SyncLogoTecnicasRequestMapper $syncLogoTecnicasRequestMapper,
+        private readonly ProcesarImagenesCotizacionRequestMapper $procesarImagenesCotizacionRequestMapper,
     ) {
     }
 
     public function ejecutar(Request $request, int $cotizacionId): void
     {
-        $allData = $request->all();
-        $prendas = $allData['prendas'] ?? $request->input('prendas', []);
+        $dtoPaso2 = $this->procesarImagenesCotizacionRequestMapper->map($request, $cotizacionId);
+        $this->procesarImagenesCotizacionRequestService->ejecutar($dtoPaso2);
 
-        $this->procesarImagenesCotizacionRequestService->ejecutar($request, $cotizacionId);
+        $prendas = $dtoPaso2->prendas;
 
         // Fallback: copiar fotos existentes de telas cuando no se enviaron archivos nuevos
         try {
@@ -92,6 +96,7 @@ final class ProcesarImagenesCotizacionOrchestratorService
             ]);
         }
 
-        $this->procesarLogoTecnicasCotizacionRequestService->ejecutar($request, $cotizacionId);
+        $dtoPaso3 = $this->syncLogoTecnicasRequestMapper->map($request, $cotizacionId);
+        $this->procesarLogoTecnicasCotizacionRequestService->ejecutar($dtoPaso3);
     }
 }

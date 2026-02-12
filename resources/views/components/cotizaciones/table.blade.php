@@ -32,7 +32,7 @@
                 </thead>
                 <tbody>
                     @foreach($cotizaciones as $cot)
-                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                        <tr style="border-bottom: 1px solid #ecf0f1;" data-cotizacion-id="{{ $cot->id }}">
                             @foreach($columns as $column)
                                 @if($column['key'] === 'fecha')
                                     <td style="padding: 12px; color: #666; font-size: 0.9rem;" data-filter-column="fecha">

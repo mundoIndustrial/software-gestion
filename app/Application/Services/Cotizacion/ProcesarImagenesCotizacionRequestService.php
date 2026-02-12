@@ -3,16 +3,11 @@
 namespace App\Application\Services\Cotizacion;
 
 use App\Models\Cotizacion;
-use App\Models\LogoCotizacion;
-use App\Models\LogoCotizacionTecnicaPrenda;
-use App\Models\LogoFotoCot;
 use App\Models\PrendaCot;
 use App\Models\PrendaTelaFotoCot;
-use Illuminate\Http\Request;
+use App\Application\Cotizacion\DTOs\ProcesarImagenesCotizacionDTO;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class ProcesarImagenesCotizacionRequestService
 {
@@ -21,13 +16,11 @@ final class ProcesarImagenesCotizacionRequestService
     ) {
     }
 
-    public function ejecutar(Request $request, int $cotizacionId): void
+    public function ejecutar(ProcesarImagenesCotizacionDTO $dto): void
     {
         try {
-            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
-            $allData = $request->all();
-            $prendas = $allData['prendas'] ?? $request->input('prendas', []);
-            $allFiles = $request->allFiles();
+            $cotizacionId = $dto->cotizacionId;
+            $prendas = $dto->prendas;
 
             // DETECTAR si es UPDATE o CREATE
             $cotizacionExistente = Cotizacion::find($cotizacionId);
@@ -37,7 +30,7 @@ final class ProcesarImagenesCotizacionRequestService
                 'cotizacion_id' => $cotizacionId,
                 'es_update' => $esUpdate,
                 'prendas_count' => is_array($prendas) ? count($prendas) : 0,
-                'all_files_keys' => array_keys($allFiles),
+                'all_files_keys' => [],
             ]);
 
             foreach ($prendas as $index => $prenda) {
@@ -53,17 +46,7 @@ final class ProcesarImagenesCotizacionRequestService
                 $ordenFotosPrenda = ($prendaModel->fotos()->max('orden') ?? 0) + 1;
 
                 // Procesar imágenes de prenda
-                $fotosArchivos = [];
-                $fotosArchivos = $request->file("prendas.{$index}.fotos") ?? [];
-
-                if (empty($fotosArchivos)) {
-                    $fotosArchivos = $request->file("prendas.{$index}.fotos.0") ?? [];
-                }
-
-                if (empty($fotosArchivos)) {
-                    $allFilesTmp = $request->allFiles();
-                    $fotosArchivos = $allFilesTmp["prendas.{$index}.fotos"] ?? [];
-                }
+                $fotosArchivos = $dto->prendaFotosArchivosPorIndex[$index] ?? [];
 
                 if ($fotosArchivos instanceof \Illuminate\Http\UploadedFile) {
                     $fotosArchivos = [$fotosArchivos];
@@ -92,7 +75,7 @@ final class ProcesarImagenesCotizacionRequestService
                 }
 
                 // Procesar fotos guardadas (rutas desde el frontend)
-                $fotosGuardadas = $request->input("prendas.{$index}.fotos_guardadas") ?? [];
+                $fotosGuardadas = $dto->prendaFotosGuardadasPorIndex[$index] ?? [];
                 if (!is_array($fotosGuardadas)) {
                     $fotosGuardadas = [];
                 }
@@ -198,14 +181,11 @@ final class ProcesarImagenesCotizacionRequestService
                     }
                 }
 
-                // Acceder a la estructura anidada: prendas[index][telas][telaIndex][fotos][]
-                $allFilesTmp = $request->allFiles();
-                if (isset($allFilesTmp['prendas']) && is_array($allFilesTmp['prendas']) && isset($allFilesTmp['prendas'][$index])) {
-                    $prendaFiles = $allFilesTmp['prendas'][$index];
-
-                    if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
-                        foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
-                            unset($ordenFotosTela);
+                // Procesar fotos de telas a partir del DTO
+                $telasFiles = $dto->telasArchivosPorPrendaIndex[$index] ?? [];
+                if (is_array($telasFiles)) {
+                    foreach ($telasFiles as $telaIndex => $fotosArray) {
+                        unset($ordenFotosTela);
 
                             $telaInfo = [];
                             foreach ($telasMultiples as $tm) {
@@ -215,13 +195,10 @@ final class ProcesarImagenesCotizacionRequestService
                                 }
                             }
 
-                            $fotosTelaExistentes = $request->input("prendas.{$index}.telas.{$telaIndex}.fotos_existentes") ?? ($telaData['fotos_existentes'] ?? []);
-                            if (is_string($fotosTelaExistentes)) {
-                                $fotosTelaExistentes = json_decode($fotosTelaExistentes, true) ?? [];
-                            }
-                            if (!is_array($fotosTelaExistentes)) {
-                                $fotosTelaExistentes = [];
-                            }
+                        $fotosTelaExistentes = $dto->telasFotosExistentesPorPrendaIndex[$index][$telaIndex] ?? [];
+                        if (!is_array($fotosTelaExistentes)) {
+                            $fotosTelaExistentes = [];
+                        }
 
                             if (!empty($fotosTelaExistentes) && !$esUpdate) {
                                 $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
@@ -252,58 +229,53 @@ final class ProcesarImagenesCotizacionRequestService
                                 }
                             }
 
-                            if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
-                                if (!isset($ordenFotosTela)) {
-                                    $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
-                                        ->where('prenda_cot_id', $prendaModel->id)
-                                        ->where('tela_index', $telaIndex)
-                                        ->max('orden') ?? 0) + 1;
-                                }
+                        if (!isset($ordenFotosTela)) {
+                            $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
+                                ->where('prenda_cot_id', $prendaModel->id)
+                                ->where('tela_index', $telaIndex)
+                                ->max('orden') ?? 0) + 1;
+                        }
 
-                                $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
+                        $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
 
-                                $fotosArray = $telaData['fotos'];
-                                if ($fotosArray instanceof \Illuminate\Http\UploadedFile) {
-                                    $fotosArray = [$fotosArray];
-                                }
+                        if ($fotosArray instanceof \Illuminate\Http\UploadedFile) {
+                            $fotosArray = [$fotosArray];
+                        }
 
-                                if (!is_array($fotosArray)) {
-                                    continue;
-                                }
+                        if (!is_array($fotosArray)) {
+                            continue;
+                        }
 
-                                foreach ($fotosArray as $archivoFoto) {
-                                    if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
-                                        try {
-                                            $rutaGuardada = $this->procesarImagenesService->procesarImagenTela(
-                                                $archivoFoto,
-                                                $cotizacionId,
-                                                $prendaModel->id
-                                            );
-                                            $rutaUrl = Storage::url($rutaGuardada);
+                        foreach ($fotosArray as $archivoFoto) {
+                            if ($archivoFoto && $archivoFoto instanceof \Illuminate\Http\UploadedFile && $archivoFoto->isValid()) {
+                                try {
+                                    $rutaGuardada = $this->procesarImagenesService->procesarImagenTela(
+                                        $archivoFoto,
+                                        $cotizacionId,
+                                        $prendaModel->id
+                                    );
 
-                                            DB::table('prenda_tela_fotos_cot')->insert([
-                                                'prenda_cot_id' => $prendaModel->id,
-                                                'prenda_tela_cot_id' => $prendaTelaCotId,
-                                                'tela_index' => $telaIndex,
-                                                'ruta_original' => null,
-                                                'ruta_webp' => $rutaGuardada,
-                                                'ruta_miniatura' => null,
-                                                'orden' => $ordenFotosTela,
-                                                'ancho' => null,
-                                                'alto' => null,
-                                                'tamaño' => $archivoFoto->getSize(),
-                                                'created_at' => now(),
-                                                'updated_at' => now(),
-                                            ]);
+                                    DB::table('prenda_tela_fotos_cot')->insert([
+                                        'prenda_cot_id' => $prendaModel->id,
+                                        'prenda_tela_cot_id' => $prendaTelaCotId,
+                                        'tela_index' => $telaIndex,
+                                        'ruta_original' => null,
+                                        'ruta_webp' => $rutaGuardada,
+                                        'ruta_miniatura' => null,
+                                        'orden' => $ordenFotosTela,
+                                        'ancho' => null,
+                                        'alto' => null,
+                                        'tamaño' => $archivoFoto->getSize(),
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
 
-                                            $ordenFotosTela++;
-                                        } catch (\Exception $e) {
-                                            Log::error(' Error guardando foto de tela', [
-                                                'error' => $e->getMessage(),
-                                                'archivo' => $archivoFoto->getClientOriginalName(),
-                                            ]);
-                                        }
-                                    }
+                                    $ordenFotosTela++;
+                                } catch (\Exception $e) {
+                                    Log::error(' Error guardando foto de tela', [
+                                        'error' => $e->getMessage(),
+                                        'archivo' => $archivoFoto->getClientOriginalName(),
+                                    ]);
                                 }
                             }
                         }
@@ -322,16 +294,5 @@ final class ProcesarImagenesCotizacionRequestService
         }
     }
 
-    private function flatearArchivos(array $archivos, array &$resultado, string $prefijo = ''): void
-    {
-        foreach ($archivos as $key => $valor) {
-            $nuevaLlave = $prefijo . '[' . $key . ']';
-
-            if ($valor instanceof UploadedFile) {
-                $resultado[$nuevaLlave] = $valor;
-            } elseif (is_array($valor)) {
-                $this->flatearArchivos($valor, $resultado, $nuevaLlave);
-            }
-        }
-    }
+    // DTO-based: flatearArchivos ya no se usa aquí, quedó en el mapper del borde.
 }

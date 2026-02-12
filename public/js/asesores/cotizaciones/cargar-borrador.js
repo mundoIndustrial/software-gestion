@@ -405,6 +405,9 @@ function cargarBorrador(cotizacion) {
     const prendasFiltradas = (Array.isArray(prendasRaw) ? prendasRaw : []).filter((prenda) => {
         if (!prenda || typeof prenda !== 'object') return false;
 
+        const tecnicasRel = prenda.logoCotizacionesTecnicas || prenda.logo_cotizaciones_tecnicas || [];
+        if (Array.isArray(tecnicasRel) && tecnicasRel.length > 0) return false;
+
         // Excluir objetos que pertenecen al Paso 3 (logo/técnicas) y que a veces vienen mezclados
         // (ej: {tipo_logo, prenda_cot, talla_cantidad, ubicaciones, ...})
         const esObjetoTecnicaLogo = (

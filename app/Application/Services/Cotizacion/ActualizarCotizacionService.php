@@ -4,9 +4,9 @@ namespace App\Application\Services\Cotizacion;
 
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
+use App\Application\Cotizacion\DTOs\ActualizarCotizacionRequestDTO;
 use App\Models\Cotizacion;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use App\Application\Services\Cotizacion\CotizacionBorradorSyncService;
 
 final class ActualizarCotizacionService
@@ -18,18 +18,17 @@ final class ActualizarCotizacionService
     ) {
     }
 
-    public function ejecutar(Cotizacion $cotizacion, Request $request): Cotizacion
+    public function ejecutar(Cotizacion $cotizacion, ActualizarCotizacionRequestDTO $dto): Cotizacion
     {
-        $clienteId = $request->input('cliente_id');
-        $nombreCliente = $request->input('cliente');
+        $clienteId = $dto->clienteId;
+        $nombreCliente = $dto->nombreCliente;
 
         if ($nombreCliente && !$clienteId) {
             $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
             $clienteId = $cliente->id;
         }
 
-        $tipo = $request->input('tipo');
-        $esBorrador = ($tipo === 'borrador' || $request->input('es_borrador') === '1' || $request->input('es_borrador') === true);
+        $esBorrador = $dto->esBorrador;
         $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
         $numeroCotizacion = $cotizacion->numero_cotizacion;
@@ -38,7 +37,7 @@ final class ActualizarCotizacionService
             $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
         }
 
-        $tipoCotizacionEnviado = $request->input('tipo_cotizacion');
+        $tipoCotizacionEnviado = $dto->tipoCotizacionCodigo;
         $tipoCotizacionId = $cotizacion->tipo_cotizacion_id;
 
         if ($tipoCotizacionEnviado === 'P') {
@@ -53,7 +52,7 @@ final class ActualizarCotizacionService
 
         $datosActualizar = [
             'cliente_id' => $clienteId,
-            'tipo_venta' => $request->input('tipo_venta'),
+            'tipo_venta' => $dto->tipoVenta,
             'es_borrador' => $esBorrador,
             'estado' => $estado,
             'numero_cotizacion' => $numeroCotizacion,
@@ -61,10 +60,7 @@ final class ActualizarCotizacionService
             'fecha_envio' => !$esBorrador ? Carbon::now('America/Bogota') : null,
         ];
 
-        $especificacionesNuevas = $request->input('especificaciones', []);
-        if (is_string($especificacionesNuevas)) {
-            $especificacionesNuevas = json_decode($especificacionesNuevas, true) ?? [];
-        }
+        $especificacionesNuevas = $dto->especificaciones;
 
         if (!empty($especificacionesNuevas)) {
             $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
@@ -79,14 +75,8 @@ final class ActualizarCotizacionService
 
         $cotizacion->update($datosActualizar);
 
-        $allData = $request->all();
-        $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
-        if (is_string($prendasRecibidas)) {
-            $prendasRecibidas = json_decode($prendasRecibidas, true) ?? [];
-        }
-
-        if (is_array($prendasRecibidas)) {
-            $this->cotizacionBorradorSyncService->sincronizarPrendasCotizacion($cotizacion, $prendasRecibidas);
+        if (!empty($dto->prendasRecibidas) && is_array($dto->prendasRecibidas)) {
+            $this->cotizacionBorradorSyncService->sincronizarPrendasCotizacion($cotizacion, $dto->prendasRecibidas);
         }
 
         return $cotizacion;

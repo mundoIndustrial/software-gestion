@@ -17,7 +17,6 @@ use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
-use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
 use App\Application\Services\Cotizacion\ActualizarCotizacionService;
 use App\Application\Services\Cotizacion\ActualizarImagenesCotizacionService;
 use App\Application\Services\Cotizacion\AnularCotizacionService;
@@ -27,13 +26,15 @@ use App\Application\Services\Cotizacion\EliminarBorradorCotizacionService;
 use App\Application\Services\Cotizacion\EliminarFotoInmediatamenteService;
 use App\Application\Services\Cotizacion\ObtenerTipoCotizacionIdService;
 use App\Application\Services\Cotizacion\ProcesarImagenesCotizacionOrchestratorService;
-use App\Application\Services\ProcesarImagenesCotizacionService;
+use App\Infrastructure\Http\Mappers\ActualizarImagenesCotizacionRequestMapper;
+use App\Infrastructure\Http\Mappers\ActualizarCotizacionRequestMapper;
+use App\Infrastructure\Http\Mappers\StoreCotizacionRequestMapper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCotizacionRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 
 final class CotizacionController extends Controller
@@ -46,11 +47,12 @@ final class CotizacionController extends Controller
         private readonly CambiarEstadoCotizacionHandler $cambiarEstadoHandler,
         private readonly AceptarCotizacionHandler $aceptarHandler,
         private readonly SubirImagenCotizacionHandler $subirImagenHandler,
-        private readonly ObtenerOCrearClienteService $obtenerOCrearClienteService,
         private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService,
-        private readonly ProcesarImagenesCotizacionService $procesarImagenesService,
         private readonly ActualizarCotizacionService $actualizarCotizacionService,
         private readonly ActualizarImagenesCotizacionService $actualizarImagenesCotizacionService,
+        private readonly ActualizarImagenesCotizacionRequestMapper $actualizarImagenesCotizacionRequestMapper,
+        private readonly ActualizarCotizacionRequestMapper $actualizarCotizacionRequestMapper,
+        private readonly StoreCotizacionRequestMapper $storeCotizacionRequestMapper,
         private readonly AnularCotizacionService $anularCotizacionService,
         private readonly EliminarBorradorCotizacionService $eliminarBorradorCotizacionService,
         private readonly ProcesarImagenesCotizacionOrchestratorService $procesarImagenesCotizacionOrchestratorService,
@@ -96,6 +98,7 @@ final class CotizacionController extends Controller
                 'prendas.variantes.genero',
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
+                'prendas.logoCotizacionesTecnicas',
                 'cliente'
             ])->findOrFail($id);
 
@@ -105,7 +108,12 @@ final class CotizacionController extends Controller
 
             $data = $cotizacion->toArray();
 
-            $data['prendas'] = $cotizacion->prendas->map(function ($prenda) {
+            $data['prendas'] = $cotizacion->prendas
+                ->filter(function ($prenda) {
+                    return $prenda->logoCotizacionesTecnicas->isEmpty();
+                })
+                ->values()
+                ->map(function ($prenda) {
                 $variantes = $prenda->variantes->map(function ($variante) {
                     return [
                         'id' => $variante->id,
@@ -163,6 +171,7 @@ final class CotizacionController extends Controller
                 'prendas.tallas',
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
+                'prendas.logoCotizacionesTecnicas',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 
@@ -176,9 +185,17 @@ final class CotizacionController extends Controller
                 'es_borrador' => $cotizacion->es_borrador,
             ]);
 
+            $data = $cotizacion->toArray();
+            $data['prendas'] = $cotizacion->prendas
+                ->filter(function ($prenda) {
+                    return $prenda->logoCotizacionesTecnicas->isEmpty();
+                })
+                ->values()
+                ->toArray();
+
             return response()->json([
                 'success' => true,
-                'data' => $cotizacion->toArray(),
+                'data' => $data,
             ]);
         } catch (\Exception $e) {
             Log::error('CotizacionController@getForEdit: Error', ['error' => $e->getMessage()]);
@@ -255,7 +272,7 @@ final class CotizacionController extends Controller
     /**
      * Crear cotización
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCotizacionRequest $request): JsonResponse
     {
         try {
             $cotizacionIdExistente = $request->input('cotizacion_id');
@@ -265,117 +282,25 @@ final class CotizacionController extends Controller
                 ]);
                 return $this->update($request, (int)$cotizacionIdExistente);
             }
-            
 
-            // Mapear productos_friendly -> prendas para compatibilidad frontend
-            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
-            $allData = $request->all();
-            Log::info(" CONTROLLER - Todos los datos recibidos", [
-                'all_keys' => array_keys($allData),
-                'productos_friendly_exists' => isset($allData['productos_friendly']),
-                'prendas_exists' => isset($allData['prendas']),
-                'productos_friendly_raw' => $allData['productos_friendly'] ?? 'NO ENVIADO'
-            ]);
-            
-            $prendasRecibidas = $allData['prendas'] ?? $allData['productos_friendly'] ?? $request->input('prendas', $request->input('productos_friendly', []));
-            $especificacionesRecibidas = $request->input('especificaciones', []);
-            
-            if (is_string($especificacionesRecibidas)) {
-                $especificacionesRecibidas = json_decode($especificacionesRecibidas, true) ?? [];
-            } elseif (!is_array($especificacionesRecibidas)) {
-                $especificacionesRecibidas = [];
-            }
-            
-            // Asegurar que todas las categorías existan, incluso si están vacías
-            $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
-            foreach ($categoriasRequeridas as $categoria) {
-                if (!isset($especificacionesRecibidas[$categoria])) {
-                    $especificacionesRecibidas[$categoria] = [];
-                }
-            }
-            
-          
+            $usuarioId = Auth::id();
+            $dto = $this->storeCotizacionRequestMapper->map($request, (int) $usuarioId);
 
-            $clienteId = $request->input('cliente_id');
-            $nombreCliente = $request->input('cliente');
-            $accion = $request->input('accion');
-            $esBorrador = $request->input('es_borrador');
+            if (!$dto->esBorrador) {
+                $usuarioIdVO = \App\Domain\Shared\ValueObjects\UserId::crear((int) $usuarioId);
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioIdVO);
 
-            if ($nombreCliente && !$clienteId) {
-                $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
-                $clienteId = $cliente->id;
-                Log::info('Cliente creado/obtenido', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
-            }
-
-            // Si es_borrador viene del frontend, usarlo. Si no, usar la lógica de acción
-            if ($esBorrador === null) {
-                $esBorrador = ($accion === 'guardar');
-            } else {
-                // IMPORTANTE: (bool)"0" en PHP es true (string no vacío). Parsear correctamente.
-                if (is_bool($esBorrador)) {
-                    $esBorrador = $esBorrador;
-                } elseif (is_numeric($esBorrador)) {
-                    $esBorrador = ((int)$esBorrador) === 1;
-                } elseif (is_string($esBorrador)) {
-                    $esBorradorLower = strtolower(trim($esBorrador));
-                    $esBorrador = in_array($esBorradorLower, ['1', 'true', 'yes', 'on'], true);
-                } else {
-                    $esBorrador = false;
-                }
-            }
-            
-            $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
-
-            // Generar número de cotización si es envío (no borrador)
-            $numeroCotizacion = null;
-            if (!$esBorrador) {
-                // Usar el servicio de generación segura de números (con database locks)
-                $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear(Auth::id());
-                // IMPORTANTE: guardar el consecutivo como INT en el DTO/handler.
-                // Si se envía formateado (ej: "COT-00005"), el DTO puede castear mal y
-                // el handler termina generando otro consecutivo.
-                $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioId);
-                
                 Log::info('CotizacionController@store: Número de cotización generado con servicio seguro', [
-                    'usuario_id' => Auth::id(),
+                    'usuario_id' => $usuarioId,
                     'numero' => $numeroCotizacion,
                     'numero_formateado' => $this->generarNumeroCotizacionService->formatearNumero($numeroCotizacion),
                 ]);
+
+                $dto = CrearCotizacionDTO::desdeArray(array_merge(
+                    $dto->toArray(),
+                    ['numero_cotizacion' => $numeroCotizacion]
+                ));
             }
-
-       
-
-            // Tipo de cotización: Logo (L) o Combinado (PL)
-            $tipoCotizacion = $request->input('tipo_cotizacion', 'PL');
-            $logoData = $request->input('logo', []);
-            
-            Log::info('CotizacionController@store: Tipo de cotización', [
-                'tipo_cotizacion' => $tipoCotizacion,
-                'logo_data' => $logoData,
-            ]);
-
-            //  OBTENER PRENDAS DESDE FORMDATA (no uses input() para arrays complejos)
-            $allData = $request->all();
-            $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
-            
-            Log::info('CotizacionController@store: Prendas extraídas', [
-                'prendas_count' => is_array($prendasRecibidas) ? count($prendasRecibidas) : 0,
-                'prendas_type' => gettype($prendasRecibidas),
-                'prendas_keys' => is_array($prendasRecibidas) && !empty($prendasRecibidas) ? array_keys($prendasRecibidas) : [],
-            ]);
-
-            $dto = CrearCotizacionDTO::desdeArray([
-                'usuario_id' => Auth::id(),
-                'tipo' => $tipoCotizacion,
-                'cliente_id' => $clienteId,
-                'prendas' => $prendasRecibidas,
-                'logo' => $request->input('logo', []),
-                'tipo_venta' => $request->input('tipo_venta', 'M'),
-                'especificaciones' => $especificacionesRecibidas,
-                'es_borrador' => $esBorrador,
-                'estado' => $estado,
-                'numero_cotizacion' => $numeroCotizacion,
-            ]);
 
             $comando = CrearCotizacionCommand::crear($dto);
             $cotizacionDTO = $this->crearHandler->handle($comando);
@@ -422,15 +347,11 @@ final class CotizacionController extends Controller
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
 
-            $cotizacion = $this->actualizarCotizacionService->ejecutar($cotizacion, $request);
+            $dtoActualizarCotizacion = $this->actualizarCotizacionRequestMapper->map($request);
+            $cotizacion = $this->actualizarCotizacionService->ejecutar($cotizacion, $dtoActualizarCotizacion);
 
-            $allData = $request->all();
-            $prendasRecibidas = $allData['prendas'] ?? $request->input('prendas', []);
-            if (is_string($prendasRecibidas)) {
-                $prendasRecibidas = json_decode($prendasRecibidas, true) ?? [];
-            }
-
-            $this->actualizarImagenesCotizacionService->ejecutar($cotizacion, $request, $prendasRecibidas);
+            $dtoActualizarImagenes = $this->actualizarImagenesCotizacionRequestMapper->map($request, $dtoActualizarCotizacion->prendasRecibidas);
+            $this->actualizarImagenesCotizacionService->ejecutar($cotizacion, $dtoActualizarImagenes);
             
             // Procesar nuevas imágenes DESPUÉS de actualizar logo
             $this->procesarImagenesCotizacionOrchestratorService->ejecutar($request, $id);

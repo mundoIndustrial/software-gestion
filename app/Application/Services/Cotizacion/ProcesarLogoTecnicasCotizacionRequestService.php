@@ -7,9 +7,8 @@ use App\Models\LogoCotizacion;
 use App\Models\LogoCotizacionTecnicaPrenda;
 use App\Models\LogoFotoCot;
 use App\Models\PrendaCot;
-use Illuminate\Http\Request;
+use App\Application\Cotizacion\DTOs\SyncLogoTecnicasDTO;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 final class ProcesarLogoTecnicasCotizacionRequestService
 {
@@ -19,52 +18,17 @@ final class ProcesarLogoTecnicasCotizacionRequestService
     ) {
     }
 
-    public function ejecutar(Request $request, int $cotizacionId): void
+    public function ejecutar(SyncLogoTecnicasDTO $dto): void
     {
         try {
+            $cotizacionId = $dto->cotizacionId;
             $cotizacionExistente = Cotizacion::find($cotizacionId);
             $esUpdate = !!$cotizacionExistente;
 
-            $logoArchivos = [];
-            $allFiles = $request->allFiles();
-
-            if (isset($allFiles['logo']) && is_array($allFiles['logo']) && isset($allFiles['logo']['imagenes'])) {
-                $logoArchivos = $allFiles['logo']['imagenes'];
-            } else {
-                $logoArchivos = $request->file('logo.imagenes') ?? [];
-            }
-
-            if ($logoArchivos instanceof \Illuminate\Http\UploadedFile) {
-                $logoArchivos = [$logoArchivos];
-            } elseif (!is_array($logoArchivos)) {
-                $logoArchivos = [];
-            }
-
-            $logoDescripcion = trim($request->input('descripcion_logo', '')) ?: null;
-
-            $logoTecnicas = $request->input('tecnicas', []);
-            if (is_string($logoTecnicas)) {
-                $logoTecnicas = json_decode($logoTecnicas, true) ?? [];
-            }
-
-            $logoSecciones = $request->input('secciones', []);
-            if (is_string($logoSecciones)) {
-                $logoSecciones = json_decode($logoSecciones, true) ?? [];
-            }
-
-            $logoObservacionesGenerales = $request->input('observaciones_generales', []);
-            if (is_string($logoObservacionesGenerales)) {
-                $logoObservacionesGenerales = json_decode($logoObservacionesGenerales, true) ?? [];
-            }
-
-            $tipoCotizacionRequest = $request->input('tipo_cotizacion');
-
-            $logoTecnicasAgregadas = $request->input('logo.tecnicas_agregadas');
-            if (is_string($logoTecnicasAgregadas)) {
-                $logoTecnicasAgregadas = json_decode($logoTecnicasAgregadas, true) ?? [];
-            } else {
-                $logoTecnicasAgregadas = (array) $logoTecnicasAgregadas;
-            }
+            $logoArchivos = $dto->logoArchivos;
+            $logoObservacionesGenerales = $dto->observacionesGenerales;
+            $tipoCotizacionRequest = $dto->tipoCotizacion;
+            $logoTecnicasAgregadas = $dto->tecnicasAgregadas;
 
             $logoTieneInformacionValida = false;
 
@@ -87,8 +51,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
             }
 
             if (!$logoTieneInformacionValida) {
-                $imagenesP3Files = $request->file('logo.imagenes_paso3');
-                if ($imagenesP3Files && !empty($imagenesP3Files)) {
+                if (!empty($dto->imagenesPaso3Archivos)) {
                     $logoTieneInformacionValida = true;
                 }
             }
@@ -108,7 +71,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                         'observaciones_generales' => is_array($logoObservacionesGenerales) && !empty($logoObservacionesGenerales)
                             ? json_encode($logoObservacionesGenerales)
                             : $logoExistente->observaciones_generales,
-                        'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? $logoExistente->tipo_venta,
+                        'tipo_venta' => $dto->tipoVenta ?? $logoExistente->tipo_venta,
                     ];
 
                     $logoExistente->update($datosActualizar);
@@ -117,7 +80,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                     $logoCotizacion = LogoCotizacion::create([
                         'cotizacion_id' => $cotizacionId,
                         'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
-                        'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
+                        'tipo_venta' => $dto->tipoVenta,
                     ]);
                     $logoFueCreadoNuevo = true;
                 }
@@ -154,10 +117,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                     }
                 }
 
-                $fotoLogosExistentes = $request->input('logo_fotos_existentes', []);
-                if (!is_array($fotoLogosExistentes)) {
-                    $fotoLogosExistentes = [];
-                }
+                $fotoLogosExistentes = $dto->logoFotosExistentes;
 
                 if (!empty($fotoLogosExistentes) && $logoFueCreadoNuevo) {
                     $fotoLogosExistentes = array_unique($fotoLogosExistentes);
@@ -202,12 +162,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                 return;
             }
 
-            $tecnicasAgregadasJson = $request->input('logo.tecnicas_agregadas', '[]');
-            if (is_string($tecnicasAgregadasJson)) {
-                $tecnicasAgregadas = json_decode($tecnicasAgregadasJson, true) ?? [];
-            } else {
-                $tecnicasAgregadas = (array) $tecnicasAgregadasJson;
-            }
+            $tecnicasAgregadas = $logoTecnicasAgregadas;
 
             $normalizarArrayRecursivo = function ($v) use (&$normalizarArrayRecursivo) {
                 if (!is_array($v)) {
@@ -618,12 +573,9 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                 }
             }
 
-            $imagenesP3Files = $request->file('logo.imagenes_paso3');
             $imagenesP3Archivos = [];
 
-            if ($imagenesP3Files && is_array($imagenesP3Files)) {
-                $this->flatearArchivos($imagenesP3Files, $imagenesP3Archivos, 'logo[imagenes_paso3]');
-            }
+            $imagenesP3Archivos = $dto->imagenesPaso3Archivos;
 
             if (count($imagenesP3Archivos) <= 0) {
                 return;

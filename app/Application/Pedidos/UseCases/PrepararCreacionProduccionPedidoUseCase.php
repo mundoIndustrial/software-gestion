@@ -18,11 +18,21 @@ class PrepararCreacionProduccionPedidoUseCase
                 'prendas' => function($query) {
                     $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
                 },
+                'prendas.logoCotizacionesTecnicas',
                 'logoCotizacion.fotos',
                 'logoCotizacion.prendas.tipoLogo',
                 'logoCotizacion.prendas.fotos',
                 'logoCotizacion.prendas.prendaCot.fotos',
             ])->findOrFail($dto->editarId);
+
+            $cotizacion->setRelation(
+                'prendas',
+                $cotizacion->prendas
+                    ->filter(function ($prenda) {
+                        return $prenda->logoCotizacionesTecnicas->isEmpty();
+                    })
+                    ->values()
+            );
             
             // Validar permisos
             if ($cotizacion->asesor_id !== $dto->usuarioId || !$cotizacion->es_borrador) {

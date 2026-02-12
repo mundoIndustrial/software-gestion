@@ -424,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Obtener parámetro 'tab' de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
+    const highlightId = urlParams.get('highlight');
     
     // Si viene con tab=borradores, mostrar ese tab
     if (tabParam === 'borradores') {
@@ -441,6 +442,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (seccionTodas) {
             seccionTodas.style.display = 'block';
         }
+    }
+
+    if (highlightId) {
+        setTimeout(() => {
+            const selector = `tr[data-cotizacion-id="${String(highlightId).replace(/"/g, '\\"')}"]`;
+            const fila = document.querySelector(selector);
+            if (fila) {
+                fila.classList.add('animate-row-highlight');
+                try {
+                    fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } catch (e) {
+                    fila.scrollIntoView(true);
+                }
+                setTimeout(() => {
+                    fila.classList.remove('animate-row-highlight');
+                }, 5000);
+            }
+        }, 300);
     }
     
     // Agregar listener para filtrado en tiempo real del buscador

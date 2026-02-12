@@ -37,8 +37,18 @@ class CotizacionPrendaController extends Controller
                 'prendas.variantes.genero',
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
+                'prendas.logoCotizacionesTecnicas',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
+
+            $cotizacion->setRelation(
+                'prendas',
+                $cotizacion->prendas
+                    ->filter(function ($prenda) {
+                        return $prenda->logoCotizacionesTecnicas->isEmpty();
+                    })
+                    ->values()
+            );
 
             if ($cotizacion->asesor_id !== Auth::id() || !$cotizacion->es_borrador) {
                 abort(403, 'No tienes permiso para editar este borrador');

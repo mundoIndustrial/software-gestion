@@ -3,7 +3,7 @@
 namespace App\Application\Services\Cotizacion;
 
 use App\Models\Cotizacion;
-use Illuminate\Http\Request;
+use App\Application\Cotizacion\DTOs\ActualizarImagenesCotizacionDTO;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,10 +14,10 @@ final class ActualizarImagenesCotizacionService
     ) {
     }
 
-    public function ejecutar(Cotizacion $cotizacion, Request $request, array $prendasRecibidas): void
+    public function ejecutar(Cotizacion $cotizacion, ActualizarImagenesCotizacionDTO $dto): void
     {
         // Eliminar fotos específicamente marcadas para eliminar
-        $fotosAEliminar = $request->input('fotos_a_eliminar', []);
+        $fotosAEliminar = $dto->fotosAEliminar;
         if (!empty($fotosAEliminar)) {
             Log::info('Eliminando fotos marcadas', ['fotos_count' => count($fotosAEliminar)]);
 
@@ -52,22 +52,14 @@ final class ActualizarImagenesCotizacionService
         }
 
         // Procesar prendas y eliminar imágenes no incluidas SOLO si se envían nuevas imágenes
-        $allFiles = $request->allFiles();
-
-        foreach ($prendasRecibidas as $index => $prendaData) {
+        foreach ($dto->prendasRecibidas as $index => $prendaData) {
             $prendaModel = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
                 ->skip($index)
                 ->first();
 
             if ($prendaModel) {
-                // Verificar si se enviaron nuevas fotos de prenda para esta prenda
-                $fotosArchivos = $request->file("prendas.{$index}.fotos") ?? [];
-                if (empty($fotosArchivos)) {
-                    $fotosArchivos = $allFiles["prendas.{$index}.fotos"] ?? [];
-                }
-
                 // Solo eliminar fotos antiguas si se enviaron nuevas fotos
-                if (!empty($fotosArchivos)) {
+                if (($dto->hayFotosPrendaNuevasPorIndex[(int) $index] ?? false) === true) {
                     $fotosActuales = $prendaData['fotos'] ?? [];
                     $this->eliminarImagenesService->eliminarImagenesPrendaNoIncluidas(
                         $prendaModel->id,
@@ -75,14 +67,8 @@ final class ActualizarImagenesCotizacionService
                     );
                 }
 
-                // Verificar si se enviaron nuevas fotos de tela para esta prenda
-                $telasArchivos = $request->file("prendas.{$index}.telas") ?? [];
-                if (empty($telasArchivos)) {
-                    $telasArchivos = $allFiles["prendas.{$index}.telas"] ?? [];
-                }
-
                 // Solo eliminar fotos de tela antiguas si se enviaron nuevas fotos de tela
-                if (!empty($telasArchivos)) {
+                if (($dto->hayFotosTelaNuevasPorIndex[(int) $index] ?? false) === true) {
                     $telasActuales = $prendaData['telas'] ?? [];
                     $this->eliminarImagenesService->eliminarImagenesTelaNoIncluidas(
                         $prendaModel->id,
@@ -98,10 +84,7 @@ final class ActualizarImagenesCotizacionService
         if ($logoCotizacion) {
             // Obtener las fotos guardadas que se envían desde el frontend
             // Pueden venir como array: logo_fotos_guardadas[]
-            $fotosLogoGuardadas = $request->input('logo_fotos_guardadas', []);
-            if (!is_array($fotosLogoGuardadas)) {
-                $fotosLogoGuardadas = $fotosLogoGuardadas ? [$fotosLogoGuardadas] : [];
-            }
+            $fotosLogoGuardadas = $dto->logoFotosGuardadas;
 
             // Limpiar rutas: remover /storage/ del principio si existe
             $fotosLogoGuardadas = array_map(function ($ruta) {
@@ -120,22 +103,12 @@ final class ActualizarImagenesCotizacionService
                 'logo_id' => $logoCotizacion->id,
                 'fotos_guardadas_count' => count($fotosLogoGuardadas),
                 'fotos_guardadas' => $fotosLogoGuardadas,
-                'raw_input' => $request->input('logo_fotos_guardadas', []),
+                'raw_input' => $dto->logoFotosGuardadas,
             ]);
-
-            // Obtener archivos nuevos para saber si se están enviando archivos
-            $archivosNuevos = $request->file('logo.imagenes') ?? [];
-            $allFiles = $request->allFiles();
-            if (empty($archivosNuevos) && isset($allFiles['logo']['imagenes'])) {
-                $archivosNuevos = $allFiles['logo']['imagenes'];
-            }
-            if ($archivosNuevos instanceof \Illuminate\Http\UploadedFile) {
-                $archivosNuevos = [$archivosNuevos];
-            }
 
             Log::info('DEBUG - Archivos nuevos de logo:', [
                 'logo_id' => $logoCotizacion->id,
-                'archivos_nuevos_count' => count($archivosNuevos),
+                'archivos_nuevos_count' => $dto->logoArchivosNuevosCount,
             ]);
 
             // SIEMPRE ejecutar eliminación, pasando las fotos a conservar
