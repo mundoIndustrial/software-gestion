@@ -82,7 +82,7 @@
                                 {{ $orden->created_at->format('d/m/Y h:i A') }}
                             </td>
                             <td class="actions-cell">
-                                @php($editUrl = route('asesores.pedidos.create', ['tipo' => 'PB', 'editar' => $orden->id]))
+                                @php($editUrl = route('asesores.cotizaciones.edit-borrador', ['id' => $orden->id]))
                                 <a href="{{ $editUrl }}" data-url="{{ $editUrl }}" class="btn-action btn-edit btn-editar-borrador">
                                     <span class="material-symbols-rounded">edit</span>
                                     Editar

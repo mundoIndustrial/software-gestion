@@ -89,7 +89,7 @@
                                             $pdfButtons = [];
                                         ?>
                                         @if($isBorrador)
-                                            <?php $editUrl = route('asesores.pedidos.create', ['tipo' => 'PB', 'editar' => $cot->id]); ?>
+                                            <?php $editUrl = route('asesores.cotizaciones.edit-borrador', ['id' => $cot->id]); ?>
                                             <a href="{{ $editUrl }}"
                                                 data-url="{{ $editUrl }}"
                                                 class="btn-editar-borrador"
