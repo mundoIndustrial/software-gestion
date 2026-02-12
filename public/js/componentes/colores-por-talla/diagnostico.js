@@ -141,5 +141,5 @@ window.verificarDOM = function() {
 };
 
 // Registrar cuando los scripts cargan
-console.log('%c Diagnóstico.js cargado. Comandos disponibles: diagnosticarSistema(), pruebaToggle(), hacerToggleManual(), verificarDOM()', 'color: #22c55e; font-weight: bold;');
+// console.log('%c Diagnóstico.js cargado. Comandos disponibles: diagnosticarSistema(), pruebaToggle(), hacerToggleManual(), verificarDOM()', 'color: #22c55e; font-weight: bold;');
 

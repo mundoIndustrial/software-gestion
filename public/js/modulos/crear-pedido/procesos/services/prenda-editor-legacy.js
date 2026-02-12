@@ -19,7 +19,7 @@ class PrendaEditorLegacy {
     init(options = {}) {
         this.notificationService = options.notificationService;
         this.cotizacionActual = options.cotizacionActual || null;
-        console.log('[PrendaEditorLegacy]  Servicio legacy inicializado');
+        // console.log('[PrendaEditorLegacy]  Servicio legacy inicializado');
     }
 
     /**
@@ -27,12 +27,12 @@ class PrendaEditorLegacy {
      * @private
      */
     llenarCamposBasicos(prenda) {
-        console.log(' [llenarCamposBasicos] INICIANDO CARGA DE CAMPOS BÁSICOS ', {
-            nombre: prenda.nombre_prenda,
-            de_bodega: prenda.de_bodega,
-            origen: prenda.origen,
-            timestamp: new Date().toLocaleTimeString()
-        });
+        // console.log(' [llenarCamposBasicos] INICIANDO CARGA DE CAMPOS BÁSICOS ', {
+        //     nombre: prenda.nombre_prenda,
+        //     de_bodega: prenda.de_bodega,
+        //     origen: prenda.origen,
+        //     timestamp: new Date().toLocaleTimeString()
+        // });
         
         //  ASEGURAR QUE EL DOM ESTÁ LISTO (pequeño delay para rendering)
         setTimeout(() => {
@@ -45,25 +45,25 @@ class PrendaEditorLegacy {
         const descripcionField = document.getElementById('nueva-prenda-descripcion');
         const origenField = document.getElementById('nueva-prenda-origen-select');
 
-        console.log('[llenarCamposBasicos]  DOM LISTO PARA LLENAR (después de timeout)');
-        console.log('[llenarCamposBasicos] DEBUG Elementos encontrados:', {
-            nombreField: !!nombreField,
-            descripcionField: !!descripcionField,
-            origenField: !!origenField,
-            origenFieldTagName: origenField?.tagName,
-            origenFieldOptions: origenField?.options?.length,
-            modalVisible: !!document.getElementById('modal-agregar-prenda-nueva')?.offsetParent
-        });
+        // console.log('[llenarCamposBasicos]  DOM LISTO PARA LLENAR (después de timeout)');
+        // console.log('[llenarCamposBasicos] DEBUG Elementos encontrados:', {
+        //     nombreField: !!nombreField,
+        //     descripcionField: !!descripcionField,
+        //     origenField: !!origenField,
+        //     origenFieldTagName: origenField?.tagName,
+        //     origenFieldOptions: origenField?.options?.length,
+        //     modalVisible: !!document.getElementById('modal-agregar-prenda-nueva')?.offsetParent
+        // });
         
         if (nombreField) nombreField.value = prenda.nombre_prenda || '';
         if (descripcionField) descripcionField.value = prenda.descripcion || '';
         
         if (origenField) {
-            console.log('[llenarCamposBasicos] Datos de origen ANTES:', {
-                prendaOrigen: prenda.origen,
-                prendaDeBodega: prenda.de_bodega,
-                tipoDeBodega: typeof prenda.de_bodega
-            });
+            // console.log('[llenarCamposBasicos] Datos de origen ANTES:', {
+        //     prendaOrigen: prenda.origen,
+        //     prendaDeBodega: prenda.de_bodega,
+        //     tipoDeBodega: typeof prenda.de_bodega
+        // });
             
             //  APLICAR ORIGEN AUTOMÁTICO AQUÍ TAMBIÉN
             // Si hay cotización, FUERZA el origen antes de llenar el campo
@@ -90,20 +90,20 @@ class PrendaEditorLegacy {
                 
                 if (opcionEncontrada) {
                     origenField.value = opcionEncontrada.value;
-                    console.log('[llenarCamposBasicos]  Origen forzado por cotización:', opcionEncontrada.value);
+                    // console.log('[llenarCamposBasicos]  Origen forzado por cotización:', opcionEncontrada.value);
                 } else {
                     // Fallback al origen de la prenda
                     origenField.value = prenda.origen || '';
-                    console.log('[llenarCamposBasicos]  Origen fallback a prenda:', prenda.origen);
+                    // console.log('[llenarCamposBasicos]  Origen fallback a prenda:', prenda.origen);
                 }
             } else {
                 // Sin cotización, usar origen de la prenda
                 origenField.value = prenda.origen || '';
-                console.log('[llenarCamposBasicos] 📄 Origen desde prenda (sin cotización):', prenda.origen);
+                // console.log('[llenarCamposBasicos]  Origen desde prenda (sin cotización):', prenda.origen);
             }
         }
         
-        console.log('[llenarCamposBasicos]  Campos básicos llenados');
+        // console.log('[llenarCamposBasicos]  Campos básicos llenados');
     }
 
     /**

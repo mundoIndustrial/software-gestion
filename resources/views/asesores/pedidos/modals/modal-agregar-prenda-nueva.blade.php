@@ -60,7 +60,7 @@
                         </label>
                         
                         <!-- Imagen principal preview -->
-                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg">
+                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg" tabindex="0" style="outline: none;" contenteditable="true">
                             <div class="foto-preview-content">
                                 <div class="material-symbols-rounded">add_photo_alternate</div>
                                 <div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div>
@@ -125,11 +125,7 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed transparent; border-radius: 6px; padding: 8px; cursor: pointer;"
-                                             ondrop="handleDropTela(event)" 
-                                             ondragover="handleDragOver(event)"
-                                             ondragleave="handleDragLeave(event)"
-                                             onclick="document.getElementById('modal-agregar-prenda-nueva-file-input').click()">
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: 0.2s; border-radius: 6px; padding: 8px; cursor: pointer; outline: none;" tabindex="0">
                                             <button type="button" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px;" title="Agregar imagen (opcional) o arrastra una imagen aquí">
                                                 <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
                                                 <span style="font-size: 0.7rem;">Agregar imagen</span>
@@ -143,11 +139,7 @@
                                             </div>
                                         </div>
                                         <!-- Preview temporal dentro de la celda - EN EL FLUJO VISUAL Y VISIBLE -->
-                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"
-                                             ondrop="handleDropTela(event)" 
-                                             ondragover="handleDragOver(event)"
-                                             ondragleave="handleDragLeave(event)"
-                                             onclick="document.getElementById('modal-agregar-prenda-nueva-file-input').click()">
+                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;">
                                             
                                             <!-- Texto de ayuda -->
                                             <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
@@ -666,4 +658,228 @@ document.addEventListener('paste', function(event) {
 <script src="{{ asset('js/componentes/colores-por-talla/ColoresPorTalla.js') }}"></script>
 <script src="{{ asset('js/componentes/colores-por-talla/compatibilidad.js') }}"></script>
 <script src="{{ asset('js/componentes/colores-por-talla/diagnostico.js') }}"></script>
-<script src="{{ asset('js/componentes/colores-por-talla/diagnostico.js') }}"></script>
+
+<!-- Scripts: Sistema Drag & Drop Manager -->
+<script src="{{ asset('js/componentes/prendas-wrappers.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/services/UIHelperService.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/services/ClipboardService.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/services/ContextMenuService.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/services/DragDropEventHandler.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/handlers/BaseDragDropHandler.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/handlers/PrendaDragDropHandler.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/handlers/TelaDragDropHandler.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/handlers/ProcesoDragDropHandler.js') }}"></script>
+<script src="{{ asset('js/componentes/prendas-module/drag-drop-manager.js') }}"></script>
+
+<!-- Script para inicializar el Drag & Drop cuando se abre el modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para inicializar el drag & drop cuando el modal se abra
+    window.inicializarDragDropModalPrenda = function() {
+        console.log('[DragDrop] 🚀 Inicializando sistema Drag & Drop para modal de prenda...');
+        
+        // Esperar un poco a que todos los scripts carguen
+        setTimeout(() => {
+            if (window.DragDropManager) {
+                try {
+                    // Forzar re-inicialización completa
+                    window.DragDropManager.inicializar();
+                    console.log('[DragDrop] ✅ Sistema inicializado correctamente');
+                    
+                    // Verificar estado
+                    const estado = window.DragDropManager.getEstadoCompleto();
+                    console.log('[DragDrop] 📊 Estado del sistema:', estado);
+                    
+                    // Debug info
+                    const debugInfo = window.DragDropManager.getDebugInfo();
+                    console.log('[DragDrop] 🔍 Debug info:', debugInfo);
+                    
+                    // Verificar que el preview esté configurado
+                    const preview = document.getElementById('nueva-prenda-foto-preview');
+                    if (preview) {
+                        console.log('[DragDrop] ✅ Preview encontrado:', preview);
+                        
+                        // Agregar listeners manuales como fallback con máxima prioridad
+                        preview.addEventListener('dragover', function(e) {
+                            console.log('[DragDrop] 🎯 Drag over detectado en preview (manual)');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            this.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                            this.style.border = '2px dashed #3b82f6';
+                        }, true);
+                        
+                        preview.addEventListener('dragleave', function(e) {
+                            console.log('[DragDrop] 🎯 Drag leave detectado en preview (manual)');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            this.style.backgroundColor = '';
+                            this.style.border = '';
+                        }, true);
+                        
+                        preview.addEventListener('drop', function(e) {
+                            console.log('[DragDrop] 🎯 Drop detectado en preview (manual - PRIORIDAD MÁXIMA)');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            
+                            // Restaurar estilos
+                            this.style.backgroundColor = '';
+                            this.style.border = '';
+                            
+                            const files = e.dataTransfer.files;
+                            console.log('[DragDrop] 📁 Archivos recibidos:', files.length);
+                            
+                            if (files.length > 0) {
+                                console.log('[DragDrop] 📸 Procesando archivos...');
+                                
+                                // Asignar archivos directamente al input
+                                const input = document.getElementById('nueva-prenda-foto-input');
+                                const preview = document.getElementById('nueva-prenda-foto-preview');
+                                
+                                if (input && preview) {
+                                    // Asignar archivos directamente al input
+                                    input.files = files;
+                                    console.log('[DragDrop] 📸 Archivos asignados al input');
+                                    
+                                    // Llamar a la función de manejo de imágenes
+                                    if (typeof window.manejarImagenesPrenda === 'function') {
+                                        console.log('[DragDrop] 📸 Llamando a manejarImagenesPrenda...');
+                                        window.manejarImagenesPrenda(input);
+                                    } else {
+                                        console.error('[DragDrop] ❌ manejarImagenesPrenda no disponible');
+                                        
+                                        // Fallback: mostrar imagen manualmente
+                                        const reader = new FileReader();
+                                        reader.onload = function(e) {
+                                            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                                            console.log('[DragDrop] 📸 Imagen mostrada manualmente (fallback)');
+                                        };
+                                        reader.readAsDataURL(files[0]);
+                                    }
+                                } else {
+                                    console.error('[DragDrop] ❌ Input o preview no encontrados');
+                                }
+                            } else {
+                                console.log('[DragDrop] ⚠️ No se recibieron archivos');
+                            }
+                        }, true);
+                        
+                        console.log('[DragDrop] ✅ Listeners manuales agregados como fallback');
+                        
+                        // Agregar listener de paste como fallback adicional
+                        preview.addEventListener('paste', function(e) {
+                            console.log('[DragDrop] 📋 Paste directo detectado en preview');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const items = e.clipboardData.items;
+                            console.log('[DragDrop] 📋 Items en portapapeles:', items.length);
+                            
+                            for (let i = 0; i < items.length; i++) {
+                                const item = items[i];
+                                console.log('[DragDrop] 📋 Item', i, ':', item.kind, item.type);
+                                
+                                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                                    const file = item.getAsFile();
+                                    if (file) {
+                                        console.log('[DragDrop] 📸 Imagen obtenida del portapapeles:', file.name, file.type, file.size);
+                                        
+                                        // Simular input file
+                                        const input = document.getElementById('nueva-prenda-foto-input');
+                                        if (input) {
+                                            // Crear DataTransfer para asignar el archivo
+                                            const dataTransfer = new DataTransfer();
+                                            dataTransfer.items.add(file);
+                                            input.files = dataTransfer.files;
+                                            
+                                            console.log('[DragDrop] 📸 Llamando a manejarImagenesPrenda desde paste...');
+                                            if (typeof window.manejarImagenesPrenda === 'function') {
+                                                window.manejarImagenesPrenda(input);
+                                            } else {
+                                                console.error('[DragDrop] ❌ manejarImagenesPrenda no disponible');
+                                            }
+                                        }
+                                        break; // Solo procesar la primera imagen
+                                    }
+                                }
+                            }
+                        });
+                        
+                        console.log('[DragDrop] ✅ Listener de paste agregado como fallback');
+                        
+                        // NO reconfigurar el DragDropEventHandler para evitar conflictos
+                        // Nuestro listener manual es suficiente y tiene prioridad
+                        console.log('[DragDrop] ✅ Usando solo listeners manuales para evitar conflictos');
+                    } else {
+                        console.error('[DragDrop] ❌ Preview no encontrado');
+                    }
+                    
+                    console.log('[DragDrop] ✅ Menú contextual agregado');
+                    
+                } catch (error) {
+                    console.error('[DragDrop] ❌ Error al inicializar:', error);
+                }
+            } else {
+                console.error('[DragDrop] ❌ DragDropManager no disponible');
+            }
+        }, 200);
+    };
+    
+    // Escuchar cuando se abre el modal de prenda
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const modal = document.getElementById('modal-agregar-prenda-nueva');
+                if (modal && modal.style.display !== 'none' && modal.style.display !== '') {
+                    console.log('[DragDrop] 📋 Modal detectado como visible, inicializando...');
+                    window.inicializarDragDropModalPrenda();
+                }
+            }
+        });
+    });
+    
+    // Observar el modal
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (modal) {
+        observer.observe(modal, { attributes: true });
+    }
+    
+    // También escuchar por el evento de apertura del modal
+    document.addEventListener('modalPrendaAbierto', function() {
+        console.log('[DragDrop] 📋 Evento modalPrendaAbierto recibido');
+        window.inicializarDragDropModalPrenda();
+    });
+});
+
+// Función de debugging para probar el paste
+window.probarPasteImagen = function() {
+    console.log('[DragDrop] 🧪 Simulando paste de imagen...');
+    
+    const preview = document.getElementById('nueva-prenda-foto-preview');
+    if (preview) {
+        // Simular un evento de paste
+        const mockEvent = {
+            preventDefault: () => {},
+            stopPropagation: () => {},
+            clipboardData: {
+                items: [
+                    {
+                        kind: 'file',
+                        type: 'image/png',
+                        getAsFile: () => new File(['test'], 'test.png', { type: 'image/png' })
+                    }
+                ]
+            }
+        };
+        
+        // Disparar evento paste manualmente
+        if (preview.onpaste) {
+            preview.onpaste(mockEvent);
+        } else {
+            console.log('[DragDrop] ❌ No hay listener de paste en el preview');
+        }
+    }
+};
+</script>

@@ -14,37 +14,37 @@ window.ColoresPorTalla = (function() {
      * Inicialización del módulo
      */
     function init() {
-        console.log('[ColoresPorTalla]  Iniciando módulo ColoresPorTalla...');
+        // console.log('[ColoresPorTalla]  Iniciando módulo ColoresPorTalla...');
         
         // Verificar que todos los módulos estén disponibles
         if (!window.StateManager || !window.AsignacionManager || 
             !window.WizardManager || !window.UIRenderer) {
-            console.error('[ColoresPorTalla]  Faltan módulos dependientes');
-            console.error('[ColoresPorTalla] Disponibles:', {
-                StateManager: !!window.StateManager,
-                AsignacionManager: !!window.AsignacionManager,
-                WizardManager: !!window.WizardManager,
-                UIRenderer: !!window.UIRenderer
-            });
+            // console.error('[ColoresPorTalla]  Faltan módulos dependientes');
+            // console.error('[ColoresPorTalla] Disponibles:', {
+            //     StateManager: !!window.StateManager,
+            //     AsignacionManager: !!window.AsignacionManager,
+            //     WizardManager: !!window.WizardManager,
+            //     UIRenderer: !!window.UIRenderer
+            // });
             return false;
         }
         
-        console.log('[ColoresPorTalla]  Todos los módulos están disponibles');
+        // console.log('[ColoresPorTalla]  Todos los módulos están disponibles');
         
         // Configurar eventos globales solo UNA VEZ
         if (!eventosConfigurados) {
             configurarEventosGlobales();
             eventosConfigurados = true;
-            console.log('[ColoresPorTalla]  Eventos globales configurados (primera vez)');
+            // console.log('[ColoresPorTalla]  Eventos globales configurados (primera vez)');
         } else {
-            console.log('[ColoresPorTalla] ⏭️ Eventos ya configurados, saltando...');
+            // console.log('[ColoresPorTalla] ⏭️ Eventos ya configurados, saltando...');
         }
         
         // Actualizar vistas iniciales
         actualizarVistasIniciales();
-        console.log('[ColoresPorTalla]  Vistas iniciales actualizadas');
+        // console.log('[ColoresPorTalla]  Vistas iniciales actualizadas');
         
-        console.log('[ColoresPorTalla]  Módulo ColoresPorTalla inicializado exitosamente');
+        // console.log('[ColoresPorTalla]  Módulo ColoresPorTalla inicializado exitosamente');
         return true;
     }
 
@@ -52,7 +52,7 @@ window.ColoresPorTalla = (function() {
      * Configurar eventos globales
      */
     function configurarEventosGlobales() {
-        console.log('[ColoresPorTalla] 🔹 Configurando eventos globales...');
+        // console.log('[ColoresPorTalla] 🔹 Configurando eventos globales...');
         
         // Botones principales
         const btnAsignarColores = document.getElementById('btn-asignar-colores-tallas');
@@ -61,19 +61,19 @@ window.ColoresPorTalla = (function() {
         const wzdBtnSiguiente = document.getElementById('wzd-btn-siguiente');
         const wzdBtnAtras = document.getElementById('wzd-btn-atras');
         
-        console.log('[ColoresPorTalla] 🔸 Botones encontrados:', {
-            btnAsignarColores: !!btnAsignarColores,
-            btnCancelarWizard: !!btnCancelarWizard,
-            btnGuardarAsignacion: !!btnGuardarAsignacion,
-            wzdBtnSiguiente: !!wzdBtnSiguiente,
-            wzdBtnAtras: !!wzdBtnAtras
-        });
+        // console.log('[ColoresPorTalla] 🔸 Botones encontrados:', {
+        //     btnAsignarColores: !!btnAsignarColores,
+        //     btnCancelarWizard: !!btnCancelarWizard,
+        //     btnGuardarAsignacion: !!btnGuardarAsignacion,
+        //     wzdBtnSiguiente: !!wzdBtnSiguiente,
+        //     wzdBtnAtras: !!wzdBtnAtras
+        // });
         
         // Remover listeners existentes para evitar duplicados
         if (btnAsignarColores && !btnAsignarColores.dataset.listenerConfigured) {
             btnAsignarColores.addEventListener('click', toggleVistaAsignacion);
             btnAsignarColores.dataset.listenerConfigured = 'true';
-            console.log('[ColoresPorTalla]  Event listener agregado a btn-asignar-colores-tallas');
+            // console.log('[ColoresPorTalla]  Event listener agregado a btn-asignar-colores-tallas');
         }
         
         if (btnCancelarWizard && !btnCancelarWizard.dataset.listenerConfigured) {
@@ -89,19 +89,21 @@ window.ColoresPorTalla = (function() {
                 }
             });
             btnCancelarWizard.dataset.listenerConfigured = 'true';
-            console.log('[ColoresPorTalla]  Event listener agregado a btn-cancelar-wizard');
+            // console.log('[ColoresPorTalla]  Event listener agregado a btn-cancelar-wizard');
         }
         
         if (btnGuardarAsignacion && !btnGuardarAsignacion.dataset.listenerConfigured) {
             btnGuardarAsignacion.addEventListener('click', () => {
                 wizardGuardarAsignacion();
+                // Establecer bandera para evitar inicialización automática del wizard
+                window.evitarInicializacionWizard = true;
                 // Después de guardar, cerrar la vista del wizard
                 setTimeout(() => {
                     toggleVistaAsignacion();
                 }, 500);
             });
             btnGuardarAsignacion.dataset.listenerConfigured = 'true';
-            console.log('[ColoresPorTalla]  Event listener agregado a btn-guardar-asignacion');
+            // console.log('[ColoresPorTalla]  Event listener agregado a btn-guardar-asignacion');
         }
         
         if (wzdBtnSiguiente && !wzdBtnSiguiente.dataset.listenerConfigured) {
@@ -116,7 +118,7 @@ window.ColoresPorTalla = (function() {
                 }
             });
             wzdBtnSiguiente.dataset.listenerConfigured = 'true';
-            console.log('[ColoresPorTalla]  Event listener agregado a wzd-btn-siguiente');
+            // console.log('[ColoresPorTalla]  Event listener agregado a wzd-btn-siguiente');
         }
         
         if (wzdBtnAtras && !wzdBtnAtras.dataset.listenerConfigured) {
@@ -130,7 +132,7 @@ window.ColoresPorTalla = (function() {
                 }
             });
             wzdBtnAtras.dataset.listenerConfigured = 'true';
-            console.log('[ColoresPorTalla]  Event listener agregado a wzd-btn-atras');
+            // console.log('[ColoresPorTalla]  Event listener agregado a wzd-btn-atras');
         }
         
         // Eventos de selects
@@ -154,7 +156,7 @@ window.ColoresPorTalla = (function() {
             btnAgregarColorPersonalizado.dataset.listenerConfigured = 'true';
         }
         
-        console.log('[ColoresPorTalla]  Eventos globales configurados');
+        // console.log('[ColoresPorTalla]  Eventos globales configurados');
     }
 
     /**
@@ -212,6 +214,18 @@ window.ColoresPorTalla = (function() {
             // Ocultar wizard y mostrar resumen si hay asignaciones
             ocultarWizardYMostrarResumen();
             
+            // Asegurar que la tabla de telas sea visible independientemente de la sección de tallas
+            setTimeout(() => {
+                const tbodyTelas = document.getElementById('tbody-telas');
+                if (tbodyTelas) {
+                    const tabla = tbodyTelas.closest('table');
+                    if (tabla) {
+                        tabla.style.display = 'table';
+                        console.log('[ColoresPorTalla] 📋 Tabla de telas forzada a ser visible');
+                    }
+                }
+            }, 100);
+            
             console.log('[ColoresPorTalla]  vistaTablaTelas.style.display = block');
             console.log('[ColoresPorTalla]  vistaAsignacion.style.display = none');
             console.log('[ColoresPorTalla]  Volviendo a vista de Tabla de Telas');
@@ -233,8 +247,8 @@ window.ColoresPorTalla = (function() {
             // Mostrar selector de telas si hay múltiples
             mostrarSelectoreTelasSiNecesario();
             
-            // Resetear wizard y mostrar paso inicial
-            if (window.WizardManager) {
+            // Resetear wizard y mostrar paso inicial SOLO si no viene de guardar asignaciones
+            if (window.WizardManager && !window.evitarInicializacionWizard) {
                 try {
                     if (typeof window.WizardManager.resetWizard === 'function') {
                         window.WizardManager.resetWizard();
@@ -246,6 +260,10 @@ window.ColoresPorTalla = (function() {
                     console.warn('[toggleVistaAsignacion]  Error con WizardManager:', error);
                     // Continuar sin wizard
                 }
+            } else if (window.evitarInicializacionWizard) {
+                console.log('[toggleVistaAsignacion] 🚫 Evitando inicialización automática del wizard');
+                // Limpiar la bandera después de usarla
+                delete window.evitarInicializacionWizard;
             } else {
                 console.log('[toggleVistaAsignacion]  WizardManager no disponible, continuando sin wizard');
             }
@@ -268,8 +286,6 @@ window.ColoresPorTalla = (function() {
             // Actualizar tablas de asignaciones
             UIRenderer.actualizarTablaAsignaciones();
             UIRenderer.actualizarResumenAsignaciones();
-            
-            console.log('[ColoresPorTalla]  Wizard state reseteado');
         }
     }
 
@@ -715,9 +731,14 @@ window.ColoresPorTalla = (function() {
             
             console.log('[wizardGuardarAsignacion]  FIN - Asignaciones guardadas y wizard reseteado');
             
-            // Actualizar tarjeta de género con los colores asignados
-            console.log('[wizardGuardarAsignacion]  Actualizando tarjeta de género con colores...');
-            actualizarTarjetaGeneroConColores(genero);
+            // Actualizar tarjeta de género con los colores asignados SOLO si existen las tarjetas
+            const containerTarjetas = document.getElementById('tarjetas-generos-container');
+            if (containerTarjetas) {
+                console.log('[wizardGuardarAsignacion]  Actualizando tarjeta de género con colores...');
+                actualizarTarjetaGeneroConColores(genero);
+            } else {
+                console.log('[wizardGuardarAsignacion]  No hay tarjetas de género en este modal (modal de creación)');
+            }
             
             // Disparar evento para actualizar tarjeta de prenda-card-readonly si existe
             setTimeout(() => {
@@ -735,8 +756,8 @@ window.ColoresPorTalla = (function() {
                     document.dispatchEvent(evento);
                 }
                 
-                // Cerrar vista de asignación
-                toggleVistaAsignacion();
+                // NOTA: No llamar a toggleVistaAsignacion aquí porque 
+                // ya se maneja en el event listener del botón guardar
             }, 500);
             
             return true;

@@ -93,11 +93,27 @@ window.PrendaEditorLoader = (function() {
     function loadScriptsParallel() {
         return Promise.all(scriptsParallel.map(src => {
             return new Promise((resolve) => {
+                // Verificar si el script ya está cargado
+                const scriptName = src.split('/').pop().split('?')[0]; // Obtener nombre sin parámetros
+                const existingScript = document.querySelector(`script[src*="${scriptName}"]`);
+                
+                if (existingScript) {
+                    console.log(`[PrendaEditorLoader] ⚡ Script ya cargado: ${scriptName}`);
+                    resolve();
+                    return;
+                }
+                
                 const script = document.createElement('script');
                 script.src = src;
                 script.type = 'text/javascript';
-                script.onload = () => resolve();
-                script.onerror = () => resolve(); // No fallar si un script paralelo falla
+                script.onload = () => {
+                    console.log(`[PrendaEditorLoader] ✅ Script cargado: ${scriptName}`);
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.warn(`[PrendaEditorLoader] ❌ Error cargando script: ${scriptName}`);
+                    resolve(); // No fallar si un script paralelo falla
+                };
                 document.head.appendChild(script);
             });
         }));
@@ -125,6 +141,16 @@ window.PrendaEditorLoader = (function() {
                 
                 const src = scriptsToLoad[loaded];
                 const filename = src.split('/').pop().split('?')[0];
+                
+                // Verificar si el script ya está cargado
+                const existingScript = document.querySelector(`script[src*="${filename}"]`);
+                if (existingScript) {
+                    console.log(`[PrendaEditorLoader] ⚡ Script ya cargado (secuencial): ${filename}`);
+                    loaded++;
+                    loadNext();
+                    return;
+                }
+                
                 const tiempoAntes = performance.now();
                 
                 const script = document.createElement('script');

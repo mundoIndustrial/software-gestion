@@ -9,99 +9,85 @@
  * @deprecated Usar prendas-wrappers-v2.js para nuevas implementaciones
  */
 
-// Cargar el nuevo sistema modular
-const script = document.createElement('script');
-script.src = '/js/componentes/prendas-module/prendas-wrappers-v2.js';
-script.async = true;
+// Evitar cargas múltiples del script
+if (window.prendaWrappersCargado) {
+    console.log('[prendas-wrappers] ⚠️ Script ya cargado, evitando duplicación');
+} else {
+    window.prendaWrappersCargado = true;
+    
+    // Cargar el nuevo sistema modular de forma síncrona para garantizar disponibilidad
+    const prendaScript = document.createElement('script');
+    prendaScript.src = '/js/componentes/prendas-module/prendas-wrappers-v2.js';
+    prendaScript.async = false; // Carga síncrona para garantizar disponibilidad
+    document.head.appendChild(prendaScript);
 
-script.onload = () => {
-    // Las funciones se exportarán cuando todos los componentes estén carguados
-    // Ver listener de prendasModuleLoaded abajo
+// Definir funciones básicas inmediatamente (sin setTimeout)
+window.abrirModalPrendaNueva = function() {
+    console.log('[prendas-wrappers] Abriendo modal de prenda nueva');
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Limpiar formulario al abrir
+        const form = modal.querySelector('#form-prenda-nueva');
+        if (form) {
+            form.reset();
+        }
+    } else {
+        console.warn('[prendas-wrappers] Modal no encontrado');
+    }
 };
 
-script.onerror = () => {
-    console.error(' Error cargando el sistema modular de Prendas Wrappers');
+window.cerrarModalPrendaNueva = function() {
+    console.log('[prendas-wrappers] Cerrando modal de prenda nueva');
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 };
 
-document.head.appendChild(script);
-
-// Escuchar evento de carga completa del módulo (después de que todos los componentes se carguen)
-window.addEventListener('prendasModuleLoaded', function() {
-    console.log('[prendas-wrappers]  prendasModuleLoaded event fired - exportando funciones...');
-    
-    // Exportar funciones al window después de que todos los componentes estén cargados
-    if (window.PrendasModule && window.PrendasModule.exportFunctions) {
-        const exported = window.PrendasModule.exportFunctions();
-        console.log(' Prendas Module exportado:', exported);
-        
-        // Hacer disponibles en el window SOLO si son funciones reales
-        if (typeof exported.abrirModalPrendaNueva === 'function') {
-            window.abrirModalPrendaNueva = exported.abrirModalPrendaNueva;
-            console.log(' abrirModalPrendaNueva asignada');
-        }
-        if (typeof exported.agregarPrendaNueva === 'function') {
-            window.agregarPrendaNueva = exported.agregarPrendaNueva;
-            console.log(' agregarPrendaNueva asignada');
-        }
-        if (typeof exported.cargarItemEnModal === 'function') {
-            window.cargarItemEnModal = exported.cargarItemEnModal;
-            console.log(' cargarItemEnModal asignada');
-        }
-        if (typeof exported.manejarImagenesPrenda === 'function') {
-            window.manejarImagenesPrenda = exported.manejarImagenesPrenda;
-            console.log(' manejarImagenesPrenda asignada');
-        }
-        if (typeof exported.cerrarModalPrendaNueva === 'function') {
-            window.cerrarModalPrendaNueva = exported.cerrarModalPrendaNueva;
-            console.log(' cerrarModalPrendaNueva asignada');
+window.manejarImagenesPrenda = function(input) {
+    if (input.files && input.files.length > 0) {
+        console.log('📸 Archivo recibido:', input.files[0].name);
+        // Lógica básica de manejo de imágenes
+        const preview = document.getElementById('nueva-prenda-foto-preview');
+        if (preview) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(input.files[0]);
         }
     }
+};
+
+// Escuchar cuando el módulo completo cargue para reemplazar con funciones avanzadas
+document.addEventListener('prendasModuleLoaded', (event) => {
+    const exported = event.detail;
+    console.log('[prendas-wrappers] 📦 Módulo prendas cargado, actualizando funciones globales...');
+    
+    // Reemplazar funciones básicas con las avanzadas del módulo
+    if (typeof exported.cerrarModalPrendaNueva === 'function') {
+        window.cerrarModalPrendaNueva = exported.cerrarModalPrendaNueva;
+        console.log('  cerrarModalPrendaNueva actualizada con función avanzada');
+    }
+    
+    if (typeof exported.manejarImagenesPrenda === 'function') {
+        window.manejarImagenesPrenda = exported.manejarImagenesPrenda;
+        console.log('  manejarImagenesPrenda actualizada con función avanzada');
+    }
+    
+    if (typeof exported.agregarPrendaNueva === 'function') {
+        window.agregarPrendaNueva = exported.agregarPrendaNueva;
+        console.log('  agregarPrendaNueva asignada');
+    }
+    
+    if (typeof exported.cargarItemEnModal === 'function') {
+        window.cargarItemEnModal = exported.cargarItemEnModal;
+        console.log('  cargarItemEnModal asignada');
+    }
+    
+    console.log('[prendas-wrappers] ✅ Funciones globales actualizadas correctamente');
 });
 
-// Fallback para prendasWrappersLoaded (para compatibilidad)
-window.addEventListener('prendasWrappersLoaded', function() {
-    console.log('[prendas-wrappers]  prendasWrappersLoaded event fired');
-    
-    // Crear fallbacks solo si las funciones no están disponibles como funciones reales
-    if (typeof window.abrirModalPrendaNueva !== 'function') {
-        console.log('[prendas-wrappers]  Usando fallback para abrirModalPrendaNueva');
-        window.abrirModalPrendaNueva = function() {
-            const modal = document.getElementById('modal-agregar-prenda-nueva');
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-        };
-    }
-    
-    if (typeof window.manejarImagenesPrenda !== 'function') {
-        console.log('[prendas-wrappers]  Usando fallback para manejarImagenesPrenda');
-        window.manejarImagenesPrenda = function(input) {
-            if (input.files && input.files.length > 0) {
-                console.log('📸 Archivo recibido:', input.files[0].name);
-            }
-        };
-    }
-});
-
-// Fallbacks de emergencia (si el módulo no se carga en 5 segundos)
-setTimeout(() => {
-    if (typeof window.abrirModalPrendaNueva !== 'function') {
-        console.warn(' Módulo no cargado, usando fallback de emergencia para abrirModalPrendaNueva');
-        window.abrirModalPrendaNueva = function() {
-            const modal = document.getElementById('modal-agregar-prenda-nueva');
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-        };
-    }
-
-    if (typeof window.manejarImagenesPrenda !== 'function') {
-        console.warn(' Módulo no cargado, usando fallback de emergencia para manejarImagenesPrenda');
-        window.manejarImagenesPrenda = function(input) {
-            if (input.files && input.files.length > 0) {
-                console.log('📸 Archivo recibido:', input.files[0].name);
-            }
-        };
-    }
-}, 5000);
+} // Cierre del bloque else de prendaWrappersCargado
 

@@ -206,7 +206,7 @@ class PrendaEditor {
         if (window.prendaEditorLegacy) {
             window.prendaEditorLegacy.mostrarNotificacion(mensaje, tipo);
         } else {
-            console.log(`[PrendaEditor] ${tipo}: ${mensaje}`);
+            // console.log(`[PrendaEditor] ${tipo}: ${mensaje}`);
         }
     }
 
@@ -806,4 +806,4 @@ window.PrendaEditor = PrendaEditor;
 
 // NOTA: Este archivo depende de prenda-editor-legacy.js para métodos legados
 // Asegurar que se cargue primero el archivo legacy
-console.log('[PrendaEditor]  PrendaEditor cargado (requiere prenda-editor-legacy.js)');
+// console.log('[PrendaEditor]  PrendaEditor cargado (requiere prenda-editor-legacy.js)');

@@ -1639,7 +1639,7 @@ function configurarListenersModalPrenda() {
         return;
     }
     
-    console.log('🔧 [Modal] Configurando listeners...');
+    // console.log('🔧 [Modal] Configurando listeners...');
     
     // LISTENER DEL BOTÓN CERRAR
     btnCerrar.onclick = function(e) {
@@ -1648,8 +1648,8 @@ function configurarListenersModalPrenda() {
             e.preventDefault();
             e.stopPropagation();
         }
-        console.log('🔘 [Modal] Botón cerrar clickeado → Ejecutando cerrarModalPrendaNueva()');
-        console.log(' [Debug] Ejecutando cerrarModalPrendaNueva() ahora...');
+        // console.log('🔘 [Modal] Botón cerrar clickeado → Ejecutando cerrarModalPrendaNueva()');
+        // console.log(' [Debug] Ejecutando cerrarModalPrendaNueva() ahora...');
         cerrarModalPrendaNueva();
         const clickDuration = performance.now() - clickStart;
         console.log(` [Debug] cerrarModalPrendaNueva() tardó ${clickDuration.toFixed(2)}ms`);
@@ -1660,7 +1660,7 @@ function configurarListenersModalPrenda() {
     if (modalOverlay) {
         modalOverlay.addEventListener('click', function(e) {
             if (e.target === modalOverlay) {
-                console.log('📍 [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
+                // console.log('📍 [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
                 cerrarModalPrendaNueva();
             }
         });
@@ -1672,15 +1672,15 @@ function configurarListenersModalPrenda() {
         if (e.key === 'Escape') {
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             if (modal && modal.style.display !== 'none') {
-                console.log('⌨️ [Modal] ESC presionado → Ejecutando cerrarModalPrendaNueva()');
+                // console.log('⌨️ [Modal] ESC presionado → Ejecutando cerrarModalPrendaNueva()');
                 cerrarModalPrendaNueva();
             }
         }
     };
     document.addEventListener('keydown', window._escListenerModal);
-    console.log('✓ Listener de ESC configurado');
+    // console.log('✓ Listener de ESC configurado');
     
-    console.log(' [Modal] Todos los listeners configurados exitosamente');
+    // console.log(' [Modal] Todos los listeners configurados exitosamente');
 }
 
 // Ejecutar cuando el documento está listo
@@ -1735,5 +1735,5 @@ window.diagnosticarDelayModalCierre = function() {
     console.log('===========================================================\n');
 };
 
-console.log('💡 Tip: Ejecuta "diagnosticarDelayModalCierre()" en la consola para ver recomendaciones');
+// console.log('💡 Tip: Ejecuta "diagnosticarDelayModalCierre()" en la consola para ver recomendaciones');
 

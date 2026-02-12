@@ -132,5 +132,5 @@
 
 // Ejecutar automáticamente al cargar la consola
 if (window.PrendaEditorPreloader) {
-    console.log('%c💡 TIP: Ejecuta window.showPrendaPreloaderMonitor() para ver el estado', 'color: #f39c12; font-style: italic;');
+    // console.log('%c💡 TIP: Ejecuta window.showPrendaPreloaderMonitor() para ver el estado', 'color: #f39c12; font-style: italic;');
 }

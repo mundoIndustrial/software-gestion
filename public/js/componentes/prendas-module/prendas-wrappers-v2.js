@@ -35,11 +35,6 @@ if (typeof window.components === 'undefined') {
             description: 'Manejo de imágenes de prendas y telas'
         },
         {
-            name: 'drag-drop-handlers',
-            file: '/js/componentes/prendas-module/drag-drop-handlers.js',
-            description: 'Funcionalidades de drag & drop'
-        },
-        {
             name: 'modal-wrappers',
             file: '/js/componentes/prendas-module/modal-wrappers.js',
             description: 'Gestión de modales de prendas'
@@ -77,6 +72,23 @@ async function loadAllComponents() {
         
         // Marcar como completamente cargado
         window.PrendasModule.loaded = true;
+        
+        // Inicializar listener global de paste para Ctrl+V con reintentos
+        let retries = 0;
+        const initPasteListener = () => {
+            if (typeof window.setupGlobalPasteListener === 'function') {
+                window.setupGlobalPasteListener();
+                // console.log('[prendas-wrappers-v2] ✅ Listener global de paste inicializado');
+            } else if (retries < 5) {
+                retries++;
+                // console.log('[prendas-wrappers-v2] ⏳ Esperando setupGlobalPasteListener... intento', retries);
+                setTimeout(initPasteListener, 500);
+            } else {
+                console.warn('[prendas-wrappers-v2] ⚠️ setupGlobalPasteListener no disponible después de 5 reintentos');
+            }
+        };
+        
+        initPasteListener();
         
         // Disparar evento de carga completa
         if (typeof window.dispatchEvent === 'function') {

@@ -19,7 +19,6 @@ window.PrendasModule = {
     components: {
         'ui-helpers': false,
         'image-management': false,
-        'drag-drop-handlers': false,
         'modal-wrappers': false
     }
 };
@@ -35,11 +34,6 @@ const components = [
         name: 'image-management',
         path: '/js/componentes/prendas-module/image-management.js',
         description: 'Manejo de imágenes de prendas y telas'
-    },
-    {
-        name: 'drag-drop-handlers',
-        path: '/js/componentes/prendas-module/drag-drop-handlers.js',
-        description: 'Funcionalidades de drag & drop'
     },
     {
         name: 'modal-wrappers',
@@ -129,7 +123,6 @@ console.log('  📁 prendas-module/');
 console.log('    📄 index.js (este archivo)');
 console.log('    📄 ui-helpers.js');
 console.log('    📄 image-management.js');
-console.log('    📄 drag-drop-handlers.js');
 console.log('    📄 modal-wrappers.js');
 console.log('    📄 prendas-wrappers-v2.js');
 console.log('    📄 README.md');

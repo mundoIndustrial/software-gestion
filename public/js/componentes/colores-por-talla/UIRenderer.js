@@ -43,7 +43,7 @@ window.UIRenderer = (function() {
             
             contenedorColores.appendChild(tablaDiv);
             
-            console.log('[UIRenderer] Interfaz profesional creada para tallas:', tallas);
+            // console.log('[UIRenderer] Interfaz profesional creada para tallas:', tallas);
         },
 
         /**
@@ -378,7 +378,7 @@ window.UIRenderer = (function() {
             });
             
             if (contador) contador.textContent = totalAsignaciones;
-            console.log('[UIRenderer] Tabla actualizada con', totalAsignaciones, 'asignaciones');
+            // console.log('[UIRenderer] Tabla actualizada con', totalAsignaciones, 'asignaciones');
             
             // Configurar event delegation para los botones de eliminar
             this.configurarEventosEliminarAsignacion();
@@ -388,17 +388,17 @@ window.UIRenderer = (function() {
          * Actualizar el resumen de asignaciones
          */
         actualizarResumenAsignaciones() {
-            console.log('[UIRenderer.actualizarResumenAsignaciones]  Iniciando actualización de resumen...');
+            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Iniciando actualización de resumen...');
             
             const tbodyResumen = document.getElementById('tabla-resumen-asignaciones-cuerpo');
             const msgResumenVacio = document.getElementById('msg-resumen-vacio');
             const totalResumen = document.getElementById('total-asignaciones-resumen');
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones] 📍 Elementos del DOM:', {
-                tbodyResumen: !!tbodyResumen,
-                msgResumenVacio: !!msgResumenVacio,
-                totalResumen: !!totalResumen
-            });
+            // console.log('[UIRenderer.actualizarResumenAsignaciones] 📍 Elementos del DOM:', {
+            //     tbodyResumen: !!tbodyResumen,
+            //     msgResumenVacio: !!msgResumenVacio,
+            //     totalResumen: !!totalResumen
+            // });
             
             if (!tbodyResumen) {
                 console.error('[UIRenderer.actualizarResumenAsignaciones]  No se encontró tabla-resumen-asignaciones-cuerpo');
@@ -407,34 +407,34 @@ window.UIRenderer = (function() {
             
             // Limpiar tabla
             tbodyResumen.innerHTML = '';
-            console.log('[UIRenderer.actualizarResumenAsignaciones] 🧹 Tabla limpiada');
+            // console.log('[UIRenderer.actualizarResumenAsignaciones] 🧹 Tabla limpiada');
             
             const asignaciones = StateManager.getAsignaciones();
             const asignacionesArray = Object.values(asignaciones);
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones]  Asignaciones en StateManager:', {
-                cantidad: asignacionesArray.length,
-                datos: asignacionesArray
-            });
+            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Asignaciones en StateManager:', {
+            //     cantidad: asignacionesArray.length,
+            //     datos: asignacionesArray
+            // });
             
             if (asignacionesArray.length === 0) {
-                console.log('[UIRenderer.actualizarResumenAsignaciones]  Sin asignaciones - mostrando mensaje vacío');
+                // console.log('[UIRenderer.actualizarResumenAsignaciones]  Sin asignaciones - mostrando mensaje vacío');
                 if (msgResumenVacio) msgResumenVacio.style.display = 'block';
                 if (totalResumen) totalResumen.textContent = '0';
                 return;
             }
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones]  Hay asignaciones - ocultando mensaje vacío');
+            // console.log('[UIRenderer.actualizarResumenAsignaciones]  Hay asignaciones - ocultando mensaje vacío');
             if (msgResumenVacio) msgResumenVacio.style.display = 'none';
             
             let totalUnidades = 0;
             let filaCount = 0;
             
             asignacionesArray.forEach((asignacion, asigIndex) => {
-                console.log(`[UIRenderer.actualizarResumenAsignaciones]  Procesando asignación #${asigIndex}:`, asignacion);
+                // console.log(`[UIRenderer.actualizarResumenAsignaciones]  Procesando asignación #${asigIndex}:`, asignacion);
                 
                 if (!asignacion.colores || asignacion.colores.length === 0) {
-                    console.log(`[UIRenderer.actualizarResumenAsignaciones] ⏭️ Sin colores en asignación #${asigIndex}, saltando`);
+                    // console.log(`[UIRenderer.actualizarResumenAsignaciones] ⏭️ Sin colores en asignación #${asigIndex}, saltando`);
                     return;
                 }
                 
@@ -443,7 +443,7 @@ window.UIRenderer = (function() {
                     totalUnidades += cantidad;
                     filaCount++;
                     
-                    console.log(`[UIRenderer.actualizarResumenAsignaciones] 📝 Fila #${filaCount}: ${asignacion.tela} | ${asignacion.genero} | ${asignacion.talla} | ${color.nombre} | ${cantidad}`);
+                    // console.log(`[UIRenderer.actualizarResumenAsignaciones] 📝 Fila #${filaCount}: ${asignacion.tela} | ${asignacion.genero} | ${asignacion.talla} | ${color.nombre} | ${cantidad}`);
                     
                     const tr = document.createElement('tr');
                     Object.assign(tr.style, { borderBottom: '1px solid #e5e7eb;' });
@@ -479,16 +479,16 @@ window.UIRenderer = (function() {
                     `;
                     
                     tbodyResumen.appendChild(tr);
-                    console.log(`[UIRenderer.actualizarResumenAsignaciones]  Fila #${filaCount} añadida a la tabla`);
+                    // console.log(`[UIRenderer.actualizarResumenAsignaciones]  Fila #${filaCount} añadida a la tabla`);
                 });
             });
             
             if (totalResumen) {
                 totalResumen.textContent = totalUnidades;
-                console.log('[UIRenderer.actualizarResumenAsignaciones] 🎯 Total actualizado a:', totalUnidades);
+                // console.log('[UIRenderer.actualizarResumenAsignaciones] 🎯 Total actualizado a:', totalUnidades);
             }
             
-            console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
+            // console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
             
             // Configurar event delegation para los botones de eliminar
             this.configurarEventosEliminarAsignacion();
