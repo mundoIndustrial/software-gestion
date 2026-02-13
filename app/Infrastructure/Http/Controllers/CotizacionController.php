@@ -187,9 +187,6 @@ final class CotizacionController extends Controller
 
             $data = $cotizacion->toArray();
             $data['prendas'] = $cotizacion->prendas
-                ->filter(function ($prenda) {
-                    return $prenda->logoCotizacionesTecnicas->isEmpty();
-                })
                 ->values()
                 ->toArray();
 

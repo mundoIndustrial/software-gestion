@@ -142,18 +142,6 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
                     });
                 }
 
-                // Imagen principal prenda (paso2) para card (formato esperado por render: {ruta, tipo:'paso2'})
-                // IMPORTANTE: marcar origen para poder editar/eliminar correctamente en modal Paso 3.
-                const fotosPrenda = prendaCot.fotos || [];
-                const imagenesPrenda = Array.isArray(fotosPrenda)
-                    ? fotosPrenda.map(f => ({
-                        ruta: normalizarUrl(f),
-                        tipo: 'paso2',
-                        origen: 'prenda',
-                        foto_id: (typeof f === 'object' && f && f.id) ? f.id : null,
-                    })).filter(i => i.ruta)
-                    : [];
-
                 // Imágenes de logo guardadas en técnica+prenda
                 // IMPORTANTE: marcar origen para poder eliminarlas desde el modal y persistir el borrado.
                 const fotosLogo = tp.fotos || [];
@@ -183,7 +171,7 @@ function __hidratarPaso3DesdeBorrador(cotizacion) {
                 tecnicasMap.get(key).prendas.push({
                     nombre_prenda: prendaCot.nombre_producto || prendaCot.nombre || '',
                     ubicaciones: ubicacionesArr,
-                    imagenes: [...imagenesPrenda, ...imagenesLogo],
+                    imagenes: [...imagenesLogo],
                     talla_cantidad: tp.talla_cantidad || [],
                     observaciones: tp.observaciones || ''
                 });
@@ -291,12 +279,7 @@ function cargarBorrador(cotizacion) {
         window.especificacionesActuales = especificacionesDecodificadas;
 
         
-        // Solo continuar si hay especificaciones decodificadas
-        if (Object.keys(especificacionesDecodificadas).length === 0) {
-
-            return;
-        }
-        
+        // No cortar la hidratación completa del borrador: seguir con prendas (Paso 2) y demás pasos.
         // Mapeo de claves JSON a IDs de tbody (algunas no coinciden)
         const tbodyMapping = {
             'forma_pago': 'tbody_pago',
@@ -400,13 +383,33 @@ function cargarBorrador(cotizacion) {
     
     // Cargar productos/prendas
     // Soportar ambos nombres: productos (legacy) y prendas (nuevo)
-    const prendasRaw = cotizacion.prendas || cotizacion.productos || [];
+    let prendasRaw = cotizacion.prendas || cotizacion.productos || [];
+
+    // Laravel a veces serializa Collections como: {"Illuminate\\Database\\Eloquent\\Collection": [...]}.
+    // Normalizar para que el Paso 2 siempre reciba un array.
+    try {
+        if (prendasRaw && typeof prendasRaw === 'object' && !Array.isArray(prendasRaw)) {
+            const k = 'Illuminate\\Database\\Eloquent\\Collection';
+            if (Array.isArray(prendasRaw[k])) {
+                prendasRaw = prendasRaw[k];
+            }
+        }
+    } catch (_) {
+        // no-op
+    }
 
     const prendasFiltradas = (Array.isArray(prendasRaw) ? prendasRaw : []).filter((prenda) => {
         if (!prenda || typeof prenda !== 'object') return false;
 
-        const tecnicasRel = prenda.logoCotizacionesTecnicas || prenda.logo_cotizaciones_tecnicas || [];
-        if (Array.isArray(tecnicasRel) && tecnicasRel.length > 0) return false;
+        // Si existe una prenda mínima creada por Paso 3 (prenda_bodega=true) que quedó en la colección,
+        // NO debe renderizarse en Paso 2.
+        const esPrendaBodega = (prenda.prenda_bodega === true || prenda.prenda_bodega === 1 || prenda.prenda_bodega === '1');
+        const tallas = Array.isArray(prenda.tallas) ? prenda.tallas.length : 0;
+        const variantes = Array.isArray(prenda.variantes) ? prenda.variantes.length : 0;
+        const fotos = Array.isArray(prenda.fotos) ? prenda.fotos.length : 0;
+        const telaFotos = Array.isArray(prenda.tela_fotos) ? prenda.tela_fotos.length : 0;
+        const esPrendaMinimaPaso3 = esPrendaBodega && tallas === 0 && variantes === 0 && fotos === 0 && telaFotos === 0;
+        if (esPrendaMinimaPaso3) return false;
 
         // Excluir objetos que pertenecen al Paso 3 (logo/técnicas) y que a veces vienen mezclados
         // (ej: {tipo_logo, prenda_cot, talla_cantidad, ubicaciones, ...})

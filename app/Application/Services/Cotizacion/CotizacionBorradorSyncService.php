@@ -13,8 +13,15 @@ final class CotizacionBorradorSyncService
     {
         // IMPORTANTE: no sincronizar ni eliminar prendas que están asociadas a técnicas/logo (Paso 3).
         // Si se eliminan estas prendas se provoca borrado en cascada (FK) de logo_cotizacion_tecnica_prendas.
+        // NOTA: una prenda del Paso 2 puede quedar asociada a técnicas/logo cuando se reutiliza en el Paso 3.
+        // Si filtramos por whereDoesntHave('logoCotizacionesTecnicas') aquí, esa prenda desaparece del orden
+        // y al sincronizar por índice terminaríamos CREANDO una nueva PrendaCot (duplicado).
+        // Para mantener el mapeo estable del Paso 2, identificamos prendas del Paso 2 por prenda_bodega=false.
         $prendasExistentes = PrendaCot::where('cotizacion_id', $cotizacion->id)
-            ->whereDoesntHave('logoCotizacionesTecnicas')
+            ->where(function ($q) {
+                $q->where('prenda_bodega', false)
+                    ->orWhereNull('prenda_bodega');
+            })
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
@@ -76,6 +83,10 @@ final class CotizacionBorradorSyncService
 
         $prendasAEliminar = PrendaCot::where('cotizacion_id', $cotizacion->id)
             ->whereDoesntHave('logoCotizacionesTecnicas')
+            ->where(function ($q) {
+                $q->where('prenda_bodega', false)
+                    ->orWhereNull('prenda_bodega');
+            })
             ->when(!empty($idsConservar), fn($q) => $q->whereNotIn('id', $idsConservar))
             ->get();
 

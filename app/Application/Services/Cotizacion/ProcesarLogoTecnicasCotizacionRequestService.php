@@ -163,14 +163,6 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                 return;
             }
 
-            if ($esUpdate && !$tecnicasAgregadasPresent && empty($dto->imagenesPaso3Archivos)) {
-                return;
-            }
-
-            if ($esUpdate && empty($logoTecnicasAgregadas) && empty($dto->imagenesPaso3Archivos)) {
-                return;
-            }
-
             $tecnicasAgregadas = $logoTecnicasAgregadas;
 
             $normalizarArrayRecursivo = function ($v) use (&$normalizarArrayRecursivo) {
@@ -232,6 +224,20 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                 }
             }
 
+            // IMPORTANTE: al reutilizar una prenda del Paso 2 en el Paso 3, esa prenda YA tendrá técnicas/logo.
+            // Por lo tanto NO se puede filtrar por whereDoesntHave('logoCotizacionesTecnicas'), porque eso haría
+            // que no se encuentre por prenda_paso2_index y termine creándose una nueva PrendaCot.
+            // La forma correcta de identificar las prendas creadas en Paso 2 es prenda_bodega = false.
+            $prendasPaso2Ordenadas = PrendaCot::where('cotizacion_id', $cotizacionId)
+                ->where(function ($q) {
+                    $q->where('prenda_bodega', false)
+                        ->orWhereNull('prenda_bodega');
+                })
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->get()
+                ->values();
+
             $prendasCotPorNombre = [];
 
             if (!empty($tecnicasAgregadas)) {
@@ -253,9 +259,18 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                             continue;
                         }
 
+                        $prendaPaso2Index = $prendaData['prenda_paso2_index'] ?? null;
+                        if (is_string($prendaPaso2Index)) {
+                            $prendaPaso2Index = is_numeric($prendaPaso2Index) ? (int) $prendaPaso2Index : null;
+                        }
+                        if (!is_int($prendaPaso2Index)) {
+                            $prendaPaso2Index = null;
+                        }
+
                         $prendaKey = md5(
                             json_encode([
                                 'nombre' => $nombrePrendaCompleto,
+                                'prenda_paso2_index' => $prendaPaso2Index,
                                 'ubicaciones' => $prendaData['ubicaciones'] ?? [],
                                 'talla_cantidad' => $prendaData['talla_cantidad'] ?? [],
                             ])
@@ -267,32 +282,42 @@ final class ProcesarLogoTecnicasCotizacionRequestService
 
                         $prendasKeys[] = $prendaKey;
 
-                        $nombreKey = trim(mb_strtoupper($nombrePrendaCompleto));
-                        $nombreProductoNormalizado = $nombreKey;
-
-                        if (!isset($prendasCotPorNombre[$nombreKey])) {
-                            $prendaCotExistentePaso3 = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
-                                ->whereHas('prendaCot', function ($q) use ($nombreProductoNormalizado) {
-                                    $q->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombreProductoNormalizado)]);
-                                })
-                                ->orderByDesc('id')
-                                ->first();
-
-                            if ($prendaCotExistentePaso3 && $prendaCotExistentePaso3->prendaCot) {
-                                $prendasCotPorNombre[$nombreKey] = $prendaCotExistentePaso3->prendaCot;
-                            } else {
-                                $prendasCotPorNombre[$nombreKey] = PrendaCot::create([
-                                    'cotizacion_id' => $cotizacionId,
-                                    'nombre_producto' => $nombreProductoNormalizado,
-                                    'descripcion' => $prendaData['descripcion'] ?? ($prendaData['observaciones'] ?? ''),
-                                    'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
-                                    'cantidad' => $prendaData['cantidad'] ?? 1,
-                                    'prenda_bodega' => true,
-                                ]);
-                            }
+                        $prendaCot = null;
+                        if ($prendaPaso2Index !== null) {
+                            $prendaCot = $prendasPaso2Ordenadas->get($prendaPaso2Index);
                         }
 
-                        $prendaCot = $prendasCotPorNombre[$nombreKey];
+                        if ($prendaCot) {
+                            $nombreKey = 'paso2|' . ((string) $prendaCot->id);
+                            $prendasCotPorNombre[$nombreKey] = $prendaCot;
+                        } else {
+                            $nombreKey = trim(mb_strtoupper($nombrePrendaCompleto));
+                            $nombreProductoNormalizado = $nombreKey;
+
+                            if (!isset($prendasCotPorNombre[$nombreKey])) {
+                                $prendaCotExistentePaso3 = LogoCotizacionTecnicaPrenda::where('logo_cotizacion_id', $logoCotizacion->id)
+                                    ->whereHas('prendaCot', function ($q) use ($nombreProductoNormalizado) {
+                                        $q->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombreProductoNormalizado)]);
+                                    })
+                                    ->orderByDesc('id')
+                                    ->first();
+
+                                if ($prendaCotExistentePaso3 && $prendaCotExistentePaso3->prendaCot) {
+                                    $prendasCotPorNombre[$nombreKey] = $prendaCotExistentePaso3->prendaCot;
+                                } else {
+                                    $prendasCotPorNombre[$nombreKey] = PrendaCot::create([
+                                        'cotizacion_id' => $cotizacionId,
+                                        'nombre_producto' => $nombreProductoNormalizado,
+                                        'descripcion' => $prendaData['descripcion'] ?? ($prendaData['observaciones'] ?? ''),
+                                        'texto_personalizado_tallas' => $prendaData['texto_personalizado_tallas'] ?? null,
+                                        'cantidad' => $prendaData['cantidad'] ?? 1,
+                                        'prenda_bodega' => true,
+                                    ]);
+                                }
+                            }
+
+                            $prendaCot = $prendasCotPorNombre[$nombreKey];
+                        }
 
                         $ubicacionesJson = $jsonEstable($prendaData['ubicaciones'] ?? []);
                         $tallaCantidadJson = $jsonEstable($prendaData['talla_cantidad'] ?? []);
@@ -568,6 +593,24 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                             continue;
                         }
 
+                        // Si la prenda viene del Paso 2, NO se debe eliminar de prendas_cot.
+                        // Solo se eliminaron sus técnicas/fotos del Paso 3 (arriba) y eso es suficiente.
+                        // Heurística:
+                        // - Paso 2 normalmente crea prendas con relaciones (tallas/telas/variantes/fotos) y prenda_bodega != true.
+                        // - Paso 3 (logo) crea una prenda mínima (prenda_bodega=true) sin esas relaciones.
+                        if (!$prenda->prenda_bodega) {
+                            continue;
+                        }
+
+                        $tieneRelacionesDePaso2 = $prenda->tallas()->exists()
+                            || $prenda->variantes()->exists()
+                            || $prenda->telas()->exists()
+                            || $prenda->fotos()->exists();
+
+                        if ($tieneRelacionesDePaso2) {
+                            continue;
+                        }
+
                         // Seguridad: solo borrar si ya no tiene técnicas asociadas
                         if ($prenda->logoCotizacionesTecnicas()->exists()) {
                             continue;
@@ -600,6 +643,39 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                         }
                     }
                 }
+
+                // Purga adicional:
+                // si quedó una prenda creada por Paso 3 (mínima) sin ninguna técnica asociada,
+                // debe eliminarse incluso si no apareció en $prendaCotIdsAntes (ej: prenda huérfana por flujos previos).
+                $prendaCotIdsEsperadasKeys = array_keys($prendaCotIdsEsperadas);
+                $prendasCandidatasP3 = PrendaCot::where('cotizacion_id', $cotizacionId)
+                    ->where('prenda_bodega', true)
+                    ->whereNotIn('id', $prendaCotIdsEsperadasKeys)
+                    ->get();
+
+                foreach ($prendasCandidatasP3 as $prendaCandidata) {
+                    try {
+                        if ($prendaCandidata->logoCotizacionesTecnicas()->exists()) {
+                            continue;
+                        }
+
+                        $tieneRelacionesDePaso2 = $prendaCandidata->tallas()->exists()
+                            || $prendaCandidata->variantes()->exists()
+                            || $prendaCandidata->telas()->exists()
+                            || $prendaCandidata->fotos()->exists();
+
+                        if ($tieneRelacionesDePaso2) {
+                            continue;
+                        }
+
+                        $prendaCandidata->delete();
+                    } catch (\Throwable $e) {
+                        Log::warning('Sync técnica: error purgando prenda_cot huérfana de Paso 3', [
+                            'prenda_cot_id' => $prendaCandidata->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
             }
 
             $imagenesP3Archivos = [];
@@ -626,17 +702,31 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                     }
 
                     $prendaData = $tecnicasAgregadas[$tecnicaIndex]['prendas'][$prendaIndex];
-                    $nombrePrendaBase = explode(' - ', $prendaData['nombre_prenda'])[0];
 
-                    $nombreKeyImg = trim(mb_strtoupper($nombrePrendaBase));
+                    $nombrePrendaCompleto = $prendaData['nombre_prenda'] ?? '';
+                    $nombreKeyImg = trim(mb_strtoupper($nombrePrendaCompleto));
+
+                    $prendaPaso2Index = $prendaData['prenda_paso2_index'] ?? null;
+                    if (is_string($prendaPaso2Index)) {
+                        $prendaPaso2Index = is_numeric($prendaPaso2Index) ? (int) $prendaPaso2Index : null;
+                    }
+                    if (!is_int($prendaPaso2Index)) {
+                        $prendaPaso2Index = null;
+                    }
+
                     $prendaCot = null;
 
-                    if (isset($prendasCotPorNombre[$nombreKeyImg])) {
+                    if ($prendaPaso2Index !== null) {
+                        $prendaCot = $prendasPaso2Ordenadas->get($prendaPaso2Index);
+                    }
+
+                    if (!$prendaCot && isset($prendasCotPorNombre[$nombreKeyImg])) {
                         $prendaCot = $prendasCotPorNombre[$nombreKeyImg];
-                    } else {
+                    }
+
+                    if (!$prendaCot && $nombrePrendaCompleto !== '') {
                         $prendaCot = PrendaCot::where('cotizacion_id', $cotizacionId)
-                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaBase)])
-                            ->where('prenda_bodega', true)
+                            ->whereRaw('LOWER(nombre_producto) = ?', [strtolower($nombrePrendaCompleto)])
                             ->orderByDesc('id')
                             ->first();
                     }

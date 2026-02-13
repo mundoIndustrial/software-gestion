@@ -37,11 +37,67 @@ function obtenerPrendasDelPaso2() {
                 return; // Saltar si no hay nombre
             }
 
-            // Obtener género
+            // Obtener género (del UI actual del Paso 2)
             let genero = '';
-            const selectGenero = card.querySelector('.talla-genero-select');
-            if (selectGenero) {
-                genero = selectGenero.value.trim();
+            const generosSeleccionados = Array.from(card.querySelectorAll('.talla-genero-checkbox:checked'))
+                .map(cb => (cb.value || '').trim())
+                .filter(v => v);
+            if (generosSeleccionados.length > 0) {
+                const etiquetas = generosSeleccionados.map(v => {
+                    const vv = v.toLowerCase();
+                    if (vv === 'dama') return 'Dama';
+                    if (vv === 'caballero') return 'Caballero';
+                    if (vv === 'ambos') return 'Ambos';
+                    return v;
+                });
+                genero = etiquetas.join('/');
+            }
+
+            // Si no hay género marcado por checkboxes, intentar inferirlo desde el flujo avanzado
+            // "Asignar colores a tallas" (AdvancedSizeVariationManager => window.advancedVariationsByProductoId).
+            if (!genero) {
+                try {
+                    const productoId = card?.dataset?.productoId;
+                    const store = window.advancedVariationsByProductoId || {};
+                    const vars = productoId ? (store[String(productoId)] || []) : [];
+                    if (Array.isArray(vars) && vars.length > 0) {
+                        const set = new Set();
+                        vars.forEach(v => {
+                            if (!v || v.assignmentType !== 'Género') return;
+                            const gs = Array.isArray(v.genders) ? v.genders : [];
+                            gs.forEach(g => {
+                                const gg = String(g || '').trim().toUpperCase();
+                                if (gg === 'DAMA') set.add('Dama');
+                                if (gg === 'CABALLERO') set.add('Caballero');
+                            });
+                        });
+                        if (set.size > 0) {
+                            const arr = Array.from(set);
+                            // Orden consistente
+                            arr.sort((a, b) => {
+                                const w = (x) => (x === 'Caballero' ? 1 : (x === 'Dama' ? 2 : 3));
+                                return w(a) - w(b);
+                            });
+                            genero = arr.join('/');
+                        }
+                    }
+                } catch (e) {
+                    // no-op
+                }
+            }
+
+            // Obtener color de tela (tabla Color/Tela/Referencia) - tomamos la primera fila como referencia
+            let colorTela = '';
+            const inputTela = card.querySelector('table tbody tr .tela-input') || card.querySelector('.tela-input');
+            const filaTela = inputTela ? inputTela.closest('tr') : null;
+            const inputColorTela = filaTela ? (filaTela.querySelector('.color-input') || filaTela.querySelector('input[name*="[color_id]"]')) : null;
+            if (inputColorTela && inputColorTela.value) {
+                colorTela = String(inputColorTela.value).trim();
+            } else {
+                const inputColorFallback = card.querySelector('table tbody tr .color-input') || card.querySelector('.color-input');
+                if (inputColorFallback && inputColorFallback.value) {
+                    colorTela = String(inputColorFallback.value).trim();
+                }
             }
             
             // Obtener imágenes de la prenda
@@ -58,8 +114,10 @@ function obtenerPrendasDelPaso2() {
             console.log(`  - Imágenes finales: ${imagenes.length}`);
 
             prendas.push({
+                index: idx,
                 nombre: nombre,
                 genero: genero,
+                color_tela: colorTela,
                 imagenes: imagenes,
             });
         });
@@ -68,6 +126,17 @@ function obtenerPrendasDelPaso2() {
     }
     
     return prendas;
+}
+
+function construirLabelPrendaPaso2(prenda) {
+    if (!prenda) return '';
+    const nombre = (prenda.nombre || '').trim().toUpperCase();
+    const genero = (prenda.genero || '').trim();
+    const colorTela = (prenda.color_tela || '').trim().toUpperCase();
+    const partes = [nombre];
+    if (genero) partes.push(genero);
+    if (colorTela) partes.push(colorTela);
+    return partes.join(' - ');
 }
 
 // =========================================================
@@ -139,6 +208,20 @@ function renderizarSelectTecnicasPaso3() {
 // 4. ABRIR MODAL PARA AGREGAR TÉCNICA
 // =========================================================
 
+function abrirModalValidacionTecnicaPaso3() {
+    try {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Selecciona una técnica',
+            text: 'Debes seleccionar al menos una técnica antes de agregar una prenda.',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#333',
+        });
+    } catch (_) {
+        alert('Debes seleccionar al menos una técnica antes de agregar una prenda.');
+    }
+}
+
 function abrirModalAgregarTecnicaPaso3() {
     const checkboxes = document.querySelectorAll('.tecnica-checkbox-paso3:checked');
     tecnicasSeleccionadasPaso3 = Array.from(checkboxes).map(cb => {
@@ -179,10 +262,19 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         html: `
             <div style="text-align: left; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-height: 60vh; overflow-y: auto;">
                 
-                <!-- PRENDA ÚNICA - INPUT MANUAL -->
+                <!-- PRENDA ÚNICA -->
                 <div style="margin-bottom: 25px;">
                     <h3 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 600; color: #333;">Prenda</h3>
-                    <input id="dNombrePrendaP3" type="text" placeholder="Escribe el nombre de la prenda (Ej: CAMISA, GORRA, CHAQUETA...)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; text-transform: uppercase;" />
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <input id="dNombrePrendaP3" type="text" placeholder="Escribe el nombre de la prenda (Ej: CAMISA, GORRA, CHAQUETA...)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; text-transform: uppercase;" />
+                        <label style="display:flex; align-items:center; gap: 8px; cursor:pointer; user-select:none; font-weight: 600; color:#333; font-size: 0.85rem; white-space: nowrap;">
+                            <input type="checkbox" id="dUsarPrendasCreadasP3" style="width: 18px; height: 18px; cursor: pointer;" />
+                            Seleccionar prendas creadas
+                        </label>
+                    </div>
+                    <select id="dPrendaPaso2SelectP3" style="display:none; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 0.9rem; margin-bottom: 10px;">
+                        <option value="">Selecciona una prenda del Paso 2</option>
+                    </select>
                 </div>
                 
                 <!-- UBICACIONES POR TÉCNICA -->
@@ -226,15 +318,97 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
         confirmButtonColor: '#333',
         didOpen: (modal) => {
             const inputNombrePrenda = document.getElementById('dNombrePrendaP3');
+            const selectPrendaPaso2 = document.getElementById('dPrendaPaso2SelectP3');
+            const cbUsarPrendasCreadas = document.getElementById('dUsarPrendasCreadasP3');
             const ubicacionesPorTecnicaDiv = document.getElementById('dUbicacionesPorTecnicaP3');
             const imagenesPorTecnicaDiv = document.getElementById('dImagenesPorTecnicaP3');
-            
+            const logosCompartidosDiv = document.getElementById('dLogosCompartidosP3');
+            const usarLogoCompartidoCheck = document.getElementById('dUsarLogoCompartido');
             const imagenesAgregadasPorTecnica = {}; // Almacena imágenes por técnica
 
             if (inputNombrePrenda) {
                 inputNombrePrenda.focus();
             }
-            
+
+            // Precargar prendas del Paso 2 para selección
+            try {
+                const prendasPaso2 = obtenerPrendasDelPaso2();
+                window.__prendasPaso2CacheP3 = Array.isArray(prendasPaso2) ? prendasPaso2 : [];
+                window.__prendaPaso2SeleccionadaIndexP3 = null;
+
+                if (selectPrendaPaso2) {
+                    selectPrendaPaso2.innerHTML = '<option value="">Selecciona una prenda del Paso 2</option>';
+                    window.__prendasPaso2CacheP3.forEach((p) => {
+                        const opt = document.createElement('option');
+                        opt.value = String(p.index);
+                        opt.textContent = construirLabelPrendaPaso2(p);
+                        selectPrendaPaso2.appendChild(opt);
+                    });
+
+                    selectPrendaPaso2.addEventListener('change', () => {
+                        const v = (selectPrendaPaso2.value || '').trim();
+                        if (!v) {
+                            window.__prendaPaso2SeleccionadaIndexP3 = null;
+                            if (inputNombrePrenda) {
+                                inputNombrePrenda.value = '';
+                                inputNombrePrenda.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                            return;
+                        }
+                        const idx = parseInt(v);
+                        if (Number.isNaN(idx)) {
+                            window.__prendaPaso2SeleccionadaIndexP3 = null;
+                            if (inputNombrePrenda) {
+                                inputNombrePrenda.value = '';
+                                inputNombrePrenda.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                            return;
+                        }
+                        const prenda = window.__prendasPaso2CacheP3.find(pp => Number(pp.index) === idx);
+                        if (!prenda) {
+                            window.__prendaPaso2SeleccionadaIndexP3 = null;
+                            if (inputNombrePrenda) {
+                                inputNombrePrenda.value = '';
+                                inputNombrePrenda.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                            return;
+                        }
+                        window.__prendaPaso2SeleccionadaIndexP3 = idx;
+                        if (inputNombrePrenda) {
+                            inputNombrePrenda.value = construirLabelPrendaPaso2(prenda);
+                            inputNombrePrenda.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    });
+                }
+
+                const activarModoSelect = (activar) => {
+                    const useSelect = !!activar;
+                    if (selectPrendaPaso2) {
+                        selectPrendaPaso2.style.display = useSelect ? 'block' : 'none';
+                        if (!useSelect) {
+                            selectPrendaPaso2.value = '';
+                        }
+                    }
+                    if (inputNombrePrenda) {
+                        inputNombrePrenda.style.display = useSelect ? 'none' : 'block';
+                        if (useSelect) {
+                            inputNombrePrenda.value = '';
+                            inputNombrePrenda.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                    window.__prendaPaso2SeleccionadaIndexP3 = null;
+                };
+
+                if (cbUsarPrendasCreadas) {
+                    cbUsarPrendasCreadas.addEventListener('change', () => {
+                        activarModoSelect(cbUsarPrendasCreadas.checked);
+                    });
+                    activarModoSelect(cbUsarPrendasCreadas.checked);
+                }
+            } catch (e) {
+                console.error('Error precargando prendas del Paso 2 para Paso 3:', e);
+            }
+
             // Crear inputs de ubicación por técnica y dropzones de imagen
             
             tecnicas.forEach((tecnica, idx) => {
@@ -482,16 +656,43 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             window.imagenesAgregadasPorTecnicaP3 = imagenesAgregadasPorTecnica;
         },
         preConfirm: () => {
-            const inputNombrePrenda = document.getElementById('dNombrePrendaP3');
-            if (!inputNombrePrenda) {
-                Swal.showValidationMessage('Error: elemento de prenda no encontrado');
-                return false;
+            const cbUsarPrendasCreadas = document.getElementById('dUsarPrendasCreadasP3');
+            const useSelect = !!(cbUsarPrendasCreadas && cbUsarPrendasCreadas.checked);
+            const inputNombre = document.getElementById('dNombrePrendaP3');
+            const selectPrendaPaso2 = document.getElementById('dPrendaPaso2SelectP3');
+
+            let prendaPaso2Index = null;
+            let nombrePrendaCompleto = '';
+
+            if (useSelect) {
+                const rawIndex = selectPrendaPaso2 ? String(selectPrendaPaso2.value || '').trim() : '';
+                if (!rawIndex) {
+                    Swal.showValidationMessage('Por favor selecciona una prenda del Paso 2');
+                    return false;
+                }
+                const idx = parseInt(rawIndex, 10);
+                if (Number.isNaN(idx)) {
+                    Swal.showValidationMessage('Selección de prenda inválida');
+                    return false;
+                }
+                prendaPaso2Index = idx;
+
+                const prendas = Array.isArray(window.__prendasPaso2CacheP3) ? window.__prendasPaso2CacheP3 : [];
+                const prenda = prendas.find(pp => Number(pp.index) === idx);
+                if (!prenda) {
+                    Swal.showValidationMessage('No se encontró la prenda seleccionada del Paso 2');
+                    return false;
+                }
+
+                // Enviar el nombre base (sin concatenados de género/color)
+                nombrePrendaCompleto = String(prenda.nombre || '').trim().toUpperCase();
+            } else {
+                nombrePrendaCompleto = inputNombre ? String(inputNombre.value || '').trim().toUpperCase() : '';
             }
 
-            const nombrePrendaCompleto = (inputNombrePrenda.value || '').trim().toUpperCase();
-
+            // Validar nombre prenda
             if (!nombrePrendaCompleto) {
-                Swal.showValidationMessage('Debes escribir el nombre de la prenda');
+                Swal.showValidationMessage('Por favor ingresa el nombre de la prenda');
                 return false;
             }
             
@@ -515,6 +716,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
             
             return {
                 nombre_prenda: nombrePrendaCompleto,
+                prenda_paso2_index: useSelect ? prendaPaso2Index : null,
                 observaciones: document.getElementById('dObservacionesP3').value.trim(),
                 ubicacionesPorTecnica: ubicacionesPorTecnica,
                 imagenesAgregadas: window.imagenesAgregadasPorTecnicaP3,
@@ -1035,6 +1237,7 @@ function guardarTecnicaCombinada(datosForm, tecnicas) {
             },
             prendas: [{
                 nombre_prenda: datosForm.nombre_prenda,
+                prenda_paso2_index: datosForm.prenda_paso2_index ?? null,
                 ubicaciones: datosForm.ubicacionesPorTecnica[idx] || [],
                 observaciones: datosForm.observaciones,
                 imagenes: imagenesCapturadas,  // Cambiar de imagenes_files a imagenes con metadata

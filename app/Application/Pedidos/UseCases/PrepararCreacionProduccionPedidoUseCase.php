@@ -24,15 +24,6 @@ class PrepararCreacionProduccionPedidoUseCase
                 'logoCotizacion.prendas.fotos',
                 'logoCotizacion.prendas.prendaCot.fotos',
             ])->findOrFail($dto->editarId);
-
-            $cotizacion->setRelation(
-                'prendas',
-                $cotizacion->prendas
-                    ->filter(function ($prenda) {
-                        return $prenda->logoCotizacionesTecnicas->isEmpty();
-                    })
-                    ->values()
-            );
             
             // Validar permisos
             if ($cotizacion->asesor_id !== $dto->usuarioId || !$cotizacion->es_borrador) {
