@@ -344,7 +344,7 @@
                                                 placeholder="Notas..."
                                                 rows="1"
                                                 readonly
-                                            >{{ $item['observaciones'] ?? '' }}</textarea>
+                                            ></textarea>
                                             @php
                                                 $nombreItem = '';
                                                 if($item['tipo'] === 'prenda') {
@@ -536,8 +536,8 @@
     <span id="toastMessage">✓ Operación completada</span>
 </div>
 
-<!-- Modal de Factura -->
-<div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 9999;">
+ <!-- Modal de Factura -->
+ <div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100000;">
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
@@ -1136,6 +1136,7 @@ function cerrarModalNotas() {
 function cargarNotas(numeroPedido, talla) {
     fetch('/gestion-bodega/notas/obtener', {
         method: 'POST',
+        cache: 'no-store',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
@@ -1214,10 +1215,11 @@ function cargarNotas(numeroPedido, talla) {
         }
         
         // Actualizar TODOS los textareas de observaciones que coincidan con este pedido/talla
-        const observacionesInputs = document.querySelectorAll(
-            `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-        );
-        
+        const tallaNorm = String(talla || '').toLowerCase();
+        const observacionesInputs = Array.from(
+            document.querySelectorAll(`.observaciones-input[data-numero-pedido="${numeroPedido}"]`)
+        ).filter(textarea => String(textarea?.dataset?.talla || '').toLowerCase() === tallaNorm);
+
         observacionesInputs.forEach(textarea => {
             const oldValue = textarea.value;
             textarea.value = textAreaContent.trim();

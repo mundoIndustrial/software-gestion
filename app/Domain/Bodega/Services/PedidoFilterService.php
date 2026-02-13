@@ -16,7 +16,7 @@ class PedidoFilterService
      * Estados permitidos para pedidos activos
      */
     private const ESTADOS_PERMITIDOS = [
-        'ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'ANULADA', 
+        'ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 
         'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'
     ];
 

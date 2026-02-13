@@ -21,6 +21,448 @@ function toggleUserMenu() {
     }
 }
 
+if (typeof window.usuarioActualId === 'undefined' || window.usuarioActualId === null) {
+    const metaUserId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
+    if (metaUserId) {
+        const parsed = Number(metaUserId);
+        window.usuarioActualId = Number.isFinite(parsed) ? parsed : metaUserId;
+    }
+}
+
+if (typeof window.abrirModalNotas !== 'function') {
+    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal) {
+        try {
+            window.__notasContext = {
+                numero_pedido: numeroPedido || '',
+                talla: talla || ''
+            };
+
+            const modal = document.getElementById('modalNotas');
+            if (!modal) {
+                console.error('No existe #modalNotas en esta vista');
+                return;
+            }
+
+            const numeroSpan = document.getElementById('modalNotasNumeroPedido');
+            if (numeroSpan) numeroSpan.textContent = numeroPedido || '';
+
+            const articuloSpan = document.getElementById('modalNotasArticulo');
+            if (articuloSpan) {
+                let textoArticulo = nombreItem || '';
+                if (tipoItem === 'prenda' && tallaReal) {
+                    textoArticulo += ` - ${tallaReal}`;
+                }
+                articuloSpan.textContent = textoArticulo;
+            }
+
+            const nuevaContent = document.getElementById('notasNuevaContent') || document.getElementById('nuevaNota');
+            if (nuevaContent) nuevaContent.value = '';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.style.display = 'flex';
+
+            if (typeof window.cargarNotas === 'function') {
+                window.cargarNotas(numeroPedido, talla);
+            }
+        } catch (e) {
+            console.error('Error en abrirModalNotas fallback:', e);
+        }
+    };
+}
+
+if (typeof window.cargarNotas !== 'function') {
+    window.cargarNotas = async function(numeroPedido, talla) {
+        try {
+            const historial = document.getElementById('notasHistorial');
+            if (historial) {
+                historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">⏳ Cargando notas...</span></div>';
+            }
+
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/gestion-bodega/notas/obtener', {
+                method: 'POST',
+                cache: 'no-store',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({
+                    numero_pedido: numeroPedido,
+                    talla: talla,
+                })
+            });
+
+            const data = await response.json().catch(() => null);
+            const notas = (data && data.success && Array.isArray(data.data)) ? data.data : [];
+
+            if (!response.ok || !data || data.success === false) {
+                if (historial) {
+                    historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
+                }
+                return;
+            }
+
+            let textAreaContent = '';
+            if (notas.length === 0) {
+                if (historial) {
+                    historial.innerHTML = '<div class="text-center text-slate-500 py-6">No hay notas</div>';
+                }
+            } else {
+                let html = '<div class="space-y-4">';
+                notas.forEach(nota => {
+                    const puedeEditar = (String(nota.usuario_id) === String(window.usuarioActualId)) || (window.__usuarioEsAdmin === true);
+                    const contenidoSeguro = String(nota.contenido ?? '').replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+                    const botones = puedeEditar ? `
+                        <button onclick="window.editarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
+                        <button onclick="window.eliminarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                    ` : '';
+
+                    html += `
+                        <div data-nota-id="${nota.id}" data-numero-pedido="${numeroPedido}" data-talla="${talla}" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;">
+                            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${nota.usuario_nombre ?? ''}</div>
+                                <div style="display:flex;gap:10px;align-items:center;">
+                                    <div style="color:#64748b;font-size:12px;white-space:nowrap;">${nota.fecha_completa ?? ((nota.fecha ?? '') + ' ' + (nota.hora ?? ''))}</div>
+                                    ${botones}
+                                </div>
+                            </div>
+                            <div class="nota-contenido" style="margin:0;color:#1e293b;font-size:13px;white-space:pre-wrap;">${nota.contenido ?? ''}</div>
+                        </div>
+                    `;
+
+                    textAreaContent += `${nota.usuario_nombre ?? ''} - ${nota.contenido ?? ''}\n`;
+                });
+                html += '</div>';
+                if (historial) {
+                    historial.innerHTML = html;
+                }
+            }
+
+            // Mostrar notas en el textarea readonly (solo visual; NO se persiste en observaciones_bodega)
+            const tallaNorm = String(talla ?? '').toLowerCase();
+            const observacionesInputs = Array.from(
+                document.querySelectorAll(`.observaciones-input[data-numero-pedido="${numeroPedido}"]`)
+            ).filter(input => String(input?.dataset?.talla ?? '').toLowerCase() === tallaNorm);
+
+            observacionesInputs.forEach(input => {
+                input.value = textAreaContent.trim();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.style.height = 'auto';
+                input.style.height = (input.scrollHeight) + 'px';
+            });
+        } catch (e) {
+            console.error('Error en cargarNotas fallback:', e);
+            const historial = document.getElementById('notasHistorial');
+            if (historial) historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
+        }
+    };
+}
+
+// Cargar notas automáticamente en la columna de observaciones al entrar a la vista
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof window.cargarNotas !== 'function') return;
+
+        const textareas = Array.from(document.querySelectorAll('.observaciones-input'));
+        if (textareas.length === 0) return;
+
+        const claves = [];
+        const seen = new Set();
+        textareas.forEach(t => {
+            const numeroPedido = t?.dataset?.numeroPedido;
+            const talla = t?.dataset?.talla;
+            if (!numeroPedido || !talla) return;
+            const key = `${numeroPedido}|${talla}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            claves.push({ numeroPedido, talla });
+        });
+
+        // Ejecutar en serie con pequeños delays para evitar demasiadas requests simultáneas
+        const ejecutar = async () => {
+            for (const item of claves) {
+                await window.cargarNotas(item.numeroPedido, item.talla);
+                await new Promise(r => setTimeout(r, 30));
+            }
+        };
+
+        ejecutar();
+    } catch (e) {
+        console.error('Error auto-cargando notas para observaciones:', e);
+    }
+});
+
+if (typeof window.editarNota !== 'function') {
+    window.editarNota = function(notaId, numeroPedido, talla) {
+        const card = document.querySelector(`[data-nota-id="${notaId}"]`);
+        if (!card) return;
+
+        const contentEl = card.querySelector('.nota-contenido');
+        if (!contentEl) return;
+
+        if (card.getAttribute('data-editing') === '1') {
+            const textarea = card.querySelector('textarea');
+            if (textarea) textarea.focus();
+            return;
+        }
+
+        const originalContent = (contentEl.textContent ?? '').toString();
+        card.setAttribute('data-editing', '1');
+        card.setAttribute('data-original-content', originalContent);
+
+        const textarea = document.createElement('textarea');
+        textarea.value = originalContent;
+        textarea.rows = 3;
+        textarea.style.width = '100%';
+        textarea.style.minHeight = '60px';
+        textarea.style.resize = 'vertical';
+        textarea.style.border = '1px solid #cbd5e1';
+        textarea.style.borderRadius = '8px';
+        textarea.style.padding = '8px';
+        textarea.style.fontSize = '13px';
+        textarea.style.color = '#0f172a';
+        textarea.style.background = '#ffffff';
+
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '8px';
+        actions.style.marginTop = '8px';
+        actions.style.justifyContent = 'flex-end';
+
+        const btnGuardar = document.createElement('button');
+        btnGuardar.type = 'button';
+        btnGuardar.textContent = 'Guardar';
+        btnGuardar.style.border = 'none';
+        btnGuardar.style.background = '#0ea5e9';
+        btnGuardar.style.color = '#ffffff';
+        btnGuardar.style.borderRadius = '8px';
+        btnGuardar.style.padding = '6px 10px';
+        btnGuardar.style.cursor = 'pointer';
+        btnGuardar.style.fontSize = '12px';
+
+        const btnCancelar = document.createElement('button');
+        btnCancelar.type = 'button';
+        btnCancelar.textContent = 'Cancelar';
+        btnCancelar.style.border = 'none';
+        btnCancelar.style.background = '#e2e8f0';
+        btnCancelar.style.color = '#0f172a';
+        btnCancelar.style.borderRadius = '8px';
+        btnCancelar.style.padding = '6px 10px';
+        btnCancelar.style.cursor = 'pointer';
+        btnCancelar.style.fontSize = '12px';
+
+        actions.appendChild(btnCancelar);
+        actions.appendChild(btnGuardar);
+
+        contentEl.replaceWith(textarea);
+        textarea.insertAdjacentElement('afterend', actions);
+
+        const focusTextarea = () => {
+            textarea.focus();
+            const len = textarea.value.length;
+            textarea.setSelectionRange(len, len);
+        };
+
+        setTimeout(focusTextarea, 0);
+
+        const cancelar = () => {
+            const restored = document.createElement('div');
+            restored.className = 'nota-contenido';
+            restored.style.margin = '0';
+            restored.style.color = '#1e293b';
+            restored.style.fontSize = '13px';
+            restored.style.whiteSpace = 'pre-wrap';
+            restored.textContent = card.getAttribute('data-original-content') || '';
+
+            actions.remove();
+            textarea.replaceWith(restored);
+            card.setAttribute('data-editing', '0');
+        };
+
+        btnCancelar.addEventListener('click', cancelar);
+
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelar();
+            }
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                btnGuardar.click();
+            }
+        });
+
+        btnGuardar.addEventListener('click', async () => {
+            const contenido = (textarea.value || '').trim();
+            if (!contenido) {
+                alert('La nota no puede estar vacía');
+                textarea.focus();
+                return;
+            }
+
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            btnGuardar.disabled = true;
+            btnCancelar.disabled = true;
+
+            try {
+                const r = await fetch(`/gestion-bodega/notas/${notaId}/actualizar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                    },
+                    body: JSON.stringify({ contenido })
+                });
+
+                const data = await r.json().catch(() => null);
+                if (!r.ok || !data || data.success === false) {
+                    alert('Error: ' + (data?.message || 'No se pudo actualizar la nota'));
+                    btnGuardar.disabled = false;
+                    btnCancelar.disabled = false;
+                    return;
+                }
+
+                if (typeof window.cargarNotas === 'function') {
+                    window.cargarNotas(numeroPedido, talla);
+                }
+            } catch (err) {
+                console.error('Error editarNota:', err);
+                alert('Error al actualizar la nota');
+                btnGuardar.disabled = false;
+                btnCancelar.disabled = false;
+            }
+        });
+    };
+}
+
+if (typeof window.eliminarNota !== 'function') {
+    window.eliminarNota = function(notaId, numeroPedido, talla) {
+        if (!confirm('¿Eliminar esta nota?')) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch(`/gestion-bodega/notas/${notaId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data || data.success === false) {
+                alert('Error: ' + (data?.message || 'No se pudo eliminar la nota'));
+                return;
+            }
+            if (typeof window.cargarNotas === 'function') {
+                window.cargarNotas(numeroPedido, talla);
+            }
+        })
+        .catch(err => {
+            console.error('Error eliminarNota:', err);
+            alert('Error al eliminar la nota');
+        });
+    };
+}
+
+if (typeof window.cerrarModalNotas !== 'function') {
+    window.cerrarModalNotas = function() {
+        const modal = document.getElementById('modalNotas');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = '';
+    };
+}
+
+// Normalizar comportamiento aunque la vista defina sus propias funciones
+(function() {
+    const originalAbrirModalNotas = window.abrirModalNotas;
+    const originalCerrarModalNotas = window.cerrarModalNotas;
+
+    window.abrirModalNotas = function(...args) {
+        const result = (typeof originalAbrirModalNotas === 'function') ? originalAbrirModalNotas.apply(this, args) : undefined;
+        const modal = document.getElementById('modalNotas');
+        if (modal && !modal.classList.contains('hidden')) {
+            modal.classList.add('flex');
+            modal.style.display = 'flex';
+        }
+        return result;
+    };
+
+    window.cerrarModalNotas = function(...args) {
+        const result = (typeof originalCerrarModalNotas === 'function') ? originalCerrarModalNotas.apply(this, args) : undefined;
+        const modal = document.getElementById('modalNotas');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modal.style.display = '';
+        }
+        if (document && document.body) {
+            document.body.style.overflow = '';
+        }
+        return result;
+    };
+})();
+
+if (typeof window.guardarNota !== 'function') {
+    window.guardarNota = async function() {
+        try {
+            const ctx = window.__notasContext || {};
+            const numeroPedido = ctx.numero_pedido || document.getElementById('modalNotasNumeroPedido')?.textContent || '';
+            const talla = ctx.talla || '';
+
+            const textarea = document.getElementById('notasNuevaContent') || document.getElementById('nuevaNota');
+            const contenido = (textarea?.value || '').trim();
+
+            if (!numeroPedido || !talla) {
+                console.error('Contexto de notas incompleto', { numeroPedido, talla });
+                return;
+            }
+
+            if (!contenido) {
+                alert('Por favor, escribe una nota antes de guardar');
+                return;
+            }
+
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            const response = await fetch('/gestion-bodega/notas/guardar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({
+                    numero_pedido: numeroPedido,
+                    talla: talla,
+                    contenido: contenido,
+                })
+            });
+
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data || data.success === false) {
+                alert('Error: ' + ((data && data.message) ? data.message : 'No se pudo guardar la nota'));
+                return;
+            }
+
+            if (textarea) textarea.value = '';
+
+            if (typeof window.cargarNotas === 'function') {
+                window.cargarNotas(numeroPedido, talla);
+            }
+
+            // Cerrar modal al guardar
+            if (typeof window.cerrarModalNotas === 'function') {
+                window.cerrarModalNotas();
+            }
+        } catch (e) {
+            console.error('Error en guardarNota fallback:', e);
+            alert('Error al guardar la nota: ' + (e.message || e));
+        }
+    };
+}
+
 /**
  * Cerrar menú de usuario cuando se haga click fuera
  */
@@ -210,12 +652,10 @@ async function guardarPedidoCompleto(numeroPedido) {
             }
             
             const pendientesInput = fila.querySelector('.pendientes-input');
-            const observacionesInput = fila.querySelector('.observaciones-input');
             const fechaInput = fila.querySelector('.fecha-input');
             
             // Valores actuales
             const pendientes = pendientesInput?.value || '';
-            const observaciones = observacionesInput?.value || '';
             const fecha = fechaInput?.value || '';
             const area = areaSelect?.value || '';
             const estado = estadoSelect?.value || '';
@@ -225,7 +665,7 @@ async function guardarPedidoCompleto(numeroPedido) {
             const estadoOriginal = estadoSelect?.getAttribute('data-original-estado') || '';
             
             // Incluir si: tiene datos en campos de texto O cambió area O cambió estado
-            const tieneContenidoTexto = pendientes || observaciones || fecha;
+            const tieneContenidoTexto = pendientes || fecha;
             const areaEsCambiado = area !== areaOriginal;
             const estadoEsCambiado = estado !== estadoOriginal;
             
@@ -239,7 +679,6 @@ async function guardarPedidoCompleto(numeroPedido) {
                     cantidad: parseInt(cantidad) || 0,  // Guardar cantidad como número
                     prenda_nombre: nombrePrenda,  // Guardar nombre de la prenda/artículo
                     pendientes: pendientes || null,
-                    observaciones_bodega: observaciones || null,
                     fecha_entrega: fecha || null,
                     area: area || null,
                     estado_bodega: estado || null,
@@ -323,14 +762,22 @@ async function abrirModalFactura(pedidoId) {
         }
 
         const data = await response.json();
-        
-        if (data) {
-            // Generar HTML de la factura
-            const htmlFactura = generarHTMLFactura(data);
-            contenido.innerHTML = htmlFactura;
-        } else {
+
+        if (!data) {
             contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error al cargar la factura</div>';
+            return;
         }
+
+        if (data.success === false) {
+            contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error: ' + (data.message || 'No se pudieron cargar las prendas del pedido.') + '</div>';
+            return;
+        }
+
+        const payload = (data && typeof data === 'object' && data.data) ? data.data : data;
+
+        // Generar HTML de la factura
+        const htmlFactura = generarHTMLFactura(payload);
+        contenido.innerHTML = htmlFactura;
     } catch (error) {
         console.error('Error cargando factura:', error);
         contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error: ' + error.message + '</div>';
@@ -736,9 +1183,6 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     const pendientesInput = document.querySelector(
         `.pendientes-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
-    const observacionesInput = document.querySelector(
-        `.observaciones-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
-    );
     const fechaPedidoInput = document.querySelector(
         `.fecha-pedido-input[data-numero-pedido="${numeroPedido}"][data-talla="${talla}"]`
     );
@@ -773,7 +1217,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     // Obtener PRENDA_NOMBRE desde el select
     const prendaNombre = estadoSelect.getAttribute('data-prenda-nombre') || '';
     
-    const lastUpdatedAt = observacionesInput?.dataset?.updatedAt || new Date().toISOString();
+    const lastUpdatedAt = new Date().toISOString();
 
     console.log(`[GUARDAR] numeroPedido=${numeroPedido}, talla=${talla}`);
     console.log(`[GUARDAR] asesor='${asesor}' (largo: ${asesor.length})`);
@@ -790,7 +1234,6 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         asesor: asesor,
         empresa: empresa,
         pendientes: pendientesInput.value.trim(),
-        observaciones_bodega: observacionesInput?.value?.trim() || '',
         fecha_pedido: fechaPedidoInput?.value || null,
         fecha_entrega: fechaEntregaInput?.value || null,
         area: areaSelect?.value || null,

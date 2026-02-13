@@ -38,6 +38,9 @@ class BodegaPedidoService
         
         // Obtener pedidos base
         $todosLosPedidos = $this->bodegaRepository->obtenerPedidosBase($estadosPermitidos);
+
+        // Excluir pedidos anulados (estado del pedido principal)
+        $todosLosPedidos = $this->filtrarPedidosAnulados($todosLosPedidos);
         
         // Filtrar por áreas según rol
         $pedidosFiltradosPorRol = $this->filtrarPedidosPorArea($todosLosPedidos, $areasPermitidas);
@@ -171,7 +174,7 @@ class BodegaPedidoService
 
     private function obtenerEstadosPermitidos(): array
     {
-        return ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'ANULADA', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
+        return ['ENTREGADO', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
     }
 
     private function filtrarPedidosPorArea(Collection $pedidos, array $areasPermitidas): Collection
@@ -191,6 +194,30 @@ class BodegaPedidoService
             
             return false;
         })->values();
+    }
+
+    private function filtrarPedidosAnulados(Collection $pedidos): Collection
+    {
+        $numerosPedido = $pedidos->pluck('numero_pedido')
+            ->filter(fn($n) => !empty($n))
+            ->unique()
+            ->values();
+
+        if ($numerosPedido->isEmpty()) {
+            return $pedidos;
+        }
+
+        $numerosAnulados = PedidoProduccion::query()
+            ->whereIn('numero_pedido', $numerosPedido)
+            ->whereRaw('UPPER(TRIM(estado)) = ?', ['ANULADA'])
+            ->pluck('numero_pedido')
+            ->unique();
+
+        if ($numerosAnulados->isEmpty()) {
+            return $pedidos;
+        }
+
+        return $pedidos->reject(fn($p) => $numerosAnulados->contains($p->numero_pedido))->values();
     }
 
     private function paginarPedidos(Collection $pedidos, Request $request): array
