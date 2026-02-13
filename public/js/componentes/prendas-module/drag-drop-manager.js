@@ -463,6 +463,7 @@ class DragDropManager {
             procesos: this.procesoHandler ? this.procesoHandler.getEstado() : { procesosConfigurados: 0, error: 'Handler no inicializado' },
             servicios: {
                 uiHelper: UIHelperService ? 'disponible' : 'no disponible',
+                contextMenu: ContextMenuService && typeof ContextMenuService.getEstado === 'function' ? ContextMenuService.getEstado() : 'no disponible',
                 clipboard: ClipboardService && typeof ClipboardService.getEstado === 'function' ? ClipboardService.getEstado() : 'no disponible'
             }
         };
@@ -633,6 +634,7 @@ const inicializarConRetraso = () => {
             // Verificar que las dependencias estén disponibles
             const dependencias = {
                 UIHelperService: typeof window.UIHelperService !== 'undefined',
+                ContextMenuService: typeof window.ContextMenuService !== 'undefined',
                 ClipboardService: typeof window.ClipboardService !== 'undefined',
                 PrendaDragDropHandler: typeof window.PrendaDragDropHandler !== 'undefined'
             };

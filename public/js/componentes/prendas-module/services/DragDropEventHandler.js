@@ -136,10 +136,6 @@ class DragDropEventHandler {
         this.elemento.addEventListener('click', (e) => {
             if (!this.estaActivo) return;
             
-            // Solo procesar click izquierdo (button === 0)
-            // Permitir click derecho y botones auxiliares para que funcione el menú nativo
-            if (e.button !== 0) return;
-            
             UIHelperService.preventDefaults(e);
             
             // Enfocar el elemento
@@ -161,9 +157,40 @@ class DragDropEventHandler {
             UIHelperService.quitarEstilosFocus(this.elemento);
         });
 
-        // Evento paste delegado a DragDropManager (listener global)
-        // No agregar listener local para evitar conflictos con el global
-        // que ya maneja correctamente el Ctrl+V y el menú contextual
+        // Evento paste
+        this.elemento.addEventListener('paste', (e) => {
+            if (!this.estaActivo) return;
+            
+            UIHelperService.log('DragDropEventHandler', '📋 EVENTO PASTE LOCAL DETECTADO');
+            
+            // Prevenir comportamiento por defecto
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Obtener archivos del portapapeles
+            const items = e.clipboardData.items;
+            if (!items || items.length === 0) {
+                UIHelperService.log('DragDropEventHandler', 'No hay items en el portapapeles local');
+                return;
+            }
+            
+            // Filtrar archivos según configuración
+            const archivos = this._filtrarArchivos(items);
+            
+            if (archivos.length > 0) {
+                UIHelperService.log('DragDropEventHandler', `Procesando ${archivos.length} archivos desde paste local`);
+                
+                if (this.callbacks.onPaste) {
+                    this.callbacks.onPaste(archivos, e);
+                }
+            } else {
+                UIHelperService.log('DragDropEventHandler', 'No se encontraron archivos válidos en paste local');
+            }
+        });
+
+        // 🖱️ Evento context menu (botón derecho) - DESACTIVADO
+        // Solo permitimos pegado con Ctrl+V directamente, que es más intuitivo
+        // y evita la confusión de un menú contextual que solo muestra instrucciones
 
         // Hacer focusable
         UIHelperService.hacerFocusable(this.elemento);

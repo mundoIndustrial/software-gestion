@@ -125,13 +125,14 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
+                                        <!-- Botón para seleccionar imagen -->
+                                        <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal-agregar-prenda-nueva-file-input').click(); return false;">
+                                            <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
+                                            <span style="font-size: 0.7rem;">Agregar imagen</span>
+                                        </button>
+                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
+                                        
                                         <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #10b981; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0fdf4;" data-zona="tela" data-estado="inicial" tabindex="0">
-                                            <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto;" title="Click para seleccionar imagen o arrastra una aquí" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('nueva-prenda-tela-file-input').click(); return false;">
-                                                <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
-                                                <span style="font-size: 0.7rem;">Agregar imagen</span>
-                                            </button>
-                                            <input type="file" id="nueva-prenda-tela-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
-                                            
                                             <!-- Texto de ayuda -->
                                             <div style="text-align: center; color: #059669; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
                                                 <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
