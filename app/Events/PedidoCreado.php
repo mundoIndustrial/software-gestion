@@ -38,7 +38,7 @@ class PedidoCreado implements ShouldBroadcastNow
         $this->asesorId = $asesor->id;
         $this->asesorNombre = $asesor->name;
         $this->estado = $pedido->estado;
-        $this->formaPago = $pedido->forma_pago;
+        $this->formaPago = $pedido->forma_de_pago;
         $this->cantidadTotal = $pedido->cantidad_total;
         $this->fechaCreacion = $pedido->created_at?->toISOString();
     }

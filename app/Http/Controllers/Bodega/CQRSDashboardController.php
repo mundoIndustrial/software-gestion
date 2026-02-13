@@ -68,7 +68,7 @@ class CQRSDashboardController extends Controller
         $date = $this->getDateFromPeriod($periodo);
         
         $totalEvents = PedidoEvent::where('occurred_at', '>=', $date)->count();
-        $uniqueAggregates = PedidoEvent::where('occurred_at', '>=', $date')
+        $uniqueAggregates = PedidoEvent::where('occurred_at', '>=', $date)
             ->distinct('aggregate_id')
             ->count('aggregate_id');
         

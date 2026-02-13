@@ -19,6 +19,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * - Variantes (color, tela, manga, broche, bolsillos) están en tabla hija prenda_variantes
  * - NO maneja reflectivo
  * - Escalable para ERP de producción textil
+ * 
+ * @property int $id
+ * @property int $pedido_produccion_id
+ * @property string $nombre_prenda
+ * @property string|null $descripcion
+ * @property bool $de_bodega
+ * @property int|null $prenda_id
+ * @property string|null $observaciones
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property string $color
+ * @property string $tela
+ * @property string $tipo_manga
+ * @property string $tipo_broche
  */
 class PrendaPedido extends Model
 {

@@ -50,24 +50,25 @@
     <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}"></script>
     
     <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/proceso-editor.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/gestor-edicion-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/servicio-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/middleware-guardado-prenda.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/proceso-editor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/gestor-edicion-procesos.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/servicio-procesos.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/middleware-guardado-prenda.js') }}?v={{ time() }}"></script>
     
     <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/notification-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/notification-service.js') }}?v={{ time() }}"></script>
     
     <!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/payload-normalizer-v3-definitiva.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/payload-normalizer.js') }}?v={{ time() }}"></script>
     
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-api-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-validator.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-form-collector.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-renderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor-legacy.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/prenda-editor.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/services/item-orchestrator.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-api-service.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
+    <!-- 🆕 PrendaEditor sin legacy -->
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
     
     <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes y servicios -->
     <!-- Módulos para COTIZACIONES (crear pedido desde cotización) -->
@@ -109,4 +110,7 @@
             }, 500);
         });
     </script>
+
+    <!-- 🔬 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
+    <script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 @endpush

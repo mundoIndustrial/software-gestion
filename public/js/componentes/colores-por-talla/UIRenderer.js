@@ -394,11 +394,6 @@ window.UIRenderer = (function() {
             const msgResumenVacio = document.getElementById('msg-resumen-vacio');
             const totalResumen = document.getElementById('total-asignaciones-resumen');
             
-            // console.log('[UIRenderer.actualizarResumenAsignaciones] 📍 Elementos del DOM:', {
-            //     tbodyResumen: !!tbodyResumen,
-            //     msgResumenVacio: !!msgResumenVacio,
-            //     totalResumen: !!totalResumen
-            // });
             
             if (!tbodyResumen) {
                 console.error('[UIRenderer.actualizarResumenAsignaciones]  No se encontró tabla-resumen-asignaciones-cuerpo');
@@ -555,43 +550,30 @@ window.UIRenderer = (function() {
          * Actualizar visibilidad de secciones de resumen
          */
         actualizarVisibilidadSeccionesResumen() {
-            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Verificando visibilidad de secciones...');
             
             const seccionTallasCantidades = document.getElementById('seccion-tallas-cantidades');
             const seccionResumenAsignaciones = document.getElementById('seccion-resumen-asignaciones');
             const tieneAsignaciones = StateManager.tieneAsignaciones();
-            
-            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen] 📍 Elementos del DOM:', {
-                seccionTallasCantidades: !!seccionTallasCantidades,
-                seccionResumenAsignaciones: !!seccionResumenAsignaciones,
-                tieneAsignaciones: tieneAsignaciones
-            });
+    
             
             if (tieneAsignaciones) {
-                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Hay asignaciones - mostrando resumen, ocultando tallas');
                 // Si hay asignaciones, mostrar resumen y ocultar TALLAS Y CANTIDADES
                 if (seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'none';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-tallas-cantidades ocultada');
                 }
                 if (seccionResumenAsignaciones) {
                     seccionResumenAsignaciones.style.display = 'block';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-resumen-asignaciones mostrada');
                 }
             } else {
-                console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  Sin asignaciones - mostrando tallas, ocultando resumen');
                 // Si no hay asignaciones, mostrar TALLAS Y CANTIDADES y ocultar resumen
                 if (seccionTallasCantidades) {
                     seccionTallasCantidades.style.display = 'block';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-tallas-cantidades mostrada');
                 }
                 if (seccionResumenAsignaciones) {
                     seccionResumenAsignaciones.style.display = 'none';
-                    console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  seccion-resumen-asignaciones ocultada');
                 }
             }
             
-            console.log('[UIRenderer.actualizarVisibilidadSeccionesResumen]  COMPLETADO');
         },
 
         /**

@@ -64,8 +64,20 @@ window.manejarImagenProceso = function(input, procesoIndex) {
                 imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;';
                 imgElement.onclick = () => {
                     console.log(`[manejarImagenProceso] 🖼️ Click en imagen del proceso ${procesoIndex}`);
-                    // Aquí podrías abrir una galería si hay múltiples imágenes
-                    mostrarImagenAmpliada(previewUrl, file.name, procesoIndex);
+                    // Abrir galería modal del componente (no el modal extra)
+                    const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
+                    const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
+                    const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
+                    
+                    if (typeof galeriaFunction === 'function') {
+                        // Obtener las imágenes del storage
+                        const imagenes = window.procesosImagenesStorage ? 
+                            window.procesosImagenesStorage.obtenerImagenes(procesoIndex).map(img => img.previewUrl) : 
+                            [previewUrl];
+                        galeriaFunction(imagenes);
+                    } else {
+                        console.warn(`[manejarImagenProceso] ⚠️ Función de galería no encontrada para proceso ${procesoIndex}`);
+                    }
                 };
                 imgElement.onmouseover = () => imgElement.style.opacity = '0.8';
                 imgElement.onmouseout = imgElement.style.opacity = '1';
@@ -174,11 +186,8 @@ window.eliminarImagenProceso = function(procesoIndex) {
             console.log(`[eliminarImagenProceso]  Preview del proceso ${procesoIndex} restaurado`);
         }
         
-        // Eliminar del storage si está disponible
-        if (window.procesosImagenesStorage) {
-            window.procesosImagenesStorage.eliminarImagen(procesoIndex);
-            console.log(`[eliminarImagenProceso]  Imagen eliminada del storage para proceso ${procesoIndex}`);
-        }
+        // NOTA: NO eliminar del storage aquí - ya se eliminó desde _eliminarDelStorage()
+        // Solo restaurar el preview visual
         
         // Reconfigurar drag & drop
         if (typeof window.setupDragDropProceso === 'function') {

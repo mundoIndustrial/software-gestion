@@ -12,6 +12,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Representa una variante de una prenda en un pedido
  * Guarda: tipo_manga_id, tipo_broche_boton_id, tiene_bolsillos, tiene_reflectivo y observaciones
  * Los colores y telas se guardan en PrendaPedidoColorTela
+ * 
+ * @property int $id
+ * @property int $prenda_pedido_id
+ * @property int|null $tipo_manga_id
+ * @property int|null $tipo_broche_boton_id
+ * @property string|null $manga_obs
+ * @property string|null $broche_boton_obs
+ * @property bool $tiene_bolsillos
+ * @property string|null $bolsillos_obs
+ * @property array $telas_multiples
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PrendaVariantePed extends Model
 {

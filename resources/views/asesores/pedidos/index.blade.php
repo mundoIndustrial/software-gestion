@@ -117,7 +117,7 @@
 <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
 
 <!--  LAZY LOADERS: Cargan módulos bajo demanda -->
-<script src="{{ asset('js/lazy-loaders/prenda-editor-loader.js') }}"></script>
+<script src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
 <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
 
 <!-- Componente: Modal Editar Pedido -->

@@ -76,27 +76,8 @@ class DragDropEventHandler {
      * @private
      */
     _configurarEventosBasicos() {
-        // Prevenir menú contextual del navegador solo si no hay menú personalizado
-        this.elemento.addEventListener('contextmenu', (e) => {
-            // Verificar si hay un manejador de menú contextual personalizado
-            const tieneMenuPersonalizado = this.options.tieneMenuContextual || false;
-            
-            if (!tieneMenuPersonalizado) {
-                UIHelperService.preventDefaults(e);
-                e.stopImmediatePropagation();
-                return false;
-            }
-            // Si tiene menú personalizado, permitir que se ejecute
-        }, true);
-
-        // Prevenir click derecho solo si no hay menú personalizado
-        this.elemento.addEventListener('mouseup', (e) => {
-            const tieneMenuPersonalizado = this.options.tieneMenuContextual || false;
-            
-            if (e.button === 2 && !tieneMenuPersonalizado) {
-                UIHelperService.preventDefaults(e);
-            }
-        });
+        // No bloquear menú contextual - permitir que el navegador muestre el menú nativo
+        // con opción de pegar (Ctrl+V y clic derecho)
     }
 
     /**
@@ -155,6 +136,10 @@ class DragDropEventHandler {
         this.elemento.addEventListener('click', (e) => {
             if (!this.estaActivo) return;
             
+            // Solo procesar click izquierdo (button === 0)
+            // Permitir click derecho y botones auxiliares para que funcione el menú nativo
+            if (e.button !== 0) return;
+            
             UIHelperService.preventDefaults(e);
             
             // Enfocar el elemento
@@ -176,36 +161,9 @@ class DragDropEventHandler {
             UIHelperService.quitarEstilosFocus(this.elemento);
         });
 
-        // Evento paste
-        this.elemento.addEventListener('paste', (e) => {
-            if (!this.estaActivo) return;
-            
-            UIHelperService.log('DragDropEventHandler', '📋 EVENTO PASTE LOCAL DETECTADO');
-            
-            // Prevenir comportamiento por defecto
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Obtener archivos del portapapeles
-            const items = e.clipboardData.items;
-            if (!items || items.length === 0) {
-                UIHelperService.log('DragDropEventHandler', 'No hay items en el portapapeles local');
-                return;
-            }
-            
-            // Filtrar archivos según configuración
-            const archivos = this._filtrarArchivos(items);
-            
-            if (archivos.length > 0) {
-                UIHelperService.log('DragDropEventHandler', `Procesando ${archivos.length} archivos desde paste local`);
-                
-                if (this.callbacks.onPaste) {
-                    this.callbacks.onPaste(archivos, e);
-                }
-            } else {
-                UIHelperService.log('DragDropEventHandler', 'No se encontraron archivos válidos en paste local');
-            }
-        });
+        // Evento paste delegado a DragDropManager (listener global)
+        // No agregar listener local para evitar conflictos con el global
+        // que ya maneja correctamente el Ctrl+V y el menú contextual
 
         // Hacer focusable
         UIHelperService.hacerFocusable(this.elemento);

@@ -458,7 +458,7 @@
     @stack('modals')
     
     <!--  PAYLOAD NORMALIZER v3 - CARGADO EN BLADE TEMPLATES INDIVIDUALES -->
-    <!-- Implementación definitiva en: payload-normalizer-v3-definitiva.js -->
+    <!-- Payload normalizer: payload-normalizer.js -->
 
 </body>
 </html>

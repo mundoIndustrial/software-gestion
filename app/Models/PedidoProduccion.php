@@ -15,6 +15,37 @@ use App\Services\CalculadorDiasService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $cotizacion_id
+ * @property string|null $numero_cotizacion
+ * @property string|null $numero_pedido
+ * @property string $cliente
+ * @property int|null $cliente_id
+ * @property string|null $novedades
+ * @property int|null $asesor_id
+ * @property string|null $forma_de_pago
+ * @property string|null $estado
+ * @property string|null $area
+ * @property \Carbon\Carbon|null $fecha_ultimo_proceso
+ * @property \Carbon\Carbon|null $fecha_de_creacion_de_orden
+ * @property int|null $dia_de_entrega
+ * @property \Carbon\Carbon|null $fecha_estimada_de_entrega
+ * @property \Carbon\Carbon|null $aprobado_por_supervisor_en
+ * @property string|null $motivo_anulacion
+ * @property \Carbon\Carbon|null $fecha_anulacion
+ * @property int|null $usuario_anulacion
+ * @property int|null $cantidad_total
+ * @property int|null $aprobado_por_usuario_cartera
+ * @property \Carbon\Carbon|null $aprobado_por_cartera_en
+ * @property int|null $rechazado_por_usuario_cartera
+ * @property \Carbon\Carbon|null $rechazado_por_cartera_en
+ * @property string|null $motivo_rechazo_cartera
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property string $descripcion_prendas
+ */
 class PedidoProduccion extends Model
 {
     use SoftDeletes, HasLegibleEstado;

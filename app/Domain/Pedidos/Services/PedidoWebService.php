@@ -20,6 +20,7 @@ use App\Models\TelaPrenda;
 use App\Application\Services\ImageUploadService;
 use App\Domain\Pedidos\Services\ProcesoImagenService;
 use App\Domain\Pedidos\Services\PedidoSequenceService;
+use App\Domain\Pedidos\Services\ImagenRelocalizadorService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,19 +42,22 @@ class PedidoWebService
     private ProcesoImagenService $procesoImagenService;
     private ImageUploadService $imageUploadService;
     private PedidoSequenceService $pedidoSequenceService;
+    private ImagenRelocalizadorService $imagenRelocalizadorService;
 
     public function __construct(
         PrendaImagenService $prendaImagenService = null,
         TelaImagenService $telaImagenService = null,
         ProcesoImagenService $procesoImagenService = null,
         ImageUploadService $imageUploadService = null,
-        PedidoSequenceService $pedidoSequenceService = null
+        PedidoSequenceService $pedidoSequenceService = null,
+        ImagenRelocalizadorService $imagenRelocalizadorService = null
     ) {
         $this->prendaImagenService = $prendaImagenService ?? app(PrendaImagenService::class);
         $this->telaImagenService = $telaImagenService ?? app(TelaImagenService::class);
         $this->procesoImagenService = $procesoImagenService ?? app(ProcesoImagenService::class);
         $this->imageUploadService = $imageUploadService ?? app(ImageUploadService::class);
         $this->pedidoSequenceService = $pedidoSequenceService ?? app(PedidoSequenceService::class);
+        $this->imagenRelocalizadorService = $imagenRelocalizadorService ?? app(ImagenRelocalizadorService::class);
     }
 
     /**
@@ -335,7 +339,7 @@ class PedidoWebService
                             // Buscar tela_id en tabla telas_prenda usando TelaPrenda model
                             $telaId = null;
                             if ($telaGuardar) {
-                                $telaRecord = \App\Models\TelaPrenda::where('nombre', $telaGuardar)->first();
+                                $telaRecord = TelaPrenda::where('nombre', $telaGuardar)->first();
                                 $telaId = $telaRecord?->id;
                             }
                             
@@ -348,7 +352,7 @@ class PedidoWebService
                                     if ($colorNombre) {
                                         // Buscar color_id en tabla colores_prenda usando ColorPrenda model
                                         $colorId = null;
-                                        $colorRecord = \App\Models\ColorPrenda::where('nombre', $colorNombre)->first();
+                                        $colorRecord = ColorPrenda::where('nombre', $colorNombre)->first();
                                         $colorId = $colorRecord?->id;
                                         
                                         $prendaPedidoTalla->coloresAsignados()->create([
@@ -1014,7 +1018,7 @@ class PedidoWebService
 
             // Procesar y guardar imágenes en directorio específico del pedido
             foreach ($imagenes as $imagen) {
-                if ($imagen instanceof \Illuminate\Http\UploadedFile && $imagen->isValid()) {
+                if ($imagen instanceof UploadedFile && $imagen->isValid()) {
                     $rutaGuardada = $imagen->store("pedido/{$pedidoId}/procesos/{$nombreProceso}", 'public');
                     
                     Log::info('[PedidoWebService] Imagen proceso guardada', [

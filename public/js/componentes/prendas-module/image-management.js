@@ -97,11 +97,8 @@ window.actualizarPreviewPrenda = function() {
         img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
         console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
         
-        // Solo agregar click handler al preview (no duplicar en la img)
-        preview.onclick = (e) => {
-            e.stopPropagation();
-            mostrarGaleriaImagenesPrenda(imagenes, 0);
-        };
+        // NO asignar click handler aquí - PrendaDragDropHandler ya maneja los clicks
+        // El handler en PrendaDragDropHandler._onClickConImagenes() se encargará de abrir la galería
         
         preview.appendChild(img);
         console.log('[actualizarPreviewPrenda]  Imagen agregada al preview');
@@ -115,6 +112,15 @@ window.actualizarPreviewPrenda = function() {
         
         if (btn) {
             btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        }
+        
+        // 🔄 IMPORTANTE: Notificar al DragDropManager que las imágenes han cambiado
+        // Esto hará que el handler se reconfigure si es necesario
+        if (window.dragDropManager && typeof window.dragDropManager.actualizarImagenesPrenda === 'function') {
+            window.dragDropManager.actualizarImagenesPrenda(imagenes);
+            console.log('[actualizarPreviewPrenda] ✅ DragDropManager notificado de cambios en imágenes');
+        } else {
+            console.log('[actualizarPreviewPrenda] ⚠️ DragDropManager no disponible para notificación');
         }
         
     } catch (e) {

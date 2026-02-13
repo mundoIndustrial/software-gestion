@@ -36,93 +36,6 @@ class DragDropManager {
             this.mousePosition.x = e.clientX;
             this.mousePosition.y = e.clientY;
         }, { passive: true });
-        
-        // Agregar listener global de mousedown para diagnóstico
-        document.addEventListener('mousedown', (e) => {
-            if (e.button === 2) { // Botón derecho
-                UIHelperService.log('DragDropManager', `🌐 GLOBAL mousedown derecho - target: ${e.target.id || e.target.tagName}, class: ${e.target.className || 'no-class'}, parent: ${e.target.parentElement?.id || e.target.parentElement?.tagName || 'no-parent'}`);
-                
-                // Verificar si está en el área de telas
-                const dropZoneTela = document.getElementById('nueva-prenda-tela-drop-zone');
-                const previewTela = document.getElementById('nueva-prenda-tela-preview');
-                const previewPrenda = document.getElementById('nueva-prenda-foto-preview');
-                
-                if (dropZoneTela && (dropZoneTela.contains(e.target) || dropZoneTela === e.target)) {
-                    UIHelperService.log('DragDropManager', '🎯 GLOBAL: Click derecho en drop zone de telas');
-                    
-                    // INTERVENCIÓN DIRECTA: Redirigir al handler de telas
-                    if (this.telaHandler && this.telaHandler.mostrarMenuContextual) {
-                        UIHelperService.log('DragDropManager', '🚨 INTERVENCIÓN: Redirigiendo al handler de telas');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        
-                        // Enfocar el elemento
-                        dropZoneTela.focus();
-                        
-                        // Llamar directamente al handler
-                        this.telaHandler.mostrarMenuContextual(e, 'dropzone');
-                        return false;
-                    }
-                } else if (previewTela && (previewTela.contains(e.target) || previewTela === e.target)) {
-                    UIHelperService.log('DragDropManager', '🎯 GLOBAL: Click derecho en preview de telas');
-                    
-                    // INTERVENCIÓN DIRECTA: Redirigir al handler de telas
-                    if (this.telaHandler && this.telaHandler.mostrarMenuContextual) {
-                        UIHelperService.log('DragDropManager', '� INTERVENCIÓN: Redirigiendo al handler de telas (preview)');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        
-                        // Enfocar el elemento
-                        previewTela.focus();
-                        
-                        // Llamar directamente al handler
-                        this.telaHandler.mostrarMenuContextual(e, 'preview');
-                        return false;
-                    }
-                } else if (previewPrenda && (previewPrenda.contains(e.target) || previewPrenda === e.target)) {
-                    UIHelperService.log('DragDropManager', '🎯 GLOBAL: Click derecho en preview de prendas');
-                    
-                    // INTERVENCIÓN DIRECTA: Redirigir al handler de prendas
-                    if (this.prendaHandler && this.prendaHandler.mostrarMenuContextual) {
-                        UIHelperService.log('DragDropManager', '🚨 INTERVENCIÓN: Redirigiendo al handler de prendas');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        
-                        // Enfocar el elemento
-                        previewPrenda.focus();
-                        
-                        // Llamar directamente al handler
-                        this.prendaHandler.mostrarMenuContextual(e, 'preview');
-                        return false;
-                    }
-                }
-                
-                // Verificar si nuestro listener de fallback se está ejecutando (agregar un timeout para dar tiempo)
-                setTimeout(() => {
-                    UIHelperService.log('DragDropManager', '🔍 Verificando si el listener de fallback se ejecutó...');
-                }, 10);
-            }
-        }, true); // Usar captura
-        
-        UIHelperService.log('DragDropManager', '🖱️ Mouse tracking configurado');
-    }
-
-    /**
-     * Incrementar contador del listener de fallback (para diagnóstico)
-     */
-    incrementarFallbackCounter() {
-        this.fallbackListenerCounter++;
-        UIHelperService.log('DragDropManager', `🚨 FALLBACK: Ejecución #${this.fallbackListenerCounter} del listener de fallback`);
-    }
-
-    /**
-     * Obtener contador del listener de fallback
-     */
-    getFallbackCounter() {
-        return this.fallbackListenerCounter;
     }
 
     /**
@@ -135,7 +48,6 @@ class DragDropManager {
             return this;
         }
 
-        UIHelperService.log('DragDropManager', '🚀 Inicializando sistema Drag & Drop...');
 
         // Verificar dependencias antes de crear instancias
         if (!window.PrendaDragDropHandler || !window.TelaDragDropHandler || !window.ProcesoDragDropHandler) {
@@ -146,18 +58,13 @@ class DragDropManager {
             throw new Error('Dependencias no disponibles: PrendaDragDropHandler, TelaDragDropHandler, o ProcesoDragDropHandler');
         }
 
-        UIHelperService.log('DragDropManager', '✅ Dependencias verificadas, creando instancias...');
 
         // Crear instancias ahora que las clases están disponibles
         this.prendaHandler = new PrendaDragDropHandler();
         this.telaHandler = new TelaDragDropHandler();
         this.procesoHandler = new ProcesoDragDropHandler();
 
-        UIHelperService.log('DragDropManager', '✅ Instancias creadas:', 'success');
-        UIHelperService.log('DragDropManager', `- PrendaHandler: ${!!this.prendaHandler}`);
-        UIHelperService.log('DragDropManager', `- TelaHandler: ${!!this.telaHandler}`);
-        UIHelperService.log('DragDropManager', `- ProcesoHandler: ${!!this.procesoHandler}`);
-
+  
         // Configurar listener global de paste
         this._configurarListenerGlobalPaste();
 
@@ -425,12 +332,10 @@ class DragDropManager {
      * @private
      */
     _inicializarTelas() {
-        UIHelperService.log('DragDropManager', '🔧 Inicializando sistema de telas...');
         
         // Configurar drag & drop en el botón
         const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
         if (dropZone) {
-            UIHelperService.log('DragDropManager', '✅ Drop zone de telas encontrado, configurando...');
             this.telaHandler.configurarDropZone(dropZone);
             UIHelperService.log('DragDropManager', '✅ Drop zone de telas configurada');
         } else {
@@ -472,8 +377,19 @@ class DragDropManager {
      */
     actualizarImagenesPrenda(nuevasImagenes) {
         if (this.prendaHandler) {
+            const teníanImagenesAntes = (this.prendaHandler.imagenesActuales && this.prendaHandler.imagenesActuales.length > 0);
+            const tienenImagenesAhora = (nuevasImagenes && nuevasImagenes.length > 0);
+            
+            // Actualizar la lista de imágenes
             this.prendaHandler.actualizarImagenesActuales(nuevasImagenes);
             UIHelperService.log('DragDropManager', `Imágenes de prenda actualizadas: ${nuevasImagenes.length}`);
+            
+            // Si pasamos de "sin imágenes" a "con imágenes" o viceversa, reconfigurar el handler
+            // para cambiar el comportamiento del click handler
+            if (teníanImagenesAntes !== tienenImagenesAhora) {
+                UIHelperService.log('DragDropManager', `Estado de imágenes cambió (${teníanImagenesAntes} → ${tienenImagenesAhora}), reconfigurando handler...`);
+                this.reconfigurarPrendas();
+            }
         } else {
             UIHelperService.log('DragDropManager', 'Handler de prendas no disponible para actualizar imágenes', 'warn');
         }
@@ -547,7 +463,6 @@ class DragDropManager {
             procesos: this.procesoHandler ? this.procesoHandler.getEstado() : { procesosConfigurados: 0, error: 'Handler no inicializado' },
             servicios: {
                 uiHelper: UIHelperService ? 'disponible' : 'no disponible',
-                contextMenu: ContextMenuService && typeof ContextMenuService.getEstado === 'function' ? ContextMenuService.getEstado() : 'no disponible',
                 clipboard: ClipboardService && typeof ClipboardService.getEstado === 'function' ? ClipboardService.getEstado() : 'no disponible'
             }
         };
@@ -718,7 +633,6 @@ const inicializarConRetraso = () => {
             // Verificar que las dependencias estén disponibles
             const dependencias = {
                 UIHelperService: typeof window.UIHelperService !== 'undefined',
-                ContextMenuService: typeof window.ContextMenuService !== 'undefined',
                 ClipboardService: typeof window.ClipboardService !== 'undefined',
                 PrendaDragDropHandler: typeof window.PrendaDragDropHandler !== 'undefined'
             };

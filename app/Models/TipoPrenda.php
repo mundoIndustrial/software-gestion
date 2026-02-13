@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * TipoPrenda Model
+ * 
+ * @property int $id
+ * @property string $nombre
+ * @property string|null $codigo
+ * @property array $palabras_clave
+ * @property string|null $descripcion
+ * @property bool $activo
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 class TipoPrenda extends Model
 {
     protected $table = 'tipos_prenda';

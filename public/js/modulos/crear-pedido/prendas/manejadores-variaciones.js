@@ -251,24 +251,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Cargar catálogos de telas y colores al abrir el modal
-    cargarTelasDisponibles();
-    cargarColoresDisponibles();
+    // 🔄 Catálogos se cargan bajo demanda cuando se abre el modal
+    console.log('[DOMContentLoaded] Catálogos de telas y colores se cargarán bajo demanda');
 });
 
 /**
  * Cargar telas disponibles desde la BD
  */
 async function cargarTelasDisponibles() {
+    console.log('[Telas] Iniciando carga de telas disponibles...');
     try {
         const response = await fetch('/api/public/telas');
         const result = await response.json();
         
+        console.log('[Telas] Respuesta de API:', { 
+            success: result.success, 
+            count: result.data?.length || 0,
+            status: response.status
+        });
+        
         if (result.success && result.data) {
             telasDisponibles = result.data;
+            console.log('[Telas] Telas cargadas en memoria:', result.data.length);
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-telas');
+            console.log('[Telas] Buscando datalist con id "opciones-telas":', datalist ? '✅ Encontrado' : '❌ NO ENCONTRADO');
+            
             if (datalist) {
                 datalist.innerHTML = '';
                 result.data.forEach(tela => {
@@ -278,10 +287,18 @@ async function cargarTelasDisponibles() {
                     option.dataset.referencia = tela.referencia || '';
                     datalist.appendChild(option);
                 });
+                console.log('[Telas] Datalist actualizado con', result.data.length, 'telas');
+            } else {
+                console.warn('[Telas] Datalist "opciones-telas" no existe en el DOM');
             }
+        } else {
+            console.warn('[Telas] Respuesta no válida:', result);
         }
     } catch (error) {
-        console.warn('[Telas] Error cargando telas:', error);
+        console.error('[Telas] Error cargando telas:', {
+            message: error.message,
+            stack: error.stack
+        });
     }
 }
 
@@ -289,15 +306,25 @@ async function cargarTelasDisponibles() {
  * Cargar colores disponibles desde la BD
  */
 async function cargarColoresDisponibles() {
+    console.log('[Colores] Iniciando carga de colores disponibles...');
     try {
         const response = await fetch('/api/public/colores');
         const result = await response.json();
         
+        console.log('[Colores] Respuesta de API:', { 
+            success: result.success, 
+            count: result.data?.length || 0,
+            status: response.status
+        });
+        
         if (result.success && result.data) {
             coloresDisponibles = result.data;
+            console.log('[Colores] Colores cargados en memoria:', result.data.length);
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-colores');
+            console.log('[Colores] Buscando datalist con id "opciones-colores":', datalist ? '✅ Encontrado' : '❌ NO ENCONTRADO');
+            
             if (datalist) {
                 datalist.innerHTML = '';
                 result.data.forEach(color => {
@@ -307,12 +334,45 @@ async function cargarColoresDisponibles() {
                     option.dataset.codigo = color.codigo || '';
                     datalist.appendChild(option);
                 });
+                console.log('[Colores] Datalist actualizado con', result.data.length, 'colores');
+            } else {
+                console.warn('[Colores] Datalist "opciones-colores" no existe en el DOM');
             }
+        } else {
+            console.warn('[Colores] Respuesta no válida:', result);
         }
     } catch (error) {
-        console.warn('[Colores] Error cargando colores:', error);
+        console.error('[Colores] Error cargando colores:', {
+            message: error.message,
+            stack: error.stack
+        });
     }
 }
+
+// 🔄 Flags de control para cargar bajo demanda
+window._telasCargadas = false;
+window._coloresCargados = false;
+
+/**
+ * Cargar catálogos bajo demanda (solo una vez)
+ */
+window.cargarCatalogosModal = async function() {
+    // Cargar telas si no se han cargado
+    if (!window._telasCargadas) {
+        await cargarTelasDisponibles();
+        window._telasCargadas = true;
+    } else {
+        console.log('[Catálogos] Telas ya cargadas, usando cache');
+    }
+    
+    // Cargar colores si no se han cargado
+    if (!window._coloresCargados) {
+        await cargarColoresDisponibles();
+        window._coloresCargados = true;
+    } else {
+        console.log('[Catálogos] Colores ya cargados, usando cache');
+    }
+};
 
 // Exportar funciones globales
 window.cargarTelasDisponibles = cargarTelasDisponibles;

@@ -6,6 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * PrendaPedidoTalla Model
+ * 
+ * @property int $id
+ * @property int $prenda_pedido_id
+ * @property string $genero
+ * @property string|null $talla
+ * @property string|null $tipo_talla
+ * @property int $cantidad
+ * @property bool $es_sobremedida
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 class PrendaPedidoTalla extends Model
 {
     protected $table = 'prenda_pedido_tallas';

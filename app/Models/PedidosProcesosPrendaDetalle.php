@@ -12,6 +12,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * 
  * Representa procesos productivos aplicados a una prenda
  * (bordado, estampado, DTF, sublimado, etc.)
+ * 
+ * @property int $id
+ * @property int $prenda_pedido_id
+ * @property int|null $tipo_proceso_id
+ * @property array $ubicaciones
+ * @property string|null $observaciones
+ * @property array|null $tallas_dama
+ * @property array|null $tallas_caballero
+ * @property string|null $estado
+ * @property string|null $notas_rechazo
+ * @property \Carbon\Carbon|null $fecha_aprobacion
+ * @property int|null $aprobado_por
+ * @property array|null $datos_adicionales
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
  */
 class PedidosProcesosPrendaDetalle extends Model
 {

@@ -8,6 +8,23 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\Auditable;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string|null $password
+ * @property string|null $google_id
+ * @property int|null $role_id
+ * @property array|null $roles_ids
+ * @property string|null $avatar
+ * @property string|null $telefono
+ * @property string|null $bio
+ * @property string|null $ciudad
+ * @property string|null $departamento
+ * @property \Carbon\Carbon|null $email_verified_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */

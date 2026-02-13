@@ -13,10 +13,6 @@ class TelaDragDropHandler extends BaseDragDropHandler {
     constructor() {
         super();
         this.tipo = 'tela';
-        this.opcionesMenu = {
-            textoPegar: 'Pegar imagen de tela',
-            iconoPegar: 'content_paste'
-        };
     }
 
     /**
@@ -202,7 +198,39 @@ class TelaDragDropHandler extends BaseDragDropHandler {
     _onClickDropZone(e) {
         // UIHelperService.log('TelaDragDropHandler', 'Click en drop zone de tela');
         
-        // Enfocar el elemento para permitir pegar
+        // Solo procesar click izquierdo
+        if (e.button !== 0) return;
+        
+        // Verificar si ya hay imagen en el preview de tela
+        const previewTela = document.getElementById('nueva-prenda-tela-preview');
+        const tieneImagen = previewTela && previewTela.querySelector('img');
+        
+        if (tieneImagen) {
+            // Si hay imagen, abrir modal de visualización
+            UIHelperService.log('TelaDragDropHandler', 'Abriendo modal de visualización de tela');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Buscar imágenes para la galería
+            const imagenesParaGaleria = [];
+            const imgs = previewTela.querySelectorAll('img');
+            imagenesParaGaleria.push(...Array.from(imgs).map(img => img.src));
+            
+            if (imagenesParaGaleria.length > 0 && typeof window.abrirGaleriaTela === 'function') {
+                window.abrirGaleriaTela(imagenesParaGaleria);
+            }
+            return;
+        }
+        
+        // Si no hay imagen, abrir file picker correcto
+        const fileInput = document.getElementById('nueva-prenda-tela-file-input');
+        if (fileInput) {
+            fileInput.click();
+        } else {
+            UIHelperService.log('TelaDragDropHandler', 'Input de tela no encontrado', 'warn');
+        }
+        
+        // También enfocar para permitir pegar
         this.handler.elemento.focus();
     }
 
@@ -213,6 +241,30 @@ class TelaDragDropHandler extends BaseDragDropHandler {
      */
     _onClickPreview(e) {
         // UIHelperService.log('TelaDragDropHandler', 'Click en preview de tela');
+        
+        // Solo procesar click izquierdo
+        if (e.button !== 0) return;
+        
+        // Verificar si hay imágenes en el preview
+        const imagenesParaGaleria = [];
+        const imgs = this.handlerPreview.elemento.querySelectorAll('img');
+        imagenesParaGaleria.push(...Array.from(imgs).map(img => img.src));
+        
+        if (imagenesParaGaleria.length > 0 && typeof window.abrirGaleriaTela === 'function') {
+            // Si hay imágenes, abrir modal de visualización
+            UIHelperService.log('TelaDragDropHandler', 'Abriendo galería de tela desde preview');
+            e.preventDefault();
+            e.stopPropagation();
+            window.abrirGaleriaTela(imagenesParaGaleria);
+        } else {
+            // Si no hay imágenes, abrir file picker
+            const fileInput = document.getElementById('nueva-prenda-tela-file-input');
+            if (fileInput) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            }
+        }
         
         // Enfocar el elemento para permitir pegar
         this.handlerPreview.elemento.focus();
@@ -266,140 +318,6 @@ class TelaDragDropHandler extends BaseDragDropHandler {
         } else {
             UIHelperService.log('TelaDragDropHandler', 'Función manejarImagenTela no disponible', 'error');
             UIHelperService.mostrarModalError('No se pudo procesar la imagen de tela. Función de manejo no disponible.');
-        }
-    }
-
-    /**
-     * Configurar menú contextual para telas
-     * @param {MouseEvent} e - Evento que activa el menú
-     * @param {string} tipo - Tipo de elemento ('dropzone' o 'preview')
-     */
-    mostrarMenuContextual(e, tipo = 'dropzone') {
-        UIHelperService.log('TelaDragDropHandler', `🎯 mostrarMenuContextual llamado (${tipo})...`);
-        UIHelperService.log('TelaDragDropHandler', `📍 Coordenadas: x=${e.clientX}, y=${e.clientY}`);
-        
-        // Verificar si ContextMenuService está disponible
-        if (!window.ContextMenuService) {
-            UIHelperService.log('TelaDragDropHandler', '❌ ContextMenuService no disponible', 'error');
-            return;
-        }
-        
-        UIHelperService.log('TelaDragDropHandler', '✅ ContextMenuService disponible');
-        
-        // Crear callback con logging
-        const callbackPegar = (e, opcion) => {
-            UIHelperService.log('TelaDragDropHandler', '🚀 Callback ejecutado desde menú contextual');
-            this._pegarDesdeMenuContextual();
-        };
-        
-        UIHelperService.log('TelaDragDropHandler', `📋 Callback creado: ${typeof callbackPegar}`);
-        
-        const opciones = [
-            ContextMenuService.crearOpcionPegarTela(callbackPegar)
-        ];
-
-        UIHelperService.log('TelaDragDropHandler', `📝 Opciones creadas: ${opciones.length}`);
-
-        const config = {
-            usarOverlay: true,
-            autoCerrar: true,
-            animacion: true
-        };
-
-        UIHelperService.log('TelaDragDropHandler', `📋 Llamando a ContextMenuService.crearMenu...`);
-        
-        try {
-            const resultado = ContextMenuService.crearMenu(e.clientX, e.clientY, opciones, config);
-            UIHelperService.log('TelaDragDropHandler', `✅ ContextMenuService.crearMenu ejecutado, resultado: ${resultado}`);
-            UIHelperService.log('TelaDragDropHandler', `✅ Menú contextual mostrado para ${tipo}`);
-        } catch (error) {
-            UIHelperService.log('TelaDragDropHandler', `❌ Error al crear menú contextual: ${error.message}`, 'error');
-            UIHelperService.log('TelaDragDropHandler', `❌ Stack trace: ${error.stack}`, 'error');
-        }
-    }
-
-    /**
-     * Pegar imagen desde menú contextual
-     * @param {string} tipo - Tipo de elemento ('dropzone' o 'preview')
-     * @private
-     */
-    async _pegarDesdeMenuContextual(tipo) {
-        UIHelperService.log('TelaDragDropHandler', `🖱️ Iniciando pegado desde menú contextual (${tipo})...`);
-        
-        try {
-            // Verificar si ClipboardService está disponible
-            if (!window.ClipboardService) {
-                UIHelperService.log('TelaDragDropHandler', '❌ ClipboardService no disponible', 'error');
-                throw new Error('ClipboardService no disponible');
-            }
-
-            UIHelperService.log('TelaDragDropHandler', '✅ ClipboardService disponible, intentando leer...');
-
-            // Leer imágenes del portapapeles
-            const archivos = await ClipboardService.leerImagenes({ maxArchivos: 1 });
-
-            UIHelperService.log('TelaDragDropHandler', `📁 Archivos obtenidos: ${archivos.length}`);
-
-            if (archivos.length > 0) {
-                const tempInput = UIHelperService.crearInputTemporal(archivos);
-                this._procesarImagen(tempInput);
-                UIHelperService.log('TelaDragDropHandler', `✅ Imagen de tela pegada desde menú (${tipo})`);
-            } else {
-                UIHelperService.log('TelaDragDropHandler', '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
-            }
-
-        } catch (error) {
-            UIHelperService.log('TelaDragDropHandler', `❌ Error principal pegando desde menú: ${error.message}`, 'error');
-            
-            // Fallback mejorado: usar el portapapeles del navegador directamente
-            try {
-                UIHelperService.log('TelaDragDropHandler', '🔄 Intentando fallback con navigator.clipboard...');
-                
-                if (navigator.clipboard && navigator.clipboard.read) {
-                    const items = await navigator.clipboard.read();
-                    UIHelperService.log('TelaDragDropHandler', `📋 Items encontrados en fallback: ${items.length}`);
-                    
-                    const archivos = [];
-                    
-                    for (const item of items) {
-                        UIHelperService.log('TelaDragDropHandler', `🔍 Tipos en item: ${item.types.join(', ')}`);
-                        
-                        for (const type of item.types) {
-                            if (type.startsWith('image/')) {
-                                UIHelperService.log('TelaDragDropHandler', `🖼️ Procesando tipo de imagen: ${type}`);
-                                
-                                const blob = await item.getType(type);
-                                UIHelperService.log('TelaDragDropHandler', `📦 Blob obtenido: ${blob.size} bytes`);
-                                
-                                const file = new File([blob], `tela-${Date.now()}.${type.split('/')[1]}`, {
-                                    type: type
-                                });
-                                archivos.push(file);
-                                
-                                // Solo necesitamos una imagen para telas
-                                break;
-                            }
-                        }
-                        if (archivos.length > 0) {
-                            break;
-                        }
-                    }
-                    
-                    if (archivos.length > 0) {
-                        const tempInput = UIHelperService.crearInputTemporal(archivos);
-                        this._procesarImagen(tempInput);
-                        UIHelperService.log('TelaDragDropHandler', `✅ Imagen de tela pegada con fallback (${tipo})`);
-                    } else {
-                        UIHelperService.mostrarModalError('No se encontraron imágenes en el portapapeles. Por favor copia una imagen primero.');
-                    }
-                } else {
-                    UIHelperService.log('TelaDragDropHandler', '❌ navigator.clipboard.read no disponible', 'error');
-                    UIHelperService.mostrarModalError('Por favor usa Ctrl+V para pegar la imagen de tela.');
-                }
-            } catch (fallbackError) {
-                UIHelperService.log('TelaDragDropHandler', `❌ Error en fallback: ${fallbackError.message}`, 'error');
-                UIHelperService.mostrarModalError('No se pudo acceder al portapapeles. Por favor usa Ctrl+V para pegar la imagen de tela.');
-            }
         }
     }
 

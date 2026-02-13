@@ -69,9 +69,9 @@
                         <span class="material-symbols-rounded">photo_camera</span>IMÁGENES (Máximo 3)
                     </label>
                     
-                    <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start;">
+                    <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start;" tabindex="0">
                         <!-- Preview 1 -->
-                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-1').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
@@ -80,7 +80,7 @@
                         <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso" onchange="manejarImagenProceso(this, 1)">
                         
                         <!-- Preview 2 -->
-                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-2').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
@@ -89,7 +89,7 @@
                         <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso" onchange="manejarImagenProceso(this, 2)">
                         
                         <!-- Preview 3 -->
-                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" onclick="document.getElementById('proceso-foto-input-3').click()" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;">
+                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
@@ -113,6 +113,60 @@
         </div>
     </div>
 </div>
+
+<!-- Componentes: Galerías Modales Reutilizables para cada Proceso -->
+<x-galeria-modal :id="'proceso-1'" :titulo="'Galería - Proceso 1'" />
+<x-galeria-modal :id="'proceso-2'" :titulo="'Galería - Proceso 2'" />
+<x-galeria-modal :id="'proceso-3'" :titulo="'Galería - Proceso 3'" />
+
+<script>
+    // Manejar paste en el panel de fotos
+    document.addEventListener('DOMContentLoaded', function() {
+        const fotoPanelElement = document.querySelector('.foto-panel');
+        
+        if (fotoPanelElement) {
+            fotoPanelElement.addEventListener('paste', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const items = (e.clipboardData || window.clipboardData).items;
+                
+                for (let item of items) {
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        
+                        // Encontrar el primer cuadro vacío
+                        let cuadroVacio = null;
+                        for (let i = 1; i <= 3; i++) {
+                            const preview = document.getElementById(`proceso-foto-preview-${i}`);
+                            const input = document.getElementById(`proceso-foto-input-${i}`);
+                            
+                            // Verificar si el cuadro está vacío (no tiene imagen)
+                            if (preview && !preview.querySelector('img')) {
+                                cuadroVacio = i;
+                                break;
+                            }
+                        }
+                        
+                        if (cuadroVacio) {
+                            // Asignar el archivo al input correcto
+                            const input = document.getElementById(`proceso-foto-input-${cuadroVacio}`);
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            input.files = dataTransfer.files;
+                            
+                            // Ejecutar el manejador de imagen
+                            if (typeof manejarImagenProceso === 'function') {
+                                manejarImagenProceso(input, cuadroVacio);
+                            }
+                        }
+                        break; // Solo procesar la primera imagen
+                    }
+                }
+            }, false);
+        }
+    });
+</script>
 
 <!-- MODAL SECUNDARIO: Editor de Tallas Específicas -->
 <div id="modal-editor-tallas" class="modal-overlay" style="z-index: 100002; display: none;">

@@ -54,13 +54,13 @@
                     </div>
 
                     <!-- COLUMNA DERECHA: Fotos de la Prenda -->
-                    <div class="foto-panel">
-                        <label for="nueva-prenda-foto-input" class="foto-panel-label">
-                            <span class="material-symbols-rounded">photo_camera</span>FOTOS
+                    <div class="foto-panel" id="panel-fotos-prenda" style="border: 2px solid #9333ea; border-radius: 8px; padding: 1rem; background: #faf5ff;">
+                        <label for="nueva-prenda-foto-input" class="foto-panel-label" style="color: #7c3aed;">
+                            <span class="material-symbols-rounded">photo_camera</span>📸 FOTOS DE PRENDA
                         </label>
                         
                         <!-- Imagen principal preview -->
-                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg" tabindex="0" style="outline: none;" contenteditable="true">
+                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg" tabindex="0" style="outline: none; border: 2px dashed #d1b3e6; background: white;" data-zona="prenda">
                             <div class="foto-preview-content">
                                 <div class="material-symbols-rounded">add_photo_alternate</div>
                                 <div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div>
@@ -125,28 +125,21 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: 0.2s; border-radius: 6px; padding: 8px; cursor: pointer; outline: none;" tabindex="0">
-                                            <button type="button" class="btn btn-primary btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px;" title="Agregar imagen (opcional) o arrastra una imagen aquí">
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #10b981; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0fdf4;" data-zona="tela" data-estado="inicial" tabindex="0">
+                                            <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto;" title="Click para seleccionar imagen o arrastra una aquí" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('nueva-prenda-tela-file-input').click(); return false;">
                                                 <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
                                                 <span style="font-size: 0.7rem;">Agregar imagen</span>
                                             </button>
-                                            <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
+                                            <input type="file" id="nueva-prenda-tela-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
                                             
                                             <!-- Texto de ayuda -->
-                                            <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
-                                                <div class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.5;">cloud_upload</div>
-                                                <div>Arrastra o Ctrl+V para pegar</div>
+                                            <div style="text-align: center; color: #059669; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
+                                                <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
+                                                <div>📸 TELA: Arrastra aquí o pega Ctrl+V</div>
                                             </div>
                                         </div>
-                                        <!-- Preview temporal dentro de la celda - EN EL FLUJO VISUAL Y VISIBLE -->
-                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;">
-                                            
-                                            <!-- Texto de ayuda -->
-                                            <div style="text-align: center; color: #6b7280; font-size: 0.7rem; margin-top: 4px;">
-                                                <div class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.5;">cloud_upload</div>
-                                                <div>Arrastra o Ctrl+V para pegar</div>
-                                            </div>
-                                        </div>
+                                        <!-- Preview temporal dentro de la celda -->
+                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"></div>
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; width: 20%;">
                                         <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
@@ -531,6 +524,13 @@
     </div>
 </div>
 
+<!-- Componente: Galería Modal Reutilizable -->
+<x-galeria-modal :id="'prenda'" />
+
+        </div>
+    </div>
+</div>
+
 <!-- SCRIPT: Asegurar que la fila de inputs de telas siempre esté disponible en edición -->
 <script>
 /**
@@ -676,7 +676,6 @@ document.addEventListener('paste', function(event) {
 document.addEventListener('DOMContentLoaded', function() {
     // Función para inicializar el drag & drop cuando el modal se abra
     window.inicializarDragDropModalPrenda = function() {
-        console.log('[DragDrop] 🚀 Inicializando sistema Drag & Drop para modal de prenda...');
         
         // Esperar un poco a que todos los scripts carguen
         setTimeout(() => {
@@ -851,6 +850,185 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('[DragDrop] 📋 Evento modalPrendaAbierto recibido');
         window.inicializarDragDropModalPrenda();
     });
+    
+    // ========================================================================
+    // LISTENERS ESPECÍFICOS POR ZONA - PRENDA vs TELA
+    // ========================================================================
+    
+    // ZONA 1: FOTOS DE PRENDA (Morado)
+    const prendaPreview = document.getElementById('nueva-prenda-foto-preview');
+    if (prendaPreview) {
+        console.log('[📸 PRENDA] Inicializando listeners específicos para fotos de PRENDA');
+        
+        ['dragover', 'dragenter', 'dragleave', 'drop', 'paste'].forEach(event => {
+            prendaPreview.addEventListener(event, (e) => {
+                // Solo procesa si es para PRENDA
+                if (e.target.getAttribute('data-zona') === 'prenda' || prendaPreview.contains(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true); // Usar capture mode para tomar prioridad
+        });
+        
+        // Dragover - visual feedback
+        prendaPreview.addEventListener('dragover', (e) => {
+            if (prendaPreview.contains(e.target)) {
+                prendaPreview.style.borderColor = '#7c3aed';
+                prendaPreview.style.background = '#fdf2f8';
+                prendaPreview.setAttribute('data-estado', 'hovering');
+                console.log('[📸 PRENDA] 🎯 Dragging over prenda area');
+            }
+        });
+        
+        // Dragleave - reset
+        prendaPreview.addEventListener('dragleave', (e) => {
+            if (e.target === prendaPreview) {
+                prendaPreview.style.borderColor = '#d1b3e6';
+                prendaPreview.style.background = 'white';
+                prendaPreview.setAttribute('data-estado', 'inicial');
+                console.log('[📸 PRENDA] ⬆️ Left prenda area');
+            }
+        });
+        
+        // Drop en prenda
+        prendaPreview.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (prendaPreview.contains(e.target)) {
+                prendaPreview.style.borderColor = '#d1b3e6';
+                prendaPreview.style.background = 'white';
+                prendaPreview.setAttribute('data-estado', 'inicial');
+                
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    console.log('[📸 PRENDA] 📁 Archivos dropped en PRENDA:', files.length);
+                    manejarImagenesPrendaDropped(files);
+                }
+            }
+        });
+        
+        // Paste en prenda
+        prendaPreview.addEventListener('paste', (e) => {
+            if (prendaPreview.contains(document.activeElement) || e.target === prendaPreview) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const items = e.clipboardData.items;
+                const files = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+                        files.push(items[i].getAsFile());
+                    }
+                }
+                
+                if (files.length > 0) {
+                    console.log('[📸 PRENDA] 📋 Paste detectado en PRENDA:', files.length, 'archivos');
+                    manejarImagenesPrendaDropped(files);
+                }
+            }
+        });
+    }
+    
+    // ZONA 2: FOTOS DE TELA (Verde)
+    const telaDropZone = document.getElementById('nueva-prenda-tela-drop-zone');
+    if (telaDropZone) {
+        console.log('[🧵 TELA] Inicializando listeners específicos para imágenes de TELA');
+        
+        ['dragover', 'dragenter', 'dragleave', 'drop', 'paste'].forEach(event => {
+            telaDropZone.addEventListener(event, (e) => {
+                // Solo procesa si es para TELA
+                if (e.target.getAttribute('data-zona') === 'tela' || telaDropZone.contains(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true); // Usar capture mode para tomar prioridad
+        });
+        
+        // Dragover - visual feedback
+        telaDropZone.addEventListener('dragover', (e) => {
+            if (telaDropZone.contains(e.target)) {
+                telaDropZone.style.borderColor = '#059669';
+                telaDropZone.style.background = '#dcfce7';
+                telaDropZone.setAttribute('data-estado', 'hovering');
+                console.log('[🧵 TELA] 🎯 Dragging over tela area');
+            }
+        });
+        
+        // Dragleave - reset
+        telaDropZone.addEventListener('dragleave', (e) => {
+            if (e.target === telaDropZone) {
+                telaDropZone.style.borderColor = '#10b981';
+                telaDropZone.style.background = '#f0fdf4';
+                telaDropZone.setAttribute('data-estado', 'inicial');
+                console.log('[🧵 TELA] ⬆️ Left tela area');
+            }
+        });
+        
+        // Drop en tela
+        telaDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (telaDropZone.contains(e.target)) {
+                telaDropZone.style.borderColor = '#10b981';
+                telaDropZone.style.background = '#f0fdf4';
+                telaDropZone.setAttribute('data-estado', 'inicial');
+                
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    console.log('[🧵 TELA] 📁 Archivos dropped en TELA:', files.length);
+                    manejarImagenTelaDropped(files[0]);
+                }
+            }
+        });
+        
+        // Paste en tela
+        telaDropZone.addEventListener('paste', (e) => {
+            if (telaDropZone.contains(document.activeElement) || e.target === telaDropZone) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+                        const file = items[i].getAsFile();
+                        console.log('[🧵 TELA] 📋 Paste detectado en TELA:', file.name);
+                        manejarImagenTelaDropped(file);
+                        return;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Función auxiliar para manejar archivos en PRENDA
+    window.manejarImagenesPrendaDropped = function(files) {
+        const fileInput = document.getElementById('nueva-prenda-foto-input');
+        if (fileInput) {
+            const dataTransfer = new DataTransfer();
+            for (let file of files) {
+                dataTransfer.items.add(file);
+            }
+            fileInput.files = dataTransfer.files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+            console.log('[📸 PRENDA] ✅ Archivos procesados:', files.length);
+        }
+    };
+    
+    // Función auxiliar para manejar archivos en TELA
+    window.manejarImagenTelaDropped = function(file) {
+        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+        if (fileInput) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+            console.log('[🧵 TELA] ✅ Archivo procesado:', file.name);
+        }
+    };
 });
 
 // Función de debugging para probar el paste
@@ -883,3 +1061,30 @@ window.probarPasteImagen = function() {
     }
 };
 </script>
+
+<!-- 🔧 LOADERS DE PRENDAS - Cargar directamente en el modal (si no se cargaron en Blade padre) -->
+<script>
+// Proteger contra carga múltiple
+if (typeof PrendaEditorBasicos === 'undefined') {
+    document.write('Cargando loaders del modal...');
+}
+</script>
+
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js') }}"></script>
+
+<!-- Manager del modal -->
+<script src="{{ asset('js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js') }}"></script>
+
+<!-- Servicios -->
+<script src="{{ asset('js/modulos/crear-pedido/prendas/services/prenda-editor-service.js') }}"></script>
+
+<!-- 🚫 NOTA: prenda-editor.js ya se carga en la Blade padre (crear-pedido.blade.php, edit.blade.php, etc.)
+     Si se cargar aquí también, causará: "SyntaxError: Identifier 'PrendaEditor' has already been declared"
+     Ahora prenda-editor.js tiene protección contra redeclaración con typeof PrendaEditor === 'undefined'
+-->

@@ -16,6 +16,14 @@ use Illuminate\Database\Eloquent\Model;
  * - Timestamps automáticos (created_at, updated_at)
  * 
  * Relacionada con: PrendaVariante.tela_id
+ * 
+ * @property int $id
+ * @property string $nombre
+ * @property string|null $referencia
+ * @property string|null $descripcion
+ * @property bool $activo
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class TelaPrenda extends Model
 {

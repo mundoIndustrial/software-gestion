@@ -1654,7 +1654,6 @@ function configurarListenersModalPrenda() {
         const clickDuration = performance.now() - clickStart;
         console.log(` [Debug] cerrarModalPrendaNueva() tardó ${clickDuration.toFixed(2)}ms`);
     };
-    console.log('✓ Listener del botón cerrar configurado');
     
     // LISTENER PARA CLICK FUERA DEL MODAL
     if (modalOverlay) {
@@ -1664,7 +1663,6 @@ function configurarListenersModalPrenda() {
                 cerrarModalPrendaNueva();
             }
         });
-        console.log('✓ Listener del overlay configurado');
     }
     
     // LISTENER PARA ESC

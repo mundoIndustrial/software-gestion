@@ -22,7 +22,14 @@ class UIHelperService {
                 title: 'Error',
                 text: mensaje,
                 confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Cerrar'
+                confirmButtonText: 'Cerrar',
+                didOpen: (modal) => {
+                    // Asegurar que el modal esté encima de todo
+                    const backdrop = document.querySelector('.swal2-container');
+                    const popup = document.querySelector('.swal2-popup');
+                    if (backdrop) backdrop.style.zIndex = '99999999999';
+                    if (popup) popup.style.zIndex = '99999999999';
+                }
             });
         } else {
             // Fallback a alert si Swal no está disponible

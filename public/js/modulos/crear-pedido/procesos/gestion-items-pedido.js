@@ -302,13 +302,28 @@ class GestionItemsUI {
         
         const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
         
-        if (esEdicion) {
-            console.log('[abrirModalAgregarPrendaNueva] ✏️ EDICIÓN: Abriendo modal para editar prenda index', this.prendaEditIndex);
-        } else {
-            console.log('[abrirModalAgregarPrendaNueva]  CREACIÓN: Abriendo modal para crear nueva prenda');
+        // 📦 Cargar catálogos bajo demanda
+        if (typeof window.cargarCatalogosModal === 'function') {
+            window.cargarCatalogosModal().catch(error => {
+                console.warn('[abrirModalAgregarPrendaNueva] ⚠️ Error cargando catálogos:', error);
+            });
         }
         
-        this.prendaEditor.abrirModal(esEdicion, this.prendaEditIndex);
+        if (esEdicion) {
+            console.log('[abrirModalAgregarPrendaNueva] ✏️ EDICIÓN: Abriendo modal para editar prenda index', this.prendaEditIndex);
+            // 🔥 IMPORTANTE: Cuando es edición, CARGAR LA PRENDA GUARDADA EN DOM
+            const prendaAEditar = this.prendas[this.prendaEditIndex];
+            if (prendaAEditar && this.prendaEditor) {
+                // Pasar la prenda completa guardada en DOM al modal
+                this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
+            }
+        } else {
+            console.log('[abrirModalAgregarPrendaNueva]  CREACIÓN: Abriendo modal para crear nueva prenda');
+            // Solo abrir el modal vacío para crear nueva
+            if (this.prendaEditor) {
+                this.prendaEditor.abrirModal(false, null);
+            }
+        }
     }
 
     /**

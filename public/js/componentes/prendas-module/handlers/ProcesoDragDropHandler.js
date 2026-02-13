@@ -58,38 +58,11 @@ class ProcesoDragDropHandler {
             }
         });
 
-        // Configurar eventos adicionales específicos para procesos
-        this._configurarEventosProceso(handler, previewElement, procesoNumero);
-
         handler.configurar(previewElement);
         this.handlers.set(procesoNumero, handler);
         
         // UIHelperService.log('ProcesoDragDropHandler', `Proceso ${procesoNumero} configurado`);
         return this;
-    }
-
-    /**
-     * Configurar eventos adicionales específicos para procesos
-     * @param {DragDropEventHandler} handler - Handler base
-     * @param {HTMLElement} elemento - Elemento del proceso
-     * @param {number} procesoNumero - Número del proceso
-     * @private
-     */
-    _configurarEventosProceso(handler, elemento, procesoNumero) {
-        // Remover onclick del HTML para que no interfiera
-        elemento.removeAttribute('onclick');
-        
-        // Evento mousedown para menú contextual (botón derecho)
-        elemento.addEventListener('mousedown', (e) => {
-            if (e.button === 2) { // Botón derecho
-                this._onRightClick(e, procesoNumero);
-            }
-        });
-
-        // Evento contextmenu adicional
-        elemento.addEventListener('contextmenu', (e) => {
-            this._onContextMenu(e, procesoNumero);
-        });
     }
 
     /**
@@ -138,18 +111,47 @@ class ProcesoDragDropHandler {
     _onClick(e, procesoNumero) {
         // UIHelperService.log('ProcesoDragDropHandler', `Click en proceso ${procesoNumero}`);
         
-        // Cerrar cualquier menú contextual abierto
-        this._cerrarMenusAbiertos();
+        // Solo procesar click izquierdo
+        if (e.button !== 0) return;
         
-        // Abrir el selector de archivos original
+        // Obtener el preview
+        const preview = document.getElementById(`proceso-foto-preview-${procesoNumero}`);
+        
+        // Verificar si hay imágenes en el preview
+        let imagenesParaGaleria = [];
+        const imgs = preview ? preview.querySelectorAll('img') : [];
+        imagenesParaGaleria = Array.from(imgs)
+            .map(img => img.src)
+            .filter(src => src && src.length > 0);
+        
+        UIHelperService.log('ProcesoDragDropHandler', `Imágenes encontradas en proceso ${procesoNumero}: ${imagenesParaGaleria.length}`);
+        
+        // Si hay imágenes y la función de galería está disponible, abrir la galería
+        // La función debe estar nombrada como: abrirGaleriaProceso{Numero} o abrirGaleriaproceso{Numero}
+        const functionNamePascal = `abrirGaleriaProceso${procesoNumero}`;
+        const functionNameLower = `abrirGaleriaproceso${procesoNumero}`;
+        const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
+        
+        if (imagenesParaGaleria.length > 0 && typeof galeriaFunction === 'function') {
+            UIHelperService.log('ProcesoDragDropHandler', `✅ Abriendo galería modal para proceso ${procesoNumero}`);
+            e.preventDefault();
+            e.stopPropagation();
+            galeriaFunction(imagenesParaGaleria);
+            return;
+        }
+        
+        // Si no hay imágenes o la galería no está disponible, abrir el selector de archivos
+        UIHelperService.log('ProcesoDragDropHandler', `Abriendo selector de archivos para proceso ${procesoNumero}`);
         const inputId = `proceso-foto-input-${procesoNumero}`;
         const inputElement = document.getElementById(inputId);
         
         if (inputElement) {
+            e.preventDefault();
+            e.stopPropagation();
             // UIHelperService.log('ProcesoDragDropHandler', `Abriendo input ${inputId}`);
             inputElement.click();
         } else {
-            // UIHelperService.log('ProcesoDragDropHandler', `Input ${inputId} no encontrado`, 'warn');
+            UIHelperService.log('ProcesoDragDropHandler', `Input ${inputId} no encontrado`, 'warn');
         }
     }
 
@@ -168,53 +170,6 @@ class ProcesoDragDropHandler {
             const tempInput = handler.crearInputTemporal(files);
             this._procesarImagenProceso(tempInput, procesoNumero);
         }
-    }
-
-    /**
-     * Manejar evento de clic derecho
-     * @param {MouseEvent} e - Evento mousedown
-     * @param {number} procesoNumero - Número del proceso
-     * @private
-     */
-    _onRightClick(e, procesoNumero) {
-        UIHelperService.log('ProcesoDragDropHandler', `Right click en proceso ${procesoNumero}`);
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Enfocar el elemento
-        const handler = this.handlers.get(procesoNumero);
-        if (handler) {
-            handler.elemento.focus();
-        }
-        
-        // Mostrar menú contextual
-        this.mostrarMenuContextual(e, procesoNumero);
-    }
-
-    /**
-     * Manejar evento contextmenu
-     * @param {MouseEvent} e - Evento contextmenu
-     * @param {number} procesoNumero - Número del proceso
-     * @private
-     */
-    _onContextMenu(e, procesoNumero) {
-        UIHelperService.log('ProcesoDragDropHandler', `Contextmenu en proceso ${procesoNumero}`);
-        
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        // Enfocar el elemento
-        const handler = this.handlers.get(procesoNumero);
-        if (handler) {
-            handler.elemento.focus();
-        }
-        
-        // Mostrar menú contextual
-        this.mostrarMenuContextual(e, procesoNumero);
-        
-        return false;
     }
 
     /**
@@ -242,69 +197,6 @@ class ProcesoDragDropHandler {
         } else {
             UIHelperService.log('ProcesoDragDropHandler', 'Función manejarImagenProceso no disponible', 'error');
             UIHelperService.mostrarModalError('No se pudo procesar la imagen del proceso. Función de manejo no disponible.');
-        }
-    }
-
-    /**
-     * Cerrar menús contextuales abiertos
-     * @private
-     */
-    _cerrarMenusAbiertos() {
-        const menuAbierto = document.querySelector('.proceso-context-menu-debug');
-        if (menuAbierto && menuAbierto.parentElement) {
-            UIHelperService.log('ProcesoDragDropHandler', 'Cerrando menú contextual previo');
-            menuAbierto.parentElement.removeChild(menuAbierto);
-        }
-    }
-
-    /**
-     * Configurar menú contextual para procesos
-     * @param {MouseEvent} e - Evento que activa el menú
-     * @param {number} procesoNumero - Número del proceso
-     */
-    mostrarMenuContextual(e, procesoNumero) {
-        const opciones = [
-            ContextMenuService.crearOpcionPegarProceso((e, opcion) => {
-                this._pegarDesdeMenuContextual(procesoNumero);
-            }, procesoNumero)
-        ];
-
-        const config = {
-            usarOverlay: true,
-            autoCerrar: true,
-            animacion: true,
-            zIndex: 999999999
-        };
-
-        const menu = ContextMenuService.crearMenu(e.clientX, e.clientY, opciones, config);
-        
-        // Agregar clase específica para debugging
-        if (menu) {
-            menu.className = 'proceso-context-menu-debug';
-        }
-        
-        UIHelperService.log('ProcesoDragDropHandler', `Menú contextual mostrado para proceso ${procesoNumero}`);
-    }
-
-    /**
-     * Pegar imagen desde menú contextual
-     * @param {number} procesoNumero - Número del proceso
-     * @private
-     */
-    async _pegarDesdeMenuContextual(procesoNumero) {
-        try {
-            // Leer imágenes del portapapeles
-            const archivos = await ClipboardService.leerImagenes({ maxArchivos: 1 });
-
-            if (archivos.length > 0) {
-                const tempInput = UIHelperService.crearInputTemporal(archivos);
-                this._procesarImagenProceso(tempInput, procesoNumero);
-                UIHelperService.log('ProcesoDragDropHandler', `Imagen de proceso ${procesoNumero} pegada desde menú`);
-            }
-
-        } catch (error) {
-            UIHelperService.log('ProcesoDragDropHandler', `Error pegando desde menú (proceso ${procesoNumero}): ${error.message}`, 'error');
-            UIHelperService.mostrarModalError('No se pudo acceder al portapapeles. Intenta copiar una imagen y usar Ctrl+V.');
         }
     }
 
