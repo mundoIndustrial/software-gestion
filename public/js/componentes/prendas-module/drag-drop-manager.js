@@ -40,14 +40,21 @@ class DragDropManager {
 
     /**
      * Inicializar todo el sistema de drag & drop
+     * 
+     * FASE 1: Guard clause reforzado
+     * - Una sola inicialización garantizada
+     * - Múltiples llamadas son rechazadas silenciosamente
+     * 
      * @returns {DragDropManager} Instancia para encadenamiento
      */
     inicializar() {
+        // Guard clause real: SI ya inicializado, SALIR completamente
         if (this.inicializado) {
-            UIHelperService.log('DragDropManager', 'Sistema ya inicializado', 'warn');
-            return this;
+            UIHelperService.log('DragDropManager', '✅ Ya inicializado, ignorando llamada duplicada', 'info');
+            return this;  // ← Retorna AQUÍ, no continúa con el código abajo
         }
 
+        console.log('[DragDropManager] Iniciando inicialización del sistema drag & drop...');
 
         // Verificar dependencias antes de crear instancias
         if (!window.PrendaDragDropHandler || !window.TelaDragDropHandler || !window.ProcesoDragDropHandler) {
@@ -58,13 +65,11 @@ class DragDropManager {
             throw new Error('Dependencias no disponibles: PrendaDragDropHandler, TelaDragDropHandler, o ProcesoDragDropHandler');
         }
 
-
         // Crear instancias ahora que las clases están disponibles
         this.prendaHandler = new PrendaDragDropHandler();
         this.telaHandler = new TelaDragDropHandler();
         this.procesoHandler = new ProcesoDragDropHandler();
 
-  
         // Configurar listener global de paste
         this._configurarListenerGlobalPaste();
 
@@ -73,8 +78,10 @@ class DragDropManager {
         this._inicializarTelas();
         this._inicializarProcesos();
 
+        // ✅ MARCAR como inicializado SOLO al final
         this.inicializado = true;
-        // UIHelperService.log('DragDropManager', 'Sistema de drag & drop inicializado completamente');
+        
+        console.log('[DragDropManager] ✅ Sistema de drag & drop inicializado correctamente');
         return this;
     }
 
@@ -626,42 +633,18 @@ window.testRightClick = () => {
     ProcesoDragDropHandler.testRightClick(1);
 };
 
-// Inicialización automática cuando el DOM esté listo
-const inicializarConRetraso = () => {
-    // Esperar un poco para que todos los scripts carguen
-    setTimeout(() => {
-        if (window.DragDropManager) {
-            // Verificar que las dependencias estén disponibles
-            const dependencias = {
-                UIHelperService: typeof window.UIHelperService !== 'undefined',
-                ContextMenuService: typeof window.ContextMenuService !== 'undefined',
-                ClipboardService: typeof window.ClipboardService !== 'undefined',
-                PrendaDragDropHandler: typeof window.PrendaDragDropHandler !== 'undefined'
-            };
-            
-            const todasDisponibles = Object.values(dependencias).every(v => v);
-            
-            if (todasDisponibles) {
-                // console.log('[DragDropManager] ✅ Todas las dependencias disponibles, inicializando...');
-                window.DragDropManager.inicializar();
-            } else {
-                // console.log('[DragDropManager] ⚠️ Dependencias faltantes, reintentando...', dependencias);
-                // Reintentar después de un tiempo
-                setTimeout(inicializarConRetraso, 500);
-            }
-        } else {
-            // console.log('[DragDropManager] ⚠️ DragDropManager no disponible, reintentando...');
-            setTimeout(inicializarConRetraso, 500);
-        }
-    }, 100);
-};
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarConRetraso);
-} else {
-    // El DOM ya está cargado
-    inicializarConRetraso();
-}
+// ============================================================
+// AUTO-INICIALIZACIÓN ELIMINADA
+// ============================================================
+// DragDropManager.inicializar() ahora se ejecuta EXCLUSIVAMENTE
+// desde el listener 'shown.bs.modal' { once: true } registrado
+// en GestionItemsUI.abrirModalAgregarPrendaNueva().
+//
+// Esto garantiza:
+// - Init SOLO cuando el modal es visible
+// - Una sola ejecución por apertura
+// - Flujo determinístico: FSM OPENING → shown → DragDrop → FSM OPEN
+// ============================================================
 
 // Exportar para uso en módulos
 if (typeof module !== 'undefined' && module.exports) {

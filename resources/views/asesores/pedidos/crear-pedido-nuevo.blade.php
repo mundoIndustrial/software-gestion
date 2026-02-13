@@ -163,188 +163,65 @@
 @endsection
 
 @push('scripts')
-    <!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
-    <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/shared-prenda-data-service.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/shared-prenda-storage-service.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/shared-prenda-editor-service.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/prenda-service-container.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/initialization-helper.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/system-validation-test.js') }}?v=1"></script>
-    
-    <!-- Inicializar contenedor de servicios -->
+    {{-- ⚡ JS BUNDLES — 8 bundles replace ~107 individual script tags --}}
+    {{-- Reduces HTTP requests from ~120 to ~8, eliminating waterfall bottleneck --}}
+
+    @php $v = config('app.asset_version'); @endphp
+
+    <!-- Bundle 1: Shared Services -->
+    <script defer src="/js/bundle/crear-pedido-shared.js?v={{ $v }}"></script>
+
+    @if(config('app.debug'))
+    <script defer src="{{ asset('js/servicios/shared/system-validation-test.js') }}?v=1"></script>
+    @endif
+
+    <!-- Inicializar contenedor de servicios (defer-compatible) -->
     <script>
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                PrendasEditorHelper.inicializar().catch(err => {
-                    console.error('[crear-nuevo] Error:', err);
-                });
-            });
-        } else {
+        document.addEventListener('DOMContentLoaded', function() {
             PrendasEditorHelper.inicializar().catch(err => {
                 console.error('[crear-nuevo] Error:', err);
             });
-        }
+        });
     </script>
-    
-    <!-- IMPORTANTE: Cargar PRIMERO el protector de datos principales -->
-    <script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}?v={{ time() }}"></script>
-    
-    <!-- IMPORTANTE: Cargar constantes PRIMERO -->
-    <script src="{{ asset('js/configuraciones/constantes-tallas.js') }}?v={{ time() }}"></script>
-    
-    <!-- IMPORTANTE: Cargar módulos DESPUÉS de las constantes -->
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ time() }}"></script>
-    
-    <!-- SERVICIO HTTP para EPP (DEBE cargarse ANTES del modal) -->
-    <script src="{{ asset('js/services/epp/EppHttpService.js') }}?v={{ time() }}"></script>
 
-    <!--  CRÍTICO: Cargar image-storage-service ANTES de gestion-telas.js -->
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/image-storage-service.js') }}?v={{ time() }}"></script>
-    
-    <!--  Inicializar storages INMEDIATAMENTE (ANTES de que se cargue gestion-telas.js) -->
+    <!-- Bundle 2: Config, Security, Constants, Image Storage -->
+    <script defer src="/js/bundle/crear-pedido-config.js?v={{ $v }}"></script>
+
+    <!-- Inicializar storages cuando scripts defer hayan cargado -->
     <script>
-        if (!window.imagenesPrendaStorage) {
-            window.imagenesPrendaStorage = new ImageStorageService(3);
-        }
-        if (!window.imagenesTelaStorage) {
-            window.imagenesTelaStorage = new ImageStorageService(3);
-        }
-        if (!window.imagenesReflectivoStorage) {
-            window.imagenesReflectivoStorage = new ImageStorageService(3);
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.imagenesPrendaStorage) {
+                window.imagenesPrendaStorage = new ImageStorageService(3);
+            }
+            if (!window.imagenesTelaStorage) {
+                window.imagenesTelaStorage = new ImageStorageService(3);
+            }
+            if (!window.imagenesReflectivoStorage) {
+                window.imagenesReflectivoStorage = new ImageStorageService(3);
+            }
+        });
     </script>
-    
-    <!-- EPP Services - Deben cargarse ANTES del modal -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-api-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-state-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-modal-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-item-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-imagen-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-service.js') }}?v={{ time() }}"></script>
-    
-    <!-- EPP Services SOLID - Mejoras de refactorización -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-notification-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-creation-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-form-manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/services/epp-menu-handlers.js') }}?v={{ time() }}"></script>
-    
-    <!-- EPP Templates e Interfaces -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/templates/epp-modal-template.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/epp/interfaces/epp-modal-interface.js') }}?v={{ time() }}"></script>
-    
-    <!-- EPP Initialization -->
-    <script src="{{ asset('js/modulos/crear-pedido/epp/epp-init.js') }}?v={{ time() }}"></script>
-    
-    <!-- Modal EPP se incluye como Blade template (línea 166) -->
-    <script src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/telas/gestion-telas.js') }}?v={{ time() }}"></script>
-    
-    <!-- ESTILOS del componente tarjeta readonly (ANTES de scripts) -->
-    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ time() }}">
+
+    <!-- Bundle 3: EPP Services -->
+    <script defer src="/js/bundle/crear-pedido-epp.js?v={{ $v }}"></script>
+
+    <!-- Bundle 4: Core (tallas, telas, utilidades, procesos) -->
+    <script defer src="/js/bundle/crear-pedido-core.js?v={{ $v }}"></script>
+
+    <!-- ESTILOS del componente tarjeta readonly -->
+    <link rel="stylesheet" href="{{ asset('css/componentes/prenda-card-readonly.css') }}?v={{ $v }}">
     <link rel="stylesheet" href="{{ asset('css/componentes/epp-card.css') }}">
-    
-    <!-- Constantes y helpers -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido-constantes.js') }}?v={{ time() }}"></script>
-    
-    <!-- UTILIDADES (Helpers de DOM y Limpieza) -->
-    <script src="{{ asset('js/utilidades/dom-utils.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/utilidades/modal-cleanup.js') }}?v={{ time() }}"></script>
-    
-    <!-- UTILIDADES (Procesamiento de datos de prenda) -->
-    <script src="{{ asset('js/utilidades/tela-processor.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/utilidades/prenda-data-builder.js') }}?v={{ time() }}"></script>
-    
-    <!-- UTILIDADES (Validación y Logging - Phase 3) -->
-    <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/utilidades/validador-prenda.js') }}?v={{ time() }}"></script>
-    
-    <!-- Manejadores de procesos - DEBEN cargarse ANTES de prenda-editor.js -->
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ time() }}"></script>
-    
-    <!-- STORAGE Y MANEJO DE IMÁGENES DE PROCESOS -->
-    <script src="{{ asset('js/componentes/procesos-imagenes-storage.js') }}"></script>
-    <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
-    
-    <!--  SERVICIOS EDICIÓN DINÁMICA DE PROCESOS - Deben cargarse PRIMERO -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/proceso-editor.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/gestor-edicion-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/servicio-procesos.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/middleware-guardado-prenda.js') }}?v={{ time() }}"></script>
-    
-    <!--  SERVICIOS SOLID - Deben cargarse ANTES de GestionItemsUI -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/notification-service.js') }}?v={{ time() }}"></script>
-    
-    <!-- PAYLOAD NORMALIZER v3 - VERSIÓN DEFINITIVA Y SEGURA -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/payload-normalizer.js') }}?v={{ time() }}"></script>
-    
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-api-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-validator.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-form-collector.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-renderer.js') }}?v={{ time() }}"></script>
-    <!-- 🆕 PrendaEditor sin legacy -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor-init.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/item-orchestrator.js') }}?v={{ time() }}"></script>
-    
-    <!-- Componentes de Modales -->
-    <script src="{{ asset('js/componentes/prenda-form-collector.js') }}?v={{ time() }}"></script>
-    
-    <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/modales/modal-seleccion-prendas.js') }}?v={{ time() }}"></script>
-    
-    <!-- Wrappers delegadores para prendas -->
-    <script src="{{ asset('js/componentes/prendas-wrappers.js') }}?v={{ time() }}"></script>
-    
-    <!-- Cargar módulos de gestión de pedidos -->
-    <script src="{{ asset('js/modulos/crear-pedido/configuracion/api-pedidos-editable.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/manejador-fotos-prenda-edicion.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modulos/crear-pedido/fotos/galeria-imagenes-prenda.js') }}?v={{ time() }}"></script>
-    
-    <!-- Gestor base (necesario para la clase GestorPrendaSinCotizacion) -->
-    <script src="{{ asset('js/modulos/crear-pedido/gestores/gestor-prenda-sin-cotizacion.js') }}"></script>
-    
-    <!-- Inicializador del gestor -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/inicializar-gestor.js') }}"></script>
-    
-    <!-- Manejadores de variaciones -->
-    <script src="{{ asset('js/modulos/crear-pedido/prendas/manejadores-variaciones.js') }}"></script>
-    
-    <!-- UTILIDADES para transformación de datos -->
-    <script src="{{ asset('js/prendas/utils/prenda-data-transformer.js') }}?v={{ time() }}"></script>
-    
-    <!-- BUILDERS para construcción de secciones HTML -->
-    <script src="{{ asset('js/prendas/builders/variaciones-builder.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/prendas/builders/tallas-builder.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/prendas/builders/procesos-builder.js') }}?v={{ time() }}"></script>
-    
-    <!-- SERVICIOS MODULARES para tarjeta readonly (DEBEN cargarse ANTES) -->
-    <script src="{{ asset('js/componentes/services/image-converter-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/componentes/services/prenda-card-service.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/componentes/services/prenda-card-handlers.js') }}?v={{ time() }}"></script>
-    
-    <!-- Componente tarjeta readonly (completo - funcional) -->
-    <script src="{{ asset('js/componentes/prenda-card-readonly.js') }}?v={{ time() }}"></script>
-    
-    <!-- Modal de prendas - Constantes HTML (DEBE cargarse ANTES del modal principal) -->
-    <script src="{{ asset('js/componentes/modal-prenda-dinamico-constantes.js') }}"></script>
-    
-    <!-- Modal de prendas - Clase principal (usa constantes) -->
-    <script src="{{ asset('js/componentes/modal-prenda-dinamico.js') }}"></script>
-    
-    <!-- Edición simple de prendas (reutiliza factura) -->
-    <script src="{{ asset('js/componentes/prenda-card-editar-simple.js') }}"></script>
+
+    <!-- Bundle 5: Prendas Services -->
+    <script defer src="/js/bundle/crear-pedido-prendas.js?v={{ $v }}"></script>
+
+    <!-- Bundle 6: Gestores, Builders, Card Services -->
+    <script defer src="/js/bundle/crear-pedido-gestores.js?v={{ $v }}"></script>
 
 <script>
     window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
 
     document.addEventListener('DOMContentLoaded', function() {
-        //  Storages ya inicializados en el script anterior (antes de cargar gestion-telas.js)
-        
         // Configurar asesora
         document.getElementById('asesora_editable').value = '{{ Auth::user()->name ?? '' }}';
         
@@ -391,10 +268,8 @@
                 }
                 // Manejar diferentes tipos de pedido
                 if (tipoPedido === 'P') {
-                    // Prenda - incluye prendas, reflectivo, bordado, estampado, DTF, sublimado
                     window.abrirModalPrendaNueva();
                 } else if (tipoPedido === 'EPP') {
-                    // EPP - Equipo de Protección Personal
                     window.abrirModalAgregarEPP();
                 } else {
                     Swal.fire({
@@ -411,9 +286,7 @@
         // Manejar cambio de tipo de pedido nuevo
         window.manejarCambiaTipoPedido = function() {
             const tipoPedido = selectTipoPedidoNuevo.value;
-            
             if (!tipoPedido) return;
-            // Mostrar botón inline
             const btnAgregarTipoInline = document.getElementById('btn-agregar-item-tipo-inline');
             if (btnAgregarTipoInline) {
                 btnAgregarTipoInline.style.display = 'flex';
@@ -426,7 +299,6 @@
             if (tipoPedido === 'EPP') {
                 window.abrirModalAgregarEPP();
             } else if (tipoPedido === 'P') {
-                // Prenda - abre el modal existente
                 window.abrirModalPrendaNueva();
             }
         };
@@ -435,26 +307,39 @@
 
 <!-- Script para cargar datos en modo edición -->
 @if($modoEdicion ?? false)
-<script src="{{ asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<script defer src="{{ asset('js/modulos/crear-pedido/edicion/cargar-datos-edicion-nuevo.js') }}?v={{ $v }}"></script>
 @endif
 
-<!-- Script para Vista Previa en Vivo de Factura - Módulos Desacoplados -->
-<script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
-<script src="{{ asset('js/modulos/invoice/FormDataCaptureService.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
-<script src="{{ asset('js/modulos/invoice/ModalManager.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
-<script src="{{ asset('js/modulos/invoice/InvoiceExportService.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
-<script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}&t={{ uniqid() }}"></script>
+<!-- Invoice Preview: Lazy-loaded cuando se necesite -->
+<script>
+    window._invoiceScriptsLoaded = false;
+    window.cargarModulosInvoice = function() {
+        if (window._invoiceScriptsLoaded) return Promise.resolve();
+        return new Promise(function(resolve) {
+            var scripts = [
+                '{{ asset("js/modulos/invoice/ImageGalleryManager.js") }}?v={{ $v }}',
+                '{{ asset("js/modulos/invoice/FormDataCaptureService.js") }}?v={{ $v }}',
+                '{{ asset("js/modulos/invoice/InvoiceRenderer.js") }}?v={{ $v }}',
+                '{{ asset("js/modulos/invoice/ModalManager.js") }}?v={{ $v }}',
+                '{{ asset("js/modulos/invoice/InvoiceExportService.js") }}?v={{ $v }}',
+                '{{ asset("js/invoice-preview-live.js") }}?v={{ $v }}'
+            ];
+            var loaded = 0;
+            scripts.forEach(function(src) {
+                var s = document.createElement('script');
+                s.src = src;
+                s.onload = function() { if (++loaded === scripts.length) { window._invoiceScriptsLoaded = true; resolve(); } };
+                document.head.appendChild(s);
+            });
+        });
+    };
+</script>
 
-<!-- Script para interactividad de item-cards -->
-<script src="{{ asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}"></script>
+<!-- Bundle 7: Final UI Scripts -->
+<script defer src="/js/bundle/crear-pedido-ui.js?v={{ $v }}"></script>
 
-<!-- 🧪 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
-<script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
-
-<!-- Script para modal de prendas y autocomplete -->
-<script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
-
-<!-- Script para drag & drop de procesos -->
-<script src="{{ asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ time() }}"></script>
+<!-- 🧪 TEST SUITE: Solo en desarrollo -->
+@if(config('app.debug'))
+<script defer src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ $v }}"></script>
+@endif
 @endpush

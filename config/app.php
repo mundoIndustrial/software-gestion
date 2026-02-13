@@ -129,4 +129,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Asset Version (Cache Busting)
+    |--------------------------------------------------------------------------
+    |
+    | This value is appended to asset URLs as a query parameter to bust
+    | browser cache when assets change. Increment this value on each
+    | deployment that includes JS/CSS changes.
+    |
+    */
+
+    'asset_version' => env('ASSET_VERSION', '1.0.0'),
+
 ];

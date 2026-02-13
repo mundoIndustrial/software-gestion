@@ -27,10 +27,17 @@ class BodegaCQRSServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Registrar Command Bus y Query Bus
-        $this->app->singleton(CommandBus::class);
+        // Registrar Command Bus y Query Bus como singletons con handlers pre-registrados
+        $this->app->singleton(CommandBus::class, function ($app) {
+            $bus = new CommandBus();
+            $this->registrarCommandHandlersEnBus($bus);
+            return $bus;
+        });
+
         $this->app->singleton(QueryBus::class, function ($app) {
-            return new QueryBus(config('cqrs.cache_ttl', 300)); // 5 minutos por defecto
+            $bus = new QueryBus(config('cqrs.cache_ttl', 300));
+            $this->registrarQueryHandlersEnBus($bus);
+            return $bus;
         });
 
         // Registrar CQRS Manager
@@ -73,9 +80,8 @@ class BodegaCQRSServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Registrar handlers en los buses
-        $this->registrarCommandHandlers();
-        $this->registrarQueryHandlers();
+        // Los handlers se registran dentro de las factory closures del singleton.
+        // boot() ya no necesita hacer nada.
 
         // Publicar configuración si es necesario
         $this->publishes([
@@ -84,12 +90,10 @@ class BodegaCQRSServiceProvider extends ServiceProvider
     }
 
     /**
-     * Registrar handlers de Commands
+     * Registrar handlers de Commands en el bus
      */
-    private function registrarCommandHandlers(): void
+    private function registrarCommandHandlersEnBus(CommandBus $commandBus): void
     {
-        $commandBus = $this->app->make(CommandBus::class);
-
         // Registrar EntregarPedidoCommand
         $commandBus->register(
             EntregarPedidoCommand::class,
@@ -104,12 +108,10 @@ class BodegaCQRSServiceProvider extends ServiceProvider
     }
 
     /**
-     * Registrar handlers de Queries
+     * Registrar handlers de Queries en el bus
      */
-    private function registrarQueryHandlers(): void
+    private function registrarQueryHandlersEnBus(QueryBus $queryBus): void
     {
-        $queryBus = $this->app->make(QueryBus::class);
-
         // Registrar ObtenerPedidosPorAreaQuery
         $queryBus->register(
             ObtenerPedidosPorAreaQuery::class,

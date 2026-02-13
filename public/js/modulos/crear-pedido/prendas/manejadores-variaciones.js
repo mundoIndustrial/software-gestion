@@ -349,31 +349,70 @@ async function cargarColoresDisponibles() {
     }
 }
 
-// 🔄 Flags de control para cargar bajo demanda
-window._telasCargadas = false;
-window._coloresCargados = false;
+/**
+ * ================================================
+ * FASE 1: DEDUPLICACIÓN DE PROMISES
+ * ================================================
+ * 
+ * Cambios:
+ * - Eliminado flags globales (_telasCargadas, _coloresCargados)
+ * - Agregada deduplicación con PromiseCache
+ * - Múltiples llamadas simultáneas reutilizan la misma promise
+ * 
+ * Requiere: promise-cache.js cargado antes
+ */
 
 /**
  * Cargar catálogos bajo demanda (solo una vez)
+ * 
+ * Si hay una carga en progreso, reutiliza esa promise
+ * Múltiples llamadas simultáneas = 1 solo fetch
+ * 
+ * @returns {Promise<object>} { telas, colores }
  */
 window.cargarCatalogosModal = async function() {
-    // Cargar telas si no se han cargado
-    if (!window._telasCargadas) {
-        await cargarTelasDisponibles();
-        window._telasCargadas = true;
-    } else {
-        console.log('[Catálogos] Telas ya cargadas, usando cache');
-    }
+    const CACHE_KEY = 'catalogs:telas-colores';
     
-    // Cargar colores si no se han cargado
-    if (!window._coloresCargados) {
-        await cargarColoresDisponibles();
-        window._coloresCargados = true;
-    } else {
-        console.log('[Catálogos] Colores ya cargados, usando cache');
+    // Guard 1: Si hay una promise en flight, reutilizarla
+    if (typeof PromiseCache !== 'undefined' && PromiseCache.has(CACHE_KEY)) {
+        console.log('[Catálogos] ✓ Promise en flight, reutilizando...');
+        return PromiseCache.get(CACHE_KEY);
     }
+
+    // Crear nueva promise de carga
+    const catalogsPromise = (async () => {
+        try {
+            console.log('[Catálogos] Iniciando carga de catálogos...');
+            
+            // Cargar en paralelo (Promise.all)
+            const [telas, colores] = await Promise.all([
+                cargarTelasDisponibles(),
+                cargarColoresDisponibles()
+            ]);
+            
+            console.log('[Catálogos] ✅ Ambos catálogos cargados', {
+                telas: telas?.length || 0,
+                colores: colores?.length || 0
+            });
+            
+            return { telas, colores };
+        } catch (error) {
+            console.error('[Catálogos] ❌ Error cargando catálogos:', {
+                message: error.message,
+                stack: error.stack
+            });
+            throw error;
+        }
+    })();
+
+    // Guardar en caché (se limpia automáticamente al terminar)
+    if (typeof PromiseCache !== 'undefined') {
+        PromiseCache.set(CACHE_KEY, catalogsPromise);
+    }
+
+    return catalogsPromise;
 };
 
-// Exportar funciones globales
+// Exportar funciones globales (para compatibilidad)
 window.cargarTelasDisponibles = cargarTelasDisponibles;
 window.cargarColoresDisponibles = cargarColoresDisponibles;

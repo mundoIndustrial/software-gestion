@@ -11,6 +11,7 @@ class PrendaModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'flex';
+            modal.dispatchEvent(new CustomEvent('shown.bs.modal', { bubbles: true }));
             console.log(`✅ [Modal] Abierto: ${modalId}`);
         } else {
             console.warn(`❌ [Modal] No encontrado: ${modalId}`);
@@ -24,6 +25,7 @@ class PrendaModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'none';
+            modal.dispatchEvent(new CustomEvent('hidden.bs.modal', { bubbles: true }));
             console.log(`✅ [Modal] Cerrado: ${modalId}`);
         }
     }
@@ -142,6 +144,7 @@ class PrendaModalManager {
 
     /**
      * Esperar a que el modal esté visible
+     * Usa el evento shown.bs.modal (dispatched por abrir()) con timeout de seguridad
      */
     static async esperarVisible(modalId = 'modal-agregar-prenda-nueva') {
         return new Promise((resolve) => {
@@ -150,26 +153,23 @@ class PrendaModalManager {
                 resolve();
                 return;
             }
-            
-            // Si ya está visible, resolver
-            if (modal.style.display !== 'none') {
+
+            // Si ya está visible, resolver inmediatamente
+            if (modal.style.display !== 'none' && modal.style.display !== '') {
                 resolve();
                 return;
             }
-            
-            // Esperar a que sea visible
-            const observer = new MutationObserver(() => {
-                if (modal.style.display !== 'none') {
-                    observer.disconnect();
-                    resolve();
-                }
-            });
-            
-            observer.observe(modal, { attributes: true });
-            
+
+            // Esperar evento shown.bs.modal (una sola vez)
+            const handler = () => {
+                clearTimeout(timeout);
+                resolve();
+            };
+            modal.addEventListener('shown.bs.modal', handler, { once: true });
+
             // Timeout de seguridad
-            setTimeout(() => {
-                observer.disconnect();
+            const timeout = setTimeout(() => {
+                modal.removeEventListener('shown.bs.modal', handler);
                 resolve();
             }, 1000);
         });

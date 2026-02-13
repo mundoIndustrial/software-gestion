@@ -295,33 +295,64 @@ class GestionItemsUI {
         }
     }
 
-    abrirModalAgregarPrendaNueva() {
-        // 🔥 FLUJO:
-        // 1. Si viene del botón "Agregar nueva prenda" → prendaEditIndex está en null
-        // 2. Si viene del botón "Editar prenda" → prendaEditIndex ya fue establecido ANTES de llamar aquí
-        
-        const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
-        
-        // 📦 Cargar catálogos bajo demanda
-        if (typeof window.cargarCatalogosModal === 'function') {
-            window.cargarCatalogosModal().catch(error => {
-                console.warn('[abrirModalAgregarPrendaNueva] ⚠️ Error cargando catálogos:', error);
-            });
+    /**
+     * Abrir modal de prenda (crear o editar)
+     * 
+     * Flujo: FSM guard → OPENING → catálogos → shown.bs.modal({once}) → DragDrop → OPEN
+     */
+    async abrirModalAgregarPrendaNueva() {
+        const fsm = window.__MODAL_FSM__;
+
+        // Guard: FSM previene doble apertura
+        if (fsm && !fsm.puedeAbrir()) {
+            console.warn('[abrirModal] Bloqueado por FSM (estado:', fsm.obtenerEstado(), ')');
+            return;
         }
-        
-        if (esEdicion) {
-            console.log('[abrirModalAgregarPrendaNueva] ✏️ EDICIÓN: Abriendo modal para editar prenda index', this.prendaEditIndex);
-            // 🔥 IMPORTANTE: Cuando es edición, CARGAR LA PRENDA GUARDADA EN DOM
-            const prendaAEditar = this.prendas[this.prendaEditIndex];
-            if (prendaAEditar && this.prendaEditor) {
-                // Pasar la prenda completa guardada en DOM al modal
-                this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
+
+        try {
+            // FSM → OPENING
+            if (fsm) fsm.cambiarEstado('OPENING', { origen: 'abrirModalAgregarPrendaNueva' });
+
+            // 1. Cargar catálogos (deduplicado automáticamente)
+            if (typeof window.cargarCatalogosModal === 'function') {
+                await window.cargarCatalogosModal();
             }
-        } else {
-            console.log('[abrirModalAgregarPrendaNueva]  CREACIÓN: Abriendo modal para crear nueva prenda');
-            // Solo abrir el modal vacío para crear nueva
-            if (this.prendaEditor) {
-                this.prendaEditor.abrirModal(false, null);
+
+            // 2. Registrar listener shown ANTES de abrir (se auto-elimina con {once})
+            const modal = document.getElementById('modal-agregar-prenda-nueva');
+            if (modal) {
+                modal.addEventListener('shown.bs.modal', () => {
+                    // DragDrop init (guard interno previene doble init)
+                    if (window.DragDropManager) {
+                        window.DragDropManager.inicializar();
+                    }
+                    // FSM → OPEN
+                    if (fsm) fsm.cambiarEstado('OPEN', { origen: 'shown.bs.modal' });
+                    console.log('[abrirModal] ✅ Modal OPEN — DragDrop inicializado');
+                }, { once: true });
+            }
+
+            // 3. Abrir modal (dispara shown.bs.modal sincrónicamente)
+            const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+
+            if (esEdicion) {
+                const prendaAEditar = this.prendas[this.prendaEditIndex];
+                if (prendaAEditar && this.prendaEditor) {
+                    this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
+                }
+            } else {
+                if (this.prendaEditor) {
+                    this.prendaEditor.abrirModal(false, null);
+                }
+            }
+
+        } catch (error) {
+            console.error('[abrirModalAgregarPrendaNueva] ERROR:', error);
+            // Reset de emergencia
+            if (fsm) fsm.cambiarEstado('CLOSED', { error: error.message });
+
+            if (typeof NotificationService !== 'undefined' && NotificationService) {
+                NotificationService.error('Error abriendo modal: ' + error.message);
             }
         }
     }
@@ -330,48 +361,44 @@ class GestionItemsUI {
      * Cerrar modal de agregar/editar prenda
      */
     cerrarModalAgregarPrendaNueva() {
+        const fsm = window.__MODAL_FSM__;
+
         try {
-            console.log('[gestionItemsUI] 🔘 Cerrando modal de agregar/editar prenda...');
-            
-            //  NUEVO: Resetear la bandera de nueva prenda desde cotización
+            // FSM → CLOSING
+            if (fsm) fsm.cambiarEstado('CLOSING', { origen: 'cerrarModalAgregarPrendaNueva' });
+
+            // Resetear bandera de nueva prenda desde cotización
             if (this.prendaEditor) {
                 this.prendaEditor.esNuevaPrendaDesdeCotizacion = false;
             }
-            
-            // 🔥 IMPORTANTE: Limpiar COMPLETAMENTE el modal después de guardar una prenda
-            // Esto asegura que la próxima prenda se agregue con un formulario limpio
-            // ModalCleanup.limpiarDespuésDeGuardar() se encarga de:
-            // - Limpiar todo (inputs, storages, checkboxes, procesos, contenedores)
-            // - Resetear window.prendaEditIndex en TODAS las ubicaciones
-            // - Ocultar el modal
+
+            // Limpiar modal (oculta + limpia campos)
             if (typeof ModalCleanup !== 'undefined') {
-                console.log('[gestionItemsUI]   → Ejecutando ModalCleanup.limpiarDespuésDeGuardar()...');
                 ModalCleanup.limpiarDespuésDeGuardar();
-                console.log('[gestionItemsUI]   ✓ ModalCleanup completado');
             } else {
-                // Fallback si ModalCleanup no está disponible
-                console.log('[gestionItemsUI]    ModalCleanup no disponible, usando fallback...');
                 this.prendaEditIndex = null;
-                if (this.prendaEditor) {
-                    this.prendaEditor.prendaEditIndex = null;
-                }
+                if (this.prendaEditor) this.prendaEditor.prendaEditIndex = null;
                 window.prendaEditIndex = null;
-                
-                // Cerrar directamente el modal
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
+                if (modal) modal.style.display = 'none';
             }
-            
+
             // Resetear editor
             if (this.prendaEditor) {
                 this.prendaEditor.resetearEdicion();
             }
-            
-            console.log('[gestionItemsUI]  Modal de prenda cerrado exitosamente');
+
+            // Destruir DragDrop (resetea inicializado=false para próxima apertura)
+            if (window.DragDropManager) {
+                window.DragDropManager.destruir();
+            }
+
+            // FSM → CLOSED
+            if (fsm) fsm.cambiarEstado('CLOSED', { origen: 'cerrarModalAgregarPrendaNueva' });
+
         } catch (error) {
-            console.error('[gestionItemsUI]  Error cerrando modal:', error);
+            console.error('[cerrarModal] ERROR:', error);
+            if (fsm) fsm.cambiarEstado('CLOSED', { error: error.message });
         }
     }
 

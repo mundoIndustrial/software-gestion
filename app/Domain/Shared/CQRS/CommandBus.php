@@ -50,11 +50,6 @@ class CommandBus
     public function register(string $commandClass, string $handlerClass): void
     {
         $this->handlers[$commandClass] = $handlerClass;
-        
-        Log::debug(' CommandBus: Handler registrado', [
-            'command' => $commandClass,
-            'handler' => $handlerClass,
-        ]);
     }
 
     /**
@@ -75,11 +70,6 @@ class CommandBus
         $handlerClass = $this->handlers[$commandClass];
 
         try {
-            Log::info('⚡ [CommandBus] Ejecutando command', [
-                'command' => class_basename($command),
-                'handler' => class_basename($handlerClass),
-            ]);
-
             // Ejecutar en transacción
             $resultado = \DB::transaction(function () use ($handlerClass, $command) {
                 // Resolver el handler del contenedor
@@ -88,11 +78,6 @@ class CommandBus
                 // Ejecutar el handler
                 return $handler->handle($command);
             });
-
-            Log::info(' [CommandBus] Command ejecutado exitosamente', [
-                'command' => class_basename($command),
-                'resultado_type' => gettype($resultado),
-            ]);
 
             return $resultado;
 

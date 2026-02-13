@@ -236,11 +236,7 @@ class ModalCleanup {
         if (fotosPreview) {
             fotosPreview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
             fotosPreview.style.cursor = 'pointer';
-            
-            // 🔥 IMPORTANTE: Configurar drag & drop después de limpiar
-            if (typeof window.setupDragAndDrop === 'function') {
-                window.setupDragAndDrop(fotosPreview);
-            }
+            // DragDrop se reconfigura en shown.bs.modal, NO aquí
         }
         
         // Limpiar contador de fotos
@@ -255,13 +251,7 @@ class ModalCleanup {
             fotosBtn.style.display = 'block';
         }
         
-        // 🔥 IMPORTANTE: Configurar drag & drop para imágenes de tela después de limpiar
-        if (typeof window.setupDragDropTela === 'function') {
-            const telaDropZone = document.getElementById('nueva-prenda-tela-drop-zone');
-            if (telaDropZone) {
-                window.setupDragDropTela(telaDropZone);
-            }
-        }
+        // DragDrop tela se reconfigura en shown.bs.modal, NO aquí
 
         // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
         const tarjetasGenerosContainer = document.getElementById('tarjetas-generos-container');

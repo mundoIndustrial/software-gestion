@@ -97,14 +97,18 @@ class CQRSServiceProvider extends ServiceProvider
         // Registrar Validators
         $this->registerValidators();
 
-        // Registrar QueryBus como singleton
+        // Registrar QueryBus como singleton con handlers pre-registrados
         $this->app->singleton(QueryBus::class, function ($app) {
-            return new QueryBus($app);
+            $bus = new QueryBus($app);
+            $this->registerQueries($bus);
+            return $bus;
         });
 
-        // Registrar CommandBus como singleton
+        // Registrar CommandBus como singleton con handlers pre-registrados
         $this->app->singleton(CommandBus::class, function ($app) {
-            return new CommandBus($app);
+            $bus = new CommandBus($app);
+            $this->registerCommands($bus);
+            return $bus;
         });
 
         // Aliases para compatibilidad
@@ -121,23 +125,10 @@ class CQRSServiceProvider extends ServiceProvider
     /**
      * Bootstrap services
      */
-    public function boot(QueryBus $queryBus, CommandBus $commandBus): void
+    public function boot(): void
     {
-        // Guard para evitar que boot() se ejecute múltiples veces
-        if ($this->app->has('cqrs.booted') && $this->app->get('cqrs.booted')) {
-            return;
-        }
-
-        // Registrar Queries
-        $this->registerQueries($queryBus);
-
-        // Registrar Commands
-        $this->registerCommands($commandBus);
-
-        // Marcar como booted
-        $this->app->instance('cqrs.booted', true);
-
-        \Illuminate\Support\Facades\Log::info(' [CQRSServiceProvider] CQRS providers registrados');
+        // Los handlers se registran dentro de las factory closures del singleton.
+        // boot() ya no necesita hacer nada.
     }
 
     /**

@@ -49,11 +49,6 @@ class QueryBus
     public function register(string $queryClass, string $handlerClass): void
     {
         $this->handlers[$queryClass] = $handlerClass;
-        
-        Log::debug(' QueryBus: Handler registrado', [
-            'query' => $queryClass,
-            'handler' => $handlerClass,
-        ]);
     }
 
     /**
@@ -74,21 +69,11 @@ class QueryBus
         $handlerClass = $this->handlers[$queryClass];
 
         try {
-            Log::info(' [QueryBus] Ejecutando query', [
-                'query' => class_basename($query),
-                'handler' => class_basename($handlerClass),
-            ]);
-
             // Resolver el handler del contenedor
             $handler = $this->container->make($handlerClass);
 
             // Ejecutar el handler
             $resultado = $handler->handle($query);
-
-            Log::info(' [QueryBus] Query ejecutada exitosamente', [
-                'query' => class_basename($query),
-                'resultado_type' => gettype($resultado),
-            ]);
 
             return $resultado;
 

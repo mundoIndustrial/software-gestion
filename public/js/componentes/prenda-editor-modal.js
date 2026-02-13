@@ -1385,11 +1385,7 @@ function limpiarFormularioPrendaNueva() {
     if (prevFoto) {
         prevFoto.style.backgroundImage = 'none';
         prevFoto.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Click o arrastra para agregar</div></div>';
-        
-        // 🔥 IMPORTANTE: Configurar drag & drop después de limpiar
-        if (typeof window.setupDragAndDrop === 'function') {
-            window.setupDragAndDrop(prevFoto);
-        }
+        // DragDrop se reconfigura en shown.bs.modal, NO aquí
     }
     
     // 🔥 CRÍTICO: Limpiar arrays de telas

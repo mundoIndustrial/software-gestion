@@ -81,13 +81,17 @@
             return false;
         };
         
-        // EXTRA: Filtrar errores que lleguen a console.log también
+        // EXTRA: Bandera de debug basada en entorno Laravel
+        window.APP_DEBUG = {{ app()->environment('local', 'staging') ? 'true' : 'false' }};
+
+        // Filtrar console.log: en producción suprime TODOS, en local solo filtra storage errors
         const originalLog = console.log;
         console.log = function(...args) {
             const msg = String(args[0]);
             if (msg.includes('Uncaught (in promise)') && msg.includes('storage is not allowed')) {
                 return;
             }
+            if (!window.APP_DEBUG) return; // Producción: silenciar todos los logs
             return originalLog.apply(console, args);
         };
         
@@ -365,11 +369,11 @@
 
     @yield('body')
 
-    <!-- Core JS - Crítico para funcionalidad (sin defer) -->
-    <script src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
+    <!-- Core JS -->
+    <script defer src="{{ asset('js/configuraciones/sidebar.js') }}"></script>
     
     <!-- Sistema de refresh automático de token CSRF (Previene error 419) -->
-    <script src="{{ asset('js/configuraciones/csrf-refresh.js') }}"></script>
+    <script defer src="{{ asset('js/configuraciones/csrf-refresh.js') }}"></script>
     
     <!-- Print Handler - Gestión centralizada de impresión -->
     <script>
@@ -439,16 +443,16 @@
     @endauth
 
     <!-- Modal de Cotización Global -->
-    <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+    <script defer src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
     <!-- Notifications realtime system (loaded once) -->
-    <script src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
+    <script defer src="{{ asset('js/configuraciones/notifications-realtime.js') }}"></script>
     
     <!-- Scripts de Facturas (solo para vistas que lo necesiten) -->
     @if(request()->is(['cartera/pedidos', 'cartera/aprobados', 'cartera/rechazados', 'cartera/anulados']))
-    <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
-    <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
-    <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
     @endif
     
     <!-- Page-specific scripts -->
