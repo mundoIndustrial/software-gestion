@@ -29,6 +29,7 @@ final class ProcesarLogoTecnicasCotizacionRequestService
             $logoObservacionesGenerales = $dto->observacionesGenerales;
             $tipoCotizacionRequest = $dto->tipoCotizacion;
             $logoTecnicasAgregadas = $dto->tecnicasAgregadas;
+            $tecnicasAgregadasPresent = $dto->tecnicasAgregadasPresent;
 
             $logoTieneInformacionValida = false;
 
@@ -159,6 +160,14 @@ final class ProcesarLogoTecnicasCotizacionRequestService
             }
 
             if (!$logoCotizacion) {
+                return;
+            }
+
+            if ($esUpdate && !$tecnicasAgregadasPresent && empty($dto->imagenesPaso3Archivos)) {
+                return;
+            }
+
+            if ($esUpdate && empty($logoTecnicasAgregadas) && empty($dto->imagenesPaso3Archivos)) {
                 return;
             }
 
@@ -327,11 +336,31 @@ final class ProcesarLogoTecnicasCotizacionRequestService
 
                                 if ($rutaGuardar) {
                                     try {
+                                        $rutaNormalizada = is_string($rutaGuardar) ? trim($rutaGuardar) : $rutaGuardar;
+                                        if (is_string($rutaNormalizada)) {
+                                            if (strpos($rutaNormalizada, 'http') === 0 && preg_match('#/storage/(.+)$#', $rutaNormalizada, $m)) {
+                                                $rutaNormalizada = $m[1];
+                                            }
+                                            if (strpos($rutaNormalizada, '/storage/') === 0) {
+                                                $rutaNormalizada = substr($rutaNormalizada, 9);
+                                            }
+                                            if (strpos($rutaNormalizada, 'storage/') === 0) {
+                                                $rutaNormalizada = substr($rutaNormalizada, 8);
+                                            }
+                                            $rutaNormalizada = ltrim($rutaNormalizada, '/');
+                                        }
+
+                                        $rutasAComparar = array_values(array_unique(array_filter([
+                                            $rutaNormalizada,
+                                            is_string($rutaNormalizada) ? ('/' . ltrim($rutaNormalizada, '/')) : null,
+                                            is_string($rutaNormalizada) ? ('/storage/' . ltrim($rutaNormalizada, '/')) : null,
+                                        ], fn($v) => is_string($v) && trim($v) !== '')));
+
                                         $yaExisteFoto = $logoCotizacionTecnicaPrenda->fotos()
-                                            ->where(function ($q) use ($rutaGuardar) {
-                                                $q->where('ruta_webp', $rutaGuardar)
-                                                    ->orWhere('ruta_original', $rutaGuardar)
-                                                    ->orWhere('ruta_miniatura', $rutaGuardar);
+                                            ->where(function ($q) use ($rutasAComparar) {
+                                                $q->whereIn('ruta_webp', $rutasAComparar)
+                                                    ->orWhereIn('ruta_original', $rutasAComparar)
+                                                    ->orWhereIn('ruta_miniatura', $rutasAComparar);
                                             })
                                             ->exists();
 
@@ -340,9 +369,9 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                                         }
 
                                         $logoCotizacionTecnicaPrenda->fotos()->create([
-                                            'ruta_original' => $rutaGuardar,
-                                            'ruta_webp' => $rutaGuardar,
-                                            'ruta_miniatura' => $rutaGuardar,
+                                            'ruta_original' => $rutaNormalizada,
+                                            'ruta_webp' => $rutaNormalizada,
+                                            'ruta_miniatura' => $rutaNormalizada,
                                             'orden' => $ordenFoto,
                                         ]);
 

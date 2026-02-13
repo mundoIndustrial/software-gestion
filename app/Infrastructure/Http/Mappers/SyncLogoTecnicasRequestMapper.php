@@ -20,6 +20,7 @@ final class SyncLogoTecnicasRequestMapper
             $observacionesGenerales = [];
         }
 
+        $tecnicasAgregadasPresent = $request->has('logo.tecnicas_agregadas') || $request->has('logo[tecnicas_agregadas]');
         $tecnicasAgregadas = $request->input('logo.tecnicas_agregadas', $request->input('logo[tecnicas_agregadas]', '[]'));
         if (is_string($tecnicasAgregadas)) {
             $tecnicasAgregadas = json_decode($tecnicasAgregadas, true) ?? [];
@@ -65,6 +66,7 @@ final class SyncLogoTecnicasRequestMapper
             tipoVenta: is_string($tipoVenta) ? $tipoVenta : null,
             observacionesGenerales: $observacionesGenerales,
             tecnicasAgregadas: $tecnicasAgregadas,
+            tecnicasAgregadasPresent: $tecnicasAgregadasPresent,
             logoArchivos: $logoArchivos,
             imagenesPaso3Archivos: $imagenesPaso3Archivos,
             logoFotosGuardadas: $logoFotosGuardadas,

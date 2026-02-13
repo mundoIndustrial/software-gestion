@@ -336,10 +336,18 @@ class LogoCotizacionTecnicaController extends Controller
                         ]);
                         continue; // Si no se encontró la ruta, saltar
                     }
+
+                    $rutaNormalizada = $rutaCompartida;
+                    if (is_string($rutaNormalizada) && str_starts_with($rutaNormalizada, '/storage/')) {
+                        $rutaNormalizada = substr($rutaNormalizada, strlen('/storage/'));
+                    }
+                    if (is_string($rutaNormalizada)) {
+                        $rutaNormalizada = ltrim($rutaNormalizada, '/');
+                    }
                     
                     try {
                         // Obtener dimensiones de la imagen compartida para mejor metadata
-                        $imagenPath = storage_path('app/public/' . str_replace('storage/', '', $rutaCompartida));
+                        $imagenPath = storage_path('app/public/' . $rutaNormalizada);
                         $dimensiones = @getimagesize($imagenPath);
                         $ancho = $dimensiones[0] ?? 0;
                         $alto = $dimensiones[1] ?? 0;
@@ -354,12 +362,24 @@ class LogoCotizacionTecnicaController extends Controller
                             continue;
                         }
 
+                        $rutasAComparar = array_values(array_unique(array_filter([
+                            $rutaNormalizada,
+                            is_string($rutaNormalizada) ? ('/storage/' . ltrim($rutaNormalizada, '/')) : null,
+                        ], fn($v) => is_string($v) && $v !== '')));
+
+                        $yaExiste = LogoCotizacionTecnicaPrendaFoto::where('logo_cotizacion_tecnica_prenda_id', (int) $prenda->id)
+                            ->whereIn('ruta_webp', $rutasAComparar)
+                            ->exists();
+                        if ($yaExiste) {
+                            continue;
+                        }
+
                         // Crear entrada en BD apuntando a la ruta compartida
                         $foto = LogoCotizacionTecnicaPrendaFoto::create([
                             'logo_cotizacion_tecnica_prenda_id' => $prenda->id,
-                            'ruta_original' => $rutaCompartida,
-                            'ruta_webp' => $rutaCompartida,
-                            'ruta_miniatura' => $rutaCompartida,
+                            'ruta_original' => $rutaNormalizada,
+                            'ruta_webp' => $rutaNormalizada,
+                            'ruta_miniatura' => $rutaNormalizada,
                             'orden' => 999, // Orden muy alto para que aparezca al final
                             'ancho' => $ancho,
                             'alto' => $alto,

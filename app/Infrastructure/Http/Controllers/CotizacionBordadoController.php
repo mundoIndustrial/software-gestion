@@ -293,7 +293,9 @@ class CotizacionBordadoController extends Controller
                 if (is_array($tecnicas)) {
                     $mapaPrendasTecnica = $this->syncTecnicasPrendasDesdeFormulario($tecnicas, (int) $logoCotizacion->id);
                     $this->adjuntarNuevasFotosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
-                    $this->vincularLogosCompartidosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                    if (!$esEnvio) {
+                        $this->vincularLogosCompartidosTecnicasDesdeRequest($tecnicas, (int) $logoCotizacion->id, $request, $mapaPrendasTecnica);
+                    }
                 }
 
                 // Recargar la cotización con todos sus datos actualizados
@@ -683,10 +685,26 @@ class CotizacionBordadoController extends Controller
                         continue;
                     }
 
-                    $yaExiste = \App\Models\LogoCotizacionTecnicaPrendaFoto::where([
-                        'logo_cotizacion_tecnica_prenda_id' => (int) $prendaTecnicaId,
-                        'ruta_webp' => $rutaCompartida,
-                    ])->exists();
+                    $rutaNormalizada = $rutaCompartida;
+                    if (is_string($rutaNormalizada) && str_starts_with($rutaNormalizada, '/storage/')) {
+                        $rutaNormalizada = substr($rutaNormalizada, strlen('/storage/'));
+                    }
+                    if (is_string($rutaNormalizada)) {
+                        $rutaNormalizada = ltrim($rutaNormalizada, '/');
+                    }
+
+                    $rutasAComparar = array_values(array_unique(array_filter([
+                        $rutaNormalizada,
+                        is_string($rutaNormalizada) ? ('/' . ltrim($rutaNormalizada, '/')) : null,
+                        is_string($rutaNormalizada) ? ('/storage/' . ltrim($rutaNormalizada, '/')) : null,
+                    ], fn($v) => is_string($v) && $v !== '')));
+
+                    $yaExiste = \App\Models\LogoCotizacionTecnicaPrendaFoto::where('logo_cotizacion_tecnica_prenda_id', (int) $prendaTecnicaId)
+                        ->where(function ($q) use ($rutasAComparar) {
+                            $q->whereIn('ruta_webp', $rutasAComparar)
+                                ->orWhereIn('ruta_original', $rutasAComparar);
+                        })
+                        ->exists();
                     if ($yaExiste) {
                         continue;
                     }
@@ -695,7 +713,7 @@ class CotizacionBordadoController extends Controller
                     $alto = 0;
                     $tam = 0;
                     try {
-                        $path = $rutaCompartida;
+                        $path = $rutaNormalizada;
                         if (str_starts_with($path, '/storage/')) {
                             $path = substr($path, strlen('/storage/'));
                         }
@@ -711,9 +729,9 @@ class CotizacionBordadoController extends Controller
 
                     \App\Models\LogoCotizacionTecnicaPrendaFoto::create([
                         'logo_cotizacion_tecnica_prenda_id' => (int) $prendaTecnicaId,
-                        'ruta_original' => $rutaCompartida,
-                        'ruta_webp' => $rutaCompartida,
-                        'ruta_miniatura' => $rutaCompartida,
+                        'ruta_original' => $rutaNormalizada,
+                        'ruta_webp' => $rutaNormalizada,
+                        'ruta_miniatura' => $rutaNormalizada,
                         'orden' => 999,
                         'ancho' => $ancho,
                         'alto' => $alto,

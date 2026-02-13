@@ -17,6 +17,7 @@ final readonly class SyncLogoTecnicasDTO
         public ?string $tipoVenta,
         public array $observacionesGenerales,
         public array $tecnicasAgregadas,
+        public bool $tecnicasAgregadasPresent,
         public array $logoArchivos,
         public array $imagenesPaso3Archivos,
         public array $logoFotosGuardadas,
