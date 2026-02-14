@@ -13,6 +13,14 @@ class PrendaEditorTelas {
             telas: prenda.telasAgregadas?.map(t => t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
+        // 🔴 CRÍTICO: RESETEAR window.telasCreacion COMPLETAMENTE ANTES DE CARGAR
+        // Esto evita que telas de prenda anterior contaminen la prenda actual
+        console.log('[Telas] 💣 RESET EXPLOSIVO - Limpiando window.telasCreacion ANTES de cargar');
+        console.log('[Telas]   ANTES:', window.telasCreacion);
+        window.telasCreacion = [];
+        window.telasAgregadas = [];
+        console.log('[Telas]   DESPUÉS:', window.telasCreacion);
+        
         // 🔴 CRÍTICO: LIMPIAR imagenesTelaStorage SOLO cuando se ABRE una NUEVA prenda
         // NO limpiar durante guardado/cierre, eso se hace aquí al CARGAR
         if (window.imagenesTelaStorage && typeof window.imagenesTelaStorage.limpiar === 'function') {
@@ -69,7 +77,7 @@ class PrendaEditorTelas {
         
         //  Replicar a global para que sea editable
         // ⚠️ CRÍTICO: NO usar JSON.stringify porque DESTRUYE File objects y blob URLs
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
+        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
             // Hacer copia profunda que preserve File objects y datos de imagen
             // Approach: spread cada tela y copiar su array de imágenes
             window.telasCreacion = prenda.telasAgregadas.map(tela => ({
@@ -104,9 +112,78 @@ class PrendaEditorTelas {
             
             // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
             window.telasAgregadas = [];
+        } else {
+            // 🔴 CRÍTICO: Si la prenda NO tiene telas (nueva prenda o sin telas), resetear telasCreacion
+            console.log('[Carga] 🧹 Prenda sin telas: reseteando window.telasCreacion a []');
+            window.telasCreacion = [];
+            window.telasAgregadas = [];
         }
         
         console.log(' [Telas] Completado');
+    }
+
+    /**
+     * 🧹 LIMPIAR TABLA DE TELAS
+     * Se ejecuta cuando se abre el modal (CREATE o EDIT)
+     * Elimina todas las filas exceptuando la fila de inputs
+     * TAMBIÉN RESETS window.telasCreacion para evitar fantasmas de prenda anterior
+     */
+    static limpiarTabla() {
+        console.log('═══════════════════════════════════════════════════');
+        console.log('[Telas.limpiarTabla] 🧹 INICIANDO LIMPIEZA');
+        console.log('═══════════════════════════════════════════════════');
+        
+        // Estado ANTES de limpiar
+        console.log('[Telas.limpiarTabla] 📊 ESTADO ANTES:');
+        console.log('  window.telasCreacion:', window.telasCreacion);
+        console.log('  window.telasCreacion.length:', window.telasCreacion?.length);
+        if (window.telasCreacion && window.telasCreacion.length > 0) {
+            console.log('  Primera tela:', window.telasCreacion[0]?.tela);
+            console.log('  Primera tela imagenes:', window.telasCreacion[0]?.imagenes?.length);
+        }
+        
+        // 🔴 CRÍTICO: Resetear variables globales PRIMERO
+        console.log('[Telas.limpiarTabla] 🧹 Reseteando variables globales...');
+        window.telasCreacion = [];
+        window.telasAgregadas = [];
+        
+        // Verificar que se reseteó
+        console.log('[Telas.limpiarTabla] ✓ DESPUÉS de resetear window.telasCreacion:', window.telasCreacion);
+        console.log('[Telas.limpiarTabla] ✓ DESPUÉS de resetear window.telasAgregadas:', window.telasAgregadas);
+        
+        const tablaTelas = document.querySelector('#tbody-telas');
+        if (!tablaTelas) {
+            console.warn('[Telas.limpiarTabla] ❌ No encontrado #tbody-telas');
+            return;
+        }
+
+        // Encontrar fila de inputs
+        const todasLasFilas = Array.from(tablaTelas.querySelectorAll('tr'));
+        console.log('[Telas.limpiarTabla] 📊 Total de filas en tabla:', todasLasFilas.length);
+        
+        const filaInputs = todasLasFilas.find(tr => 
+            tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
+        );
+        
+        console.log('[Telas.limpiarTabla] 📌 Fila de inputs encontrada:', !!filaInputs);
+
+        // Eliminar filas viejas (excepto inputs)
+        const filasExistentes = tablaTelas.querySelectorAll('tr');
+        let filasEliminadas = 0;
+        filasExistentes.forEach((fila, idx) => {
+            if (fila !== filaInputs) {
+                console.log(`[Telas.limpiarTabla] 🗑️ Eliminando fila ${idx}:`, fila.textContent.substring(0, 50));
+                fila.remove();
+                filasEliminadas++;
+            } else {
+                console.log(`[Telas.limpiarTabla] ✓ Conservando fila de inputs`);
+            }
+        });
+
+        console.log('[Telas.limpiarTabla] 🎉 COMPLETADO');
+        console.log('  - Filas eliminadas:', filasEliminadas);
+        console.log('  - telasCreacion reseteado a:', window.telasCreacion);
+        console.log('═══════════════════════════════════════════════════');
     }
 
     /**

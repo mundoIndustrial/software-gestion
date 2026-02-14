@@ -15,33 +15,51 @@
  * @returns {Promise<boolean>} Resultado de la operación
  */
 window.agregarTelaNueva = async function() {
-    console.log('[agregarTelaNueva]  Iniciando agregación de nueva tela');
+    console.log('═════════════════════════════════════════════════════════════════');
+    console.log('[agregarTelaNueva] 🟦 CLICK DETECTADO EN BOTÓN AGREGAR TELA');
+    console.log('═════════════════════════════════════════════════════════════════');
     
     try {
+        console.log('[agregarTelaNueva] ✅ ENTRADA: Iniciando agregación de nueva tela');
+        
+        // DIAGNÓSTICO 1: Estado INICIAL de telasCreacion
+        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 1 - Estado INICIAL:');
+        console.log('  window.telasCreacion:', window.telasCreacion);
+        console.log('  Cantidad de telas:', window.telasCreacion?.length || 0);
+        if (window.telasCreacion && window.telasCreacion.length > 0) {
+            console.log('  Telas en array:');
+            window.telasCreacion.forEach((t, idx) => {
+                console.log(`    [${idx}] Color: ${t.color}, Tela: ${t.tela}, Ref: ${t.referencia}`);
+            });
+        }
+        
         // Obtener elementos del DOM
+        console.log('[agregarTelaNueva] 🔍 Buscando elementos en el DOM...');
         const colorElement = document.getElementById('nueva-prenda-color');
         const telaElement = document.getElementById('nueva-prenda-tela');
         const referenciaElement = document.getElementById('nueva-prenda-referencia');
         
         // Verificar que los elementos existan
         if (!colorElement || !telaElement || !referenciaElement) {
-            console.error('[agregarTelaNueva]  Elementos del modal no encontrados. Verifica que el modal esté abierto.');
+            console.error('[agregarTelaNueva] ❌ Elementos del modal no encontrados. Verifica que el modal esté abierto.');
             window.mostrarErrorTela('nueva-prenda-tela', 'Error: Modal no está activo');
             return false;
         }
+        console.log('[agregarTelaNueva] ✓ Elementos del modal encontrados');
         
         // Obtener valores de los campos
         const color = colorElement.value.trim().toUpperCase();
         const tela = telaElement.value.trim();
         const referencia = referenciaElement.value.trim();
         
-        console.log('[agregarTelaNueva]  Datos capturados:', { color, tela, referencia });
+        console.log('[agregarTelaNueva] 📝 VALORES CAPTURADOS:', { color, tela, referencia });
         
         // Validar campos
+        console.log('[agregarTelaNueva] 🔐 Validando campos...');
         const validacion = window.validarCamposTela(color, tela, referencia);
         
         if (!validacion.valido) {
-            console.warn('[agregarTelaNueva]  Validación fallida:', validacion.errores);
+            console.warn('[agregarTelaNueva] ❌ Validación fallida:', validacion.errores);
             
             // Mostrar errores
             validacion.errores.forEach(error => {
@@ -50,28 +68,31 @@ window.agregarTelaNueva = async function() {
             
             return false;
         }
+        console.log('[agregarTelaNueva] ✓ Validación exitosa');
         
         // Verificar si la tela ya existe
+        console.log('[agregarTelaNueva] 🔎 Verificando duplicados...');
         const telaExistente = window.telasCreacion.find(t => 
             t.color.toUpperCase() === color.toUpperCase() && 
             t.tela.toUpperCase() === tela.toUpperCase()
         );
         
         if (telaExistente) {
-            console.warn('[agregarTelaNueva]  Tela ya existe:', { color, tela });
+            console.warn('[agregarTelaNueva] ⚠️  Tela ya existe:', { color, tela });
             window.mostrarErrorTela('nueva-prenda-tela', 'Esta tela ya está agregada');
             return false;
         }
+        console.log('[agregarTelaNueva] ✓ No hay duplicados');
         
         // Crear objeto de tela
+        console.log('[agregarTelaNueva] 🖼️  Obteniendo imágenes temporales...');
         const imagenesActuales = window.imagenesTelaModalNueva || [];
         
         // Debug: Verificar estado del array antes de guardar
-        console.log('[agregarTelaNueva]  Estado del array temporal:', {
-            arrayDefinido: !!window.imagenesTelaModalNueva,
-            arrayLength: window.imagenesTelaModalNueva?.length || 0,
-            arrayContenido: window.imagenesTelaModalNueva?.map(img => ({ name: img.name, size: img.size })) || []
-        });
+        console.log('[agregarTelaNueva] 📸 DIAGNÓSTICO 2 - Imágenes temporales:');
+        console.log('  window.imagenesTelaModalNueva definido:', !!window.imagenesTelaModalNueva);
+        console.log('  Cantidad de imágenes:', window.imagenesTelaModalNueva?.length || 0);
+        console.log('  Imágenes:', window.imagenesTelaModalNueva?.map(img => ({ name: img.name, size: img.size })) || []);
         
         const nuevaTela = {
             color: color,
@@ -81,16 +102,32 @@ window.agregarTelaNueva = async function() {
             fechaCreacion: new Date().toISOString()
         };
         
-        console.log('[agregarTelaNueva]  Nueva tela creada:', nuevaTela);
-        console.log('[agregarTelaNueva] 📸 Imágenes incluidas:', imagenesActuales.length);
+        console.log('[agregarTelaNueva] 🆕 OBJETO TELA CREADO:', nuevaTela);
+        console.log('[agregarTelaNueva] 📸 Imágenes a incluir:', imagenesActuales.length);
+        
+        // DIAGNÓSTICO 3: ANTES de hacer push
+        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 3 - ANTES de push:');
+        console.log('  window.telasCreacion.length:', window.telasCreacion.length);
+        console.log('  Contenido actual:', window.telasCreacion.map(t => `${t.color}/${t.tela}`));
         
         // Agregar al array
+        console.log('[agregarTelaNueva] ➕ Haciendo PUSH a window.telasCreacion...');
         window.telasCreacion.push(nuevaTela);
         
+        // DIAGNÓSTICO 4: DESPUÉS de hacer push
+        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 4 - DESPUÉS de push:');
+        console.log('  window.telasCreacion.length:', window.telasCreacion.length);
+        console.log('  Contenido actualizado:', window.telasCreacion.map(t => `${t.color}/${t.tela}`));
+        window.telasCreacion.forEach((t, idx) => {
+            console.log(`    [${idx}] ${t.color} - ${t.tela} - ${t.referencia}`);
+        });
+        
         // Limpiar campos
+        console.log('[agregarTelaNueva] 🧹 Limpiando campos del modal...');
         document.getElementById('nueva-prenda-color').value = '';
         document.getElementById('nueva-prenda-tela').value = '';
         document.getElementById('nueva-prenda-referencia').value = '';
+        console.log('[agregarTelaNueva] ✓ Campos limpiados');
         
         // Limpiar preview de imágenes (de forma segura)
         try {
@@ -98,22 +135,39 @@ window.agregarTelaNueva = async function() {
             if (previewDiv) {
                 previewDiv.innerHTML = '';
                 previewDiv.style.display = 'none';
+                console.log('[agregarTelaNueva] ✓ Preview de imágenes limpiado');
             }
         } catch (e) {
-            console.warn('[agregarTelaNueva]  Error al limpiar preview:', e);
+            console.warn('[agregarTelaNueva] ⚠️  Error al limpiar preview:', e);
         }
         
         // Limpiar errores
+        console.log('[agregarTelaNueva] 🧹 Limpiando errores...');
         window.limpiarTodosLosErroresTela();
+        console.log('[agregarTelaNueva] ✓ Errores limpiados');
         
         // Limpiar imágenes temporales DESPUÉS de guardarlas en la tela
+        console.log('[agregarTelaNueva] 🧹 Limpiando imágenes temporales...');
         window.imagenesTelaModalNueva = [];
-        console.log('[agregarTelaNueva] 🧹 Imágenes temporales limpiadas después de guardar en tela');
+        console.log('[agregarTelaNueva] ✓ Imágenes temporales limpiadas después de guardar en tela');
+        
+        // DIAGNÓSTICO 5: ANTES de actualizar tabla
+        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 5 - ANTES de actualizarTablaTelas():');
+        console.log('  window.telasCreacion:', window.telasCreacion);
+        console.log('  Cantidad total:', window.telasCreacion.length);
         
         // Actualizar tabla
+        console.log('[agregarTelaNueva] 🔄 Llamando a window.actualizarTablaTelas()...');
         window.actualizarTablaTelas();
+        console.log('[agregarTelaNueva] ✓ Tabla actualizada');
         
-        console.log('[agregarTelaNueva]  Tela agregada exitosamente con', imagenesActuales.length, 'imágenes');
+        // DIAGNÓSTICO 6: DESPUÉS de actualizar tabla
+        console.log('[agregarTelaNueva] 📊 DIAGNÓSTICO 6 - DESPUÉS de actualizarTablaTelas():');
+        console.log('  window.telasCreacion:', window.telasCreacion);
+        console.log('  Cantidad total:', window.telasCreacion.length);
+        
+        console.log('[agregarTelaNueva] ✅ Tela agregada exitosamente con ' + imagenesActuales.length + ' imágenes');
+        console.log('═════════════════════════════════════════════════════════════════');
         return true;
         
     } catch (error) {

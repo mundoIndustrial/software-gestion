@@ -348,6 +348,11 @@ class DragDropManager {
      * @private
      */
     _inicializarTelas() {
+        // 🔴 CRÍTICO: LIMPIAR tabla de telas cuando se abre el modal
+        // Esto asegura que no haya telas residuales de la prenda anterior
+        if (window.PrendaEditorTelas && typeof window.PrendaEditorTelas.limpiarTabla === 'function') {
+            window.PrendaEditorTelas.limpiarTabla();
+        }
         
         // Configurar drag & drop en el botón
         const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');

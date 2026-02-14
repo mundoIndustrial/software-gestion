@@ -362,6 +362,15 @@ class GestionItemsUI {
                     this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
                 }
             } else {
+                // 🔴 CRÍTICO: RESETEAR window.telasCreacion para NUEVA PRENDA (modo creación)
+                // Esto evita que telas de prenda anterior contaminen la nueva prenda
+                console.log('[abrirModalAgregarPrendaNueva] 💣 RESET - Limpiando window.telasCreacion para NUEVA prenda');
+                console.log('[abrirModalAgregarPrendaNueva]   ANTES:', window.telasCreacion);
+                window.telasCreacion = [];
+                window.telasAgregadas = [];
+                window.imagenesTelaModalNueva = [];
+                console.log('[abrirModalAgregarPrendaNueva]   DESPUÉS:', window.telasCreacion);
+                
                 if (this.prendaEditor) {
                     this.prendaEditor.abrirModal(false, null);
                 }

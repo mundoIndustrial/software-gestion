@@ -15,33 +15,64 @@
  * Evita múltiples reflows usando batch rendering
  */
 window.actualizarTablaTelas = function() {
+    console.log('═════════════════════════════════════════════════════════════════');
+    console.log('[actualizarTablaTelas] 🔄 FUNCIÓN LLAMADA - Rendering tabla');
+    console.log('═════════════════════════════════════════════════════════════════');
+    
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
-        console.warn('[actualizarTablasTelas]  tbody-telas no encontrado');
+        console.warn('[actualizarTablasTelas] ❌ tbody-telas no encontrado');
         return;
     }
+    console.log('[actualizarTablaTelas] ✓ tbody-telas encontrado');
     
     const telas = window.telasCreacion;
     
+    // DIAGNÓSTICO: Ver qué hay en telasCreacion
+    console.log('[actualizarTablaTelas] 📊 DIAGNÓSTICO - Datos a renderizar:');
+    console.log('  window.telasCreacion:', telas);
+    console.log('  Cantidad de telas:', telas?.length || 0);
+    if (telas && telas.length > 0) {
+        console.log('  Telas en array:');
+        telas.forEach((t, idx) => {
+            console.log(`    [${idx}] Color: ${t.color}, Tela: ${t.tela}, Ref: ${t.referencia}, Imágenes: ${t.imagenes?.length || 0}`);
+        });
+    }
+    
     // Identificar la fila de INPUTS usando el botón "Agregar" (selector robusto)
+    console.log('[actualizarTablaTelas] 🔍 Buscando fila de INPUTS en tabla...');
     const todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
+    console.log('[actualizarTablaTelas] 📊 Total de filas en tabla:', todasLasFilas.length);
+    
     const filaInputs = todasLasFilas.find(tr => 
         tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
     );
     
+    if (filaInputs) {
+        console.log('[actualizarTablaTelas] ✓ Fila de INPUTS identificada');
+    } else {
+        console.warn('[actualizarTablaTelas] ⚠️  No se encontró fila de INPUTS');
+    }
+    
     // Eliminar SOLO las filas de telas (las que tienen onclick="eliminarTela()")
     // NO eliminar la fila de inputs
-    todasLasFilas.forEach(fila => {
+    console.log('[actualizarTablaTelas] 🧹 Eliminando filas antiguas de telas (NO inputs)...');
+    let filasEliminadas = 0;
+    todasLasFilas.forEach((fila, idx) => {
         if (fila !== filaInputs) {
+            console.log(`[actualizarTablaTelas]   → Eliminando fila ${idx}`);
             fila.remove();
+            filasEliminadas++;
         }
     });
+    console.log('[actualizarTablaTelas] ✓ Filas antiguas eliminadas:', filasEliminadas);
     
     // Usar DocumentFragment para mejor rendimiento
     const fragment = document.createDocumentFragment();
     
     if (telas.length === 0) {
+        console.log('[actualizarTablaTelas] 📭 Sin telas - mostrando mensaje vacío');
         // Mensaje cuando no hay telas
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -52,21 +83,30 @@ window.actualizarTablaTelas = function() {
         `;
         fragment.appendChild(tr);
     } else {
+        console.log('[actualizarTablaTelas] 🎨 Renderizando ' + telas.length + ' tela(s)...');
         // Renderizar cada tela
         telas.forEach((tela, index) => {
+            console.log(`[actualizarTablaTelas]   → Creando fila para tela ${index}: ${tela.color}/${tela.tela}`);
             const tr = crearFilaTela(tela, index);
             fragment.appendChild(tr);
         });
+        console.log('[actualizarTablaTelas] ✓ Todas las filas creadas en fragment');
     }
     
     // Insertar las telas DESPUÉS de la fila de inputs (si existe)
     // Esto hace que el mensaje "No hay telas" o las telas existentes queden DEBAJO de los inputs
+    console.log('[actualizarTablaTelas] 📍 Insertando fragment en DOM...');
     if (filaInputs) {
+        console.log('[actualizarTablaTelas] ✓ Insertando DESPUÉS de fila de inputs');
         filaInputs.parentNode.insertBefore(fragment, filaInputs.nextSibling);
     } else {
         // Fallback: insertar al final
+        console.log('[actualizarTablaTelas] ⚠️  No hay fila de inputs, insertando al final');
         tbody.appendChild(fragment);
     }
+    
+    console.log('[actualizarTablaTelas] ✅ COMPLETADO - Tabla actualizada');
+    console.log('═════════════════════════════════════════════════════════════════');
 };
 
 /**

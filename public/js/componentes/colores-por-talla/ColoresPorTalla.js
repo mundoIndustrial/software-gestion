@@ -231,6 +231,14 @@ window.ColoresPorTalla = (function() {
             console.log('[ColoresPorTalla]  Volviendo a vista de Tabla de Telas');
             
         } else {
+            // Validar que haya una tela seleccionada antes de abrir asignación
+            const telas = window.telasCreacion || [];
+            if (telas.length === 0) {
+                console.warn('[ColoresPorTalla]  ⚠️  No hay telas seleccionadas');
+                mostrarModalSinTela();
+                return;
+            }
+            
             // Abriendo vista de asignación
             console.log('[ColoresTalla]  ACCIÓN: Abriendo vista de Asignación de Colores');
             
@@ -985,6 +993,85 @@ window.ColoresPorTalla = (function() {
         AsignacionManager.cargarAsignacionesPrevias(datos);
         UIRenderer.actualizarTablaAsignaciones();
         UIRenderer.actualizarResumenAsignaciones();
+    }
+
+    /**
+     * Mostrar modal cuando no hay tela seleccionada
+     */
+    function mostrarModalSinTela() {
+        console.log('[mostrarModalSinTela]  Mostrando modal de advertencia');
+        
+        // Crear el modal dinámicamente
+        let modal = document.getElementById('modal-sin-tela-seleccionada');
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-sin-tela-seleccionada';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 999999 !important;
+            `;
+            
+            const contenido = document.createElement('div');
+            contenido.style.cssText = `
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            `;
+            
+            contenido.innerHTML = `
+                <div style="margin-bottom: 1.5rem; font-size: 2.5rem;">⚠️</div>
+                <h2 style="margin: 0 0 1rem 0; color: #333; font-size: 1.5rem; font-weight: 600;">
+                    Selecciona una Tela Primero
+                </h2>
+                <p style="margin: 0 0 2rem 0; color: #666; font-size: 1rem; line-height: 1.5;">
+                    Debes seleccionar una tela primero para aplicar los colores a la talla.
+                </p>
+                <button id="btn-cerrar-modal-sin-tela" type="button" style="
+                    background: #3b82f6;
+                    color: white;
+                    border: none;
+                    padding: 0.75rem 2rem;
+                    border-radius: 6px;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                ">
+                    Entendido
+                </button>
+            `;
+            
+            modal.appendChild(contenido);
+            document.body.appendChild(modal);
+            
+            // Configurar listener para cerrar el modal
+            document.getElementById('btn-cerrar-modal-sin-tela').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            // Cerrar al clickear fuera del modal
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Mostrar el modal
+        modal.style.display = 'flex';
     }
 
     /**
