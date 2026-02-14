@@ -74,8 +74,27 @@ if (typeof window.abrirModalNotas !== 'function') {
 if (typeof window.cargarNotas !== 'function') {
     window.cargarNotas = async function(numeroPedido, talla) {
         try {
+            const key = `${numeroPedido || ''}|${talla || ''}`;
+
+            if (typeof window.__notasRequestSeq !== 'number') {
+                window.__notasRequestSeq = 0;
+            }
+            if (!window.__notasActiveRequests || typeof window.__notasActiveRequests !== 'object') {
+                window.__notasActiveRequests = {};
+            }
+
+            const requestId = ++window.__notasRequestSeq;
+            window.__notasActiveRequests[key] = requestId;
+
+            const modal = document.getElementById('modalNotas');
+            const modalVisible = !!(modal && !modal.classList.contains('hidden'));
+            const ctx = window.__notasContext || {};
+            const contextoCoincide = String(ctx.numero_pedido || '') === String(numeroPedido || '')
+                && String(ctx.talla || '') === String(talla || '');
+            const debeRenderizarHistorial = modalVisible && contextoCoincide;
+
             const historial = document.getElementById('notasHistorial');
-            if (historial) {
+            if (historial && debeRenderizarHistorial) {
                 historial.innerHTML = '<div class="flex justify-center items-center py-8"><span class="text-slate-500">⏳ Cargando notas...</span></div>';
             }
 
@@ -96,8 +115,13 @@ if (typeof window.cargarNotas !== 'function') {
             const data = await response.json().catch(() => null);
             const notas = (data && data.success && Array.isArray(data.data)) ? data.data : [];
 
+            // Si llegó una respuesta vieja (hubo otra request más reciente para este pedido/talla), ignorar.
+            if (window.__notasActiveRequests && window.__notasActiveRequests[key] !== requestId) {
+                return;
+            }
+
             if (!response.ok || !data || data.success === false) {
-                if (historial) {
+                if (historial && debeRenderizarHistorial) {
                     historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
                 }
                 return;
@@ -105,7 +129,7 @@ if (typeof window.cargarNotas !== 'function') {
 
             let textAreaContent = '';
             if (notas.length === 0) {
-                if (historial) {
+                if (historial && debeRenderizarHistorial) {
                     historial.innerHTML = '<div class="text-center text-slate-500 py-6">No hay notas</div>';
                 }
             } else {
@@ -134,7 +158,7 @@ if (typeof window.cargarNotas !== 'function') {
                     textAreaContent += `${nota.usuario_nombre ?? ''} - ${nota.contenido ?? ''}\n`;
                 });
                 html += '</div>';
-                if (historial) {
+                if (historial && debeRenderizarHistorial) {
                     historial.innerHTML = html;
                 }
             }
@@ -155,7 +179,9 @@ if (typeof window.cargarNotas !== 'function') {
         } catch (e) {
             console.error('Error en cargarNotas fallback:', e);
             const historial = document.getElementById('notasHistorial');
-            if (historial) historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
+            const modal = document.getElementById('modalNotas');
+            const modalVisible = !!(modal && !modal.classList.contains('hidden'));
+            if (historial && modalVisible) historial.innerHTML = '<div class="text-center text-red-600 py-6">Error al cargar notas</div>';
         }
     };
 }
@@ -1226,22 +1252,48 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
     console.log(`[GUARDAR] data-empresa=${fila.getAttribute('data-empresa')}`);
     console.log(`[GUARDAR] cantidad final: ${cantidad}`);
 
+    const path = String(window.location?.pathname || '');
+    const areaInferida = path.includes('/gestion-bodega/pendiente-costura') ? 'Costura'
+        : (path.includes('/gestion-bodega/pendiente-epp') ? 'EPP' : null);
+    const areaFinal = (areaSelect?.value || '').trim() || areaInferida;
+
     const datosAGuardar = {
         numero_pedido: numeroPedido,
         talla: talla,
-        prenda_nombre: prendaNombre,
-        cantidad: cantidad,
-        asesor: asesor,
-        empresa: empresa,
-        pendientes: pendientesInput.value.trim(),
+        prenda_nombre: prendaNombre || null,
+        asesor: asesor || null,
+        empresa: empresa || null,
+        cantidad: cantidad || null,
+        pendientes: pendientesInput?.value || null,
+        observaciones_bodega: null, // ya no se guarda aquí
         fecha_pedido: fechaPedidoInput?.value || null,
         fecha_entrega: fechaEntregaInput?.value || null,
-        area: areaSelect?.value || null,
+        area: areaFinal || null,
+        // Por defecto se mantiene como estado general,
+        // pero en las vistas de pendientes (costura/epp) NO se debe modificar.
         estado_bodega: estadoSelect?.value || null,
         pedido_produccion_id: pedidoProduccionId,
         recibo_prenda_id: reciboPrendaId,
         last_updated_at: lastUpdatedAt,
     };
+
+    // Guardar estado específico por área en vistas de pendientes
+    // (pendiente-costura => costura_estado, pendiente-epp => epp_estado)
+    try {
+        const path = (window.location && window.location.pathname) ? window.location.pathname : '';
+        const estadoSeleccionado = estadoSelect?.value || null;
+
+        if (path.includes('/gestion-bodega/pendiente-costura/')) {
+            datosAGuardar.costura_estado = estadoSeleccionado;
+            delete datosAGuardar.estado_bodega;
+        }
+        if (path.includes('/gestion-bodega/pendiente-epp/')) {
+            datosAGuardar.epp_estado = estadoSeleccionado;
+            delete datosAGuardar.estado_bodega;
+        }
+    } catch (e) {
+        // no-op
+    }
 
     // Mostrar spinner de carga
     const textoOriginal = btnGuardar.textContent;
@@ -1272,7 +1324,6 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
             }
             
             if (data.data?.updated_at) {
-                if (observacionesInput) observacionesInput.dataset.updatedAt = data.data.updated_at;
                 if (fechaPedidoInput) fechaPedidoInput.dataset.updatedAt = data.data.updated_at;
                 if (fechaEntregaInput) fechaEntregaInput.dataset.updatedAt = data.data.updated_at;
             }

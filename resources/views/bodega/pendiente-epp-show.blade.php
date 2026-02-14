@@ -71,7 +71,9 @@
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                     data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
                                     data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
-                                    @if($item['estado_bodega'] === 'Entregado')
+                                    @if(($item['epp_estado'] ?? null) === 'Omologar')
+                                        style="background-color: rgba(147, 51, 234, 0.08);"
+                                    @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
                                 >
@@ -178,7 +180,7 @@
                                                 placeholder="Notas..."
                                                 rows="1"
                                                 readonly
-                                            >{{ $item['observaciones'] ?? '' }}</textarea>
+                                            ></textarea>
                                             <button
                                                 type="button"
                                                 onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
@@ -237,12 +239,24 @@
                                                     @endif"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            data-original-estado="{{ $item['estado'] ?? '' }}"
+                                            data-prenda-nombre="{{ $item['prenda_nombre'] ?? ($item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '') }}"
+                                            data-cantidad="{{ $item['cantidad_total'] ?? $item['cantidad'] ?? 0 }}"
+                                            data-original-estado="{{ $item['epp_estado'] ?? '' }}"
                                         >
-                                            <option value="Pendiente" {{ ($item['estado_bodega'] ?? '') === 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                            <option value="Entregado" {{ ($item['estado_bodega'] ?? '') === 'Entregado' ? 'selected' : '' }}>Entregado</option>
-                                            <option value="Anulado" {{ ($item['estado_bodega'] ?? '') === 'Anulado' ? 'selected' : '' }}>Anulado</option>
+                                            <option value="">ESTADO</option>
+                                            <option value="Pendiente" {{ ($item['epp_estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                            <option value="Entregado" {{ ($item['epp_estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                            <option value="Omologar" {{ ($item['epp_estado'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
+                                            <option value="Anulado" {{ ($item['epp_estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                         </select>
+
+                                        <button
+                                            type="button"
+                                            onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
+                                            class="w-full mt-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase rounded transition"
+                                        >
+                                            💾 Guardar
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
@@ -268,7 +282,7 @@
 </div>
 
 <!-- Modal de Notas -->
-<div id="modalNotas" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden flex items-center justify-center p-4">
+<div id="modalNotas" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden flex items-center justify-center p-4" style="z-index: 100001;">
     <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 my-8">
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-white">💬 Notas - Pedido <span id="modalNotasNumeroPedido">#</span></h2>
@@ -281,7 +295,7 @@
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
-                    id="nuevaNota"
+                    id="notasNuevaContent"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                     rows="4"
                 ></textarea>
@@ -460,13 +474,13 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            button.textContent = ' Guardado';
+            button.textContent = '✅ Guardado';
             setTimeout(() => {
                 button.textContent = '💾 Guardar';
                 button.disabled = false;
             }, 2000);
         } else {
-            button.textContent = ' Error';
+            button.textContent = '❌ Error';
             setTimeout(() => {
                 button.textContent = '💾 Guardar';
                 button.disabled = false;
@@ -476,7 +490,7 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     })
     .catch(error => {
         console.error('Error al guardar:', error);
-        button.textContent = ' Error';
+        button.textContent = '❌ Error';
         setTimeout(() => {
             button.textContent = '💾 Guardar';
             button.disabled = false;
@@ -493,4 +507,8 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+@push('scripts')
+    <script src="{{ asset('js/bodega-pedidos.js') }}"></script>
+@endpush
 @endsection

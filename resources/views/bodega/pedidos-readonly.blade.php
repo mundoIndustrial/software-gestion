@@ -214,6 +214,8 @@
                                     data-search="{{ strtolower($numeroPedido . ' ' . $item['asesor'] . ' ' . $item['empresa']) }}"
                                     @if($esAnulada)
                                         style="background-color: rgba(147, 51, 234, 0.1);"
+                                    @elseif($item['estado_bodega'] === 'Omologar')
+                                        style="background-color: rgba(147, 51, 234, 0.08);"
                                     @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
@@ -425,6 +427,7 @@
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
                                                 <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                <option value="Omologar" {{ ($item['estado_bodega'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
                                                 @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
                                                 <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                                 @endif
@@ -558,7 +561,7 @@
 </div>
 
 <!-- Modal de Notas -->
-<div id="modalNotas" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9998 overflow-auto" style="z-index: 9998;">
+<div id="modalNotas" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9998 overflow-auto" style="z-index: 100001;">
     <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 my-8">
         <!-- Header -->
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">

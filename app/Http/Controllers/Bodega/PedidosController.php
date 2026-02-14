@@ -84,6 +84,44 @@ class PedidosController extends Controller
     }
 
     /**
+     * Mostrar lista de pedidos anulados (estado del pedido principal = ANULADA)
+     */
+    public function anulados(Request $request)
+    {
+        try {
+            $datos = $this->bodegaPedidoService->obtenerPedidosAnuladosPaginados($request);
+
+            if ($datos['view_type'] === 'details') {
+                $usuario = auth()->user();
+                $rolesDelUsuario = $usuario->getRoleNames()->toArray();
+                $esReadOnly = $this->roleService->esReadOnly($rolesDelUsuario);
+
+                $viewName = $esReadOnly ? 'bodega.pedidos-readonly' : 'bodega.pedidos';
+
+                return view($viewName, [
+                    'pedidosAgrupados' => $datos['pedidos_agrupados'] ?? [],
+                    'asesores' => $datos['asesores'] ?? [],
+                    'paginacion' => $datos['pagination']['paginacion_obj'] ?? null,
+                    'totalPedidos' => $datos['pagination']['total_pedidos'] ?? 0,
+                    'datosBodega' => $datos['datos_bodega'] ?? collect(),
+                    'notasBodega' => $datos['notas_bodega'] ?? collect(),
+                ]);
+            }
+
+            return view('bodega.index-list', [
+                'pedidosPorPagina' => $datos['pedidos_por_pagina'] ?? [],
+                'totalPedidos' => $datos['total_pedidos'] ?? 0,
+                'paginaActual' => $datos['pagina_actual'] ?? 1,
+                'porPagina' => $datos['por_pagina'] ?? 20,
+                'search' => $request->query('search', ''),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en PedidosController@anulados: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los pedidos anulados: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Mostrar detalles de un pedido específico (solo EPP Pendiente)
      */
     public function showPendienteEpp(Request $request, $pedidoId)
@@ -147,6 +185,21 @@ class PedidosController extends Controller
                 
                 // Reindexar el array después del filtro
                 $datos['items'] = array_values($datos['items']);
+
+                // Normalizar campos para la vista pendiente-epp-show
+                $datos['items'] = array_map(function($item) {
+                    if (!isset($item['cantidad']) && isset($item['cantidad_total'])) {
+                        $item['cantidad'] = $item['cantidad_total'];
+                    }
+
+                    if (empty($item['prenda_nombre']) && isset($item['descripcion']) && is_array($item['descripcion'])) {
+                        $item['prenda_nombre'] = $item['descripcion']['nombre_prenda']
+                            ?? $item['descripcion']['nombre']
+                            ?? null;
+                    }
+
+                    return $item;
+                }, $datos['items']);
                 
                 // Actualizar contadores si existen
                 if (isset($datos['estadisticas'])) {
@@ -227,6 +280,21 @@ class PedidosController extends Controller
                 
                 // Reindexar el array después del filtro
                 $datos['items'] = array_values($datos['items']);
+
+                // Normalizar campos para la vista pendiente-costura-show
+                $datos['items'] = array_map(function($item) {
+                    if (!isset($item['cantidad']) && isset($item['cantidad_total'])) {
+                        $item['cantidad'] = $item['cantidad_total'];
+                    }
+
+                    if (empty($item['prenda_nombre']) && isset($item['descripcion']) && is_array($item['descripcion'])) {
+                        $item['prenda_nombre'] = $item['descripcion']['nombre_prenda']
+                            ?? $item['descripcion']['nombre']
+                            ?? null;
+                    }
+
+                    return $item;
+                }, $datos['items']);
                 
                 // Actualizar contadores si existen
                 if (isset($datos['estadisticas'])) {
@@ -398,7 +466,8 @@ class PedidosController extends Controller
                     ->first();
                 
                 return [
-                    'id' => $pedidoProduccion ? $pedidoProduccion->id : $detalle->id, // Usar ID de pedidos_produccion si existe
+                    'id' => $detalle->id, // El detalle es lo que usa showPendienteCostura (/pendiente-costura/{id})
+                    'pedido_produccion_id' => $pedidoProduccion?->id,
                     'numero_pedido' => $detalle->numero_pedido,
                     'cliente' => $detalle->empresa,
                     'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
@@ -582,7 +651,8 @@ class PedidosController extends Controller
                     ->first();
                 
                 return [
-                    'id' => $pedidoProduccion ? $pedidoProduccion->id : $detalle->id, // Usar ID de pedidos_produccion si existe
+                    'id' => $detalle->id, // El detalle es lo que usa showPendienteEpp (/pendiente-epp/{id})
+                    'pedido_produccion_id' => $pedidoProduccion?->id,
                     'numero_pedido' => $detalle->numero_pedido,
                     'cliente' => $detalle->empresa,
                     'asesor' => is_string($detalle->asesor) ? $detalle->asesor : 
@@ -965,7 +1035,9 @@ class PedidosController extends Controller
                 'observaciones_bodega' => 'nullable|string',
                 'fecha_entrega' => 'nullable|date',
                 'fecha_pedido' => 'nullable|date',
-                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado',
+                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
+                'costura_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
+                'epp_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
                 'last_updated_at' => 'nullable|string',
             ]);
@@ -1008,7 +1080,7 @@ class PedidosController extends Controller
                 'detalles.*.observaciones_bodega' => 'nullable|string',
                 'detalles.*.fecha_entrega' => 'nullable|date',
                 'detalles.*.area' => 'nullable|string|in:Costura,EPP,Otro',
-                'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado',
+                'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
             ]);
 
             $usuario = auth()->user();
@@ -1835,6 +1907,8 @@ class PedidosController extends Controller
                     'cantidad' => $detalle->cantidad,
                     'area' => $detalle->area,
                     'estado_bodega' => $detalle->estado_bodega,
+                    'costura_estado' => $detalle->costura_estado ?? null,
+                    'epp_estado' => $detalle->epp_estado ?? null,
                     'observaciones_bodega' => $detalle->observaciones_bodega,
                     'fecha_pedido' => $detalle->fecha_pedido,
                     'fecha_entrega' => $detalle->fecha_entrega,

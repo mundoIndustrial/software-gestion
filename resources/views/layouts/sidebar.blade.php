@@ -38,6 +38,14 @@
         </a>
       </li>
       <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
+           aria-label="Pedidos anulados - Bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+          <span class="menu-label">Pedidos anulados</span>
+        </a>
+      </li>
+      <li class="menu-item">
         <a href="{{ route('gestion-bodega.pendientes-costura') }}"
            class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
            aria-label="Pendiente Costura">

@@ -64,7 +64,11 @@
                             @forelse($items as $item)
                                 <tr class="hover:bg-slate-50 transition-colors"
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
-                                    @if($item['estado_bodega'] === 'Entregado')
+                                    data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
+                                    data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
+                                    @if(($item['costura_estado'] ?? null) === 'Omologar')
+                                        style="background-color: rgba(147, 51, 234, 0.08);"
+                                    @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
                                 >
@@ -207,15 +211,15 @@
                                             class="estado-select w-full px-2 py-1 border border-slate-300 bg-white text-black text-xs font-semibold uppercase rounded"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            data-original-estado="{{ $item['estado'] ?? '' }}"
+                                            data-prenda-nombre="{{ $item['prenda_nombre'] ?? ($item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '') }}"
+                                            data-cantidad="{{ $item['cantidad'] ?? 0 }}"
+                                            data-original-estado="{{ $item['costura_estado'] ?? '' }}"
                                         >
                                             <option value="">ESTADO</option>
-                                            <option value="Pendiente" {{ ($item['estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                            <option value="En Proceso" {{ ($item['estado'] ?? null) === 'En Proceso' ? 'selected' : '' }}>EN PROCESO</option>
-                                            <option value="Terminado" {{ ($item['estado'] ?? null) === 'Terminado' ? 'selected' : '' }}>TERMINADO</option>
-                                            @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
-                                            <option value="Cancelado" {{ ($item['estado'] ?? null) === 'Cancelado' ? 'selected' : '' }}>CANCELADO</option>
-                                            @endif
+                                            <option value="Pendiente" {{ ($item['costura_estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                            <option value="Entregado" {{ ($item['costura_estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                            <option value="Omologar" {{ ($item['costura_estado'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
+                                            <option value="Anulado" {{ ($item['costura_estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                         </select>
 
                                         <button
@@ -269,6 +273,48 @@
     </div>
 </div>
 
+<!-- Modal de Notas -->
+<div id="modalNotas" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden flex items-center justify-center p-4" style="z-index: 100001;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 my-8">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white">💬 Notas - Pedido <span id="modalNotasNumeroPedido">#</span></h2>
+            <button onclick="cerrarModalNotas()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+        </div>
+        <div class="px-6 py-6">
+            <div class="mb-3 text-sm text-slate-700">
+                <span class="font-semibold">Artículo:</span> <span id="modalNotasArticulo">—</span>
+            </div>
+            <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;"></div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
+                <textarea
+                    id="notasNuevaContent"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                    rows="4"
+                ></textarea>
+                <div class="flex gap-3 mt-4">
+                    <button
+                        type="button"
+                        onclick="guardarNota()"
+                        class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition"
+                    >
+                        ✓ Guardar Nota
+                    </button>
+                    <button
+                        type="button"
+                        onclick="cerrarModalNotas()"
+                        class="flex-1 px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-lg transition"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ asset('js/bodega-pedidos.js') }}"></script>
+
 <script>
 function abrirModalFactura(pedidoId) {
     // Implementar función para ver el pedido completo
@@ -277,16 +323,6 @@ function abrirModalFactura(pedidoId) {
 
 function cerrarModalFactura() {
     document.getElementById('modalFactura').classList.add('hidden');
-}
-
-function abrirModalNotas(numeroPedido, talla, nombrePrenda, tipo, identificador) {
-    // Implementar función para notas
-    console.log('Notas para:', numeroPedido, talla, nombrePrenda);
-}
-
-function guardarFilaCompleta(button, numeroPedido, talla) {
-    // Implementar función para guardar
-    console.log('Guardar fila:', numeroPedido, talla);
 }
 
 /**

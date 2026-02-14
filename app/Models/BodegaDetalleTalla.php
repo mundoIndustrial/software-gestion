@@ -25,6 +25,8 @@ class BodegaDetalleTalla extends Model
         'fecha_pedido',
         'fecha_entrega',
         'estado_bodega',
+        'costura_estado',
+        'epp_estado',
         'area',
         'usuario_bodega_id',
         'usuario_bodega_nombre',
@@ -62,6 +64,22 @@ class BodegaDetalleTalla extends Model
     public function scopePorEstado($query, $estado)
     {
         return $query->where('estado_bodega', $estado);
+    }
+
+    /**
+     * Scope para filtrar por estado de Costura
+     */
+    public function scopePorEstadoCostura($query, $estado)
+    {
+        return $query->where('costura_estado', $estado);
+    }
+
+    /**
+     * Scope para filtrar por estado de EPP
+     */
+    public function scopePorEstadoEpp($query, $estado)
+    {
+        return $query->where('epp_estado', $estado);
     }
 
     /**

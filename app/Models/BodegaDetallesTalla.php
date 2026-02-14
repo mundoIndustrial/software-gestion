@@ -25,6 +25,8 @@ class BodegaDetallesTalla extends Model
         'fecha_pedido',
         'fecha_entrega',
         'estado_bodega',
+        'costura_estado',
+        'epp_estado',
         'area',
         'usuario_bodega_id',
         'usuario_bodega_nombre',
