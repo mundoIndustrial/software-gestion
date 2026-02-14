@@ -437,6 +437,48 @@ class GestionItemsUI {
      */
     async agregarPrendaNueva() {
         try {
+            //  🎬 PUNTO DE PARTIDA: Registrar estado COMPLETO de storages al hacer click "Guardar Cambios"
+            console.log('\n\n═══════════════════════════════════════════════════════════════');
+            console.log('🔴 [agregarPrendaNueva] ⏱️ CLICK EN "GUARDAR CAMBIOS" ← PUNTO DE INICIO');
+            console.log('═══════════════════════════════════════════════════════════════');
+            
+            // ESTADO DE STORAGES ANTES DE PROCESAR
+            const estadoImagenesPrenda = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+            const estadoImagenesTela = window.imagenesTelaStorage?.obtenerImagenes?.() || [];
+            const estadoTelasCreacion = window.telasCreacion || [];
+            const estadoProcesos = window.procesosSeleccionados || {};
+            
+            console.log('[agregarPrendaNueva] 📸 ESTADO INICIAL DE STORAGES:');
+            console.log('[agregarPrendaNueva]   🖼️ imagenesPrendaStorage:', estadoImagenesPrenda.length, 'imágenes');
+            console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesPrenda.map(img => ({
+                tipo: typeof img,
+                previewUrl: img?.previewUrl?.substring(0, 50),
+                ruta: img?.ruta,
+                constructor: img?.constructor?.name
+            })));
+            
+            console.log('[agregarPrendaNueva]   🧵 imagenesTelaStorage:', estadoImagenesTela.length, 'imágenes');
+            console.log('[agregarPrendaNueva]      Contenido:', estadoImagenesTela.map(img => ({
+                tipo: typeof img,
+                previewUrl: img?.previewUrl?.substring(0, 50),
+                ruta: img?.ruta,
+                constructor: img?.constructor?.name
+            })));
+            
+            console.log('[agregarPrendaNueva]   🧵 window.telasCreacion:', estadoTelasCreacion.length, 'telas');
+            console.log('[agregarPrendaNueva]      Primera tela imagenes:', estadoTelasCreacion[0]?.imagenes?.length || 0);
+            console.log('[agregarPrendaNueva]      Contenido primera tela imágenes:', estadoTelasCreacion[0]?.imagenes);
+            
+            console.log('[agregarPrendaNueva]   ⚙️ procesosSeleccionados types:', Object.keys(estadoProcesos));
+            console.log('[agregarPrendaNueva]      procesosSeleccionados imagenes:', 
+                Object.entries(estadoProcesos).map(([tipo, proc]) => ({
+                    tipo: tipo,
+                    tieneImagenes: proc?.imagenes?.length || 0
+                }))
+            );
+            
+            console.log('═══════════════════════════════════════════════════════════════\n');
+            
             //  CRÍTICO: Verificar estado ANTES de hacer nada
             console.log('[agregarPrendaNueva]  INICIO - Estado actual:');
             console.log('[agregarPrendaNueva]   - this.prendaEditIndex:', this.prendaEditIndex);
@@ -460,6 +502,39 @@ class GestionItemsUI {
                 this.prendaEditIndex,
                 this.prendas
             );
+            
+            // 🔍 LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
+            console.log('\n═══════════════════════════════════════════════════════════════');
+            console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
+            console.log('═══════════════════════════════════════════════════════════════');
+            console.log('[agregarPrendaNueva]   📸 prendaData.imagenes:', prendaData?.imagenes?.length || 0);
+            console.log('[agregarPrendaNueva]      Contenido:', prendaData?.imagenes?.map(img => ({
+                tipo: typeof img,
+                previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
+                ruta: typeof img === 'object' ? img?.ruta : undefined,
+                constructor: typeof img === 'object' ? img?.constructor?.name : 'string'
+            })));
+            
+            console.log('[agregarPrendaNueva]   🧵 prendaData.telasAgregadas:', prendaData?.telasAgregadas?.length || 0);
+            if (prendaData?.telasAgregadas?.length > 0) {
+                console.log('[agregarPrendaNueva]      Primera tela:');
+                const primeraTela = prendaData.telasAgregadas[0];
+                console.log('[agregarPrendaNueva]        - tela:', primeraTela.tela);
+                console.log('[agregarPrendaNueva]        - imagenes:', primeraTela.imagenes?.length || 0);
+                console.log('[agregarPrendaNueva]        - contenido imagenes:', primeraTela.imagenes?.map(img => ({
+                    tipo: typeof img,
+                    previewUrl: typeof img === 'object' ? img?.previewUrl?.substring(0, 50) : img?.substring(0, 50),
+                    ruta: typeof img === 'object' ? img?.ruta : undefined,
+                    constructor: typeof img === 'object' ? img?.constructor?.name : 'string'
+                })));
+            }
+            
+            console.log('[agregarPrendaNueva]   ⚙️ prendaData.procesos types:', Object.keys(prendaData?.procesos || {}));
+            console.log('[agregarPrendaNueva]      procesos imagenes:', Object.entries(prendaData?.procesos || {}).map(([tipo, proc]) => ({
+                tipo: tipo,
+                tieneImagenes: proc?.imagenes?.length || 0
+            })));
+            console.log('═══════════════════════════════════════════════════════════════\n');
             
             if (!prendaData) {
 
@@ -637,6 +712,12 @@ class GestionItemsUI {
                         //  ANTES: Estado de la prenda antes de actualizar
                         const prendaAnterior = JSON.parse(JSON.stringify(this.prendas[this.prendaEditIndex]));
                         
+                        console.log('[guardarPrenda] 📋 ESTADO ANTES DE ACTUALIZAR:');
+                        console.log('[guardarPrenda]   telasAgregadas:', prendaAnterior.telasAgregadas?.length || 'undefined');
+                        if (prendaAnterior.telasAgregadas?.length > 0) {
+                            console.log('[guardarPrenda]     Primera tela imagenes:', prendaAnterior.telasAgregadas[0].imagenes?.length || 0);
+                        }
+                        
                         // Actualizar prenda con los datos modificados
                         this.prendas[this.prendaEditIndex] = { ...this.prendas[this.prendaEditIndex], ...prendaData };
                         
@@ -647,6 +728,47 @@ class GestionItemsUI {
                         console.log('[guardarPrenda]   - Nombre DESPUÉS:', prendaActualizada.nombre_prenda);
                         console.log('[guardarPrenda]   - Descripción ANTES:', prendaAnterior.descripcion);
                         console.log('[guardarPrenda]   - Descripción DESPUÉS:', prendaActualizada.descripcion);
+                        
+                        // 🔴 CRÍTICO: LOG DE IMÁGENES DE PRENDA
+                        console.log('[guardarPrenda] 🔴 IMÁGENES DE PRENDA:');
+                        console.log('[guardarPrenda]   ANTES:', prendaAnterior.imagenes?.length || 0, 'imágenes');
+                        console.log('[guardarPrenda]   DESPUÉS:', prendaActualizada.imagenes?.length || 0, 'imágenes');
+                        console.log('[guardarPrenda]   prendaData.imagenes durante actualización:', prendaData.imagenes?.length || 0, 'imágenes');
+                        
+                        if (prendaActualizada.imagenes?.length > 0) {
+                            console.log('[guardarPrenda]   DETALLE IMÁGENES ACTUALIZADAS:');
+                            prendaActualizada.imagenes.forEach((img, idx) => {
+                                console.log('[guardarPrenda]     Imagen ' + idx + ':', {
+                                    tipo: img instanceof File ? 'File' : typeof img,
+                                    esFile: img instanceof File,
+                                    id: img?.id,
+                                    previewUrl: img?.previewUrl?.substring(0, 50),
+                                    ruta: img?.ruta,
+                                    propiedades: typeof img === 'object' ? Object.keys(img || {}).slice(0, 5) : 'N/A'
+                                });
+                            });
+                        } else {
+                            console.log('[guardarPrenda]   ⚠️ SIN IMÁGENES DESPUÉS DE ACTUALIZAR!');
+                            console.log('[guardarPrenda]   imagenesCopia pasado a prendaData tenía:', prendaData.imagenes?.length || 0);
+                            console.log('[guardarPrenda]   Verificando si prendaData.imagenes es referencia válida...');
+                        }
+                        
+                        console.log('[guardarPrenda]   - telasAgregadas ANTES:', prendaAnterior.telasAgregadas?.length || 'undefined');
+                        console.log('[guardarPrenda]   - telasAgregadas DESPUÉS:', prendaActualizada.telasAgregadas?.length || 'undefined');
+                        
+                        if (prendaActualizada.telasAgregadas?.length > 0) {
+                            console.log('[guardarPrenda]     DETALLE TELAS ACTUALIZADAS:');
+                            prendaActualizada.telasAgregadas.forEach((tela, idx) => {
+                                console.log('[guardarPrenda]       Tela ' + idx + ' (' + tela.tela + '): ' + (tela.imagenes?.length || 0) + ' imagenes');
+                                if (tela.imagenes?.length > 0) {
+                                    console.log('[guardarPrenda]         IMG[0]:', {
+                                        tipo: typeof tela.imagenes[0],
+                                        previewUrl: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].previewUrl?.substring(0, 50) : 'N/A',
+                                        constructor: typeof tela.imagenes[0] === 'object' ? tela.imagenes[0].constructor?.name : 'string'
+                                    });
+                                }
+                            });
+                        }
                         
                         //  CRÍTICO: Renderizar inmediatamente después de actualizar
                         console.log('[gestionItemsUI] ✏️ Prenda actualizada, re-renderizando...');
@@ -660,6 +782,24 @@ class GestionItemsUI {
                         this.notificationService?.exito('Prenda actualizada correctamente');
                     } else {
                         console.error('[guardarPrenda]  ERROR: No existe prenda en index', this.prendaEditIndex);
+                    }
+                    
+//  🔴 CRÍTICO: FINAL CHECK ANTES DE RESETEAR prendaEditIndex
+                    const indexAntesDeLimpiar = this.prendaEditIndex;
+                    console.log('[guardarPrenda] 🔴 ANTES DE CERRAR MODAL - FINAL CHECK CON ÍNDICE VÁLIDO:');
+                    console.log('[guardarPrenda]   prendaEditIndex ANTES de limpiar:', indexAntesDeLimpiar);
+                    const prendaFinalAntesDeReset = this.prendas[indexAntesDeLimpiar];
+                    console.log('[guardarPrenda]   📸 imagenes en this.prendas[' + indexAntesDeLimpiar + ']:', prendaFinalAntesDeReset?.imagenes?.length || 0, 'imágenes');
+                    if (prendaFinalAntesDeReset?.imagenes?.length > 0) {
+                        prendaFinalAntesDeReset.imagenes.forEach((img, idx) => {
+                            console.log('[guardarPrenda]     IMG[' + idx + ']: tipo=' + typeof img + ', esFile=' + (img instanceof File) + ', previewUrl=' + (img?.previewUrl?.substring(0, 40) || 'undefined'));
+                        });
+                    } else {
+                        console.log('[guardarPrenda]   ❌ CRÍTICO: NO HAY IMÁGENES EN LA PRENDA FINAL!');
+                    }
+                    console.log('[guardarPrenda]   🧵 telasAgregadas:', prendaFinalAntesDeReset?.telasAgregadas?.length || 0);
+                    if (prendaFinalAntesDeReset?.telasAgregadas?.length > 0) {
+                        console.log('[guardarPrenda]     Primera tela imagenes:', prendaFinalAntesDeReset.telasAgregadas[0].imagenes?.length || 0);
                     }
                     
                     //  Cerrar modal AQUÍ en modo edición

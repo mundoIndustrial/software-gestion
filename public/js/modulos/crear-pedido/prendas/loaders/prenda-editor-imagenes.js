@@ -79,7 +79,23 @@ class PrendaEditorImagenes {
         if (prenda.imagenes && Array.isArray(prenda.imagenes) && window.imagenesPrendaStorage?.establecerImagenes) {
             // IMPORTANTE: Procesar imágenes para crear blob URLs si es necesario
             const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
-                // Si ya tiene previewUrl (blob o data URL), mantenerlo
+                // 🔴 CRITICAL FIX: Si tiene File object, SIEMPRE crear un blob URL NUEVO
+                // No importa si previewUrl existe - puede estar revocado
+                if (img.file instanceof File) {
+                    console.log(`[prenda-editor-imagenes] 🔴 RECONSTITUYENDO blob URL para imagen ${idx} (File object presente)`);
+                    const nuevoBlob = URL.createObjectURL(img.file);
+                    return {
+                        ...img,
+                        file: img.file,                    // ← Preservar el File object
+                        previewUrl: nuevoBlob,             // ← NUEVO blob URL SIEMPRE desde File
+                        nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
+                        tamaño: img.tamaño || img.file.size,
+                        fileType: img.file.type,
+                        fileSize: img.file.size
+                    };
+                }
+                
+                // Si ya tiene previewUrl válido (blob o data URL), mantenerlo
                 if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
                     return img;
                 }
@@ -135,7 +151,15 @@ class PrendaEditorImagenes {
         }
         
         if (typeof img === 'object') {
-            return img.url || img.ruta || img.ruta_imagen || img.imagen || null;
+            // 🔴 FIX CRÍTICO: Si el objeto tiene un File object en .file,
+            // crear un blob URL desde ese File (aunque previewUrl esté revocado)
+            if (img.file instanceof File) {
+                console.log('[prenda-editor-imagenes] 🔴 DETECTADO File object en img.file - creando blob URL');
+                return URL.createObjectURL(img.file);
+            }
+            
+            // Si no, intentar extraer URL de propiedades
+            return img.url || img.ruta || img.ruta_imagen || img.imagen || img.previewUrl || null;
         }
         
         return null;

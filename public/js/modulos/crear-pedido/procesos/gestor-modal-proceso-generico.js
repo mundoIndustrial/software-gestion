@@ -292,6 +292,11 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
     console.log('[cerrarModalProcesoGenerico] 🧹 Listeners de imágenes removidos');
     
     //  Remover listeners de inputs file
+    console.log('[cerrarModalProcesoGenerico] 🔍 ESTADO ACTUAL ANTES DE LIMPIAR:');
+    console.log('[cerrarModalProcesoGenerico]   - imagenesTelaStorage images:', window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0);
+    console.log('[cerrarModalProcesoGenerico]   - imagenesPrendaStorage images:', window.imagenesPrendaStorage?.obtenerImagenes?.()?.length || 0);
+    console.log('[cerrarModalProcesoGenerico]   - telasCreacion length:', window.telasCreacion?.length || 0);
+    
     for (let i = 1; i <= 3; i++) {
         const input = document.getElementById(`proceso-foto-input-${i}`);
         if (input && input._changeHandler) {

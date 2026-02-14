@@ -59,9 +59,10 @@ window.actualizarTablaTelas = function() {
         });
     }
     
-    // Insertar las telas ANTES de la fila de inputs (si existe)
+    // Insertar las telas DESPUÉS de la fila de inputs (si existe)
+    // Esto hace que el mensaje "No hay telas" o las telas existentes queden DEBAJO de los inputs
     if (filaInputs) {
-        filaInputs.parentNode.insertBefore(fragment, filaInputs);
+        filaInputs.parentNode.insertBefore(fragment, filaInputs.nextSibling);
     } else {
         // Fallback: insertar al final
         tbody.appendChild(fragment);

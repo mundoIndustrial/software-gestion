@@ -1443,13 +1443,28 @@ class ModalNovedadEdicion {
                 console.log('[modal-novedad-edicion] 📢 Evento disparado: prendaActualizada', evento.detail);
                 
                 // 🧹 CRÍTICO: Limpiar storages de imágenes después de guardar exitosamente
-                if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.limpiar === 'function') {
-                    window.imagenesPrendaStorage.limpiar();
-                    console.log('🧹 [mostrarExito] Storage de imágenes de prenda limpiado');
-                }
-                if (window.imagenesTelaStorage && typeof window.imagenesTelaStorage.limpiar === 'function') {
-                    window.imagenesTelaStorage.limpiar();
-                    console.log('🧹 [mostrarExito] Storage de imágenes de tela limpiado');
+                // Esto solo aplica cuando se guarda en BD (pedido existente)
+                // En modo CREACIÓN (memory-only), no limpiamos porque aún se necesitan los datos
+                const enPedidoExistente = window.datosEdicionPedido && (window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido);
+                
+                if (enPedidoExistente) {
+                    // SOLO en modo DB: limpiar todos los storages
+                    if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.limpiar === 'function') {
+                        window.imagenesPrendaStorage.limpiar();
+                        console.log('🧹 [mostrarExito] Storage de imágenes de prenda limpiado (BD)');
+                    }
+                    if (window.imagenesTelaStorage && typeof window.imagenesTelaStorage.limpiar === 'function') {
+                        window.imagenesTelaStorage.limpiar();
+                        console.log('🧹 [mostrarExito] Storage de imágenes de tela limpiado (BD)');
+                    }
+                } else {
+                    // En modo CREACIÓN: solo limpiar imágenes de prenda, NO las de tela
+                    if (window.imagenesPrendaStorage && typeof window.imagenesPrendaStorage.limpiar === 'function') {
+                        window.imagenesPrendaStorage.limpiar();
+                        console.log('🧹 [mostrarExito] Storage de imágenes de prenda limpiado (CREACIÓN)');
+                    }
+                    // NO limpiar imagenesTelaStorage - se necesitan para guardar telas en prendaData
+                    console.log('⚠️ [mostrarExito] imagenesTelaStorage NO limpiado (modo CREACIÓN - se preserva)');
                 }
                 
                 // IMPORTANTE: Solo cerrar el modal de prenda, NO abrir otro modal

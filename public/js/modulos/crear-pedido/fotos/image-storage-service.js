@@ -78,9 +78,16 @@ class ImageStorageService {
         }
         
         // Limpiar URLs de imágenes que serán reemplazadas
+        // 🔴 CRÍTICO FIX: Solo revocar blob URLs de imágenes SIN File object
+        // Las imágenes nuevas (con File object) necesitan mantener su blob URL
         this.images.forEach(img => {
             if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(img.previewUrl);
+                // Solo revocar si NO tiene File object (imagen antigua/de BD)
+                if (!img.file || !(img.file instanceof File)) {
+                    URL.revokeObjectURL(img.previewUrl);
+                } else {
+                    console.log('[ImageStorageService.establecerImagenes] 🔒 Preservando blob URL de imagen con File object');
+                }
             }
         });
         

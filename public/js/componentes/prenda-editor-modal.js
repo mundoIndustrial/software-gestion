@@ -1432,9 +1432,14 @@ function limpiarFormularioPrendaNueva() {
     if (window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage.limpiar();
     }
-    if (window.imagenesTelaStorage) {
-        window.imagenesTelaStorage.limpiar();
-    }
+    
+    // 🔴 CRÍTICO: NO limpiar imagenesTelaStorage aquí
+    // Las imágenes de tela se cargan una sola vez cuando se abre la prenda
+    // y se preservan durante TODO el ciclo de edición de la prenda
+    // Solo se limpian cuando se ABRE una NUEVA prenda (en prenda-editor-telas.js)
+    // if (window.imagenesTelaStorage) {
+    //     window.imagenesTelaStorage.limpiar();
+    // }
 }
 
 /**

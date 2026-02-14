@@ -358,37 +358,49 @@ class DragDropManager {
             UIHelperService.log('DragDropManager', ' Drop zone de telas no encontrada', 'warn');
         }
         
-        // Configurar listener en el botón "Agregar imagen"
+        // Configurar listener en el botón "Agregar imagen" (CON GUARD para evitar duplicados)
         const btnAgregarImagenTela = document.getElementById('btn-agregar-imagen-tela');
         if (btnAgregarImagenTela) {
-            btnAgregarImagenTela.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
-                if (fileInput) {
-                    fileInput.click();
-                    UIHelperService.log('DragDropManager', '🖱️ Click en botón Agregar imagen - abriendo file input');
-                } else {
-                    UIHelperService.log('DragDropManager', ' File input no encontrado', 'error');
-                }
-            });
-            UIHelperService.log('DragDropManager', ' Listener agregado al botón "Agregar imagen de tela"');
+            // 🔴 CRÍTICO FIX: Prevenir listeners duplicados
+            if (!btnAgregarImagenTela._listenerAgregado) {
+                btnAgregarImagenTela.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+                    if (fileInput) {
+                        fileInput.click();
+                        UIHelperService.log('DragDropManager', '🖱️ Click en botón Agregar imagen - abriendo file input');
+                    } else {
+                        UIHelperService.log('DragDropManager', ' File input no encontrado', 'error');
+                    }
+                });
+                btnAgregarImagenTela._listenerAgregado = true;
+                UIHelperService.log('DragDropManager', ' Listener agregado al botón "Agregar imagen de tela"');
+            } else {
+                UIHelperService.log('DragDropManager', ' ✓ Listener del botón YA EXISTE - ignorando duplicado', 'info');
+            }
         } else {
             UIHelperService.log('DragDropManager', ' Botón "Agregar imagen" no encontrado', 'warn');
         }
         
-        // Configurar listener en el file input (change event)
+        // Configurar listener en el file input (change event) (CON GUARD para evitar duplicados)
         const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
         if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                UIHelperService.log('DragDropManager', '📁 cambio detectado en file input');
-                if (typeof window.manejarImagenTela === 'function') {
-                    window.manejarImagenTela(fileInput);
-                } else {
-                    UIHelperService.log('DragDropManager', ' Función manejarImagenTela no disponible', 'error');
-                }
-            });
-            UIHelperService.log('DragDropManager', ' Listener agregado al file input');
+            // 🔴 CRÍTICO FIX: Prevenir listeners duplicados
+            if (!fileInput._listenerAgregado) {
+                fileInput.addEventListener('change', (e) => {
+                    UIHelperService.log('DragDropManager', '📁 cambio detectado en file input');
+                    if (typeof window.manejarImagenTela === 'function') {
+                        window.manejarImagenTela(fileInput);
+                    } else {
+                        UIHelperService.log('DragDropManager', ' Función manejarImagenTela no disponible', 'error');
+                    }
+                });
+                fileInput._listenerAgregado = true;
+                UIHelperService.log('DragDropManager', ' Listener agregado al file input');
+            } else {
+                UIHelperService.log('DragDropManager', ' ✓ Listener del file input YA EXISTE - ignorando duplicado', 'info');
+            }
         } else {
             UIHelperService.log('DragDropManager', ' File input no encontrado', 'warn');
         }

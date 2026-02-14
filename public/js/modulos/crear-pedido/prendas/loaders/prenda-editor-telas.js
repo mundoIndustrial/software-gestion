@@ -13,6 +13,17 @@ class PrendaEditorTelas {
             telas: prenda.telasAgregadas?.map(t => t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
+        // 🔴 CRÍTICO: LIMPIAR imagenesTelaStorage SOLO cuando se ABRE una NUEVA prenda
+        // NO limpiar durante guardado/cierre, eso se hace aquí al CARGAR
+        if (window.imagenesTelaStorage && typeof window.imagenesTelaStorage.limpiar === 'function') {
+            console.log('[Telas] 🧹 Limpiando OLD imagenesTelaStorage para NUEVA prenda');
+            const imagenesAntes = window.imagenesTelaStorage.obtenerImagenes?.() || [];
+            console.log('[Telas] 🧹 Imágenes de tela ANTES de limpiar:', imagenesAntes.length, imagenesAntes);
+            window.imagenesTelaStorage.limpiar();
+            const imagenesDespues = window.imagenesTelaStorage.obtenerImagenes?.() || [];
+            console.log('[Telas] 🧹 Imágenes de tela DESPUÉS de limpiar:', imagenesDespues.length);
+        }
+        
         // Buscar tabla
         const tablaTelas = document.querySelector('#tbody-telas');
         if (!tablaTelas) {
@@ -44,9 +55,10 @@ class PrendaEditorTelas {
             prenda.telasAgregadas.forEach((tela, idx) => {
                 const fila = this._crearFilaTela(tela, idx);
                 
-                // Insertar ANTES de la fila de inputs
+                // 🔴 CAMBIO: Insertar DESPUÉS de la fila de inputs (no antes)
+                // Esto hace que la fila de inputs quede ARRIBA y las telas existentes ABAJO
                 if (filaInputs) {
-                    filaInputs.parentNode.insertBefore(fila, filaInputs);
+                    filaInputs.parentNode.insertBefore(fila, filaInputs.nextSibling);
                 } else {
                     tablaTelas.appendChild(fila);
                 }
@@ -56,9 +68,40 @@ class PrendaEditorTelas {
         }
         
         //  Replicar a global para que sea editable
+        // ⚠️ CRÍTICO: NO usar JSON.stringify porque DESTRUYE File objects y blob URLs
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-            window.telasCreacion = JSON.parse(JSON.stringify(prenda.telasAgregadas));
-            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion:', window.telasCreacion.length);
+            // Hacer copia profunda que preserve File objects y datos de imagen
+            // Approach: spread cada tela y copiar su array de imágenes
+            window.telasCreacion = prenda.telasAgregadas.map(tela => ({
+                ...tela,
+                imagenes: tela.imagenes ? [...tela.imagenes] : []  // Copia el array de imágenes sin procesar
+            }));
+            
+            // 🔍 DEBUG PROFUNDO: Mostrar exactamente qué se cargó
+            const detallesDebug = window.telasCreacion[0]?.imagenes?.map(img => ({
+                tipo: typeof img,
+                esFile: img instanceof File,
+                constructor: img?.constructor?.name || 'N/A',
+                toStringValor: Object.prototype.toString.call(img),
+                campos_enumerables: Object.keys(img || {}),
+                campos_propios: Object.getOwnPropertyNames(img || {}),
+                // Valores directos
+                previewUrl: img?.previewUrl,
+                ruta: img?.ruta,
+                ruta_original: img?.ruta_original,
+                ruta_webp: img?.ruta_webp,
+                url: img?.url,
+                id: img?.id,
+                stringify: JSON.stringify(img)
+            })) || [];
+            
+            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (SIN stringify/parse):', {
+                cantidad: window.telasCreacion.length,
+                primeraTela: window.telasCreacion[0]?.tela,
+                imagenesEnPrimera: window.telasCreacion[0]?.imagenes?.length,
+                detallesImagenesProfundo: detallesDebug
+            });
+            
             // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
             window.telasAgregadas = [];
         }

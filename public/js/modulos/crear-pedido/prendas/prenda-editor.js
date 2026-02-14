@@ -146,7 +146,19 @@ class PrendaEditor {
             PrendaEditorTelas.cargar(prenda);
             // Replicar a global para edicion
             if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
-                window.telasCreacion = JSON.parse(JSON.stringify(prenda.telasAgregadas));
+                // 🔴 CRÍTICO: NO usar JSON.stringify/parse - DESTRUYE File objects y blob URLs
+                // Hacer copia profunda que preserve todos los objetos
+                window.telasCreacion = prenda.telasAgregadas.map(tela => ({
+                    ...tela,
+                    imagenes: tela.imagenes ? [...tela.imagenes] : []
+                }));
+                
+                console.log('[prenda-editor] ✅ telasCreacion replicado con spread operator (SIN stringify/parse):', {
+                    cantidad: window.telasCreacion.length,
+                    primeraTela: window.telasCreacion[0]?.tela,
+                    imagenesEnPrimera: window.telasCreacion[0]?.imagenes?.length || 0
+                });
+                
                 // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
                 // (prenda-form-collector.js prioriza telasAgregadas sobre telasCreacion)
                 window.telasAgregadas = [];

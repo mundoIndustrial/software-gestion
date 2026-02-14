@@ -53,40 +53,181 @@ class PrendaFormCollector {
             // ============================================
             const imagenesTemporales = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
             
-
+            console.log('[prenda-form-collector] 🖼️ PROCESANDO IMÁGENES DE PRENDA:', {
+                imagenesTemporales_length: imagenesTemporales.length,
+                imagenesTemporales_type: Array.isArray(imagenesTemporales) ? 'array' : typeof imagenesTemporales,
+                primeraprimeraDiagnostico: imagenesTemporales[0] ? {
+                    tipo: typeof imagenesTemporales[0],
+                    esFile: imagenesTemporales[0] instanceof File,
+                    constructor: imagenesTemporales[0]?.constructor?.name,
+                    propiedades: Object.keys(imagenesTemporales[0] || {})
+                } : null
+            });
             
-            // Procesar imágenes: nuevas File objects Y imágenes de base de datos
-            const imagenesCopia = imagenesTemporales.map(img => {
-
+            // Procesar imágenes: nuevas File objects + rutas de BD (NUNCA blob URLs que se revocaran)
+            const imagenesCopia = imagenesTemporales.map((img, imgIdx) => {
+                console.log(`[prenda-form-collector] 🔍 PROCESANDO IMAGEN ${imgIdx}:`);
+                console.log(`[prenda-form-collector]   🔴 CONTENIDO COMPLETO DEL OBJETO:`, JSON.stringify({
+                    previewUrl: img?.previewUrl?.substring ? img.previewUrl.substring(0, 80) : img?.previewUrl,
+                    url: img?.url?.substring ? img.url.substring(0, 80) : img?.url,
+                    nombre: img?.nombre,
+                    tamaño: img?.tamaño,
+                    id: img?.id,
+                    prenda_foto_id: img?.prenda_foto_id,
+                    ruta_original: img?.ruta_original?.substring ? img.ruta_original.substring(0, 80) : img?.ruta_original,
+                    ruta_webp: img?.ruta_webp?.substring ? img.ruta_webp.substring(0, 80) : img?.ruta_webp,
+                    hasFile: !!img?.file,
+                    fileType: img?.file?.type,
+                    fileSize: img?.file?.size
+                }, null, 2));
+                console.log(`[prenda-form-collector]   Tipo:`, typeof img);
+                console.log(`[prenda-form-collector]   Es File?:`, img instanceof File);
+                console.log(`[prenda-form-collector]   Constructor:`, img?.constructor?.name);
+                console.log(`[prenda-form-collector]   Propiedades (keys):`, Object.keys(img || {}));
+                console.log(`[prenda-form-collector]   Propiedades (getOwnPropertyNames):`, Object.getOwnPropertyNames(img || {}).slice(0, 10));
+                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE previewUrl:`, img?.previewUrl);
+                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE url:`, img?.url?.substring(0, 60) || 'undefined');
+                console.log(`[prenda-form-collector]   🔴 VALOR ACTUAL DE ruta_original:`, img?.ruta_original?.substring(0, 60) || 'undefined');
                 
-                // Si img es directamente un File object, usarlo
+                // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva)
                 if (img instanceof File) {
-
+                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Es File object directo, RETORNANDO`);
                     return img;
                 }
-                // Si img tiene propiedad file que es File object, usar eso
+                
+                // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                 if (img && img.file instanceof File) {
-
-                    return img.file;
-                }
-                // Si es un objeto con previewUrl (desde BD), PRESERVARLO COMPLETAMENTE para edición
-                if (img && img.previewUrl && !img.file) {
-                    // IMPORTANTE: Copiar TODOS los campos para que el modal pueda acceder al ID
+                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene .file que es File object, RETORNANDO`);
+                    // 🔴 CRÍTICO: Guardar el File object CON el metadata, no solo el File
+                    // Esto asegura que cuando se recupere la imagen, tenga toda la info
                     return {
-                        id: img.id,                          // ID de prenda_fotos_pedido
-                        prenda_foto_id: img.prenda_foto_id,  // Alias
-                        previewUrl: img.previewUrl,
-                        url: img.url,                        // URL del accessor
-                        ruta_original: img.ruta_original,    // Ruta original
-                        ruta_webp: img.ruta_webp,            // Ruta WebP
+                        file: img.file,                    // ← El File object real
+                        previewUrl: img.previewUrl,        // ← El blob URL para preview
+                        nombre: img.nombre,
+                        tamaño: img.tamaño,
+                        fileType: img.file.type,
+                        fileSize: img.file.size
+                    };
+                }
+                
+                // 3️⃣ CRÍTICO: Si es un objeto con información de BD, extraer RUTA DE ALMACENAMIENTO
+                // NUNCA guardar blob URLs porque se revocaran en limpieza asíncrona
+                if (img && typeof img === 'object' && img.previewUrl) {
+                    console.log(`[prenda-form-collector]   Es objeto con previewUrl:`, img.previewUrl.substring(0, 50));
+                    
+                    // Prioridad: ruta de almacenamiento permanente
+                    if (img.ruta_original && img.ruta_original.startsWith('/')) {
+                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_original, RETORNANDO`);
+                        return {
+                            id: img.id,
+                            prenda_foto_id: img.prenda_foto_id,
+                            ruta: img.ruta_original,
+                            ruta_original: img.ruta_original,
+                            ruta_webp: img.ruta_webp,
+                            nombre: img.nombre,
+                            urlDesdeDB: true
+                        };
+                    }
+                    if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
+                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene ruta_webp, RETORNANDO`);
+                        return {
+                            id: img.id,
+                            prenda_foto_id: img.prenda_foto_id,
+                            ruta: img.ruta_webp,
+                            ruta_original: img.ruta_original,
+                            ruta_webp: img.ruta_webp,
+                            nombre: img.nombre,
+                            urlDesdeDB: true
+                        };
+                    }
+                    if (img.url && img.url.startsWith('/')) {
+                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Tiene url, RETORNANDO`);
+                        return {
+                            id: img.id,
+                            prenda_foto_id: img.prenda_foto_id,
+                            ruta: img.url,
+                            ruta_original: img.ruta_original,
+                            ruta_webp: img.ruta_webp,
+                            nombre: img.nombre,
+                            urlDesdeDB: true
+                        };
+                    }
+                    // Fallback: Si solo tiene blob URL y datos de BD, preservar ID para merge
+                    console.log(`[prenda-form-classifier]   ⚠️ DECISIÓN: Preservando con blob URL fallback`);
+                    return {
+                        id: img.id,
+                        prenda_foto_id: img.prenda_foto_id,
+                        enBD: true,
+                        urlFallback: img.previewUrl,
+                        ruta_original: img.ruta_original,
+                        ruta_webp: img.ruta_webp,
                         nombre: img.nombre,
                         urlDesdeDB: true
                     };
                 }
-                // Fallback: retornar img tal cual si es File
-
+                
+                // 4️⃣ FALLBACK DEFENSIVO: Si es un objeto que llegó del storage pero no tiene previewUrl,
+                // preservarlo de todas formas porque algo debe tener
+                if (img && typeof img === 'object') {
+                    console.log(`[prenda-form-collector]   ⚠️ Objeto sin previewUrl - preservando como está`);
+                    // Si tiene ID o alguna referencia a BD, marcalo como tal
+                    if (img.id || img.prenda_foto_id) {
+                        console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando con urlDesdeDB=true`);
+                        return {
+                            ...img,
+                            urlDesdeDB: true
+                        };
+                    }
+                    // Si no, preservarlo tal cual
+                    console.log(`[prenda-form-collector]   ✅ DECISIÓN: Preservando tal cual`);
+                    return img;
+                }
+                
+                // Retornar tal cual si es File o válido
+                console.log(`[prenda-form-collector]   ✅ DECISIÓN: Retornando tal cual`);
                 return img;
-            }).filter(img => img !== null && (img instanceof File || (img && img.urlDesdeDB)));
+            }).filter((img, filterIdx) => {
+                // 🔴 CRÍTICO: Descartar IMÁGENES VACÍAS (blob URLs revocados del storage)
+                // Una imagen válida DEBE tener una de estas:
+                // 1. Es un File object
+                // 2. Tiene previewUrl NO VACÍO
+                // 3. Tiene url NO VACÍO  
+                // 4. Tiene id de BD (prenda_foto_id)
+                
+                const esFile = img instanceof File;
+                const tienePreviewUrl = img?.previewUrl && img.previewUrl.trim() !== '';
+                const tieneUrl = img?.url && img.url.trim() !== '';
+                const tieneIdBD = img?.id || img?.prenda_foto_id;
+                
+                const esValido = img !== null && img !== undefined && (esFile || tienePreviewUrl || tieneUrl || tieneIdBD);
+                
+                console.log(`[prenda-form-collector] 🔍 FILTER [${filterIdx}]: esValido=${esValido}`, {
+                    esFile,
+                    tienePreviewUrl: !!tienePreviewUrl,
+                    tieneUrl: !!tieneUrl,
+                    tieneIdBD: !!tieneIdBD,
+                    razon: !esValido ? (img === null || img === undefined ? 'null/undefined' : 'imagen vacía sin contenido') : 'válida'
+                });
+                
+                if (!esValido) {
+                    console.log(`[prenda-form-collector] ❌ Imagen ${filterIdx} DESCARTADA - sin contenido válido`);
+                }
+                
+                return esValido;
+            });
+            
+            console.log('[prenda-form-collector] 🖼️ IMÁGENES DE PRENDA DESPUÉS DE PROCESAR:', {
+                cantidad: imagenesCopia.length,
+                detalles: imagenesCopia.map(img => ({
+                    tipo: img instanceof File ? 'File' : typeof img,
+                    esFile: img instanceof File,
+                    tieneId: !!img.id,
+                    tienePreviewUrl: !!img.previewUrl,
+                    tieneRuta: !!img.ruta,
+                    urlDesdeDB: img.urlDesdeDB,
+                    keys: typeof img === 'object' ? Object.keys(img || {}).slice(0, 5) : 'N/A'
+                }))
+            });
 
             // ============================================
             // 3. CONSTRUIR OBJETO BASE DE PRENDA
@@ -166,6 +307,23 @@ class PrendaFormCollector {
                 cantidad_talla: copiarTallasRelacionales(tallasParaGuardar || { DAMA: {}, CABALLERO: {}, UNISEX: {} }),
                 variantes: {}
             };
+            
+            // 🔴 LOG CRÍTICO INMEDIATO: Verificar que prendaData.imagenes se asignó correctamente
+            console.log('[prenda-form-collector] 🔴 CRÍTICO - prendaData.imagenes asignado JUSTO DESPUÉS DE CREAR prendaData:', {
+                imagenesCopia_length: imagenesCopia.length,
+                prendaData_imagenes_length: prendaData.imagenes?.length || 0,
+                sonLaMismaReferencia: prendaData.imagenes === imagenesCopia,
+                contenido_imagenesCopia: imagenesCopia.map(img => ({
+                    tipo: img instanceof File ? 'File' : typeof img,
+                    id: img?.id,
+                    previewUrl: img?.previewUrl?.substring(0, 50)
+                })),
+                contenido_prendaData_imagenes: prendaData.imagenes?.map(img => ({
+                    tipo: img instanceof File ? 'File' : typeof img,
+                    id: img?.id,
+                    previewUrl: img?.previewUrl?.substring(0, 50)
+                }))
+            });
 
             // DEBUG: Log para ver qué se capturó
             console.log('[prenda-form-collector]  Datos capturados en prendaData:');
@@ -198,35 +356,123 @@ class PrendaFormCollector {
                 });
 
                 prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
-                    // Copiar imágenes de tela: File objects NUEVOS + URLs de BD existentes
-                    const imagenesCopia = (tela.imagenes || []).map(img => {
-                        // Si img es directamente un File object, usarlo (imagen nueva)
+                    // Copiar imágenes de tela: CRÍTICO - NUNCA usar blob URLs (se revoca en limpieza)
+                    // Solo preservar File objects NUEVOS o rutas de almacenamiento PERMANENTES de BD
+                    let imagenesDelaTela = tela.imagenes || [];
+                    
+                    // 🆕 CRÍTICO: Si tela.imagenes está vacío pero existe imagenesTelaStorage con imágenes
+                    // usar las del storage como fallback (esto ocurre cuando se guardan cambios)
+                    console.log(`[prenda-form-collector]  🔍 ANTES de fallback - Tela ${telaIdx}:`, {
+                        imagenesDelaTela_length: imagenesDelaTela?.length || 0,
+                        imagenesDelaTela_content: imagenesDelaTela,
+                        imagenesTelaStorage_exists: !!window.imagenesTelaStorage,
+                        imagenesTelaStorage_count: window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0
+                    });
+                    
+                    if ((!imagenesDelaTela || imagenesDelaTela.length === 0 || 
+                         (imagenesDelaTela.length > 0 && imagenesDelaTela[0] && Object.keys(imagenesDelaTela[0]).length === 0)) &&
+                        window.imagenesTelaStorage && typeof window.imagenesTelaStorage.obtenerImagenes === 'function') {
+                        
+                        const imagenesDelStorage = window.imagenesTelaStorage.obtenerImagenes() || [];
+                        if (imagenesDelStorage.length > 0) {
+                            console.log(`[prenda-form-collector]  🆘 FALLBACK: Tela ${telaIdx} sin imágenes válidas, usando imagenesTelaStorage (${imagenesDelStorage.length} imágenes)`);
+                            console.log(`[prenda-form-collector]  🆘 Imágenes del storage:`, imagenesDelStorage);
+                            imagenesDelaTela = imagenesDelStorage;
+                        } else {
+                            console.log(`[prenda-form-collector]  ⚠️ imagenesTelaStorage VACÍO! No hay imágenes en storage`);
+                        }
+                    }
+                    
+                    const imagenesCopia = (imagenesDelaTela).map((img, imgIdx) => {
+                        // 🔍 DEBUG PROFUNDO: Analizar exactamente qué es este objeto
+                        let imagenDiagnostico = {
+                            tipo: typeof img,
+                            esFile: img instanceof File,
+                            esObjeto: img && typeof img === 'object',
+                            esNull: img === null,
+                            esUndefined: img === undefined,
+                            campos: img && typeof img === 'object' ? Object.keys(img) : 'N/A',
+                            propiedadesEnumerables: img && typeof img === 'object' ? Object.getOwnPropertyNames(img).slice(0, 10) : 'N/A',
+                            constructor: img?.constructor?.name || 'N/A',
+                            toStringValor: Object.prototype.toString.call(img),
+                            // Intentar acceder a propiedades directamente
+                            _previewUrl: img?.previewUrl,
+                            _ruta: img?.ruta,
+                            _ruta_original: img?.ruta_original,
+                            _ruta_webp: img?.ruta_webp,
+                            _url: img?.url,
+                            _id: img?.id,
+                            _file: img?.file instanceof File ? 'File object' : typeof img?.file,
+                            stringify_resultado: JSON.stringify(img)
+                        };
+                        console.log(`[prenda-form-collector] 🖼️ PROCESANDO imagen ${imgIdx} de tela ${telaIdx}:`, imagenDiagnostico);
+                        
+                        // 1️⃣ Si img es directamente un File object, usarlo (imagen nueva a subir)
                         if (img instanceof File) {
+                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE OBJECT`);
                             return img;
                         }
-                        // Si img tiene propiedad file que es File object, usar eso (imagen cargada)
+                        
+                        // 2️⃣ Si img tiene propiedad file que es File object, usar eso (imagen cargada nuevamente)
                         if (img && img.file instanceof File) {
+                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: FILE object dentro de propiedad`);
                             return img.file;
                         }
-                        // CRÍTICO: Si es un objeto con previewUrl (imagen existente de BD), preservar la URL
-                        // Buscar la URL original en diferentes campos posibles
-                        if (img && img.previewUrl) {
-                            // Si previewUrl es un blob:// URL, puede que no sea persistente
-                            // Intentar usar una URL de almacenamiento permanente si existe
+                        
+                        // 3️⃣ CRÍTICO: Si es un objeto con información de BD, extraer RUTA DE ALMACENAMIENTO PERMANENTE
+                        // NUNCA usar previewUrl/blob URLs aquí porque se revocan durante limpiarDespuésDeGuardar()
+                        if (img && typeof img === 'object') {
+                            // Buscar ruta de almacenamiento permanente en este orden de prioridad
                             if (img.ruta && img.ruta.startsWith('/')) {
-                                return img.ruta;  // Prioridad: ruta absoluta de storage
-                            }
-                            if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
-                                return img.ruta_webp;
+                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta = ${img.ruta}`);
+                                return img.ruta;  // 🎯 Prioridad 1: ruta absoluta de storage
                             }
                             if (img.ruta_original && img.ruta_original.startsWith('/')) {
-                                return img.ruta_original;
+                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_original = ${img.ruta_original}`);
+                                return img.ruta_original;  // 🎯 Prioridad 2: ruta original
                             }
-                            // Si no hay ruta absoluta, usar el previewUrl (blob URL probablemente)
-                            return img.previewUrl;
+                            if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
+                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.ruta_webp = ${img.ruta_webp}`);
+                                return img.ruta_webp;  // 🎯 Prioridad 3: ruta webp
+                            }
+                            // Si tiene URL de acceso, usarla si es path absoluto
+                            if (img.url && img.url.startsWith('/')) {
+                                console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: Usando img.url = ${img.url}`);
+                                return img.url;
+                            }
+                            // Si tienen información de ID de BD, conservarla en un objeto (para merge posterior)
+                            if (img.id || img.prenda_foto_id) {
+                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: PRESERVANDO como objeto de BD (ID encontrado)`);
+                                return {
+                                    id: img.id || img.prenda_foto_id,
+                                    // Conservar alguna ruta aunque sea blob, porque es respaldo
+                                    urlFallback: img.previewUrl,
+                                    enBD: true
+                                };
+                            }
+                            
+                            // 🆕 FALLBACK: Si es un objeto con 0 propiedades enumerables pero era en telasCreacion,
+                            // intentar usar previewUrl como blob URL (último recurso)
+                            if (Object.keys(img).length === 0 && img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                                console.log(`[prenda-form-collector]   ⚠️ Imagen ${imgIdx}: FALLBACK blob URL (objeto vacío pero con previewUrl)`);
+                                // Retornar un objeto con la información que tenemos
+                                return {
+                                    previewUrl: img.previewUrl,
+                                    esBlob: true,
+                                    warning: 'Blob URL - puede revocar después'
+                                };
+                            }
                         }
-                        // Ignorar valores null/undefined
-                        return img !== null && img !== undefined ? img : null;
+                        
+                        // 4️⃣ Si img es un string (ruta directa), usarlo
+                        if (typeof img === 'string' && img.startsWith('/')) {
+                            console.log(`[prenda-form-collector]   ✅ Imagen ${imgIdx}: STRING (ruta) = ${img}`);
+                            return img;
+                        }
+                        
+                        // ❌ Ignorar blob URLs y otros valores inválidos
+                        console.log(`[prenda-form-collector]   ❌ Imagen ${imgIdx}: DESCARTADA (blob URL o inválida)`);
+                        return null;
                     }).filter(img => img !== null && img !== undefined);
                     
                     return {
