@@ -226,7 +226,7 @@
      */
     function agregarEventListenersCotizacion() {
         // Los event listeners se agregan inline en el HTML generado
-        console.log('[renderizador-cotizaciones] 📋 Event listeners agregados');
+        console.log('[renderizador-cotizaciones]  Event listeners agregados');
     }
 
     /**

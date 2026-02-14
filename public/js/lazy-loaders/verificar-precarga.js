@@ -95,7 +95,7 @@
 
     // Resumen
     console.log('\n' + '═'.repeat(60));
-    console.log('%c📋 RESUMEN', 'font-weight: bold; font-size: 14px; color: #2ecc71;');
+    console.log('%c RESUMEN', 'font-weight: bold; font-size: 14px; color: #2ecc71;');
     console.log('═'.repeat(60));
 
     const allChecksPassed = 

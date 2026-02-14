@@ -1,5 +1,5 @@
 <!-- MODAL: Agregar Prenda Nueva (Sin Cotización) -->
-<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0;">
+<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; overflow: hidden; padding: 2rem 0;">
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">
@@ -125,14 +125,16 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%; position: relative; overflow: visible;">
-                                        <!-- Botón para seleccionar imagen -->
-                                        <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal-agregar-prenda-nueva-file-input').click(); return false;">
+                                        <!-- Botón para seleccionar imagen (listener manejado por FileInputManager) -->
+                                        <button type="button" id="btn-agregar-imagen-tela" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
                                             <span style="font-size: 0.7rem;">Agregar imagen</span>
                                         </button>
-                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
+                                        <!-- Input file: listeners manejados por FileInputManager (NO usar onchange inline) -->
+                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela">
                                         
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;" data-zona="tela" data-estado="inicial" tabindex="0">
+                                        <!-- Drop-zone: listeners manejados por FileInputManager (NO usar ondragover, ondrop inline) -->
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;">
                                             <!-- Texto de ayuda -->
                                             <div style="text-align: center; color: #0066cc; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
                                                 <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
@@ -584,71 +586,30 @@ if (window.actualizarTablaTelas) {
 </script>
 
 <script>
-// Funciones para drag & drop de imágenes de tela
-function handleDragOver(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.style.borderColor = '#3b82f6';
-    event.currentTarget.style.backgroundColor = '#eff6ff';
-}
+/**
+ *  DEPRECATED: Drag-drop y paste handlers movidos a FileInputManager
+ * 
+ * Estos handlers inline causaban duplicación de listeners y doble-click.
+ * Ahora se manejan centralizadamente en:
+ * - public/js/componentes/file-input-manager.js
+ * - public/js/componentes/prenda-modal-manager-v2.js
+ * 
+ * Los listeners son agregados automáticamente con inicialización idempotente,
+ * evitando duplicación al abrir/cerrar el modal múltiples veces.
+ */
 
-function handleDragLeave(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.style.borderColor = '#d1d5db';
-    event.currentTarget.style.backgroundColor = '#f9fafb';
-}
+// Mantener funciones como fallback para compatibilidad (no se usan)
+window.handleDragOver = window.handleDragOver || function(event) {
+    console.warn('[Deprecated] handleDragOver - usar FileInputManager en su lugar');
+};
 
-function handleDropTela(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Restaurar estilos
-    event.currentTarget.style.borderColor = '#d1d5db';
-    event.currentTarget.style.backgroundColor = '#f9fafb';
-    
-    // Obtener archivos
-    const files = event.dataTransfer.files;
-    if (files.length === 0) return;
-    
-    // Simular input change
-    const input = document.getElementById('nueva-prenda-tela-imagen-input');
-    input.files = files;
-    manejarImagenTela(input);
-}
+window.handleDragLeave = window.handleDragLeave || function(event) {
+    console.warn('[Deprecated] handleDragLeave - usar FileInputManager en su lugar');
+};
 
-// Función para manejar paste de imágenes
-document.addEventListener('paste', function(event) {
-    const activeElement = document.activeElement;
-    
-    // Verificar si estamos en un campo de tela
-    if (activeElement && (
-        activeElement.id === 'nueva-prenda-color' || 
-        activeElement.id === 'nueva-prenda-tela' || 
-        activeElement.id === 'nueva-prenda-referencia'
-    )) {
-        
-        const items = event.clipboardData.items;
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            
-            if (item.type.indexOf('image') !== -1) {
-                const file = item.getAsFile();
-                if (file) {
-                    const input = document.getElementById('nueva-prenda-tela-imagen-input');
-                    
-                    // Crear un nuevo FileList
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    input.files = dataTransfer.files;
-                    
-                    manejarImagenTela(input);
-                    break;
-                }
-            }
-        }
-    }
-});
+window.handleDropTela = window.handleDropTela || function(event) {
+    console.warn('[Deprecated] handleDropTela - usar FileInputManager en su lugar');
+};
 </script>
 
 <!-- ─── Modal Prenda: colores-por-talla, drag-drop, FSM, loaders ─── -->
@@ -670,6 +631,7 @@ document.addEventListener('paste', function(event) {
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/PrendaDragDropHandler.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/TelaDragDropHandler.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/ProcesoDragDropHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/drag-drop-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/core/modal-mini-fsm.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js') }}?v={{ $v }}"></script>

@@ -72,10 +72,10 @@ class TallasBuilder {
                 });
                 
                 if (claveBuscada) {
-                    console.log(`[TallasBuilder]   ✅ Encontrado por Método 1 (objeto). Clave: "${claveBuscada}"`);
+                    console.log(`[TallasBuilder]    Encontrado por Método 1 (objeto). Clave: "${claveBuscada}"`);
                     asignacion = asignacionesColores[claveBuscada];
                 } else {
-                    console.log(`[TallasBuilder]   ⚠️ Método 1 no encontró`);
+                    console.log(`[TallasBuilder]    Método 1 no encontró`);
                     // Método 2: Buscar por clave en formato "genero-tipo-talla" (ignorando tipo)
                     const claveAlternativa = Object.keys(asignacionesColores).find(clave => {
                         // Clave formato: "dama-Letra-S" o "dama-S"
@@ -89,7 +89,7 @@ class TallasBuilder {
                     });
                     
                     if (claveAlternativa) {
-                        console.log(`[TallasBuilder]   ✅ Encontrado por Método 2 (clave). Clave: "${claveAlternativa}"`);
+                        console.log(`[TallasBuilder]    Encontrado por Método 2 (clave). Clave: "${claveAlternativa}"`);
                         // Si encontramos por clave, transformar a formato de asignacion si no lo está ya
                         const valor = asignacionesColores[claveAlternativa];
                         if (valor.genero) {
@@ -99,7 +99,7 @@ class TallasBuilder {
                             asignacion = { genero, talla, colores: Array.isArray(valor) ? valor : [valor] };
                         }
                     } else {
-                        console.log(`[TallasBuilder]   ❌ No encontrado por Método 2`);
+                        console.log(`[TallasBuilder]    No encontrado por Método 2`);
                     }
                 }
                 

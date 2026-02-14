@@ -105,7 +105,7 @@ if ($Operacion -eq "creacion-pedido" -or $Operacion -eq "todas") {
             # Extraer desglose de pasos
             if ($linea -match '"desglose_pasos":\s*\{([^}]+)\}') {
                 $desglose = $matches[0]
-                Write-Host "    📋 Desglose de pasos:" -ForegroundColor White
+                Write-Host "     Desglose de pasos:" -ForegroundColor White
                 
                 $pasos = @{
                     "JSON" = [regex]::Matches($linea, '"paso_1_json_ms":\s*(\d+\.?\d*)') | % {$_.Groups[1].Value}

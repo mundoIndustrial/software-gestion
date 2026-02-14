@@ -66,7 +66,7 @@ class ItemFormCollector {
                 cantidad_talla: item.cantidad_talla || {}, //  AGREGAR cantidad_talla aquí
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
-                asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, // ✅ Agregar asignaciones de colores
+                asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, //  Agregar asignaciones de colores
             };
             
             console.log('[ItemFormCollector]  baseItem CONSTRUIDO:', {

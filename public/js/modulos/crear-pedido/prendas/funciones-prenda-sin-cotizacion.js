@@ -1,7 +1,7 @@
 /**
- * FUNCIONES GLOBALES - Prenda Sin Cotizaci�n Tipo PRENDA [LEGADO - REFACTORIZADO]
+ * FUNCIONES GLOBALES - Prenda Sin Cotizacin Tipo PRENDA [LEGADO - REFACTORIZADO]
  * 
- * Este archivo se mantiene solo como referencia hist�rica.
+ * Este archivo se mantiene solo como referencia histrica.
  * La funcionalidad se ha refactorizado en componentes especializados:
  * 
  * COMPONENTES NUEVOS (cargados en orden):
@@ -33,10 +33,10 @@
  *    - marcarPrendaDeBodega()
  *    - actualizarOrigenPrenda()
  * 
- * UBICACI�N DE SCRIPTS:
- * Ver: resources/views/asesores/pedidos/crear-pedido-nuevo.blade.php (l�neas 164-170)
+ * UBICACIN DE SCRIPTS:
+ * Ver: resources/views/asesores/pedidos/crear-pedido-nuevo.blade.php (lneas 164-170)
  * 
- *  MIGRACI�N COMPLETADA
+ *  MIGRACIN COMPLETADA
  * Todas las funciones window.* han sido movidas a sus componentes respectivos.
  * Este archivo se mantiene por compatibilidad de versiones anteriores.
  */

@@ -1,5 +1,5 @@
 /**
- * 🎨 Módulo de Asignación de Colores por Talla
+ *  Módulo de Asignación de Colores por Talla
  * Responsabilidad: Cargar y mostrar asignación de colores
  */
 
@@ -8,19 +8,19 @@ class PrendaEditorColores {
      * Cargar asignación de colores por talla
      */
     static cargar(prenda) {
-        console.log('🎨 [Colores] Cargando asignaciones:', {
+        console.log(' [Colores] Cargando asignaciones:', {
             cantidad: prenda.asignaciones?.length || 0
         });
         
         const tabla = document.getElementById('tabla-resumen-asignaciones-cuerpo');
         if (!tabla) {
-            console.warn('❌ [Colores] No encontrado #tabla-resumen-asignaciones-cuerpo');
+            console.warn(' [Colores] No encontrado #tabla-resumen-asignaciones-cuerpo');
             return;
         }
         
         // Si no hay asignaciones, salir
         if (!prenda.asignaciones || !Array.isArray(prenda.asignaciones) || prenda.asignaciones.length === 0) {
-            console.log('ℹ️ [Colores] Sin asignaciones para cargar');
+            console.log(' [Colores] Sin asignaciones para cargar');
             this._ocultarSeccion();
             return;
         }
@@ -32,21 +32,21 @@ class PrendaEditorColores {
         prenda.asignaciones.forEach((asignacion, idx) => {
             const fila = this._crearFilaAsignacion(asignacion, idx);
             tabla.appendChild(fila);
-            console.log(`✅ [Colores] Asignación ${idx + 1}: ${asignacion.tela} - ${asignacion.talla}`);
+            console.log(` [Colores] Asignación ${idx + 1}: ${asignacion.tela} - ${asignacion.talla}`);
         });
         
         // Mostrar sección y actualizar contador
         this._mostrarSeccion();
         this._actualizarContadores(prenda);
         
-        // 🔥 Replicar a global para que sea editable
+        //  Replicar a global para que sea editable
         if (prenda.asignacionesColoresPorTalla) {
             window.ColoresPorTalla = window.ColoresPorTalla || {};
             window.ColoresPorTalla.datos = JSON.parse(JSON.stringify(prenda.asignacionesColoresPorTalla));
-            console.log('[Carga] 🎨 Asignaciones de colores replicadas');
+            console.log('[Carga]  Asignaciones de colores replicadas');
         }
         
-        console.log('✅ [Colores] Completado');
+        console.log(' [Colores] Completado');
     }
 
     /**

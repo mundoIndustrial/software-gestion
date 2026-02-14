@@ -76,7 +76,7 @@ window.WizardManager = (function() {
             const generoSeleccionado = StateManager.getGeneroSeleccionado();
             const tallasSeleccionadas = StateManager.getTallasSeleccionadas();
             
-            console.log('[WizardManager] 📋 Estado actual:', {
+            console.log('[WizardManager]  Estado actual:', {
                 pasoActual: pasoActual,
                 telaSeleccionada: telaSeleccionada,
                 generoSeleccionado: generoSeleccionado,
@@ -120,7 +120,7 @@ window.WizardManager = (function() {
                 console.log('[WizardManager]  Tallas validadas:', tallasSeleccionadas);
                 console.log('[WizardManager] ➜ Avanzando a PASO 3...');
                 
-                // 🔥 BLOQUEAR LLAMADAS MÚLTIPLES
+                //  BLOQUEAR LLAMADAS MÚLTIPLES
                 if (this._avanzandoAPaso3) {
                     console.warn('[WizardManager]  Ya estamos avanzando al paso 3, ignorando llamada duplicada');
                     return false;
@@ -130,7 +130,7 @@ window.WizardManager = (function() {
                 console.log('[WizardManager]  Ejecutando irPaso(3)...');
                 this.irPaso(3);
                 
-                // 🔥 LIMPIAR BLOQUEO DESPUÉS DE UN TIEMPO
+                //  LIMPIAR BLOQUEO DESPUÉS DE UN TIEMPO
                 setTimeout(() => {
                     this._avanzandoAPaso3 = false;
                     console.log('[WizardManager] 🔓 Bloqueo de avance a paso 3 liberado');
@@ -263,7 +263,7 @@ window.WizardManager = (function() {
             
             // Si es paso 0, cargar las telas disponibles
             if (numeroPaso === 0) {
-                console.log('[WizardManager] 📋 Cargando telas disponibles...');
+                console.log('[WizardManager]  Cargando telas disponibles...');
                 this.cargarTelasDisponibles();
             }
             
@@ -846,7 +846,7 @@ window.WizardManager = (function() {
             // Paso 1: Resetear estado en StateManager
             StateManager.resetWizardState();
             console.log('[WizardManager]  Estado del StateManager reseteado');
-            console.log('[WizardManager] 📋 Verificación de estado:', {
+            console.log('[WizardManager]  Verificación de estado:', {
                 pasoActual: StateManager.getPasoActual(),
                 generoSeleccionado: StateManager.getGeneroSeleccionado(),
                 tallasSeleccionadas: StateManager.getTallasSeleccionadas()

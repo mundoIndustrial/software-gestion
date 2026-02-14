@@ -60,7 +60,7 @@ class ModalMiniFSM {
         // Guard: transición inválida
         if (!transicionesValidas[this.estado]?.includes(nuevoEstado)) {
             console.warn(
-                `[ModalFSM] ❌ Transición inválida: ${this.estado} → ${nuevoEstado}`
+                `[ModalFSM]  Transición inválida: ${this.estado} → ${nuevoEstado}`
             );
             return false;
         }
@@ -70,7 +70,7 @@ class ModalMiniFSM {
         this._ultimaCambioOH = Date.now();
 
         console.log(
-            `[ModalFSM] ✅ ${estadoAnterior} → ${nuevoEstado}`
+            `[ModalFSM]  ${estadoAnterior} → ${nuevoEstado}`
         );
 
         // Notificar listeners
@@ -116,7 +116,7 @@ class ModalMiniFSM {
 // SINGLETON GLOBAL (excepto por esta línea, inyectada explícitamente)
 if (!window.__MODAL_FSM__) {
     window.__MODAL_FSM__ = new ModalMiniFSM('modal-agregar-prenda-nueva');
-    console.log('[ModalFSM] ✅ Singleton inicializado');
+    console.log('[ModalFSM]  Singleton inicializado');
 }
 ```
 
@@ -134,17 +134,17 @@ En `/resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.ph
 Abrir consola del navegador y ejecutar:
 ```javascript
 window.__MODAL_FSM__.cambiarEstado('OPENING');
-// Output: [ModalFSM] ✅ CLOSED → OPENING
+// Output: [ModalFSM]  CLOSED → OPENING
 
 window.__MODAL_FSM__.obtenerEstado();
 // Output: 'OPENING'
 
 // Intentar transición inválida
 window.__MODAL_FSM__.cambiarEstado('CLOSED');
-// Output: [ModalFSM] ✅ OPENING → CLOSED (esto SÍ es válido)
+// Output: [ModalFSM]  OPENING → CLOSED (esto SÍ es válido)
 ```
 
-✅ **Resultado esperado:** FSM funciona sin romper nada existente.
+ **Resultado esperado:** FSM funciona sin romper nada existente.
 
 ---
 
@@ -179,7 +179,7 @@ async abrirModalAgregarPrendaNueva() {
         if (typeof window.cargarCatalogosModal === 'function') {
             console.log('[abrirModalAgregarPrendaNueva] Cargando catálogosO...');
             await window.cargarCatalogosModal();
-            console.log('[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados');
+            console.log('[abrirModalAgregarPrendaNueva]  Catálogos cargados');
         }
         
         // 3️⃣ Determinar si es edición o creación (código EXISTENTE - sin cambios)
@@ -210,14 +210,14 @@ async abrirModalAgregarPrendaNueva() {
         // 6️⃣ Transicionar a OPEN
         fsm.cambiarEstado('OPEN');
         
-        console.log('[abrirModalAgregarPrendaNueva] ✅ ÉXITO - Modal abierto');
+        console.log('[abrirModalAgregarPrendaNueva]  ÉXITO - Modal abierto');
         
     } catch (error) {
         // En error, resetear a CLOSED
         const fsm = window.__MODAL_FSM__;
         fsm.cambiarEstado('CLOSED');
         
-        console.error('[abrirModalAgregarPrendaNueva] ❌ ERROR:', error);
+        console.error('[abrirModalAgregarPrendaNueva]  ERROR:', error);
         if (typeof NotificationService !== 'undefined') {
             NotificationService.error('Error abriendo modal: ' + error.message);
         }
@@ -245,7 +245,7 @@ async _esperarModalVisible(timeoutMs = 1000) {
             
             if (isVisible) {
                 clearInterval(intervalo);
-                console.log('[_esperarModalVisible] ✅ Modal visible');
+                console.log('[_esperarModalVisible]  Modal visible');
                 resolve();
             }
         }, 50);
@@ -253,7 +253,7 @@ async _esperarModalVisible(timeoutMs = 1000) {
         // Timeout de seguridad
         setTimeout(() => {
             clearInterval(intervalo);
-            console.warn('[_esperarModalVisible] ⚠️ Timeout esperando modal');
+            console.warn('[_esperarModalVisible]  Timeout esperando modal');
             resolve();  // Continuar de todas formas
         }, timeoutMs);
     });
@@ -265,12 +265,12 @@ async _esperarModalVisible(timeoutMs = 1000) {
 En `/resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php`, buscar y **COMENTAR** (no eliminar):
 
 ```javascript
-// ❌ COMENTAR ESTA SECCIÓN (línea ~683-700)
+//  COMENTAR ESTA SECCIÓN (línea ~683-700)
 /*
 if (window.DragDropManager) {
     try {
         window.DragDropManager.inicializar();
-        console.log('[DragDrop] ✅ Sistema inicializado correctamente');
+        console.log('[DragDrop]  Sistema inicializado correctamente');
         // ...
     }
 }
@@ -283,17 +283,17 @@ if (window.DragDropManager) {
 2. Hacer clic en "Agregar nueva prenda"
 3. Observar los logs:
    ```
-   [ModalFSM] ✅ CLOSED → OPENING
+   [ModalFSM]  CLOSED → OPENING
    [abrirModalAgregarPrendaNueva] INICIO
    [abrirModalAgregarPrendaNueva] Cargando catálogos...
-   [abrirModalAgregarPrendaNueva] ✅ Catálogos cargados
-   [_esperarModalVisible] ✅ Modal visible
-   [DragDropManager] ✅ Ya inicializado (solo primera vez)
-   [ModalFSM] ✅ OPENING → OPEN
-   [abrirModalAgregarPrendaNueva] ✅ ÉXITO
+   [abrirModalAgregarPrendaNueva]  Catálogos cargados
+   [_esperarModalVisible]  Modal visible
+   [DragDropManager]  Ya inicializado (solo primera vez)
+   [ModalFSM]  OPENING → OPEN
+   [abrirModalAgregarPrendaNueva]  ÉXITO
    ```
 
-✅ **Resultado esperado:** Modal abre correctamente, DragDrop se init UNA SOLA VEZ, no hay dobles fetch.
+ **Resultado esperado:** Modal abre correctamente, DragDrop se init UNA SOLA VEZ, no hay dobles fetch.
 
 ---
 
@@ -308,7 +308,7 @@ Eliminar los listeners y MutationObserver del Blade que causaban triggers múlti
 **REMOVER ESTAS LÍNEAS:**
 
 ```javascript
-// ❌ REMOVER: MutationObserver (línea ~830-860)
+//  REMOVER: MutationObserver (línea ~830-860)
 const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
@@ -324,7 +324,7 @@ if (modal) {
     observer.observe(modal, { attributes: true });
 }
 
-// ❌ REMOVER: Event listener personalizado
+//  REMOVER: Event listener personalizado
 document.addEventListener('modalPrendaAbierto', function() {
     window.inicializarDragDropModalPrenda();
 });
@@ -343,7 +343,7 @@ git diff public/js/modulos/crear-pedido/procesos/gestion-items-pedido.js
 git checkout -- resources/views/asesores/pedidos/modals/modal-agregar-prenda-nueva.blade.php
 ```
 
-✅ **Resultado esperado:** Sistema funciona igual, pero más limpio y sin race conditions.
+ **Resultado esperado:** Sistema funciona igual, pero más limpio y sin race conditions.
 
 ---
 
@@ -390,7 +390,7 @@ console.log('Catálogos en memoria:', {
 
 ---
 
-## ⚠️ PUNTOS CRÍTICOS A VALIDAR
+##  PUNTOS CRÍTICOS A VALIDAR
 
 ### Antes de Fase 3:
 - [ ] Modal abre correctamente

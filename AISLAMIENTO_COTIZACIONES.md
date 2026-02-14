@@ -1,17 +1,17 @@
 # 🔐 AISLAMIENTO DE COTIZACIONES - ARQUITECTURA MODULAR
 
-## ⚠️ RESTRICCIÓN CRÍTICA
+##  RESTRICCIÓN CRÍTICA
 
 **La lógica de edición compartida SOLO funciona para:**
-- ✅ Crear Pedidos (`/asesores/pedidos-editable/crear-nuevo`)
-- ✅ Editar Pedidos (`/asesores/pedidos-editable/{pedido_id}`)
+-  Crear Pedidos (`/asesores/pedidos-editable/crear-nuevo`)
+-  Editar Pedidos (`/asesores/pedidos-editable/{pedido_id}`)
 
 **NO interfiere con:**
-- ❌ Cotizaciones
-- ❌ Módulo de Cotizaciones
-- ❌ Lógica de Cotización Prenda Handler
-- ❌ CotizacionEditorService
-- ❌ Procesos de cotización
+-  Cotizaciones
+-  Módulo de Cotizaciones
+-  Lógica de Cotización Prenda Handler
+-  CotizacionEditorService
+-  Procesos de cotización
 
 ---
 
@@ -50,7 +50,7 @@
 │  │    ├─ SharedPrendaStorageService                            │ │
 │  │    └─ PrendaServiceContainer                                │ │
 │  │                                                               │ │
-│  │ ✅ COMPLETAMENTE AISLADO de cotizaciones                     │ │
+│  │  COMPLETAMENTE AISLADO de cotizaciones                     │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -60,31 +60,31 @@
 
 ## 🔌 VERIFICACIÓN DE AISLAMIENTO
 
-### ✅ Cotizaciones NUNCA usan servicios compartidos
+###  Cotizaciones NUNCA usan servicios compartidos
 
 ```javascript
 // 🚫 PROHIBIDO en cotizaciones
-window.prendasServiceContainer.getService('editor') // ❌
+window.prendasServiceContainer.getService('editor') // 
 
-// ✅ Cotizaciones usan su propio sistema
+//  Cotizaciones usan su propio sistema
 window.cotizacionEditorService
 window.cotizacionPrendaHandler
 ```
 
-### ✅ Servicios compartidos NUNCA tocan endpoint de cotización
+###  Servicios compartidos NUNCA tocan endpoint de cotización
 
 ```javascript
 // SharedPrendaEditorService NO hace:
 class SharedPrendaEditorService {
-    // ❌ NO hay lógica de "tipo_cotizacion_id"
-    // ❌ NO hay lógica de "origen automático desde cotización"
-    // ❌ NO hay métodos de cotización-específicos
+    //  NO hay lógica de "tipo_cotizacion_id"
+    //  NO hay lógica de "origen automático desde cotización"
+    //  NO hay métodos de cotización-específicos
     
-    // ✅ SOLO tiene lógica genérica de edición de prendas
+    //  SOLO tiene lógica genérica de edición de prendas
 }
 ```
 
-### ✅ Endpoints diferentes
+###  Endpoints diferentes
 
 ```javascript
 // Cotizaciones
@@ -100,25 +100,25 @@ PATCH /api/prendas/{id}
 
 ---
 
-## 📋 CHECKLIST DE AISLAMIENTO
+##  CHECKLIST DE AISLAMIENTO
 
 ### En `SharedPrendaEditorService`
-- [ ] ❌ NO tiene referencia a `cotizacionActual`
-- [ ] ❌ NO tiene lógica de `tipo_cotizacion_id`
-- [ ] ❌ NO tiene `aplicarOrigenAutomaticoDesdeCotizacion`
-- [ ] ❌ NO toca `window.cotizacionActual`
-- [ ] ❌ NO llama métodos de `CotizacionEditorService`
+- [ ]  NO tiene referencia a `cotizacionActual`
+- [ ]  NO tiene lógica de `tipo_cotizacion_id`
+- [ ]  NO tiene `aplicarOrigenAutomaticoDesdeCotizacion`
+- [ ]  NO toca `window.cotizacionActual`
+- [ ]  NO llama métodos de `CotizacionEditorService`
 
 ### En `SharedPrendaDataService`
-- [ ] ❌ NO tiene endpoints de `/api/cotizaciones`
-- [ ] ❌ NO maneja transformación específica de cotización
-- [ ] ❌ Endpoints apuntan SOLO a `/api/prendas`
+- [ ]  NO tiene endpoints de `/api/cotizaciones`
+- [ ]  NO maneja transformación específica de cotización
+- [ ]  Endpoints apuntan SOLO a `/api/prendas`
 
 ### En aplicación
-- [ ] ✅ Cotizaciones siguen usando su propio `CotizacionEditorService`
-- [ ] ✅ Crear-nuevo usa `SharedPrendaEditorService`
-- [ ] ✅ Editar pedido usa `SharedPrendaEditorService`
-- [ ] ✅ Nunca hay import cruzado entre servicios
+- [ ]  Cotizaciones siguen usando su propio `CotizacionEditorService`
+- [ ]  Crear-nuevo usa `SharedPrendaEditorService`
+- [ ]  Editar pedido usa `SharedPrendaEditorService`
+- [ ]  Nunca hay import cruzado entre servicios
 
 ---
 
@@ -164,14 +164,14 @@ PATCH /api/prendas/{id}
 async function inicializar() {
     console.log('[crear-nuevo] Inicializando...');
 
-    // ✅ Usar servicios compartidos
+    //  Usar servicios compartidos
     const container = window.prendasServiceContainer;
     await container.initialize();
 
     const editor = container.getService('editor');
     window.editorPrendas = editor;
 
-    // ❌ NUNCA usar cotización
+    //  NUNCA usar cotización
     // No hay acceso a: window.cotizacionEditorService
 }
 ```
@@ -182,11 +182,11 @@ async function inicializar() {
 // cotizacion-editor-service.js
 class CotizacionEditorService {
     constructor() {
-        // ✅ Su propio sistema, completamente aislado
+        //  Su propio sistema, completamente aislado
         this.cotizacionActual = null;
         this.prendaHandler = new CotizacionPrendaHandler();
         
-        // ❌ NO referencia a servicios compartidos
+        //  NO referencia a servicios compartidos
         // No hace: window.prendasServiceContainer
     }
 
@@ -205,32 +205,32 @@ window.cotizacionEditorService = new CotizacionEditorService();
 
 ## 🚫 COLISIONES A EVITAR
 
-### ❌ NO HACER EN SERVICIOS COMPARTIDOS
+###  NO HACER EN SERVICIOS COMPARTIDOS
 
 ```javascript
-// ❌ NUNCA esto:
+//  NUNCA esto:
 class SharedPrendaEditorService {
     aplicarOrigenAutomaticoDesdeCotizacion(prenda) {
-        // ❌ PROHIBIDO - esto es solo para cotizaciones
+        //  PROHIBIDO - esto es solo para cotizaciones
     }
 
     cargarTelasDesdeCtizacion(prenda) {
-        // ❌ PROHIBIDO - esto es solo para cotizaciones
+        //  PROHIBIDO - esto es solo para cotizaciones
     }
 
     detectarTipoCotizacion() {
-        // ❌ PROHIBIDO - esto es solo para cotizaciones
+        //  PROHIBIDO - esto es solo para cotizaciones
     }
 }
 ```
 
-### ✅ HACER EN SERVICIOS DE COTIZACIÓN
+###  HACER EN SERVICIOS DE COTIZACIÓN
 
 ```javascript
-// ✅ AQUÍ SÍ:
+//  AQUÍ SÍ:
 class CotizacionPrendaHandler {
     aplicarOrigenAutomaticoDesdeCotizacion(prenda) {
-        // ✅ CORRECTO - solo aquí
+        //  CORRECTO - solo aquí
         const esReflectivo = this.cotizacionActual?.tipo_cotizacion_id === 4;
         if (esReflectivo) {
             prenda.origen = 'bodega'; // Origen automático por tipo
@@ -238,7 +238,7 @@ class CotizacionPrendaHandler {
     }
 
     cargarTelasDesdeCtizacion() {
-        // ✅ CORRECTO - solo aquí
+        //  CORRECTO - solo aquí
     }
 }
 ```
@@ -249,11 +249,11 @@ class CotizacionPrendaHandler {
 
 | Servicio | Ubicación | Usa Compartidos | Independiente | Modifica |
 |----------|-----------|-----------------|---------------|----------|
-| `CotizacionEditorService` | `/servicios/cotizaciones/` | ❌ | ✅ | Cotizaciones |
-| `SharedPrendaEditorService` | `/servicios/shared/` | - | ✅ | Pedidos |
-| `crear-nuevo.js` | `/modulos/crear-pedido/` | ✅ | - | Pedidos |
-| `pedidos-editable.js` | `/modulos/editar-pedido/` | ✅ | - | Pedidos |
-| `CotizacionPrendaHandler` | `/servicios/cotizaciones/` | ❌ | ✅ | Cotizaciones |
+| `CotizacionEditorService` | `/servicios/cotizaciones/` |  |  | Cotizaciones |
+| `SharedPrendaEditorService` | `/servicios/shared/` | - |  | Pedidos |
+| `crear-nuevo.js` | `/modulos/crear-pedido/` |  | - | Pedidos |
+| `pedidos-editable.js` | `/modulos/editar-pedido/` |  | - | Pedidos |
+| `CotizacionPrendaHandler` | `/servicios/cotizaciones/` |  |  | Cotizaciones |
 
 ---
 
@@ -262,25 +262,25 @@ class CotizacionPrendaHandler {
 ### En `crear-nuevo.html` (CORRECTO)
 
 ```html
-<!-- ✅ Solo servicios compartidos para pedidos -->
+<!--  Solo servicios compartidos para pedidos -->
 <script src="/js/servicios/shared/event-bus.js"></script>
 <script src="/js/servicios/shared/format-detector.js"></script>
 <script src="/js/servicios/shared/shared-prenda-data-service.js"></script>
 <script src="/js/servicios/shared/shared-prenda-editor-service.js"></script>
 <script src="/js/servicios/shared/prenda-service-container.js"></script>
 
-<!-- ❌ NUNCA incluir esto aquí -->
+<!--  NUNCA incluir esto aquí -->
 <!-- NO <script src="/js/servicios/cotizaciones/cotizacion-editor-service.js"></script> -->
 ```
 
 ### En `cotizaciones.html` (CORRECTO)
 
 ```html
-<!-- ✅ Solo servicios de cotización -->
+<!--  Solo servicios de cotización -->
 <script src="/js/servicios/cotizaciones/cotizacion-editor-service.js"></script>
 <script src="/js/servicios/cotizaciones/cotizacion-prenda-handler.js"></script>
 
-<!-- ❌ NUNCA incluir esto aquí -->
+<!--  NUNCA incluir esto aquí -->
 <!-- NO <script src="/js/servicios/shared/prenda-service-container.js"></script> -->
 ```
 
@@ -291,15 +291,15 @@ class CotizacionPrendaHandler {
 ### Guard 1: No compartir instancias
 
 ```javascript
-// ❌ NUNCA hacer esto:
+//  NUNCA hacer esto:
 class SharedPrendaEditorService {
     constructor() {
-        // ❌ MALO - acoplamiento
+        //  MALO - acoplamiento
         this.cotizacionService = window.cotizacionEditorService;
     }
 }
 
-// ✅ HACER esto:
+//  HACER esto:
 class SharedPrendaEditorService {
     constructor(dependencies) {
         // Solo inyectar lo que necesita (nada de cotización)
@@ -329,7 +329,7 @@ window.PrendaServices = {
 ### Guard 3: Event buses separados
 
 ```javascript
-// ❌ NUNCA compartir eventBus entre servicios no relacionados
+//  NUNCA compartir eventBus entre servicios no relacionados
 const eventBusCotizaciones = new EventBus(); // Solo cotizaciones
 const eventBusPrendas = new EventBus();      // Solo pedidos
 
@@ -359,20 +359,20 @@ await container.getService('editor').abrirEditor({
 });
 
 // Verificar: cotización NO debe cambiar
-console.assert(cotizacion.id === 1, 'Cotización modificada ❌');
-console.assert(window.cotizacionActual === undefined, 'Contexto contaminado ❌');
+console.assert(cotizacion.id === 1, 'Cotización modificada ');
+console.assert(window.cotizacionActual === undefined, 'Contexto contaminado ');
 ```
 
 ### Test 2: Servicios no se interfieren
 
 ```javascript
-// ✅ Verificar que no comparten estado
+//  Verificar que no comparten estado
 const editorPedido = window.prendasServiceContainer.getService('editor');
 const editorCotizacion = window.cotizacionEditorService;
 
 console.assert(
     editorPedido.constructor.name !== editorCotizacion.constructor.name,
-    'Misma clase = problema ❌'
+    'Misma clase = problema '
 );
 ```
 
@@ -392,4 +392,4 @@ console.assert(
 **Servicios compartidos = SOLO para pedidos (crear-nuevo + editar)**
 **Cotizaciones = Sistema INDEPENDIENTE sin cambios**
 
-Sin contaminación cruzada. Sin acoplamiento. Sin sorpresas. ✅
+Sin contaminación cruzada. Sin acoplamiento. Sin sorpresas. 

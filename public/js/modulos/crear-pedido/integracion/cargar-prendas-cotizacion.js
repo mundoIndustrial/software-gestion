@@ -177,7 +177,7 @@ class CargadorPrendasCotizacion {
             }
             
             // Fallback por si la foto es un string (ruta directa)
-            console.warn(`[transformarDatos] ⚠️ FOTO ${idx} NO TIENE ESTRUCTURA ESPERADA, USANDO FALLBACK:`, foto);
+            console.warn(`[transformarDatos]  FOTO ${idx} NO TIENE ESTRUCTURA ESPERADA, USANDO FALLBACK:`, foto);
             return {
                 ruta: foto?.ruta || foto,
                 ruta_webp: foto?.ruta_webp || null,
@@ -314,7 +314,7 @@ class CargadorPrendasCotizacion {
         
         if (prenda.variantes && Array.isArray(prenda.variantes)) {
             console.log('[transformarDatos]  Recorriendo TODAS las variantes para extraer telas');
-            console.log('[transformarDatos] � Total de variantes a procesar:', prenda.variantes.length);
+            console.log('[transformarDatos]  Total de variantes a procesar:', prenda.variantes.length);
             
             // Recorremos todas las variantes
             prenda.variantes.forEach((variante, varianteIndex) => {
@@ -399,7 +399,7 @@ class CargadorPrendasCotizacion {
             telasFormato = [...telasDesdeLogo];
         } else if (telasDesdeBackend && telasDesdeBackend.length > 0) {
             // Si no hay telas de Logo, usar las del backend
-            console.log('[transformarDatos] 📋 USANDO TELAS DESDE BACKEND:', telasDesdeBackend.length);
+            console.log('[transformarDatos]  USANDO TELAS DESDE BACKEND:', telasDesdeBackend.length);
             telasFormato = [...telasDesdeBackend];
             
             // Enriquecer con datos de variantes si es necesario
@@ -606,7 +606,7 @@ class CargadorPrendasCotizacion {
      * Agregar prenda completa a GestionItemsUI
      */
     agregarPrendaAGestion(prendaCompleta) {
-        console.log('[CargadorPrendasCotizacion] 📋 Agregando prenda a GestionItemsUI');
+        console.log('[CargadorPrendasCotizacion]  Agregando prenda a GestionItemsUI');
 
         if (!window.gestionItemsUI) {
             console.error(' GestionItemsUI no disponible');

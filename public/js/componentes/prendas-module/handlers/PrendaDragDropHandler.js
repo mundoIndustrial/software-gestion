@@ -229,7 +229,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
         
         // Si hay imágenes y la función de galería está disponible, abrir la galería
         if (imagenesParaGaleria.length > 0 && typeof window.abrirGaleriaPrenda === 'function') {
-            UIHelperService.log('PrendaDragDropHandler', `✅ Abriendo galería modal con ${imagenesParaGaleria.length} imágenes`);
+            UIHelperService.log('PrendaDragDropHandler', ` Abriendo galería modal con ${imagenesParaGaleria.length} imágenes`);
             e.preventDefault();
             e.stopPropagation();
             window.abrirGaleriaPrenda(imagenesParaGaleria);
@@ -319,11 +319,11 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
 
             // Verificar si ClipboardService está disponible
             if (!window.ClipboardService) {
-                UIHelperService.log('PrendaDragDropHandler', '❌ ClipboardService no disponible', 'error');
+                UIHelperService.log('PrendaDragDropHandler', ' ClipboardService no disponible', 'error');
                 throw new Error('ClipboardService no disponible');
             }
 
-            UIHelperService.log('PrendaDragDropHandler', '✅ ClipboardService disponible, intentando leer...');
+            UIHelperService.log('PrendaDragDropHandler', ' ClipboardService disponible, intentando leer...');
 
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({
@@ -335,13 +335,13 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
                 this._procesarImagen(tempInput);
-                UIHelperService.log('PrendaDragDropHandler', `✅ Imagen pegada desde menú: ${archivos.length} archivos`);
+                UIHelperService.log('PrendaDragDropHandler', ` Imagen pegada desde menú: ${archivos.length} archivos`);
             } else {
-                UIHelperService.log('PrendaDragDropHandler', '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
+                UIHelperService.log('PrendaDragDropHandler', ' No se encontraron imágenes en el portapapeles', 'warn');
             }
 
         } catch (error) {
-            UIHelperService.log('PrendaDragDropHandler', `❌ Error principal pegando desde menú: ${error.message}`, 'error');
+            UIHelperService.log('PrendaDragDropHandler', ` Error principal pegando desde menú: ${error.message}`, 'error');
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
@@ -349,7 +349,7 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
-                    UIHelperService.log('PrendaDragDropHandler', `📋 Items encontrados en fallback: ${items.length}`);
+                    UIHelperService.log('PrendaDragDropHandler', ` Items encontrados en fallback: ${items.length}`);
                     
                     const archivos = [];
                     
@@ -382,17 +382,17 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                     if (archivos.length > 0) {
                         const tempInput = UIHelperService.crearInputTemporal(archivos);
                         this._procesarImagen(tempInput);
-                        UIHelperService.log('PrendaDragDropHandler', `✅ Imagen pegada con fallback: ${archivos.length} archivos`);
+                        UIHelperService.log('PrendaDragDropHandler', ` Imagen pegada con fallback: ${archivos.length} archivos`);
                     } else {
                         UIHelperService.mostrarModalError('No se encontraron imágenes en el portapapeles. Por favor copia una imagen primero.');
                     }
                 } else {
-                    UIHelperService.log('PrendaDragDropHandler', '❌ navigator.clipboard.read no disponible', 'error');
+                    UIHelperService.log('PrendaDragDropHandler', ' navigator.clipboard.read no disponible', 'error');
                     // Fallback final: solicitar al usuario que use Ctrl+V
                     UIHelperService.mostrarModalError('Usa Ctrl+V para pegar la imagen directamente en el área de fotos.');
                 }
             } catch (fallbackError) {
-                UIHelperService.log('PrendaDragDropHandler', `❌ Error en fallback: ${fallbackError.message}`, 'error');
+                UIHelperService.log('PrendaDragDropHandler', ` Error en fallback: ${fallbackError.message}`, 'error');
                 UIHelperService.mostrarModalError('No se pudo acceder al portapapeles. Por favor usa Ctrl+V para pegar la imagen.');
             }
         }

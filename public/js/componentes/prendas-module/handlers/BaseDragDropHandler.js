@@ -25,7 +25,7 @@ class BaseDragDropHandler {
      */
     mostrarMenuContextual(e) {
         // Este método debe ser implementado por las subclases
-        UIHelperService.log('BaseDragDropHandler', '⚠️ mostrarMenuContextual debe ser implementado por la subclase', 'warn');
+        UIHelperService.log('BaseDragDropHandler', ' mostrarMenuContextual debe ser implementado por la subclase', 'warn');
         throw new Error('El método mostrarMenuContextual debe ser implementado por la subclase');
     }
 
@@ -39,11 +39,11 @@ class BaseDragDropHandler {
         try {
             // Verificar si ClipboardService está disponible
             if (!window.ClipboardService) {
-                UIHelperService.log(`${this.constructor.name}`, '❌ ClipboardService no disponible', 'error');
+                UIHelperService.log(`${this.constructor.name}`, ' ClipboardService no disponible', 'error');
                 throw new Error('ClipboardService no disponible');
             }
 
-            UIHelperService.log(`${this.constructor.name}`, '✅ ClipboardService disponible, intentando leer...');
+            UIHelperService.log(`${this.constructor.name}`, ' ClipboardService disponible, intentando leer...');
 
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: this.maxArchivos });
@@ -53,13 +53,13 @@ class BaseDragDropHandler {
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
                 this._procesarImagen(tempInput);
-                UIHelperService.log(`${this.constructor.name}`, `✅ Imagen de ${this.tipo} pegada desde menú`);
+                UIHelperService.log(`${this.constructor.name}`, ` Imagen de ${this.tipo} pegada desde menú`);
             } else {
-                UIHelperService.log(`${this.constructor.name}`, '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
+                UIHelperService.log(`${this.constructor.name}`, ' No se encontraron imágenes en el portapapeles', 'warn');
             }
 
         } catch (error) {
-            UIHelperService.log(`${this.constructor.name}`, `❌ Error principal pegando desde menú: ${error.message}`, 'error');
+            UIHelperService.log(`${this.constructor.name}`, ` Error principal pegando desde menú: ${error.message}`, 'error');
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
@@ -67,7 +67,7 @@ class BaseDragDropHandler {
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
-                    UIHelperService.log(`${this.constructor.name}`, `📋 Items encontrados en fallback: ${items.length}`);
+                    UIHelperService.log(`${this.constructor.name}`, ` Items encontrados en fallback: ${items.length}`);
                     
                     const archivos = [];
                     
@@ -100,16 +100,16 @@ class BaseDragDropHandler {
                     if (archivos.length > 0) {
                         const tempInput = UIHelperService.crearInputTemporal(archivos);
                         this._procesarImagen(tempInput);
-                        UIHelperService.log(`${this.constructor.name}`, `✅ Imagen de ${this.tipo} pegada con fallback`);
+                        UIHelperService.log(`${this.constructor.name}`, ` Imagen de ${this.tipo} pegada con fallback`);
                     } else {
                         UIHelperService.mostrarModalError('No se encontraron imágenes en el portapapeles. Por favor copia una imagen primero.');
                     }
                 } else {
-                    UIHelperService.log(`${this.constructor.name}`, '❌ navigator.clipboard.read no disponible', 'error');
+                    UIHelperService.log(`${this.constructor.name}`, ' navigator.clipboard.read no disponible', 'error');
                     UIHelperService.mostrarModalError('Por favor usa Ctrl+V para pegar la imagen.');
                 }
             } catch (fallbackError) {
-                UIHelperService.log(`${this.constructor.name}`, `❌ Error en fallback: ${fallbackError.message}`, 'error');
+                UIHelperService.log(`${this.constructor.name}`, ` Error en fallback: ${fallbackError.message}`, 'error');
                 UIHelperService.mostrarModalError('No se pudo acceder al portapapeles. Por favor usa Ctrl+V para pegar la imagen.');
             }
         }
@@ -149,7 +149,7 @@ class BaseDragDropHandler {
      * @protected
      */
     _configurarHandlerBase(elemento, opcionesEspecificas = {}) {
-        UIHelperService.log(`${this.constructor.name}`, `🔧 _configurarHandlerBase llamado para ${this.tipo}...`);
+        UIHelperService.log(`${this.constructor.name}`, ` _configurarHandlerBase llamado para ${this.tipo}...`);
         UIHelperService.log(`${this.constructor.name}`, `📌 Elemento: ${elemento.id || elemento.tagName}`);
         
         const opcionesComunes = {
@@ -166,12 +166,12 @@ class BaseDragDropHandler {
             ...opcionesEspecificas
         };
 
-        UIHelperService.log(`${this.constructor.name}`, `📋 Creando DragDropEventHandler...`);
+        UIHelperService.log(`${this.constructor.name}`, ` Creando DragDropEventHandler...`);
         this.handler = new DragDropEventHandler(opcionesComunes);
-        UIHelperService.log(`${this.constructor.name}`, `📋 Configurando handler...`);
+        UIHelperService.log(`${this.constructor.name}`, ` Configurando handler...`);
         this.handler.configurar(elemento);
         
-        UIHelperService.log(`${this.constructor.name}`, `✅ _configurarHandlerBase completado para ${this.tipo}`);
+        UIHelperService.log(`${this.constructor.name}`, ` _configurarHandlerBase completado para ${this.tipo}`);
         return this;
     }
 

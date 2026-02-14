@@ -19,14 +19,14 @@
     
     <!-- CRÍTICO: Definir datos del pedido ANTES de que se cargue crear-pedido-desde-cotizacion -->
     <script>
-        console.log('🔥 [editar-pedido] Definiendo datos del pedido ANTES de todo...');
+        console.log(' [editar-pedido] Definiendo datos del pedido ANTES de todo...');
         
         window.modoEdicion = true;
         window.pedidoEdicionId = {{ $pedido->id }};
         window.pedidoEdicionData = @json($pedidoData);
         
-        console.log('🔥 [editar-pedido] pedidoData recibido:', window.pedidoEdicionData);
-        console.log('🔥 [editar-pedido] ¿Tiene procesos?', 'procesos' in window.pedidoEdicionData);
+        console.log(' [editar-pedido] pedidoData recibido:', window.pedidoEdicionData);
+        console.log(' [editar-pedido] ¿Tiene procesos?', 'procesos' in window.pedidoEdicionData);
         
         // IMPORTANTE: Para que abrirEditarPrendaModal() funcione correctamente
         // Establecer datosEdicionPedido con la estructura que espera
@@ -42,7 +42,7 @@
         // Establecer en body para que obtenerPedidoId() lo encuentre
         document.body.dataset.pedidoIdEdicion = {{ $pedido->id }};
         
-        console.log('🔥 [editar-pedido] window.datosEdicionPedido =', window.datosEdicionPedido);
+        console.log(' [editar-pedido] window.datosEdicionPedido =', window.datosEdicionPedido);
     </script>
 
     <!-- Loading Overlay de Página Completa -->
@@ -69,7 +69,7 @@
     <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}"></script>
     <script>
         window.addEventListener('load', function() {
-            console.log('🔥 [FACTURA-EDITABLE] Página completamente cargada, ejecutando...');
+            console.log(' [FACTURA-EDITABLE] Página completamente cargada, ejecutando...');
             
             // Esperar un poco más para que invoice-preview-live se cargue completamente
             setTimeout(function() {

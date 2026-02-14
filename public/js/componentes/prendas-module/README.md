@@ -1,6 +1,6 @@
 # Prendas Module - Sistema Modular v2.0
 
-## 📋 Descripción
+##  Descripción
 
 Sistema modular desacoplado para el manejo de prendas, imágenes y funcionalidades de drag & drop. Organizado en una carpeta específica para mejor claridad y mantenibilidad.
 
@@ -10,14 +10,14 @@ Sistema modular desacoplado para el manejo de prendas, imágenes y funcionalidad
 public/js/componentes/prendas-module/
 ├── index.js                          # Punto de entrada principal
 ├── prendas-wrappers-v2.js           # Loader principal del sistema
-├── modal-wrappers.js                # 📋 Gestión de modales
+├── modal-wrappers.js                #  Gestión de modales
 ├── image-management.js              # 🖼️ Manejo de imágenes
 ├── drag-drop-handlers.js            # 🎯 Funcionalidades drag & drop
 ├── ui-helpers.js                    # 🛠️ Utilidades y helpers
 └── README.md                         # 📚 Documentación
 ```
 
-## � Componentes del Módulo
+##  Componentes del Módulo
 
 ### 1. **Index** (`index.js`)
 - Punto de entrada principal del módulo
@@ -145,7 +145,7 @@ console.log(window.PrendasModule);
 - **Testing**: Testing unitario por componente
 - **Namespace**: Todo bajo `PrendasModule`
 
-### 🔧 Funcionalidades Completas
+###  Funcionalidades Completas
 
 - **Drag & Drop Completo**: Para imágenes de prendas y telas
 - **Gestión de Imágenes**: Preview, galería, eliminación
@@ -172,7 +172,7 @@ El módulo incluye logs detallados con emojis:
 
 - **📁 Carpeta clara**: Todo en `prendas-module/`
 - **🏷️ Nombres descriptivos**: Cada archivo indica su propósito
-- **📋 Documentación**: README en cada nivel
+- ** Documentación**: README en cada nivel
 - ** Búsqueda fácil**: Encuentra rápidamente lo que necesitas
 
 ##  Migración desde Sistema Antiguo
@@ -212,7 +212,7 @@ El módulo incluye logs detallados con emojis:
 - **Escalabilidad**: Fácil agregar nuevos componentes
 - **Debugging**: Logs específicos por componente
 
-### 🔧 Mantenimiento
+###  Mantenimiento
 - **Independiente**: Cada componente puede ser modificado por separado
 - **Versionado**: Cada componente puede tener su propia versión
 - **Testing**: Testing unitario por componente

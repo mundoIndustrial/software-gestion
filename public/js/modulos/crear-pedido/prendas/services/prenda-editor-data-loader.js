@@ -39,9 +39,9 @@ class PrendaEditorDataLoaderService {
             // 7. Procesos
             await this._ejecutarLoader('PrendaEditorProcesos', prenda);
 
-            console.log('✅ [DataLoader] Todos los módulos cargados correctamente');
+            console.log(' [DataLoader] Todos los módulos cargados correctamente');
         } catch (error) {
-            console.error('❌ [DataLoader] Error:', error);
+            console.error(' [DataLoader] Error:', error);
             throw error;
         }
     }
@@ -58,7 +58,7 @@ class PrendaEditorDataLoaderService {
         if (typeof loader !== 'undefined' && typeof loader.cargar === 'function') {
             loader.cargar(prenda);
         } else {
-            console.warn(`[DataLoader] ⚠️ ${loaderName} no disponible`);
+            console.warn(`[DataLoader]  ${loaderName} no disponible`);
         }
     }
 
@@ -73,7 +73,7 @@ class PrendaEditorDataLoaderService {
     static _ejecutarLoaderConMetodos(loaderName, prenda, metodos) {
         const loader = window[loaderName];
         if (typeof loader === 'undefined') {
-            console.warn(`[DataLoader] ⚠️ ${loaderName} no disponible`);
+            console.warn(`[DataLoader]  ${loaderName} no disponible`);
             return;
         }
 

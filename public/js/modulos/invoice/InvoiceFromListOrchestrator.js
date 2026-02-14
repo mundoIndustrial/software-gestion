@@ -49,7 +49,7 @@ class InvoiceFromListOrchestrator {
         } else {
             // Solo mostrar el éxito una vez para evitar spam
             if (!this.modulosCargados) {
-                console.log('[InvoiceFromList] ✅ Todos los módulos cargados correctamente');
+                console.log('[InvoiceFromList]  Todos los módulos cargados correctamente');
             }
             this.modulosCargados = true;
             this.reintentos = 0; // Resetear contador
@@ -148,32 +148,32 @@ class InvoiceFromListOrchestrator {
             // Intentar inicializar cada módulo manualmente
             if (!window.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
                 window.invoiceDataFetcher = new InvoiceDataFetcher();
-                console.log('[InvoiceFromList] ✅ InvoiceDataFetcher inicializado manualmente');
+                console.log('[InvoiceFromList]  InvoiceDataFetcher inicializado manualmente');
             }
             
             if (!window.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
                 window.invoiceModalManager = new InvoiceModalManager();
-                console.log('[InvoiceFromList] ✅ InvoiceModalManager inicializado manualmente');
+                console.log('[InvoiceFromList]  InvoiceModalManager inicializado manualmente');
             }
             
             if (!window.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
                 window.receiptsModalManager = new ReceiptsModalManager();
-                console.log('[InvoiceFromList] ✅ ReceiptsModalManager inicializado manualmente');
+                console.log('[InvoiceFromList]  ReceiptsModalManager inicializado manualmente');
             }
             
             if (!window.loadingManager && typeof LoadingManager !== 'undefined') {
                 window.loadingManager = new LoadingManager();
-                console.log('[InvoiceFromList] ✅ LoadingManager inicializado manualmente');
+                console.log('[InvoiceFromList]  LoadingManager inicializado manualmente');
             }
             
             if (!window.notificationManager && typeof NotificationManager !== 'undefined') {
                 window.notificationManager = new NotificationManager();
-                console.log('[InvoiceFromList] ✅ NotificationManager inicializado manualmente');
+                console.log('[InvoiceFromList]  NotificationManager inicializado manualmente');
             }
             
             if (!window.componentLoader && typeof ComponentLoader !== 'undefined') {
                 window.componentLoader = new ComponentLoader();
-                console.log('[InvoiceFromList] ✅ ComponentLoader inicializado manualmente');
+                console.log('[InvoiceFromList]  ComponentLoader inicializado manualmente');
             }
             
             // Verificar después de inicialización manual
@@ -281,14 +281,14 @@ class InvoiceFromListOrchestrator {
             const instanciaDisponible = !!window[modulo.charAt(0).toLowerCase() + modulo.slice(1)];
             
             console.log(`  ${modulo}:`);
-            console.log(`    Clase: ${claseDisponible ? '✅' : '❌'}`);
-            console.log(`    Instancia: ${instanciaDisponible ? '✅' : '❌'}`);
+            console.log(`    Clase: ${claseDisponible ? '' : ''}`);
+            console.log(`    Instancia: ${instanciaDisponible ? '' : ''}`);
         });
         
         // Verificar orquestador
         console.log('\n🎯 Orquestador:');
-        console.log(`  InvoiceFromListOrchestrator: ${typeof window.InvoiceFromListOrchestrator !== 'undefined' ? '✅' : '❌'}`);
-        console.log(`  invoiceFromListOrchestrator: ${!!window.invoiceFromListOrchestrator ? '✅' : '❌'}`);
+        console.log(`  InvoiceFromListOrchestrator: ${typeof window.InvoiceFromListOrchestrator !== 'undefined' ? '' : ''}`);
+        console.log(`  invoiceFromListOrchestrator: ${!!window.invoiceFromListOrchestrator ? '' : ''}`);
         
         if (window.invoiceFromListOrchestrator) {
             const estado = window.invoiceFromListOrchestrator.getEstadoModulos();
@@ -308,7 +308,7 @@ class InvoiceFromListOrchestrator {
         ];
         
         funciones.forEach(funcion => {
-            console.log(`  ${funcion}: ${typeof window[funcion] !== 'undefined' ? '✅' : '❌'}`);
+            console.log(`  ${funcion}: ${typeof window[funcion] !== 'undefined' ? '' : ''}`);
         });
         
         console.log('\n=== FIN DEL DIAGNÓSTICO ===\n');
@@ -323,32 +323,32 @@ class InvoiceFromListOrchestrator {
         // Intentar inicializar manualmente cada módulo
         if (!window.invoiceDataFetcher && typeof InvoiceDataFetcher !== 'undefined') {
             window.invoiceDataFetcher = new InvoiceDataFetcher();
-            console.log('✅ InvoiceDataFetcher forzado');
+            console.log(' InvoiceDataFetcher forzado');
         }
         
         if (!window.invoiceModalManager && typeof InvoiceModalManager !== 'undefined') {
             window.invoiceModalManager = new InvoiceModalManager();
-            console.log('✅ InvoiceModalManager forzado');
+            console.log(' InvoiceModalManager forzado');
         }
         
         if (!window.receiptsModalManager && typeof ReceiptsModalManager !== 'undefined') {
             window.receiptsModalManager = new ReceiptsModalManager();
-            console.log('✅ ReceiptsModalManager forzado');
+            console.log(' ReceiptsModalManager forzado');
         }
         
         if (!window.loadingManager && typeof LoadingManager !== 'undefined') {
             window.loadingManager = new LoadingManager();
-            console.log('✅ LoadingManager forzado');
+            console.log(' LoadingManager forzado');
         }
         
         if (!window.notificationManager && typeof NotificationManager !== 'undefined') {
             window.notificationManager = new NotificationManager();
-            console.log('✅ NotificationManager forzado');
+            console.log(' NotificationManager forzado');
         }
         
         if (!window.componentLoader && typeof ComponentLoader !== 'undefined') {
             window.componentLoader = new ComponentLoader();
-            console.log('✅ ComponentLoader forzado');
+            console.log(' ComponentLoader forzado');
         }
         
         // Re-verificar

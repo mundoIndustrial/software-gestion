@@ -82,10 +82,6 @@
                     <input type="text" id="forma_de_pago_editable" name="forma_de_pago">
                 </div>
 
-                <div class="form-group">
-                    <label for="numero_pedido_editable">Número de Pedido</label>
-                    <input type="text" id="numero_pedido_editable" name="numero_pedido" readonly placeholder="Se asignará automáticamente" style="background-color: #f3f4f6; cursor: not-allowed;">
-                </div>
             </div>
         </div>
 

@@ -1,4 +1,4 @@
-# ✅ CHECKLIST DE IMPLEMENTACIÓN - SERVICIOS COMPARTIDOS DE PRENDAS
+#  CHECKLIST DE IMPLEMENTACIÓN - SERVICIOS COMPARTIDOS DE PRENDAS
 
 **Status Actual:** 🟢 ARQUITECTURA COMPLETA - LISTOS PARA INTEGRAR
 
@@ -53,7 +53,7 @@
 
 ---
 
-## 🔧 FASE 2: INTEGRACIÓN CREAR-NUEVO (3-4 horas)
+##  FASE 2: INTEGRACIÓN CREAR-NUEVO (3-4 horas)
 
 ### Paso 2.1: HTML
 - [ ] Ubicar: `/resources/views/asesores/pedidos/crear-nuevo.blade.php`
@@ -89,7 +89,7 @@ console.log(window.datosCreacionPedido.prendas)
 
 ---
 
-## 🔧 FASE 3: INTEGRACIÓN EDITAR-PEDIDO (3-4 horas)
+##  FASE 3: INTEGRACIÓN EDITAR-PEDIDO (3-4 horas)
 
 ### Paso 3.1: HTML
 - [ ] Ubicar: `/resources/views/asesores/pedidos/pedidos-editable.blade.php`
@@ -125,7 +125,7 @@ console.log(window.datosEdicionPedido.prendas)
 
 ---
 
-## 🔧 FASE 3+: INTEGRACIÓN CREAR-DESDE-COTIZACIÓN (2-3 horas)
+##  FASE 3+: INTEGRACIÓN CREAR-DESDE-COTIZACIÓN (2-3 horas)
 
 ### Nuevo flujo: Crear pedidos desde prendas de cotizaciones existentes
 **URL:** `http://localhost:8000/asesores/pedidos-editable/crear-desde-cotizacion`
@@ -255,7 +255,7 @@ await window.prendasServiceContainer.initialize();
 
 ---
 
-## 📋 LISTA DE VERIFICACIÓN FINAL
+##  LISTA DE VERIFICACIÓN FINAL
 
 ### Antes de Merge
 - [ ] Todos los 7 servicios compilables sin errores

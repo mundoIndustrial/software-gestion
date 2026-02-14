@@ -317,7 +317,7 @@ class ItemAPIService {
             console.debug('[crearPedido] PASO 3 completo');
 
             // DEBUG: Verificar qué contiene FormData antes de enviar
-            console.log('[crearPedido] 📋 Inspeccionando FormData antes de fetch:');
+            console.log('[crearPedido]  Inspeccionando FormData antes de fetch:');
             let formDataDebug = [];
             for (let [key, value] of formData.entries()) {
                 formDataDebug.push({

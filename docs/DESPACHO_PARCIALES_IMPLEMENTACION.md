@@ -6,7 +6,7 @@ La funcionalidad de guardado de despachos parciales por talla está **completame
 
 ---
 
-## 📋 Especificación Técnica Implementada
+##  Especificación Técnica Implementada
 
 ###  Objetivo
 Guardar despachos parciales de prendas y EPP en múltiples entregas, sin validaciones matemáticas automáticas. Cada fila (prenda/EPP + talla) genera un registro independiente en `despacho_parciales`.
@@ -310,7 +310,7 @@ php artisan test tests/Feature/DespachoParcialesTest.php
 
 ---
 
-## ⚙️ Configuración
+##  Configuración
 
 ### Middleware Requerido
 - `auth` - Autenticación

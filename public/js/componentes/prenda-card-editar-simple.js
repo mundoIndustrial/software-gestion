@@ -14,7 +14,7 @@
 function generarHTMLDatosPrenda(prenda) {
     let html = '';
     
-    console.log('[generarHTMLDatosPrenda] 📋 Iniciando generación de HTML para prenda:', {
+    console.log('[generarHTMLDatosPrenda]  Iniciando generación de HTML para prenda:', {
         nombre: prenda.nombre_prenda,
         colores_telas_count: prenda.colores_telas ? prenda.colores_telas.length : 0,
         colores_telas: prenda.colores_telas,
@@ -172,7 +172,7 @@ function obtenerPedidoId() {
  * @param {number} pedidoId - ID del pedido en BD (para guardar)
  */
 async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
-    console.log('🔥🔥🔥 [INIT] abrirEditarPrendaModal - Valores recibidos:', {
+    console.log(' [INIT] abrirEditarPrendaModal - Valores recibidos:', {
         prenda_nombre: prenda?.nombre_prenda || prenda?.nombre,
         prenda_id: prenda?.id,
         prendaIndex: prendaIndex,
@@ -201,7 +201,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
         prendas: [prendaEditable]
     };
     
-    console.log('🔥 [FETCH-INICIO] Condiciones:', {
+    console.log(' [FETCH-INICIO] Condiciones:', {
         tiene_pedidoId: !!pedidoId,
         tiene_prenda_id: !!prenda?.id,
         ejecutara_fetch: !!(pedidoId && prenda?.id)
@@ -210,7 +210,7 @@ async function abrirEditarPrendaModal(prenda, prendaIndex, pedidoId) {
     if (pedidoId && prenda.id) {
         try {
             const url = `/asesores/pedidos/${pedidoId}/factura-datos`;
-            console.log('🔥 [FETCH] Llamando a URL:', url);
+            console.log(' [FETCH] Llamando a URL:', url);
             console.log(' [FETCH-DEBUG] Parámetros - pedidoId:', pedidoId);
 
             const response = await fetch(url);

@@ -392,7 +392,7 @@
                         
                         // IGNORADO: tabla epp_imagenes no existe, usar pedido_epp_imagenes
                         // Las imágenes se guardan en pedido_epp_imagenes después de crear el pedido
-                        console.debug('📋 [FORMULARIO] EPP sin enviar imágenes de epp_imagenes');
+                        console.debug(' [FORMULARIO] EPP sin enviar imágenes de epp_imagenes');
                         
                         // if (item.imagenes && Array.isArray(item.imagenes)) {
                         //     item.imagenes.forEach((img) => {

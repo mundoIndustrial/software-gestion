@@ -198,26 +198,36 @@ class PrendaFormCollector {
                 });
 
                 prendaData.telasAgregadas = window.telasCreacion.map((tela, telaIdx) => {
-                    // Copiar imágenes de tela: SOLO File objects (NO blobs ni previewUrl)
+                    // Copiar imágenes de tela: File objects NUEVOS + URLs de BD existentes
                     const imagenesCopia = (tela.imagenes || []).map(img => {
-                        // Si img es directamente un File object, usarlo
+                        // Si img es directamente un File object, usarlo (imagen nueva)
                         if (img instanceof File) {
-
                             return img;
                         }
-                        // Si img tiene propiedad file que es File object, usar eso
+                        // Si img tiene propiedad file que es File object, usar eso (imagen cargada)
                         if (img && img.file instanceof File) {
-
                             return img.file;
                         }
-                        // Si es un objeto con previewUrl (desde BD), ignorar
-                        if (img && img.previewUrl && !img.file) {
-
-                            return null;
+                        // CRÍTICO: Si es un objeto con previewUrl (imagen existente de BD), preservar la URL
+                        // Buscar la URL original en diferentes campos posibles
+                        if (img && img.previewUrl) {
+                            // Si previewUrl es un blob:// URL, puede que no sea persistente
+                            // Intentar usar una URL de almacenamiento permanente si existe
+                            if (img.ruta && img.ruta.startsWith('/')) {
+                                return img.ruta;  // Prioridad: ruta absoluta de storage
+                            }
+                            if (img.ruta_webp && img.ruta_webp.startsWith('/')) {
+                                return img.ruta_webp;
+                            }
+                            if (img.ruta_original && img.ruta_original.startsWith('/')) {
+                                return img.ruta_original;
+                            }
+                            // Si no hay ruta absoluta, usar el previewUrl (blob URL probablemente)
+                            return img.previewUrl;
                         }
-
-                        return img;
-                    }).filter(img => img !== null && img instanceof File);
+                        // Ignorar valores null/undefined
+                        return img !== null && img !== undefined ? img : null;
+                    }).filter(img => img !== null && img !== undefined);
                     
                     return {
                         tela: tela.tela || '',
@@ -243,7 +253,11 @@ class PrendaFormCollector {
             // ============================================
             // 4.1. PROCESAR TELAS AGREGADAS (FLUJO EDICIÓN DESDE BD O COTIZACIÓN)
             // ============================================
-            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0) {
+            // IMPORTANTE: Solo usar window.telasAgregadas si window.telasCreacion NO fue definido
+            // Si window.telasCreacion existe (incluso si está vacío), significa estamos en edición
+            // y debemos respetar el estado actual [incluyendo la intención de eliminar todas las telas]
+            if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > 0 
+                && (!window.telasCreacion || !Array.isArray(window.telasCreacion))) {
                 console.log('[prenda-form-collector] 🧵 USANDO TELAS AGREGADAS (BD o Cotización)');
                 prendaData.telasAgregadas = window.telasAgregadas.map((tela, telaIdx) => {
                     // Para cotización/BD, las imágenes ya vienen procesadas
@@ -276,7 +290,8 @@ class PrendaFormCollector {
             }
             // Si estamos en modo edición y no hay telas en window.telasAgregadas, 
             // obtener telas Y VARIANTES de la prenda anterior
-            else if (prendaEditIndex !== null && prendaEditIndex !== undefined && prendasArray[prendaEditIndex]) {
+            // PERO SOLO si window.telasCreacion no existe (no estamos en flujo de edición)
+            else if (!window.telasCreacion && prendaEditIndex !== null && prendaEditIndex !== undefined && prendasArray[prendaEditIndex]) {
                 const prendaAnterior = prendasArray[prendaEditIndex];
                 
                 // Copiar telas anteriores
@@ -410,29 +425,29 @@ class PrendaFormCollector {
             
             if (window.ColoresPorTalla && typeof window.ColoresPorTalla.obtenerDatosAsignaciones === 'function') {
                 asignacionesColores = window.ColoresPorTalla.obtenerDatosAsignaciones();
-                console.log('[prenda-form-collector] 📋 Asignaciones obtenidas de ColoresPorTalla:', asignacionesColores);
+                console.log('[prenda-form-collector]  Asignaciones obtenidas de ColoresPorTalla:', asignacionesColores);
                 console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
                 console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
             } else if (typeof obtenerDatosAsignacionesColores === 'function') {
                 // Compatibilidad con la API antigua
                 asignacionesColores = obtenerDatosAsignacionesColores();
-                console.log('[prenda-form-collector] 📋 Asignaciones de colores por talla (API antigua):', asignacionesColores);
+                console.log('[prenda-form-collector]  Asignaciones de colores por talla (API antigua):', asignacionesColores);
             } else {
                 // Si no hay función disponible, intentar obtener del StateManager
                 if (window.StateManager && typeof window.StateManager.getAsignaciones === 'function') {
                     asignacionesColores = window.StateManager.getAsignaciones();
-                    console.log('[prenda-form-collector] 📋 Asignaciones de colores recuperadas de StateManager:');
+                    console.log('[prenda-form-collector]  Asignaciones de colores recuperadas de StateManager:');
                     console.log('[prenda-form-collector]   - Datos:', asignacionesColores);
                     console.log('[prenda-form-collector]   - Claves:', Object.keys(asignacionesColores));
                     console.log('[prenda-form-collector]   - ¿Vacío?', Object.keys(asignacionesColores).length === 0);
                 } else {
                     asignacionesColores = {};
-                    console.warn('[prenda-form-collector] ⚠️ Función obtenerDatosAsignaciones no disponible y StateManager sin datos');
+                    console.warn('[prenda-form-collector]  Función obtenerDatosAsignaciones no disponible y StateManager sin datos');
                 }
             }
             
             prendaData.asignacionesColoresPorTalla = asignacionesColores;
-            console.log('[prenda-form-collector] ✅ prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
+            console.log('[prenda-form-collector]  prendaData.asignacionesColoresPorTalla asignado:', prendaData.asignacionesColoresPorTalla);
 
             console.log('[prenda-form-collector]  Retornando prendaData completa:');
             console.log('[prenda-form-collector]  VERIFICACIÓN FINAL DE TELAS EN prendaData:', {

@@ -75,7 +75,7 @@ class PrendaDataTransformer {
         
         // PRIMERO: Intentar obtener de prendaRaw.asignacionesColoresPorTalla (datos guardados en la prenda)
         if (prendaRaw.asignacionesColoresPorTalla && Object.keys(prendaRaw.asignacionesColoresPorTalla).length > 0) {
-            console.log('[PrendaDataTransformer] ✅ Asignaciones encontradas en prendaRaw (PRIORIDAD):', prendaRaw.asignacionesColoresPorTalla);
+            console.log('[PrendaDataTransformer]  Asignaciones encontradas en prendaRaw (PRIORIDAD):', prendaRaw.asignacionesColoresPorTalla);
             asignacionesColores = prendaRaw.asignacionesColoresPorTalla;
         } 
         // SEGUNDO: Intentar obtener del StateManager (para prendas desde BD)
@@ -83,7 +83,7 @@ class PrendaDataTransformer {
             const asignacionesStateManager = window.StateManager.getAsignaciones() || {};
             console.log('[PrendaDataTransformer]   - Intentando StateManager, cantidad:', Object.keys(asignacionesStateManager).length);
             if (Object.keys(asignacionesStateManager).length > 0) {
-                console.log('[PrendaDataTransformer] ⚠️ Usando asignaciones desde StateManager (fallback):', asignacionesStateManager);
+                console.log('[PrendaDataTransformer]  Usando asignaciones desde StateManager (fallback):', asignacionesStateManager);
                 asignacionesColores = asignacionesStateManager;
             } else {
                 console.log('[PrendaDataTransformer]   - StateManager está vacío');
@@ -92,7 +92,7 @@ class PrendaDataTransformer {
             console.log('[PrendaDataTransformer]   - StateManager no disponible');
         }
         
-        console.log('[PrendaDataTransformer] 🎨 RESULTADO FINAL de asignacionesColores:', asignacionesColores);
+        console.log('[PrendaDataTransformer]  RESULTADO FINAL de asignacionesColores:', asignacionesColores);
 
         return {
             // Identidad
@@ -192,7 +192,7 @@ class PrendaDataTransformer {
 
         // Desde propiedades raíz (BD)
         if (prenda.tela || prenda.color) {
-            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 USANDO PROPIEDADES RAÍZ');
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  USANDO PROPIEDADES RAÍZ');
             const resultadoRaiz = {
                 tela: prenda.tela || 'N/A',
                 color: prenda.color || 'N/A',
@@ -204,9 +204,9 @@ class PrendaDataTransformer {
 
         // Desde telasAgregadas (prendas nuevas)
         if (prenda.telasAgregadas && prenda.telasAgregadas.length > 0) {
-            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 USANDO TELAS AGREGADAS');
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  USANDO TELAS AGREGADAS');
             const tela = prenda.telasAgregadas[0];
-            console.log('[PrendaDataTransformer.obtenerInfoTela] 📋 PRIMERA TELA:', tela);
+            console.log('[PrendaDataTransformer.obtenerInfoTela]  PRIMERA TELA:', tela);
             
             const resultadoAgregadas = {
                 tela: tela.tela || 'N/A',
@@ -295,8 +295,8 @@ class PrendaDataTransformer {
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
             const primeraTela = prendaRaw.telas[0];
-            console.log('[PrendaDataTransformer._extraerTela] 📋 Primera tela:', primeraTela);
-            console.log('[PrendaDataTransformer._extraerTela] 📋 primeraTela.tela:', primeraTela.tela);
+            console.log('[PrendaDataTransformer._extraerTela]  Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerTela]  primeraTela.tela:', primeraTela.tela);
             
             const nombreTela = primeraTela.tela ? primeraTela.tela.nombre : '';
             console.log('[PrendaDataTransformer._extraerTela]  Tela extraída:', nombreTela);
@@ -322,8 +322,8 @@ class PrendaDataTransformer {
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
             const primeraTela = prendaRaw.telas[0];
-            console.log('[PrendaDataTransformer._extraerColor] 📋 Primera tela:', primeraTela);
-            console.log('[PrendaDataTransformer._extraerColor] 📋 primeraTela.color:', primeraTela.color);
+            console.log('[PrendaDataTransformer._extraerColor]  Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerColor]  primeraTela.color:', primeraTela.color);
             
             const nombreColor = primeraTela.color ? primeraTela.color.nombre : '';
             console.log('[PrendaDataTransformer._extraerColor]  Color extraído:', nombreColor);
@@ -349,8 +349,8 @@ class PrendaDataTransformer {
         // Desde telasAgregadas (estructura de cotización)
         if (prendaRaw.telas && Array.isArray(prendaRaw.telas) && prendaRaw.telas.length > 0) {
             const primeraTela = prendaRaw.telas[0];
-            console.log('[PrendaDataTransformer._extraerReferencia] 📋 Primera tela:', primeraTela);
-            console.log('[PrendaDataTransformer._extraerReferencia] 📋 primeraTela.referencia:', primeraTela.referencia);
+            console.log('[PrendaDataTransformer._extraerReferencia]  Primera tela:', primeraTela);
+            console.log('[PrendaDataTransformer._extraerReferencia]  primeraTela.referencia:', primeraTela.referencia);
             
             const referencia = primeraTela.referencia || '';
             console.log('[PrendaDataTransformer._extraerReferencia]  Referencia extraída:', referencia);

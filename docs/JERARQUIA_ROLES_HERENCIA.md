@@ -8,7 +8,7 @@ Un sistema **extensible** que permite que ciertos roles hereden automáticamente
 
 ---
 
-## 📋 Cómo Funciona
+##  Cómo Funciona
 
 ### 1. **Sin cambios en rutas**
 Las rutas siguen usando el middleware exactamente igual:
@@ -73,7 +73,7 @@ return [
 
 ---
 
-## 📍 Ubicación de Archivos
+##  Ubicación de Archivos
 
 ```
 config/

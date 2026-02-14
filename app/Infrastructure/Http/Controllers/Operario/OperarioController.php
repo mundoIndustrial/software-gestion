@@ -568,7 +568,7 @@ class OperarioController extends Controller
             ]);
             
             if ($tipoReciboFiltro && isset($responseData['prendas']) && is_array($responseData['prendas'])) {
-                \Log::info('[OperarioController.getPedidoData] 📋 FILTRO TIPO RECIBO: Filtrando procesos - Solo ' . strtoupper($tipoReciboFiltro), [
+                \Log::info('[OperarioController.getPedidoData]  FILTRO TIPO RECIBO: Filtrando procesos - Solo ' . strtoupper($tipoReciboFiltro), [
                     'numero_pedido' => $numeroPedido,
                     'tipo_recibo' => $tipoReciboFiltro
                 ]);

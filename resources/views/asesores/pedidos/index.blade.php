@@ -44,7 +44,7 @@
             bottom: 0 !important;
         }
         
-        /* 🔥 FIX CRÍTICO: Todos los .modal-overlay deben ser fixed overlays */
+        /*  FIX CRÍTICO: Todos los .modal-overlay deben ser fixed overlays SIN scroll en el fondo */
         .modal-overlay {
             position: fixed !important;
             top: 0 !important;
@@ -56,7 +56,7 @@
             align-items: center !important;
             justify-content: center !important;
             padding: 20px !important;
-            overflow-y: auto !important;
+            overflow: hidden !important;
             /*  CRÍTICO: NO usar !important en z-index para permitir inline styles */
             z-index: 99999;
         }
@@ -75,6 +75,31 @@
             overflow-y: auto !important;
             max-width: 900px !important;
             width: 100% !important;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+        
+        /* Scroll personalizado para navegadores WebKit */
+        .modal-overlay .modal-container::-webkit-scrollbar,
+        .modal-overlay .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-overlay .modal-container::-webkit-scrollbar-track,
+        .modal-overlay .modal-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .modal-overlay .modal-container::-webkit-scrollbar-thumb,
+        .modal-overlay .modal-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .modal-overlay .modal-container::-webkit-scrollbar-thumb:hover,
+        .modal-overlay .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 @endsection
@@ -372,7 +397,7 @@
         try {
             etapas.inicio = performance.now();
             console.log(`[editarPedido]  Iniciando apertura modal - Pedido: ${pedidoId}`);
-            // 🔥 PASO 1: Abrir modal pequeño de carga centrado
+            //  PASO 1: Abrir modal pequeño de carga centrado
             console.log('[editarPedido]  Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
@@ -408,7 +433,7 @@
                 }
             });
 
-            // 🔥 PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
+            //  PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
             // Si ya está precargado, esto es casi instantáneo (<1ms)
             // Si no, muestra el loader mientras termina
             if (!window.PrendaEditorPreloader?.isReady?.()) {
@@ -435,7 +460,7 @@
                 console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
             }
 
-            // 🔥 PASO 3: Fetch de datos mientras el modal ya está visible
+            //  PASO 3: Fetch de datos mientras el modal ya está visible
             console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
 
             const response = await fetch(`/asesores/pedidos/${pedidoId}/factura-datos`, {
@@ -498,7 +523,7 @@
                 procesos: datosTransformados.procesos?.length || 0
             });
 
-            // 🔥 PASO 4: Reemplazar modal de carga con contenido real
+            //  PASO 4: Reemplazar modal de carga con contenido real
             etapas.antes_modal = performance.now();
             console.log(`[editarPedido] 🎬 Abriendo modal de edición...`);
             
@@ -1303,7 +1328,7 @@
             console.warn('[PedidosInit]  EPPManagerLoader no encontrado - revisar script de carga');
         }
 
-        // 🔥 Envolver funciones de edición/creación para garantizar lazy loading
+        //  Envolver funciones de edición/creación para garantizar lazy loading
         if (typeof abrirModalEditarEPP === 'function') {
             const originalAbrirEPP = window.abrirModalEditarEPP;
             window.abrirModalEditarEPP = async function(...args) {
@@ -1320,7 +1345,7 @@
             console.log('[PedidosInit]  abrirModalEditarEPP envuelto para lazy loading');
         }
 
-        // 🔥 Envolver función para agregar prenda
+        //  Envolver función para agregar prenda
         if (typeof abrirAgregarPrenda === 'function') {
             const originalAgregar = window.abrirAgregarPrenda;
             window.abrirAgregarPrenda = async function(...args) {

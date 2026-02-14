@@ -424,23 +424,31 @@ if (typeof window.GaleriaComponente === 'undefined') {
                 const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
                 let indiceReal = -1;
                 
+                // Primero: Intentar buscar por previewUrl o url exacto
                 for (let i = 0; i < imagenes.length; i++) {
-                    if (imagenes[i].previewUrl === src || imagenes[i].src === src) {
+                    if (imagenes[i].previewUrl === src || imagenes[i].src === src || imagenes[i].url === src) {
                         indiceReal = i;
                         break;
                     }
                 }
                 
+                // Segundo: Si no encontró, usar el indice directo (porque el orden en galería puede coincidir)
+                if (indiceReal === -1 && indice < imagenes.length) {
+                    indiceReal = indice;
+                    console.log('[GaleriaComponente]  Imagen no encontrada por URL, usando índice directo:', indiceReal);
+                }
+                
                 if (indiceReal !== -1) {
                     window.imagenesPrendaStorage.eliminarImagen(indiceReal);
-                    console.log('[GaleriaComponente] ✅ Imagen eliminada del storage de prendas (índice real:', indiceReal + ')');
+                    console.log('[GaleriaComponente]  Imagen eliminada del storage de prendas (índice real:', indiceReal + ')');
                     
                     // Actualizar preview de prendas
                     if (typeof window.actualizarPreviewPrenda === 'function') {
                         window.actualizarPreviewPrenda();
                     }
                 } else {
-                    console.warn('[GaleriaComponente] ⚠️ No se encontró la imagen en el storage de prendas');
+                    console.warn('[GaleriaComponente]  No se encontró la imagen en el storage de prendas');
+                    console.warn('[GaleriaComponente]  Imágenes en storage:', imagenes);
                 }
                 
             } else if (this.id === 'tela' && typeof window.imagenesTelaStorage !== 'undefined') {
@@ -448,23 +456,30 @@ if (typeof window.GaleriaComponente === 'undefined') {
                 const imagenes = window.imagenesTelaStorage.obtenerImagenes();
                 let indiceReal = -1;
                 
+                // Primero: Intentar buscar por previewUrl o url exacto
                 for (let i = 0; i < imagenes.length; i++) {
-                    if (imagenes[i].previewUrl === src || imagenes[i].src === src) {
+                    if (imagenes[i].previewUrl === src || imagenes[i].src === src || imagenes[i].url === src) {
                         indiceReal = i;
                         break;
                     }
                 }
                 
+                // Segundo: Si no encontró, usar el indice directo
+                if (indiceReal === -1 && indice < imagenes.length) {
+                    indiceReal = indice;
+                    console.log('[GaleriaComponente]  Imagen no encontrada por URL, usando índice directo:', indiceReal);
+                }
+                
                 if (indiceReal !== -1) {
                     window.imagenesTelaStorage.eliminarImagen(indiceReal);
-                    console.log('[GaleriaComponente] ✅ Imagen eliminada del storage de telas (índice real:', indiceReal + ')');
+                    console.log('[GaleriaComponente]  Imagen eliminada del storage de telas (índice real:', indiceReal + ')');
                     
                     // Actualizar preview de telas
                     if (typeof window.actualizarPreviewTela === 'function') {
                         window.actualizarPreviewTela();
                     }
                 } else {
-                    console.warn('[GaleriaComponente] ⚠️ No se encontró la imagen en el storage de telas');
+                    console.warn('[GaleriaComponente]  No se encontró la imagen en el storage de telas');
                 }
                 
             } else if (this.id.includes('proceso') && typeof window.procesosImagenesStorage !== 'undefined') {
@@ -480,21 +495,21 @@ if (typeof window.GaleriaComponente === 'undefined') {
                 const imagenes = window.procesosImagenesStorage.obtenerImagenes(numProceso);
                 if (imagenes && indiceAEliminar >= 0 && indiceAEliminar < imagenes.length) {
                     window.procesosImagenesStorage.eliminarImagen(numProceso, indiceAEliminar);
-                    console.log(`[GaleriaComponente] ✅ Imagen eliminada del storage de proceso ${numProceso} (índice:`, indiceAEliminar + ')');
+                    console.log(`[GaleriaComponente]  Imagen eliminada del storage de proceso ${numProceso} (índice:`, indiceAEliminar + ')');
                     
                     // Limpiar el preview del proceso
                     if (typeof window.eliminarImagenProceso === 'function') {
                         window.eliminarImagenProceso(numProceso);
                     }
                 } else {
-                    console.warn(`[GaleriaComponente] ⚠️ No se pudo eliminar la imagen del storage de proceso ${numProceso}`);
+                    console.warn(`[GaleriaComponente]  No se pudo eliminar la imagen del storage de proceso ${numProceso}`);
                 }
                 
             } else {
-                console.warn('[GaleriaComponente] ⚠️ Storage no encontrado para galería:', this.id);
+                console.warn('[GaleriaComponente]  Storage no encontrado para galería:', this.id);
             }
         } catch (error) {
-            console.error('[GaleriaComponente] ❌ Error eliminando del storage:', error);
+            console.error('[GaleriaComponente]  Error eliminando del storage:', error);
         }
     }
     };

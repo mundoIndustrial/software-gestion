@@ -121,7 +121,7 @@ class PedidoNormalizadorDTO
                 'telas' => self::normalizarTelas($prenda['telas'] ?? []),
                 'procesos' => self::normalizarProcesos($prenda['procesos'] ?? []),
                 'imagenes' => self::normalizarImagenes($prenda['imagenes'] ?? []),
-                'asignacionesColoresPorTalla' => $prenda['asignacionesColoresPorTalla'] ?? []  // ✅ Capture color assignments per talla from frontend
+                'asignacionesColoresPorTalla' => $prenda['asignacionesColoresPorTalla'] ?? []  //  Capture color assignments per talla from frontend
             ];
         }, $prendas);
     }

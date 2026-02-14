@@ -84,7 +84,7 @@
             gap: 1rem;
         }
 
-        /* 🔥 PROTECCIÓN MÁXIMA: El nav NUNCA se puede ocultar en supervisor-pedidos */
+        /*  PROTECCIÓN MÁXIMA: El nav NUNCA se puede ocultar en supervisor-pedidos */
         header.top-nav {
             display: flex !important;
             visibility: visible !important;
@@ -530,7 +530,7 @@
 
     @stack('scripts')
 
-    <!-- 🔥 PROTECCIÓN TOTAL: Prevenir que el nav se oculte por cualquier medio -->
+    <!--  PROTECCIÓN TOTAL: Prevenir que el nav se oculte por cualquier medio -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const topNav = document.querySelector('.top-nav');

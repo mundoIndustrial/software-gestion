@@ -15,7 +15,7 @@ class PrendaEditorImagenes {
         
         const preview = document.getElementById('nueva-prenda-foto-preview');
         if (!preview) {
-            console.warn('⚠️ [Imagenes] No encontrado #nueva-prenda-foto-preview');
+            console.warn(' [Imagenes] No encontrado #nueva-prenda-foto-preview');
             return;
         }
         
@@ -40,7 +40,7 @@ class PrendaEditorImagenes {
                     
                     // Agregar manejador de error para mostrar placeholder
                     imgEl.onerror = function() {
-                        console.warn(`⚠️ [Imagenes] Error cargando imagen ${idx + 1} desde: ${src}`);
+                        console.warn(` [Imagenes] Error cargando imagen ${idx + 1} desde: ${src}`);
                         // Crear placeholder
                         this.style.display = 'none';
                         const placeholder = document.createElement('div');
@@ -68,20 +68,57 @@ class PrendaEditorImagenes {
                     
                     container.appendChild(imgEl);
                     preview.appendChild(container);
-                    console.log(`✅ [Imagenes] Imagen ${idx + 1} cargada`);
+                    console.log(` [Imagenes] Imagen ${idx + 1} cargada`);
                 } else {
-                    console.warn(`⚠️ [Imagenes] No se pudo extraer URL de imagen ${idx + 1}`);
+                    console.warn(` [Imagenes] No se pudo extraer URL de imagen ${idx + 1}`);
                 }
             });
         }
         
-        // 🔥 Replicar a global para que sea editable
+        //  Replicar a global para que sea editable
         if (prenda.imagenes && Array.isArray(prenda.imagenes) && window.imagenesPrendaStorage?.establecerImagenes) {
-            window.imagenesPrendaStorage.establecerImagenes(prenda.imagenes);
+            // IMPORTANTE: Procesar imágenes para crear blob URLs si es necesario
+            const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
+                // Si ya tiene previewUrl (blob o data URL), mantenerlo
+                if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
+                    return img;
+                }
+                
+                // Si es una string (URL), usar como previewUrl
+                if (typeof img === 'string') {
+                    return {
+                        previewUrl: img,
+                        url: img,
+                        nombre: `imagen-${idx + 1}`,
+                        tamaño: 0
+                    };
+                }
+                
+                // Si es un objeto pero no tiene previewUrl, crear uno
+                if (typeof img === 'object') {
+                    // Crear blob URL si es posible
+                    let blobUrl = img.previewUrl;
+                    if (!blobUrl && (img.url || img.ruta)) {
+                        blobUrl = img.url || img.ruta;
+                    }
+                    
+                    return {
+                        ...img,
+                        previewUrl: blobUrl || img.url || img.ruta || '',
+                        url: img.url || img.ruta || '',
+                        nombre: img.nombre || `imagen-${idx + 1}`,
+                        tamaño: img.tamaño || 0
+                    };
+                }
+                
+                return img;
+            });
+            
+            window.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
             console.log('[Carga] 📸 Imágenes replicadas en window.imagenesPrendaStorage');
         }
         
-        console.log('✅ [Imagenes] Completado');
+        console.log(' [Imagenes] Completado');
     }
 
     /**

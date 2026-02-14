@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('prenda_pedido_tallas', function (Blueprint $table) {
-            // ✅ Remover el campo tela (ahora en tabla relacional prenda_pedido_talla_colores.tela_nombre)
+            //  Remover el campo tela (ahora en tabla relacional prenda_pedido_talla_colores.tela_nombre)
             if (Schema::hasColumn('prenda_pedido_tallas', 'tela')) {
                 $table->dropColumn('tela');
             }
@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('prenda_pedido_tallas', function (Blueprint $table) {
-            // ✅ Restaurar el campo tela en caso de rollback
+            //  Restaurar el campo tela en caso de rollback
             $table->string('tela', 100)->nullable()->comment('Nombre de la tela (LEGACY - usar prenda_pedido_talla_colores.tela_nombre)');
         });
     }

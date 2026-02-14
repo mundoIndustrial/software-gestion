@@ -355,7 +355,7 @@ window.mostrarGaleriaImagenesPrenda = function(imagenes, prendaIndex = 0, indice
                 
                 imagenEliminada = true;
                 
-                // 🔥 SINCRONIZAR CON STORAGE REAL también en edición
+                //  SINCRONIZAR CON STORAGE REAL también en edición
                 if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
                     try {
                         const imagenesTemporales = window.imagenesPrendaStorage.obtenerImagenes();

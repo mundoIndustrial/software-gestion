@@ -718,7 +718,7 @@ class PedidosProduccionController
                 'descripcion' => 'nullable|string',
                 'origen' => 'required|string|in:bodega,confeccion',
                 'cantidad_talla' => 'nullable|json',
-                'asignaciones_colores' => 'nullable|json',  // ✅ NUEVO: colores por talla
+                'asignaciones_colores' => 'nullable|json',  //  NUEVO: colores por talla
                 'procesos' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
                 'imagenes' => 'nullable|array',
@@ -1501,7 +1501,7 @@ class PedidosProduccionController
     public function obtenerDatosPrendaEdicion(int|string $pedidoId, int|string $prendaId): JsonResponse
     {
         try {
-            Log::info('🔥 [PRENDA-DATOS-INICIO] Endpoint llamado', [
+            Log::info(' [PRENDA-DATOS-INICIO] Endpoint llamado', [
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'timestamp' => now()

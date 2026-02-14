@@ -58,13 +58,13 @@ window.PrendaEditorLoader = (function() {
 
         return Promise.all(promises)
             .then(() => {
-                console.log('✅ [PrendaEditor] Todos los módulos cargados');
+                console.log(' [PrendaEditor] Todos los módulos cargados');
                 isLoaded = true;
                 isLoading = false;
                 window.dispatchEvent(new CustomEvent('prendaEditorRefactoredReady'));
             })
             .catch(error => {
-                console.error('❌ [PrendaEditor] Error cargando módulos:', error);
+                console.error(' [PrendaEditor] Error cargando módulos:', error);
                 loadError = error;
                 isLoading = false;
                 throw error;
@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.PrendaEditorRefactoredLoader !== 'undefined') {
         window.PrendaEditorRefactoredLoader.load()
             .then(() => {
-                console.log('✅ [PrendaEditor] Sistema listo para editar prendas');
+                console.log(' [PrendaEditor] Sistema listo para editar prendas');
             })
             .catch(error => {
-                console.error('❌ [PrendaEditor] Error inicializando:', error);
+                console.error(' [PrendaEditor] Error inicializando:', error);
             });
     }
 });

@@ -1,12 +1,12 @@
 # 🏗️ ANÁLISIS ARQUITECTÓNICO - SISTEMA MODAL ERP
 
-## 📋 RESUMEN EJECUTIVO
+##  RESUMEN EJECUTIVO
 
 **Problema:** Doble (o triple) ejecución de funciones en modal `modal-agregar-prenda-nueva`
 
 **Causa Raíz:** Arquitectura basada en **global scope pollution** sin **idempotencia** ni **state machine**. Las funciones se llaman desde múltiples puntos sin coordinación.
 
-**Severidad:** 🔴 CRÍTICA - Se desperdician recursos, race conditions, inconsistencia de estado
+**Severidad:**  CRÍTICA - Se desperdician recursos, race conditions, inconsistencia de estado
 
 ---
 
@@ -53,8 +53,8 @@ if (this.inicializado) {
 
 #### Flags Globales Inseguros
 ```javascript
-window._telasCargadas = false;      // ❌ Global
-window._coloresCargados = false;    // ❌ Global
+window._telasCargadas = false;      //  Global
+window._coloresCargados = false;    //  Global
 ```
 
 **Problemas:**
@@ -234,16 +234,16 @@ Cualquier → CLOSED  ✓ siempre permitido (emergencia)
 
 ## ✋ REGLAS ARQUITECTÓNICAS OBLIGATORIAS
 
-### ✅ PROHIBIDO
+###  PROHIBIDO
 
-- ❌ `window.anything = ...` (excepto DI explícita)
-- ❌ `setTimeout()` para sincronización
-- ❌ Flags globales para state management
-- ❌ Múltiples fetch simultáneos del mismo recurso
-- ❌ Listeners que no se limpian
-- ❌ Variables mágicas (_cargado, _inicializado, etc)
+-  `window.anything = ...` (excepto DI explícita)
+-  `setTimeout()` para sincronización
+-  Flags globales para state management
+-  Múltiples fetch simultáneos del mismo recurso
+-  Listeners que no se limpian
+-  Variables mágicas (_cargado, _inicializado, etc)
 
-### ✅ OBLIGATORIO
+###  OBLIGATORIO
 
 - ✓ Todas las funciones deben ser puras o idempotentes
 - ✓ Estado centralizado en FSM
@@ -289,7 +289,7 @@ public/js/
 
 ---
 
-## 🔧 PRÓXIMOS PASOS
+##  PRÓXIMOS PASOS
 
 1. **Crear FSM con estados explícitos**
 2. **Implementar Promise Deduplication Service**

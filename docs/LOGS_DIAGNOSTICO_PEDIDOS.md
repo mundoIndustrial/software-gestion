@@ -5,7 +5,7 @@ Identificar cuellos de botella y latencias en la creación de pedidos en:
 - `http://localhost:8000/asesores/pedidos-editable/crear-nuevo`
 - `http://localhost:8000/asesores/pedidos-editable/crear-desde-cotizacion`
 
-## 📍 Dónde encontrar los logs
+##  Dónde encontrar los logs
 
 ```
 storage/logs/laravel.log
@@ -25,7 +25,7 @@ storage/logs/laravel.log
 -  `[CREAR-PEDIDO-NUEVO] 📏 Tallas cargadas` → tiempo_ms
 -  `[CREAR-PEDIDO-NUEVO]  Pedidos existentes cargados` → tiempo_ms
 -  `[CREAR-PEDIDO-NUEVO] 👥 Clientes cargados` → tiempo_ms
--  `[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
+-  `[CREAR-DESDE-COTIZACION]  Cotizaciones cargadas (CON RELACIONES)` → tiempo_ms  **CRÍTICO**
 
 **Log final:**
 ```
@@ -188,7 +188,7 @@ storage/logs/laravel.log
 
 ##  Cómo Analizar los Logs
 
-### 📋 Comando para filtrar logs de creación
+###  Comando para filtrar logs de creación
 
 ```bash
 # Ver todos los logs de creación de pedidos

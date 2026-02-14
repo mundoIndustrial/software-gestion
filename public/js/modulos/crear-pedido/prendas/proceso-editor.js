@@ -84,7 +84,7 @@ class ProcesosEditor {
             return;
         }
 
-        console.log('📍 [PROCESO-EDITOR] Registrando cambio de ubicaciones:', {
+        console.log(' [PROCESO-EDITOR] Registrando cambio de ubicaciones:', {
             ubicacionesAnteriores: this.cambios.ubicaciones || this.procesoOriginal.ubicaciones,
             ubicacionesNuevas: nuevasUbicaciones,
             cantidad: nuevasUbicaciones.length
@@ -247,7 +247,7 @@ class ProcesosEditor {
 
     /**
      * PRIVADO: Normalizar imágenes para evitar valores null/vacíos
-     * Filtra las imágenes válidas
+     * Filtra las imágenes válidas - acepta strings, File objects, y objetos con URLs
      * @private
      */
     _normalizarImagenes(imagenes) {
@@ -257,13 +257,34 @@ class ProcesosEditor {
 
         return imagenes
             .map(img => {
-                // Si es string, limpiar y retornar
-                if (typeof img === 'string') {
-                    return img.trim();
+                // Si es null o undefined, descartar
+                if (!img) {
+                    return null;
                 }
+                
+                // Si es File object, mantener (se procesará al enviar)
+                if (img instanceof File) {
+                    return img;
+                }
+                
+                // Si es string, limpiar y retornar si tiene contenido
+                if (typeof img === 'string') {
+                    const trimmed = img.trim();
+                    return trimmed && trimmed !== 'null' && trimmed.length > 0 ? trimmed : null;
+                }
+                
+                // Si es objeto con URL o ruta, extraer la URL
+                if (typeof img === 'object') {
+                    const url = img.url || img.ruta || img.ruta_original || img.previewUrl;
+                    if (url && typeof url === 'string') {
+                        const trimmed = url.trim();
+                        return trimmed && trimmed !== 'null' && trimmed.length > 0 ? trimmed : null;
+                    }
+                }
+                
                 return null;
             })
-            .filter(img => img && img !== 'null' && img.length > 0); // Filtrar vacíos y "null"
+            .filter(img => img !== null); // Filtrar null/vacíos
     }
 
     /**

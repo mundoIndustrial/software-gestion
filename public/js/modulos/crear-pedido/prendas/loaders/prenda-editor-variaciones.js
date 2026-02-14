@@ -1,5 +1,5 @@
 /**
- * ⚙️ Módulo de Variaciones (Manga, Bolsillos, Broche)
+ *  Módulo de Variaciones (Manga, Bolsillos, Broche)
  * Responsabilidad: Cargar variaciones específicas en el modal
  */
 
@@ -8,18 +8,18 @@ class PrendaEditorVariaciones {
      * Cargar variaciones específicas (manga, bolsillos, broche)
      */
     static cargar(prenda) {
-        console.log('⚙️ [Variaciones] Cargando manga, bolsillos, broche');
-        console.log('⚙️ [Variaciones] Objeto prenda recibido:', prenda);
-        console.log('⚙️ [Variaciones] prenda.variaciones:', prenda?.variaciones);
-        console.log('⚙️ [Variaciones] prenda.manga:', prenda?.manga);
-        console.log('⚙️ [Variaciones] prenda.bolsillos:', prenda?.bolsillos);
-        console.log('⚙️ [Variaciones] prenda.broche:', prenda?.broche);
+        console.log(' [Variaciones] Cargando manga, bolsillos, broche');
+        console.log(' [Variaciones] Objeto prenda recibido:', prenda);
+        console.log(' [Variaciones] prenda.variaciones:', prenda?.variaciones);
+        console.log(' [Variaciones] prenda.manga:', prenda?.manga);
+        console.log(' [Variaciones] prenda.bolsillos:', prenda?.bolsillos);
+        console.log(' [Variaciones] prenda.broche:', prenda?.broche);
         
         this._cargarManga(prenda);
         this._cargarBolsillos(prenda);
         this._cargarBroche(prenda);
         
-        console.log('✅ [Variaciones] Completado');
+        console.log(' [Variaciones] Completado');
     }
 
     /**
@@ -32,7 +32,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('manga-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Manga] Elementos no encontrados');
+            console.warn(' [Manga] Elementos no encontrados');
             return;
         }
 
@@ -57,7 +57,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
+            console.log(' [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
         }
     }
 
@@ -70,7 +70,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('bolsillos-obs');
 
         if (!checkbox || !obs) {
-            console.warn('⚠️ [Bolsillos] Elementos no encontrados');
+            console.warn(' [Bolsillos] Elementos no encontrados');
             return;
         }
 
@@ -92,7 +92,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Bolsillos] Cargado - Obs:', obsValue);
+            console.log(' [Bolsillos] Cargado - Obs:', obsValue);
         }
     }
 
@@ -106,7 +106,7 @@ class PrendaEditorVariaciones {
         const obs = document.getElementById('broche-obs');
 
         if (!checkbox || !input || !obs) {
-            console.warn('⚠️ [Broche] Elementos no encontrados');
+            console.warn(' [Broche] Elementos no encontrados');
             return;
         }
 
@@ -133,7 +133,7 @@ class PrendaEditorVariaciones {
             // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            console.log('✅ [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
+            console.log(' [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
         }
     }
 

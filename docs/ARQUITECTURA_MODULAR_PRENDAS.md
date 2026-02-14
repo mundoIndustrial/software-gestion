@@ -95,7 +95,7 @@ Modal completamente relleno en ~500ms
 
 ### 2. **Testabilidad**
 ```javascript
-// ✅ Ahora puedes testear cada módulo por separado:
+//  Ahora puedes testear cada módulo por separado:
 test('PrendaEditorTelas', () => {
   const prenda = { telasAgregadas: [...] };
   PrendaEditorTelas.cargar(prenda);
@@ -108,7 +108,7 @@ test('PrendaEditorTelas', () => {
 // Puedes usar PrendaEditorTables en otro contexto:
 class CotizacionEditor {
   cargarTelas(cotizacion) {
-    PrendaEditorTelas.cargar(cotizacion); // ✅ Funciona igual
+    PrendaEditorTelas.cargar(cotizacion); //  Funciona igual
   }
 }
 ```
@@ -153,7 +153,7 @@ await editor.cargarPrendaEnModal(prenda, 0);
 
 ---
 
-## 🔧 Integración Gradual
+##  Integración Gradual
 
 SI TODAVÍA USAS EL VIEJO CÓDIGO:
 
@@ -225,13 +225,13 @@ prenda-editor-refactorizado.js: 120 líneas ← SOLO ORQUESTA
 
 ---
 
-## ⚠️ Notas Importantes
+##  Notas Importantes
 
-- ✅ Todos los módulos ya incluyen **logging detallado**
-- ✅ **Sin breaking changes** - código viejo sigue funcionando
-- ✅ **Carga asíncrona** - no bloquea la UI
-- ✅ **Manejo de errores** - fallbacks automáticos
-- ✅ **Validación** - parámetros checkeados antes de usar
+-  Todos los módulos ya incluyen **logging detallado**
+-  **Sin breaking changes** - código viejo sigue funcionando
+-  **Carga asíncrona** - no bloquea la UI
+-  **Manejo de errores** - fallbacks automáticos
+-  **Validación** - parámetros checkeados antes de usar
 
 ---
 

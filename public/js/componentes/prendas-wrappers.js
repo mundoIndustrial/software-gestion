@@ -11,7 +11,7 @@
 
 // Evitar cargas múltiples del script
 if (window.prendaWrappersCargado) {
-    console.log('[prendas-wrappers] ⚠️ Script ya cargado, evitando duplicación');
+    console.log('[prendas-wrappers]  Script ya cargado, evitando duplicación');
 } else {
     window.prendaWrappersCargado = true;
     
@@ -26,7 +26,20 @@ window.abrirModalPrendaNueva = function() {
     console.log('[prendas-wrappers] Abriendo modal de prenda nueva');
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        modal.style.display = 'flex';
+        // Usar UIModalService para manejar el scroll del body
+        if (window.UI && typeof window.UI.abrirModal === 'function') {
+            window.UI.abrirModal('modal-agregar-prenda-nueva', {
+                display: 'flex',
+                closeOnClickOutside: false,
+                closeOnEsc: true,
+                preventScroll: true
+            });
+        } else {
+            // Fallback si UIModalService no está disponible
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
         // Limpiar formulario al abrir
         const form = modal.querySelector('#form-prenda-nueva');
         if (form) {
@@ -41,7 +54,16 @@ window.cerrarModalPrendaNueva = function() {
     console.log('[prendas-wrappers] Cerrando modal de prenda nueva');
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        modal.style.display = 'none';
+        // Usar UIModalService para manejar el scroll del body
+        if (window.UI && typeof window.UI.cerrarModal === 'function') {
+            window.UI.cerrarModal('modal-agregar-prenda-nueva', {
+                animate: false
+            });
+        } else {
+            // Fallback si UIModalService no está disponible
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
     }
 };
 
@@ -86,7 +108,7 @@ document.addEventListener('prendasModuleLoaded', (event) => {
         console.log('  cargarItemEnModal asignada');
     }
     
-    console.log('[prendas-wrappers] ✅ Funciones globales actualizadas correctamente');
+    console.log('[prendas-wrappers]  Funciones globales actualizadas correctamente');
 });
 
 } // Cierre del bloque else de prendaWrappersCargado

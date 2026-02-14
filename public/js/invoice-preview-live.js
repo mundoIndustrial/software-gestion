@@ -178,27 +178,27 @@ class InvoicePreviewOrchestrator {
             // Intentar inicializar cada módulo manualmente
             if (!window.imageGalleryManager && typeof ImageGalleryManager !== 'undefined') {
                 window.imageGalleryManager = new ImageGalleryManager();
-                console.log('[InvoicePreview] ✅ ImageGalleryManager inicializado manualmente');
+                console.log('[InvoicePreview]  ImageGalleryManager inicializado manualmente');
             }
             
             if (!window.formDataCaptureService && typeof FormDataCaptureService !== 'undefined') {
                 window.formDataCaptureService = new FormDataCaptureService();
-                console.log('[InvoicePreview] ✅ FormDataCaptureService inicializado manualmente');
+                console.log('[InvoicePreview]  FormDataCaptureService inicializado manualmente');
             }
             
             if (!window.invoiceRenderer && typeof InvoiceRenderer !== 'undefined') {
                 window.invoiceRenderer = new InvoiceRenderer();
-                console.log('[InvoicePreview] ✅ InvoiceRenderer inicializado manualmente');
+                console.log('[InvoicePreview]  InvoiceRenderer inicializado manualmente');
             }
             
             if (!window.modalManager && typeof ModalManager !== 'undefined') {
                 window.modalManager = new ModalManager();
-                console.log('[InvoicePreview] ✅ ModalManager inicializado manualmente');
+                console.log('[InvoicePreview]  ModalManager inicializado manualmente');
             }
             
             if (!window.invoiceExportService && typeof InvoiceExportService !== 'undefined') {
                 window.invoiceExportService = new InvoiceExportService();
-                console.log('[InvoicePreview] ✅ InvoiceExportService inicializado manualmente');
+                console.log('[InvoicePreview]  InvoiceExportService inicializado manualmente');
             }
             
             // Verificar después de inicialización manual

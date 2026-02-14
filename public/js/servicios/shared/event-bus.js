@@ -57,7 +57,7 @@ class EventBus {
     emit(eventName, data = null) {
         if (!this.events.has(eventName)) {
             if (this.debugMode) {
-                console.log(`[EventBus] ⚠️ Evento no tiene listeners: ${eventName}`);
+                console.log(`[EventBus]  Evento no tiene listeners: ${eventName}`);
             }
             return;
         }
@@ -74,7 +74,7 @@ class EventBus {
                 try {
                     callback(data);
                 } catch (error) {
-                    console.error(`[EventBus] ❌ Error en listener de ${eventName}:`, error);
+                    console.error(`[EventBus]  Error en listener de ${eventName}:`, error);
                 }
             });
         });
@@ -124,7 +124,7 @@ class EventBus {
     enableDebug(enabled = true) {
         this.debugMode = enabled;
         if (enabled) {
-            console.log('[EventBus] 🔧 Modo DEBUG habilitado');
+            console.log('[EventBus]  Modo DEBUG habilitado');
         }
     }
 }

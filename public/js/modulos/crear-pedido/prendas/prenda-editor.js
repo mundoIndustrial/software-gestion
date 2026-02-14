@@ -7,7 +7,7 @@
  * - Delegación a loaders especializados
  */
 
-// ⚠️ Permitir redeclaración (se puede cargar múltiples veces desde diferentes Blades)
+//  Permitir redeclaración (se puede cargar múltiples veces desde diferentes Blades)
 if (typeof window.PrendaEditor !== 'undefined') {
     delete window.PrendaEditor;
 }
@@ -51,10 +51,10 @@ class PrendaEditor {
     }
 
     /**
-     * 📋 CARGA PRENDA EN MODAL
+     *  CARGA PRENDA EN MODAL
      */
     async cargarPrendaEnModal(prenda, prendaIndex) {
-        console.log('📋 [PrendaEditor] Cargando prenda:', prenda.nombre_prenda || prenda.nombre);
+        console.log(' [PrendaEditor] Cargando prenda:', prenda.nombre_prenda || prenda.nombre);
 
         try {
             // 1️⃣ Guardar en global
@@ -88,9 +88,9 @@ class PrendaEditor {
                 PrendaModalManager.cambiarBotonAGuardarCambios(this.modalId);
             }
 
-            console.log('✅ [PrendaEditor] Prenda cargada');
+            console.log(' [PrendaEditor] Prenda cargada');
         } catch (error) {
-            console.error('❌ [PrendaEditor]', error);
+            console.error(' [PrendaEditor]', error);
             if (typeof PrendaModalManager !== 'undefined') {
                 PrendaModalManager.mostrarError(`Error: ${error.message}`);
             }
@@ -147,6 +147,9 @@ class PrendaEditor {
             // Replicar a global para edicion
             if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
                 window.telasCreacion = JSON.parse(JSON.stringify(prenda.telasAgregadas));
+                // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
+                // (prenda-form-collector.js prioriza telasAgregadas sobre telasCreacion)
+                window.telasAgregadas = [];
             }
         }
 
@@ -176,7 +179,7 @@ class PrendaEditor {
             PrendaEditorProcesos.cargar(prenda);
         }
 
-        console.log('✅ [🔄 Carga] Datos cargados en formulario');
+        console.log(' [🔄 Carga] Datos cargados en formulario');
     }
 
     resetearEdicion() {

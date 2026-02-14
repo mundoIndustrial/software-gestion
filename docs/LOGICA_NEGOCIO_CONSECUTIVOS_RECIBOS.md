@@ -1,6 +1,6 @@
 # Lógica de Negocio: Generación de Consecutivos de Recibos
 
-## 📋 Overview
+##  Overview
 
 Este documento describe la lógica de negocio implementada para la generación automática de consecutivos de recibos cuando un pedido cambia a estado `PENDIENTE_INSUMOS`.
 

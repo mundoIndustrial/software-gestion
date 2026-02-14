@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('[cargarPrendasDesdeCotizacion]  Error en fetch:', error);
-                console.error('[cargarPrendasDesdeCotizacion] 📍 Stack trace:', error.stack);
+                console.error('[cargarPrendasDesdeCotizacion]  Stack trace:', error.stack);
                 
                 prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al cargar las prendas: ${error.message}</p>`;
                 

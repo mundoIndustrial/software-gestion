@@ -33,9 +33,9 @@ Route::get('/verificar-datos-bd', function () {
         // 1. Verificar tabla pedidos
         $tables = DB::select('SHOW TABLES LIKE "pedidos"');
         if (empty($tables)) {
-            echo '<p>❌ La tabla pedidos no existe</p>';
+            echo '<p> La tabla pedidos no existe</p>';
         } else {
-            echo '<p>✅ Tabla pedidos encontrada</p>';
+            echo '<p> Tabla pedidos encontrada</p>';
         }
         
         // 2. Verificar columnas
@@ -44,9 +44,9 @@ Route::get('/verificar-datos-bd', function () {
         echo '<h2>Columnas:</h2>';
         foreach ($columnasRelevantes as $columna) {
             if (in_array($columna, $columns)) {
-                echo "<p>✅ Columna {$columna} encontrada</p>";
+                echo "<p> Columna {$columna} encontrada</p>";
             } else {
-                echo "<p>❌ Columna {$columna} NO encontrada</p>";
+                echo "<p> Columna {$columna} NO encontrada</p>";
             }
         }
         
@@ -63,8 +63,8 @@ Route::get('/verificar-datos-bd', function () {
         // 5. Números
         $numerosConDatos = DB::table('pedidos')->whereNotNull('numero_pedido')->where('numero_pedido', '!=', '')->count();
         $numerosUnicos = DB::table('pedidos')->whereNotNull('numero_pedido')->where('numero_pedido', '!=', '')->distinct('numero_pedido')->count();
-        echo "<p>📋 Números con datos: {$numerosConDatos}</p>";
-        echo "<p>📋 Números únicos: {$numerosUnicos}</p>";
+        echo "<p> Números con datos: {$numerosConDatos}</p>";
+        echo "<p> Números únicos: {$numerosUnicos}</p>";
         
         // 6. Fechas
         $fechasConDatos = DB::table('pedidos')->whereNotNull('rechazado_por_cartera_en')->where('rechazado_por_cartera_en', '!=', '')->count();
@@ -85,14 +85,14 @@ Route::get('/verificar-datos-bd', function () {
             ->pluck('cliente');
         
         if (!empty($resultadosClientes)) {
-            echo "<p>✅ Búsqueda '{$busquedaEjemplo}' encontró " . count($resultadosClientes) . " resultados:</p>";
+            echo "<p> Búsqueda '{$busquedaEjemplo}' encontró " . count($resultadosClientes) . " resultados:</p>";
             echo '<ul>';
             foreach ($resultadosClientes as $resultado) {
                 echo "<li>{$resultado}</li>";
             }
             echo '</ul>';
         } else {
-            echo "<p>❌ Búsqueda '{$busquedaEjemplo}' no encontró resultados</p>";
+            echo "<p> Búsqueda '{$busquedaEjemplo}' no encontró resultados</p>";
         }
         
         // 8. Ejemplos de datos
@@ -148,11 +148,11 @@ Route::get('/verificar-datos-bd', function () {
         echo '</ul>';
         
         echo '<h2>=== VERIFICACIÓN COMPLETADA ===</h2>';
-        echo '<p>✅ Todos los datos necesarios para el autocompletar están disponibles</p>';
+        echo '<p> Todos los datos necesarios para el autocompletar están disponibles</p>';
         echo '<p>🚀 El sistema de sugerencias debería funcionar correctamente</p>';
         
     } catch (\Exception $e) {
-        echo '<p>❌ Error: ' . $e->getMessage() . '</p>';
+        echo '<p> Error: ' . $e->getMessage() . '</p>';
     }
 })->name('verificar.datos.bd');
 
@@ -199,7 +199,7 @@ Route::get('/verificar-tablas-bd', function () {
                     echo '<ul>';
                     foreach ($relevantColumns as $column) {
                         if (in_array($column, $columns)) {
-                            echo "<li>✅ Columna '{$column}' encontrada</li>";
+                            echo "<li> Columna '{$column}' encontrada</li>";
                         }
                     }
                     echo '</ul>';
@@ -209,7 +209,7 @@ Route::get('/verificar-tablas-bd', function () {
                     echo "<li>📊 Registros: {$count}</li>";
                     
                 } catch (\Exception $e) {
-                    echo "<li>❌ Error al verificar columnas: {$e->getMessage()}</li>";
+                    echo "<li> Error al verificar columnas: {$e->getMessage()}</li>";
                 }
                 
                 echo '</li>';
@@ -224,7 +224,7 @@ Route::get('/verificar-tablas-bd', function () {
         echo '<p>Una vez identificada la tabla correcta, actualiza las rutas API para usar esa tabla.</p>';
         
     } catch (\Exception $e) {
-        echo '<p>❌ Error: ' . $e->getMessage() . '</p>';
+        echo '<p> Error: ' . $e->getMessage() . '</p>';
     }
 })->name('verificar.tablas.bd');
 

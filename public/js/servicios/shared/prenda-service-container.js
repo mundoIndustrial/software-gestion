@@ -24,7 +24,7 @@ class PrendaServiceContainer {
         };
 
         if (this.config.debug) {
-            console.log('[PrendaServiceContainer] 🔧 Modo DEBUG habilitado');
+            console.log('[PrendaServiceContainer]  Modo DEBUG habilitado');
         }
     }
 
@@ -34,7 +34,7 @@ class PrendaServiceContainer {
      */
     async initialize() {
         if (this.initialized) {
-            console.log('[PrendaServiceContainer] ⚠️ Ya inicializado, ignorando...');
+            console.log('[PrendaServiceContainer]  Ya inicializado, ignorando...');
             return;
         }
 
@@ -94,11 +94,11 @@ class PrendaServiceContainer {
             this.initialized = true;
             this.services.eventBus.emit('container:inicializado');
 
-            console.log('[PrendaServiceContainer] ✅ TODOS LOS SERVICIOS INICIALIZADOS CORRECTAMENTE');
+            console.log('[PrendaServiceContainer]  TODOS LOS SERVICIOS INICIALIZADOS CORRECTAMENTE');
             console.log('[PrendaServiceContainer] 🔐 AISLADO DE COTIZACIONES');
 
         } catch (error) {
-            console.error('[PrendaServiceContainer] ❌ Error inicializando:', error);
+            console.error('[PrendaServiceContainer]  Error inicializando:', error);
             throw error;
         }
     }

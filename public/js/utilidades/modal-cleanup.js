@@ -87,7 +87,7 @@ class ModalCleanup {
      * Limpiar todos los storages globales
      */
     static limpiarStorages() {
-        // 🔥 CRÍTICO: Limpiar storage de imágenes de prenda PRIMERO
+        //  CRÍTICO: Limpiar storage de imágenes de prenda PRIMERO
         // Esto vacía el array y revoca todas las URLs blob
         if (window.imagenesPrendaStorage) {
             if (typeof window.imagenesPrendaStorage.limpiar === 'function') {
@@ -110,7 +110,7 @@ class ModalCleanup {
             }
         }
 
-        // 🔥 CRÍTICO: Limpiar telas agregadas (variable principal donde se guardan las telas)
+        //  CRÍTICO: Limpiar telas agregadas (variable principal donde se guardan las telas)
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
         }
@@ -184,7 +184,7 @@ class ModalCleanup {
 
         }
         
-        // 🔥 CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
+        //  CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
         if (!preservar) {
             if (window.tallasSeleccionadasProceso) {
                 window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
@@ -225,7 +225,7 @@ class ModalCleanup {
             telaPreview.style.display = 'none';
         }
 
-        // 🔥 CRÍTICO: Limpiar COMPLETAMENTE galería de fotos - STORAGE + DOM
+        //  CRÍTICO: Limpiar COMPLETAMENTE galería de fotos - STORAGE + DOM
         // Primero limpiar el servicio de imágenes (vacía array y revoca URLs)
         if (window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage.limpiar?.();
@@ -253,7 +253,7 @@ class ModalCleanup {
         
         // DragDrop tela se reconfigura en shown.bs.modal, NO aquí
 
-        // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
+        //  CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
         const tarjetasGenerosContainer = document.getElementById('tarjetas-generos-container');
         if (tarjetasGenerosContainer) {
             tarjetasGenerosContainer.innerHTML = '';
@@ -285,13 +285,13 @@ class ModalCleanup {
             // contenedorTarjetas.innerHTML = ''; // COMENTADO: Esto borraba los procesos al abrir en edición
         }
         
-        // 🔥 CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
+        //  CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
         const resumenTallas = document.getElementById('proceso-tallas-resumen');
         if (resumenTallas) {
             resumenTallas.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         }
         
-        // 🔥 CRÍTICO: Resetear el contador general de prendas también
+        //  CRÍTICO: Resetear el contador general de prendas también
         const totalPrendas = document.getElementById('total-prendas');
         if (totalPrendas) {
             totalPrendas.textContent = '0';
@@ -425,11 +425,11 @@ class ModalCleanup {
     static prepararParaNueva() {
 
         
-        // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
+        //  CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
         // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
         window.prendaEditIndex = null;
         
-        // 🔥 CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
+        //  CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
         // Esto previene que datos viejos de prenda anterior aparezcan en las tarjetas
         if (!window.tallasRelacionales) {
             window.tallasRelacionales = {};
@@ -439,10 +439,10 @@ class ModalCleanup {
         window.tallasRelacionales.UNISEX = {};
         window.tallasRelacionales.SOBREMEDIDA = {};
         
-        // 🔥 CRÍTICO: Limpiar imágenes de procesos
+        //  CRÍTICO: Limpiar imágenes de procesos
         window.imagenesProcesoActual = [null, null, null];
         
-        // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
+        //  CRÍTICO: Limpiar TELAS - arrays en memoria
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
         }
@@ -450,7 +450,7 @@ class ModalCleanup {
             window.telasCreacion.length = 0;
         }
         
-        // 🔥 CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
+        //  CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
         // Esto asegura que los inputs SIEMPRE estén presentes
         const tbody = document.getElementById('tbody-telas');
         if (tbody) {
@@ -503,7 +503,7 @@ class ModalCleanup {
         this.limpiarProcesos(false); // Limpiar TODO
         this.limpiarContenedores();
         
-        // 🔥 CRÍTICO: Cargar opciones de telas y colores para las datalist
+        //  CRÍTICO: Cargar opciones de telas y colores para las datalist
         // Esto restaura las sugerencias de autocomplete
         if (typeof window.cargarTelasDisponibles === 'function') {
             window.cargarTelasDisponibles();
@@ -524,11 +524,11 @@ class ModalCleanup {
     static prepararParaEditar(prendaIndex) {
 
         
-        // 🔥 IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
+        //  IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
         // Esto permite que limpiarFormulario() sepa que estamos en modo edición
         window.prendaEditIndex = prendaIndex;
         
-        // 🔥 CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
+        //  CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
         window.imagenesProcesoActual = [null, null, null];
         
         // NO limpiar storages en modo edición - se cargarán los datos de la prenda
@@ -539,20 +539,20 @@ class ModalCleanup {
         // NO limpiar contenedores en modo edición - se cargarán los datos de la prenda
         // this.limpiarContenedores();
         
-        // 🔥 CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
+        //  CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
         // Cuando editamos una prenda que fue agregada desde creación, telasCreacion podría tener datos viejos
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
             console.log(' [prepararParaEditar] telasCreacion limpiado para modo edición');
         }
         
-        // 🔥 CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
+        //  CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
         if (!window.telasAgregadas) {
             window.telasAgregadas = [];
             console.log(' [prepararParaEditar] telasAgregadas inicializado como array vacío');
         }
         
-        // 🔥 Cargar opciones de telas y colores para las datalist
+        //  Cargar opciones de telas y colores para las datalist
         if (typeof window.cargarTelasDisponibles === 'function') {
             window.cargarTelasDisponibles();
         }
@@ -578,7 +578,7 @@ class ModalCleanup {
      */
     static limpiarDespuésDeGuardar() {
         const inicioTiempo = performance.now();
-        console.log('🔧 [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza...');
+        console.log(' [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza...');
         
         try {
             // PASO 1: Limpiar formulario

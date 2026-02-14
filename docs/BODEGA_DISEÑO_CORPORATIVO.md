@@ -1,6 +1,6 @@
 # 🏭 MÓDULO BODEGA - DISEÑO CORPORATIVO INDUSTRIAL
 
-## 📋 Descripción
+##  Descripción
 
 Sistema de gestión de pedidos para bodegueros con interfaz corporativa, industrial y profesional. Estructura jerárquica con agrupación por número de pedido.
 
@@ -81,7 +81,7 @@ FILAS DE ARTÍCULOS
 <!-- Tipografía: font-bold uppercase tracking-wider -->
 ```
 
-## 🔧 Instalación
+##  Instalación
 
 ### 1. Registrar Rutas
 En `routes/web.php`:

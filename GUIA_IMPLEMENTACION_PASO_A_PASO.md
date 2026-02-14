@@ -119,10 +119,10 @@ Encontrar: `</script>` (debe estar cerca de la línea 900+)
 2. Abrir consola (F12)
 3. Ejecutar:
 ```javascript
-console.log('FSM disponible:', window.__MODAL_FSM__ ? '✅' : '❌');
+console.log('FSM disponible:', window.__MODAL_FSM__ ? '' : '');
 ```
 
-**Esperado:** ✅ (Si aparece ❌, verificar ruta del script)
+**Esperado:**  (Si aparece , verificar ruta del script)
 
 ---
 
@@ -149,7 +149,7 @@ async abrirModalAgregarPrendaNueva() {
         if (typeof window.cargarCatalogosModal === 'function') {
             console.log('[abrirModalAgregarPrendaNueva] Cargando catálogos...');
             await window.cargarCatalogosModal();
-            console.log('[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados correctamente');
+            console.log('[abrirModalAgregarPrendaNueva]  Catálogos cargados correctamente');
         }
         
         const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
@@ -293,23 +293,23 @@ http://localhost:8000/asesores/crear-pedido
 2. **Observar logs esperados:**
 
 ```
-[ModalFSM] ✅ Transición: CLOSED → OPENING
+[ModalFSM]  Transición: CLOSED → OPENING
 [abrirModalAgregarPrendaNueva] FASE 1: Iniciando apertura
 [abrirModalAgregarPrendaNueva] FASE 2: Cargando catálogos...
 [Telas] Iniciando carga de telas disponibles...
 [Telas] Respuesta de API... ← SOLO UNA VEZ
 [Telas] Telas cargadas: 48  ← Solo una vez
-[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados correctamente
+[abrirModalAgregarPrendaNueva]  Catálogos cargados correctamente
 [abrirModalAgregarPrendaNueva] FASE 4: Esperando visible...
 [_esperarModalVisible] Modal visible
 [abrirModalAgregarPrendaNueva] FASE 5: Inicializando DragDropManager...
-[DragDropManager] ✅ Ya inicializado, ignorando... ← O solo "Sistema inicializado"
-[abrirModalAgregarPrendaNueva] ✅ DragDropManager inicializado
-[ModalFSM] ✅ Transición: OPENING → OPEN
-[abrirModalAgregarPrendaNueva] ✅ ÉXITO
+[DragDropManager]  Ya inicializado, ignorando... ← O solo "Sistema inicializado"
+[abrirModalAgregarPrendaNueva]  DragDropManager inicializado
+[ModalFSM]  Transición: OPENING → OPEN
+[abrirModalAgregarPrendaNueva]  ÉXITO
 ```
 
-**✅ ÉXITO SI:**
+** ÉXITO SI:**
 - `[Respuesta de API...]` aparece 1 sola vez (no 2)
 - `[ModalFSM]` muestra transiciones ordenadas
 - No hay errores en rojo
@@ -321,13 +321,13 @@ http://localhost:8000/asesores/crear-pedido
 3. **Observar:**
 
 ```
-[ModalFSM] ✅ CLOSED → OPENING
+[ModalFSM]  CLOSED → OPENING
 [abrirModalAgregarPrendaNueva] FASE 1...
 [ModalFSM] Modal no puede abrir ahora (estado: OPENING)
-[abrirModalAgregarPrendaNueva] ⚠️ Modal ya está en estado: OPENING. Ignorando...
+[abrirModalAgregarPrendaNueva]  Modal ya está en estado: OPENING. Ignorando...
 ```
 
-**✅ ÉXITO SI:**
+** ÉXITO SI:**
 - La segunda llamada es ignorada silenciosamente
 - No hay doble fetch
 - Modal no se abre dos veces
@@ -402,11 +402,11 @@ php artisan cache:clear
 - [ ] `window.__MODAL_FSM__` disponible en consola
 - [ ] Método `abrirModalAgregarPrendaNueva()` reemplazado
 - [ ] Método `_esperarModalVisible()` agregado
-- [ ] **PRUEBA 1:** Abrimiento básico - telas cargan 1 sola vez ✅
-- [ ] **PRUEBA 2:** Doble clic activa guard clause ✅
-- [ ] **PRUEBA 3:** Drag & Drop funciona ✅
-- [ ] **PRUEBA 4:** Edición funciona ✅
-- [ ] **PRODUCCIÓN:** Monitoreo primeras 24 horas ✅
+- [ ] **PRUEBA 1:** Abrimiento básico - telas cargan 1 sola vez 
+- [ ] **PRUEBA 2:** Doble clic activa guard clause 
+- [ ] **PRUEBA 3:** Drag & Drop funciona 
+- [ ] **PRUEBA 4:** Edición funciona 
+- [ ] **PRODUCCIÓN:** Monitoreo primeras 24 horas 
 
 ---
 

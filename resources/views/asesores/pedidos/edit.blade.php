@@ -379,7 +379,7 @@
 <script src="{{ asset('js/invoice-preview-live.js') }}?v={{ time() }}"></script>
 <script>
     window.addEventListener('load', function() {
-        console.log('🔥 [FACTURA-EDITABLE-EDIT] Página cargada, renderizando factura...');
+        console.log(' [FACTURA-EDITABLE-EDIT] Página cargada, renderizando factura...');
         
         // Esperar un poco para que todo esté listo
         setTimeout(function() {
@@ -395,7 +395,7 @@
             
             // Obtener ID del pedido del atributo data-pedido
             const pedidoId = formElement.getAttribute('data-pedido');
-            console.log('📋 [FACTURA-EDITABLE-EDIT] Pedido ID:', pedidoId);
+            console.log(' [FACTURA-EDITABLE-EDIT] Pedido ID:', pedidoId);
             
             // Hacer fetch para obtener los datos del pedido desde la API
             fetch(`/api/pedidos/${pedidoId}`)

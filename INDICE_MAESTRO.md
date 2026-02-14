@@ -70,8 +70,8 @@ Tu sistema ERP tiene un problema de **doble ejecución en modal** causado por l�
 **Por qué:** Saber que el sistema está estable, no solo "parece funcionar"  
 **Contiene:**
 - 8 errores críticos a evitar
-- 7 señales de que está estable ✅
-- 4 signos de que algo está mal 🔴
+- 7 señales de que está estable 
+- 4 signos de que algo está mal 
 - Comando de debugging completo
 - Tests manuales por navegador
 
@@ -161,7 +161,7 @@ Tu sistema ERP tiene un problema de **doble ejecución en modal** causado por l�
 
 ---
 
-## 🔧 CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 ### Día 1 (2-3 horas)
 - [ ] Tech Lead lee diagnóstico y aprueba plan
@@ -266,7 +266,7 @@ c:\Users\Usuario\Documents\mundoindustrial\
 
 ---
 
-## ✅ ÚLTIMAS INSTRUCCIONES
+##  ÚLTIMAS INSTRUCCIONES
 
 1. **AHORA:** Lee DIAGNOSTICO_EJECUTIVO.md (15 min)
 2. **DESPUÉS:** Lee PLAN_IMPLEMENTACION_4_FASES.md (30 min)

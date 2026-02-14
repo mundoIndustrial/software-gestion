@@ -61,7 +61,7 @@ const ModalListenerRegistry = (() => {
             );
             
             if (yaRegistrado) {
-                log(`⚠️ Listener ya registrado`, { event });
+                log(` Listener ya registrado`, { event });
                 return;
             }
 
@@ -71,7 +71,7 @@ const ModalListenerRegistry = (() => {
             // Guardar referencia
             listeners.push({ element, event, handler });
             
-            log(`✅ Listener registrado`, { event });
+            log(` Listener registrado`, { event });
         },
         
         /**
@@ -80,7 +80,7 @@ const ModalListenerRegistry = (() => {
          */
         unregisterAll: () => {
             if (listeners.length === 0) {
-                log('⚠️ No hay listeners para limpiar');
+                log(' No hay listeners para limpiar');
                 return;
             }
 
@@ -93,7 +93,7 @@ const ModalListenerRegistry = (() => {
             });
 
             listeners.length = 0;  // Limpiar array
-            log(`✅ Todos los listeners desregistrados`);
+            log(` Todos los listeners desregistrados`);
         },
         
         /**
@@ -111,14 +111,14 @@ const ModalListenerRegistry = (() => {
             );
 
             if (index === -1) {
-                log(`⚠️ Listener no encontrado`, { event });
+                log(` Listener no encontrado`, { event });
                 return;
             }
 
             try {
                 element.removeEventListener(event, handler);
                 listeners.splice(index, 1);
-                log(`✅ Listener desregistrado`, { event });
+                log(` Listener desregistrado`, { event });
             } catch (error) {
                 console.error('[ModalListeners] Error desregistrando:', error);
             }
@@ -159,4 +159,4 @@ const ModalListenerRegistry = (() => {
 })();
 
 // Auto-inicialización
-console.log('[ModalListeners] ✅ Inicializado y listo');
+console.log('[ModalListeners]  Inicializado y listo');

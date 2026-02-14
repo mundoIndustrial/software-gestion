@@ -65,7 +65,7 @@ class VerificarEppImagenesIgnorada extends Command
             
             // Verificar estructura
             $columnas = Schema::getColumnListing('pedido_epp_imagenes');
-            $this->info('   📋 Columnas:');
+            $this->info('    Columnas:');
             foreach ($columnas as $col) {
                 $this->line("      - {$col}");
             }
@@ -93,7 +93,7 @@ class VerificarEppImagenesIgnorada extends Command
         // En un verdadero monitoreo, verificaríamos query log
         
         $this->info('   Sistema configurado para ignorar epp_imagenes');
-        $this->info('   📋 Métodos afectados:');
+        $this->info('    Métodos afectados:');
         $this->line('      - EppRepository::obtenerPorId()');
         $this->line('      - EppRepository::obtenerPorCodigo()');
         $this->line('      - EppRepository::obtenerActivos()');

@@ -28,7 +28,7 @@ class EppDomainService
      */
     public function buscarEpp(string $termino): Collection
     {
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Buscando EPP sin epp_imagenes', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-SERVICE] Buscando EPP sin epp_imagenes', [
             'termino' => $termino,
         ]);
         
@@ -44,7 +44,7 @@ class EppDomainService
      */
     public function obtenerEppActivos(): Collection
     {
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPPs activos sin epp_imagenes');
+        \Illuminate\Support\Facades\Log::debug(' [EPP-SERVICE] Obteniendo EPPs activos sin epp_imagenes');
         
         $epps = $this->eppRepository->obtenerActivos();
 
@@ -58,7 +58,7 @@ class EppDomainService
      */
     public function obtenerEppPorCategoria(string $categoria): Collection
     {
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPPs por categoría sin epp_imagenes', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-SERVICE] Obteniendo EPPs por categoría sin epp_imagenes', [
             'categoria' => $categoria,
         ]);
         
@@ -79,7 +79,7 @@ class EppDomainService
      */
     public function obtenerEppPorId(int $id): ?array
     {
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-SERVICE] Obteniendo EPP por ID sin epp_imagenes', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-SERVICE] Obteniendo EPP por ID sin epp_imagenes', [
             'epp_id' => $id,
         ]);
         

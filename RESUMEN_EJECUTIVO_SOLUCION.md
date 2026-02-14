@@ -2,7 +2,7 @@
 
 ## 📊 ESTADO ACTUAL vs DESEADO
 
-### 🔴 ESTADO ACTUAL (Producción - Caótico)
+###  ESTADO ACTUAL (Producción - Caótico)
 
 ```
 ┌─────────────────────────────────────────┐
@@ -32,11 +32,11 @@
 ```
 
 **Síntomas:**
-- ❌ 2 llamadas a `/api/public/telas` en Network
-- ❌ 2 llamadas a `/api/public/colores` en Network
-- ❌ Listeners se registran 2+ veces
-- ❌ DragDropManager se inicializa múltiples veces
-- ❌ Memory leak leve cada apertura
+-  2 llamadas a `/api/public/telas` en Network
+-  2 llamadas a `/api/public/colores` en Network
+-  Listeners se registran 2+ veces
+-  DragDropManager se inicializa múltiples veces
+-  Memory leak leve cada apertura
 
 ---
 
@@ -65,12 +65,12 @@
 ```
 
 **Beneficios:**
-- ✅ 1 llamada a `/api/public/telas`
-- ✅ 1 llamada a `/api/public/colores`
-- ✅ Listeners registrados y limpiados en pareja
-- ✅ DragDropManager se inicializa 1 vez
-- ✅ Sin memory leaks
-- ✅ Código testeable y mockeable
+-  1 llamada a `/api/public/telas`
+-  1 llamada a `/api/public/colores`
+-  Listeners registrados y limpiados en pareja
+-  DragDropManager se inicializa 1 vez
+-  Sin memory leaks
+-  Código testeable y mockeable
 
 ---
 
@@ -83,10 +83,10 @@
 **Reversibilidad:** Sí (5 minutos)
 
 Archivos creados:
-- ✅ `promise-cache.js` 
-- ✅ Refactorizado: `manejadores-variaciones.js`
-- ✅ Refactorizado: `gestion-items-pedido.js`
-- ✅ Refactorizado: `drag-drop-manager.js`
+-  `promise-cache.js` 
+-  Refactorizado: `manejadores-variaciones.js`
+-  Refactorizado: `gestion-items-pedido.js`
+-  Refactorizado: `drag-drop-manager.js`
 
 **Resultado:** 2 API calls → 1 API call
 
@@ -99,7 +99,7 @@ Archivos creados:
 **Reversibilidad:** Sí (varias horas)
 
 Archivos creados:
-- ✅ `modal-listener-registry.js`
+-  `modal-listener-registry.js`
 - ⏳ Refactorizar: `modal-cleanup.js`
 
 **Resultado:** Listeners limpios, sin acumulación
@@ -192,9 +192,9 @@ console.log(modalSystem.getStatus());
 
 ### Garantía 1: Una única inicialización
 ```javascript
-✅ DragDropManager.inicializar()
-✅ DragDropManager.inicializar()  // Rechazada silenciosamente
-✅ DragDropManager.inicializar()  // Rechazada silenciosamente
+ DragDropManager.inicializar()
+ DragDropManager.inicializar()  // Rechazada silenciosamente
+ DragDropManager.inicializar()  // Rechazada silenciosamente
 
 // Resultado: Sistema inicializado UNA VEZ
 ```
@@ -243,12 +243,12 @@ Resultado: Estado consistente, sin estado intermedio
 
 | Aspecto | ACTUAL | FASE 1 | FASE 2 | FASE 3 |
 |---------|--------|--------|--------|--------|
-| API calls | ❌ 2x | ✅ 1x | ✅ 1x | ✅ 1x |
-| Listeners | ❌ Dup | ❌ Dup | ✅ Limpio | ✅ Limpio |
-| Memory leak | ❌ Sí | ❌ Sí | ✅ No | ✅ No |
-| Idempotencia | ❌ No | ✅ SÍ | ✅ SÍ | ✅ SÍ |
-| FSM | ❌ No | ❌ No | ❌ No | ✅ SÍ |
-| Testeable | ❌ No | ❌ No | ⚠️ Parcial | ✅ SÍ |
+| API calls |  2x |  1x |  1x |  1x |
+| Listeners |  Dup |  Dup |  Limpio |  Limpio |
+| Memory leak |  Sí |  Sí |  No |  No |
+| Idempotencia |  No |  SÍ |  SÍ |  SÍ |
+| FSM |  No |  No |  No |  SÍ |
+| Testeable |  No |  No |  Parcial |  SÍ |
 | Performance | 🐌 Lento | ⚡ Rápido | ⚡ Rápido | ⚡⚡ Muy rápido |
 
 ---

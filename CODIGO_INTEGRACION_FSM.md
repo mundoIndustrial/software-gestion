@@ -27,12 +27,12 @@ async abrirModalAgregarPrendaNueva() {
         // ========================================
         const fsm = window.__MODAL_FSM__;
         if (!fsm) {
-            console.error('[abrirModalAgregarPrendaNueva] ❌ FSM no cargado. Verificar que modal-mini-fsm.js esté incluido en el Blade.');
+            console.error('[abrirModalAgregarPrendaNueva]  FSM no cargado. Verificar que modal-mini-fsm.js esté incluido en el Blade.');
             throw new Error('FSM no disponible');
         }
 
         if (!fsm.puedeAbrir()) {
-            console.warn(`[abrirModalAgregarPrendaNueva] ⚠️ Modal ya está en estado: ${fsm.obtenerEstado()}. Ignorando llamada.`);
+            console.warn(`[abrirModalAgregarPrendaNueva]  Modal ya está en estado: ${fsm.obtenerEstado()}. Ignorando llamada.`);
             return;  // Salir silenciosamente
         }
 
@@ -49,14 +49,14 @@ async abrirModalAgregarPrendaNueva() {
             
             try {
                 await window.cargarCatalogosModal();
-                console.log('[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados correctamente');
+                console.log('[abrirModalAgregarPrendaNueva]  Catálogos cargados correctamente');
             } catch (error) {
-                console.error('[abrirModalAgregarPrendaNueva] ❌ Error cargando catálogos:', error.message);
+                console.error('[abrirModalAgregarPrendaNueva]  Error cargando catálogos:', error.message);
                 // NO lanzar error - continuar de todas formas
                 // Los catálogos se pueden cargar bajo demanda
             }
         } else {
-            console.warn('[abrirModalAgregarPrendaNueva] ⚠️ cargarCatalogosModal no disponible. Continuando sin precarga.');
+            console.warn('[abrirModalAgregarPrendaNueva]  cargarCatalogosModal no disponible. Continuando sin precarga.');
         }
 
         // ========================================
@@ -72,7 +72,7 @@ async abrirModalAgregarPrendaNueva() {
             if (prendaAEditar && this.prendaEditor) {
                 this.prendaEditor.cargarPrendaEnModal(prendaAEditar, this.prendaEditIndex);
             } else {
-                console.warn('[abrirModalAgregarPrendaNueva] ⚠️ Prenda no encontrada en índice:', this.prendaEditIndex);
+                console.warn('[abrirModalAgregarPrendaNueva]  Prenda no encontrada en índice:', this.prendaEditIndex);
             }
         } else {
             console.log('[abrirModalAgregarPrendaNueva] FASE 3b: CREACIÓN - Abriendo modal vacío para nueva prenda');
@@ -81,7 +81,7 @@ async abrirModalAgregarPrendaNueva() {
             if (this.prendaEditor) {
                 this.prendaEditor.abrirModal(false, null);
             } else {
-                console.error('[abrirModalAgregarPrendaNueva] ❌ prendaEditor no disponible');
+                console.error('[abrirModalAgregarPrendaNueva]  prendaEditor no disponible');
             }
         }
 
@@ -90,7 +90,7 @@ async abrirModalAgregarPrendaNueva() {
         // ========================================
         console.log('[abrirModalAgregarPrendaNueva] FASE 4: Esperando a que modal esté visible en DOM...');
         await this._esperarModalVisible(1500);  // timeout de 1.5 segundos
-        console.log('[abrirModalAgregarPrendaNueva] ✅ Modal visible en DOM');
+        console.log('[abrirModalAgregarPrendaNueva]  Modal visible en DOM');
 
         // ========================================
         // FASE 5: INICIALIZAR DRAG & DROP
@@ -99,13 +99,13 @@ async abrirModalAgregarPrendaNueva() {
             console.log('[abrirModalAgregarPrendaNueva] FASE 5: Inicializando DragDropManager...');
             try {
                 window.DragDropManager.inicializar();
-                console.log('[abrirModalAgregarPrendaNueva] ✅ DragDropManager inicializado');
+                console.log('[abrirModalAgregarPrendaNueva]  DragDropManager inicializado');
             } catch (error) {
                 // No es error fatal
-                console.warn('[abrirModalAgregarPrendaNueva] ⚠️ Error inicializando DragDropManager:', error.message);
+                console.warn('[abrirModalAgregarPrendaNueva]  Error inicializando DragDropManager:', error.message);
             }
         } else {
-            console.warn('[abrirModalAgregarPrendaNueva] ⚠️ DragDropManager no disponible');
+            console.warn('[abrirModalAgregarPrendaNueva]  DragDropManager no disponible');
         }
 
         // ========================================
@@ -113,7 +113,7 @@ async abrirModalAgregarPrendaNueva() {
         // ========================================
         fsm.cambiarEstado('OPEN', { origen: 'abrirModalAgregarPrendaNueva' });
 
-        console.log('[abrirModalAgregarPrendaNueva] ✅ ÉXITO - Modal abierto correctamente');
+        console.log('[abrirModalAgregarPrendaNueva]  ÉXITO - Modal abierto correctamente');
         console.log('[abrirModalAgregarPrendaNueva] Timing:', {
             modal: esEdicion ? 'edición' : 'creación',
             estadoFSM: fsm.obtenerEstado(),
@@ -124,7 +124,7 @@ async abrirModalAgregarPrendaNueva() {
         // ========================================
         // ERROR HANDLING
         // ========================================
-        console.error('[abrirModalAgregarPrendaNueva] ❌ ERROR CRÍTICO:', {
+        console.error('[abrirModalAgregarPrendaNueva]  ERROR CRÍTICO:', {
             message: error.message,
             stack: error.stack
         });
@@ -159,7 +159,7 @@ async _esperarModalVisible(timeoutMs = 1500) {
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         
         if (!modal) {
-            console.warn('[_esperarModalVisible] ❌ Modal no encontrado en DOM.');
+            console.warn('[_esperarModalVisible]  Modal no encontrado en DOM.');
             resolve();
             return;
         }
@@ -175,7 +175,7 @@ async _esperarModalVisible(timeoutMs = 1500) {
             if (isVisible) {
                 clearInterval(intervalo);
                 const elapsed = Date.now() - startTime;
-                console.log(`[_esperarModalVisible] ✅ Modal visible en ${elapsed}ms`);
+                console.log(`[_esperarModalVisible]  Modal visible en ${elapsed}ms`);
                 resolve();
                 return;
             }
@@ -183,7 +183,7 @@ async _esperarModalVisible(timeoutMs = 1500) {
             // Comprobar timeout
             if (Date.now() - startTime > timeoutMs) {
                 clearInterval(intervalo);
-                console.warn(`[_esperarModalVisible] ⚠️ Timeout (${timeoutMs}ms) esperando modal visible. Continuando de todas formas.`);
+                console.warn(`[_esperarModalVisible]  Timeout (${timeoutMs}ms) esperando modal visible. Continuando de todas formas.`);
                 resolve();  // Continuar de todas formas (no es error fatal)
             }
         }, 50);
@@ -215,7 +215,7 @@ cerrarModalAgregarPrendaNueva() {
             try {
                 PrendaModalManager.cerrar('modal-agregar-prenda-nueva');
                 PrendaModalManager.limpiar('modal-agregar-prenda-nueva');
-                console.log('[cerrarModalAgregarPrendaNueva] ✅ Modal cerrado vía PrendaModalManager');
+                console.log('[cerrarModalAgregarPrendaNueva]  Modal cerrado vía PrendaModalManager');
             } catch (error) {
                 console.error('[cerrarModalAgregarPrendaNueva] Error en PrendaModalManager:', error);
             }
@@ -226,10 +226,10 @@ cerrarModalAgregarPrendaNueva() {
             fsm.cambiarEstado('CLOSED', { origen: 'cerrarModalAgregarPrendaNueva' });
         }
 
-        console.log('[cerrarModalAgregarPrendaNueva] ✅ Modal cerrado correctamente');
+        console.log('[cerrarModalAgregarPrendaNueva]  Modal cerrado correctamente');
 
     } catch (error) {
-        console.error('[cerrarModalAgregarPrendaNueva] ❌ Error:', error);
+        console.error('[cerrarModalAgregarPrendaNueva]  Error:', error);
 
         // Resetear FSM a CLOSED (emergencia)
         const fsm = window.__MODAL_FSM__;

@@ -17,7 +17,7 @@ class PrendaEditorService {
         try {
             const endpoint = `/pedidos-public/${pedidoId}/factura-datos`;
             
-            console.log('[📡 Service] 📍 Obteniendo desde:', endpoint);
+            console.log('[📡 Service]  Obteniendo desde:', endpoint);
             
             const response = await fetch(endpoint, {
                 headers: { 'Accept': 'application/json' }
@@ -43,7 +43,7 @@ class PrendaEditorService {
                 return null;
             }
             
-            console.log('✅ [Service] Prenda obtenida del servidor');
+            console.log(' [Service] Prenda obtenida del servidor');
             return prenda;
             
         } catch (error) {

@@ -199,7 +199,7 @@ window.ColoresPorTalla = (function() {
         
         if (esVistaAsignacionActiva) {
             // Volviendo a tabla de telas
-            console.log('[ColoresPorTalla] 📋 ACCIÓN: Volviendo a tabla de telas');
+            console.log('[ColoresPorTalla]  ACCIÓN: Volviendo a tabla de telas');
             
             if (vistaTablaTelas) {
                 vistaTablaTelas.style.display = 'block';
@@ -221,7 +221,7 @@ window.ColoresPorTalla = (function() {
                     const tabla = tbodyTelas.closest('table');
                     if (tabla) {
                         tabla.style.display = 'table';
-                        console.log('[ColoresPorTalla] 📋 Tabla de telas forzada a ser visible');
+                        console.log('[ColoresPorTalla]  Tabla de telas forzada a ser visible');
                     }
                 }
             }, 100);
@@ -232,7 +232,7 @@ window.ColoresPorTalla = (function() {
             
         } else {
             // Abriendo vista de asignación
-            console.log('[ColoresTalla] 📋 ACCIÓN: Abriendo vista de Asignación de Colores');
+            console.log('[ColoresTalla]  ACCIÓN: Abriendo vista de Asignación de Colores');
             
             if (vistaTablaTelas) {
                 vistaTablaTelas.style.display = 'none';
@@ -302,7 +302,7 @@ window.ColoresPorTalla = (function() {
             return telas[0]?.tela || telas[0]?.nombre_tela || null;
         }
         
-        console.log('[mostrarSelectoreTelasSiNecesario] 📋 Múltiples telas - mostrando selector');
+        console.log('[mostrarSelectoreTelasSiNecesario]  Múltiples telas - mostrando selector');
         
         // Mostrar modal de selección de tela
         const modal = document.getElementById('modal-seleccionar-tela');
@@ -491,7 +491,7 @@ window.ColoresPorTalla = (function() {
                 tallaSelect.appendChild(option);
             });
             
-            console.log('[actualizarTallasDisponibles] 📋 Tallas agregadas:', todasLasTallas.length);
+            console.log('[actualizarTallasDisponibles]  Tallas agregadas:', todasLasTallas.length);
         } else {
             console.log('[actualizarTallasDisponibles]  No hay género seleccionado');
         }
@@ -648,7 +648,7 @@ window.ColoresPorTalla = (function() {
         const tipo = StateManager.getTipoTallaSel();
         const telaDelWizard = StateManager.getTelaSeleccionada();
         
-        console.log('[wizardGuardarAsignacion] 📋 Estado actual:', { genero, tallas, tipo, telaDelWizard });
+        console.log('[wizardGuardarAsignacion]  Estado actual:', { genero, tallas, tipo, telaDelWizard });
         
         if (!genero || !tallas || tallas.length === 0) {
             console.error('[wizardGuardarAsignacion]  Datos incompletos del wizard');
@@ -876,7 +876,7 @@ window.ColoresPorTalla = (function() {
                 // Crear título "Colores"
                 const tituloColores = document.createElement('div');
                 tituloColores.style.cssText = 'font-weight: 600; color: #374151; margin-bottom: 0.35rem;';
-                tituloColores.textContent = '🎨 Colores:';
+                tituloColores.textContent = ' Colores:';
                 coloresDiv.appendChild(tituloColores);
                 
                 // Agregar cada color

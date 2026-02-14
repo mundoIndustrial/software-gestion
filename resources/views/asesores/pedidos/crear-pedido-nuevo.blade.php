@@ -73,10 +73,6 @@
                     <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
                 </div>
 
-                <div class="form-group">
-                    <label for="numero_pedido_editable">Número de Pedido</label>
-                    <input type="text" id="numero_pedido_editable" name="numero_pedido" readonly placeholder="Se asignará automáticamente" style="background-color: #f3f4f6; cursor: not-allowed;">
-                </div>
             </div>
         </div>
 
@@ -126,13 +122,13 @@
                 <span>3</span> Ítems del Pedido
             </h2>
 
-            <!-- Lista de ítems genéricos -->
+            <!-- Lista de ítems genéricos (readonly, después de agregar) -->
             <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <!-- Los ítems se agregarán aquí dinámicamente -->
+                <!-- Los ítems se agregarán aquí dinámicamente por ItemRenderer -->
             </div>
 
-            <!-- Prendas del Pedido (dentro de Ítems del Pedido) -->
-            <div id="prendas-container-editable" style="margin-top: 1.5rem;">
+            <!-- Formulario de entrada para prendas sin cotización (durante creación) -->
+            <div id="prendas-container-editable" style="margin-top: 1.5rem; display: none;">
                 <div class="empty-state">
                     <p>Agrega ítems al pedido</p>
                 </div>
@@ -243,7 +239,8 @@
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/procesos-imagenes-storage.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/manejo-imagenes-proceso.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/FileDialogStateManager.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/manejador-imagen-proceso-con-indice-v2.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 
     <!-- ESTILOS del componente tarjeta readonly -->
@@ -414,7 +411,6 @@
 <!-- ─── Final UI Scripts ─── -->
 <script defer src="{{ js_asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-modal.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ $v }}"></script>
 
 <!-- 🧪 TEST SUITE: Solo en desarrollo -->
 @if(config('app.debug'))

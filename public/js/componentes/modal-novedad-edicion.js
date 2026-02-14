@@ -340,7 +340,7 @@ class ModalNovedadEdicion {
                     
                     if (Array.isArray(imagenesTelaRaw) && imagenesTelaRaw.length > 0) {
                         telaObj.imagenes = imagenesTelaRaw.map(img => {
-                            // 🔥 CRÍTICO: Detectar si es imagen nueva (tiene previewUrl/file) o de BD
+                            //  CRÍTICO: Detectar si es imagen nueva (tiene previewUrl/file) o de BD
                             const esImagenNueva = img.file instanceof File || (img.previewUrl && img.previewUrl.startsWith('blob:'));
                             
                             if (esImagenNueva) {
@@ -574,7 +574,7 @@ class ModalNovedadEdicion {
             // Capturar las filas que el usuario agregó manualmente con agregarFilaTela()
             const filasTelasDOMNuevas = document.querySelectorAll('.fila-tela');
             if (filasTelasDOMNuevas && filasTelasDOMNuevas.length > 0) {
-                console.log('[modal-novedad-edicion] 📋 Leyendo', filasTelasDOMNuevas.length, 'filas de telas del DOM');
+                console.log('[modal-novedad-edicion]  Leyendo', filasTelasDOMNuevas.length, 'filas de telas del DOM');
                 filasTelasDOMNuevas.forEach((fila, idx) => {
                     const nombreInput = fila.querySelector('.tela-name');
                     const colorInput = fila.querySelector('.tela-color');
@@ -660,7 +660,7 @@ class ModalNovedadEdicion {
                     if (tela.imagenes && tela.imagenes.length > 0) {
                         obj.imagenes = [];
                         tela.imagenes.forEach((img, imgIdx) => {
-                            // 🔥 FIX: Detectar File en múltiples formas
+                            //  FIX: Detectar File en múltiples formas
                             const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
                             
                             if (fileObject) {
@@ -703,7 +703,7 @@ class ModalNovedadEdicion {
                 telasParaEnviar.forEach((tela, telaIdx) => {
                     if (tela.imagenes && tela.imagenes.length > 0) {
                         tela.imagenes.forEach((img, imgIdx) => {
-                            // 🔥 FIX: Detectar si es File directo O si es objeto con propiedad 'file'
+                            //  FIX: Detectar si es File directo O si es objeto con propiedad 'file'
                             const fileObject = img instanceof File ? img : (img.file instanceof File ? img.file : null);
                             
                             if (fileObject) {
@@ -1139,7 +1139,7 @@ class ModalNovedadEdicion {
                             ubicacionesAEnviar.forEach((ub, idx) => {
                                 patchFormData.append(`ubicaciones[${idx}]`, ub);
                             });
-                            console.log('[modal-novedad-edicion] 📍 Ubicaciones añadidas al PATCH (limpias):', ubicacionesAEnviar);
+                            console.log('[modal-novedad-edicion]  Ubicaciones añadidas al PATCH (limpias):', ubicacionesAEnviar);
                         }
                         
                         // Observaciones: usar las del cambio si existen, sino intentar del DOM

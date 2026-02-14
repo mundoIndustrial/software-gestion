@@ -14,37 +14,37 @@ return new class extends Migration
         Schema::create('prenda_pedido_talla_colores', function (Blueprint $table) {
             $table->id();
             
-            // ✅ RELACIÓN PRINCIPAL: Talla a la que pertenece este color
+            //  RELACIÓN PRINCIPAL: Talla a la que pertenece este color
             $table->unsignedBigInteger('prenda_pedido_talla_id');
             $table->foreign('prenda_pedido_talla_id')
                 ->references('id')
                 ->on('prenda_pedido_tallas')
                 ->onDelete('cascade');
             
-            // ✅ TELA - Campo principal con respaldo
+            //  TELA - Campo principal con respaldo
             $table->unsignedBigInteger('tela_id')->nullable()->comment('FK a tabla telas (si existe)');
             $table->string('tela_nombre', 100)->nullable()->comment('Nombre de la tela (respaldo si no existe tela_id)');
-            // ℹ️ Sin FK constraint a telas - puede cambiar en futuro
+            //  Sin FK constraint a telas - puede cambiar en futuro
             
-            // ✅ COLOR - Información del color
+            //  COLOR - Información del color
             $table->unsignedBigInteger('color_id')->nullable()->comment('FK a tabla colores (si existe)');
             $table->string('color_nombre', 100)->nullable()->comment('Nombre del color (puede no estar en tabla colores)');
-            // ℹ️ Sin FK constraint a colores - guarda información con nombre como fallback
+            //  Sin FK constraint a colores - guarda información con nombre como fallback
             
-            // ✅ CANTIDAD de prendas con este color
+            //  CANTIDAD de prendas con este color
             $table->unsignedInteger('cantidad')->default(1)->comment('Cantidad de prendas con este color');
             
-            // ✅ AUDITORÍA
+            //  AUDITORÍA
             $table->timestamps();
             
-            // ✅ ÍNDICES PARA QUERIES COMUNES
+            //  ÍNDICES PARA QUERIES COMUNES
             $table->index('prenda_pedido_talla_id');
             $table->index('tela_id');
             $table->index('color_id');
             $table->index('color_nombre');
             $table->index('tela_nombre');
             
-            // ✅ ÍNDICE COMPUESTO PARA REPORTES
+            //  ÍNDICE COMPUESTO PARA REPORTES
             $table->index(['color_nombre', 'tela_nombre']);
         });
     }

@@ -163,7 +163,7 @@ class ModalNovedadPrenda {
             formData.append('origen', this.prendaData.origen);
             formData.append('cantidad_talla', JSON.stringify(this.prendaData.cantidad_talla || {}));
             
-            // ✅ AGREGAR: Asignaciones de colores por talla (crítico para prenda_pedido_tallas)
+            //  AGREGAR: Asignaciones de colores por talla (crítico para prenda_pedido_tallas)
             if (this.prendaData.asignacionesColoresPorTalla) {
                 formData.append('asignaciones_colores', JSON.stringify(this.prendaData.asignacionesColoresPorTalla));
                 console.log('[modal-novedad-prenda]  Asignaciones de colores agregadas:', this.prendaData.asignacionesColoresPorTalla);

@@ -1,4 +1,4 @@
-# 🔴 DIAGNÓSTICO EJECUTIVO - SISTEMA MODAL ACTUAL
+#  DIAGNÓSTICO EJECUTIVO - SISTEMA MODAL ACTUAL
 
 ## TL;DR - El Problema Real
 
@@ -32,14 +32,14 @@ Modal-agregar-prenda-nueva.blade.php
 | modal-agregar-prenda-nueva.blade.php | 860-905 | Listeners directos sin registry |
 | gestion-items-pedido.js | 309+ | abrirModalAgregarPrendaNueva() |
 | prenda-editor.js | 23+ | abrirModal() delegando a PrendaModalManager |
-| drag-drop-manager.js | 40-99 | Guard clause ✅ pero se llama múltiples veces |
+| drag-drop-manager.js | 40-99 | Guard clause  pero se llama múltiples veces |
 
-### Guard clause de DragDropManager ✅ FUNCIONA
+### Guard clause de DragDropManager  FUNCIONA
 
 ```javascript
 inicializar() {
     if (this.inicializado) {
-        UIHelperService.log('DragDropManager', '✅ Ya inicializado');
+        UIHelperService.log('DragDropManager', ' Ya inicializado');
         return this;  // ← Sale aquí correctamente
     }
     // ... resto de inicialización
@@ -59,9 +59,9 @@ inicializar() {
 ```
 [Telas] Iniciando carga de telas disponibles...
 [abrirModalAgregarPrendaNueva] CREACIÓN: Abriendo modal
-✅ [Modal] Abierto: modal-agregar-prenda-nueva
+ [Modal] Abierto: modal-agregar-prenda-nueva
 [DragDropManager] Sistema ya inicializado          ← Guard clause detuvo MÁS instancias
-[DragDrop] ✅ Sistema inicializado correctamente   ← Pero esto SE EJECUTÓ YA
+[DragDrop]  Sistema inicializado correctamente   ← Pero esto SE EJECUTÓ YA
 [Telas] Respuesta de API...                         ← Fetch #1
 [Telas] Telas cargadas en memoria: 48
 [Telas] Respuesta de API...                         ← Fetch #2 (DUPLICADO)
@@ -91,13 +91,13 @@ CLOSED → OPENING → OPEN → CLOSING → CLOSED
 
 ### 2. **Un único punto de entrada controlado**
 ```javascript
-// ❌ ANTES (disperso)
+//  ANTES (disperso)
 DOMContentLoaded → DragDropManager.inicializar()
 shown.bs.modal → DragDropManager.inicializar()
 MutationObserver → inicializarDragDropModalPrenda()
 Blade → window.cargarTelasDisponibles()
 
-// ✅ DESPUÉS (centralizado)
+//  DESPUÉS (centralizado)
 GestionItemsUI.abrirModalAgregarPrendaNueva()
   ├─ FSM: CLOSED → OPENING
   ├─ Cargar catálogos
@@ -113,11 +113,11 @@ GestionItemsUI.abrirModalAgregarPrendaNueva()
 
 ---
 
-## ⚠️ RIESGOS DE IMPLEMENTACIÓN
+##  RIESGOS DE IMPLEMENTACIÓN
 
 | Riesgo | Nivel | Cómo evitarlo |
 |--------|-------|--------------|
-| Romper compatibilidad con window.PrendasEditorHelper | 🔴 CRÍTICO | No tocar window.PrendasEditorHelper, solo agregar FSM encima |
+| Romper compatibilidad con window.PrendasEditorHelper |  CRÍTICO | No tocar window.PrendasEditorHelper, solo agregar FSM encima |
 | Nueva inicialización de DragDrop no se ejecute | 🟡 ALTO | Validar que FSM.OPENING dispare inicialización |
 | Memory leaks si listeners no se limpian | 🟡 ALTO | Usar ModalListenerRegistry para todas las suscripciones |
 | Catálogos se carguen múltiples veces | 🟡 ALTO | Promise deduplication existe, usar el servicio |
@@ -125,7 +125,7 @@ GestionItemsUI.abrirModalAgregarPrendaNueva()
 
 ---
 
-## ✅ REGLA FUNDAMENTAL PARA ESTA IMPLEMENTACIÓN
+##  REGLA FUNDAMENTAL PARA ESTA IMPLEMENTACIÓN
 
 > **Nunca modificar la lógica de negocio existente.**
 > **Solo envolver con FSM + controladores de punto de entrada.**
@@ -140,7 +140,7 @@ GestionItemsUI.abrirModalAgregarPrendaNueva()
 
 ---
 
-## 📋 ARCHIVOS A MODIFICAR (Mínimo)
+##  ARCHIVOS A MODIFICAR (Mínimo)
 
 ### Crear (nuevos):
 1. `/public/js/modulos/crear-pedido/prendas/core/modal-mini-fsm.js` (80 líneas)
@@ -157,4 +157,4 @@ GestionItemsUI.abrirModalAgregarPrendaNueva()
 
 ---
 
-**Generado:** 2026-02-13 | **Status:** Análisis Pre-Implementación ✅
+**Generado:** 2026-02-13 | **Status:** Análisis Pre-Implementación 

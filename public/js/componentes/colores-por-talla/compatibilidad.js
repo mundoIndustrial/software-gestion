@@ -86,7 +86,7 @@ function toggleVistaAsignacionColoresFallback() {
         
         if (esVistaAsignacionActiva) {
             // Volver a vista de telas
-            console.log('[Compatibilidad] 📋 ACCIÓN: Mostrando tabla de telas');
+            console.log('[Compatibilidad]  ACCIÓN: Mostrando tabla de telas');
             vistaTablaTelas.style.display = 'block';
             vistaAsignacion.style.display = 'none';
             
@@ -98,7 +98,7 @@ function toggleVistaAsignacionColoresFallback() {
             return true;
         } else {
             // Cambiar a vista de asignación
-            console.log('[Compatibilidad] 📋 ACCIÓN: Mostrando vista de asignación');
+            console.log('[Compatibilidad]  ACCIÓN: Mostrando vista de asignación');
             vistaTablaTelas.style.display = 'none';
             vistaAsignacion.style.display = 'block';
             

@@ -29,7 +29,7 @@ class TestConsecutivosCommand extends Command
 
             if (!$pedido) {
                 $this->error(' No hay pedidos en estado PENDIENTE_SUPERVISOR');
-                $this->info('📋 Estados disponibles:');
+                $this->info(' Estados disponibles:');
                 
                 $estados = PedidoProduccion::distinct()->pluck('estado');
                 foreach ($estados as $estado) {
@@ -80,7 +80,7 @@ class TestConsecutivosCommand extends Command
                     ->where('pedido_produccion_id', $pedido->id)
                     ->get();
                     
-                $this->info('📋 Consecutivos del pedido:');
+                $this->info(' Consecutivos del pedido:');
                 foreach ($nuevosConsecutivos as $cons) {
                     $this->info("   - {$cons->tipo_recibo}: {$cons->consecutivo_actual} (inicial: {$cons->consecutivo_inicial})");
                     $this->info("     Notas: {$cons->notas}");
@@ -98,7 +98,7 @@ class TestConsecutivosCommand extends Command
 
         } catch (\Exception $e) {
             $this->error(" Error: " . $e->getMessage());
-            $this->error("📍 Línea: " . $e->getLine());
+            $this->error(" Línea: " . $e->getLine());
             $this->error("📁 Archivo: " . $e->getFile());
             return 1;
         }

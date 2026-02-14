@@ -318,7 +318,7 @@ class SupervisorPedidosController extends Controller
                 'timestamp' => now()
             ]);
 
-            // 🔥 Broadcast evento en tiempo real
+            //  Broadcast evento en tiempo real
             broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']));
             \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación");
 
@@ -414,7 +414,7 @@ class SupervisorPedidosController extends Controller
             'rol' => $rol,
         ]);
 
-        // 🔥 Broadcast evento en tiempo real
+        //  Broadcast evento en tiempo real
         broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades', 'motivo_revision']));
         \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Revisión");
 
@@ -465,7 +465,7 @@ class SupervisorPedidosController extends Controller
                     'tipo_cotizacion' => $orden->cotizacion->tipoCotizacion->nombre ?? 'N/A',
                 ]);
 
-                // 🔥 Broadcast evento en tiempo real
+                //  Broadcast evento en tiempo real
                 broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
                 \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Reflectiva");
 
@@ -489,7 +489,7 @@ class SupervisorPedidosController extends Controller
                     'area' => 'Insumos',
                 ]);
 
-                // 🔥 Broadcast evento en tiempo real
+                //  Broadcast evento en tiempo real
                 broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
                 \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Normal");
 

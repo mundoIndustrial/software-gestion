@@ -50,7 +50,7 @@ function actualizarResumenClientePaso4() {
         const tieneLogo = document.getElementById('descripcion_logo')?.value?.trim() !== '';
         const tieneReflectivo = false; // Paso 4 eliminado - ya no hay reflectivo
         
-        let tipoDetectado = '� Cotización';
+        let tipoDetectado = ' Cotización';
         if (tienePrendas && tieneLogo) {
             tipoDetectado = ' Combinada (Prendas + Logo)';
         } else if (tienePrendas) {
@@ -249,7 +249,7 @@ function generarTablaLogoPaso3(nombrePrenda) {
                         
                         // Agregar las ubicaciones
                         if (prenda.ubicaciones && Array.isArray(prenda.ubicaciones)) {
-                            console.log('📍 Ubicaciones encontradas:', prenda.ubicaciones);
+                            console.log(' Ubicaciones encontradas:', prenda.ubicaciones);
                             prenda.ubicaciones.forEach(ubicacion => {
                                 if (ubicacion && ubicacion.trim() !== '' && ubicacion.trim() !== 'SIN UBICACIÓN') {
                                     tecnicasUbicaciones[nombreTecnica].push(ubicacion.trim());
@@ -323,7 +323,7 @@ function generarTablaReflectivoPaso4(nombrePrenda) {
                             });
                         }
                     });
-                    console.log('📍 Ubicaciones reflectivo encontradas:', reflectivoDatos);
+                    console.log(' Ubicaciones reflectivo encontradas:', reflectivoDatos);
                 }
             }
         });

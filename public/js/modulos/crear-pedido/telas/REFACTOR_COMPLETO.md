@@ -1,6 +1,6 @@
 # 🎉 REFACTOR COMPLETO - MÓDULO DE TELAS
 
-## 📋 Resumen del Cambio
+##  Resumen del Cambio
 
 ###  Sistema Antiguo (Eliminado)
 - **Archivo**: `gestion-telas.js` (1052 líneas monolíticas)
@@ -21,11 +21,11 @@
 ├── 📄 gestion-telas.js              #  Loader principal (4KB)
 └── 📁 telas-module/                 #  Módulo completo
     ├── 📄 estado-validacion.js      # 🧪 Estado y validaciones (5KB)
-    ├── 📄 gestion-telas.js          # 📋 CRUD de telas (10KB)
+    ├── 📄 gestion-telas.js          #  CRUD de telas (10KB)
     ├── 📄 manejo-imagenes.js        # 🖼️ Galería y preview (12KB)
     ├── 📄 ui-renderizado.js          #  UI y renderizado (9KB)
     ├── 📄 storage-datos.js          # 💾 Storage y datos (8KB)
-    ├── 📄 telas-module-main.js       # 📋 Loader del módulo (5KB)
+    ├── 📄 telas-module-main.js       #  Loader del módulo (5KB)
     └── 📄 README.md                  # 📚 Documentación completa (10KB)
 ```
 

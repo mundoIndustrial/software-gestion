@@ -989,7 +989,7 @@ function agregarTallasSeleccionadas(btn) {
  */
 function actualizarTallasHidden(container) {
     console.log(' Actualizando campo hidden de tallas');
-    console.log('📍 Container:', container);
+    console.log(' Container:', container);
     
     if (!container) {
         console.warn(' Container no encontrado');

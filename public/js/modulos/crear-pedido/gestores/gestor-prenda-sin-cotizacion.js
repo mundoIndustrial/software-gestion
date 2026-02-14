@@ -43,7 +43,7 @@ class GestorPrendaSinCotizacion {
      */
     setPrendaActual(prenda) {
         this.prendaActual = prenda;
-        console.log('[GestorPrendaSinCotizacion] 📋 Prenda actual establecida:', prenda.nombre_prenda || prenda.nombre);
+        console.log('[GestorPrendaSinCotizacion]  Prenda actual establecida:', prenda.nombre_prenda || prenda.nombre);
     }
 
     /**

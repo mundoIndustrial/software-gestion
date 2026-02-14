@@ -69,7 +69,7 @@ class BodegaRealtimeRefresh {
         const observacionesInputs = document.querySelectorAll('.observaciones-input');
         
         if (this.debug) {
-            console.log(`📋 [BodegaRealtime] Encontrados ${observacionesInputs.length} inputs para suscribir`);
+            console.log(` [BodegaRealtime] Encontrados ${observacionesInputs.length} inputs para suscribir`);
         }
         
         observacionesInputs.forEach((input, index) => {

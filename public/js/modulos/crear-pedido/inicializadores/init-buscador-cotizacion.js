@@ -112,7 +112,7 @@
             return;
         }
         
-        console.log('📋 [INIT-BUSCADOR] Datos de cotizaciones encontrados:', window.cotizacionesData.length);
+        console.log(' [INIT-BUSCADOR] Datos de cotizaciones encontrados:', window.cotizacionesData.length);
 
         // Transformar datos de cotizaciones del servidor
         const cotizacionesFormateadas = window.cotizacionesData.map(cot => {
@@ -145,7 +145,7 @@
             };
         });
 
-        console.log('📋 Cotizaciones cargadas:', cotizacionesFormateadas.length);
+        console.log(' Cotizaciones cargadas:', cotizacionesFormateadas.length);
         console.log(' DEBUG - Primera cotización:', cotizacionesFormateadas[0]);  //  Debug
         console.log(' DEBUG - Datos originales primero:', window.cotizacionesData[0]);  //  Debug
         

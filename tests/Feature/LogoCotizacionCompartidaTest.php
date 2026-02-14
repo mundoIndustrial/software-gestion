@@ -203,7 +203,7 @@ class LogoCotizacionCompartidaTest extends TestCase
         // ============================================
         // FRONTEND: create.blade.php
         // ============================================
-        echo "📍 FRONTEND (create.blade.php):\n";
+        echo " FRONTEND (create.blade.php):\n";
 
         $data = [
             'tecnicas' => [
@@ -255,7 +255,7 @@ class LogoCotizacionCompartidaTest extends TestCase
         // ============================================
         // BACKEND: CotizacionBordadoController
         // ============================================
-        echo "\n📍 BACKEND (CotizacionBordadoController):\n";
+        echo "\n BACKEND (CotizacionBordadoController):\n";
 
         // Simular recepción de FormData
         $request_files_simulado = [

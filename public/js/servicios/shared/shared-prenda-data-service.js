@@ -68,7 +68,7 @@ class SharedPrendaDataService {
         );
 
         if (!esPermitido) {
-            console.warn(`⚠️ [SharedPrendaDataService] Endpoint inusual (pero permitido): ${endpoint}`);
+            console.warn(` [SharedPrendaDataService] Endpoint inusual (pero permitido): ${endpoint}`);
         }
     }
 
@@ -127,7 +127,7 @@ class SharedPrendaDataService {
             return prendaNormalizada;
 
         } catch (error) {
-            console.error('[SharedPrendaData] ❌ Error obteniendo prenda:', error);
+            console.error('[SharedPrendaData]  Error obteniendo prenda:', error);
             throw error;
         }
     }
@@ -142,7 +142,7 @@ class SharedPrendaDataService {
             // 🔐 VALIDACIÓN DE AISLAMIENTO
             // No permitir guardar datos que referencien cotizaciones
             if (prendaData.cotizacion_id !== undefined && prendaData.cotizacion_id !== null) {
-                console.warn('⚠️ [SharedPrendaData] Detectado cotizacion_id en datos, será limpiado según contexto');
+                console.warn(' [SharedPrendaData] Detectado cotizacion_id en datos, será limpiado según contexto');
                 
                 // Si es crear-desde-cotizacion, guardar como referencia histórica
                 if (prendaData.contexto === 'crear-desde-cotizacion') {
@@ -199,7 +199,7 @@ class SharedPrendaDataService {
             return prendaGuardada;
 
         } catch (error) {
-            console.error('[SharedPrendaData] ❌ Error guardando:', error);
+            console.error('[SharedPrendaData]  Error guardando:', error);
             throw error;
         }
     }
@@ -231,7 +231,7 @@ class SharedPrendaDataService {
             return true;
 
         } catch (error) {
-            console.error('[SharedPrendaData] ❌ Error eliminando:', error);
+            console.error('[SharedPrendaData]  Error eliminando:', error);
             throw error;
         }
     }
@@ -256,7 +256,7 @@ class SharedPrendaDataService {
         } else if (formato === 'ANTIGUO') {
             normalizado = this.transformarDesdeAntiguo(datos);
         } else {
-            console.warn('[SharedPrendaData] ⚠️ Formato no reconocido, usando defaults');
+            console.warn('[SharedPrendaData]  Formato no reconocido, usando defaults');
             normalizado = this.crearPrendaDefecto();
         }
 

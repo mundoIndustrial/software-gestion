@@ -288,11 +288,11 @@ class TelaDragDropHandler extends BaseDragDropHandler {
         try {
             // Verificar si ClipboardService está disponible
             if (!window.ClipboardService) {
-                UIHelperService.log('TelaDragDropHandler', '❌ ClipboardService no disponible', 'error');
+                UIHelperService.log('TelaDragDropHandler', ' ClipboardService no disponible', 'error');
                 throw new Error('ClipboardService no disponible');
             }
 
-            UIHelperService.log('TelaDragDropHandler', '✅ ClipboardService disponible, intentando leer...');
+            UIHelperService.log('TelaDragDropHandler', ' ClipboardService disponible, intentando leer...');
 
             // Leer imágenes del portapapeles
             const archivos = await ClipboardService.leerImagenes({ maxArchivos: 1 });
@@ -302,13 +302,13 @@ class TelaDragDropHandler extends BaseDragDropHandler {
             if (archivos.length > 0) {
                 const tempInput = UIHelperService.crearInputTemporal(archivos);
                 this._procesarImagen(tempInput);
-                UIHelperService.log('TelaDragDropHandler', `✅ Imagen de tela pegada desde menú (${tipo})`);
+                UIHelperService.log('TelaDragDropHandler', ` Imagen de tela pegada desde menú (${tipo})`);
             } else {
-                UIHelperService.log('TelaDragDropHandler', '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
+                UIHelperService.log('TelaDragDropHandler', ' No se encontraron imágenes en el portapapeles', 'warn');
             }
 
         } catch (error) {
-            UIHelperService.log('TelaDragDropHandler', `❌ Error principal pegando desde menú: ${error.message}`, 'error');
+            UIHelperService.log('TelaDragDropHandler', ` Error principal pegando desde menú: ${error.message}`, 'error');
             
             // Fallback mejorado: usar el portapapeles del navegador directamente
             try {
@@ -316,7 +316,7 @@ class TelaDragDropHandler extends BaseDragDropHandler {
                 
                 if (navigator.clipboard && navigator.clipboard.read) {
                     const items = await navigator.clipboard.read();
-                    UIHelperService.log('TelaDragDropHandler', `📋 Items encontrados en fallback: ${items.length}`);
+                    UIHelperService.log('TelaDragDropHandler', ` Items encontrados en fallback: ${items.length}`);
                     
                     const archivos = [];
                     
@@ -347,16 +347,16 @@ class TelaDragDropHandler extends BaseDragDropHandler {
                     if (archivos.length > 0) {
                         const tempInput = UIHelperService.crearInputTemporal(archivos);
                         this._procesarImagen(tempInput);
-                        UIHelperService.log('TelaDragDropHandler', `✅ Imagen de tela pegada con fallback (${tipo})`);
+                        UIHelperService.log('TelaDragDropHandler', ` Imagen de tela pegada con fallback (${tipo})`);
                     } else {
                         UIHelperService.mostrarModalError('No se encontraron imágenes en el portapapeles. Por favor copia una imagen primero.');
                     }
                 } else {
-                    UIHelperService.log('TelaDragDropHandler', '❌ navigator.clipboard.read no disponible', 'error');
+                    UIHelperService.log('TelaDragDropHandler', ' navigator.clipboard.read no disponible', 'error');
                     UIHelperService.mostrarModalError('Por favor usa Ctrl+V para pegar la imagen de tela.');
                 }
             } catch (fallbackError) {
-                UIHelperService.log('TelaDragDropHandler', `❌ Error en fallback: ${fallbackError.message}`, 'error');
+                UIHelperService.log('TelaDragDropHandler', ` Error en fallback: ${fallbackError.message}`, 'error');
                 UIHelperService.mostrarModalError('No se pudo acceder al portapapeles. Por favor usa Ctrl+V para pegar la imagen de tela.');
             }
         }

@@ -644,7 +644,7 @@ function agregarObservacion() {
 document.addEventListener('DOMContentLoaded', function() {
     // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
     // No se sincronizan automáticamente para permitir valores diferentes
-    // 🔥 SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
+    //  SOBRESCRIBIR LA FUNCIÓN agregarSeccion DE especificaciones.js
     // Paso-tres debe usar SU PROPIA FUNCIÓN, no la de especificaciones.js
 
     // Usar setTimeout para asegurar que especificaciones.js ya se cargó y puede ser sobrescrita

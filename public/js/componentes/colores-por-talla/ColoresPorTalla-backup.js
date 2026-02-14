@@ -182,7 +182,7 @@ window.ColoresPorTalla = (function() {
         
         if (esVistaAsignacionActiva) {
             // Volver a vista de telas
-            console.log('[ColoresPorTalla] 📋 ACCIÓN: Volviendo a tabla de telas');
+            console.log('[ColoresPorTalla]  ACCIÓN: Volviendo a tabla de telas');
             vistaTablaTelas.style.display = 'block';
             console.log('[ColoresPorTalla]  vistaTablaTelas.style.display =', vistaTablaTelas.style.display);
             
@@ -199,7 +199,7 @@ window.ColoresPorTalla = (function() {
             console.log('[ColoresPorTalla]  Volviendo a vista de Tabla de Telas');
         } else {
             // Cambiar a vista de asignación
-            console.log('[ColoresPorTalla] 📋 ACCIÓN: Abriendo vista de Asignación de Colores');
+            console.log('[ColoresPorTalla]  ACCIÓN: Abriendo vista de Asignación de Colores');
             vistaTablaTelas.style.display = 'none';
             console.log('[ColoresPorTalla]  vistaTablaTelas.style.display =', vistaTablaTelas.style.display);
             
@@ -688,7 +688,7 @@ window.ColoresPorTalla = (function() {
         const tipo = StateManager.getTipoTallaSel();
         let tela = StateManager.getTelaSeleccionada();  //  Obtener tela del wizard primero
         
-        console.log('[wizardGuardarAsignacion] 📋 Estado actual:', {
+        console.log('[wizardGuardarAsignacion]  Estado actual:', {
             genero: genero,
             tallas: tallas,
             tipo: tipo,

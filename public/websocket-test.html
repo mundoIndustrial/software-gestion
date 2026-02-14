@@ -282,7 +282,7 @@
         console.log = function(...args) {
             originalConsoleLog.apply(console, args);
             if (args[0] && args[0].includes && args[0].includes('[PedidosRealtime]')) {
-                log('📋 ' + args.join(' '));
+                log(' ' + args.join(' '));
             }
         };
         

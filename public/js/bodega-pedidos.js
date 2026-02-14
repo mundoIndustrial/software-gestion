@@ -889,7 +889,7 @@ function generarHTMLFactura(datos) {
                             <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                    📍 ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
+                                     ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
                                 </div>
                             ` : ''}
                             ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
@@ -1017,7 +1017,7 @@ function generarHTMLFactura(datos) {
 
             ${datos.observaciones ? `
                 <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
-                    <strong style="color: #92400e;">📋 Observaciones:</strong>
+                    <strong style="color: #92400e;"> Observaciones:</strong>
                     <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
                 </div>
             ` : ''}
@@ -1262,7 +1262,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
         btnGuardar.disabled = false;
 
         if (data.success) {
-            btnGuardar.textContent = '✅ Guardado';
+            btnGuardar.textContent = ' Guardado';
             setTimeout(() => {
                 btnGuardar.textContent = textoOriginal;
             }, 2000);
@@ -1285,7 +1285,7 @@ function guardarFilaCompleta(btnGuardar, numeroPedido, talla) {
             alert('Conflicto de edición: Otro usuario modificó este registro.\n\nPor favor, recarga la página para los cambios más recientes.');
             location.reload();
         } else {
-            btnGuardar.textContent = '❌ Error';
+            btnGuardar.textContent = ' Error';
             setTimeout(() => {
                 btnGuardar.textContent = textoOriginal;
             }, 2000);

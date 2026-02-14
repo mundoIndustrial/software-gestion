@@ -71,7 +71,7 @@ class ObtenerPedidosService
      */
     private function obtenerPedidosProduccion(int $userId, ?string $tipo, array $filtros = [], int $perPage = 20): LengthAwarePaginator
     {
-        // 🔥 OPTIMIZACIÓN 1: Select solo columnas necesarias
+        //  OPTIMIZACIÓN 1: Select solo columnas necesarias
         $query = PedidoProduccion::where('asesor_id', $userId)
             ->select([
                 'id',
@@ -83,7 +83,7 @@ class ObtenerPedidosService
                 'created_at',
                 'asesor_id'
             ])
-            // 🔥 OPTIMIZACIÓN 2: With relaciones optimizadas
+            //  OPTIMIZACIÓN 2: With relaciones optimizadas
             ->with([
                 'prendas' => function ($q) {
                     // Select solo columnas necesarias de prendas
@@ -94,7 +94,7 @@ class ObtenerPedidosService
                         'cantidad',
                         'descripcion'
                     ])
-                    // 🔥 CRÍTICO: Eager load procesos CON LIMIT
+                    //  CRÍTICO: Eager load procesos CON LIMIT
                     ->with(['procesos' => function ($q2) {
                         $q2->select([
                             'id',
@@ -169,7 +169,7 @@ class ObtenerPedidosService
      */
     public function obtenerEstados(): array
     {
-        // 🔥 Cache por 1 hora (3600 segundos)
+        //  Cache por 1 hora (3600 segundos)
         return Cache::remember('pedidos_estados_list', 3600, function () {
             if (app()->isLocal()) {
                 \Log::info('[ESTADOS] Obteniendo estados únicos');

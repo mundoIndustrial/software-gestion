@@ -41,9 +41,9 @@ class GestionItemsUI {
      */
     obtenerItemsOrdenados() {
         const itemsOrdenados = [];
-        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.ordenItems:', JSON.stringify(this.ordenItems));
-        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.prendas:', this.prendas.length, 'items');
-        console.log('[gestionItemsUI] 📋 obtenerItemsOrdenados() - this.epps:', this.epps.length, 'items');
+        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.ordenItems:', JSON.stringify(this.ordenItems));
+        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.prendas:', this.prendas.length, 'items');
+        console.log('[gestionItemsUI]  obtenerItemsOrdenados() - this.epps:', this.epps.length, 'items');
         
         this.ordenItems.forEach(({ tipo, index }) => {
             if (tipo === 'prenda' && this.prendas[index]) {
@@ -328,12 +328,33 @@ class GestionItemsUI {
                     }
                     // FSM → OPEN
                     if (fsm) fsm.cambiarEstado('OPEN', { origen: 'shown.bs.modal' });
-                    console.log('[abrirModal] ✅ Modal OPEN — DragDrop inicializado');
+                    console.log('[abrirModal]  Modal OPEN — DragDrop inicializado');
                 }, { once: true });
             }
 
             // 3. Abrir modal (dispara shown.bs.modal sincrónicamente)
             const esEdicion = this.prendaEditIndex !== null && this.prendaEditIndex !== undefined;
+
+            // Actualizar texto del botón según modo
+            const btnGuardar = document.getElementById('btn-guardar-prenda');
+            if (btnGuardar) {
+                const spanCheck = btnGuardar.querySelector('.material-symbols-rounded');
+                if (esEdicion) {
+                    // Modo edición: "Guardar Cambios"
+                    if (spanCheck) {
+                        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Guardar Cambios';
+                    } else {
+                        btnGuardar.textContent = 'Guardar Cambios';
+                    }
+                } else {
+                    // Modo creación: "Agregar Prenda"
+                    if (spanCheck) {
+                        btnGuardar.innerHTML = '<span class="material-symbols-rounded">check</span>Agregar Prenda';
+                    } else {
+                        btnGuardar.textContent = 'Agregar Prenda';
+                    }
+                }
+            }
 
             if (esEdicion) {
                 const prendaAEditar = this.prendas[this.prendaEditIndex];
@@ -416,7 +437,7 @@ class GestionItemsUI {
      */
     async agregarPrendaNueva() {
         try {
-            // 🔥 CRÍTICO: Verificar estado ANTES de hacer nada
+            //  CRÍTICO: Verificar estado ANTES de hacer nada
             console.log('[agregarPrendaNueva]  INICIO - Estado actual:');
             console.log('[agregarPrendaNueva]   - this.prendaEditIndex:', this.prendaEditIndex);
             console.log('[agregarPrendaNueva]   - this.prendas.length:', this.prendas.length);
@@ -568,7 +589,7 @@ class GestionItemsUI {
                         prendaDataId: prendaData.id
                     });
 
-                    // 🔥 CRÍTICO: Incluir telas nuevas si fueron agregadas
+                    //  CRÍTICO: Incluir telas nuevas si fueron agregadas
                     // Si hay telas en window.telasAgg o window.telasCreacion, incluirlas en prendaData
                     if ((window.telasAgregadas && window.telasAgregadas.length > 0) || 
                         (window.telasCreacion && window.telasCreacion.length > 0)) {
@@ -595,7 +616,7 @@ class GestionItemsUI {
                     console.log('[guardarPrenda]   - ¿Existe prenda en este index?:', !!this.prendas[this.prendaEditIndex]);
 
                     if (this.prendas[this.prendaEditIndex]) {
-                        // 🔥 MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
+                        //  MANEJO ESPECÍFICO: Eliminación de imágenes en modo CREATE
                         // Si estamos en modo CREATE (no edición desde backend) y se eliminaron todas las imágenes
                         const esModoCreate = !window.datosEdicionPedido || (!window.datosEdicionPedido.id && !window.datosEdicionPedido.numero_pedido);
                         const imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
@@ -767,7 +788,7 @@ class GestionItemsUI {
             this.mostrarCargando('Validando pedido...');
 
             const validacion = await this.apiService.validarPedido(pedidoData);
-            console.log('[gestion-items-pedido] 📋 Validación recibida:', validacion);
+            console.log('[gestion-items-pedido]  Validación recibida:', validacion);
             
             // El backend retorna "success", no "valid"
             if (!validacion.success) {
@@ -786,7 +807,7 @@ class GestionItemsUI {
 
             this.mostrarCargando('Creando pedido...');
             const resultado = await this.apiService.crearPedido(pedidoData);
-            console.log('[gestion-items-pedido] 📋 Resultado recibido:', resultado);
+            console.log('[gestion-items-pedido]  Resultado recibido:', resultado);
             console.log('[gestion-items-pedido] ¿resultado.success?', resultado.success);
             console.log('[gestion-items-pedido] typeof resultado.success:', typeof resultado.success);
 
@@ -980,7 +1001,7 @@ class GestionItemsUI {
         console.log('[mostrarModalExito] ¿modalElement existe?', !!modalElement);
         
         if (!modalElement) {
-            console.log('[mostrarModalExito] 🔧 Creando modal desde HTML...');
+            console.log('[mostrarModalExito]  Creando modal desde HTML...');
             if (typeof MODAL_EXITO_PEDIDO_HTML === 'undefined') {
                 console.error('[mostrarModalExito]  CRÍTICO: MODAL_EXITO_PEDIDO_HTML no está definido');
                 throw new Error('MODAL_EXITO_PEDIDO_HTML no está disponible');
@@ -1109,7 +1130,7 @@ function cargarDatosProcesoEnModalEdicion(tipo, datos) {
         let caballeroTallas = datos.tallas.caballero || {};
         let sobremedidaTallas = datos.tallas.sobremedida || {};
         
-        // 🔥 FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada (número u objeto), EXTRAERLA
+        //  FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada (número u objeto), EXTRAERLA
         const damaTallasLimpias = {};
         for (const [talla, valor] of Object.entries(damaTallas)) {
             if (talla === 'SOBREMEDIDA') {

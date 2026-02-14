@@ -8,16 +8,16 @@
 En flujo de EDICIÓN de pedidos, cuando se llama a cargarItemEnModal()
   → PrendaEditor.cargarPrendaEnModal()
     → window.prendaEditorLegacy.aplicarOrigenAutomaticoDesdeCotizacion()
-      ❌ window.prendaEditorLegacy es undefined
+       window.prendaEditorLegacy es undefined
 ```
 
 **¿Por qué ocurre?**
-- En `crear-nuevo`: El HTML carga `prenda-editor-legacy.js` antes de usarlo ✅
-- En `pedidos-editable`: El modal se abre dinámicamente, pero el script legacy puede no estar cargado ❌
+- En `crear-nuevo`: El HTML carga `prenda-editor-legacy.js` antes de usarlo 
+- En `pedidos-editable`: El modal se abre dinámicamente, pero el script legacy puede no estar cargado 
 
 ---
 
-## ✅ SOLUCIÓN 1: VALIDACIÓN DEFENSIVA (Parche Rápido)
+##  SOLUCIÓN 1: VALIDACIÓN DEFENSIVA (Parche Rápido)
 
 **Archivo**: `/public/js/modulos/crear-pedido/procesos/services/prenda-editor.js`
 **Línea**: 87
@@ -25,10 +25,10 @@ En flujo de EDICIÓN de pedidos, cuando se llama a cargarItemEnModal()
 ### CAMBIO
 
 ```javascript
-// ❌ ANTES (Sin validación)
+//  ANTES (Sin validación)
 const prendaProcesada = window.prendaEditorLegacy.aplicarOrigenAutomaticoDesdeCotizacion(prenda);
 
-// ✅ DESPUÉS (Con validación)
+//  DESPUÉS (Con validación)
 if (!window.prendaEditorLegacy) {
     console.warn('[CARGAR-PRENDA]  Legacy no inicializado, usando método DDD');
     // Delegar al método DDD que no depende de legacy
@@ -40,7 +40,7 @@ const prendaProcesada = window.prendaEditorLegacy.aplicarOrigenAutomaticoDesdeCo
 
 ---
 
-## ✅ SOLUCIÓN 2: INICIALIZACIÓN GARANTIZADA (Recomendado)
+##  SOLUCIÓN 2: INICIALIZACIÓN GARANTIZADA (Recomendado)
 
 **Crear archivo nuevo**: `/public/js/lazy-loaders/ensure-legacy-editor.js`
 
@@ -85,7 +85,7 @@ const scriptsToLoad = [
 
 ---
 
-## ✅ SOLUCIÓN 3: MÉTODO UNIFICADO (Largo Plazo)
+##  SOLUCIÓN 3: MÉTODO UNIFICADO (Largo Plazo)
 
 **Objetivo**: Eliminar dependencia de legacy en el flujo de edición
 
@@ -173,14 +173,14 @@ prenda-editor-modal.js: abrirEditarPrendaEspecifica()
     ↓
 cargarItemEnModal() → PrendaEditor.cargarPrendaEnModal()
     ↓
-✅ window.prendaEditorLegacy DISPONIBLE (garantizado por Solución 2)
+ window.prendaEditorLegacy DISPONIBLE (garantizado por Solución 2)
     ↓
 window.prendaEditorLegacy.llenarCamposBasicos()
 window.prendaEditorLegacy.cargarImagenes()
 window.prendaEditorLegacy.cargarTelas()
     ↓
 Modal se carga con datos locales
-    ✅ ÉXITO
+     ÉXITO
 ```
 
 ### FLUJO EDICIÓN PEDIDO (con Solución 1)
@@ -194,12 +194,12 @@ prenda-editor-modal.js: abrirEditarPrendaEspecifica()
 cargarItemEnModal(prendaTransformada)
     ↓
 PrendaEditor.cargarPrendaEnModal()
-    ├─ ❌ window.prendaEditorLegacy unavailable
-    ├─ ✅ Detecta con validación defensiva
+    ├─  window.prendaEditorLegacy unavailable
+    ├─  Detecta con validación defensiva
     └─ Delega a: cargarPrendaEnModalDDD()
     ↓
 Modal se carga desde API
-    ✅ ÉXITO
+     ÉXITO
 ```
 
 ### FLUJO IDEAL (con Solución 3)
@@ -215,7 +215,7 @@ cargarItemEnModal() DETECTA contexto
     └─ EDITAR → Usa DDD (datos API)
     ↓
 Modal se carga correctamente sin conflictos
-    ✅ ÉXITO
+     ÉXITO
 ```
 
 ---
@@ -322,13 +322,13 @@ async abrirEditarPrendaEspecifica() {
 El sistema YA detecta formatos automáticamente, pero hay edge cases:
 
 ```javascript
-// ✅ OBRAS: Nuevo formato DDD
+//  OBRAS: Nuevo formato DDD
 {generosConTallas: {DAMA: {L: 20}}}
 
-// ✅ OBRAS: Formato antiguo
+//  OBRAS: Formato antiguo
 {tallas_dama: [{talla: L, cantidad: 20}]}
 
-// ⚠️ PROBLEMA: Formato vacío
+//  PROBLEMA: Formato vacío
 {generosConTallas: undefined, tallas_dama: undefined}
 
 // SOLUCIÓN: Asegurar siempre estructura válida
@@ -340,8 +340,8 @@ const tallasPorGenero = prendaCompleta.generosConTallas || fallbackTallas;
 **Ubicación**: `prenda-editor-modal.js:2800`
 
 ```javascript
-// ✅ CORRECTO: /storage/pedidos/19/prenda/imagen.webp
-// ❌ INCORRECTO: /pedidos/19/prenda/imagen.webp (sin /storage)
+//  CORRECTO: /storage/pedidos/19/prenda/imagen.webp
+//  INCORRECTO: /pedidos/19/prenda/imagen.webp (sin /storage)
 
 const agregarStorage = (url) => {
     if (!url || url.includes('/storage/')) return url;
@@ -352,7 +352,7 @@ const agregarStorage = (url) => {
 
 ---
 
-## 📋 CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 - [ ] Crear `ensure-legacy-editor.js`
 - [ ] Agregar a prenda-editor-loader-modular.js
@@ -394,10 +394,10 @@ console.log('Modal visible:', modal?.offsetParent !== null);
 
 | Archivo | Propósito | Issue |
 |---------|-----------|-------|
-| `prenda-editor.js` | Gestor principal | `cargarPrendaEnModal()` línea 87 ❌ |
+| `prenda-editor.js` | Gestor principal | `cargarPrendaEnModal()` línea 87  |
 | `prenda-editor-legacy.js` | Métodos legacy (datos locales) | Inicialización global |
 | `gestion-items-pedido.js` | Orquestador de carga | `cargarItemEnModal()` |
-| `prenda-editor-modal.js` | Modal de edición | Detección de formato ✅ |
+| `prenda-editor-modal.js` | Modal de edición | Detección de formato  |
 | `prenda-editor-loader-modular.js` | Lazy loader | Orden de scripts |
 | `ensure-legacy-editor.js` | **NUEVO** | Garantizar inicialización |
 

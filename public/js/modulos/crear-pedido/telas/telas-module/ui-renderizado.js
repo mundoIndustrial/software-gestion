@@ -15,8 +15,6 @@
  * Evita múltiples reflows usando batch rendering
  */
 window.actualizarTablaTelas = function() {
-    console.log('[actualizarTablaTelas]  Actualizando tabla de telas');
-    
     const tbody = document.getElementById('tbody-telas');
     
     if (!tbody) {
@@ -25,18 +23,20 @@ window.actualizarTablaTelas = function() {
     }
     
     const telas = window.telasCreacion;
-    console.log('[actualizarTablasTelas]  Telas a renderizar:', telas.length);
     
-    // Guardar la fila de entrada (primera fila con los inputs)
-    const filaEntrada = tbody.querySelector('tr');
+    // Identificar la fila de INPUTS usando el botón "Agregar" (selector robusto)
+    const todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
+    const filaInputs = todasLasFilas.find(tr => 
+        tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
+    );
     
-    // Limpiar tabla (excepto la fila de entrada)
-    tbody.innerHTML = '';
-    
-    // Re-insertar la fila de entrada
-    if (filaEntrada) {
-        tbody.appendChild(filaEntrada);
-    }
+    // Eliminar SOLO las filas de telas (las que tienen onclick="eliminarTela()")
+    // NO eliminar la fila de inputs
+    todasLasFilas.forEach(fila => {
+        if (fila !== filaInputs) {
+            fila.remove();
+        }
+    });
     
     // Usar DocumentFragment para mejor rendimiento
     const fragment = document.createDocumentFragment();
@@ -46,7 +46,7 @@ window.actualizarTablaTelas = function() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td colspan="5" style="padding: 2rem; text-align: center; color: #9ca3af;">
-                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">📋</div>
+                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;"></div>
                 <div style="font-size: 0.9rem;">No hay telas agregadas</div>
             </td>
         `;
@@ -59,10 +59,13 @@ window.actualizarTablaTelas = function() {
         });
     }
     
-    // Aplicar cambios en una sola operación
-    tbody.appendChild(fragment);
-    
-    console.log('[actualizarTablasTelas]  Tabla actualizada con ' + telas.length + ' filas');
+    // Insertar las telas ANTES de la fila de inputs (si existe)
+    if (filaInputs) {
+        filaInputs.parentNode.insertBefore(fragment, filaInputs);
+    } else {
+        // Fallback: insertar al final
+        tbody.appendChild(fragment);
+    }
 };
 
 /**

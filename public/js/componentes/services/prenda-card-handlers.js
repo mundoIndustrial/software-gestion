@@ -220,7 +220,7 @@ window.PrendaCardHandlers = {
                             console.log('[PrendaCardHandlers] 📏 Tallas encontradas:', tallas.length);
                         } else if (section === 'procesos') {
                             const procesos = content.querySelectorAll('.proceso-item');
-                            console.log('[PrendaCardHandlers] ⚙️ Procesos encontrados:', procesos.length);
+                            console.log('[PrendaCardHandlers]  Procesos encontrados:', procesos.length);
                         }
                         
                         //  DIAGNÓSTICO AVANZADO - Verificar elementos padres
@@ -263,7 +263,7 @@ window.PrendaCardHandlers = {
                         
                         // Verificar si el elemento está fuera del viewport
                         const rect = content.getBoundingClientRect();
-                        console.log('[PrendaCardHandlers] 📍 Posición en viewport:', {
+                        console.log('[PrendaCardHandlers]  Posición en viewport:', {
                             top: rect.top,
                             left: rect.left,
                             bottom: rect.bottom,
@@ -346,7 +346,7 @@ window.PrendaCardHandlers = {
                             pedidoId = document.querySelector('[data-pedido-id]')?.dataset.pedidoId || null;
                         }
 
-                        console.log('🔥 [btn-editar-prenda] Llamando abrirEditarPrendaModal:', {
+                        console.log(' [btn-editar-prenda] Llamando abrirEditarPrendaModal:', {
                             prendaIndex,
                             prendaId: prenda.id,
                             pedidoId

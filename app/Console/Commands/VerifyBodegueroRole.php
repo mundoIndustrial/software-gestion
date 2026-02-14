@@ -66,7 +66,7 @@ class VerifyBodegueroRole extends Command
         $this->info('🎉 Configuración completada exitosamente!');
         $this->newLine();
 
-        $this->info('📋 Próximos pasos:');
+        $this->info(' Próximos pasos:');
         $this->line('   1. Asignar rol a usuario:');
         $this->line('      php artisan db:seed --class=AssignBodegueroRoleSeeder');
         $this->line('   2. O manualmente con SQL:');

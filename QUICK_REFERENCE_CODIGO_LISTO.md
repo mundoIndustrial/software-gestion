@@ -1,13 +1,13 @@
-# 🔧 QUICK REFERENCE - CÓDIGO LISTO PARA PRODUCCIÓN
+#  QUICK REFERENCE - CÓDIGO LISTO PARA PRODUCCIÓN
 
-## 📋 ÍNDICE DE CAMBIOS
+##  ÍNDICE DE CAMBIOS
 
 | Archivo | Cambio | Fase | Estado |
 |---------|--------|------|--------|
-| `promise-cache.js` | Crear (nuevo) | 1 | ✅ Listo |
-| `manejadores-variaciones.js` | Refactorizar `cargarCatalogosModal()` | 1 | ✅ Listo |
-| `gestion-items-pedido.js` | Hacer async `abrirModalAgregarPrendaNueva()` | 1 | ✅ Listo |
-| `drag-drop-manager.js` | Guard clause en `inicializar()` | 1 | ✅ Listo |
+| `promise-cache.js` | Crear (nuevo) | 1 |  Listo |
+| `manejadores-variaciones.js` | Refactorizar `cargarCatalogosModal()` | 1 |  Listo |
+| `gestion-items-pedido.js` | Hacer async `abrirModalAgregarPrendaNueva()` | 1 |  Listo |
+| `drag-drop-manager.js` | Guard clause en `inicializar()` | 1 |  Listo |
 | `modal-listener-registry.js` | Crear (nuevo) | 2 | ⏳ A implementar |
 | `modal-fsm.js` | Crear (nuevo) | 3 | ⏳ A implementar |
 | `catalog-sync.js` | Crear (nuevo) | 3 | ⏳ A implementar |
@@ -49,7 +49,7 @@ await window.cargarCatalogosModal(); // Debe reutilizar promise
 class GestionItemsUI {
     async abrirModalAgregarPrendaNueva() {
         try {
-            // ✅ Espera a que catálogos carguen
+            //  Espera a que catálogos carguen
             await window.cargarCatalogosModal();
             
             // 🎯 Abrir modal cuando todo está listo
@@ -140,11 +140,11 @@ ModalListenerRegistry.getStatus()
 **Causa:** No se cargó `promise-cache.js`  
 **Solución:** Verificar orden de scripts en HTML
 ```html
-<!-- ✅ CORRECTO -->
+<!--  CORRECTO -->
 <script src="promise-cache.js"></script>
 <script src="manejadores-variaciones.js"></script>
 
-<!-- ❌ INCORRECTO -->
+<!--  INCORRECTO -->
 <script src="manejadores-variaciones.js"></script>
 <script src="promise-cache.js"></script>
 ```
@@ -153,10 +153,10 @@ ModalListenerRegistry.getStatus()
 **Causa:** No se agregó `await` en caller  
 **Solución:**
 ```javascript
-// ❌ INCORRECTO
+//  INCORRECTO
 this.gestionItemsUI.abrirModalAgregarPrendaNueva();
 
-// ✅ CORRECTO
+//  CORRECTO
 await this.gestionItemsUI.abrirModalAgregarPrendaNueva();
 ```
 
@@ -164,7 +164,7 @@ await this.gestionItemsUI.abrirModalAgregarPrendaNueva();
 **Este es esperado en Fase 1.** Se arregla en Fase 2.
 ```javascript
 // Mensaje:
-[ModalListeners] ⚠️ Listener ya registrado
+[ModalListeners]  Listener ya registrado
 
 // Fase 2 lo elimina completamente
 ```
@@ -194,11 +194,11 @@ PromiseCache.getStatus()
 [Telas] Respuesta de API...
 [Colores] Iniciando carga de colores disponibles...
 [Colores] Respuesta de API...
-[Catálogos] ✅ Ambos catálogos cargados { telas: 48, colores: 25 }
+[Catálogos]  Ambos catálogos cargados { telas: 48, colores: 25 }
 [PromiseCache] Promise limpiada automáticamente
-[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados correctamente
+[abrirModalAgregarPrendaNueva]  Catálogos cargados correctamente
 [abrirModalAgregarPrendaNueva] ➕ CREACIÓN - Abriendo modal vacío para nueva prenda
-[abrirModalAgregarPrendaNueva] ✅ ÉXITO - Modal abierto correctamente
+[abrirModalAgregarPrendaNueva]  ÉXITO - Modal abierto correctamente
 [Modal] Modal completamente visible
 ```
 

@@ -37,7 +37,7 @@ window.mostrarNotificacion = function(mensaje, tipo = 'info') {
       setTimeout(() => toast.remove(), 300);
     }, 5000);
   } else {
-    console.warn('⚠️ Contenedor de notificaciones no encontrado');
+    console.warn(' Contenedor de notificaciones no encontrado');
   }
 };
 
@@ -72,9 +72,9 @@ window.abrirModalFiltro = function(tipo, event) {
       }
     });
     
-    console.log('✅ Modal abierto exitosamente');
+    console.log(' Modal abierto exitosamente');
   } else {
-    console.error('❌ ERROR: Modal no encontrado');
+    console.error(' ERROR: Modal no encontrado');
   }
 };
 
@@ -113,7 +113,7 @@ window.limpiarTodosLosFiltros = function() {
     window.cargarPedidos();
   }
   
-  console.log('✅ Filtros limpiados exitosamente');
+  console.log(' Filtros limpiados exitosamente');
 };
 
 // Función global para verificar si hay filtros activos
@@ -154,7 +154,7 @@ function buscarSugerenciasCliente() {
   console.log('🔍 Contenedor encontrado:', !!contenedor);
 
   if (!input || !contenedor) {
-    console.error('❌ ERROR: Input o contenedor no encontrado');
+    console.error(' ERROR: Input o contenedor no encontrado');
     return;
   }
 
@@ -281,7 +281,7 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
     console.log('🔍 Contenedor encontrado:', !!contenedor);
     
     if (!contenedor) {
-      console.warn('⚠️ Contenedor no encontrado para tipo:', tipo);
+      console.warn(' Contenedor no encontrado para tipo:', tipo);
       return [];
     }
     
@@ -339,8 +339,8 @@ async function cargarSugerenciasDesdeBD(tipo, textoBusqueda) {
     }
     
   } catch (error) {
-    console.error('🔥 Error cargando sugerencias desde BD:', error);
-    console.error('🔥 Stack trace:', error.stack);
+    console.error(' Error cargando sugerencias desde BD:', error);
+    console.error(' Stack trace:', error.stack);
     
     // Mostrar mensaje de error
     const contenedor = document.getElementById(`sugerencias${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
@@ -417,7 +417,7 @@ function renderizarSugerenciasCliente(textoBusqueda) {
   contenedor.classList.add('active');
   contenedor.style.display = 'block';
   
-  console.log('✅ renderizarSugerenciasCliente completado');
+  console.log(' renderizarSugerenciasCliente completado');
 }
 
 // Renderizar sugerencias de número
@@ -543,7 +543,7 @@ function seleccionarSugerenciaCliente(index, valor) {
       contenedor.classList.remove('active');
       contenedor.style.display = 'none';
     } else {
-      console.error('❌ ERROR: Contenedor sugerenciasCliente no encontrado');
+      console.error(' ERROR: Contenedor sugerenciasCliente no encontrado');
     }
 
     // Limpiar sugerencias
@@ -554,10 +554,10 @@ function seleccionarSugerenciaCliente(index, valor) {
     console.log('🔍 Aplicando filtro...');
     aplicarFiltroCliente();
     
-    console.log('✅ seleccionarSugerenciaCliente completado exitosamente');
+    console.log(' seleccionarSugerenciaCliente completado exitosamente');
     
   } else {
-    console.error('❌ ERROR: Input filtroClienteInput no encontrado');
+    console.error(' ERROR: Input filtroClienteInput no encontrado');
   }
 }
 
@@ -767,12 +767,12 @@ window.verFactura = function(pedidoId, numeroPedido) {
             console.log('🧾 Modal de factura abierto con ModalManager');
           })
           .catch(error => {
-            console.error('🔥 Error al obtener datos del servidor:', error);
+            console.error(' Error al obtener datos del servidor:', error);
             window.mostrarNotificacion('Error al obtener datos de la factura', 'error');
           });
       } else {
         // Fallback si InvoiceDataFetcher no está disponible
-        console.warn('⚠️ InvoiceDataFetcher no encontrado, intentando con datos locales...');
+        console.warn(' InvoiceDataFetcher no encontrado, intentando con datos locales...');
         
         // Intentar obtener los datos del pedido desde la vista actual
         let pedidoDatos = null;
@@ -792,16 +792,16 @@ window.verFactura = function(pedidoId, numeroPedido) {
           window.crearModalPreviewFactura(pedidoDatos);
           console.log('🧾 Modal de factura abierto con datos locales y ModalManager');
         } else {
-          console.warn('⚠️ No se encontraron datos locales del pedido');
+          console.warn(' No se encontraron datos locales del pedido');
           window.mostrarNotificacion('No se encontraron datos del pedido', 'warning');
         }
       }
     } catch (error) {
-      console.error('🔥 Error al generar factura:', error);
+      console.error(' Error al generar factura:', error);
       window.mostrarNotificacion('Error al generar la factura', 'error');
     }
   } else {
-    console.warn('⚠️ ModalManager no encontrado');
+    console.warn(' ModalManager no encontrado');
     window.mostrarNotificacion(`Factura del pedido #${numeroPedido} - Sistema no disponible`, 'warning');
   }
 };
@@ -836,13 +836,13 @@ function aplicarFiltroCliente() {
   const input = document.getElementById('filtroClienteInput');
   const valor = input ? input.value.trim() : '';
   
-  console.log('📋 Valor del filtro:', valor);
+  console.log(' Valor del filtro:', valor);
   
   if (valor) {
     // Actualizar variable global de filtro
     if (typeof window !== 'undefined') {
       window.filtroCliente = valor;
-      console.log('✅ Filtro cliente aplicado:', valor);
+      console.log(' Filtro cliente aplicado:', valor);
     }
     
     // Recargar pedidos con el nuevo filtro
@@ -851,7 +851,7 @@ function aplicarFiltroCliente() {
       cargarPedidos();
     }
   } else {
-    console.warn('⚠️ No hay valor de filtro');
+    console.warn(' No hay valor de filtro');
   }
   
   // Cerrar el modal
@@ -864,13 +864,13 @@ function aplicarFiltroNumero() {
   const input = document.getElementById('filtroNumeroInput');
   const valor = input ? input.value.trim() : '';
   
-  console.log('📋 Valor del filtro:', valor);
+  console.log(' Valor del filtro:', valor);
   
   if (valor) {
     // Guardar como búsqueda o filtro
     if (typeof window !== 'undefined') {
       window.currentSearch = valor;
-      console.log('✅ Filtro número aplicado:', valor);
+      console.log(' Filtro número aplicado:', valor);
     }
     
     // Recargar pedidos con el nuevo filtro
@@ -879,7 +879,7 @@ function aplicarFiltroNumero() {
       cargarPedidos();
     }
   } else {
-    console.warn('⚠️ No hay valor de filtro');
+    console.warn(' No hay valor de filtro');
   }
   
   // Cerrar el modal
@@ -892,13 +892,13 @@ function aplicarFiltroFecha() {
   const input = document.getElementById('filtroFechaInput');
   const valor = input ? input.value.trim() : '';
   
-  console.log('📋 Valor del filtro:', valor);
+  console.log(' Valor del filtro:', valor);
   
   if (valor) {
     // Actualizar variable global de filtro
     if (typeof window !== 'undefined') {
       window.filtroFechaDesde = valor;
-      console.log('✅ Filtro fecha aplicado:', valor);
+      console.log(' Filtro fecha aplicado:', valor);
     }
     
     // Recargar pedidos con el nuevo filtro
@@ -907,7 +907,7 @@ function aplicarFiltroFecha() {
       cargarPedidos();
     }
   } else {
-    console.warn('⚠️ No hay valor de filtro');
+    console.warn(' No hay valor de filtro');
   }
   
   // Cerrar el modal

@@ -1,10 +1,10 @@
 # 🚀 GUÍA PRÁCTICA DE IMPLEMENTACIÓN
 
-## 📋 PRE-REQUISITOS
+##  PRE-REQUISITOS
 
-- ✅ Servicios compartidos creados en `/public/js/servicios/shared/`
-- ✅ Documentación completa disponible
-- ✅ Acceso a modificar `crear-nuevo.html` y `pedidos-editable.html`
+-  Servicios compartidos creados en `/public/js/servicios/shared/`
+-  Documentación completa disponible
+-  Acceso a modificar `crear-nuevo.html` y `pedidos-editable.html`
 
 ---
 
@@ -30,7 +30,7 @@ console.log('cotizacionActual:', window.cotizacionActual);  // Debe ser igual
 console.log('cotizacionEditor:', window.cotizacionEditorService); // Debe ser igual
 ```
 
-✅ **Resultado esperado**: Nada cambió en contexto de cotización
+ **Resultado esperado**: Nada cambió en contexto de cotización
 
 ### Paso 1.2: Verificar servicios cargados
 
@@ -47,7 +47,7 @@ console.log(container.getEstadisticas());
 }
 ```
 
-✅ **Resultado esperado**: Todos los servicios disponibles
+ **Resultado esperado**: Todos los servicios disponibles
 
 ---
 
@@ -93,14 +93,14 @@ async function inicializarServiciosPrendas() {
         // Inicializar
         await container.initialize();
         
-        console.log('[crear-nuevo] ✅ Servicios inicializados');
+        console.log('[crear-nuevo]  Servicios inicializados');
         
         // Guardar referencia global para fácil acceso
         window.editorPrendas = container.getService('editor');
         
         return container;
     } catch (error) {
-        console.error('[crear-nuevo] ❌ Error inicializando servicios:', error);
+        console.error('[crear-nuevo]  Error inicializando servicios:', error);
         throw error;
     }
 }
@@ -118,14 +118,14 @@ if (document.readyState === 'loading') {
 En `crear-nuevo.js`, encontrar la función que abre el editor (ej: `abrirEditarPrendaNueva()`):
 
 ```javascript
-// ❌ ANTES (seguramente algo como):
+//  ANTES (seguramente algo como):
 async function abrirEditarPrendaNueva() {
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     modal.style.display = 'flex';
     // ... más código
 }
 
-// ✅ DESPUÉS:
+//  DESPUÉS:
 async function abrirEditarPrendaNueva(prendaIndex = null) {
     try {
         console.log('[crear-nuevo] 📖 Abriendo editor de prendas...');
@@ -169,14 +169,14 @@ async function abrirEditarPrendaNueva(prendaIndex = null) {
             
             // Callback si cancela
             onCancelar: () => {
-                console.log('[crear-nuevo] ❌ Edición cancelada');
+                console.log('[crear-nuevo]  Edición cancelada');
                 const modal = document.getElementById('modal-agregar-prenda-nueva');
                 if (modal) modal.style.display = 'none';
             }
         });
         
     } catch (error) {
-        console.error('[crear-nuevo] ❌ Error abriendo editor:', error);
+        console.error('[crear-nuevo]  Error abriendo editor:', error);
         alert('Error abriendo editor: ' + error.message);
     }
 }
@@ -200,7 +200,7 @@ console.log('Prendas en datosCreacionPedido:', window.datosCreacionPedido.prenda
 abrirEditarPrendaNueva(0);  // Editar la primera prenda
 ```
 
-✅ **Resultado esperado**: Editor abre, se pueden editar datos, se guardan correctamente
+ **Resultado esperado**: Editor abre, se pueden editar datos, se guardan correctamente
 
 ---
 
@@ -291,7 +291,7 @@ editarPrendaPedidoExistente(prenda.id, 0);
 console.log('Prenda actualizada:', window.datosEdicionPedido.prendas[0]);
 ```
 
-✅ **Resultado esperado**: Se carga desde BD, se puede editar, se guarda correctamente
+ **Resultado esperado**: Se carga desde BD, se puede editar, se guarda correctamente
 
 ---
 
@@ -336,11 +336,11 @@ async function inicializarServiciosPrendas() {
         
         window.editorPrendas = container.getService('editor');
         
-        console.log('[crear-desde-cotizacion] ✅ Servicios inicializados');
+        console.log('[crear-desde-cotizacion]  Servicios inicializados');
         
         return container;
     } catch (error) {
-        console.error('[crear-desde-cotizacion] ❌ Error:', error);
+        console.error('[crear-desde-cotizacion]  Error:', error);
         throw error;
     }
 }
@@ -378,7 +378,7 @@ async function editarPrendaDesdeCotizacion(
             throw new Error('Servicio de edición no inicializado');
         }
         
-        // ⚠️ IMPORTANTE: Hacer COPIA profunda de datos
+        //  IMPORTANTE: Hacer COPIA profunda de datos
         // Esto previene que cambios afecten la cotización original
         const prendaCopia = JSON.parse(JSON.stringify(datosPrenda));
         
@@ -414,13 +414,13 @@ async function editarPrendaDesdeCotizacion(
             
             // Callback si cancela
             onCancelar: () => {
-                console.log('[crear-desde-cotizacion] ❌ Edición cancelada');
+                console.log('[crear-desde-cotizacion]  Edición cancelada');
                 cerrarModalEditor();
             }
         });
         
     } catch (error) {
-        console.error('[crear-desde-cotizacion] ❌ Error abriendo editor:', error);
+        console.error('[crear-desde-cotizacion]  Error abriendo editor:', error);
         alert('Error abriendo editor: ' + error.message);
     }
 }
@@ -482,7 +482,7 @@ console.log('Cotización original:', window.cotizacionActual);
 // Debe estar intacta
 ```
 
-✅ **Resultado esperado**: 
+ **Resultado esperado**: 
 - Prendas se editan correctamente
 - Se agregan al pedido como nuevos items
 - Cotización original intacta
@@ -604,11 +604,11 @@ container.setDebug(true);
 
 Después de completar estos 4 pasos:
 
-✅ Servicios compartidos funcionando
-✅ Crear-nuevo integrado
-✅ Editar-pedido integrado
-✅ Cotizaciones protegidas
-✅ Sistema listo para producción
+ Servicios compartidos funcionando
+ Crear-nuevo integrado
+ Editar-pedido integrado
+ Cotizaciones protegidas
+ Sistema listo para producción
 
 ---
 

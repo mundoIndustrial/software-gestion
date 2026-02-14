@@ -74,7 +74,7 @@ echo "Consecutivo global actual: {$consecutivoGlobal->consecutivo_actual}\n";
 echo "Consecutivo inicial: {$consecutivoGlobal->consecutivo_inicial}\n\n";
 
 // 3. Crear los consecutivos faltantes
-echo "🔧 PASO 3: Creando consecutivos faltantes...\n";
+echo " PASO 3: Creando consecutivos faltantes...\n";
 echo str_repeat("-", 80) . "\n";
 
 DB::beginTransaction();

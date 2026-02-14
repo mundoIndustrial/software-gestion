@@ -1,8 +1,8 @@
-# 🔧 ERRORES CRÍTICOS A EVITAR & SEÑALES DE ESTABILIDAD
+#  ERRORES CRÍTICOS A EVITAR & SEÑALES DE ESTABILIDAD
 
 ## ERRORES CRÍTICOS QUE ROMPEN TODO
 
-### ❌ ERROR 1: No esperar a que el DOM esté listo
+###  ERROR 1: No esperar a que el DOM esté listo
 
 **MALO:**
 ```javascript
@@ -17,7 +17,7 @@ window.DragDropManager.inicializar();
 **CORRECTO:**
 - DragDropManager SOLO se inicializa en `abrirModalAgregarPrendaNueva()` **DESPUÉS** de que modal-mini-fsm.js esté cargado
 
-### ❌ ERROR 2: Múltiples handlers del mismo evento
+###  ERROR 2: Múltiples handlers del mismo evento
 
 **MALO:**
 ```javascript
@@ -34,7 +34,7 @@ modal.addEventListener('shown.bs.modal', () => { ... });  // DUPLICADO
 - Usar `ModalMiniFSM.onStateChange()` para escuchar cambios
 - Registrar listeners en un punto único: `_registrarListenersModal()`
 
-### ❌ ERROR 3: Crear múltiples instancias de DragDropManager
+###  ERROR 3: Crear múltiples instancias de DragDropManager
 
 **MALO:**
 ```javascript
@@ -60,7 +60,7 @@ if (!window.DragDropManager) {
 window.DragDropManager.inicializar();  // Guard clause lo detiene si ya está inicializado
 ```
 
-### ❌ ERROR 4: No sincronizar catálogos con apertura del modal
+###  ERROR 4: No sincronizar catálogos con apertura del modal
 
 **MALO:**
 ```javascript
@@ -88,7 +88,7 @@ abrirModalAgregarPrendaNueva() {
 }
 ```
 
-### ❌ ERROR 5: Usar setTimeout para sincronización
+###  ERROR 5: Usar setTimeout para sincronización
 
 **MALO:**
 ```javascript
@@ -108,7 +108,7 @@ setTimeout(() => {
 await this._esperarModalVisible(1500);  // timeout seguro pero con fallback
 ```
 
-### ❌ ERROR 6: No limpiar listeners al cerrar modal
+###  ERROR 6: No limpiar listeners al cerrar modal
 
 **MALO:**
 ```javascript
@@ -140,7 +140,7 @@ listeners.forEach(({ element, event, handler }) => {
 });
 ```
 
-### ❌ ERROR 7: Depender del orden de carga de scripts
+###  ERROR 7: Depender del orden de carga de scripts
 
 **MALO:**
 ```html
@@ -162,7 +162,7 @@ listeners.forEach(({ element, event, handler }) => {
 <script src="modal-mini-fsm.js"></script>
 ```
 
-### ❌ ERROR 8: No validar estado de FSM antes de inicializar
+###  ERROR 8: No validar estado de FSM antes de inicializar
 
 **MALO:**
 ```javascript
@@ -199,14 +199,14 @@ async abrirModal() {
 
 ---
 
-## ✅ SEÑALES DE QUE EL SISTEMA ESTÁ ESTABLE
+##  SEÑALES DE QUE EL SISTEMA ESTÁ ESTABLE
 
 ### Verde 1: Logs limpios sin duplicados
 
 **Frecuencia:** Primera apertura del modal
 
 ```
-[ModalFSM] ✅ Transición: CLOSED → OPENING
+[ModalFSM]  Transición: CLOSED → OPENING
 [abrirModalAgregarPrendaNueva] FASE 1: Iniciando
 [abrirModalAgregarPrendaNueva] FASE 2: Cargando catálogos...
 [Telas] Iniciando carga de telas disponibles...
@@ -215,21 +215,21 @@ async abrirModal() {
 [Colores] Iniciando carga de colores disponibles...
 [Colores] Respuesta de API: { success: true, count: 32 }
 [Colores] Colores cargados en memoria: 32  ← UNA SOLA VEZ
-[abrirModalAgregarPrendaNueva] ✅ Catálogos cargados
+[abrirModalAgregarPrendaNueva]  Catálogos cargados
 [abrirModalAgregarPrendaNueva] FASE 4: Esperando visible...
-[_esperarModalVisible] ✅ Modal visible
+[_esperarModalVisible]  Modal visible
 [abrirModalAgregarPrendaNueva] FASE 5: Inicializando DragDropManager
-[DragDropManager] ✅ Ya inicializado (ignorando) ← O solo "inicializado"
-[abrirModalAgregarPrendaNueva] ✅ DragDropManager inicializado
-[ModalFSM] ✅ Transición: OPENING → OPEN
-[abrirModalAgregarPrendaNueva] ✅ ÉXITO
+[DragDropManager]  Ya inicializado (ignorando) ← O solo "inicializado"
+[abrirModalAgregarPrendaNueva]  DragDropManager inicializado
+[ModalFSM]  Transición: OPENING → OPEN
+[abrirModalAgregarPrendaNueva]  ÉXITO
 ```
 
 **Cosas a validar:**
-- ✅ Cada log aparece 1 sola vez (no repetido)
-- ✅ Transiciones FSM son ordenadas: CLOSED → OPENING → OPEN
-- ✅ Telas/Colores cargan una sola vez cada uno
-- ✅ No hay `[Error]` o `[❌]` en rojo
+-  Cada log aparece 1 sola vez (no repetido)
+-  Transiciones FSM son ordenadas: CLOSED → OPENING → OPEN
+-  Telas/Colores cargan una sola vez cada uno
+-  No hay `[Error]` o `[]` en rojo
 
 ---
 
@@ -240,16 +240,16 @@ async abrirModal() {
 2. Mientras se abre, hacer clic otra vez (INMEDIATAMENTE)
 
 ```
-[ModalFSM] ✅ CLOSED → OPENING
+[ModalFSM]  CLOSED → OPENING
 [abrirModalAgregarPrendaNueva] INICIO
-[ModalFSM] ⚠️ Modal no puede abrir ahora (estado: OPENING)
-[abrirModalAgregarPrendaNueva] ⚠️ Modal ya está en estado: OPENING. Ignorando llamada.
+[ModalFSM]  Modal no puede abrir ahora (estado: OPENING)
+[abrirModalAgregarPrendaNueva]  Modal ya está en estado: OPENING. Ignorando llamada.
 ```
 
 **Cosas a validar:**
-- ✅ Segunda llamada NO dispara `[abrirModalAgregarPrendaNueva] INICIO`
-- ✅ Solo aparece UNA carga de catálogos (no dos)
-- ✅ No hay error, solo warning
+-  Segunda llamada NO dispara `[abrirModalAgregarPrendaNueva] INICIO`
+-  Solo aparece UNA carga de catálogos (no dos)
+-  No hay error, solo warning
 
 ---
 
@@ -262,15 +262,15 @@ async abrirModal() {
 
 **Esperado en consola:**
 ```
-[DragDrop] 📋 EVENTO PASTE DETECTADO
+[DragDrop]  EVENTO PASTE DETECTADO
 [DragDrop] Modal visible: true
-[DragDrop] ✅ Procesando pegado global...
+[DragDrop]  Procesando pegado global...
 ```
 
 **Cosas a validar:**
-- ✅ Se reconoce la imagen
-- ✅ Se carga sin errores
-- ✅ Preview se actualiza
+-  Se reconoce la imagen
+-  Se carga sin errores
+-  Preview se actualiza
 
 ---
 
@@ -358,7 +358,7 @@ console.log('Tiempo total:', performance.now() - start, 'ms');
 
 ## 🚨 SIGNOS DE QUE ALGO ESTÁ MAL
 
-### 🔴 Rojo 1: Fetch duplicado
+###  Rojo 1: Fetch duplicado
 
 ```
 [Telas] Respuesta de API...
@@ -375,10 +375,10 @@ console.log('Tiempo total:', performance.now() - start, 'ms');
 
 ---
 
-### 🔴 Rojo 2: "Sistema ya inicializado" pero sigue inicializando
+###  Rojo 2: "Sistema ya inicializado" pero sigue inicializando
 
 ```
-[DragDropManager] ✅ Ya inicializado
+[DragDropManager]  Ya inicializado
 [DragDropManager] Iniciando inicialización...  ← ¿qué?
 ```
 
@@ -399,10 +399,10 @@ inicializar() {
 
 ---
 
-### 🔴 Rojo 3: Modal no abre
+###  Rojo 3: Modal no abre
 
 ```
-[ModalFSM] ✅ CLOSED → OPENING
+[ModalFSM]  CLOSED → OPENING
 [abrirModalAgregarPrendaNueva] FASE 1
 [ModalFSM] Modal no puede abrir
 ```
@@ -419,7 +419,7 @@ inicializar() {
 
 ---
 
-### 🔴 Rojo 4: Listeners se duplican (se ejecutan x2)
+###  Rojo 4: Listeners se duplican (se ejecutan x2)
 
 ```
 // Primera apertura: OK

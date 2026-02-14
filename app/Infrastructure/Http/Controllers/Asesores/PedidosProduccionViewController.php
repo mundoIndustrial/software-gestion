@@ -751,7 +751,7 @@ class PedidosProduccionViewController
                 }
             } else {
                 // Usar lógica tradicional de telas de PrendaTelaCot
-                \Log::info('[OBTENER-PRENDA-COMPLETA] 📋 USANDO TELAS TRADICIONALES DE PRENDA_TELA_COT', [
+                \Log::info('[OBTENER-PRENDA-COMPLETA]  USANDO TELAS TRADICIONALES DE PRENDA_TELA_COT', [
                     'prenda_id' => $prenda->id,
                     'es_logo' => $esLogoCotizacion,
                     'tiene_logo_telas' => !!($prenda->logoCotizacionTelasPrenda && count($prenda->logoCotizacionTelasPrenda) > 0)

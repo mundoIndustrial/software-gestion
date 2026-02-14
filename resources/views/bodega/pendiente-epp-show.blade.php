@@ -460,13 +460,13 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            button.textContent = '✅ Guardado';
+            button.textContent = ' Guardado';
             setTimeout(() => {
                 button.textContent = '💾 Guardar';
                 button.disabled = false;
             }, 2000);
         } else {
-            button.textContent = '❌ Error';
+            button.textContent = ' Error';
             setTimeout(() => {
                 button.textContent = '💾 Guardar';
                 button.disabled = false;
@@ -476,7 +476,7 @@ function guardarFilaCompleta(button, numeroPedido, talla) {
     })
     .catch(error => {
         console.error('Error al guardar:', error);
-        button.textContent = '❌ Error';
+        button.textContent = ' Error';
         setTimeout(() => {
             button.textContent = '💾 Guardar';
             button.disabled = false;

@@ -23,7 +23,7 @@ export class ReceiptBuilder {
         const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
         
         if (excluirCosturaBodega) {
-            console.log('📋 [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
+            console.log(' [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
         }
         
         if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {

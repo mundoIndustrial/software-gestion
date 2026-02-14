@@ -11,7 +11,7 @@ console.log('='.repeat(60));
 
 // Esperar un poco para que todos los scripts se carguen
 setTimeout(() => {
-    console.log('\n📋 ESTADO DE DEPENDENCIAS GLOBALES:');
+    console.log('\n ESTADO DE DEPENDENCIAS GLOBALES:');
     console.log('  - window.PayloadNormalizer:', window.PayloadNormalizer ? ' EXISTE' : ' NO EXISTE');
     
     if (window.PayloadNormalizer) {

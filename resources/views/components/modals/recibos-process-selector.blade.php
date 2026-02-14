@@ -411,7 +411,7 @@
             const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
             
             if (excluirCosturaBodega) {
-                console.log('📋 [renderizarPrendasEnSelector] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
+                console.log(' [renderizarPrendasEnSelector] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
             }
             
             if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {

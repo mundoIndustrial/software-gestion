@@ -394,7 +394,7 @@ function agregarEPPALista() {
 }
 
 function renderizarTablaEPP() {
-    console.log('📋 [renderizarTablaEPP] Iniciado. Total items:', eppAgregadosList.length);
+    console.log(' [renderizarTablaEPP] Iniciado. Total items:', eppAgregadosList.length);
     const tbody = document.getElementById('cuerpoTablaEPP');
     if (!tbody) {
         console.error(' [renderizarTablaEPP] tbody no encontrado');
@@ -876,7 +876,7 @@ function finalizarAgregarEPP() {
     });
     
     console.log(' [finalizarAgregarEPP] Todos los EPP han sido agregados');
-    console.log('📋 [finalizarAgregarEPP] window.itemsPedido actual:', window.itemsPedido);
+    console.log(' [finalizarAgregarEPP] window.itemsPedido actual:', window.itemsPedido);
     cerrarModalAgregarEPP();
 }
 

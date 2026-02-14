@@ -1,5 +1,5 @@
 /**
- * 🔧 Helper para inicialización de servicios compartidos
+ *  Helper para inicialización de servicios compartidos
  * Facilita la integración en diferentes contextos
  */
 
@@ -13,11 +13,11 @@ class PrendasEditorHelper {
 
             await container.initialize();
             window.editorPrendas = container.getService('editor');
-            console.log('✅ Servicios de edición de prendas inicializados');
+            console.log(' Servicios de edición de prendas inicializados');
             
             return window.editorPrendas;
         } catch (error) {
-            console.error('❌ Error inicializando servicios:', error);
+            console.error(' Error inicializando servicios:', error);
             throw error;
         }
     }

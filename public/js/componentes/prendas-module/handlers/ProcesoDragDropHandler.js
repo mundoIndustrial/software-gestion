@@ -133,7 +133,7 @@ class ProcesoDragDropHandler {
         const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
         
         if (imagenesParaGaleria.length > 0 && typeof galeriaFunction === 'function') {
-            UIHelperService.log('ProcesoDragDropHandler', `✅ Abriendo galería modal para proceso ${procesoNumero}`);
+            UIHelperService.log('ProcesoDragDropHandler', ` Abriendo galería modal para proceso ${procesoNumero}`);
             e.preventDefault();
             e.stopPropagation();
             galeriaFunction(imagenesParaGaleria);

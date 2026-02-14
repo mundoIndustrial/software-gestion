@@ -16,7 +16,7 @@ class PrendaCardService {
         try {
             console.log('[PrendaCardService.generar]  INICIA GENERACIÓN DE TARJETA');
             console.log('[PrendaCardService.generar]  ENTRADA - prendaRaw:', prendaRaw);
-            console.log('[PrendaCardService.generar] 📍 ÍNDICE:', indice);
+            console.log('[PrendaCardService.generar]  ÍNDICE:', indice);
             
             // Verificar estructura específica de datos
             console.log('[PrendaCardService.generar]  ESTRUCTURA DE DATOS:');
@@ -48,7 +48,7 @@ class PrendaCardService {
             
             console.log('[PrendaCardService.generar] 📸 Foto principal:', fotoPrincipal);
             console.log('[PrendaCardService.generar] 🧵 Foto tela:', fotoTela);
-            console.log('[PrendaCardService.generar] 📋 Info tela:', infoTela);
+            console.log('[PrendaCardService.generar]  Info tela:', infoTela);
 
             // 3. Construir secciones expandibles
             console.log('[PrendaCardService.generar] 🏗️ CONSTRUYENDO SECCIONES...');

@@ -852,7 +852,7 @@ window.llenarReciboCosturaMobile = function(data) {
         
         descripcionHTML = `<div style="line-height: 1.3; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0; text-align: left;">${descSinTallas}</div>`;
         
-        // 🔧 AGREGAR DATOS DE PROCESOS (Ubicaciones, Observaciones) 
+        //  AGREGAR DATOS DE PROCESOS (Ubicaciones, Observaciones) 
         // Incluso aunque usamos descripcionPrendasCompleta, debemos incluir datos dinámicos de procesos
         const procStartIndex = window.prendaCarouselIndex || 0;
         const procEndIndex = procStartIndex + PRENDAS_POR_PAGINA;

@@ -56,6 +56,15 @@
         const prendasContainer = document.getElementById('prendas-container-editable');
         if (!prendasContainer) return;
 
+        // Ocultar la lista de items readonly (lista-items-pedido)
+        const listaItems = document.getElementById('lista-items-pedido');
+        if (listaItems) {
+            listaItems.style.display = 'none';
+        }
+
+        // Mostrar el contenedor de formulario de entrada
+        prendasContainer.style.display = 'block';
+
         const prendas = window.gestorPedidoSinCotizacion?.obtenerTodas() || [];
 
         if (prendas.length === 0) {

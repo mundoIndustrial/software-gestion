@@ -409,7 +409,7 @@
 <div id="modalNovedades" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 75vh; display: flex; flex-direction: column;">
         <div class="modal-header" style="border-bottom: 2px solid #1e40af; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 1.5rem;">
-            <h2 style="margin: 0; font-size: 1.2rem; color: white;">📋 Historial de Novedades</h2>
+            <h2 style="margin: 0; font-size: 1.2rem; color: white;"> Historial de Novedades</h2>
             <button class="btn-close" onclick="cerrarModalNovedades()" style="background: none; border: none; cursor: pointer; font-size: 1.5rem; color: white; position: absolute; right: 1rem; top: 1rem;">
                 <span class="material-symbols-rounded">close</span>
             </button>
@@ -695,7 +695,7 @@
             etapas.inicio = performance.now();
             console.log(`[editarPedido]  Iniciando apertura modal - Pedido: ${pedidoId}`);
             
-            // 🔥 PASO 1: Abrir modal pequeño de carga centrado
+            //  PASO 1: Abrir modal pequeño de carga centrado
             console.log('[editarPedido]  Abriendo modal de carga...');
             await _ensureSwal();
             etapas.swalReady = performance.now();
@@ -731,7 +731,7 @@
                 }
             });
 
-            // 🔥 PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
+            //  PASO 2: Cargar módulos en segundo plano (con preloader inteligente)
             if (!window.PrendaEditorPreloader?.isReady?.()) {
                 console.log('[editarPedido]  Cargando módulos de edición (con preloader)...');
                 try {
@@ -756,7 +756,7 @@
                 console.log('[editarPedido] ⚡ Módulos ya precargados en background (cache)');
             }
 
-            // 🔥 PASO 3: Fetch de datos mientras el modal ya está visible
+            //  PASO 3: Fetch de datos mientras el modal ya está visible
             console.log('[editarPedido] 📥 Cargando datos completos del servidor...');
 
             const response = await fetch(`/api/pedidos/${pedidoId}`, {
@@ -806,7 +806,7 @@
                 procesos: datosTransformados.procesos?.length || 0
             });
 
-            // 🔥 PASO 4: Reemplazar modal de carga con contenido real
+            //  PASO 4: Reemplazar modal de carga con contenido real
             etapas.antes_modal = performance.now();
             console.log(`[editarPedido] 🎬 Abriendo modal de edición...`);
             
@@ -1608,7 +1608,7 @@
         };
     </script>
 
-    <!-- 🔥 REALTIME: Listener para actualizaciones de órdenes en tiempo real -->
+    <!--  REALTIME: Listener para actualizaciones de órdenes en tiempo real -->
     <script>
         /**
          * Sistema de Tiempo Real - Supervisor-Pedidos
@@ -1788,7 +1788,7 @@
             document.head.appendChild(style);
         }
 
-        // 🔥 ESPERAR A QUE window.waitForEcho ESTÉ DISPONIBLE ANTES DE CONECTARSE
+        //  ESPERAR A QUE window.waitForEcho ESTÉ DISPONIBLE ANTES DE CONECTARSE
         console.log('[Realtime Supervisor] ⏳ Esperando a que window.waitForEcho esté disponible...');
         
         // Función para inicializar el listener

@@ -163,10 +163,10 @@ class NotificationManager {
      */
     getIconoTipo(tipo) {
         const iconos = {
-            error: '❌',
-            exito: '✅',
-            info: 'ℹ️',
-            advertencia: '⚠️'
+            error: '',
+            exito: '',
+            info: '',
+            advertencia: ''
         };
         
         return iconos[tipo] || iconos.info;

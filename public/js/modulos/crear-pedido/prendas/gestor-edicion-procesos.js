@@ -120,7 +120,7 @@ class GestorEditacionProcesos {
             });
         });
 
-        console.log('📋 [GESTOR-EDICION] Procesos editados:', {
+        console.log(' [GESTOR-EDICION] Procesos editados:', {
             cantidad: editados.length,
             tipos: editados.map(p => p.tipo),
             detalles: editados

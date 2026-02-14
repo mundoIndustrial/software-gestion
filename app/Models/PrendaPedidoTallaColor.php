@@ -26,7 +26,7 @@ class PrendaPedidoTallaColor extends Model
         'updated_at' => 'datetime',
     ];
 
-    // ✅ RELACIONES
+    //  RELACIONES
 
     /**
      * Relación: Pertenece a una talla específica
@@ -67,7 +67,7 @@ class PrendaPedidoTallaColor extends Model
         );
     }
 
-    // ✅ SCOPES
+    //  SCOPES
 
     /**
      * Filtrar por nombre de color
@@ -93,7 +93,7 @@ class PrendaPedidoTallaColor extends Model
         return $query->with(['tela', 'color', 'prendaPedidoTalla']);
     }
 
-    // ✅ ACCESSORS
+    //  ACCESSORS
 
     /**
      * Obtener nombre completo: Tela + Color

@@ -70,32 +70,53 @@
                     </label>
                     
                     <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start; user-select: none;">
-                        <!-- Preview 1 -->
-                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" onclick="abrirSelectorImagenProceso(1)">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
-                            </div>
+                        <!-- Preview 1 - CONTENEDOR CON AISLAMIENTO -->
+                        <div style="position: relative; width: 120px; height: 120px; flex-shrink: 0; user-select: none;">
+                            <!-- Label clickeable para abrir file input -->
+                            <label for="proceso-foto-input-1" class="foto-preview-proceso" style="width: 120px; height: 120px; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: absolute; top: 0; left: 0; user-select: none; margin: 0; overflow: hidden; pointer-events: auto;">
+                                <div id="proceso-foto-preview-1" class="placeholder-content" style="text-align: center; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;">
+                                    <div style="text-align: center;">
+                                        <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                        <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <!-- Contenedor aislado para el botón de eliminar -->
+                            <div style="position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; pointer-events: auto; z-index: 20;" class="btn-eliminar-proceso-1"></div>
                         </div>
-                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso" onchange="manejarImagenProcesoConIndice(this, 1)">
+                        <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso">
                         
-                        <!-- Preview 2 -->
-                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" onclick="abrirSelectorImagenProceso(2)">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
-                            </div>
+                        <!-- Preview 2 - CONTENEDOR CON AISLAMIENTO -->
+                        <div style="position: relative; width: 120px; height: 120px; flex-shrink: 0; user-select: none;">
+                            <!-- Label clickeable para abrir file input -->
+                            <label for="proceso-foto-input-2" class="foto-preview-proceso" style="width: 120px; height: 120px; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: absolute; top: 0; left: 0; user-select: none; margin: 0; overflow: hidden; pointer-events: auto;">
+                                <div id="proceso-foto-preview-2" class="placeholder-content" style="text-align: center; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;">
+                                    <div style="text-align: center;">
+                                        <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                        <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <!-- Contenedor aislado para el botón de eliminar -->
+                            <div style="position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; pointer-events: auto; z-index: 20;" class="btn-eliminar-proceso-2"></div>
                         </div>
-                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso" onchange="manejarImagenProcesoConIndice(this, 2)">
+                        <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso">
                         
-                        <!-- Preview 3 -->
-                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" onclick="abrirSelectorImagenProceso(3)">
-                            <div class="placeholder-content" style="text-align: center;">
-                                <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                                <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
-                            </div>
+                        <!-- Preview 3 - CONTENEDOR CON AISLAMIENTO -->
+                        <div style="position: relative; width: 120px; height: 120px; flex-shrink: 0; user-select: none;">
+                            <!-- Label clickeable para abrir file input -->
+                            <label for="proceso-foto-input-3" class="foto-preview-proceso" style="width: 120px; height: 120px; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: absolute; top: 0; left: 0; user-select: none; margin: 0; overflow: hidden; pointer-events: auto;">
+                                <div id="proceso-foto-preview-3" class="placeholder-content" style="text-align: center; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;">
+                                    <div style="text-align: center;">
+                                        <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                                        <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <!-- Contenedor aislado para el botón de eliminar -->
+                            <div style="position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; pointer-events: auto; z-index: 20;" class="btn-eliminar-proceso-3"></div>
                         </div>
-                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" aria-label="Imagen 3 del Proceso" onchange="manejarImagenProcesoConIndice(this, 3)">
+                        <input type="file" id="proceso-foto-input-3" accept="image/*" style="display: none;" aria-label="Imagen 3 del Proceso">
                     </div>
                     <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                         <i class="fas fa-info-circle"></i> Puedes agregar hasta 3 imágenes para este proceso
@@ -120,48 +141,84 @@
 <x-galeria-modal :id="'proceso-3'" :titulo="'Galería - Proceso 3'" />
 
 <script>
-    // Manejar paste en el panel de fotos
+    // Manejar paste y drag & drop en CADA preview específicamente
     document.addEventListener('DOMContentLoaded', function() {
-        const fotoPanelElement = document.querySelector('.foto-panel');
-        
-        if (fotoPanelElement) {
-            fotoPanelElement.addEventListener('paste', function(e) {
+        // Configurar handlers para CADA preview (1, 2, 3)
+        for (let previewIndex = 1; previewIndex <= 3; previewIndex++) {
+            const preview = document.getElementById(`proceso-foto-preview-${previewIndex}`);
+            const label = document.querySelector(`label[for="proceso-foto-input-${previewIndex}"]`);
+            
+            if (!preview || !label) continue;
+            
+            // ====== HANDLER DE PASTE ======
+            preview.addEventListener('paste', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                console.log(`[Paste] Detect en preview ${previewIndex}`);
                 
                 const items = (e.clipboardData || window.clipboardData).items;
                 
                 for (let item of items) {
                     if (item.kind === 'file' && item.type.startsWith('image/')) {
                         const file = item.getAsFile();
+                        console.log(`[Paste] Archivo pegado en preview ${previewIndex}:`, file.name);
                         
-                        // Encontrar el primer cuadro vacío
-                        let cuadroVacio = null;
-                        for (let i = 1; i <= 3; i++) {
-                            const preview = document.getElementById(`proceso-foto-preview-${i}`);
-                            const input = document.getElementById(`proceso-foto-input-${i}`);
-                            
-                            // Verificar si el cuadro está vacío (no tiene imagen)
-                            if (preview && !preview.querySelector('img')) {
-                                cuadroVacio = i;
-                                break;
-                            }
-                        }
+                        // Asignar al input de ESTE preview
+                        const input = document.getElementById(`proceso-foto-input-${previewIndex}`);
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        input.files = dataTransfer.files;
                         
-                        if (cuadroVacio) {
-                            // Asignar el archivo al input correcto
-                            const input = document.getElementById(`proceso-foto-input-${cuadroVacio}`);
-                            const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(file);
-                            input.files = dataTransfer.files;
-                            
-                            // Ejecutar el manejador de imagen
-                            if (typeof manejarImagenProcesoConIndice === 'function') {
-                                // 🔧 IMPORTANTE: Pasar cuadroVacio (índice del cuadro 1-3) Y window.procesoActualIndex (índice del proceso)
-                                manejarImagenProcesoConIndice(input, cuadroVacio);
-                            }
+                        // Ejecutar manejador
+                        if (typeof manejarImagenProcesoConIndice === 'function') {
+                            manejarImagenProcesoConIndice(input, previewIndex);
                         }
-                        break; // Solo procesar la primera imagen
+                        break;
+                    }
+                }
+            }, false);
+            
+            // ====== HANDLERS DE DRAG & DROP ======
+            label.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                label.style.borderColor = '#dc2626';
+                label.style.backgroundColor = '#fee2e2';
+            }, false);
+            
+            label.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                label.style.borderColor = '#0066cc';
+                label.style.backgroundColor = '#f9fafb';
+            }, false);
+            
+            label.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                label.style.borderColor = '#0066cc';
+                label.style.backgroundColor = '#f9fafb';
+                
+                console.log(`[Drop] Detectado en preview ${previewIndex}`);
+                
+                const files = e.dataTransfer.files;
+                
+                for (let file of files) {
+                    if (file.type.startsWith('image/')) {
+                        console.log(`[Drop] Imagen soltada en preview ${previewIndex}:`, file.name);
+                        
+                        // Asignar al input de ESTE preview
+                        const input = document.getElementById(`proceso-foto-input-${previewIndex}`);
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        input.files = dataTransfer.files;
+                        
+                        // Ejecutar manejador
+                        if (typeof manejarImagenProcesoConIndice === 'function') {
+                            manejarImagenProcesoConIndice(input, previewIndex);
+                        }
+                        break;
                     }
                 }
             }, false);

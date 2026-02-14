@@ -4,7 +4,7 @@
 
 | Problema | Impacto | Causa Raíz |
 |----------|--------|-----------|
-| Doble fetch API | 🔴 Alto | `cargarCatalogosModal()` llamado desde múltiples puntos sin deduplicación |
+| Doble fetch API |  Alto | `cargarCatalogosModal()` llamado desde múltiples puntos sin deduplicación |
 | Listeners duplicados | 🟡 Medio | No hay limpieza de listeners entre aperturas |
 | Race condition | 🟡 Medio | Flags globales `_telasCargadas` sin sincronización |
 | Inicialización múltiple | 🟡 Medio | `DragDropManager.inicializar()` no tiene guard clause real |
@@ -28,7 +28,7 @@ Sin control        →     Logging Creado
 
 ---
 
-## ✅ FASE 1: ESTABILIZACIÓN INMEDIATA (1-2 días)
+##  FASE 1: ESTABILIZACIÓN INMEDIATA (1-2 días)
 
 **Objetivo:** Eliminar doble fetch y listeners duplicados. **Riesgo: MÍNIMO**
 
@@ -78,7 +78,7 @@ const PromiseCache = (() => {
 En `manejadores-variaciones.js`, reemplazar:
 
 ```javascript
-// ❌ ANTES
+//  ANTES
 window.cargarCatalogosModal = async function() {
     if (!window._telasCargadas) {
         await cargarTelasDisponibles();
@@ -92,7 +92,7 @@ window.cargarCatalogosModal = async function() {
 ```
 
 ```javascript
-// ✅ DESPUÉS
+//  DESPUÉS
 window.cargarCatalogosModal = async function() {
     // Guard: si hay una promise en flight, retornarla (deduplicación)
     if (PromiseCache.has('catalogs')) {
@@ -107,14 +107,14 @@ window.cargarCatalogosModal = async function() {
                 cargarColoresDisponibles()
             ]);
             
-            console.log('[Catálogos] ✅ Cargados exitosamente', {
+            console.log('[Catálogos]  Cargados exitosamente', {
                 telas: telas?.length,
                 colores: colores?.length
             });
             
             return { telas, colores };
         } catch (error) {
-            console.error('[Catálogos] ❌ Error:', error);
+            console.error('[Catálogos]  Error:', error);
             throw error;
         } finally {
             // Eliminar de cache cuando se resuelve
@@ -129,17 +129,17 @@ window.cargarCatalogosModal = async function() {
 ```
 
 **¿Qué cambia?**
-- ✅ Múltiples llamadas simultáneas reutilizan la MISMA promise
-- ✅ No hay flags globales (`_telasCargadas`)
-- ✅ El cache se auto-limpia cuando termina
-- ❌ El código legacy sigue funcionando igual
+-  Múltiples llamadas simultáneas reutilizan la MISMA promise
+-  No hay flags globales (`_telasCargadas`)
+-  El cache se auto-limpia cuando termina
+-  El código legacy sigue funcionando igual
 
 #### 3️⃣ Guard Clause en `DragDropManager.inicializar()`
 
 En `drag-drop-manager.js`, línea ~43:
 
 ```javascript
-// ❌ ANTES
+//  ANTES
 inicializar() {
     if (this.inicializado) {
         UIHelperService.log('DragDropManager', 'Sistema ya inicializado', 'warn');
@@ -150,10 +150,10 @@ inicializar() {
 ```
 
 ```javascript
-// ✅ DESPUÉS
+//  DESPUÉS
 inicializar() {
     if (this.inicializado) {
-        UIHelperService.log('DragDropManager', '✅ Ya inicializado, ignorando llamada duplicada');
+        UIHelperService.log('DragDropManager', ' Ya inicializado, ignorando llamada duplicada');
         return this;  // ← Guard clause real
     }
 
@@ -170,7 +170,7 @@ inicializar() {
 En `gestion-items-pedido.js`, línea ~298:
 
 ```javascript
-// ❌ ANTES (múltiples puntos de entrada)
+//  ANTES (múltiples puntos de entrada)
 abrirModalAgregarPrendaNueva() {
     if (typeof window.cargarCatalogosModal === 'function') {
         window.cargarCatalogosModal().catch(error => { ... });
@@ -184,7 +184,7 @@ abrirModalAgregarPrendaNueva() {
 ```
 
 ```javascript
-// ✅ DESPUÉS (orquestación clara)
+//  DESPUÉS (orquestación clara)
 async abrirModalAgregarPrendaNueva() {
     try {
         // Paso 1: Cargar catálogos (deduplicado)
@@ -205,9 +205,9 @@ async abrirModalAgregarPrendaNueva() {
             }
         }
         
-        console.log('[Modal] ✅ Abierto correctamente');
+        console.log('[Modal]  Abierto correctamente');
     } catch (error) {
-        console.error('[Modal] ❌ Error abriendo:', error);
+        console.error('[Modal]  Error abriendo:', error);
         // Notificar usuario
         if (typeof NotificationService !== 'undefined') {
             NotificationService.error('Error abriendo modal: ' + error.message);
@@ -226,21 +226,21 @@ Voy a mostrar el código exacto para Fase 1.
 
 ---
 
-## ⚠️ RIESGOS FASE 1 Y MITIGACIÓN
+##  RIESGOS FASE 1 Y MITIGACIÓN
 
 | Riesgo | Probabilidad | Mitigación |
 |--------|-------------|-----------|
 | Modal abre sin catálogos | 🟡 Media | Cambio async en abrirModalAgregarPrendaNueva() requiere que otros puntos de entrada también hagan await |
 | Listeners aún duplicados | 🟡 Media | Esto se arregla en Fase 2 - aún no tocar |
-| Log noise | ✅ Bajo | Agregar console.log ayuda a debugging, es reversible |
-| Rollback fácil | ✅ Muy fácil | Cambios son quirúrgicos, revertibles en minutos |
+| Log noise |  Bajo | Agregar console.log ayuda a debugging, es reversible |
+| Rollback fácil |  Muy fácil | Cambios son quirúrgicos, revertibles en minutos |
 
 ---
 
 ## 🛑 QUÉ NO TOCAR EN FASE 1
 
 ```javascript
-❌ NO modificar:
+ NO modificar:
   - modal-cleanup.js (se elimina en Fase 2)
   - TelaDragDropHandler.js
   - PrendaDragDropHandler.js
@@ -249,7 +249,7 @@ Voy a mostrar el código exacto para Fase 1.
   - HTML del modal
   - Variables globales existentes (excepto agregar flags)
 
-✅ SÍ modificar:
+ SÍ modificar:
   - manejadores-variaciones.js (cargarCatalogosModal)
   - gestion-items-pedido.js (abrirModalAgregarPrendaNueva)
   - drag-drop-manager.js (inicializar guard clause)
@@ -258,7 +258,7 @@ Voy a mostrar el código exacto para Fase 1.
 
 ---
 
-## ✅ FASE 2: CONTROL DE LISTENERS (3-5 días)
+##  FASE 2: CONTROL DE LISTENERS (3-5 días)
 
 **Objetivo:** Limpiar listeners sin romper Bootstrap Modal
 
@@ -319,7 +319,7 @@ static limpiarTodo() {
 En el archivo que tiene `shown.bs.modal`:
 
 ```javascript
-// ❌ ANTES
+//  ANTES
 modal.addEventListener('shown.bs.modal', function() {
     // ... inicialización
 });
@@ -330,7 +330,7 @@ modal.addEventListener('shown.bs.modal', function() {
 ```
 
 ```javascript
-// ✅ DESPUÉS
+//  DESPUÉS
 const onModalShown = function() {
     console.log('[Modal] shown.bs.modal disparado');
     // Inicializar drag & drop si no está
@@ -413,10 +413,10 @@ async abrirModalAgregarPrendaNueva() {
 
 ## 🛠️ ERRORES COMUNES A EVITAR
 
-### ❌ Error 1: Hacer async/await sin verificar TODOS los callers
+###  Error 1: Hacer async/await sin verificar TODOS los callers
 
 ```javascript
-// ❌ PELIGRO
+//  PELIGRO
 async abrirModalAgregarPrendaNueva() {
     await window.cargarCatalogosModal(); // ← Si un caller no hace await...
     // ... modal abre sin esperar
@@ -428,19 +428,19 @@ window.gestionItemsUI.abrirModalAgregarPrendaNueva(); // ← Modal abre inmediat
 
 **Solución:** Auditar TODOS los puntos que llaman esta función y agregar await.
 
-### ❌ Error 2: Eliminar modal-cleanup.js muy rápido
+###  Error 2: Eliminar modal-cleanup.js muy rápido
 
 ```javascript
-// ❌ PELIGRO: Si eliminas modal-cleanup.js en Fase 1/2
+//  PELIGRO: Si eliminas modal-cleanup.js en Fase 1/2
 // Otros archivos lo importan y el sistema rompe
 
-// ✅ CORRECTO: Mantenerlo hasta Fase 3 cuando integres todo en ModalSystemFacade
+//  CORRECTO: Mantenerlo hasta Fase 3 cuando integres todo en ModalSystemFacade
 ```
 
-### ❌ Error 3: Confundir guard clauses con return temprano
+###  Error 3: Confundir guard clauses con return temprano
 
 ```javascript
-// ❌ INCORRECTO
+//  INCORRECTO
 inicializar() {
     if (this.inicializado) return this;
     
@@ -448,7 +448,7 @@ inicializar() {
     this.prendaHandler = new PrendaDragDropHandler(); // ← Se ejecuta igual
 }
 
-// ✅ CORRECTO
+//  CORRECTO
 inicializar() {
     if (this.inicializado) {
         console.log('Ya inicializado');
@@ -460,17 +460,17 @@ inicializar() {
 }
 ```
 
-### ❌ Error 4: Asumir que flags globales son seguros
+###  Error 4: Asumir que flags globales son seguros
 
 ```javascript
-// ❌ NO HAGAS
+//  NO HAGAS
 if (!window._modalAbierto) {
     abrirModal();
     window._modalAbierto = true;
 }
 // Race condition: dos llamadas simultáneas pueden ambas pasar el if
 
-// ✅ MEJOR
+//  MEJOR
 if (ModalStateMachineLight.getState() === 'CLOSED') {
     ModalStateMachineLight.transition('OPENING');
     abrirModal();
@@ -484,16 +484,16 @@ if (ModalStateMachineLight.getState() === 'CLOSED') {
 
 ### Después de Fase 1:
 ```
-✅ Console logs muestran:
+ Console logs muestran:
   "[Catálogos] Promise en flight, reutilizando..." (solo 1 vez, no 2)
-  "[Modal] ✅ Abierto correctamente"
+  "[Modal]  Abierto correctamente"
   "Sistema ya inicializado, ignorando llamada duplicada"
 
-✅ Network tab (DevTools):
+ Network tab (DevTools):
   /api/public/telas - aparece 1 vez (no 2)
   /api/public/colores - aparece 1 vez (no 2)
 
-✅ Para usuario:
+ Para usuario:
   Modal abre más rápido (catálogos cargados)
   Sin flickering de listeners duplicados
   Sin errores en console
@@ -501,32 +501,32 @@ if (ModalStateMachineLight.getState() === 'CLOSED') {
 
 ### Después de Fase 2:
 ```
-✅ console logs muestran:
+ console logs muestran:
   "[ModalListeners] Todos limpios" (cada cierre)
   "[ModalListeners] Registrado: shown.bs.modal" (solo 1 vez)
 
-✅ Memory profiler (Chrome DevTools):
+ Memory profiler (Chrome DevTools):
   Detached DOM nodes disminuye cuando cierras modal
   Listeners count es estable (no crece con cada apertura)
 
-✅ Para usuario:
+ Para usuario:
   Modal puede abrirse/cerrarse 10 veces sin lentitud
 ```
 
 ### Después de Fase 3:
 ```
-✅ console logs muestran:
+ console logs muestran:
   "[FSM] CLOSED → OPENING → OPEN"
   "[FSM] Transición inválida: OPEN → OPENING" (rechazada correctamente)
 
-✅ Para usuario:
+ Para usuario:
   Código está preparado para refactor a ModalSystemFacade
   Arquitectura es clara y documentada
 ```
 
 ---
 
-## 📋 CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 ### Fase 1 (Hoy)
 - [ ] Crear `promise-cache.js`

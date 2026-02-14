@@ -178,7 +178,7 @@ class CarteraPedidosController extends Controller
                 ];
             });
             
-            // 🔥 Si la transacción fue exitosa, dispara el broadcast FUERA de la transacción
+            //  Si la transacción fue exitosa, dispara el broadcast FUERA de la transacción
             if ($resultado['success'] && $resultado['pedido']) {
                 broadcast(new \App\Events\OrdenUpdated($resultado['pedido'], 'created', ['numero_pedido', 'estado']));
                 \Log::info(" Broadcast enviado para pedido {$resultado['numero_pedido']} desde CARTERA", [
@@ -258,7 +258,7 @@ class CarteraPedidosController extends Controller
                 'numero_pedido' => $pedido->numero_pedido // debe ser null
             ]);
 
-            // 🔥 Broadcast evento en tiempo real
+            //  Broadcast evento en tiempo real
             broadcast(new OrdenUpdated($pedido->fresh(), 'updated', ['estado', 'novedades']));
             \Log::info("Broadcast enviado para pedido #{$pedido->id} - Rechazo desde CARTERA");
             

@@ -33,7 +33,7 @@
         <div id="resumen_prendas_cards" style="display: grid; gap: 20px; margin-bottom: 20px;">
             <!-- Mensaje inicial para depuración -->
             <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
-                <h3 style="color: #6c757d; margin: 0 0 10px 0;">📋 Cargando resumen...</h3>
+                <h3 style="color: #6c757d; margin: 0 0 10px 0;"> Cargando resumen...</h3>
                 <p style="color: #adb5bd; margin: 0;">El resumen de tu cotización aparecerá aquí</p>
             </div>
         </div>

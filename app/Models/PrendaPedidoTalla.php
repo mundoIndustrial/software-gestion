@@ -45,7 +45,7 @@ class PrendaPedidoTalla extends Model
     }
 
     /**
-     * ✅ RELACIÓN NUEVA: Colores asociados a esta talla
+     *  RELACIÓN NUEVA: Colores asociados a esta talla
      * Esto reemplaza el campo JSON 'colores' con una tabla relacional
      */
     public function coloresAsignados(): HasMany

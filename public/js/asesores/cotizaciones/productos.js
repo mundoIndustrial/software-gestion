@@ -639,7 +639,7 @@ function actualizarNumerosPreview(fotosPreview) {
 }
 
 function agregarFotoTela(input) {
-    console.log('🔥 agregarFotoTela LLAMADA:', { 
+    console.log(' agregarFotoTela LLAMADA:', { 
         inputName: input.name,
         files: input.files.length,
         tiempoActual: new Date().toLocaleTimeString()

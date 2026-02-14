@@ -482,7 +482,7 @@ function inicializarEventListenersEpp() {
             // Obtener EPP desde window.eppsPedido (donde se almacenan)
             if (window.eppsPedido && window.eppsPedido[eppIndex]) {
                 const epp = window.eppsPedido[eppIndex];
-                console.log('[EPP] 📋 EPP encontrado:', epp);
+                console.log('[EPP]  EPP encontrado:', epp);
                 
                 // TODO: Abrir modal para editar EPP
                 // Por ahora solo log

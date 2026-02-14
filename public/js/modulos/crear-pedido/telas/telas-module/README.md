@@ -1,6 +1,6 @@
 # Telas Module - Sistema Modular v2.0
 
-## 📋 Descripción
+##  Descripción
 
 Sistema modular desacoplado para el manejo de telas, colores, referencias e imágenes de prendas. Organizado en componentes específicos para mejor mantenibilidad y escalabilidad.
 
@@ -162,7 +162,7 @@ window.addEventListener('telasModuleLoaded', (e) => {
 - **Testing**: Cada componente puede ser probado independientemente
 - **Debugging**: Logs específicos por componente
 
-### 🔧 Funcionalidades Completas
+###  Funcionalidades Completas
 - **Drag & Drop**: Integración completa con el sistema de arrastrar y soltar
 - **Validaciones**: Validación de campos y archivos
 - **Galería**: Sistema completo de galería de imágenes
@@ -235,7 +235,7 @@ console.log(window.TelasModule);
 - **Escalabilidad**: Fácil agregar nuevos componentes
 - **Debugging**: Logs específicos por componente
 
-### 🔧 Mantenimiento
+###  Mantenimiento
 - **Independiente**: Cada componente puede ser modificado por separado
 - **Versionado**: Cada componente puede tener su propia versión
 - **Testing**: Testing unitario por componente

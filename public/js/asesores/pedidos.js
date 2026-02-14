@@ -1,5 +1,5 @@
 // ========================================
-// GESTI�N DE PRODUCTOS EN PEDIDOS (REFACTORIZADO)
+// GESTIN DE PRODUCTOS EN PEDIDOS (REFACTORIZADO)
 // ========================================
 
 let productoCounter = 0;
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const formCrear = document.getElementById('formCrearPedido');
     const formEditar = document.getElementById('formEditarPedido');
 
-    // Agregar primer producto autom�ticamente en crear
+    // Agregar primer producto automticamente en crear
     if (formCrear && productosContainer.children.length === 0) {
         agregarProducto();
     }
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Bot�n agregar producto
+    // Botn agregar producto
     if (btnAgregarProducto) {
         btnAgregarProducto.addEventListener('click', agregarProducto);
     }
@@ -57,13 +57,13 @@ function agregarProducto() {
     
     productoCounter++;
     
-    // Actualizar n�mero de producto
+    // Actualizar nmero de producto
     const numeroSpan = clone.querySelector('.producto-numero');
     if (numeroSpan) {
         numeroSpan.textContent = productoCounter;
     }
     
-    // Actualizar nombres de inputs para que sean �nicos
+    // Actualizar nombres de inputs para que sean nicos
     const inputs = clone.querySelectorAll('input, textarea');
     inputs.forEach(input => {
         const name = input.getAttribute('name');
@@ -87,7 +87,7 @@ function agregarEventListenersProductos() {
     const productos = document.querySelectorAll('.producto-item');
     
     productos.forEach(producto => {
-        // Bot+�n eliminar
+        // Bot+n eliminar
         const btnRemove = producto.querySelector('.btn-remove-product');
         if (btnRemove) {
             btnRemove.addEventListener('click', function() {
@@ -296,7 +296,7 @@ async function actualizarPedido(form) {
 }
 
 // ========================================
-// FUNCIONES GLOBALES PARA GALER�A
+// FUNCIONES GLOBALES PARA GALERA
 // (Delegadas a GaleriaService)
 // ========================================
 
@@ -308,7 +308,7 @@ window.toggleFactura = function() {
 };
 
 /**
- * Alterna a vista de galer�a de costura
+ * Alterna a vista de galera de costura
  */
 window.toggleGaleria = function() {
     Galeria.toggleGaleria('order-detail-modal-wrapper', 'order-pedido', 'btn-factura', 'btn-galeria');
@@ -329,7 +329,7 @@ window.cerrarImagenGrande = function() {
 };
 
 /**
- * Cambia entre im�genes
+ * Cambia entre imgenes
  */
 window.cambiarImagen = function(direccion) {
     Galeria.cambiarImagen(direccion);

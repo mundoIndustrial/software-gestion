@@ -31,8 +31,19 @@ class ItemRenderer {
         });
 
         if (!items || items.length === 0) {
+            // Si no hay items, mostrar prendas-container-editable (formulario de entrada)
             container.innerHTML = this.obtenerPlantillaVacia();
+            const prendasContainer = document.getElementById('prendas-container-editable');
+            if (prendasContainer) {
+                prendasContainer.style.display = 'block';
+            }
             return;
+        }
+
+        // Si hay items, asegurar que prendas-container-editable esté oculto
+        const prendasContainer = document.getElementById('prendas-container-editable');
+        if (prendasContainer) {
+            prendasContainer.style.display = 'none';
         }
 
         await this.renderizar(items, container);
@@ -398,7 +409,7 @@ class ItemRenderer {
         let procesosHTML = '';
         if (item.procesos) {
             if (Array.isArray(item.procesos) && item.procesos.length > 0) {
-                console.log('[item-renderer] 📋 Procesos es array:', item.procesos);
+                console.log('[item-renderer]  Procesos es array:', item.procesos);
                 procesosHTML = `<span>Procesos: ${item.procesos.join(', ')}</span>`;
             } else if (!Array.isArray(item.procesos) && typeof item.procesos === 'object') {
                 console.log('[item-renderer]  Procesos es objeto, extrayendo keys...');

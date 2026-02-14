@@ -43,7 +43,7 @@ class PedidoProduccionRepository
             'prendas.coloresTelas.tela',   // NUEVO: Cargar telas con sus detalles (nombre, referencia)
             'prendas.coloresTelas.fotos', // NUEVO: Cargar fotos de telas para cada combinación color-tela
             'prendas.tallas',  // NUEVA: Cargar tallas relacionales
-            'prendas.tallas.coloresAsignados',  // ✅ NUEVA RELACIÓN: Colores asignados por talla
+            'prendas.tallas.coloresAsignados',  //  NUEVA RELACIÓN: Colores asignados por talla
             'prendas.procesos',
             'prendas.procesos.tipoProceso',  //  NUEVO: Cargar el nombre del tipo de proceso
             'prendas.procesos.imagenes',

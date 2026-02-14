@@ -1,6 +1,6 @@
 # 🗺️ MAPA DE FLUJO DE LOGS - Creación de Pedidos
 
-## 📍 GET /asesores/pedidos-editable/crear-nuevo
+##  GET /asesores/pedidos-editable/crear-nuevo
 
 ```
 NAVEGADOR
@@ -37,7 +37,7 @@ NAVEGADOR
 
 ---
 
-## 📍 GET /asesores/pedidos-editable/crear-desde-cotizacion
+##  GET /asesores/pedidos-editable/crear-desde-cotizacion
 
 ```
 NAVEGADOR
@@ -51,11 +51,11 @@ NAVEGADOR
          ├─ 📏 Talla::all() 
          │  └─  LOG: {tiempo_ms: X}
          │
-         ├─ 📋 Cotizacion::with(['cliente', 'prendas', 'fotos', ...]) ←  CRÍTICO
+         ├─  Cotizacion::with(['cliente', 'prendas', 'fotos', ...]) ←  CRÍTICO
          │  │   WHERE asesor_id = X
          │  │   WHERE estado IN ['APROBADA', 'APROBADO_PEDIDO']
          │  │
-         │  └─  LOG: [CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas {
+         │  └─  LOG: [CREAR-DESDE-COTIZACION]  Cotizaciones cargadas {
          │         tiempo_ms: X,  ← Si > 2000ms = OPTIMIZAR QUERY
          │         nota: "Este es el tiempo MÁS CRÍTICO"
          │     }
@@ -76,7 +76,7 @@ NAVEGADOR
 
 ---
 
-## 📍 POST /asesores/pedidos-editable/crear
+##  POST /asesores/pedidos-editable/crear
 
 ```
 NAVEGADOR (FormData)

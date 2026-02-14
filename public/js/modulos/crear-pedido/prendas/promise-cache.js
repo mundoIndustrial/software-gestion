@@ -105,4 +105,4 @@ const PromiseCache = (() => {
 })();
 
 // Auto-inicialización
-console.log('[PromiseCache] ✅ Inicializado y listo');
+console.log('[PromiseCache]  Inicializado y listo');

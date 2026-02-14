@@ -436,7 +436,7 @@ window.closeDropdown = function() {
 
 // Función para abrir modal de detalles desde asesores (similar a registros)
 window.abrirModalDetallePedidoDesdeAsesores = async function(pedido, pedidoId) {
-    console.log('🔥 [abrirModalDetallePedidoDesdeAsesores] Iniciando para pedido:', pedido);
+    console.log(' [abrirModalDetallePedidoDesdeAsesores] Iniciando para pedido:', pedido);
     
     try {
         // Mostrar loading

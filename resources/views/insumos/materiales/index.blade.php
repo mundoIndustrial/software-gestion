@@ -2580,7 +2580,7 @@
                     
                     // Mostrar detalles de procesos si están disponibles
                     if (data.detalles_procesos && data.detalles_procesos.length > 0) {
-                        mensaje += '\n\n📋 Procesos creados:';
+                        mensaje += '\n\n Procesos creados:';
                         data.detalles_procesos.forEach((proceso, index) => {
                             mensaje += `\n   ${index + 1}. ${proceso}`;
                         });

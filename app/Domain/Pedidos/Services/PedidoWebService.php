@@ -324,7 +324,7 @@ class PedidoWebService
                             ]);
                         }
                         
-                        // ✅ CREAR TALLA (colores guardan en tabla relacional)
+                        //  CREAR TALLA (colores guardan en tabla relacional)
                         $prendaPedidoTalla = PrendaPedidoTalla::create([
                             'prenda_pedido_id' => $prenda->id,
                             'genero' => strtoupper($generoOEspecial),
@@ -332,7 +332,7 @@ class PedidoWebService
                             'cantidad' => (int)$cantidad,
                         ]);
                         
-                        // ✅ NUEVO: If we have color assignments, save them to the relational table
+                        //  NUEVO: If we have color assignments, save them to the relational table
                         if ($claveEncontrada && isset($asignacionesColores[$claveEncontrada])) {
                             $asignacion = $asignacionesColores[$claveEncontrada];
                             
@@ -530,7 +530,7 @@ class PedidoWebService
                     try {
                         $telaNombre = $telaData['tela'] ?? $telaData['tela_nombre'] ?? null;
                         if ($telaNombre && !$telaId) {
-                            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto
+                            //  BÚSQUEDA EXACTA: Solo match perfecto
                             $tela = TelaPrenda::where('nombre', $telaNombre)->first();
                             if ($tela) {
                                 $telaId = $tela->id;
@@ -543,7 +543,7 @@ class PedidoWebService
                         
                         $colorNombre = $telaData['color'] ?? $telaData['color_nombre'] ?? null;
                         if ($colorNombre && !empty($colorNombre) && !$colorId) {
-                            // 🔥 BÚSQUEDA EXACTA: Solo match perfecto
+                            //  BÚSQUEDA EXACTA: Solo match perfecto
                             $color = ColorPrenda::where('nombre', $colorNombre)->first();
                             if ($color) {
                                 $colorId = $color->id;
@@ -574,7 +574,7 @@ class PedidoWebService
                 
                 // Si no hay telaId pero hay nombre de tela, buscar o crear la tela
                 if (!$telaId && !empty($telaNombreGeneral)) {
-                    // 🔥 BÚSQUEDA EXACTA: Solo match perfecto (no LIKE)
+                    //  BÚSQUEDA EXACTA: Solo match perfecto (no LIKE)
                     $telaExistente = TelaPrenda::where('nombre', $telaNombreGeneral)
                                                 ->where('activo', true)
                                                 ->first();

@@ -420,7 +420,7 @@ final class ActualizarPrendaCompletaUseCase
                         'tela_id' => $telaId,
                         'referencia' => $referencia
                     ]);
-                    $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
+                    $telaIdsEnPayload[] = $id;  //  Guardar ID para no eliminar
                 }
             } 
             //  CREATE: Si NO viene con ID, crear nueva relación
@@ -437,9 +437,9 @@ final class ActualizarPrendaCompletaUseCase
                         'tela_id' => $telaId,
                         'referencia' => $referencia
                     ]);
-                    $telaIdsEnPayload[] = $nueva->id;  // 📍 Guardar ID de la nueva tela
+                    $telaIdsEnPayload[] = $nueva->id;  //  Guardar ID de la nueva tela
                 } else {
-                    $telaIdsEnPayload[] = $existente->id;  // 📍 Guardar ID de la existente
+                    $telaIdsEnPayload[] = $existente->id;  //  Guardar ID de la existente
                 }
             }
         }

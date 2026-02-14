@@ -27,7 +27,7 @@ window.verificarEstadoRealtime = function() {
     // Mostrar indicador visual
     const indicator = document.querySelector('.realtime-connection-indicator');
     if (indicator) {
-        console.log('📍 Indicador visual:', indicator.textContent, indicator.className);
+        console.log(' Indicador visual:', indicator.textContent, indicator.className);
     }
     
     return estado;

@@ -496,7 +496,7 @@
          * @param {Array} prendas - Array de objetos prenda con todos los datos
          */
         function abrirModalCeldaConFormato(titulo, prendas) {
-            console.log('[abrirModalCeldaConFormato] 📋 INICIO - Datos recibidos:');
+            console.log('[abrirModalCeldaConFormato]  INICIO - Datos recibidos:');
             console.log('[abrirModalCeldaConFormato] Título:', titulo);
             console.log('[abrirModalCeldaConFormato] Prendas tipo:', typeof prendas);
             console.log('[abrirModalCeldaConFormato] Prendas es array:', Array.isArray(prendas));
@@ -1200,7 +1200,7 @@
                         
                         // SOLO prevenir el onclick original si queremos controlar completamente el toggle
                         // Por ahora, dejamos que el onclick original maneje el toggle
-                        console.log(`[GLOBAL-CLICK] 📋 Dejando que el onclick original maneje el toggle`);
+                        console.log(`[GLOBAL-CLICK]  Dejando que el onclick original maneje el toggle`);
                         return;
                     } else {
                         console.error(`[GLOBAL-CLICK] No se pudo extraer el ID del accordion - Regex falló`);

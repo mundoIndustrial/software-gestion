@@ -779,7 +779,7 @@
         }
         
         console.log('🌐 URL a navegar:', url);
-        console.log('📍 Navegando a:', url);
+        console.log(' Navegando a:', url);
         
         // Navegar
         try {

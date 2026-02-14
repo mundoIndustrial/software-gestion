@@ -35,7 +35,7 @@ window.agregarTelaNueva = async function() {
         const tela = telaElement.value.trim();
         const referencia = referenciaElement.value.trim();
         
-        console.log('[agregarTelaNueva] 📋 Datos capturados:', { color, tela, referencia });
+        console.log('[agregarTelaNueva]  Datos capturados:', { color, tela, referencia });
         
         // Validar campos
         const validacion = window.validarCamposTela(color, tela, referencia);
@@ -139,8 +139,15 @@ window.confirmarEliminacionTela = function(index) {
         const telaAEliminar = telas[index];
         console.log('[confirmarEliminacionTela]  Tela a eliminar definitivamente:', telaAEliminar);
         
-        // Eliminar del array
+        // Eliminar del array principal
         window.telasCreacion.splice(index, 1);
+        
+        // SINCRONIZAR: Si telasAgregadas existe, eliminarlo de ahí también
+        // (prenda-form-collector.js lo prioriza sobre telasCreacion si existe con datos)
+        if (window.telasAgregadas && Array.isArray(window.telasAgregadas) && window.telasAgregadas.length > index) {
+            console.log('[confirmarEliminacionTela]  Sincronizando eliminación en telasAgregadas');
+            window.telasAgregadas.splice(index, 1);
+        }
         
         // Actualizar tabla
         window.actualizarTablaTelas();
@@ -177,7 +184,7 @@ window.eliminarTela = function(index, event) {
         }
         
         const telaAEliminar = telas[index];
-        console.log('[eliminarTela] 📋 Tela a eliminar:', telaAEliminar);
+        console.log('[eliminarTela]  Tela a eliminar:', telaAEliminar);
         
         // Cerrar cualquier modal existente primero
         const modalExistente = document.querySelector('.modal-confirmacion');
@@ -274,8 +281,8 @@ window.actualizarTela = function(index, nuevosDatos) {
         }
         
         const telaActual = telas[index];
-        console.log('[actualizarTela] 📋 Tela actual:', telaActual);
-        console.log('[actualizarTela] 📋 Nuevos datos:', nuevosDatos);
+        console.log('[actualizarTela]  Tela actual:', telaActual);
+        console.log('[actualizarTela]  Nuevos datos:', nuevosDatos);
         
         // Actualizar datos
         Object.assign(telaActual, nuevosDatos);

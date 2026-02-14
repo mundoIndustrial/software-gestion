@@ -33,7 +33,7 @@ class RepararImagenesPrendas extends Command
             return 1;
         }
 
-        $this->line("\n📋 Información del Pedido:");
+        $this->line("\n Información del Pedido:");
         $this->line("├─ ID: {$pedido->id}");
         $this->line("├─ Número: {$pedido->numero_pedido}");
         $this->line("├─ Cliente: {$pedido->cliente}");

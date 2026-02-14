@@ -1,5 +1,5 @@
 /**
- * 📍 Servicio de Lógica de Cotización
+ *  Servicio de Lógica de Cotización
  * Responsabilidad: Aplicar lógica específica según tipo de cotización
  */
 

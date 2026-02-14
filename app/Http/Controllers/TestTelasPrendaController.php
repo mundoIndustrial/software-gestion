@@ -114,7 +114,7 @@ class TestTelasPrendaController extends Controller
                 'success' => true,
                 'total' => $registros->count(),
                 'data' => $registros,
-                'message' => "📋 Se encontraron {$registros->count()} registros"
+                'message' => " Se encontraron {$registros->count()} registros"
             ]);
 
         } catch (\Exception $e) {

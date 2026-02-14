@@ -78,13 +78,13 @@ async function loadAllComponents() {
         const initPasteListener = () => {
             if (typeof window.setupGlobalPasteListener === 'function') {
                 window.setupGlobalPasteListener();
-                // console.log('[prendas-wrappers-v2] ✅ Listener global de paste inicializado');
+                // console.log('[prendas-wrappers-v2]  Listener global de paste inicializado');
             } else if (retries < 5) {
                 retries++;
                 // console.log('[prendas-wrappers-v2] ⏳ Esperando setupGlobalPasteListener... intento', retries);
                 setTimeout(initPasteListener, 500);
             } else {
-                console.warn('[prendas-wrappers-v2] ⚠️ setupGlobalPasteListener no disponible después de 5 reintentos');
+                console.warn('[prendas-wrappers-v2]  setupGlobalPasteListener no disponible después de 5 reintentos');
             }
         };
         

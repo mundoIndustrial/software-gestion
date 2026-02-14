@@ -4,13 +4,13 @@
 
 | # | Optimización | Impacto | Dificultad | Tiempo | Estado |
 |---|--|--|--|--|--|
-| 1 | Eliminar arrays vacíos en JSON | ⚡⚡⚡ | 🟢 Fácil | 20 min | 📋 Pendiente |
-| 2 | Caching con Redis | ⚡⚡⚡ | 🟡 Media | 45 min | 📋 Pendiente |
-| 3 | Lazy loading de imágenes | ⚡⚡ | 🟡 Media | 1h | 📋 Pendiente |
-| 4 | Pagination de prendas | ⚡⚡⚡ | 🟠 Complejo | 2h | 📋 Pendiente |
-| 5 | Usar select() para columnas | ⚡⚡ | 🟢 Fácil | 30 min | 📋 Pendiente |
-| 6 | Endpoint de metadata | ⚡ | 🟢 Fácil | 20 min | 📋 Pendiente |
-| 7 | Comprensión gzip | ⚡⚡ | 🟢 Fácil | 15 min | 📋 Pendiente |
+| 1 | Eliminar arrays vacíos en JSON | ⚡⚡⚡ | 🟢 Fácil | 20 min |  Pendiente |
+| 2 | Caching con Redis | ⚡⚡⚡ | 🟡 Media | 45 min |  Pendiente |
+| 3 | Lazy loading de imágenes | ⚡⚡ | 🟡 Media | 1h |  Pendiente |
+| 4 | Pagination de prendas | ⚡⚡⚡ | 🟠 Complejo | 2h |  Pendiente |
+| 5 | Usar select() para columnas | ⚡⚡ | 🟢 Fácil | 30 min |  Pendiente |
+| 6 | Endpoint de metadata | ⚡ | 🟢 Fácil | 20 min |  Pendiente |
+| 7 | Comprensión gzip | ⚡⚡ | 🟢 Fácil | 15 min |  Pendiente |
 
 ---
 
@@ -265,7 +265,7 @@ gzip_min_length 1000;
 - Relaciones precargadas
 ```
 
-### Recomendadas a Continuación (Fase 2) 📋
+### Recomendadas a Continuación (Fase 2) 
 
 **Fáciles (30 min):**
 1. Eliminar arrays vacíos en JSON

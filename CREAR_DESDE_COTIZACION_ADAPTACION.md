@@ -8,7 +8,7 @@
 
 ---
 
-## 📋 FLUJO ACTUAL
+##  FLUJO ACTUAL
 
 ```
 1. Usuario selecciona una COTIZACIÓN existente
@@ -52,13 +52,13 @@
 
 ## 🎯 REQUISITOS DE AISLAMIENTO
 
-### ❌ PROHIBIDO
+###  PROHIBIDO
 - Modificar datos de cotización en BD
 - Actualizar endpoints de cotización (`/api/cotizaciones/*`)
 - Usar datos de cotización para validaciones
 - Referenciar servicios de cotización
 
-### ✅ PERMITIDO
+###  PERMITIDO
 - **LEER** datos de cotización (una sola vez, al cargar)
 - Hacer una COPIA de los datos
 - Editar la **COPIA** libremente
@@ -66,7 +66,7 @@
 
 ---
 
-## 🔧 ADAPTACIÓN DEL SERVICIO DE EDICIÓN
+##  ADAPTACIÓN DEL SERVICIO DE EDICIÓN
 
 ### Parámetros nuevos para `abrirEditor()`
 
@@ -210,19 +210,19 @@ guardarCambios() {
 
 ```javascript
 guardarPrenda(data) {
-    // ❌ PROHIBIDO
+    //  PROHIBIDO
     if (this.apiBaseUrl.includes('/api/cotizaciones')) {
-        throw new Error('❌ VIOLACIÓN DE AISLAMIENTO: Intent to access cotizaciones API');
+        throw new Error(' VIOLACIÓN DE AISLAMIENTO: Intent to access cotizaciones API');
     }
     
-    // ❌ PROHIBIDO
+    //  PROHIBIDO
     if (data.tabla_origen === 'cotizaciones') {
-        throw new Error('❌ VIOLACIÓN: Guardando en tabla de cotizaciones');
+        throw new Error(' VIOLACIÓN: Guardando en tabla de cotizaciones');
     }
     
-    // ✅ PERMITIDO
+    //  PERMITIDO
     if (!this.apiBaseUrl.includes('/api/prendas')) {
-        console.warn('⚠️ Endpoint inusual:', this.apiBaseUrl);
+        console.warn(' Endpoint inusual:', this.apiBaseUrl);
     }
     
     // POST a /api/prendas (crearemos nuevo producto)
@@ -313,7 +313,7 @@ async function abrirEditorPrendaDesdeCotizacion(
             
             // Callback cuando usuario guarda
             onGuardar: async (prendaModificada) => {
-                console.log('[crear-desde-cotizacion] ✅ Prenda modificada');
+                console.log('[crear-desde-cotizacion]  Prenda modificada');
                 console.log('  - Nombre:', prendaModificada.nombre);
                 console.log('  - Origen:', `Cotización ${cotizacionId}`);
                 console.log('  - Se guardará como nuevo item en pedido');
@@ -326,7 +326,7 @@ async function abrirEditorPrendaDesdeCotizacion(
             },
             
             onCancelar: () => {
-                console.log('[crear-desde-cotizacion] ❌ Edición cancelada');
+                console.log('[crear-desde-cotizacion]  Edición cancelada');
                 cerrarModalEditor();
             }
         });
@@ -372,7 +372,7 @@ await editor.abrirEditor({
         tallas: [{talla: 'M', cantidad: 5}]
     },
     onGuardar: (prenda) => {
-        console.log('✅ Guardado:', prenda.nombre);
+        console.log(' Guardado:', prenda.nombre);
         // Verificar que NO está en /api/cotizaciones
     }
 });
@@ -389,7 +389,7 @@ window.fetch = function(...args) {
     const url = args[0];
     if (typeof url === 'string' && url.includes('/api/cotizaciones')) {
         cotizacionAccessAttempt = true;
-        console.error('❌ VIOLACIÓN: Intento de acceder a /api/cotizaciones');
+        console.error(' VIOLACIÓN: Intento de acceder a /api/cotizaciones');
     }
     return interceptFetch.apply(this, args);
 };
@@ -398,7 +398,7 @@ window.fetch = function(...args) {
 
 console.assert(
     !cotizacionAccessAttempt,
-    '✅ No se accedió a /api/cotizaciones'
+    ' No se accedió a /api/cotizaciones'
 );
 ```
 
@@ -411,7 +411,7 @@ console.assert(
 **Línea ~290-310:** Ya detecta contexto `crear-desde-cotizacion`
 
 ```javascript
-// ✅ YA EXISTE
+//  YA EXISTE
 if (window.location.pathname.includes('crear-desde-cotizacion')) {
     console.log('[cargarPrendasDesdeCotizacion] Flujo desde cotización detectado');
     return;  // No cargar masivamente, agregar individualmente
@@ -464,11 +464,11 @@ async function editarPrendaDesdeCotizacion(
 | **Modifica BD** | Crea nuevo | Actualiza pedido | Crea en NEW pedido |
 | **Endpoint** | `/api/prendas` | `/api/prendas` | `/api/prendas` |
 | **Cotización** | No toca | No toca | Solo LEE |
-| **Aislamiento** | ✅ Seguro | ✅ Seguro | ✅ Seguro |
+| **Aislamiento** |  Seguro |  Seguro |  Seguro |
 
 ---
 
-## ✅ CHECKLIST DE IMPLEMENTACIÓN
+##  CHECKLIST DE IMPLEMENTACIÓN
 
 ### Fase 1: Actualización del Servicio (1-2 horas)
 

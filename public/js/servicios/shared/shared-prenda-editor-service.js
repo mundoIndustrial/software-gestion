@@ -63,12 +63,12 @@ class SharedPrendaEditorService {
         // Validar que es un contexto permitido (NO cotización)
         const contextosPermitidos = ['crear-nuevo', 'pedidos-editable', 'crear-desde-cotizacion', 'otros-pedidos'];
         if (config.contexto && !contextosPermitidos.includes(config.contexto)) {
-            console.warn(`[SharedPrendaEditor] ⚠️ Contexto inusual: ${config.contexto}`);
+            console.warn(`[SharedPrendaEditor]  Contexto inusual: ${config.contexto}`);
         }
 
         // IMPORTANTE: Para crear-desde-cotizacion, verificar que se hizo copia de datos
         if (config.contexto === 'crear-desde-cotizacion' && !config.prendaLocal) {
-            throw new Error('[SharedPrendaEditor] ❌ Para crear-desde-cotizacion, debe proporcionar prendaLocal (copia de datos)');
+            throw new Error('[SharedPrendaEditor]  Para crear-desde-cotizacion, debe proporcionar prendaLocal (copia de datos)');
         }
 
         try {
@@ -106,7 +106,7 @@ class SharedPrendaEditorService {
                     const original = await this.dataService.obtenerPrendPorId(configValidada.prendaId);
                     prenda = { ...JSON.parse(JSON.stringify(original)) };
                     prenda.id = null; // Remover ID para crear nueva
-                    console.log('[SharedPrendaEditor] 📋 Modo DUPLICAR - Prenda duplicada');
+                    console.log('[SharedPrendaEditor]  Modo DUPLICAR - Prenda duplicada');
                     break;
 
                 default:
@@ -138,7 +138,7 @@ class SharedPrendaEditorService {
             return prenda;
 
         } catch (error) {
-            console.error('[SharedPrendaEditor] ❌ Error abriendo editor:', error);
+            console.error('[SharedPrendaEditor]  Error abriendo editor:', error);
             this.cache.estado = 'idle';
             this.eventBus.emit('editor:error', error);
             throw error;
@@ -162,7 +162,7 @@ class SharedPrendaEditorService {
             // 2️⃣ VALIDAR
             const errores = this.validationService.validar(datos);
             if (errores.length > 0) {
-                console.warn('[SharedPrendaEditor] ⚠️ Errores de validación:', errores);
+                console.warn('[SharedPrendaEditor]  Errores de validación:', errores);
                 this.eventBus.emit('editor:error-validacion', errores);
                 throw new Error('Datos inválidos');
             }
@@ -182,11 +182,11 @@ class SharedPrendaEditorService {
             // 6️⃣ EMITIR EVENTO
             this.eventBus.emit('editor:guardado', prendaGuardada);
 
-            console.log('[SharedPrendaEditor] ✅ Cambios guardados exitosamente');
+            console.log('[SharedPrendaEditor]  Cambios guardados exitosamente');
             return prendaGuardada;
 
         } catch (error) {
-            console.error('[SharedPrendaEditor] ❌ Error guardando:', error);
+            console.error('[SharedPrendaEditor]  Error guardando:', error);
             this.cache.estado = 'editando';
             this.eventBus.emit('editor:error', error);
             throw error;
@@ -197,7 +197,7 @@ class SharedPrendaEditorService {
      * Cancelar edición
      */
     cancelarEdicion() {
-        console.log('[SharedPrendaEditor] ❌ Edición cancelada');
+        console.log('[SharedPrendaEditor]  Edición cancelada');
         this.cache.prendaActual = null;
         this.cache.cambiosPendientes.clear();
         this.cache.estado = 'idle';
@@ -248,7 +248,7 @@ class SharedPrendaEditorService {
      */
     async procesarCambiosImagenes(datos) {
         if (!this.storageService) {
-            console.warn('[SharedPrendaEditor] ⚠️ StorageService no disponible');
+            console.warn('[SharedPrendaEditor]  StorageService no disponible');
             return datos;
         }
 

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('prenda_pedido_tallas', function (Blueprint $table) {
-            // ✅ Remover el campo colores (JSON legacy)
+            //  Remover el campo colores (JSON legacy)
             // Los colores se guardan ahora en la tabla relacional prenda_pedido_talla_colores
             $table->dropColumn('colores');
         });
@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('prenda_pedido_tallas', function (Blueprint $table) {
-            // ✅ Restaurar el campo colores en caso de rollback
+            //  Restaurar el campo colores en caso de rollback
             $table->json('colores')->nullable()->comment('JSON de colores asignados (LEGACY - usar prenda_pedido_talla_colores)');
         });
     }

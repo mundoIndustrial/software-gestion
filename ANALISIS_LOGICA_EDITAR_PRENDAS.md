@@ -1,6 +1,6 @@
 # 🔍 ANÁLISIS DETALLADO: LÓGICA DE EDICIÓN DE PRENDAS
 
-## 📋 TABLA DE CONTENIDOS
+##  TABLA DE CONTENIDOS
 1. [Flujo Actual](#flujo-actual)
 2. [Estructura de Datos](#estructura-de-datos)
 3. [Problemas Identificados](#problemas-identificados)
@@ -22,11 +22,11 @@ Usuario → Click en "Editar" → abrirEditarPrendaEspecifica()
     ↓
 cargarItemEnModal() → luego PrendaEditor.cargarPrendaEnModal()
     ↓
-window.prendaEditorLegacy (✅ FUNCIONA - Inicializado en crear-nuevo)
+window.prendaEditorLegacy ( FUNCIONA - Inicializado en crear-nuevo)
     ↓
 Modal se llena con datos locales
 ```
-**Estado en Logs**: ✅ Éxito
+**Estado en Logs**:  Éxito
 - `[CARGAR-PRENDA] Iniciando carga de prenda en modal...`
 - `[CARGAR-PRENDA] Prenda cargada completamente`
 
@@ -42,11 +42,11 @@ Backend retorna respuesta.data.prendas[] con datos COMPLETOS de BD
     ↓
 cargarItemEnModal() → luego PrendaEditor.cargarPrendaEnModal()
     ↓
-❌ window.prendaEditorLegacy NO ESTÁ INICIALIZADO
+ window.prendaEditorLegacy NO ESTÁ INICIALIZADO
     ↓
 ERROR: TypeError: Cannot read properties of undefined
 ```
-**Estado en Logs**: ❌ Error en línea 87 de prenda-editor.js
+**Estado en Logs**:  Error en línea 87 de prenda-editor.js
 
 ```
 [CARGAR-PRENDA] Error: TypeError: Cannot read properties of undefined 
@@ -173,8 +173,8 @@ const prendaProcesada = window.prendaEditorLegacy.aplicarOrigenAutomaticoDesdeCo
 ### Problema 2: Dos Métodos de Carga CONFLICTIVOS
 **En prenda-editor.js existen:**
 
-1. ✅ **`cargarPrendaEnModal()`** - Para crear-nuevo (requisitos: `prendaEditorLegacy`)
-2. ✅ **`cargarPrendaEnModalDDD()`** - Para pedidos (API, no toca legacy)
+1.  **`cargarPrendaEnModal()`** - Para crear-nuevo (requisitos: `prendaEditorLegacy`)
+2.  **`cargarPrendaEnModalDDD()`** - Para pedidos (API, no toca legacy)
 
 **El problema**: `cargarItemEnModal()` en `gestion-items-pedido.js:369` llama siempre a la versión **legacy**, asumiendo que `prendaEditorLegacy` existe:
 
@@ -184,7 +184,7 @@ window.gestionItemsUI.cargarItemEnModal(prendaParaEditar, prendasIndex);
     ↓
 PrendaEditor.cargarPrendaEnModal() ← ASUME prendaEditorLegacy disponible
     ↓
-❌ FALLA EN EDICIÓN (flujo DDD)
+ FALLA EN EDICIÓN (flujo DDD)
 ```
 
 ---
@@ -557,7 +557,7 @@ prendas_pedido (PRENDA PRINCIPAL)
        │   INSERT en BD         API PATCH /api/prendas/{id}
        │                        UPDATE en BD
        │
-       └─→ ✅ Éxito
+       └─→  Éxito
            Cierra modal
            Actualiza UI
 ```
@@ -567,15 +567,15 @@ prendas_pedido (PRENDA PRINCIPAL)
 ## 📝 NOTAS CRÍTICAS
 
 ### Problemas de Integridad
-- ❌ `prendaEditorLegacy` no se inicializa en contexto de edición
-- ❌ Dos métodos de carga conflictivos (`cargarPrendaEnModal` vs `cargarPrendaEnModalDDD`)
-- ❌ Formato de datos inconsistente entre escenarios
+-  `prendaEditorLegacy` no se inicializa en contexto de edición
+-  Dos métodos de carga conflictivos (`cargarPrendaEnModal` vs `cargarPrendaEnModalDDD`)
+-  Formato de datos inconsistente entre escenarios
 
 ### Mejoras Sugeridas
-- ✅ Usar SIEMPRE la ruta DDD (no legacy) en edición
-- ✅ Unificar los dos métodos de carga en uno solo
-- ✅ Normalizar el formato de datos en el backend
-- ✅ Validar que exista `prendaEditorLegacy` antes de usarlo
+-  Usar SIEMPRE la ruta DDD (no legacy) en edición
+-  Unificar los dos métodos de carga en uno solo
+-  Normalizar el formato de datos en el backend
+-  Validar que exista `prendaEditorLegacy` antes de usarlo
 
 ### Dependencias Críticas
 - `window.prendaEditorLegacy` - DEBE estar inicializado ANTES de editar

@@ -43,18 +43,18 @@
                     const cantidad = item.cantidad || 0;
                     htmlListaPrendas += `
                         <button onclick="(function() {
-                            console.log('🔥 [ONCLICK-INICIO] Botón prenda clickeado');
-                            console.log('🔥 [ONCLICK-DATOS] item:', item);
-                            console.log('🔥 [ONCLICK-DATOS] idx:', idx);
-                            console.log('🔥 [ONCLICK-DATOS] datosEdicionPedido:', window.datosEdicionPedido);
+                            console.log(' [ONCLICK-INICIO] Botón prenda clickeado');
+                            console.log(' [ONCLICK-DATOS] item:', item);
+                            console.log(' [ONCLICK-DATOS] idx:', idx);
+                            console.log(' [ONCLICK-DATOS] datosEdicionPedido:', window.datosEdicionPedido);
                             
                             const pedidoId = window.datosEdicionPedido?.id;
-                            console.log('🔥 [ONCLICK-PEDIDO-ID] Usando pedidoId:', pedidoId);
+                            console.log(' [ONCLICK-PEDIDO-ID] Usando pedidoId:', pedidoId);
                             
                             Swal.close();
                             setTimeout(() => {
-                                console.log('🔥 [ONCLICK-POST-SWAL] Después de Swal.close()');
-                                console.log('🔥 [ONCLICK-CHECK-FUNC] Verificando si abrirEditarPrendaModal existe:', typeof window.abrirEditarPrendaModal);
+                                console.log(' [ONCLICK-POST-SWAL] Después de Swal.close()');
+                                console.log(' [ONCLICK-CHECK-FUNC] Verificando si abrirEditarPrendaModal existe:', typeof window.abrirEditarPrendaModal);
                                 
                                 if (typeof window.abrirEditarPrendaModal === 'function') {
                                     console.log(' [ONCLICK-EJECUTANDO] abrirEditarPrendaModal encontrada, ejecutando...');

@@ -96,7 +96,7 @@ function abrirEditarPrendas() {
  * USA EL MODAL DE "AGREGAR PRENDA NUEVA" para la edición
  */
 async function abrirEditarPrendaEspecifica(prendasIndex) {
-    console.log('🔥 [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
+    console.log(' [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
     
     if (!window.prendasEdicion) {
         console.error(' No hay datos de prendas disponibles');
@@ -1202,7 +1202,16 @@ function cerrarModalPrendaNueva() {
         console.log('→ PASO 2: Ocultando modal...');
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         if (modal) {
-            modal.style.setProperty('display', 'none', 'important');
+            // Usar UIModalService para manejar el scroll del body
+            if (window.UI && typeof window.UI.cerrarModal === 'function') {
+                window.UI.cerrarModal('modal-agregar-prenda-nueva', {
+                    animate: false
+                });
+            } else {
+                // Fallback si UIModalService no está disponible
+                modal.style.setProperty('display', 'none', 'important');
+                document.body.style.overflow = '';
+            }
             modal.classList.remove('active');
         }
         console.log('✓ PASO 2 completado - Modal debe estar invisible ahora');
@@ -1388,7 +1397,7 @@ function limpiarFormularioPrendaNueva() {
         // DragDrop se reconfigura en shown.bs.modal, NO aquí
     }
     
-    // 🔥 CRÍTICO: Limpiar arrays de telas
+    //  CRÍTICO: Limpiar arrays de telas
     if (window.telasAgregadas) {
         window.telasAgregadas = [];
     }
@@ -1650,7 +1659,7 @@ function configurarListenersModalPrenda() {
         return;
     }
     
-    // console.log('🔧 [Modal] Configurando listeners...');
+    // console.log(' [Modal] Configurando listeners...');
     
     // LISTENER DEL BOTÓN CERRAR
     btnCerrar.onclick = function(e) {
@@ -1670,7 +1679,7 @@ function configurarListenersModalPrenda() {
     if (modalOverlay) {
         modalOverlay.addEventListener('click', function(e) {
             if (e.target === modalOverlay) {
-                // console.log('📍 [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
+                // console.log(' [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
                 cerrarModalPrendaNueva();
             }
         });
@@ -1710,7 +1719,7 @@ window.diagnosticarDelayModalCierre = function() {
     console.log('Para identificar el causante del delay de 3 segundos:\n');
     
     // Listar todos los timers activos
-    console.log('📋 Verificando procesos activos...\n');
+    console.log(' Verificando procesos activos...\n');
     
     // Buscar listeners de eventos en el documento
     const modalOverlay = document.getElementById('modal-agregar-prenda-nueva');

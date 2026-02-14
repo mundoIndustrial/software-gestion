@@ -9,7 +9,7 @@
  */
 function transformarVariantesATelasAgregadas(prenda) {
     console.log(' [transformarVariantesATelasAgregadas] Iniciando transformación');
-    console.log('📋 Prenda recibida:', {
+    console.log(' Prenda recibida:', {
         nombre: prenda.nombre_prenda || prenda.nombre,
         tiene_variantes: !!prenda.variantes,
         variantes_count: prenda.variantes?.length || 0,
@@ -125,7 +125,7 @@ function transformarVariantesATelasAgregadas(prenda) {
     // LOG FINAL CON REFERENCIAS
     console.log(' [transformarVariantesATelasAgregadas] TRANSFORMACIÓN COMPLETADA');
     console.log(` Total de telas agregadas: ${telasAgregadas.length}`);
-    console.log('📋 ARRAY FINAL telasAgregadas con referencias:');
+    console.log(' ARRAY FINAL telasAgregadas con referencias:');
     
     telasAgregadas.forEach((tela, index) => {
         console.log(`  [${index}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}" | imágenes: ${tela.imagenes.length}`);

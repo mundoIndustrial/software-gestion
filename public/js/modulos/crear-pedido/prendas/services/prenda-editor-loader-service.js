@@ -19,7 +19,7 @@ class PrendaEditorLoaderService {
 
         // Si los módulos ya están disponibles, marcar como cargados
         if (typeof PrendaModalManager !== 'undefined') {
-            console.log('[LoaderService] ✅ Módulos ya disponibles globalmente');
+            console.log('[LoaderService]  Módulos ya disponibles globalmente');
             this._modulosCargados = true;
             return;
         }
@@ -27,16 +27,16 @@ class PrendaEditorLoaderService {
         // Si el loader está disponible, usarlo
         if (typeof window.PrendaEditorLoader !== 'undefined') {
             this._modulosEnCarga = true;
-            console.log('[LoaderService] ⚙️ Usando PrendaEditorLoader...');
+            console.log('[LoaderService]  Usando PrendaEditorLoader...');
             
             window.PrendaEditorLoader.load()
                 .then(() => {
-                    console.log('[LoaderService] ✅ Módulos cargados vía loader');
+                    console.log('[LoaderService]  Módulos cargados vía loader');
                     this._modulosCargados = true;
                     this._modulosEnCarga = false;
                 })
                 .catch(error => {
-                    console.error('[LoaderService] ❌ Error en loader:', error);
+                    console.error('[LoaderService]  Error en loader:', error);
                     this._modulosEnCarga = false;
                 });
             return;
@@ -53,7 +53,7 @@ class PrendaEditorLoaderService {
      */
     static _cargarManualmente() {
         this._modulosEnCarga = true;
-        console.warn('[LoaderService] ⚠️ Cargando módulos manualmente...');
+        console.warn('[LoaderService]  Cargando módulos manualmente...');
         
         const modulesToLoad = [
             '/js/modulos/crear-pedido/prendas/services/prenda-editor-service.js',
@@ -75,13 +75,13 @@ class PrendaEditorLoaderService {
             script.onload = () => {
                 cargados++;
                 if (cargados === modulesToLoad.length) {
-                    console.log('[LoaderService] ✅ Todos los módulos cargados');
+                    console.log('[LoaderService]  Todos los módulos cargados');
                     this._modulosCargados = true;
                     this._modulosEnCarga = false;
                 }
             };
             script.onerror = () => {
-                console.error('[LoaderService] ❌ Error cargando:', url);
+                console.error('[LoaderService]  Error cargando:', url);
                 cargados++;
                 if (cargados === modulesToLoad.length) {
                     this._modulosEnCarga = false;

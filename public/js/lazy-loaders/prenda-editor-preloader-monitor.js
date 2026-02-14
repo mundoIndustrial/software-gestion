@@ -42,7 +42,7 @@
         console.log(`  Scripts en cache: ${status.scriptCacheSize}`);
         console.log(`  Módulos en cache: ${status.moduleCacheSize}`);
 
-        console.log('\n%c⚙️ CONFIGURACIÓN', 'font-weight: bold; color: #f39c12; font-size: 13px;');
+        console.log('\n%c CONFIGURACIÓN', 'font-weight: bold; color: #f39c12; font-size: 13px;');
         console.log(`  Delay de precarguía: ${status.config.preloadDelay}ms`);
         console.log(`  Threshold idle: ${status.config.idleThreshold}ms`);
 

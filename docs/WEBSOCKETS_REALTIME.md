@@ -1,6 +1,6 @@
 #  Sistema de Actualización en Tiempo Real - WebSockets con Fallback
 
-## 📋 Overview
+##  Overview
 
 Sistema completo de actualización en tiempo real para tabla de pedidos que utiliza WebSockets como método principal y fallback inteligente a polling cuando la conexión WebSocket falla.
 

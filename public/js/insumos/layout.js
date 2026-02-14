@@ -192,7 +192,7 @@ async function _parseResponseData(response) {
     if (contentType && contentType.includes('application/json')) {
         return await response.json();
     }
-    throw new Error('Respuesta no es JSON v�lida');
+    throw new Error('Respuesta no es JSON vlida');
 }
 
 /**

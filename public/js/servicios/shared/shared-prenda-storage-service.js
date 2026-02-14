@@ -92,7 +92,7 @@ class SharedPrendaStorageService {
             // Validar archivo
             const validacion = this.validarArchivo(archivo);
             if (!validacion.valido) {
-                console.warn(`[SharedPrendaStorage] ⚠️ Archivo ${i + 1} inválido:`, validacion.mensaje);
+                console.warn(`[SharedPrendaStorage]  Archivo ${i + 1} inválido:`, validacion.mensaje);
                 continue;
             }
 
@@ -132,7 +132,7 @@ class SharedPrendaStorageService {
                 console.log(`[SharedPrendaStorage] ✓ Subido: ${url}`);
 
             } catch (error) {
-                console.error(`[SharedPrendaStorage] ❌ Error subiendo ${archivo.name}:`, error);
+                console.error(`[SharedPrendaStorage]  Error subiendo ${archivo.name}:`, error);
                 // Continuar con el siguiente archivo
             }
         }
@@ -169,7 +169,7 @@ class SharedPrendaStorageService {
                 console.log(`[SharedPrendaStorage] ✓ Eliminada imagen ${id}`);
 
             } catch (error) {
-                console.error(`[SharedPrendaStorage] ❌ Error eliminando ${id}:`, error);
+                console.error(`[SharedPrendaStorage]  Error eliminando ${id}:`, error);
                 resultado.fallidas.push(id);
             }
         }

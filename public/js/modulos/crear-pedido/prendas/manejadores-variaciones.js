@@ -276,7 +276,7 @@ async function cargarTelasDisponibles() {
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-telas');
-            console.log('[Telas] Buscando datalist con id "opciones-telas":', datalist ? '✅ Encontrado' : '❌ NO ENCONTRADO');
+            console.log('[Telas] Buscando datalist con id "opciones-telas":', datalist ? ' Encontrado' : ' NO ENCONTRADO');
             
             if (datalist) {
                 datalist.innerHTML = '';
@@ -323,7 +323,7 @@ async function cargarColoresDisponibles() {
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-colores');
-            console.log('[Colores] Buscando datalist con id "opciones-colores":', datalist ? '✅ Encontrado' : '❌ NO ENCONTRADO');
+            console.log('[Colores] Buscando datalist con id "opciones-colores":', datalist ? ' Encontrado' : ' NO ENCONTRADO');
             
             if (datalist) {
                 datalist.innerHTML = '';
@@ -390,14 +390,14 @@ window.cargarCatalogosModal = async function() {
                 cargarColoresDisponibles()
             ]);
             
-            console.log('[Catálogos] ✅ Ambos catálogos cargados', {
+            console.log('[Catálogos]  Ambos catálogos cargados', {
                 telas: telas?.length || 0,
                 colores: colores?.length || 0
             });
             
             return { telas, colores };
         } catch (error) {
-            console.error('[Catálogos] ❌ Error cargando catálogos:', {
+            console.error('[Catálogos]  Error cargando catálogos:', {
                 message: error.message,
                 stack: error.stack
             });

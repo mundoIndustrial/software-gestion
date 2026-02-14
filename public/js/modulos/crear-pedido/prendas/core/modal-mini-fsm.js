@@ -47,7 +47,7 @@
         _validarModalExiste() {
             const modal = document.getElementById(this.modalId);
             if (!modal) {
-                console.warn(`[ModalFSM] ⚠️ Modal no encontrado en DOM al iniciar: ${this.modalId}`);
+                console.warn(`[ModalFSM]  Modal no encontrado en DOM al iniciar: ${this.modalId}`);
                 // No es error fatal - el modal se puede cargar después
             }
         }
@@ -85,7 +85,7 @@
 
             if (!transicionesValidas[estadoAnterior].includes(nuevoEstado)) {
                 console.warn(
-                    `[ModalFSM] ❌ Transición rechazada: ${estadoAnterior} → ${nuevoEstado}`
+                    `[ModalFSM]  Transición rechazada: ${estadoAnterior} → ${nuevoEstado}`
                 );
                 return false;
             }
@@ -103,7 +103,7 @@
 
             // Log de transición
             console.log(
-                `[ModalFSM] ✅ Transición: ${estadoAnterior} → ${nuevoEstado}`,
+                `[ModalFSM]  Transición: ${estadoAnterior} → ${nuevoEstado}`,
                 contexto
             );
 
@@ -214,9 +214,9 @@
 
     if (!window.__MODAL_FSM__) {
         window.__MODAL_FSM__ = new ModalMiniFSM('modal-agregar-prenda-nueva');
-        console.log('[ModalFSM] ✅ Singleton creado en window.__MODAL_FSM__');
+        console.log('[ModalFSM]  Singleton creado en window.__MODAL_FSM__');
     } else {
-        console.warn('[ModalFSM] ⚠️ Ya existe window.__MODAL_FSM__, ignorando creación duplicada');
+        console.warn('[ModalFSM]  Ya existe window.__MODAL_FSM__, ignorando creación duplicada');
     }
 
     // Mantenimiento de historial de cambios (debug)

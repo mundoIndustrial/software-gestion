@@ -32,7 +32,7 @@ class MiddlewareGuardadoPrenda {
             // Obtener procesos editados
             const procesosEditados = this.obtenerProcesosEditados();
 
-            console.log('📋 [MIDDLEWARE-GUARDADO] Procesos editados encontrados:', {
+            console.log(' [MIDDLEWARE-GUARDADO] Procesos editados encontrados:', {
                 cantidad: procesosEditados.length,
                 tipos: procesosEditados.map(p => p.tipo)
             });

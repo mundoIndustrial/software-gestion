@@ -41,25 +41,25 @@ class PrendaEditorTest {
                 procesos: []
             };
 
-            console.log('✅ [CASO 1] Prenda de ejemplo creada:', prendaEjemplo);
+            console.log(' [CASO 1] Prenda de ejemplo creada:', prendaEjemplo);
 
             // Verificar que el PrendaEditor está disponible
             if (!window.gestionItemsUI.prendaEditor) {
                 throw new Error('PrendaEditor no está disponible en GestionItemsUI');
             }
 
-            console.log('✅ [CASO 1] PrendaEditor disponible');
+            console.log(' [CASO 1] PrendaEditor disponible');
             
             // Intentar cargar la prenda en modal (sin índice = crear nueva)
             // Esto causará un 404 porque no hay pedidoId, pero debería usar datos locales
             await window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaEjemplo, null);
             
-            console.log('✅ [CASO 1] Modal abierto correctamente con datos locales');
+            console.log(' [CASO 1] Modal abierto correctamente con datos locales');
             
             // Verificar que el modal está visible
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             if (modal && modal.style.display !== 'none') {
-                console.log('✅ [CASO 1] Modal visualmente visible en pantalla');
+                console.log(' [CASO 1] Modal visualmente visible en pantalla');
             }
             
             this.resultados.push({
@@ -69,7 +69,7 @@ class PrendaEditorTest {
             });
 
         } catch (error) {
-            console.error('❌ [CASO 1] Error:', error.message);
+            console.error(' [CASO 1] Error:', error.message);
             this.resultados.push({
                 caso: this.caso_actual,
                 estado: 'ERROR',
@@ -106,11 +106,11 @@ class PrendaEditorTest {
                 throw new Error('No hay prendas en este pedido');
             }
 
-            console.log(`✅ [CASO 2] Pedido obtenido con ${prendas.length} prendas`);
+            console.log(` [CASO 2] Pedido obtenido con ${prendas.length} prendas`);
 
             // Editar la primera prenda
             const prendaAEditar = prendas[0];
-            console.log('📋 Prenda a editar:', {
+            console.log(' Prenda a editar:', {
                 nombre: prendaAEditar.nombre || prendaAEditar.nombre_prenda,
                 id: prendaAEditar.id,
                 prenda_pedido_id: prendaAEditar.prenda_pedido_id,
@@ -185,10 +185,10 @@ class PrendaEditorTest {
 
             // Validar que se cargó algo
             if (!tieneTelas && !tieneTallas && procesosCargados === 0) {
-                console.warn('⚠️ [CASO 2] Advertencia: Prenda sin telas, tallas ni procesos visibles');
+                console.warn(' [CASO 2] Advertencia: Prenda sin telas, tallas ni procesos visibles');
             }
 
-            console.log('✅ [CASO 2] Prenda cargada en modal y validada');
+            console.log(' [CASO 2] Prenda cargada en modal y validada');
 
             this.resultados.push({
                 caso: this.caso_actual,
@@ -197,7 +197,7 @@ class PrendaEditorTest {
             });
 
         } catch (error) {
-            console.error('❌ [CASO 2] Error:', error.message);
+            console.error(' [CASO 2] Error:', error.message);
             this.resultados.push({
                 caso: this.caso_actual,
                 estado: 'ERROR',
@@ -225,7 +225,7 @@ class PrendaEditorTest {
                 if (enPaginaCotizacion) {
                     throw new Error('PrendaCotizacionHandler no está disponible en página de cotización');
                 } else {
-                    console.log('⚠️ [CASO 3] Este caso solo aplica en crear-pedido-desde-cotizacion');
+                    console.log(' [CASO 3] Este caso solo aplica en crear-pedido-desde-cotizacion');
                     this.resultados.push({
                         caso: this.caso_actual,
                         estado: 'OMITIDO',
@@ -235,20 +235,20 @@ class PrendaEditorTest {
                 }
             }
 
-            console.log('✅ [CASO 3] PrendaCotizacionHandler disponible');
+            console.log(' [CASO 3] PrendaCotizacionHandler disponible');
 
             // Intentar verificar si hay prendas cargadas desde cotización
             if (window.prendas_cotizacion && window.prendas_cotizacion.length > 0) {
-                console.log(`✅ [CASO 3] ${window.prendas_cotizacion.length} prendas de cotización cargadas`);
+                console.log(` [CASO 3] ${window.prendas_cotizacion.length} prendas de cotización cargadas`);
                 
                 const prendaTest = window.prendas_cotizacion[0];
-                console.log('📋 Prenda de cotización:', {
+                console.log(' Prenda de cotización:', {
                     nombre: prendaTest.nombre || prendaTest.nombre_prenda,
                     origen: prendaTest.origen || 'No especificado',
                     tieneDatos: !!prendaTest.telas || !!prendaTest.imagenes
                 });
             } else {
-                console.warn('⚠️ [CASO 3] No hay prendas de cotización cargadas en memoria');
+                console.warn(' [CASO 3] No hay prendas de cotización cargadas en memoria');
             }
 
             this.resultados.push({
@@ -258,7 +258,7 @@ class PrendaEditorTest {
             });
 
         } catch (error) {
-            console.error('❌ [CASO 3] Error:', error.message);
+            console.error(' [CASO 3] Error:', error.message);
             this.resultados.push({
                 caso: this.caso_actual,
                 estado: 'ERROR',
@@ -277,7 +277,7 @@ class PrendaEditorTest {
         console.log('Página actual: ' + window.location.pathname);
 
         // Verificar dependencias globales
-        console.log('\n📋 Verificando dependencias globales...');
+        console.log('\n Verificando dependencias globales...');
         this.verificarDependencias();
 
         // Ejecutar casos
@@ -292,8 +292,8 @@ class PrendaEditorTest {
         
         this.resultados.forEach((r, idx) => {
             let emoji = '❓';
-            if (r.estado === 'EXITOSO') emoji = '✅';
-            else if (r.estado === 'ERROR') emoji = '❌';
+            if (r.estado === 'EXITOSO') emoji = '';
+            else if (r.estado === 'ERROR') emoji = '';
             else if (r.estado === 'OMITIDO') emoji = '⏭️';
             
             console.log(`${emoji} ${r.caso}`);
@@ -327,7 +327,7 @@ class PrendaEditorTest {
 
         dependencias.forEach(dep => {
             const existe = eval(`typeof ${dep} !== 'undefined'`);
-            const emoji = existe ? '✅' : '❌';
+            const emoji = existe ? '' : '';
             console.log(`${emoji} ${dep}: ${existe ? 'OK' : 'FALTA'}`);
         });
     }
@@ -359,4 +359,4 @@ window.testPrendaEditor = async function() {
     return await test.ejecutarTodos();
 };
 
-console.log('✅ Test suite cargado. Ejecuta: testPrendaEditor()');
+console.log(' Test suite cargado. Ejecuta: testPrendaEditor()');

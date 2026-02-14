@@ -1220,7 +1220,7 @@
         
         if (!containerMobile) {
             console.error(' ERROR: No se encontró #factura-container-mobile');
-            console.log('📋 IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+            console.log(' IDs disponibles en el documento:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
             return;
         }
         

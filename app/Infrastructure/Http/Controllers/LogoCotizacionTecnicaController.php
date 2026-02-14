@@ -173,7 +173,7 @@ class LogoCotizacionTecnicaController extends Controller
                 }
             }
 
-            Log::info('📋 Metadatos de imágenes compartidas encontrados:', [
+            Log::info(' Metadatos de imágenes compartidas encontrados:', [
                 'count' => count($imagenesCompartidas),
                 'claves' => array_keys($imagenesCompartidas)
             ]);

@@ -1,6 +1,6 @@
 # Módulo de Gestión de Bodega - Guía de Implementación
 
-## 📋 Descripción General
+##  Descripción General
 
 Sistema completo de gestión de pedidos para el rol de Bodeguero en el ERP textil. Permite visualizar, filtrar, buscar y actualizar el estado de pedidos con interfaz moderna y responsive.
 
@@ -141,7 +141,7 @@ Asegúrate de que tu layout incluya:
 </html>
 ```
 
-## 🔧 Configuración
+##  Configuración
 
 ### Variables de Entorno Necesarias
 

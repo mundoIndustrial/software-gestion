@@ -1166,9 +1166,9 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             }
         });
         
-        console.log('📋 DEBUG: Total telas procesadas:', telasPrendas.length);
+        console.log(' DEBUG: Total telas procesadas:', telasPrendas.length);
         if (telasPrendas.length > 0) {
-            console.log('📋 DEBUG: Contenido telasPrendas:', JSON.stringify(
+            console.log(' DEBUG: Contenido telasPrendas:', JSON.stringify(
                 telasPrendas.map(t => ({ 
                     prenda_cot_id: t.prenda_cot_id, 
                     color: t.color, 

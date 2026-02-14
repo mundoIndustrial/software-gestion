@@ -10,11 +10,23 @@ class PrendaModalManager {
     static abrir(modalId = 'modal-agregar-prenda-nueva') {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.style.display = 'flex';
+            // Usar UIModalService para manejar el scroll del body
+            if (window.UI && typeof window.UI.abrirModal === 'function') {
+                window.UI.abrirModal(modalId, {
+                    display: 'flex',
+                    closeOnClickOutside: false,
+                    closeOnEsc: true,
+                    preventScroll: true
+                });
+            } else {
+                // Fallback si UIModalService no está disponible
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
             modal.dispatchEvent(new CustomEvent('shown.bs.modal', { bubbles: true }));
-            console.log(`✅ [Modal] Abierto: ${modalId}`);
+            console.log(` [Modal] Abierto: ${modalId}`);
         } else {
-            console.warn(`❌ [Modal] No encontrado: ${modalId}`);
+            console.warn(` [Modal] No encontrado: ${modalId}`);
         }
     }
 
@@ -24,9 +36,18 @@ class PrendaModalManager {
     static cerrar(modalId = 'modal-agregar-prenda-nueva') {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.style.display = 'none';
+            // Usar UIModalService para manejar el scroll del body
+            if (window.UI && typeof window.UI.cerrarModal === 'function') {
+                window.UI.cerrarModal(modalId, {
+                    animate: false
+                });
+            } else {
+                // Fallback si UIModalService no está disponible
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
             modal.dispatchEvent(new CustomEvent('hidden.bs.modal', { bubbles: true }));
-            console.log(`✅ [Modal] Cerrado: ${modalId}`);
+            console.log(` [Modal] Cerrado: ${modalId}`);
         }
     }
 
@@ -68,7 +89,7 @@ class PrendaModalManager {
             console.warn('[Modal] Error limpiando módulos:', error);
         }
         
-        console.log('✅ [Modal] Limpiado');
+        console.log(' [Modal] Limpiado');
     }
 
     /**

@@ -21,7 +21,7 @@ echo "╚═══════════════════════�
 $pedidoId = 1;
 
 // 1. Información del Pedido
-echo "📋 INFORMACIÓN DEL PEDIDO\n";
+echo " INFORMACIÓN DEL PEDIDO\n";
 echo str_repeat("─", 70) . "\n";
 
 $pedido = DB::table('pedidos_produccion')->where('id', $pedidoId)->first();

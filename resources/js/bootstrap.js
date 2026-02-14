@@ -32,7 +32,7 @@ window.Pusher = Pusher;
 // Importar Echo SINCRÓNICAMENTE
 import Echo from 'laravel-echo';
 
-// 🔥 Sistema para esperar a que Echo esté listo
+//  Sistema para esperar a que Echo esté listo
 window.echoReady = false;
 window.echoReadyCallbacks = [];
 
@@ -69,7 +69,7 @@ window.notifyEchoReady = function() {
  * Inicializar Echo después de que todo esté cargado
  */
 function initializeEcho() {
-    // 🔥 Leer config desde meta tags inyectados por Laravel (dinámico, no compilado)
+    //  Leer config desde meta tags inyectados por Laravel (dinámico, no compilado)
     const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
     const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
     

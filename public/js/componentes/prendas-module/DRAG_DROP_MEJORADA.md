@@ -1,6 +1,6 @@
 # 🎯 Mejora del Área de Drag & Drop para Imágenes de Tela
 
-## 📋 Descripción de los Cambios
+##  Descripción de los Cambios
 
 He modificado el área de drag & drop para imágenes de tela para que sea mucho más grande y fácil de usar. Ahora ocupa toda la celda y el área es mucho más visible y accesible.
 

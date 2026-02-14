@@ -1,6 +1,6 @@
-# ✅ GUÍA DE IMPLEMENTACIÓN FASE 1 - PASO A PASO
+#  GUÍA DE IMPLEMENTACIÓN FASE 1 - PASO A PASO
 
-## 📋 PRE-REQUISITOS ANTES DE EMPEZAR
+##  PRE-REQUISITOS ANTES DE EMPEZAR
 
 - [ ] Backup de la rama actual: `git commit -am "Backup pre-Fase1"`
 - [ ] Crear rama feature: `git checkout -b feature/fase1-deduplicacion`
@@ -9,7 +9,7 @@
 
 ---
 
-## 🔧 PASO 1: CREAR ARCHIVO PROMISE-CACHE
+##  PASO 1: CREAR ARCHIVO PROMISE-CACHE
 
 ### Acción
 Crear nuevo archivo:
@@ -25,7 +25,7 @@ ls -la public/js/modulos/crear-pedido/prendas/promise-cache.js
 
 ---
 
-## 🔧 PASO 2: INCLUIR PROMISE-CACHE EN HTML
+##  PASO 2: INCLUIR PROMISE-CACHE EN HTML
 
 ### Archivos a modificar
 - `resources/views/asesores/pedidos/pedido-crear.blade.php` (o donde cargues scripts)
@@ -54,7 +54,7 @@ PromiseCache.getStatus()
 
 ---
 
-## 🔧 PASO 3: REEMPLAZAR FUNCIÓN cargarCatalogosModal()
+##  PASO 3: REEMPLAZAR FUNCIÓN cargarCatalogosModal()
 
 ### Archivo: `manejadores-variaciones.js`
 
@@ -68,7 +68,7 @@ grep -n "Promise en flight" public/js/modulos/crear-pedido/prendas/manejadores-v
 
 ---
 
-## 🔧 PASO 4: HACER ASYNC/AWAIT abrirModalAgregarPrendaNueva()
+##  PASO 4: HACER ASYNC/AWAIT abrirModalAgregarPrendaNueva()
 
 ### Archivo: `gestion-items-pedido.js`
 
@@ -82,7 +82,7 @@ grep -n "async abrirModalAgregarPrendaNueva" public/js/modulos/crear-pedido/proc
 
 ---
 
-## 🔧 PASO 5: REFORZAR GUARD CLAUSE DragDropManager
+##  PASO 5: REFORZAR GUARD CLAUSE DragDropManager
 
 ### Archivo: `drag-drop-manager.js`
 
@@ -96,7 +96,7 @@ grep -n "Ya inicializado, ignorando" public/js/componentes/prendas-module/drag-d
 
 ---
 
-## 🔧 PASO 6: AUDITAR TODOS LOS CALLERS
+##  PASO 6: AUDITAR TODOS LOS CALLERS
 
 ### Búsqueda 1: Dónde se llama `abrirModalAgregarPrendaNueva()`
 
@@ -117,19 +117,19 @@ Para CADA resultado, verificar si es:
 
 1. **Dentro de una clase:** Agregar `await`
 ```javascript
-// ❌ ANTES
+//  ANTES
 this.gestionItemsUI.abrirModalAgregarPrendaNueva();
 
-// ✅ DESPUÉS
+//  DESPUÉS
 await this.gestionItemsUI.abrirModalAgregarPrendaNueva();
 ```
 
 2. **Evento onclick:** Agregar async al handler
 ```html
-<!-- ❌ ANTES -->
+<!--  ANTES -->
 <button onclick="window.gestionItemsUI.abrirModalAgregarPrendaNueva()">
 
-<!-- ✅ DESPUÉS -->
+<!--  DESPUÉS -->
 <button onclick="(async () => { await window.gestionItemsUI.abrirModalAgregarPrendaNueva(); })()">
 ```
 
@@ -159,7 +159,7 @@ window.gestionItemsUI.abrirModalAgregarPrendaNueva(); // Funcionará igual (no a
 [Telas] Respuesta de API...
 [Colores] Iniciando carga de colores disponibles...
 [Colores] Respuesta de API...
-[Catálogos] ✅ Ambos catálogos cargados
+[Catálogos]  Ambos catálogos cargados
 [PromiseCache] Promise limpiada automáticamente
 ```
 
@@ -168,7 +168,7 @@ Si haces 2 clics rápidos, deberías ver:
 [PromiseCache] Promise guardada
 [Catálogos] Iniciando carga...
 [PromiseCache] Promise en flight, reutilizando... ← AQUÍ, segunda llamada
-[Catálogos] ✅ Ambos catálogos cargados
+[Catálogos]  Ambos catálogos cargados
 ```
 
 ### Test 2: Network debe mostrar 1 fetch, no 2
@@ -193,12 +193,12 @@ Si haces 2 clics rápidos, deberías ver:
 **Resultado esperado:**
 ```
 [DragDropManager] Iniciando inicialización...
-[DragDropManager] ✅ Sistema de drag & drop inicializado correctamente
+[DragDropManager]  Sistema de drag & drop inicializado correctamente
 ```
 
 Si abres el modal 2 veces:
 ```
-[DragDropManager] ✅ Ya inicializado, ignorando llamada duplicada ← ESTO en segunda apertura
+[DragDropManager]  Ya inicializado, ignorando llamada duplicada ← ESTO en segunda apertura
 ```
 
 ### Test 4: Modal abre correctamente
@@ -210,10 +210,10 @@ Si abres el modal 2 veces:
 4. Verificar que no hay errores en console
 
 **Resultado esperado:**
-- ✅ Modal se abre
-- ✅ Formulario vacío (creación) o con datos (edición)
-- ✅ Autocomplete de telas y colores funciona
-- ✅ Sin errores en console
+-  Modal se abre
+-  Formulario vacío (creación) o con datos (edición)
+-  Autocomplete de telas y colores funciona
+-  Sin errores en console
 
 ---
 
@@ -222,11 +222,11 @@ Si abres el modal 2 veces:
 Si ves CUALQUIERA de esto, hacer rollback:
 
 ```
-❌ Modal no abre
-❌ Catálogos cargan múltiples veces (2+ en Network)
-❌ Errors en console tipo "is not a function"
-❌ Modal abre sin catálogos (dropdown vacío)
-❌ Drag & drop no funciona
+ Modal no abre
+ Catálogos cargan múltiples veces (2+ en Network)
+ Errors en console tipo "is not a function"
+ Modal abre sin catálogos (dropdown vacío)
+ Drag & drop no funciona
 ```
 
 **Comando rollback:**
@@ -270,17 +270,17 @@ Performance: 400-500ms para primera apertura, 100ms en reapertura
 
 ---
 
-## ✅ CHECKLIST FINAL
+##  CHECKLIST FINAL
 
 - [ ] promise-cache.js creado y cargado
 - [ ] manejadores-variaciones.js refactorizado
 - [ ] gestion-items-pedido.js asincronizado
 - [ ] drag-drop-manager.js guard clause reforzado
 - [ ] TODOS los callers auditados y actualizados
-- [ ] Test 1 (Console dedup) ✅
-- [ ] Test 2 (Network 1x) ✅
-- [ ] Test 3 (DragDropManager guard) ✅
-- [ ] Test 4 (Modal funcional) ✅
+- [ ] Test 1 (Console dedup) 
+- [ ] Test 2 (Network 1x) 
+- [ ] Test 3 (DragDropManager guard) 
+- [ ] Test 4 (Modal funcional) 
 - [ ] 0 errores en console
 - [ ] Modal abre/cierra 10 veces sin problemas
 - [ ] Código pusheado a rama feature/fase1-deduplicacion

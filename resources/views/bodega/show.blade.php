@@ -309,7 +309,7 @@
  <div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100000;">
     <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
         <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
-            <h2 class="text-lg font-semibold text-white">📋 Pedido</h2>
+            <h2 class="text-lg font-semibold text-white"> Pedido</h2>
             <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">

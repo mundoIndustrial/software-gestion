@@ -16,12 +16,18 @@ class PrendaEditorTelas {
         // Buscar tabla
         const tablaTelas = document.querySelector('#tbody-telas');
         if (!tablaTelas) {
-            console.warn('❌ [Telas] No encontrado #tbody-telas');
+            console.warn(' [Telas] No encontrado #tbody-telas');
             return;
         }
         
-        // Encontrar fila de inputs (para agregar nuevas)
-        const filaInputs = tablaTelas.querySelector('[id="nueva-prenda-tela"]')?.closest('tr');
+        // Encontrar fila de inputs usando el botón "Agregar" (selector más robusto)
+        // El botón tiene onclick="agregarTelaNueva()" que es más estable que buscar por ID
+        const todasLasFilas = Array.from(tablaTelas.querySelectorAll('tr'));
+        const filaInputs = todasLasFilas.find(tr => 
+            tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
+        );
+        
+        console.log('[Telas] Fila de inputs encontrada:', !!filaInputs);
         
         // Eliminar filas viejas (excepto inputs)
         const filasExistentes = tablaTelas.querySelectorAll('tr');
@@ -45,17 +51,19 @@ class PrendaEditorTelas {
                     tablaTelas.appendChild(fila);
                 }
                 
-                console.log(`✅ [Telas] ${idx + 1}: ${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
+                console.log(` [Telas] ${idx + 1}: ${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
             });
         }
         
-        // 🔥 Replicar a global para que sea editable
+        //  Replicar a global para que sea editable
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
             window.telasCreacion = JSON.parse(JSON.stringify(prenda.telasAgregadas));
             console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion:', window.telasCreacion.length);
+            // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
+            window.telasAgregadas = [];
         }
         
-        console.log('✅ [Telas] Completado');
+        console.log(' [Telas] Completado');
     }
 
     /**
@@ -68,9 +76,30 @@ class PrendaEditorTelas {
         
         // Procesar imágenes de la tela
         let imagenHTML = '';
-        if (tela.imagenes && Array.isArray(tela.imagenes) && tela.imagenes.length > 0) {
+        
+        // Intentar obtener imagen de diferentes campos posibles
+        let imagenesArray = [];
+        
+        if (tela.imagenes) {
+            if (Array.isArray(tela.imagenes)) {
+                imagenesArray = tela.imagenes;
+            } else if (typeof tela.imagenes === 'object') {
+                // Si es un objeto, convertirlo a array
+                imagenesArray = [tela.imagenes];
+            } else if (typeof tela.imagenes === 'string') {
+                imagenesArray = [tela.imagenes];
+            }
+        } else if (tela.imagen) {
+            // Alternativa: campo "imagen" singular
+            imagenesArray = [tela.imagen];
+        } else if (tela.foto) {
+            // Otra alternativa: campo "foto"
+            imagenesArray = [tela.foto];
+        }
+        
+        if (imagenesArray && imagenesArray.length > 0) {
             // Tomar la primera imagen válida
-            const imagenValida = tela.imagenes.find(img => img !== null && img !== undefined);
+            const imagenValida = imagenesArray.find(img => img !== null && img !== undefined);
             if (imagenValida) {
                 let imgSrc = '';
                 
@@ -83,15 +112,25 @@ class PrendaEditorTelas {
                         // Ruta de archivo, agregar /storage/ si necesario
                         imgSrc = imagenValida.startsWith('/') ? imagenValida : '/storage/' + imagenValida;
                     }
+                } else if (imagenValida instanceof File) {
+                    // Si es un verdadero File object, crear blob URL
+                    imgSrc = URL.createObjectURL(imagenValida);
                 } else if (typeof imagenValida === 'object') {
-                    // Objeto con propiedades
+                    // Objeto con propiedades - intentar múltiples campos
                     if (imagenValida.previewUrl) {
                         imgSrc = imagenValida.previewUrl;
                     } else if (imagenValida.dataURL) {
                         imgSrc = imagenValida.dataURL;
-                    } else if (imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original) {
-                        const url = imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original;
-                        imgSrc = url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url;
+                    } else if (imagenValida.src) {
+                        imgSrc = imagenValida.src;
+                    } else if (imagenValida.url) {
+                        imgSrc = imagenValida.url.startsWith('/') || imagenValida.url.startsWith('http') ? imagenValida.url : '/storage/' + imagenValida.url;
+                    } else if (imagenValida.ruta) {
+                        imgSrc = imagenValida.ruta.startsWith('/') ? imagenValida.ruta : '/storage/' + imagenValida.ruta;
+                    } else if (imagenValida.ruta_webp) {
+                        imgSrc = imagenValida.ruta_webp.startsWith('/') ? imagenValida.ruta_webp : '/storage/' + imagenValida.ruta_webp;
+                    } else if (imagenValida.ruta_original) {
+                        imgSrc = imagenValida.ruta_original.startsWith('/') ? imagenValida.ruta_original : '/storage/' + imagenValida.ruta_original;
                     }
                 }
                 
@@ -100,7 +139,7 @@ class PrendaEditorTelas {
                         <img src="${imgSrc}" 
                             style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;" 
                             alt="Tela ${idx + 1}"
-                            onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\"font-size: 0.75rem; color: #9ca3af;\">(imagen no disponible)</div>';">
+                            onerror="const d=document.createElement('div'); d.style.cssText='font-size: 0.75rem; color: #9ca3af;'; d.textContent='(imagen no disponible)'; this.parentElement.innerHTML=''; this.parentElement.appendChild(d);">
                     `;
                 } else {
                     imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';

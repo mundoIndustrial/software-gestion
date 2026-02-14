@@ -23,7 +23,7 @@ class PrendaEditorTallas {
         
         const container = document.getElementById('tarjetas-generos-container');
         if (!container) {
-            console.warn('❌ [Tallas] No encontrado #tarjetas-generos-container');
+            console.warn(' [Tallas] No encontrado #tarjetas-generos-container');
             return;
         }
         
@@ -33,7 +33,7 @@ class PrendaEditorTallas {
         
         const tallasData = prenda.tallasRelacionales || prenda.cantidad_talla;
         if (!tallasData) {
-            console.warn('❌ [Tallas] Sin datos de tallas');
+            console.warn(' [Tallas] Sin datos de tallas');
             return;
         }
         
@@ -50,7 +50,7 @@ class PrendaEditorTallas {
             // Si no existe, crearla
             if (!tarjeta) {
                 console.log(`[Tallas] Creando tarjeta de ${genero}`);
-                tarjeta = this._crearTarjeta(genero, tallas);  // 🔧 Pasar tallas específicas
+                tarjeta = this._crearTarjeta(genero, tallas);  //  Pasar tallas específicas
                 container.appendChild(tarjeta);
             }
             
@@ -59,7 +59,7 @@ class PrendaEditorTallas {
                 const input = tarjeta.querySelector(`input[data-talla="${talla}"]`);
                 if (input) {
                     input.value = cantidad || 0;
-                    console.log(`✅ [Tallas] ${genero} - ${talla}: ${cantidad}`);
+                    console.log(` [Tallas] ${genero} - ${talla}: ${cantidad}`);
                 }
             });
         });
@@ -67,14 +67,14 @@ class PrendaEditorTallas {
         // Actualizar total
         this._actualizarTotal();
         
-        // 🔥 Replicar a global para que sea editable
+        //  Replicar a global para que sea editable
         const tallasAUsar = prenda.cantidad_talla || prenda.tallasRelacionales;
         if (tallasAUsar) {
             window.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
             console.log('[Carga] 📏 Tallas replicadas en window.tallasRelacionales');
         }
         
-        console.log('✅ [Tallas] Completado');
+        console.log(' [Tallas] Completado');
     }
 
     /**
@@ -96,22 +96,79 @@ class PrendaEditorTallas {
         // Encabezado
         const header = document.createElement('div');
         header.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; justify-content: space-between;';
-        header.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #374151;">${icons[genero] || 'help'}</span>
-                <h4 style="margin: 0; color: #1f2937; font-size: 1rem; font-weight: 600;">${genero}</h4>
-            </div>
-            <div style="display: flex; gap: 0.25rem;">
-                <button type="button" style="background: transparent; border: none; color: rgb(107, 114, 128); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 6px;">
-                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">edit</span>
-                </button>
-                <button type="button" style="background: transparent; border: none; color: rgb(107, 114, 128); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 6px;">
-                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>
-                </button>
-            </div>
-        `;
         
-        // Grid de inputs - 🔧 SOLO para tallas que tienen datos
+        const headerLeft = document.createElement('div');
+        headerLeft.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+        headerLeft.innerHTML = `
+            <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #374151;">${icons[genero] || 'help'}</span>
+            <h4 style="margin: 0; color: #1f2937; font-size: 1rem; font-weight: 600;">${genero}</h4>
+        `;
+        header.appendChild(headerLeft);
+        
+        // Botones de acciones
+        const btnGroup = document.createElement('div');
+        btnGroup.style.cssText = 'display: flex; gap: 0.25rem;';
+        
+        const btnEditar = document.createElement('button');
+        btnEditar.type = 'button';
+        btnEditar.title = 'Editar tallas';
+        btnEditar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 6px;';
+        btnEditar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem;">edit</span>';
+        btnEditar.onmouseover = () => {
+            btnEditar.style.color = '#0066cc';
+            btnEditar.style.background = '#f3f4f6';
+        };
+        btnEditar.onmouseout = () => {
+            btnEditar.style.color = '#6b7280';
+            btnEditar.style.background = 'transparent';
+        };
+        btnEditar.onclick = () => {
+            console.log(`[PrendaEditorTallas] 📝 Editando tallas de ${genero}`);
+            // Llamar a la función de edición si existe
+            if (typeof abrirModalSeleccionarTallas === 'function') {
+                abrirModalSeleccionarTallas(genero);
+            }
+        };
+        btnGroup.appendChild(btnEditar);
+        
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.title = 'Eliminar tallas';
+        btnEliminar.style.cssText = 'background: transparent; border: none; color: #6b7280; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 6px;';
+        btnEliminar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>';
+        btnEliminar.onmouseover = () => {
+            btnEliminar.style.color = '#ef4444';
+            btnEliminar.style.background = '#fee2e2';
+        };
+        btnEliminar.onmouseout = () => {
+            btnEliminar.style.color = '#6b7280';
+            btnEliminar.style.background = 'transparent';
+        };
+        btnEliminar.onclick = () => {
+            console.log(`[PrendaEditorTallas] 🗑️ Eliminando tallas de ${genero}`);
+            // Limpiar tallas del género
+            window.tallasRelacionales[genero] = {};
+            
+            // Remover tarjeta del DOM
+            tarjeta.remove();
+            
+            // Desmarcar botón de género si existe
+            const btnGenero = document.getElementById(`btn-genero-${genero}`);
+            if (btnGenero) {
+                btnGenero.dataset.selected = 'false';
+                btnGenero.style.borderColor = '#d1d5db';
+                btnGenero.style.background = 'white';
+                btnGenero.style.color = '#1f2937';
+            }
+            
+            // Actualizar total
+            this._actualizarTotal();
+        };
+        btnGroup.appendChild(btnEliminar);
+        
+        header.appendChild(btnGroup);
+        
+        // Grid de inputs -  SOLO para tallas que tienen datos
         const grid = document.createElement('div');
         grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;';
         
@@ -165,7 +222,7 @@ class PrendaEditorTallas {
     static marcarGeneros(prenda) {
         if (!prenda.cantidad_talla) return;
         
-        // 🔴 PRIMERO: Desmarcar TODOS los géneros
+        //  PRIMERO: Desmarcar TODOS los géneros
         ['dama', 'caballero', 'sobremedida'].forEach(genero => {
             const btn = document.getElementById(`btn-genero-${genero}`);
             if (btn) {
@@ -187,7 +244,7 @@ class PrendaEditorTallas {
                     btn.setAttribute('data-selected', 'true');
                     btn.style.background = '#dbeafe';
                     btn.style.borderColor = '#0369a1';
-                    console.log(`✅ [Tallas] Género ${genero} marcado (tiene ${Object.values(tallas).filter(v => v > 0).length} talla(s))`);
+                    console.log(` [Tallas] Género ${genero} marcado (tiene ${Object.values(tallas).filter(v => v > 0).length} talla(s))`);
                 }
             }
         });

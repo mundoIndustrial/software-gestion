@@ -27,7 +27,7 @@ class EppRepository implements EppRepositoryInterface
         // Ignorar tabla epp_imagenes (no existe)
         // Las imágenes se obtienen de pedido_epp_imagenes en el contexto de pedidos
         
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Cargando EPP sin tabla epp_imagenes', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] Cargando EPP sin tabla epp_imagenes', [
             'epp_id' => $id,
             'nombre' => $modelo->nombre_completo,
         ]);
@@ -49,7 +49,7 @@ class EppRepository implements EppRepositoryInterface
                 ->get();
 
             // Ignorar tabla epp_imagenes (no existe)
-            \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Obteniendo EPPs activos sin epp_imagenes', [
+            \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] Obteniendo EPPs activos sin epp_imagenes', [
                 'total' => $epps->count(),
             ]);
 
@@ -65,7 +65,7 @@ class EppRepository implements EppRepositoryInterface
      */
     public function buscar(string $termino): Collection
     {
-        // 🔥 DESACTIVADO CACHÉ TEMPORALMENTE PARA DEBUG
+        //  DESACTIVADO CACHÉ TEMPORALMENTE PARA DEBUG
         $epps = EppModel::where('activo', true)
             ->where(function ($query) use ($termino) {
                 $query->where('nombre_completo', 'like', "%{$termino}%")
@@ -76,7 +76,7 @@ class EppRepository implements EppRepositoryInterface
             ->get();
 
         // Ignorar tabla epp_imagenes (no existe)
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Buscando EPPs sin caché', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] Buscando EPPs sin caché', [
             'termino' => $termino,
             'total' => $epps->count(),
             'sql' => EppModel::where('activo', true)->where(function ($query) use ($termino) {
@@ -95,9 +95,9 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCodigo(string $codigo): ?EppAggregate
     {
-        // 🔥 NOTA: El campo 'codigo' NO existe en la tabla epps después de la migración
+        //  NOTA: El campo 'codigo' NO existe en la tabla epps después de la migración
         // Esta función devuelve null ya que no hay datos de código disponibles
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] obtenerPorCodigo IGNORADA - campo codigo no existe', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] obtenerPorCodigo IGNORADA - campo codigo no existe', [
             'codigo' => $codigo,
         ]);
         
@@ -109,9 +109,9 @@ class EppRepository implements EppRepositoryInterface
      */
     public function obtenerPorCategoria(string $categoria): Collection
     {
-        // 🔥 NOTA: El campo 'categoria_id' NO existe en la tabla epps después de la migración
+        //  NOTA: El campo 'categoria_id' NO existe en la tabla epps después de la migración
         // Devolvemos una colección vacía
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] obtenerPorCategoria IGNORADA - campo categoria_id no existe', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] obtenerPorCategoria IGNORADA - campo categoria_id no existe', [
             'categoria' => $categoria,
         ]);
         
@@ -173,7 +173,7 @@ class EppRepository implements EppRepositoryInterface
             $modelo->updated_at
         );
 
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] Mapeando EPP desde tabla', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] Mapeando EPP desde tabla', [
             'epp_id' => $modelo->id,
             'nombre' => $nombre,
         ]);
@@ -191,7 +191,7 @@ class EppRepository implements EppRepositoryInterface
     private function sincronizarImagenes(EppModel $modelo, array $imagenes): void
     {
         // Esta función no hace nada, tabla epp_imagenes no existe
-        \Illuminate\Support\Facades\Log::debug('📋 [EPP-REPO] sincronizarImagenes IGNORADA - tabla epp_imagenes no existe', [
+        \Illuminate\Support\Facades\Log::debug(' [EPP-REPO] sincronizarImagenes IGNORADA - tabla epp_imagenes no existe', [
             'epp_id' => $modelo->id,
         ]);
     }

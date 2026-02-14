@@ -1,6 +1,6 @@
 # 🏗️ ARQUITECTURA MODULAR - EDICIÓN COMPARTIDA DE PRENDAS
 
-## 📋 VISIÓN GENERAL
+##  VISIÓN GENERAL
 
 Transformar la lógica de edición de prendas en un **servicio centralizado reutilizable** que funcione en diferentes módulos sin cambios de código.
 
@@ -44,7 +44,7 @@ Transformar la lógica de edición de prendas en un **servicio centralizado reut
 
 ### 1. **Single Responsibility Principle (SRP)**
 ```javascript
-❌ ANTES: PrendaEditor hace TODO
+ ANTES: PrendaEditor hace TODO
   - Cargar datos
   - Transformar formatos
   - Validar
@@ -52,7 +52,7 @@ Transformar la lógica de edición de prendas en un **servicio centralizado reut
   - Guardar en BD
   - Manejar imágenes
 
-✅ DESPUÉS: Cada servicio hace UNA cosa
+ DESPUÉS: Cada servicio hace UNA cosa
   - PrendaDataService: Leer/escribir de BD
   - PrendaEditorService: Orquestar edición
   - PrendaValidationService: Validar datos
@@ -62,7 +62,7 @@ Transformar la lógica de edición de prendas en un **servicio centralizado reut
 
 ### 2. **Dependency Injection**
 ```javascript
-// ❌ ANTES: Las dependencias están hardcodeadas
+//  ANTES: Las dependencias están hardcodeadas
 class PrendaEditor {
     constructor() {
         this.api = new ItemAPIService();      // Acoplado
@@ -70,7 +70,7 @@ class PrendaEditor {
     }
 }
 
-// ✅ DESPUÉS: Las dependencias se inyectan
+//  DESPUÉS: Las dependencias se inyectan
 class PrendaEditor {
     constructor(dependencies) {
         this.api = dependencies.api;          // Desacoplado
@@ -687,12 +687,12 @@ async function duplicarPrendaDeCotizacion(prendaOriginalId) {
 
 | Aspecto | Antes | Después |
 |---------|-------|---------|
-| **Código duplicado** | ❌ 30% repetido en créar/editar | ✅ 0%, un solo flujo |
-| **Cambios de lógica** | ❌ Cambiar en 3-5 lugares | ✅ Un solo lugar |
-| **Nuevo módulo** | ❌ Reimplementar todo | ✅ 5 líneas de código |
-| **Testing** | ❌ Difícil (acoplado a UI/API) | ✅ Fácil (servicios aislados) |
-| **Mantenimiento** | ❌ Alto (lógica dispersa) | ✅ Bajo (servicio centralizado) |
-| **Escalabilidad** | ❌ Limitada | ✅ Ilimitada |
+| **Código duplicado** |  30% repetido en créar/editar |  0%, un solo flujo |
+| **Cambios de lógica** |  Cambiar en 3-5 lugares |  Un solo lugar |
+| **Nuevo módulo** |  Reimplementar todo |  5 líneas de código |
+| **Testing** |  Difícil (acoplado a UI/API) |  Fácil (servicios aislados) |
+| **Mantenimiento** |  Alto (lógica dispersa) |  Bajo (servicio centralizado) |
+| **Escalabilidad** |  Limitada |  Ilimitada |
 
 ---
 
@@ -796,7 +796,7 @@ async function duplicarPrendaDeCotizacion(prendaOriginalId) {
 
 ---
 
-## ✅ CHECKLIST DE MIGRACIÓN
+##  CHECKLIST DE MIGRACIÓN
 
 - [ ] Crear carpeta `/public/js/servicios/shared/`
 - [ ] Implementar EventBus

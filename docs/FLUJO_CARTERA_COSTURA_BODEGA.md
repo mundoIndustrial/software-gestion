@@ -178,7 +178,7 @@ try {
 7.  Usa transacciones para atomicidad
 8.  Sintaxis PHP validada (sin errores)
 
-### 📋 Por Probar (Testing)
+###  Por Probar (Testing)
 1. ⏳ Aprobar un pedido desde módulo de Cartera
 2. ⏳ Verificar que COSTURA-BODEGA se crea en BD
 3. ⏳ Verificar que consecutivo se incrementa

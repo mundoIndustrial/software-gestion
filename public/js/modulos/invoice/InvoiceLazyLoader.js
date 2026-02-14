@@ -121,11 +121,11 @@ class InvoiceLazyLoader {
                 this.callbacksPendientes.delete(modulo);
             }
             
-            console.log(`[InvoiceLazyLoader] ✅ Módulo ${modulo} cargado`);
+            console.log(`[InvoiceLazyLoader]  Módulo ${modulo} cargado`);
             
         } catch (error) {
             this.modulosCargando.delete(modulo);
-            console.error(`[InvoiceLazyLoader] ❌ Error cargando ${modulo}:`, error);
+            console.error(`[InvoiceLazyLoader]  Error cargando ${modulo}:`, error);
             throw error;
         }
     }

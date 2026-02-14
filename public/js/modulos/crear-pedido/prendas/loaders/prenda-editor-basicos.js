@@ -40,7 +40,7 @@ class PrendaEditorBasicos {
             descripcionInput.value = prenda.descripcion || '';
         }
         
-        console.log('✅ [Basicos] Cargado');
+        console.log(' [Basicos] Cargado');
     }
 
     /**

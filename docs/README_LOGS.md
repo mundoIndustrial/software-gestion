@@ -47,7 +47,7 @@ Si ves en el resumen:
 
 ---
 
-## 📍 Archivos Modificados
+##  Archivos Modificados
 
 ### Controllers (2 archivos)
 -  `app/Infrastructure/Http/Controllers/Asesores/CrearPedidoEditableController.php`

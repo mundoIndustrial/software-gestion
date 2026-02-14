@@ -1737,7 +1737,7 @@ class CotizacionBordadoController extends Controller
                 ];
             });
 
-            Log::info('📋 Telas de prendas obtenidas', [
+            Log::info(' Telas de prendas obtenidas', [
                 'cotizacion_id' => $cotizacionId,
                 'total' => $telasPrendas->count()
             ]);

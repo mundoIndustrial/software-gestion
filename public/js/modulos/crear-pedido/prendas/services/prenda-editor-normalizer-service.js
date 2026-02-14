@@ -45,10 +45,10 @@ class PrendaEditorNormalizerService {
 
         // Si es un número u otro tipo inválido
         if (telasAgregadas && typeof telasAgregadas !== 'object') {
-            console.warn('[Normalizer] ⚠️ telasAgregadas es tipo ' + typeof telasAgregadas);
+            console.warn('[Normalizer]  telasAgregadas es tipo ' + typeof telasAgregadas);
             // Intentar fallback
             if (Array.isArray(telasFallback) && telasFallback.length > 0) {
-                console.log('[Normalizer] 📍 Usando fallback a prenda.telas');
+                console.log('[Normalizer]  Usando fallback a prenda.telas');
                 return telasFallback;
             }
             return [];

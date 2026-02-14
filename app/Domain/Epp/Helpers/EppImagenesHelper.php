@@ -40,7 +40,7 @@ class EppImagenesHelper
      */
     public static function logObtenerEpp(int $eppId, string $codigo): void
     {
-        Log::debug('📋 [EPP-IMAGENES] Obteniendo EPP sin cargar epp_imagenes', [
+        Log::debug(' [EPP-IMAGENES] Obteniendo EPP sin cargar epp_imagenes', [
             'epp_id' => $eppId,
             'codigo' => $codigo,
             'imagenes_source' => 'pedido_epp_imagenes (si aplica contexto de pedido)',
@@ -131,7 +131,7 @@ class EppImagenesHelper
      */
     public static function logFormularioEppSinImagenes(int $itemIndex): void
     {
-        Log::debug('📋 [EPP-FORMULARIO] EPP sin enviar imágenes de epp_imagenes', [
+        Log::debug(' [EPP-FORMULARIO] EPP sin enviar imágenes de epp_imagenes', [
             'item_index' => $itemIndex,
             'nota' => 'Tabla epp_imagenes no existe',
             'imagenes_source' => 'pedido_epp_imagenes después de crear pedido',

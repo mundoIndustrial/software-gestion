@@ -23,7 +23,7 @@ window.cargarPedidos = async function() {
   const tablaPedidosBody = document.getElementById('tablaPedidosBody');
   
   if (!tablaPedidosBody) {
-    console.error('❌ ERROR: No se puede cargar - tabla no existe');
+    console.error(' ERROR: No se puede cargar - tabla no existe');
     return;
   }
   
@@ -88,7 +88,7 @@ window.cargarPedidos = async function() {
     }
     
   } catch (error) {
-    console.error('🔥 Error cargando pedidos:', error);
+    console.error(' Error cargando pedidos:', error);
     mostrarError(error.message);
   } finally {
     ocultarCargando();
@@ -137,7 +137,7 @@ function verPedido(pedidoId) {
   const pedido = pedidosDataAnulados.find(p => p.id === pedidoId);
   
   if (!pedido) {
-    console.error('❌ Pedido no encontrado:', pedidoId);
+    console.error(' Pedido no encontrado:', pedidoId);
     return;
   }
   
@@ -298,11 +298,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const paginationContainer = document.querySelector('.pagination-container');
   
   if (!tablaPedidosBody) {
-    console.error('❌ ERROR: No se encontró el contenedor de la tabla');
+    console.error(' ERROR: No se encontró el contenedor de la tabla');
     return;
   }
   
-  console.log('✅ Todos los elementos críticos encontrados. Iniciando carga...');
+  console.log(' Todos los elementos críticos encontrados. Iniciando carga...');
   
   // Cargar pedidos iniciales
   window.cargarPedidos();

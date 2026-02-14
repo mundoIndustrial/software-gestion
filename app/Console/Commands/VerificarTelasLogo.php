@@ -22,7 +22,7 @@ class VerificarTelasLogo extends Command
         $this->newLine();
 
         if ($telas->count() > 0) {
-            $this->info('📋 REGISTROS:');
+            $this->info(' REGISTROS:');
             $this->line(str_repeat("=", 120));
 
             foreach ($telas as $index => $tela) {

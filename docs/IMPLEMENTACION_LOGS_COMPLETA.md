@@ -1,6 +1,6 @@
 #  IMPLEMENTACIÓN COMPLETADA - LOGS DE DIAGNÓSTICO
 
-## 📋 Resumen
+##  Resumen
 
 Se han agregado **logs detallados con microtiming** en toda la cadena de creación de pedidos para identificar rápidamente cuellos de botella.
 

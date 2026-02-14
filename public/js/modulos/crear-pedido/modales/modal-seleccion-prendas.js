@@ -549,7 +549,7 @@ function renderizarItemsCotizacionEnDOM() {
                     ${htmlVariaciones}
                     ${htmlFotos}
                     
-                    ${item.numero ? `<p style="margin: 0.75rem 0 0 0; color: #6b7280; font-size: 0.875rem;">📋 Cotización: <strong>${item.numero}</strong></p>` : ''}
+                    ${item.numero ? `<p style="margin: 0.75rem 0 0 0; color: #6b7280; font-size: 0.875rem;"> Cotización: <strong>${item.numero}</strong></p>` : ''}
                     ${item.cliente ? `<p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">👤 Cliente: <strong>${item.cliente}</strong></p>` : ''}
                 </div>
                 <button onclick="eliminarItemCotizacion(${idx})" 

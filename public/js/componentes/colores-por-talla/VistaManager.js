@@ -101,7 +101,7 @@ window.VistaManager = (function() {
      * Mostrar vista de asignación de colores
      */
     function mostrarVistaAsignacion() {
-        console.log('[VistaManager] 📋 Mostrando vista de asignación...');
+        console.log('[VistaManager]  Mostrando vista de asignación...');
         
         // Cambiar vistas principales
         if (elementos.vistaTablaTelas) {
@@ -131,7 +131,7 @@ window.VistaManager = (function() {
      * Mostrar vista de tabla de telas
      */
     function mostrarVistaTablaTelas() {
-        console.log('[VistaManager] 📋 Mostrando vista de tabla de telas...');
+        console.log('[VistaManager]  Mostrando vista de tabla de telas...');
         
         // Cambiar vistas principales
         if (elementos.vistaTablaTelas) {
@@ -286,7 +286,7 @@ window.VistaManager = (function() {
      * Mostrar modal de selección de tela
      */
     function mostrarModalSeleccionTela(telas) {
-        console.log('[VistaManager] 📋 Mostrando modal de selección de tela...');
+        console.log('[VistaManager]  Mostrando modal de selección de tela...');
         
         if (telas.length <= 1) {
             console.log('[VistaManager]  Una sola tela - no mostrar modal');

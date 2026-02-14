@@ -14,7 +14,7 @@ echo "=================================================\n\n";
 $pedidoId = 1;
 
 // 1. Información del pedido
-echo "📋 INFORMACIÓN DEL PEDIDO #$pedidoId:\n";
+echo " INFORMACIÓN DEL PEDIDO #$pedidoId:\n";
 echo str_repeat("-", 80) . "\n";
 
 $pedido = DB::table('pedidos_produccion')->where('id', $pedidoId)->first();
@@ -75,7 +75,7 @@ foreach ($prendas as $prenda) {
 }
 
 // 3. Todos los procesos del pedido
-echo "\n🔧 TODOS LOS PROCESOS DEL PEDIDO:\n";
+echo "\n TODOS LOS PROCESOS DEL PEDIDO:\n";
 echo str_repeat("-", 80) . "\n";
 
 $procesos = DB::table('pedidos_procesos_prenda_detalles as ppd')

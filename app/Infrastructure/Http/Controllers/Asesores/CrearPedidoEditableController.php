@@ -136,7 +136,7 @@ class CrearPedidoEditableController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         $tiempoCotizaciones = round((microtime(true) - $inicioCotizaciones) * 1000, 2);
-        Log::info('[CREAR-DESDE-COTIZACION] 📋 Cotizaciones cargadas (CON RELACIONES)', [
+        Log::info('[CREAR-DESDE-COTIZACION]  Cotizaciones cargadas (CON RELACIONES)', [
             'cantidad' => $cotizaciones->count(),
             'tiempo_ms' => $tiempoCotizaciones,
             'nota' => 'Este es el tiempo MÁS CRÍTICO - incluye carga de prendas, fotos, tallas, variantes',
@@ -265,7 +265,7 @@ class CrearPedidoEditableController extends Controller
         // ========================================
         // NO cargamos cotizaciones, el usuario crea pedido desde cero con cliente manual
         $cotizaciones = collect([]);
-        Log::debug('[CREAR-PEDIDO-NUEVO] 📋 Cotizaciones (vacías para modo nuevo)', ['cantidad' => 0]);
+        Log::debug('[CREAR-PEDIDO-NUEVO]  Cotizaciones (vacías para modo nuevo)', ['cantidad' => 0]);
         
         // ========================================
         // DATO CRÍTICO: PEDIDOS EXISTENTES

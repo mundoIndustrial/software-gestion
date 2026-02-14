@@ -142,7 +142,7 @@ final class ActualizarPrendaPedidoUseCase
                         'color_id' => $colorId,
                         'tela_id' => $telaId,
                     ]);
-                    $telaIdsEnPayload[] = $id;  // 📍 Guardar ID para no eliminar
+                    $telaIdsEnPayload[] = $id;  //  Guardar ID para no eliminar
                 }
             } 
             //  CREATE: Si NO viene con ID, crear nueva relación
@@ -158,9 +158,9 @@ final class ActualizarPrendaPedidoUseCase
                         'color_id' => $colorId,
                         'tela_id' => $telaId,
                     ]);
-                    $telaIdsEnPayload[] = $nueva->id;  // 📍 Guardar ID de la nueva tela
+                    $telaIdsEnPayload[] = $nueva->id;  //  Guardar ID de la nueva tela
                 } else {
-                    $telaIdsEnPayload[] = $existente->id;  // 📍 Guardar ID de la existente
+                    $telaIdsEnPayload[] = $existente->id;  //  Guardar ID de la existente
                 }
             }
         }

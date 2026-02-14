@@ -218,12 +218,12 @@ class ContextMenuService {
                 try {
                     UIHelperService.log('ContextMenuService', '⚡ Ejecutando callback/accion...');
                     funcionAEjecutar(e, opcion);
-                    UIHelperService.log('ContextMenuService', '✅ Callback/accion ejecutado exitosamente');
+                    UIHelperService.log('ContextMenuService', ' Callback/accion ejecutado exitosamente');
                 } catch (error) {
-                    UIHelperService.log('ContextMenuService', `❌ Error en callback/accion: ${error.message}`, 'error');
+                    UIHelperService.log('ContextMenuService', ` Error en callback/accion: ${error.message}`, 'error');
                 }
             } else {
-                UIHelperService.log('ContextMenuService', `❌ Callback/accion no es una función: ${typeof funcionAEjecutar}`, 'error');
+                UIHelperService.log('ContextMenuService', ` Callback/accion no es una función: ${typeof funcionAEjecutar}`, 'error');
             }
             
             // Cerrar menú si está configurado
@@ -370,14 +370,14 @@ class ContextMenuService {
      * @returns {Object} Configuración de opción
      */
     static crearOpcionPegarPrenda(callback) {
-        UIHelperService.log('ContextMenuService', `🔧 crearOpcionPegarPrenda llamado con: ${typeof callback}`);
+        UIHelperService.log('ContextMenuService', ` crearOpcionPegarPrenda llamado con: ${typeof callback}`);
         
         const opcion = this.crearOpcionPegar(callback, {
             texto: 'Pegar imagen de prenda',
             clase: 'opcion-pegar-prenda'
         });
         
-        UIHelperService.log('ContextMenuService', `✅ Opción creada - callback: ${typeof opcion.callback}`);
+        UIHelperService.log('ContextMenuService', ` Opción creada - callback: ${typeof opcion.callback}`);
         
         return opcion;
     }
@@ -388,14 +388,14 @@ class ContextMenuService {
      * @returns {Object} Configuración de opción
      */
     static crearOpcionPegarTela(callback) {
-        UIHelperService.log('ContextMenuService', `🔧 crearOpcionPegarTela llamado con: ${typeof callback}`);
+        UIHelperService.log('ContextMenuService', ` crearOpcionPegarTela llamado con: ${typeof callback}`);
         
         const opcion = this.crearOpcionPegar(callback, {
             texto: 'Pegar imagen de tela',
             clase: 'opcion-pegar-tela'
         });
         
-        UIHelperService.log('ContextMenuService', `✅ Opción de tela creada - callback: ${typeof opcion.callback}, texto: ${opcion.texto}`);
+        UIHelperService.log('ContextMenuService', ` Opción de tela creada - callback: ${typeof opcion.callback}, texto: ${opcion.texto}`);
         
         return opcion;
     }
