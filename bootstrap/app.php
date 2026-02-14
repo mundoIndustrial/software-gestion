@@ -4,6 +4,22 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+/**
+ * Helper js_asset() - Carga .min.js en producción, original en desarrollo
+ */
+if (!function_exists('js_asset')) {
+    function js_asset(string $path): string {
+        if (config('app.debug')) {
+            return asset($path);
+        }
+        $minPath = preg_replace('/\.js$/', '.min.js', $path);
+        if (file_exists(public_path($minPath))) {
+            return asset($minPath);
+        }
+        return asset($path);
+    }
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

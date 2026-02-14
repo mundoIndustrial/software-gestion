@@ -54,13 +54,13 @@
                     </div>
 
                     <!-- COLUMNA DERECHA: Fotos de la Prenda -->
-                    <div class="foto-panel" id="panel-fotos-prenda" style="border: 2px solid #9333ea; border-radius: 8px; padding: 1rem; background: #faf5ff;">
-                        <label for="nueva-prenda-foto-input" class="foto-panel-label" style="color: #7c3aed;">
+                    <div class="foto-panel" id="panel-fotos-prenda" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1rem; background: #f0f7ff;">
+                        <label for="nueva-prenda-foto-input" class="foto-panel-label" style="color: #0066cc;">
                             <span class="material-symbols-rounded">photo_camera</span>📸 FOTOS DE PRENDA
                         </label>
                         
                         <!-- Imagen principal preview -->
-                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg" tabindex="0" style="outline: none; border: 2px dashed #d1b3e6; background: white;" data-zona="prenda">
+                        <div id="nueva-prenda-foto-preview" class="foto-preview foto-preview-lg" tabindex="0" style="outline: none; border: 2px dashed #4da6ff; background: white;" data-zona="prenda">
                             <div class="foto-preview-content">
                                 <div class="material-symbols-rounded">add_photo_alternate</div>
                                 <div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div>
@@ -124,7 +124,7 @@
                                         <label for="nueva-prenda-referencia" class="sr-only">Referencia</label>
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
-                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%;">
+                                    <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%; position: relative; overflow: visible;">
                                         <!-- Botón para seleccionar imagen -->
                                         <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal-agregar-prenda-nueva-file-input').click(); return false;">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
@@ -132,15 +132,15 @@
                                         </button>
                                         <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
                                         
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #10b981; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0fdf4;" data-zona="tela" data-estado="inicial" tabindex="0">
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;" data-zona="tela" data-estado="inicial" tabindex="0">
                                             <!-- Texto de ayuda -->
-                                            <div style="text-align: center; color: #059669; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
+                                            <div style="text-align: center; color: #0066cc; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
                                                 <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
                                                 <div>📸 TELA: Arrastra aquí o pega Ctrl+V</div>
                                             </div>
                                         </div>
                                         <!-- Preview temporal dentro de la celda -->
-                                        <div id="nueva-prenda-tela-preview" style="display: none; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: flex-start; margin-top: 0.5rem; padding: 0.5rem; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 4px; width: calc(100% + 1rem); margin-left: -0.5rem; margin-right: -0.5rem;"></div>
+                                        <div id="nueva-prenda-tela-preview" style="display: none;"></div>
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; width: 20%;">
                                         <button type="button" onclick="agregarTelaNueva()" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;" title="Agregar esta tela">
@@ -380,12 +380,13 @@
                 </div>
 
                 <!-- Variaciones -->
-                <div class="form-section">
-                    <label class="form-label-primary">
-                        <span class="material-symbols-rounded">tune</span>VARIACIONES ESPECÍFICAS
+                <div class="form-section" style="border: 2px solid #0066cc; border-radius: 8px; padding: 1.25rem; margin-top: 1.5rem; background: rgba(0, 102, 204, 0.02);">
+                    <label class="form-label-primary" style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="material-symbols-rounded" style="color: #0066cc; font-size: 1.5rem;">tune</span>
+                        <span style="font-weight: 700; font-size: 1rem; color: #0066cc;">VARIACIONES ESPECÍFICAS</span>
                     </label>
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse;">
+                        <table style="width: 100%; border-collapse: collapse; background: white;">
                             <thead>
                                 <tr style="background: #0066cc;">
                                     <th style="padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; width: 50px; color: white;">
@@ -401,7 +402,7 @@
                             </thead>
                             <tbody>
                                 <!-- Manga -->
-                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: #fafbfc;">
                                     <td style="padding: 0.75rem; text-align: center;">
                                         <label for="aplica-manga" class="sr-only">Aplicar Manga</label>
                                         <input type="checkbox" id="aplica-manga" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
@@ -427,7 +428,7 @@
                                 </tr>
                                 
                                 <!-- Bolsillos -->
-                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
                                     <td style="padding: 0.75rem; text-align: center;">
                                         <label for="aplica-bolsillos" class="sr-only">Aplicar Bolsillos</label>
                                         <input type="checkbox" id="aplica-bolsillos" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
@@ -442,7 +443,7 @@
                                 </tr>
                                 
                                 <!-- Broche/Botón -->
-                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: #fafbfc;">
                                     <td style="padding: 0.75rem; text-align: center;">
                                         <label for="aplica-broche" class="sr-only">Aplicar Broche/Botón</label>
                                         <input type="checkbox" id="aplica-broche" class="form-checkbox" onchange="manejarCheckVariacion(this)" style="width: 18px; height: 18px; cursor: pointer;">
@@ -650,8 +651,36 @@ document.addEventListener('paste', function(event) {
 });
 </script>
 
-<!-- ⚡ Bundle 8: Modal Prenda — 27 scripts in 1 request -->
-<script defer src="/js/bundle/modal-prenda.js?v={{ config('app.asset_version') }}"></script>
+<!-- ─── Modal Prenda: colores-por-talla, drag-drop, FSM, loaders ─── -->
+<!-- En producción, js_asset() carga automáticamente .min.js si existe -->
+@php $v = config('app.asset_version'); @endphp
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/StateManager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/DOMUtils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/AsignacionManager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/WizardManager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/UIRenderer.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/ColoresPorTalla.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/compatibilidad.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/diagnostico.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/services/UIHelperService.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/services/ClipboardService.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/services/ContextMenuService.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/services/DragDropEventHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/handlers/BaseDragDropHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/handlers/PrendaDragDropHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/handlers/TelaDragDropHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/handlers/ProcesoDragDropHandler.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prendas-module/drag-drop-manager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/core/modal-mini-fsm.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-imagenes.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-telas.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-variaciones.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-tallas.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-colores.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-procesos.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/services/prenda-editor-service.js') }}?v={{ $v }}"></script>
 
 <!-- 🚫 NOTA: prenda-editor.js ya se carga en la Blade padre (crear-pedido.blade.php, edit.blade.php, etc.)
      Si se cargar aquí también, causará: "SyntaxError: Identifier 'PrendaEditor' has already been declared"

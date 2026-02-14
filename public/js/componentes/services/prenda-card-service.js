@@ -755,13 +755,29 @@ window.PrendaCardService = {
                         </strong>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             ${imagenes.map(img => {
-                                const imgSrc = img instanceof File ? URL.createObjectURL(img) : img;
-                                return `
+                                // Extraer URL según el tipo de imagen
+                                let imgSrc = '';
+                                
+                                if (img instanceof File) {
+                                    imgSrc = URL.createObjectURL(img);
+                                } else if (typeof img === 'string') {
+                                    imgSrc = img;
+                                } else if (img && typeof img === 'object') {
+                                    // Intentar extraer URL de múltiples propiedades
+                                    imgSrc = img.previewUrl || img.dataURL || img.src || img.url || img.blobUrl || img.ruta_original || '';
+                                }
+                                
+                                // Agregar /storage/ si es una ruta relativa
+                                if (imgSrc && !imgSrc.startsWith('/') && !imgSrc.startsWith('http') && !imgSrc.startsWith('blob:') && !imgSrc.startsWith('data:')) {
+                                    imgSrc = '/storage/' + imgSrc;
+                                }
+                                
+                                return imgSrc ? `
                                 <img src="${imgSrc}" 
                                      alt="Imagen ${nombreProceso}" 
                                      style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer;"
                                      onclick="window.mostrarImagenProcesoGrande('${imgSrc}')">
-                            `;
+                            ` : '';
                             }).join('')}
                         </div>
                   

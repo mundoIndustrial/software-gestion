@@ -381,8 +381,16 @@ class CotizacionPrendaController extends Controller
                         try {
                             // Guardar en storage
                             $nombreOriginal = pathinfo($archivoFoto->getClientOriginalName(), PATHINFO_FILENAME);
+                            
+                            // Sanitizar el nombre: reemplazar espacios y caracteres especiales
+                            $nombreSaneado = preg_replace('/[^a-zA-Z0-9-_]/', '-', $nombreOriginal);
+                            // Eliminar múltiples guiones consecutivos
+                            $nombreSaneado = preg_replace('/-+/', '-', $nombreSaneado);
+                            // Limitar la longitud a 30 caracteres
+                            $nombreSaneado = substr($nombreSaneado, 0, 30);
+                            
                             $extension = $archivoFoto->getClientOriginalExtension();
-                            $nombreArchivo = $nombreOriginal . '_prenda_' . time() . '_' . substr(md5(uniqid()), 0, 4) . '.' . $extension;
+                            $nombreArchivo = $nombreSaneado . '_prenda_' . time() . '_' . substr(md5(uniqid()), 0, 4) . '.' . $extension;
                             $rutaGuardada = $archivoFoto->storeAs('cotizaciones/' . $cotizacionId . '/prendas', $nombreArchivo, 'public');
                             $rutaUrl = '/storage/' . $rutaGuardada;
 

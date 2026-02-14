@@ -495,11 +495,11 @@
 <!-- Script para interactividad de item-cards -->
 <script src="{{ asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}"></script>
 
-<!-- 🧪 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
-<script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
-
 <!-- Script para modal de prendas y autocomplete -->
 <script src="{{ asset('js/componentes/prenda-editor-modal.js') }}?v={{ time() }}"></script>
+
+<!-- 🧪 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
+<script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 <!-- Script para ocultar loading cuando todo está listo -->
 <script>
@@ -544,9 +544,6 @@
         }
     });
 </script>
-
-<!-- 🔬 TEST SUITE: Puedes ejecutar testPrendaEditor() en la consola -->
-<script src="{{ asset('js/tests/prenda-editor-test.js') }}?v={{ time() }}"></script>
 
 @endpush
 @endsection

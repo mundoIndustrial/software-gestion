@@ -1442,15 +1442,30 @@ function cargarPrendaEnFormularioModal(prendaData) {
     if (nombreField) nombreField.value = prendaData.nombre_producto || prendaData.nombre_prenda || '';
     if (descripcionField) descripcionField.value = prendaData.descripcion || '';
     if (origenSelect) {
-        // Si viene de_bodega de la BD: 1/true = bodega, 0/false = confeccion
+        let origen;
+        
+        // Intentar obtener desde de_bodega (más nuevo)
         if (prendaData.de_bodega !== undefined && prendaData.de_bodega !== null) {
-            const origen = (prendaData.de_bodega == 1 || prendaData.de_bodega === true) ? 'bodega' : 'confeccion';
-            console.log('🏢 [CARGAR-PRENDA] Asignando origen desde de_bodega:', {de_bodega: prendaData.de_bodega, origen: origen});
-            origenSelect.value = origen;
-        } else {
-            console.log('🏢 [CARGAR-PRENDA] de_bodega no encontrado, usando fallback');
-            origenSelect.value = prendaData.origen || 'confeccion';
+            origen = (prendaData.de_bodega == 1 || prendaData.de_bodega === true) ? 'bodega' : 'confeccion';
+            console.log('🏢 [CARGAR-PRENDA] Mapeado origen desde de_bodega:', {de_bodega: prendaData.de_bodega, origen: origen});
         }
+        // Fallback: intentar desde prenda_bodega (También soportado)
+        else if (prendaData.prenda_bodega !== undefined && prendaData.prenda_bodega !== null) {
+            origen = (prendaData.prenda_bodega === 1 || prendaData.prenda_bodega === true) ? 'bodega' : 'confeccion';
+            console.log('🏢 [CARGAR-PRENDA] Mapeado origen desde prenda_bodega:', {prenda_bodega: prendaData.prenda_bodega, origen: origen});
+        }
+        // Fallback: usar origen directo si existe
+        else if (prendaData.origen) {
+            origen = prendaData.origen;
+            console.log('🏢 [CARGAR-PRENDA] Usando origen directo:', origen);
+        }
+        // Default
+        else {
+            origen = 'confeccion';
+            console.log('🏢 [CARGAR-PRENDA] Usando default origen: confeccion');
+        }
+        
+        origenSelect.value = origen;
     }
     
 

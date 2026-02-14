@@ -9,11 +9,30 @@
  * @module ModalWrappers
  */
 
+// Flag global para debounce - evita múltiples aperturas rápidas
+window.__modalPrendaAbriendo = false;
+
 /**
  * WRAPPER: Abre el modal para agregar una prenda nueva
  * Delega a GestionItemsUI.abrirModalAgregarPrendaNueva()
+ * 
+ * Incluye debouncing para prevenir múltiples clics rápidos
  */
 window.abrirModalPrendaNueva = function() {
+    // 🛡️ Guard: Evitar múltiples aperturas simultáneas
+    if (window.__modalPrendaAbriendo) {
+        console.debug('[abrirModalPrendaNueva] 🚫 Debounced - modal ya está abriéndose');
+        return;
+    }
+    
+    // Marcar como que está abriendo
+    window.__modalPrendaAbriendo = true;
+    
+    // Auto-reset después de 500ms (tiempo de animación + buffer)
+    setTimeout(() => {
+        window.__modalPrendaAbriendo = false;
+    }, 500);
+    
     // Intentar usar GestionItemsUI si existe
     if (window.gestionItemsUI && typeof window.gestionItemsUI.abrirModalAgregarPrendaNueva === 'function') {
         return window.gestionItemsUI.abrirModalAgregarPrendaNueva();

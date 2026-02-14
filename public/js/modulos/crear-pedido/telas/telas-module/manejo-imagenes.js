@@ -15,55 +15,66 @@
  * @param {HTMLInputElement} input - Input de tipo file
  */
 window.manejarImagenTela = function(input) {
-    console.log('[manejarImagenTela] 📸 Manejando imagen de tela');
+    console.log('[manejarImagenTela] � INICIADO - input:', input);
+    
+    // 🔑 CRÍTICO: Inicializar el array si no existe (para Ctrl+V y drag-drop)
+    if (!window.imagenesTelaModalNueva) {
+        window.imagenesTelaModalNueva = [];
+        console.log('[manejarImagenTela] ✅ Array imagenesTelaModalNueva inicializado');
+    }
     
     // Si no se pasa input, buscar por ID (intentar primero el ID único del modal)
     if (!input) {
+        console.log('[manejarImagenTela] ⚠️ Input null, buscando por ID...');
         input = document.getElementById('modal-agregar-prenda-nueva-file-input') || document.getElementById('nueva-prenda-tela-img-input');
         if (!input) {
-            console.error('[manejarImagenTela]  No se encontró el elemento de input');
+            console.error('[manejarImagenTela] ❌ No se encontró elemento de input');
             return;
         }
+        console.log('[manejarImagenTela] ✅ Input encontrado:', input.id);
     }
     
+    console.log('[manejarImagenTela] input.files:', input.files);
+    console.log('[manejarImagenTela] input.files.length:', input.files?.length);
+    
     if (!input.files || input.files.length === 0) {
-        console.log('[manejarImagenTela] 📭 No se seleccionaron archivos');
+        console.log('[manejarImagenTela] ❌ Sin archivos');
         return;
     }
     
+    const file = input.files[0];
+    console.log('[manejarImagenTela] 📦 Archivo:', file.name, '|', file.type, '|', file.size, 'bytes');
+    
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+        console.warn('[manejarImagenTela] ❌ No es imagen');
+        return;
+    }
+    
+    // Validar tamaño
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        console.warn('[manejarImagenTela] ❌ Archivo muy grande');
+        return;
+    }
+    
+    // Validar límite
+    if (window.imagenesTelaModalNueva.length >= 3) {
+        console.warn('[manejarImagenTela] ❌ Limite alcanzado');
+        return;
+    }
+    
+    console.log('[manejarImagenTela] ✅ Validaciones OK, leyendo archivo...');
+    
     try {
-        const file = input.files[0];
-        console.log('[manejarImagenTela] 📄 Archivo recibido:', file.name, file.type);
-        
-        // Validar que sea una imagen
-        if (!file.type.startsWith('image/')) {
-            console.warn('[manejarImagenTela]  El archivo no es una imagen:', file.type);
-            window.mostrarErrorTela('nueva-prenda-tela', 'Por favor selecciona un archivo de imagen válido');
-            return;
-        }
-        
-        // Validar tamaño (máximo 5MB)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-            console.warn('[manejarImagenTela]  Archivo demasiado grande:', file.size);
-            window.mostrarErrorTela('nueva-prenda-tela', 'El archivo es demasiado grande (máximo 5MB)');
-            return;
-        }
-        
-        // Validar límite de imágenes (máximo 3 por tela)
-        if (window.imagenesTelaModalNueva.length >= 3) {
-            console.warn('[manejarImagenTela]  Límite de imágenes alcanzado');
-            window.mostrarErrorTela('nueva-prenda-tela', 'Máximo 3 imágenes por tela');
-            return;
-        }
-        
-        // Crear preview
         const reader = new FileReader();
+        
         reader.onload = function(e) {
-            const previewUrl = e.target.result;
-            console.log('[manejarTela] 🖼️ Preview generado para:', file.name);
+            console.log('[manejarImagenTela] ✅ FileReader.onload DISPARADO');
             
-            // Agregar al array de imágenes temporales
+            const previewUrl = e.target.result;
+            console.log('[manejarImagenTela] 📸 URL generada, longitud:', previewUrl.length);
+            
             const imagen = {
                 file: file,
                 previewUrl: previewUrl,
@@ -74,30 +85,33 @@ window.manejarImagenTela = function(input) {
             };
             
             window.imagenesTelaModalNueva.push(imagen);
+            console.log('[manejarImagenTela] ✅ Imagen agregada al array. Total:', window.imagenesTelaModalNueva.length);
             
-            console.log('[manejarImagenTela]  Imagen agregada al array temporal');
-            console.log('[maneImagenTela]  Total imágenes temporales:', window.imagenesTelaModalNueva.length);
-            
-            // Actualizar preview si es necesario
+            // Actualizar preview
+            console.log('[manejarImagenTela] 🔄 Buscando actualizarPreviewTelaTemporal...');
             if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+                console.log('[manejarImagenTela] ✅ Función ENCONTRADA, llamando...');
                 window.actualizarPreviewTelaTemporal();
+                console.log('[manejarImagenTela] ✅ Función COMPLETADA');
+            } else {
+                console.error('[manejarImagenTela] ❌ actualizarPreviewTelaTemporal NO ES FUNCIÓN');
+                console.log('[manejarImagenTela] Tipo:', typeof window.actualizarPreviewTelaTemporal);
             }
         };
         
-        reader.onerror = function() {
-            console.error('[maneImagenTela]  Error al leer el archivo');
-            window.mostrarErrorTela('nueva-prenda-tela', 'Error al leer el archivo de imagen');
+        reader.onerror = function(error) {
+            console.error('[manejarImagenTela] ❌ FileReader error:', error);
         };
         
+        console.log('[manejarImagenTela] 📖 Iniciando FileReader.readAsDataURL...');
         reader.readAsDataURL(file);
         
     } catch (error) {
-        console.error('[manejarImagenTela]  Error general:', error);
-        window.mostrarErrorTela('nueva-prenda-tela', 'Error al procesar la imagen');
+        console.error('[manejarImagenTela] ❌ Excepción:', error);
     }
     
-    // Limpiar input
     input.value = '';
+    console.log('[manejarImagenTela] 🧹 Input limpiado');
 };
 
 /**
@@ -343,68 +357,98 @@ window.eliminarImagenTemporal = function(index) {
  * Actualizar preview temporal de imágenes
  */
 window.actualizarPreviewTelaTemporal = function() {
-    console.log('[actualizarPreviewTelaTemporal] 🎬 Actualizando preview temporal de imágenes');
+    console.log('[actualizarPreviewTelaTemporal] 🚀 INICIADO');
+    console.log('[actualizarPreviewTelaTemporal] window.imagenesTelaModalNueva:', window.imagenesTelaModalNueva);
     
     const preview = document.getElementById('nueva-prenda-tela-preview');
+    console.log('[actualizarPreviewTelaTemporal] Preview buscado con ID "nueva-prenda-tela-preview"');
+    console.log('[actualizarPreviewTelaTemporal] ✓ Preview encontrado:', !!preview);
+    
     if (!preview) {
-        console.warn('[actualizarPreviewTelaTemporal]  Preview no encontrado');
+        console.error('[actualizarPreviewTelaTemporal] ❌ FALLO: Preview esNull');
+        console.log('[actualizarPreviewTelaTemporal] IDs disponibles en DOM:', Array.from(document.querySelectorAll('[id]')).map(el => el.id).slice(0, 20));
         return;
     }
     
-    const imagenes = window.imagenesTelaModalNueva;
+    console.log('[actualizarPreviewTelaTemporal] ✅ Preview elemento:', preview);
+    console.log('[actualizarPreviewTelaTemporal] Preview display:', preview.style.display);
+    console.log('[actualizarPreviewTelaTemporal] Preview parent:', preview.parentElement);
     
-    if (!imagenes || imagenes.length === 0) {
-        // Ocultar preview si no hay imágenes
+    const imagenes = window.imagenesTelaModalNueva || [];
+    console.log('[actualizarPreviewTelaTemporal] Imágenes en array:', imagenes.length);
+    
+    if (imagenes.length === 0) {
+        console.log('[actualizarPreviewTelaTemporal] ⚠️ Sin imágenes, ocultando preview');
         preview.style.display = 'none';
         return;
     }
     
-    // Mostrar preview con la primera imagen
-    preview.style.display = 'flex';
-    preview.style.flexWrap = 'wrap';
-    preview.style.gap = '0.5rem';
-    preview.style.justifyContent = 'center';
-    preview.style.alignItems = 'flex-start';
-    preview.style.marginTop = '0.5rem';
-    preview.style.padding = '0.5rem';
-    preview.style.background = '#f9fafb';
-    preview.style.border = '1px dashed #d1d5db';
-    preview.style.borderRadius = '4px';
+    console.log('[actualizarPreviewTelaTemporal] 📸 Procesando', imagenes.length, 'imágenes');
     
-    // Limpiar contenido anterior
+    // Limpiar HTML anterior
     preview.innerHTML = '';
+    console.log('[actualizarPreviewTelaTemporal] ✅ HTML limpiado');
+    
+    // Aplicar estilos
+    preview.style.cssText =
+        'display: flex !important; ' +
+        'flex-wrap: wrap !important; ' +
+        'gap: 0.5rem !important; ' +
+        'justify-content: center !important; ' +
+        'align-items: flex-start !important; ' +
+        'margin-top: 0.5rem !important; ' +
+        'padding: 0.5rem !important; ' +
+        'background: #f9fafb !important; ' +
+        'border: 1px dashed #d1d5db !important; ' +
+        'border-radius: 4px !important; ' +
+        'width: 100% !important; ' +
+        'margin-left: 0 !important; ' +
+        'margin-right: 0 !important; ' +
+        'box-sizing: border-box !important; ' +
+        'min-height: 50px !important;';
+    
+    console.log('[actualizarPreviewTelaTemporal] ✅ Estilos aplicados');
+    console.log('[actualizarPreviewTelaTemporal] Preview display NOW:', preview.style.display);
     
     // Agregar imágenes
     imagenes.forEach((img, index) => {
+        console.log(`[actualizarPreviewTelaTemporal] 📦 Imagen ${index}:`, img.name);
+        
         const container = document.createElement('div');
-        container.style.cssText = 'position: relative; width: 60px; height: 60px; flex-shrink: 0;';
+        container.style.cssText = 'position: relative; width: 60px; height: 60px; flex-shrink: 0; border: 1px solid red;';
         
         const imgElement = document.createElement('img');
         imgElement.src = img.previewUrl || img.url || img.blobUrl;
-        imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #0066cc; cursor: pointer; transition: opacity 0.2s;';
-        imgElement.onclick = () => window.mostrarGaleriaImagenesTemporales(imagenes, index);
-        imgElement.onmouseover = () => imgElement.style.opacity = '0.7';
-        imgElement.onmouseout = () => imgElement.style.opacity = '1';
+        imgElement.alt = img.name;
+        imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #0066cc;';
+        
+        console.log(`[actualizarPreviewTelaTemporal] 🖼️ Img src set to:`, imgElement.src ? imgElement.src.substring(0, 50) : 'NULL');
         
         const btnEliminar = document.createElement('button');
         btnEliminar.type = 'button';
         btnEliminar.innerHTML = '×';
-        btnEliminar.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: background 0.2s;';
-        btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
-        btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
-        btnEliminar.onclick = (e) => {
+        btnEliminar.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; padding: 0;';
+        
+        // 🔑 Agregarclic handler para eliminar
+        btnEliminar.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.eliminarImagenTemporal(index);
+            console.log(`[actualizarPreviewTelaTemporal] 🗑️ Eliminando imagen ${index}`);
+            window.imagenesTelaModalNueva.splice(index, 1);
+            console.log(`[actualizarPreviewTelaTemporal] ✅ Imagen eliminada. Quedan: ${window.imagenesTelaModalNueva.length}`);
+            window.actualizarPreviewTelaTemporal();
         };
         
         container.appendChild(imgElement);
         container.appendChild(btnEliminar);
         preview.appendChild(container);
+        
+        console.log(`[actualizarPreviewTelaTemporal] ✅ Elemento ${index} agregado al DOM`);
     });
     
-    console.log('[actualizarTelaTemporal]  Preview actualizado con ' + imagenes.length + ' imágenes');
+    console.log('[actualizarPreviewTelaTemporal] ✅ COMPLETADO - Hijos en preview:', preview.children.length);
 };
+
 
 /**
  * Validar imagen de tela

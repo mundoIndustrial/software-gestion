@@ -834,8 +834,17 @@ class PedidosProduccionViewController
             if ($prenda->variantes && count($prenda->variantes) > 0) {
                 foreach ($prenda->variantes as $variante) {
                     if ($variante->genero_id) {
-                        // genero_id puede ser JSON array o un ID simple
-                        $generosVariante = is_array($variante->genero_id) ? $variante->genero_id : [$variante->genero_id];
+                        // genero_id puede ser JSON array string, un array, o un ID simple
+                        $generoIdRaw = $variante->genero_id;
+                        
+                        // Si es string JSON, decodificar
+                        if (is_string($generoIdRaw)) {
+                            $decoded = json_decode($generoIdRaw, true);
+                            $generosVariante = is_array($decoded) ? $decoded : [$generoIdRaw];
+                        } else {
+                            $generosVariante = is_array($generoIdRaw) ? $generoIdRaw : [$generoIdRaw];
+                        }
+                        
                         foreach ($generosVariante as $generoId) {
                             if (!in_array($generoId, $generosPresentes)) {
                                 $generosPresentes[] = $generoId;
@@ -865,6 +874,14 @@ class PedidosProduccionViewController
             $variantes = [];
             if ($prenda->variantes && count($prenda->variantes) > 0) {
                 $var = $prenda->variantes[0];
+                
+                // Procesar genero_id: si está guardado como JSON string, decodificar
+                $generoId = $var->genero_id ?? null;
+                if (is_string($generoId)) {
+                    $generoIdDecodificado = json_decode($generoId, true);
+                    $generoId = is_array($generoIdDecodificado) ? $generoIdDecodificado : $generoId;
+                }
+                
                 $variantes = [
                     'tipo_prenda' => $var->tipo_prenda ?? '',
                     'es_jean_pantalon' => (bool)($var->es_jean_pantalon ?? false),
@@ -881,7 +898,7 @@ class PedidosProduccionViewController
                     'obs_broche' => $var->obs_broche ?? '',
                     'tiene_reflectivo' => (bool)($var->tiene_reflectivo ?? false),
                     'obs_reflectivo' => $var->obs_reflectivo ?? '',
-                    'genero_id' => $var->genero_id ?? null,
+                    'genero_id' => $generoId,
                     'genero' => $var->genero ? $var->genero->nombre : 'UNISEX'
                 ];
             }
@@ -1049,7 +1066,7 @@ class PedidosProduccionViewController
                 'success' => true,
                 'cotizacion_id' => $cotizacionId,
                 'numero_cotizacion' => $cotizacion->numero,
-                'generosPresentes' => $generosPresentes,  // Incluir géneros para que el frontend los pre-seleccione
+                'generosPresentes' => array_values(array_unique($generosPresentes)),  // Asegurar array plano sin duplicados
                 'prenda' => [
                     'id' => $prenda->id,
                     'nombre_producto' => $prenda->nombre_producto,

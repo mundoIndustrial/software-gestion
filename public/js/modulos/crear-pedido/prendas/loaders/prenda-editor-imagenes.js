@@ -25,6 +25,9 @@ class PrendaEditorImagenes {
         // Cargar imágenes
         if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
             prenda.imagenes.forEach((img, idx) => {
+                const container = document.createElement('div');
+                container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+                
                 const imgEl = document.createElement('img');
                 
                 // Determinar URL de forma robusta
@@ -33,8 +36,38 @@ class PrendaEditorImagenes {
                 if (src) {
                     imgEl.src = src;
                     imgEl.alt = `Imagen ${idx + 1}`;
-                    imgEl.style.cssText = 'max-width: 100%; height: auto; margin-bottom: 0.5rem;';
-                    preview.appendChild(imgEl);
+                    imgEl.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+                    
+                    // Agregar manejador de error para mostrar placeholder
+                    imgEl.onerror = function() {
+                        console.warn(`⚠️ [Imagenes] Error cargando imagen ${idx + 1} desde: ${src}`);
+                        // Crear placeholder
+                        this.style.display = 'none';
+                        const placeholder = document.createElement('div');
+                        placeholder.style.cssText = `
+                            width: 100%;
+                            height: 150px;
+                            background: #f3f4f6;
+                            border: 2px dashed #d1d5db;
+                            border-radius: 4px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-direction: column;
+                            color: #9ca3af;
+                            font-size: 13px;
+                            text-align: center;
+                        `;
+                        placeholder.innerHTML = `
+                            <div style="font-size: 24px; margin-bottom: 4px;">📷</div>
+                            <div>Imagen no disponible</div>
+                            <div style="font-size: 11px; margin-top: 2px;">${src.split('/').pop()}</div>
+                        `;
+                        container.appendChild(placeholder);
+                    };
+                    
+                    container.appendChild(imgEl);
+                    preview.appendChild(container);
                     console.log(`✅ [Imagenes] Imagen ${idx + 1} cargada`);
                 } else {
                     console.warn(`⚠️ [Imagenes] No se pudo extraer URL de imagen ${idx + 1}`);

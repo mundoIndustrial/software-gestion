@@ -129,60 +129,6 @@ window.actualizarPreviewPrenda = function() {
 };
 
 /**
- * WRAPPER: Maneja la carga de imágenes para telas
- */
-window.manejarImagenTela = function(input) {
-    if (!input.files || input.files.length === 0) {
-        return;
-    }
-    
-    try {
-        if (!window.imagenesTelaStorage) {
-            alert('Error: Servicio de almacenamiento de imágenes de tela no inicializado');
-            return;
-        }
-        
-        const promesa = window.imagenesTelaStorage.agregarImagen(input.files[0]);
-        
-        // Soporte para ambos tipos de storage (Promise y callback)
-        if (promesa && typeof promesa.then === 'function') {
-            // Versión Promise
-            promesa
-                .then((resultado) => {
-                    if (typeof actualizarPreviewTela === 'function') {
-                        actualizarPreviewTela();
-                    } else {
-                        console.warn('actualizarPreviewTela no disponible');
-                    }
-                })
-                .catch(err => {
-                    if (err.message === 'MAX_LIMIT') {
-                        if (typeof mostrarModalLimiteImagenes === 'function') {
-                            mostrarModalLimiteImagenes();
-                        }
-                    } else {
-                        alert('Error al procesar imagen: ' + err.message);
-                    }
-                });
-        } else if (promesa && promesa.success === true) {
-            // Versión callback
-            if (typeof actualizarPreviewTela === 'function') {
-                actualizarPreviewTela();
-            }
-        } else if (promesa && promesa.reason === 'MAX_LIMIT') {
-            if (typeof mostrarModalLimiteImagenes === 'function') {
-                mostrarModalLimiteImagenes();
-            }
-        }
-        
-    } catch (err) {
-        alert('Error al procesar imagen de tela: ' + err.message);
-    }
-    
-    input.value = '';
-};
-
-/**
  * WRAPPER: Actualiza el preview temporal de imágenes de tela
  * Renderiza DENTRO de la celda de imagen de la fila de inputs
  */

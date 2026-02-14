@@ -25,9 +25,24 @@ class ImageProcessor {
                 return imagen;
             }
 
+            // Es dataURL (data:image/...)
+            if (typeof imagen === 'string' && imagen.startsWith('data:')) {
+                return imagen;
+            }
+
+            // Tiene previewUrl (estructura de imagen con preview)
+            if (imagen.previewUrl && typeof imagen.previewUrl === 'string') {
+                return imagen.previewUrl;
+            }
+
             // Tiene blobUrl precreado (guardado previamente)
             if (imagen.blobUrl && typeof imagen.blobUrl === 'string') {
                 return imagen.blobUrl;
+            }
+
+            // Tiene propiedad src
+            if (imagen.src && typeof imagen.src === 'string') {
+                return imagen.src;
             }
 
             // Es File object

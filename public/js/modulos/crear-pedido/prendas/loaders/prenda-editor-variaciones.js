@@ -9,6 +9,11 @@ class PrendaEditorVariaciones {
      */
     static cargar(prenda) {
         console.log('⚙️ [Variaciones] Cargando manga, bolsillos, broche');
+        console.log('⚙️ [Variaciones] Objeto prenda recibido:', prenda);
+        console.log('⚙️ [Variaciones] prenda.variaciones:', prenda?.variaciones);
+        console.log('⚙️ [Variaciones] prenda.manga:', prenda?.manga);
+        console.log('⚙️ [Variaciones] prenda.bolsillos:', prenda?.bolsillos);
+        console.log('⚙️ [Variaciones] prenda.broche:', prenda?.broche);
         
         this._cargarManga(prenda);
         this._cargarBolsillos(prenda);
@@ -31,20 +36,28 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        const manga = prenda.variaciones?.manga || prenda.manga;
+        // 🔑 CRÍTICO: Buscar en prenda.variantes (no variaciones) - Aquí es donde se guarda realmente
+        const manga = prenda.variantes?.tipo_manga || prenda.variaciones?.manga || prenda.manga;
+        const obsValue = prenda.variantes?.obs_manga;
+        
         if (manga) {
+            // Marcar checkbox
             checkbox.checked = true;
+            
+            // Habilitar inputs ANTES de llenarlos
+            input.disabled = false;
+            obs.disabled = false;
+            
+            // Llenar valores
+            input.value = manga;
+            if (obsValue) {
+                obs.value = obsValue;
+            }
+            
+            // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            if (manga.tipo || manga.nombre) {
-                input.value = manga.tipo || manga.nombre;
-                input.disabled = false;
-            }
-            if (manga.observaciones) {
-                obs.value = manga.observaciones;
-                obs.disabled = false;
-            }
-            console.log('✅ [Manga] Cargado');
+            console.log('✅ [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
         }
     }
 
@@ -61,16 +74,25 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        const bolsillos = prenda.variaciones?.bolsillos || prenda.bolsillos;
-        if (bolsillos) {
+        // 🔑 CRÍTICO: Buscar en prenda.variantes.obs_bolsillos
+        const obsValue = prenda.variantes?.obs_bolsillos;
+        
+        if (obsValue || prenda.variantes?.obs_bolsillos) {
+            // Marcar checkbox
             checkbox.checked = true;
+            
+            // Habilitar input ANTES de llenarlo
+            obs.disabled = false;
+            
+            // Llenar valor
+            if (obsValue) {
+                obs.value = obsValue;
+            }
+            
+            // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            if (bolsillos.observaciones) {
-                obs.value = bolsillos.observaciones;
-                obs.disabled = false;
-            }
-            console.log('✅ [Bolsillos] Cargado');
+            console.log('✅ [Bolsillos] Cargado - Obs:', obsValue);
         }
     }
 
@@ -88,20 +110,30 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        const broche = prenda.variaciones?.broche || prenda.broche;
-        if (broche) {
+        // 🔑 CRÍTICO: Buscar en prenda.variantes.tipo_broche
+        const broche = prenda.variantes?.tipo_broche;
+        const obsValue = prenda.variantes?.obs_broche;
+        
+        if (broche || obsValue) {
+            // Marcar checkbox
             checkbox.checked = true;
+            
+            // Habilitar inputs ANTES de llenarlos
+            input.disabled = false;
+            obs.disabled = false;
+            
+            // Llenar valores
+ if (broche) {
+                input.value = broche;
+            }
+            if (obsValue) {
+                obs.value = obsValue;
+            }
+            
+            // Disparar change event para que otros listeners se actualicen
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
-            if (broche.tipo || broche.nombre) {
-                input.value = broche.tipo || broche.nombre;
-                input.disabled = false;
-            }
-            if (broche.observaciones) {
-                obs.value = broche.observaciones;
-                obs.disabled = false;
-            }
-            console.log('✅ [Broche] Cargado');
+            console.log('✅ [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
         }
     }
 

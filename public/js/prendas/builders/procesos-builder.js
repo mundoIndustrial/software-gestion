@@ -222,7 +222,24 @@ class ProcesosBuilder {
 
         const imagenesHTML = imagenes
             .map((img, idx) => {
-                const url = ImageProcessor.procesarImagen(img);
+                // Intentar obtener URL directamente del objeto
+                let url = null;
+                
+                // Si ImageProcessor está disponible, usarlo
+                if (typeof ImageProcessor !== 'undefined' && ImageProcessor.procesarImagen) {
+                    url = ImageProcessor.procesarImagen(img);
+                } else {
+                    // Fallback: procesar manualmente si ImageProcessor no está disponible
+                    if (typeof img === 'string') {
+                        url = img;
+                    } else if (img && typeof img === 'object') {
+                        // Intentar obtener URL de múltiples propiedades
+                        url = img.previewUrl || img.dataURL || img.src || img.url || img.blobUrl || null;
+                    }
+                }
+                
+                console.log(`[ProcesosBuilder] 🖼️ Procesando imagen ${idx}:`, {tipo: typeof img, tieneUrl: !!url, urlPreview: url ? url.substring(0, 50) : 'null'});
+                
                 return url ? `<img src="${url}" alt="Proceso ${idx}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 2px solid #e5e7eb; cursor: pointer;" />` : '';
             })
             .filter(html => html)

@@ -175,8 +175,16 @@ class DragDropManager {
                             UIHelperService.log('DragDropManager', `⚠️ Error al obtener elemento bajo cursor: ${error.message}`);
                         }
                         
-                        // Priorizar el elemento bajo el cursor para Ctrl+V
-                        const elementoAnalizado = elementoCursor || elementoActivo;
+                        // 🔑 PRIORIDAD MEJORADA: Dar prioridad al elemento activo si está bien identificado
+                        // Esto evita confusión cuando elementoCursor es un DIV hijo
+                        let elementoAnalizado = elementoActivo;
+                        if (elementoActivo?.id && (elementoActivo.id.includes('drop') || elementoActivo.id.includes('preview'))) {
+                            // Usar elemento activo si tiene un ID claro de drop-zone o preview
+                            elementoAnalizado = elementoActivo;
+                        } else if (elementoCursor) {
+                            // Si no hay elemento activo claro, usar elemento bajo cursor
+                            elementoAnalizado = elementoCursor;
+                        }
                         
                         // Detectar el área activa
                         if (elementoAnalizado) {
@@ -185,15 +193,16 @@ class DragDropManager {
                             const dropZoneTela = document.getElementById('nueva-prenda-tela-drop-zone');
                             const previewTela = document.getElementById('nueva-prenda-tela-preview');
                             
-                            // Verificar si está en el área de prendas
+                            // Verificar si está en el área de prendas (directamente o como hijo)
                             if (previewPrenda && (previewPrenda.contains(elementoAnalizado) || previewPrenda === elementoAnalizado)) {
                                 handlerCorrecto = 'prendas';
                                 funcionManejo = window.manejarImagenesPrenda;
                                 UIHelperService.log('DragDropManager', '🎯 Detectado área de prendas');
                             }
-                            // Verificar si está en el área de telas
+                            // Verificar si está en el área de telas (directamente, como hijo, o usando closest)
                             else if ((dropZoneTela && (dropZoneTela.contains(elementoAnalizado) || dropZoneTela === elementoAnalizado)) ||
-                                     (previewTela && (previewTela.contains(elementoAnalizado) || previewTela === elementoAnalizado))) {
+                                     (previewTela && (previewTela.contains(elementoAnalizado) || previewTela === elementoAnalizado)) ||
+                                     (elementoAnalizado.closest && elementoAnalizado.closest('[data-zona="tela"]'))) {
                                 handlerCorrecto = 'telas';
                                 funcionManejo = window.manejarImagenTela;
                                 UIHelperService.log('DragDropManager', '🎯 Detectado área de telas');

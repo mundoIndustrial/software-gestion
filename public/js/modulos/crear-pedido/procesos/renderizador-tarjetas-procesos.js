@@ -27,18 +27,39 @@ window.renderizarTarjetasProcesos = function() {
     const container = document.getElementById('contenedor-tarjetas-procesos');
     
     if (!container) {
-        console.error('[RENDER-PROCESOS] No se encontró contenedor');
+        console.error('🔴 [RENDER-PROCESOS] No se encontró contenedor', {
+            contenedorId: 'contenedor-tarjetas-procesos',
+            documento: document.body ? 'cargado' : 'no cargado'
+        });
         return false;
     }
 
     const procesos = window.procesosSeleccionados || {};
+    console.log('📊 [RENDER-PROCESOS] Iniciando renderización', {
+        contenedorEncontrado: true,
+        procesosKey: Object.keys(procesos),
+        procesosLength: Object.keys(procesos).length,
+        displayActual: container.style.display
+    });
     
     // Filtrar procesos que tengan datos
     const procesosConDatos = Object.keys(procesos).filter(tipo => {
-        return procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
+        const tieneData = procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
+        if (tieneData) {
+            console.log(`  ✅ Tipo: ${tipo} → Tiene datos`, procesos[tipo]?.datos);
+        } else {
+            console.log(`  ❌ Tipo: ${tipo} → Sin datos`);
+        }
+        return tieneData;
+    });
+
+    console.log('✅ [RENDER-PROCESOS] Procesos a renderizar:', {
+        total: procesosConDatos.length,
+        tipos: procesosConDatos
     });
 
     if (procesosConDatos.length === 0) {
+        console.log('[RENDER-PROCESOS] Sin procesos con datos, mostrando mensaje vacío');
         container.innerHTML = `
             <div style="text-align: center; padding: 1.5rem; color: #9ca3af; font-size: 0.875rem;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;">add_circle</span>
@@ -52,7 +73,19 @@ window.renderizarTarjetasProcesos = function() {
     //  OPTIMIZACIÓN: Construir TODO el HTML en memoria ANTES de tocar el DOM
     let html = '';
     procesosConDatos.forEach(tipo => {
-        html += generarTarjetaProceso(tipo, procesos[tipo].datos);
+        const datosProcess = procesos[tipo].datos;
+        console.log(`🎨 [RENDER-PROCESOS] Generando tarjeta para: ${tipo}`, {
+            ubicaciones: datosProcess.ubicaciones?.length || 0,
+            tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length,
+            observaciones: datosProcess.observaciones ? 'sí' : 'no',
+            imagenes: datosProcess.imagenes?.length || 0
+        });
+        html += generarTarjetaProceso(tipo, datosProcess);
+    });
+
+    console.log('📝 [RENDER-PROCESOS] HTML generado:', {
+        htmlLength: html.length,
+        htmlPreview: html.substring(0, 100)
     });
 
     //  UN SOLO REFLOW: Asignar todo el HTML de una vez
@@ -66,16 +99,25 @@ window.renderizarTarjetasProcesos = function() {
         }
     });
     
+    // 🔴 CRÍTICO: FORZAR display = 'block' cuando hay procesos
     container.style.display = 'block';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+    
+    console.log('✅ [RENDER-PROCESOS] Renderización completada', {
+        tarjetasRenderizadas: container.querySelectorAll('.tarjeta-proceso').length,
+        displayStyle: container.style.display,
+        visibilityStyle: container.style.visibility,
+        opacityStyle: container.style.opacity
+    });
     return true;
 };
 
 /**
- * Generar HTML de una tarjeta de proceso
+ * Generar HTML de una tarjeta de proceso - VERSIÓN SIMPLIFICADA
  */
 function generarTarjetaProceso(tipo, datos) {
     const icono = iconosProcesos[tipo] || '<span class="material-symbols-rounded">settings</span>';
-    // Intentar obtener nombre de múltiples fuentes
     const nombre = nombresProcesos[tipo] || datos.nombre || datos.nombre_proceso || datos.descripcion || datos.tipo_proceso || tipo.toUpperCase();
     
     // Función auxiliar para agregar /storage/ a URLs
@@ -86,19 +128,15 @@ function generarTarjetaProceso(tipo, datos) {
         return '/storage/' + url;
     };
     
-    // Calcular totalTallas como suma de cantidades en objetos, no length
+    // Calcular totalTallas
     const damaObj = datos.tallas?.dama || {};
     const caballeroObj = datos.tallas?.caballero || {};
     const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
     
-    // Procesar ubicaciones: si es array, convertir a string; si es string JSON, parsear
+    // Procesar ubicaciones
     let ubicacionesArray = datos.ubicaciones || [];
-    
-    // Función para limpiar y parsear ubicaciones
     const limpiarYparsearUbicaciones = (raw) => {
         if (!raw) return [];
-        
-        // Si es string, tratar como JSON
         if (typeof raw === 'string') {
             try {
                 const parsed = JSON.parse(raw);
@@ -107,64 +145,157 @@ function generarTarjetaProceso(tipo, datos) {
                 return [raw];
             }
         }
-        
-        // Si es array
         if (Array.isArray(raw)) {
-            // Si el array contiene objetos con 'ubicacion' y 'descripcion'
             if (raw.length > 0 && typeof raw[0] === 'object' && raw[0].ubicacion) {
-                // Es un array de objetos del backend - retornar como está
                 return raw;
             }
-            
-            // Si contiene strings, intentar parsear cada uno
             const resultado = raw.map(ub => {
-                // Si es string, intentar parsearlo como JSON
                 if (typeof ub === 'string') {
                     try {
                         const parsed = JSON.parse(ub);
-                        // Si parsea correctamente, es un JSON
                         return Array.isArray(parsed) ? parsed[0] : parsed;
                     } catch (e) {
-                        // Si no parsea, es un string plano
                         return ub;
                     }
                 }
-                // Si es objeto, retornar como está
                 if (typeof ub === 'object' && ub !== null) {
                     return ub;
                 }
                 return ub;
             });
-            
-            // Aplanar array en caso de que haya arrays anidados
             return resultado.flat();
         }
-        
         return [String(raw)];
     };
     
     ubicacionesArray = limpiarYparsearUbicaciones(ubicacionesArray);
     
-    const ubicacionesTexto = Array.isArray(ubicacionesArray) && ubicacionesArray.length > 0
+    // HTML de ubicaciones
+    const ubicacionesHTML = Array.isArray(ubicacionesArray) && ubicacionesArray.length > 0
         ? ubicacionesArray.map(ub => {
-            // Si es objeto con ubicacion y descripcion
             if (typeof ub === 'object' && ub.ubicacion) {
                 const ubicacion = ub.ubicacion;
-                const descripcion = ub.descripcion ? ub.descripcion.replace(/\n/g, ' ').substring(0, 100) + '...' : '';
+                const descripcion = ub.descripcion ? ub.descripcion.replace(/\n/g, ' ').substring(0, 100) : '';
                 return descripcion 
-                    ? `<div style="margin-bottom: 0.75rem;"><strong>📍 ${ubicacion}</strong><br><span style="color: #6b7280; font-size: 0.8rem;">${descripcion}</span></div>` 
-                    : `<strong>📍 ${ubicacion}</strong>`;
+                    ? `<div style="margin-bottom: 0.5rem;"><strong>📍 ${ubicacion}</strong> - <span style="color: #6b7280; font-size: 0.8rem;">${descripcion}</span></div>` 
+                    : `<div style="margin-bottom: 0.5rem;"><strong>📍 ${ubicacion}</strong></div>`;
             }
-            // Si es string con nombre o descripcion
-            if (typeof ub === 'object' && (ub.nombre || ub.descripcion)) {
-                return ub.nombre || ub.descripcion;
+            if (typeof ub === 'string') {
+                return `<div style="margin-bottom: 0.5rem;"><strong>📍 ${ub}</strong></div>`;
             }
-            // Si es string plano
-            if (typeof ub === 'string') return `<strong>📍 ${ub}</strong>`;
-            // Fallback
-            return `<strong>📍 ${String(ub)}</strong>`;
+            return `<div style="margin-bottom: 0.5rem;"><strong>📍 ${String(ub)}</strong></div>`;
         }).join('') 
-        : 'Sin ubicaciones';
+        : '<div style="color: #9ca3af;">Sin ubicaciones</div>';
+    
+    // HTML de tallas
+    let tallasHTML = '';
+    if (totalTallas > 0) {
+        tallasHTML = `
+            <div style="margin-top: 0.75rem;">
+                <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">TALLAS (${totalTallas})</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                    ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
+                        ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
+                            return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                👩 ${talla}: ${cantidad}
+                            </span>`;
+                        }).join('')}
+                    ` : ''}
+                    ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
+                        ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
+                            return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                👨 ${talla}: ${cantidad}
+                            </span>`;
+                        }).join('')}
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    // HTML de observaciones
+    let observacionesHTML = '';
+    if (datos.observaciones) {
+        observacionesHTML = `
+            <div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef3c7; border-left: 2px solid #f59e0b; border-radius: 4px;">
+                <strong style="font-size: 0.75rem; color: #92400e; display: block; margin-bottom: 0.25rem;">OBSERVACIONES</strong>
+                <div style="color: #78350f; font-size: 0.8rem;">${datos.observaciones}</div>
+            </div>
+        `;
+    }
+    
+    // HTML de imágenes
+    let imagenesHTML = '';
+    if (datos.imagenes && datos.imagenes.length > 0) {
+        const imagenesValidas = datos.imagenes.filter(img => img !== null && img !== undefined);
+        console.log(`🖼️ [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} imágenes`, {
+            imagenesArray: imagenesValidas.map(img => ({
+                tipo: img instanceof File ? 'File' : typeof img,
+                nombre: img?.nombre || img?.name || 'sin-nombre',
+                tienePreviewUrl: !!img?.previewUrl,
+                tieneDataURL: !!img?.dataURL,
+                tieneSrc: !!img?.src,
+                tieneUrl: !!img?.url || !!img?.ruta_original
+            }))
+        });
+        if (imagenesValidas.length > 0) {
+            imagenesHTML = `
+                <div style="margin-top: 0.75rem;">
+                    <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">IMÁGENES (${imagenesValidas.length})</strong>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        ${imagenesValidas.slice(0, 4).map((img, idx) => {
+                            // Determinar la URL según el tipo de objeto
+                            let imgSrc = '';
+                            if (img instanceof File) {
+                                imgSrc = URL.createObjectURL(img);
+                            } else if (img.previewUrl) {
+                                // Imagen con preview (desde storage)
+                                imgSrc = img.previewUrl;
+                            } else if (img.dataURL) {
+                                // Imagen con dataURL
+                                imgSrc = img.dataURL;
+                            } else if (img.src) {
+                                imgSrc = img.src;
+                            } else if (img.url) {
+                                imgSrc = agregarStorage(img.url);
+                            } else if (img.ruta_original) {
+                                imgSrc = agregarStorage(img.ruta_original);
+                            } else if (typeof img === 'string') {
+                                imgSrc = agregarStorage(img);
+                            }
+                            
+                            console.log(`  [RENDER-TARJETA-${tipo}] Imagen ${idx}: ${typeof img} → src="${imgSrc.substring(0, 100)}"`);
+                            
+                            return imgSrc ? `
+                                <div style="position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" 
+                                     onclick="abrirGaleriaImagenesProceso('${tipo}', ${idx})"
+                                     title="Click para ver galería">
+                                    <img src="${imgSrc}" 
+                                        style="width: 100%; height: 100%; object-fit: cover;" 
+                                        alt="Imagen ${idx + 1}">
+                                </div>
+                            ` : '';
+                        }).join('')}
+                        ${imagenesValidas.length > 4 ? `
+                            <div style="display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; background: #f3f4f6; border-radius: 4px; border: 2px dashed #d1d5db; font-weight: 600; color: #6b7280; font-size: 0.75rem; cursor: pointer;"
+                                 onclick="abrirGaleriaImagenesProceso('${tipo}')"
+                                 title="Ver todas">
+                                +${imagenesValidas.length - 4}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        } else {
+            console.log(`⚠️ [RENDER-TARJETA-${tipo}] Imágenes array existe pero está vacío`);
+        }
+    } else {
+        console.log(`⚠️ [RENDER-TARJETA-${tipo}] NO hay imágenes en datos.imagenes`, {
+            tieneImagenes: !!datos.imagenes,
+            esArray: Array.isArray(datos.imagenes),
+            longitud: datos.imagenes?.length || 0
+        });
+    }
     
     return `
         <div class="tarjeta-proceso" data-tipo="${tipo}" style="
@@ -179,85 +310,35 @@ function generarTarjetaProceso(tipo, datos) {
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span style="font-size: 1.5rem;">${icono}</span>
-                    <strong style="color: #111827; font-size: 1rem;">${nombre}</strong>
+                    <div>
+                        <strong style="color: #111827; font-size: 1rem; display: block;">${nombre}</strong>
+                        <span style="color: #9ca3af; font-size: 0.7rem;">${tipo}</span>
+                    </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <button type="button" onclick="editarProcesoDesdeModal('${tipo}')" 
                         style="background: #f3f4f6; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
-                        title="Editar proceso">
+                        title="Editar">
                         <i class="fas fa-edit" style="font-size: 1rem; color: #6b7280;"></i>
                     </button>
                     <button type="button" onclick="eliminarTarjetaProceso('${tipo}')" 
                         style="background: #fee2e2; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center;" 
-                        title="Eliminar proceso">
+                        title="Eliminar">
                         <i class="fas fa-trash-alt" style="font-size: 1rem; color: #dc2626;"></i>
                     </button>
                 </div>
             </div>
             
             <!-- Contenido -->
-            <div style="display: grid; gap: 0.75rem;">
-                ${(datos.imagenes?.length > 0) ? `
-                    <div>
-                        <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">IMÁGENES</div>
-                        <div style="position: relative; display: inline-block;" onclick="abrirGaleriaImagenesProceso('${tipo}')">
-                            <img src="${
-                                datos.imagenes[0] instanceof File 
-                                    ? URL.createObjectURL(datos.imagenes[0]) 
-                                    : agregarStorage(datos.imagenes[0].url || datos.imagenes[0].ruta || datos.imagenes[0])
-                            }" 
-                                style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid #e5e7eb;" 
-                                alt="Imagen del proceso">
-                            ${datos.imagenes.length > 1 ? `
-                                <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.75); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">
-                                    +${datos.imagenes.length - 1}
-                                </span>
-                            ` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <div>
-                    <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">UBICACIONES</div>
-                    <div style="color: #374151; font-size: 0.875rem;">${ubicacionesTexto}</div>
+            <div style="color: #374151; font-size: 0.875rem;">
+                <div style="margin-bottom: 0.75rem;">
+                    <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">📍 UBICACIONES</strong>
+                    <div>${ubicacionesHTML}</div>
                 </div>
                 
-                ${totalTallas > 0 ? `
-                    <div>
-                        <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">TALLAS (${totalTallas})</div>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
-                            ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
-                                <div>
-                                    <strong style="color: #be185d; margin-right: 0.5rem;"><i class="fas fa-female"></i> Dama:</strong>
-                                    ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
-                                        return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                            ${talla}
-                                            <span style="background: #be185d; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
-                                        </span>`;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                            ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
-                                <div>
-                                    <strong style="color: #1d4ed8; margin-right: 0.5rem;"><i class="fas fa-male"></i> Caballero:</strong>
-                                    ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
-                                        return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; margin: 0.2rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                            ${talla}
-                                            <span style="background: #1d4ed8; color: white; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.75rem;">${cantidad}</span>
-                                        </span>`;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${datos.observaciones ? `
-                    <div>
-                        <div style="font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">OBSERVACIONES</div>
-                        <div style="color: #374151; font-size: 0.875rem; font-style: italic;">${datos.observaciones}</div>
-                    </div>
-                ` : ''}
+                ${tallasHTML}
+                ${observacionesHTML}
+                ${imagenesHTML}
             </div>
         </div>
     `;
@@ -780,17 +861,51 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
     
     // Procesar URLs de imágenes
     const procesarUrlImagen = (img) => {
+        console.log('🔧 [GALERIA-PROCESAR] Procesando imagen:', {
+            tipo: img instanceof File ? 'File' : typeof img,
+            tienePreviewUrl: !!img?.previewUrl,
+            tieneDataURL: !!img?.dataURL,
+            tieneUrl: !!img?.url,
+            tieneRuta: !!img?.ruta_original,
+            claves: typeof img === 'object' ? Object.keys(img) : 'N/A'
+        });
+        
         if (img instanceof File) {
+            console.log('  → Generando ObjectURL para File');
             return URL.createObjectURL(img);
         }
-        if (typeof img === 'string') {
-            return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+        
+        // Primero intentar con previewUrl (nuevas imágenes del storage)
+        if (img?.previewUrl) {
+            console.log('  → Usando previewUrl:', img.previewUrl.substring(0, 50));
+            return img.previewUrl;
         }
+        
+        // Luego dataURL
+        if (img?.dataURL) {
+            console.log('  → Usando dataURL');
+            return img.dataURL;
+        }
+        
+        // Luego URLs de backend
+        if (typeof img === 'string') {
+            const url = img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+            console.log('  → Usando string directo:', url);
+            return url;
+        }
+        
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
-            if (!url) return '';
-            return typeof url === 'string' ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
+            if (!url) {
+                console.warn('  → No se encontró URL en objeto:', Object.keys(img));
+                return '';
+            }
+            const urlProcesada = typeof url === 'string' ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
+            console.log('  → Usando URL de objeto:', urlProcesada);
+            return urlProcesada;
         }
+        
+        console.warn('  → Imagen en formato no reconocido');
         return '';
     };
     
@@ -850,8 +965,19 @@ window.navegarGaleriaImagenesProceso = function(direccion) {
     galeria.dataset.indiceActual = indice;
     
     const procesarUrlImagen = (img) => {
-        if (img instanceof File) return URL.createObjectURL(img);
-        if (typeof img === 'string') return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+        // Mismo procesamiento que en abrirGaleriaImagenesProceso
+        if (img instanceof File) {
+            return URL.createObjectURL(img);
+        }
+        if (img?.previewUrl) {
+            return img.previewUrl;
+        }
+        if (img?.dataURL) {
+            return img.dataURL;
+        }
+        if (typeof img === 'string') {
+            return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+        }
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
             return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';
@@ -890,8 +1016,19 @@ window.irAImagenProceso = function(indice) {
     galeria.dataset.indiceActual = indice;
     
     const procesarUrlImagen = (img) => {
-        if (img instanceof File) return URL.createObjectURL(img);
-        if (typeof img === 'string') return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+        // Mismo procesamiento que en abrirGaleriaImagenesProceso
+        if (img instanceof File) {
+            return URL.createObjectURL(img);
+        }
+        if (img?.previewUrl) {
+            return img.previewUrl;
+        }
+        if (img?.dataURL) {
+            return img.dataURL;
+        }
+        if (typeof img === 'string') {
+            return img.startsWith('/') || img.startsWith('http') ? img : '/storage/' + img;
+        }
         if (typeof img === 'object' && img) {
             const url = img.url || img.ruta || img.ruta_webp || img.ruta_original;
             return (typeof url === 'string') ? (url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url) : '';

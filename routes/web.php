@@ -24,12 +24,6 @@ use App\Http\Controllers\TestTelasPrendaController;
 use App\Http\Controllers\PDFPrendaController;
 use App\Http\Controllers\PDFCotizacionCombiadaController;
 use App\Http\Controllers\PDFLogoController;
-use App\Http\Controllers\JsBundleController;
-
-// ⚡ JS Bundle route — concatenates multiple JS files into single response
-// Reduces ~120 HTTP requests to ~8 for the crear-pedido page
-Route::get('/js/bundle/{name}.js', [JsBundleController::class, 'serve'])
-    ->where('name', '[a-zA-Z0-9\-]+');
 
 // Ruta temporal para verificar datos de la base de datos
 Route::get('/verificar-datos-bd', function () {

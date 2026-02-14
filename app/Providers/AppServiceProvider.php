@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use App\Models\TablaOriginalBodega;
 use App\Models\ProcesoPrenda;
@@ -94,6 +95,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Blade directive: @jsDefer('js/path/file.js')
+        // En producción carga .min.js, en desarrollo el original
+        Blade::directive('jsDefer', function (string $expression) {
+            return "<script defer src=\"<?php echo js_asset({$expression}); ?>?v=<?php echo config('app.asset_version'); ?>\"></script>";
+        });
+
         // Los Observers de TablaOriginal han sido eliminados
         // La sincronización ocurre automáticamente a través de PedidoProduccion
         // y sus relaciones con PrendaPedido y ProcesoPrenda.

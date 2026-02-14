@@ -50,8 +50,13 @@ window.manejarImagenProceso = function(input, procesoIndex) {
             const previewUrl = e.target.result;
             console.log(`[manejarImagenProceso] 🖼️ Preview generado para proceso ${procesoIndex}:`, file.name);
             
+            // 🔧 CRÍTICO: Usar el índice del cuadro (del modal) o del proceso según corresponda
+            // Si window._procesoQuadroIndex está definido, usarlo para el preview (es el cuadro 1, 2, o 3)
+            // procesoIndex siempre es para el storage
+            const previewIndex = window._procesoQuadroIndex || procesoIndex;
+            
             // Actualizar el preview específico
-            const previewElement = document.getElementById(`proceso-foto-preview-${procesoIndex}`);
+            const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
             if (previewElement) {
                 // Limpiar contenido anterior
                 previewElement.innerHTML = '';
@@ -111,7 +116,8 @@ window.manejarImagenProceso = function(input, procesoIndex) {
                 btnEliminar.onclick = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    eliminarImagenProceso(procesoIndex);
+                    // 🔧 Pasar ambos índices: el del storage y el del preview HTML
+                    eliminarImagenProceso(previewIndex, procesoIndex);
                 };
                 
                 // Posicionar elementos
@@ -119,14 +125,14 @@ window.manejarImagenProceso = function(input, procesoIndex) {
                 previewElement.appendChild(imgElement);
                 previewElement.appendChild(btnEliminar);
                 
-                console.log(`[manejarImagenProceso]  Preview actualizado para proceso ${procesoIndex}`);
+                console.log(`[manejarImagenProceso]  Preview actualizado para proceso ${procesoIndex} (preview index: ${previewIndex})`);
                 
                 // Actualizar drag & drop si es necesario
                 if (typeof window.actualizarDragDropProceso === 'function') {
                     window.actualizarDragDropProceso(procesoIndex);
                 }
             } else {
-                console.warn(`[manejarImagenProceso]  Preview del proceso ${procesoIndex} no encontrado`);
+                console.warn(`[manejarImagenProceso]  Preview encontrado con ID proceso-foto-preview-${previewIndex}`);
             }
             
             // Guardar la imagen en el storage si está disponible
@@ -161,19 +167,25 @@ window.manejarImagenProceso = function(input, procesoIndex) {
 
 /**
  * Eliminar imagen de un proceso específico
- * @param {number} procesoIndex - Índice del proceso (1, 2, 3)
+ * @param {number} previewIndex - Índice del preview HTML (1, 2, 3) - del cuadro en el modal
+ * @param {number} procesoIndex - Índice del proceso en el storage (1, 2, 3)
  */
-window.eliminarImagenProceso = function(procesoIndex) {
-    console.log(`[eliminarImagenProceso] 🗑️ Eliminando imagen del proceso ${procesoIndex}`);
+window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
+    // Soportar llamadas antiguas con un solo parámetro (backward compatibility)
+    if (procesoIndex === undefined) {
+        procesoIndex = previewIndex;
+    }
+    
+    console.log(`[eliminarImagenProceso] 🗑️ Eliminando imagen del preview ${previewIndex} (storage index: ${procesoIndex})`);
     
     try {
-        const previewElement = document.getElementById(`proceso-foto-preview-${procesoIndex}`);
+        const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
         if (previewElement) {
             // Restaurar el placeholder
             previewElement.innerHTML = `
                 <div class="placeholder-content" style="text-align: center;">
                     <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${procesoIndex}</div>
+                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${previewIndex}</div>
                 </div>
             `;
             
@@ -183,7 +195,7 @@ window.eliminarImagenProceso = function(procesoIndex) {
             previewElement.style.transform = '';
             previewElement.style.boxShadow = '';
             
-            console.log(`[eliminarImagenProceso]  Preview del proceso ${procesoIndex} restaurado`);
+            console.log(`[eliminarImagenProceso]  Preview ${previewIndex} restaurado`);
         }
         
         // NOTA: NO eliminar del storage aquí - ya se eliminó desde _eliminarDelStorage()

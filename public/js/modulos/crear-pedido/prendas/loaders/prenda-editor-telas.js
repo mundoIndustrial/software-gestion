@@ -65,12 +65,59 @@ class PrendaEditorTelas {
     static _crearFilaTela(tela, idx) {
         const fila = document.createElement('tr');
         fila.style.borderBottom = '1px solid #e5e7eb';
+        
+        // Procesar imágenes de la tela
+        let imagenHTML = '';
+        if (tela.imagenes && Array.isArray(tela.imagenes) && tela.imagenes.length > 0) {
+            // Tomar la primera imagen válida
+            const imagenValida = tela.imagenes.find(img => img !== null && img !== undefined);
+            if (imagenValida) {
+                let imgSrc = '';
+                
+                // Procesar según el tipo de imagen
+                if (typeof imagenValida === 'string') {
+                    // String: puede ser URL, ruta, o base64
+                    if (imagenValida.startsWith('data:') || imagenValida.startsWith('blob:')) {
+                        imgSrc = imagenValida;
+                    } else {
+                        // Ruta de archivo, agregar /storage/ si necesario
+                        imgSrc = imagenValida.startsWith('/') ? imagenValida : '/storage/' + imagenValida;
+                    }
+                } else if (typeof imagenValida === 'object') {
+                    // Objeto con propiedades
+                    if (imagenValida.previewUrl) {
+                        imgSrc = imagenValida.previewUrl;
+                    } else if (imagenValida.dataURL) {
+                        imgSrc = imagenValida.dataURL;
+                    } else if (imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original) {
+                        const url = imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original;
+                        imgSrc = url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url;
+                    }
+                }
+                
+                if (imgSrc) {
+                    imagenHTML = `
+                        <img src="${imgSrc}" 
+                            style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;" 
+                            alt="Tela ${idx + 1}"
+                            onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\"font-size: 0.75rem; color: #9ca3af;\">(imagen no disponible)</div>';">
+                    `;
+                } else {
+                    imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
+                }
+            } else {
+                imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
+            }
+        } else {
+            imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
+        }
+        
         fila.innerHTML = `
             <td style="padding: 0.5rem;">${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}</td>
             <td style="padding: 0.5rem;">${tela.color_nombre || tela.color || 'Sin color'}</td>
             <td style="padding: 0.5rem;">${tela.referencia || '-'}</td>
             <td style="padding: 0.5rem; text-align: center; vertical-align: top;">
-                <div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>
+                ${imagenHTML}
             </td>
             <td style="padding: 0.5rem; text-align: center;">
                 <button type="button" class="btn btn-sm btn-danger" 

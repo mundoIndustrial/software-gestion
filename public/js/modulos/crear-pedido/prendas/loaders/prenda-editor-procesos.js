@@ -8,12 +8,112 @@ class PrendaEditorProcesos {
      * Cargar procesos en el modal
      */
     static cargar(prenda) {
+        console.log('⚙️ [PROCESOS-LOADER] ===== INICIO CARGA =====');
+        console.log('⚙️ [PROCESOS-LOADER] prenda.id:', prenda.id);
+        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos EXISTS:', !!prenda.procesos);
+        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos type:', typeof prenda.procesos);
+        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos isArray:', Array.isArray(prenda.procesos));
+        console.log('⚙️ [PROCESOS-LOADER] prenda.procesos CONTENIDO COMPLETO:');
+        console.log(prenda.procesos);
+        
+        if (!prenda.procesos) {
+            console.log('⚠️ [PROCESOS-LOADER] procesos es NULL/UNDEFINED');
+            window.procesosSeleccionados = {};
+            return;
+        }
+        
+        if (Array.isArray(prenda.procesos)) {
+            console.log('✅ [PROCESOS-LOADER] Es ARRAY con', prenda.procesos.length, 'elementos');
+        }
+        
         console.log('⚙️ [Procesos] Cargando:', {
             cantidad: prenda.procesos?.length || Object.keys(prenda.procesos || {}).length || 0,
-            tipo: Array.isArray(prenda.procesos) ? 'array' : typeof prenda.procesos
+            tipo: Array.isArray(prenda.procesos) ? 'array' : typeof prenda.procesos,
+            procesos: prenda.procesos
         });
         
-        // Buscar contenedor
+        // 🔥 CRÍTICO: Replicar a global PRIMERO para que renderizarTarjetasProcesos() encuentre los datos
+        if (prenda.procesos && typeof prenda.procesos === 'object') {
+            // Convertir a formato plano de window.procesosSeleccionados
+            window.procesosSeleccionados = {};
+            
+            if (Array.isArray(prenda.procesos)) {
+                // Si es array, convertir a objeto con keys
+                prenda.procesos.forEach((proceso, idx) => {
+                    const tipo = proceso.tipo || proceso.nombre || `proceso_${idx}`;
+                    window.procesosSeleccionados[tipo] = {
+                        tipo: tipo,
+                        datos: proceso
+                    };
+                });
+            } else {
+                // Si ya es objeto, procesarlo
+                Object.entries(prenda.procesos).forEach(([key, proceso]) => {
+                    // Si el valor es un objeto con datos, usarlo directamente
+                    if (proceso && typeof proceso === 'object' && (proceso.datos || proceso.tipo || proceso.ubicaciones)) {
+                        window.procesosSeleccionados[key] = {
+                            tipo: key,
+                            datos: proceso.datos || proceso
+                        };
+                    } else if (proceso === true || proceso === 1) {
+                        // Si es solo un boolean/flag, crear objeto mínimo
+                        window.procesosSeleccionados[key] = {
+                            tipo: key,
+                            datos: {
+                                tipo: key,
+                                ubicaciones: [],
+                                tallas: { dama: {}, caballero: {}, sobremedida: {} },
+                                observaciones: '',
+                                imagenes: []
+                            }
+                        };
+                    }
+                });
+            }
+            
+            console.log('[Carga] ⚙️ Procesos replicados en window.procesosSeleccionados:', {
+                keys: Object.keys(window.procesosSeleccionados),
+                count: Object.keys(window.procesosSeleccionados).length,
+                contenido: window.procesosSeleccionados
+            });
+        }
+        
+        // 🎨 CRÍTICO: Usar el nuevo renderizador de tarjetas
+        if (window.renderizarTarjetasProcesos) {
+            console.log('✅ [Procesos] Función renderizarTarjetasProcesos() disponible');
+            console.log('[Procesos]  window.procesosSeleccionados actual:', window.procesosSeleccionados);
+            
+            // Ejecutar inmediatamente (sin delay)
+            console.log('[Procesos] Ejecutando renderización AHORA...');
+            const exito = window.renderizarTarjetasProcesos();
+            
+            console.log('[Procesos] Resultado renderización:', {
+                exito: exito,
+                container: document.getElementById('contenedor-tarjetas-procesos'),
+                containerDisplay: document.getElementById('contenedor-tarjetas-procesos')?.style.display,
+                containerHTML: document.getElementById('contenedor-tarjetas-procesos')?.innerHTML.substring(0, 100)
+            });
+            
+            if (exito) {
+                console.log('✅ [Procesos] Completado - Tarjetas renderizadas correctamente');
+                // Verificación final: asegurar que el contenedor es visible
+                const container = document.getElementById('contenedor-tarjetas-procesos');
+                if (container) {
+                    console.log('[Procesos] ✅ Contenedor visible:', {
+                        display: container.style.display,
+                        visibility: container.style.visibility,
+                        innerHTML_length: container.innerHTML.length
+                    });
+                }
+                return;
+            } else {
+                console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() retornó false');
+            }
+        } else {
+            console.warn('⚠️ [Procesos] renderizarTarjetasProcesos() NO DISPONIBLE');
+        }
+        
+        // Fallback: Si no existe renderizador, crear tarjetas simples
         let container = document.getElementById('contenedor-tarjetas-procesos');
         if (!container) {
             container = document.getElementById('procesos-agregados');
@@ -37,7 +137,7 @@ class PrendaEditorProcesos {
             return;
         }
         
-        // Mostrar procesos
+        // Mostrar procesos (fallback simple)
         container.innerHTML = '';
         container.style.display = 'block';
         
@@ -47,13 +147,7 @@ class PrendaEditorProcesos {
             console.log(`✅ [Procesos] ${idx + 1}: ${proceso.nombre}`);
         });
         
-        // 🔥 Replicar a global para que sea editable
-        if (prenda.procesos) {
-            window.procesosSeleccionados = JSON.parse(JSON.stringify(prenda.procesos));
-            console.log('[Carga] ⚙️ Procesos replicados en window.procesosSeleccionados');
-        }
-        
-        console.log('✅ [Procesos] Completado');
+        console.log('✅ [Procesos] Completado (modo fallback)');
     }
 
     /**
@@ -116,20 +210,28 @@ class PrendaEditorProcesos {
 
     /**
      * Limpiar procesos
+     * ⚠️ CRÍTICO: SOLO limpiar el contenedor de tarjetas (procesos configurados)
+     * NO tocar el .procesos-container (que contiene los checkboxes)
      */
     static limpiar() {
-        const containers = [
-            document.getElementById('contenedor-tarjetas-procesos'),
-            document.getElementById('procesos-agregados'),
-            document.querySelector('.procesos-container')
-        ];
+        // 🔴 SOLO limpiar contenedor de tarjetas renderizadas
+        // NO limpiar procesos-container (tiene los checkboxes para seleccionar procesos)
+        const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
+        if (contenedorTarjetas) {
+            contenedorTarjetas.innerHTML = '';
+            contenedorTarjetas.style.display = 'none';
+        }
         
-        containers.forEach(container => {
-            if (container) {
-                container.innerHTML = '';
-                container.style.display = 'none';
-            }
-        });
+        // Limpiar otros contenedores si existen
+        const procesosAgregados = document.getElementById('procesos-agregados');
+        if (procesosAgregados) {
+            procesosAgregados.innerHTML = '';
+            procesosAgregados.style.display = 'none';
+        }
+        
+        // ⚠️ NUNCA tocar .procesos-container (contiene los checkboxes!)
+        // const procesosContainer = document.querySelector('.procesos-container');
+        // NO LIMPIAR - esto causa que desaparezcan los checkboxes
     }
 }
 

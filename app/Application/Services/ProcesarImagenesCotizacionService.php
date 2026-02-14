@@ -122,12 +122,19 @@ class ProcesarImagenesCotizacionService
     {
         $timestamp = time();
         $random = substr(uniqid(), -4);
+        
+        // Sanitizar el nombre original: reemplazar espacios y caracteres especiales con guiones
+        $nombreSaneado = preg_replace('/[^a-zA-Z0-9-_]/', '-', $nombreOriginal);
+        // Eliminar múltiples guiones consecutivos
+        $nombreSaneado = preg_replace('/-+/', '-', $nombreSaneado);
+        // Limitar la longitud a 30 caracteres para evitar nombres muy largos
+        $nombreSaneado = substr($nombreSaneado, 0, 30);
 
         if ($prendaId) {
-            return "{$nombreOriginal}_prenda_{$prendaId}_{$timestamp}_{$random}";
+            return "{$nombreSaneado}_prenda_{$prendaId}_{$timestamp}_{$random}";
         }
 
-        return "{$nombreOriginal}_{$timestamp}_{$random}";
+        return "{$nombreSaneado}_{$timestamp}_{$random}";
     }
 
     /**

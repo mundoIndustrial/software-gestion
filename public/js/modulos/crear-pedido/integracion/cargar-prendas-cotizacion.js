@@ -143,10 +143,19 @@ class CargadorPrendasCotizacion {
 
         // Preparar fotos de prenda
         const fotosFormato = (prenda.fotos || []).map((foto, idx) => {
-            // Si foto es un objeto con ruta_original/ruta_webp (de BD)
-            if (foto && typeof foto === 'object' && (foto.ruta_original || foto.ruta_webp)) {
-                // Prioridad: ruta_original > ruta_webp > ruta
-                let ruta = foto.ruta_original || foto.ruta;
+            console.log(`[transformarDatos] 📸 PROCESANDO FOTO ${idx}:`, {
+                tipo_dato: typeof foto,
+                tiene_ruta: !!(foto?.ruta),
+                tiene_ruta_webp: !!(foto?.ruta_webp),
+                tiene_ruta_original: !!(foto?.ruta_original),
+                contenido_original: foto
+            });
+            
+            // El backend retorna fotos con estructura: { ruta, ruta_webp }
+            // Donde ruta viene de ruta_original del modelo
+            if (foto && typeof foto === 'object') {
+                // Preferencia de rutas: ruta (que viene de ruta_original del backend) > ruta_webp > ruta_original
+                let ruta = foto.ruta || foto.ruta_original;
                 let ruta_webp = foto.ruta_webp;
                 
                 // Si ruta es null o vacía, usar ruta_webp
@@ -154,31 +163,30 @@ class CargadorPrendasCotizacion {
                     ruta = ruta_webp;
                 }
                 
-                // Asegurar que las rutas tengan formato correcto
-                if (ruta && typeof ruta === 'string' && !ruta.startsWith('/')) {
-                    ruta = '/storage/' + ruta;
-                }
-                if (ruta_webp && typeof ruta_webp === 'string' && !ruta_webp.startsWith('/')) {
-                    ruta_webp = '/storage/' + ruta_webp;
-                }
+                // El backend YA procesa las rutas (agrega /storage/ si es necesario)
+                // No agregar /storage/ nuevamente si ya viene con it
                 
-                return {
-                    ruta: ruta || ruta_webp,
-                    ruta_webp: ruta_webp || ruta,
+                const resultado = {
+                    ruta: ruta,  // Backend ya lo procesó
+                    ruta_webp: ruta_webp,
                     uid: `existing-foto-prenda-${idx}`
                 };
+                
+                console.log(`[transformarDatos] 📸 FOTO ${idx} PROCESADA => RUTA FINAL:`, resultado.ruta);
+                return resultado;
             }
             
-            // Fallback por si acaso
+            // Fallback por si la foto es un string (ruta directa)
+            console.warn(`[transformarDatos] ⚠️ FOTO ${idx} NO TIENE ESTRUCTURA ESPERADA, USANDO FALLBACK:`, foto);
             return {
-                ruta: foto.ruta || foto,
-                ruta_webp: foto.ruta_webp || null,
+                ruta: foto?.ruta || foto,
+                ruta_webp: foto?.ruta_webp || null,
                 uid: `existing-foto-${Date.now()}-${idx}`
             };
         }).filter(f => f.ruta);  // Filtrar fotos sin ruta válida
         
         console.log('[transformarDatos] 📸 FOTOS RECIBIDAS DEL BACKEND:', prenda.fotos);
-        console.log('[transformarDatos]  FOTOS PROCESADAS:', fotosFormato);
+        console.log('[transformarDatos]  FOTOS PROCESADAS FINAL:', fotosFormato.map(f => ({ ruta: f.ruta, uid: f.uid })));
 
         // Preparar telas CON TODAS LAS REFERENCIAS
         console.log('[transformarDatos] 🧵 TELAS RECIBIDAS DEL BACKEND:', prenda.telas);
@@ -863,11 +871,10 @@ window.abrirSelectorPrendasCotizacion = function(cotizacion) {
                     window.gestionItemsUI.prendaEditor.cargarPrendaEnModal(prendaCompleta, null);
                     console.log('[abrirSelectorPrendasCotizacion] ✓ Prenda cargada en modal para edición');
                     
-                    // NUEVO: Cargar procesos automáticamente desde la prenda
-                    console.log('[abrirSelectorPrendasCotizacion]  Cargando procesos desde la cotización...');
+                    // Los procesos se cargarán automáticamente mediante PrendaEditorProcesos.cargar()
+                    // que se ejecuta en _cargarDatosEnFormulario() durante cargarPrendaEnModal()
                     if (prendaCompleta.procesos && Object.keys(prendaCompleta.procesos).length > 0) {
-                        window.gestionItemsUI.prendaEditor.cargarProcesos(prendaCompleta);
-                        console.log('[abrirSelectorPrendasCotizacion] ✓ Procesos cargados:', Object.keys(prendaCompleta.procesos));
+                        console.log('[abrirSelectorPrendasCotizacion] ✓ Procesos disponibles para cargar:', Object.keys(prendaCompleta.procesos));
                     } else {
                         console.log('[abrirSelectorPrendasCotizacion]  No hay procesos definidos para esta prenda');
                     }

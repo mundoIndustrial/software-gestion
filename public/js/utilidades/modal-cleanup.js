@@ -275,10 +275,14 @@ class ModalCleanup {
             }
         });
 
-        // Limpiar contenedor de procesos
+        // Limpiar contenedor de procesos - PERO SOLO SI NO ESTAMOS CARGANDO PROCESOS
+        // En modo edición, los procesos se cargan DESPUÉS de limpiar, así que no deberíamos borrar aquí
         const contenedorTarjetas = document.getElementById('contenedor-tarjetas-procesos');
         if (contenedorTarjetas) {
-            contenedorTarjetas.innerHTML = '';
+            // CRÍTICO: Solo limpiar si es realmente necesario (cuando se crea NUEVA prenda)
+            // No limpiar aquí porque causaria que los procesos cargados en edición se borren
+            console.log('[ModalCleanup] Contenedor de tarjetas procesos encontrado - NO se limpia aquí (se cargará en PrendaEditor)');
+            // contenedorTarjetas.innerHTML = ''; // COMENTADO: Esto borraba los procesos al abrir en edición
         }
         
         // 🔥 CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
