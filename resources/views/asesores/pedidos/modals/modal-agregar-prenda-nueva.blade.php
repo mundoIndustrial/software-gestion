@@ -172,14 +172,14 @@
                                     <div id="paso-1-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">1</div>
                                     <div style="font-size: 0.875rem; font-weight: 500; color: #1f2937;">Género</div>
                                 </div>
-                                <div style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem;"></div>
+                                <div id="paso-1-linea" style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem;"></div>
                                 
                                 <!-- PASO 2: TALLA -->
                                 <div style="flex: 1; text-align: center;">
                                     <div id="paso-2-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">2</div>
                                     <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Talla</div>
                                 </div>
-                                <div style="flex-grow: 1; height: 2px; background: #d1d5db; margin-bottom: 1.5rem;"></div>
+                                <div id="paso-2-linea" style="flex-grow: 1; height: 2px; background: #d1d5db; margin-bottom: 1.5rem;"></div>
                                 
                                 <!-- PASO 3: COLORES -->
                                 <div style="flex: 1; text-align: center;">

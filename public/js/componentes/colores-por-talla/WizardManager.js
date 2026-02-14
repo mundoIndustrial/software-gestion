@@ -371,8 +371,14 @@ window.WizardManager = (function() {
                 }
             }
             
+            // Línea 0-1
+            const linea0 = document.getElementById('paso-0-linea');
+            if (linea0) {
+                linea0.style.background = pasoActual >= 1 ? '#3b82f6' : '#d1d5db';
+            }
+            
             // Línea 1-2
-            const linea1 = paso1 ? paso1.parentElement.parentElement.querySelector('div:nth-child(2)') : null;
+            const linea1 = document.getElementById('paso-1-linea');
             if (linea1) {
                 linea1.style.background = pasoActual >= 2 ? '#3b82f6' : '#d1d5db';
             }
@@ -390,7 +396,7 @@ window.WizardManager = (function() {
             }
             
             // Línea 2-3
-            const linea2 = paso2 ? paso2.parentElement.parentElement.querySelector('div:nth-child(4)') : null;
+            const linea2 = document.getElementById('paso-2-linea');
             if (linea2) {
                 linea2.style.background = pasoActual >= 3 ? '#3b82f6' : '#d1d5db';
             }
@@ -550,9 +556,17 @@ window.WizardManager = (function() {
             const contenedor = document.getElementById('wizard-tallas-contenedor');
             if (!contenedor) return;
             
-            // Limpiar lista de tallas seleccionadas al cambiar género
-            StateManager.limpiarTallasSeleccionadas();
-            console.log('[WizardManager] Lista de tallas limpiada');
+            // Obtener el género previamente seleccionado
+            const generoPrevio = StateManager.getGeneroSeleccionado();
+            
+            // Solo limpiar lista de tallas si es un género diferente al anterior
+            // Si es el mismo género (volvemos atrás), conservar las tallas seleccionadas
+            if (generoPrevio !== genero) {
+                StateManager.limpiarTallasSeleccionadas();
+                console.log('[WizardManager] Genre changed from', generoPrevio, 'to', genero, '- Lista de tallas limpiada');
+            } else {
+                console.log('[WizardManager] Mismo género - conservando tallas previamente seleccionadas');
+            }
             
             // Obtener tipos de talla disponibles para el género
             const tiposTalla = StateManager.getTallasDisponibles(genero);
@@ -564,12 +578,19 @@ window.WizardManager = (function() {
             // Obtener los tipos de talla disponibles
             const tiposDisponibles = Object.keys(tiposTalla);
             
+            // Obtener el tipo previamente seleccionado (si existe)
+            const tipoPrevio = StateManager.getTipoTallaSel();
+            
             // Si hay un solo tipo de talla, mostrar directamente las tallas
             if (tiposDisponibles.length === 1) {
                 const tipoUnico = tiposDisponibles[0];
                 this.mostrarTallasPorTipo(genero, tipoUnico);
+            } else if (tipoPrevio && tiposDisponibles.includes(tipoPrevio)) {
+                // Si había un tipo previamente seleccionado y sigue siendo válido, mostrar ese tipo
+                console.log('[WizardManager] Tipo previamente seleccionado encontrado:', tipoPrevio);
+                this.mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoPrevio);
             } else {
-                // Si hay múltiples tipos, mostrar los botones de tipos primero
+                // Si hay múltiples tipos y no hay uno previo, mostrar los botones de tipos
                 this.mostrarTiposTalla(genero, tiposDisponibles);
             }
             
@@ -689,6 +710,119 @@ window.WizardManager = (function() {
         },
 
         /**
+         * Mostrar tipos de talla con uno preseleccionado
+         * (Usado cuando vuelves atrás y ya hay un tipo previamente seleccionado)
+         */
+        mostrarTiposTallaConSeleccion(genero, tiposDisponibles, tipoSeleccionado) {
+            const contenedor = document.getElementById('wizard-tallas-contenedor');
+            if (!contenedor) {
+                console.error('[WizardManager]  No se encontró wizard-tallas-contenedor');
+                return;
+            }
+
+            console.log('[WizardManager]  Mostrando tipos con preselección:', {
+                genero: genero,
+                tiposDisponibles: tiposDisponibles,
+                tipoSeleccionado: tipoSeleccionado
+            });
+
+            contenedor.innerHTML = '';
+
+            // Título
+            const tituloDiv = document.createElement('div');
+            tituloDiv.style.marginBottom = '0.5rem';
+            tituloDiv.style.fontWeight = '500';
+            tituloDiv.style.color = '#374151';
+            tituloDiv.style.fontSize = '0.95rem';
+            tituloDiv.textContent = 'Selecciona el tipo de talla:';
+            contenedor.appendChild(tituloDiv);
+
+            // Contenedor flex para los botones
+            const btnContainer = document.createElement('div');
+            btnContainer.style.display = 'flex';
+            btnContainer.style.gap = '1rem';
+            btnContainer.style.flexWrap = 'wrap';
+            btnContainer.style.alignItems = 'center';
+            btnContainer.style.marginTop = '1rem';
+            contenedor.appendChild(btnContainer);
+
+            // Crear botones para cada tipo de talla
+            tiposDisponibles.forEach(tipo => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'wizard-tipo-talla-btn';
+                btn.style.padding = '0.6rem 1.5rem';
+                btn.style.borderRadius = '4px';
+                btn.style.cursor = 'pointer';
+                btn.style.fontWeight = '500';
+                btn.style.fontSize = '0.9rem';
+                btn.style.transition = 'all 0.2s';
+                btn.style.minWidth = '100px';
+                btn.textContent = tipo;
+
+                // Pre-seleccionar el tipo que ya estaba seleccionado
+                if (tipo === tipoSeleccionado) {
+                    btn.setAttribute('data-selected', 'true');
+                    btn.style.background = '#eff6ff';
+                    btn.style.border = '1px solid #3b82f6';
+                    btn.style.color = '#1f2937';
+                    btn.style.fontWeight = '600';
+                } else {
+                    btn.style.border = '1px solid #d1d5db';
+                    btn.style.background = 'white';
+                    btn.style.color = '#374151';
+                }
+
+                // Eventos mouse
+                btn.addEventListener('mouseover', () => {
+                    if (!btn.hasAttribute('data-selected')) {
+                        btn.style.background = '#f3f4f6';
+                        btn.style.borderColor = '#9ca3af';
+                    }
+                });
+
+                btn.addEventListener('mouseout', () => {
+                    if (!btn.hasAttribute('data-selected')) {
+                        btn.style.background = 'white';
+                        btn.style.borderColor = '#d1d5db';
+                        btn.style.color = '#374151';
+                        btn.style.fontWeight = '500';
+                    }
+                });
+
+                // Evento click
+                btn.addEventListener('click', () => {
+                    console.log('[WizardManager] 🎯 Tipo seleccionado:', tipo);
+
+                    // Marcar botón como seleccionado
+                    const tipoBtns = document.querySelectorAll('.wizard-tipo-talla-btn');
+                    tipoBtns.forEach(b => {
+                        b.removeAttribute('data-selected');
+                        b.style.background = 'white';
+                        b.style.borderColor = '#d1d5db';
+                        b.style.color = '#374151';
+                        b.style.fontWeight = '500';
+                    });
+
+                    btn.setAttribute('data-selected', 'true');
+                    btn.style.background = '#eff6ff';
+                    btn.style.borderColor = '#3b82f6';
+                    btn.style.color = '#1f2937';
+                    btn.style.fontWeight = '600';
+
+                    console.log('[WizardManager]  Llamando mostrarTallasPorTipo con:', genero, tipo);
+                    this.mostrarTallasPorTipo(genero, tipo);
+                });
+
+                btnContainer.appendChild(btn);
+            });
+
+            // Automáticamente mostrar las tallas del tipo preseleccionado
+            console.log('[WizardManager]  Cargando tallas para tipo preseleccionado:', tipoSeleccionado);
+            this.mostrarTallasPorTipo(genero, tipoSeleccionado);
+        },
+
+        /**
          * Mostrar las tallas para un tipo específico (CON CHECKBOXES PARA MÚLTIPLE SELECCIÓN)
          */
         mostrarTallasPorTipo(genero, tipo) {
@@ -789,6 +923,31 @@ window.WizardManager = (function() {
                 label.appendChild(document.createTextNode(talla));
                 checkboxContainer.appendChild(label);
             });
+            
+            // Restaurar tallas previamente seleccionadas
+            const tallasGuardadas = StateManager.getTallasSeleccionadas();
+            if (tallasGuardadas && tallasGuardadas.length > 0) {
+                console.log('[WizardManager] Restaurando tallas previamente seleccionadas:', tallasGuardadas);
+                
+                document.querySelectorAll('.wizard-talla-checkbox').forEach(checkbox => {
+                    if (tallasGuardadas.includes(checkbox.value)) {
+                        checkbox.checked = true;
+                        const label = checkbox.parentElement;
+                        label.style.background = '#eff6ff';
+                        label.style.borderColor = '#3b82f6';
+                        label.style.color = '#1f2937';
+                        label.style.fontWeight = '600';
+                    }
+                });
+            }
+            
+            // Actualizar estado del botón siguiente
+            const btnSiguiente = document.getElementById('wzd-btn-siguiente');
+            if (btnSiguiente) {
+                const hayTallas = StateManager.tieneTallasSeleccionadas();
+                btnSiguiente.disabled = !hayTallas;
+                console.log('[WizardManager] Botón siguiente:', { disabled: !hayTallas, hayTallas });
+            }
         },
 
         /**
