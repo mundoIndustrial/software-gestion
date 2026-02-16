@@ -488,9 +488,13 @@ class InsumosController extends Controller
                     : 'Sin cambios',
             ], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = [];
+            foreach ($e->errors() as $field => $messages) {
+                $errors = array_merge($errors, $messages);
+            }
             return response()->json([
                 'success' => false,
-                'message' => 'Error de validación: ' . implode(', ', array_reduce($e->errors(), 'array_merge', []))
+                'message' => 'Error de validación: ' . implode(', ', $errors)
             ], 422);
         } catch (\Exception $e) {
             \Log::error('Error al guardar materiales: ' . $e->getMessage(), [
