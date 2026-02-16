@@ -275,8 +275,18 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     </noscript>
 
-    <!-- Vite CSS (contiene estilos críticos) -->
-    @vite(['resources/css/app.css'])
+    <!-- jQuery forzado global para Bootstrap 4 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <!-- Bootstrap 4 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+    
+    <!-- Bootstrap 4 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Vite CSS y JS (sin Bootstrap) -->
+    <link rel="stylesheet" href="{{ asset('build/css/app-BHMndXNp.css') }}">
+    <script src="{{ asset('build/js/app-qEnPmd7K.js') }}"></script>
     
     <!-- Laravel Echo & Pusher JS cargado vía Vite en app.js (bootstrap.js) -->
     
