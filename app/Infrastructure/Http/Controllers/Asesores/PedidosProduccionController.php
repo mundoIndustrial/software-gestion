@@ -831,6 +831,7 @@ class PedidosProduccionController
                 'imagenes.*' => 'nullable|image|max:5120',
                 'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar
                 'imagenes_a_eliminar' => 'nullable|json', // IDs de imágenes a eliminar
+                'procesos_a_eliminar' => 'nullable|json', // IDs de procesos a eliminar
             ]);
 
             // Normalizar fotosTelas: si viene en camelCase, copiar a fotos_telas (snake_case)
@@ -1061,6 +1062,78 @@ class PedidosProduccionController
                         } catch (\Exception $e) {
                             Log::warning('[PedidosProduccionController] Error eliminando imagen', [
                                 'id' => $imagenId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // 🔴 NUEVO: Procesar procesos a eliminar
+            $procesosAEliminar = [];
+            if ($request->input('procesos_a_eliminar')) {
+                try {
+                    $input = $request->input('procesos_a_eliminar');
+                    
+                    // 🔴 CRÍTICO: Manejar ambos casos
+                    // Caso 1: Ya es un array (Laravel lo parseó automáticamente)
+                    if (is_array($input)) {
+                        $procesosAEliminar = $input;
+                    }
+                    // Caso 2: Es una cadena JSON (necesita decodificar)
+                    elseif (is_string($input)) {
+                        $procesosAEliminar = json_decode($input, true) ?? [];
+                    }
+                    
+                    // Validar que sea un array válido
+                    if (!is_array($procesosAEliminar)) {
+                        $procesosAEliminar = [];
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('[PedidosProduccionController] Error procesando procesos_a_eliminar', ['error' => $e->getMessage()]);
+                }
+                
+                // Eliminar procesos de la BD
+                if (!empty($procesosAEliminar)) {
+                    Log::info('[PedidosProduccionController] Eliminando procesos marcados', [
+                        'cantidad' => count($procesosAEliminar),
+                        'ids' => $procesosAEliminar
+                    ]);
+                    
+                    foreach ($procesosAEliminar as $procesoId) {
+                        try {
+                            $proceso = \App\Models\PedidosProcesosPrendaDetalle::findOrFail($procesoId);
+                            
+                            // Eliminar imágenes asociadas al proceso
+                            if ($proceso->imagenes) {
+                                foreach ($proceso->imagenes as $imagen) {
+                                    if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                                        Storage::disk('public')->delete($imagen->ruta_original);
+                                    }
+                                    if ($imagen->ruta_webp && $imagen->ruta_webp !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_webp)) {
+                                        Storage::disk('public')->delete($imagen->ruta_webp);
+                                    }
+                                    $imagen->forceDelete();
+                                }
+                            }
+                            
+                            // Eliminar tallas asociadas al proceso
+                            if ($proceso->tallas) {
+                                foreach ($proceso->tallas as $talla) {
+                                    $talla->forceDelete();
+                                }
+                            }
+                            
+                            // Eliminar registro del proceso
+                            $proceso->forceDelete();
+                            
+                            Log::info('[PedidosProduccionController] Proceso eliminado', [
+                                'id' => $procesoId,
+                                'tipo' => $proceso->tipo_recibo
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error eliminando proceso', [
+                                'id' => $procesoId,
                                 'error' => $e->getMessage()
                             ]);
                         }

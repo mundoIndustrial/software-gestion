@@ -177,6 +177,8 @@ class ItemFormCollector {
                 };
                 
                 let procesosParaEnviar = {};
+                let procesosAEliminarLocal = []; // 🔴 NUEVO: Recopilar IDs de procesos a eliminar
+                
                 if (prenda.procesos && typeof prenda.procesos === 'object') {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                         const datosProceso = proceso.datos || proceso;
@@ -189,6 +191,8 @@ class ItemFormCollector {
                                 tipo: key,
                                 procesosParaEliminar: Array.from(window.procesosParaEliminarIds)
                             });
+                            // 🔴 NUEVO: Agregar a lista de procesos a eliminar
+                            procesosAEliminarLocal.push(datosProceso.id);
                             return; // Saltar este proceso
                         }
                         
@@ -273,6 +277,7 @@ class ItemFormCollector {
                     tipo_manga_id: prenda.tipo_manga_id || null,
                     tipo_broche_boton_id: prenda.tipo_broche_boton_id || null,
                     procesos: procesosParaEnviar,
+                    procesos_a_eliminar: procesosAEliminarLocal, // 🔴 NUEVO: Agregar IDs de procesos a eliminar
                     imagenes: fotosParaEnviar
                 };
                 

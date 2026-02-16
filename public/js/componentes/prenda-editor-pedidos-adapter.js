@@ -565,6 +565,13 @@
                 formData.append('imagenes_a_eliminar', JSON.stringify(window.imagenesAEliminar));
                 console.log('[PedidosAdapter] 🗑️ Imágenes marcadas para eliminación:', window.imagenesAEliminar);
             }
+            
+            // 🔴 NUEVO: Agregar procesos marcados para eliminación
+            if (window.procesosParaEliminarIds && window.procesosParaEliminarIds.size > 0) {
+                const procesosAEliminar = Array.from(window.procesosParaEliminarIds);
+                formData.append('procesos_a_eliminar', JSON.stringify(procesosAEliminar));
+                console.log('[PedidosAdapter] 🗑️ Procesos marcados para eliminación:', procesosAEliminar);
+            }
 
             const urlPrefix = _getUrlPrefix();
             const saveUrl = `${urlPrefix.save}/${pedidoId}/actualizar-prenda`;
