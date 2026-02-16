@@ -307,6 +307,21 @@ class PedidoController extends Controller
                 }
             }
             
+            // Cargar estado de entrega de cada prenda
+            if (isset($datos['prendas']) && is_array($datos['prendas'])) {
+                foreach ($datos['prendas'] as &$prenda) {
+                    if (isset($prenda['id'])) {
+                        $entrega = \App\Models\PrendaEntrega::where('prenda_pedido_id', $prenda['id'])->first();
+                        $prenda['entrega'] = $entrega ? [
+                            'entregado' => $entrega->entregado,
+                            'fecha_entrega' => $entrega->fecha_entrega?->format('Y-m-d H:i:s'),
+                            'usuario' => $entrega->usuario?->name,
+                        ] : null;
+                    }
+                }
+                unset($prenda); // Romper referencia
+            }
+            
             // Agregar EPPs transformados con imágenes
             $eppsList = [];
             try {

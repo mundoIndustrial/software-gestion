@@ -315,6 +315,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             placeholder="Pendientes..."
                                             rows="1"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >{{ $item['pendientes'] ?? '' }}</textarea>
                                     </td>
                                     
@@ -368,6 +369,7 @@
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                             data-updated-at="{{ isset($item['updated_at']) ? $item['updated_at']->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s') }}"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >
                                     </td>
                                     
@@ -383,7 +385,7 @@
                                             value="{{ $item['fecha_entrega'] ?? '' }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
-                                            @if($item['estado_bodega'] === 'Entregado')
+                                            @if($item['estado_bodega'] === 'Entregado' || ($esReadOnly ?? false))
                                                 disabled
                                             @endif
                                         >
@@ -399,6 +401,7 @@
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-talla="{{ $item['talla'] }}"
                                                 data-original-area="{{ $item['area'] ?? '' }}"
+                                                @if($esReadOnly ?? false) disabled @endif
                                             >
                                                 <option value="">ÁREA</option>
                                                 <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
@@ -414,6 +417,7 @@
                                                 data-prenda-nombre="{{ $item['prenda_nombre_actual'] ?? '' }}"
                                                 data-cantidad="{{ $item['cantidad_total'] ?? 0 }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
+                                                @if($esReadOnly ?? false) disabled @endif
                                             >
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
@@ -425,6 +429,7 @@
                                             </select>
 
                                             <!-- BOTÓN GUARDAR -->
+                                            @if(!($esReadOnly ?? false))
                                             <button
                                                 type="button"
                                                 onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
@@ -433,6 +438,11 @@
                                             >
                                                 💾 Guardar
                                             </button>
+                                            @else
+                                            <div class="w-full px-2 py-2 bg-slate-100 text-slate-500 text-[12px] font-medium text-center rounded-lg">
+                                                Solo lectura
+                                            </div>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

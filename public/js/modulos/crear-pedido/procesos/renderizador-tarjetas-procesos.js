@@ -27,7 +27,7 @@ window.renderizarTarjetasProcesos = function() {
     const container = document.getElementById('contenedor-tarjetas-procesos');
     
     if (!container) {
-        console.error(' [RENDER-PROCESOS] No se encontró contenedor', {
+        console.error('🔴 [RENDER-PROCESOS] No se encontró contenedor', {
             contenedorId: 'contenedor-tarjetas-procesos',
             documento: document.body ? 'cargado' : 'no cargado'
         });
@@ -46,14 +46,14 @@ window.renderizarTarjetasProcesos = function() {
     const procesosConDatos = Object.keys(procesos).filter(tipo => {
         const tieneData = procesos[tipo]?.datos !== null && procesos[tipo]?.datos !== undefined;
         if (tieneData) {
-            console.log(`   Tipo: ${tipo} → Tiene datos`, procesos[tipo]?.datos);
+            console.log(`  ✅ Tipo: ${tipo} → Tiene datos`, procesos[tipo]?.datos);
         } else {
-            console.log(`   Tipo: ${tipo} → Sin datos`);
+            console.log(`  ❌ Tipo: ${tipo} → Sin datos`);
         }
         return tieneData;
     });
 
-    console.log(' [RENDER-PROCESOS] Procesos a renderizar:', {
+    console.log('✅ [RENDER-PROCESOS] Procesos a renderizar:', {
         total: procesosConDatos.length,
         tipos: procesosConDatos
     });
@@ -74,7 +74,7 @@ window.renderizarTarjetasProcesos = function() {
     let html = '';
     procesosConDatos.forEach(tipo => {
         const datosProcess = procesos[tipo].datos;
-        console.log(` [RENDER-PROCESOS] Generando tarjeta para: ${tipo}`, {
+        console.log(`🎨 [RENDER-PROCESOS] Generando tarjeta para: ${tipo}`, {
             ubicaciones: datosProcess.ubicaciones?.length || 0,
             tallas: Object.keys(datosProcess.tallas?.dama || {}).length + Object.keys(datosProcess.tallas?.caballero || {}).length,
             observaciones: datosProcess.observaciones ? 'sí' : 'no',
@@ -99,12 +99,12 @@ window.renderizarTarjetasProcesos = function() {
         }
     });
     
-    //  CRÍTICO: FORZAR display = 'block' cuando hay procesos
+    // 🔴 CRÍTICO: FORZAR display = 'block' cuando hay procesos
     container.style.display = 'block';
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     
-    console.log(' [RENDER-PROCESOS] Renderización completada', {
+    console.log('✅ [RENDER-PROCESOS] Renderización completada', {
         tarjetasRenderizadas: container.querySelectorAll('.tarjeta-proceso').length,
         displayStyle: container.style.display,
         visibilityStyle: container.style.visibility,
@@ -131,7 +131,8 @@ function generarTarjetaProceso(tipo, datos) {
     // Calcular totalTallas
     const damaObj = datos.tallas?.dama || {};
     const caballeroObj = datos.tallas?.caballero || {};
-    const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length;
+    const sobremedidaObj = datos.tallas?.sobremedida || {};
+    const totalTallas = Object.keys(damaObj).length + Object.keys(caballeroObj).length + Object.keys(sobremedidaObj).length;
     
     // Procesar ubicaciones
     let ubicacionesArray = datos.ubicaciones || [];
@@ -177,13 +178,13 @@ function generarTarjetaProceso(tipo, datos) {
                 const ubicacion = ub.ubicacion;
                 const descripcion = ub.descripcion ? ub.descripcion.replace(/\n/g, ' ').substring(0, 100) : '';
                 return descripcion 
-                    ? `<div style="margin-bottom: 0.5rem;"><strong> ${ubicacion}</strong> - <span style="color: #6b7280; font-size: 0.8rem;">${descripcion}</span></div>` 
-                    : `<div style="margin-bottom: 0.5rem;"><strong> ${ubicacion}</strong></div>`;
+                    ? `<div style="margin-bottom: 0.5rem;"><strong>${ubicacion}</strong> - <span style="color: #6b7280; font-size: 0.8rem;">${descripcion}</span></div>` 
+                    : `<div style="margin-bottom: 0.5rem;"><strong>${ubicacion}</strong></div>`;
             }
             if (typeof ub === 'string') {
-                return `<div style="margin-bottom: 0.5rem;"><strong> ${ub}</strong></div>`;
+                return `<div style="margin-bottom: 0.5rem;"><strong>${ub}</strong></div>`;
             }
-            return `<div style="margin-bottom: 0.5rem;"><strong> ${String(ub)}</strong></div>`;
+            return `<div style="margin-bottom: 0.5rem;"><strong>${String(ub)}</strong></div>`;
         }).join('') 
         : '<div style="color: #9ca3af;">Sin ubicaciones</div>';
     
@@ -193,42 +194,27 @@ function generarTarjetaProceso(tipo, datos) {
         tallasHTML = `
             <div style="margin-top: 0.75rem;">
                 <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">TALLAS (${totalTallas})</strong>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
                     ${datos.tallas.dama && Object.keys(datos.tallas.dama).length > 0 ? `
-                        <div>
-                            <strong style="font-size: 0.75rem; color: #be185d; display: block; margin-bottom: 0.25rem;">DAMA</strong>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                                ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
-                                    return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                        ${talla}: ${cantidad}
-                                    </span>`;
-                                }).join('')}
-                            </div>
-                        </div>
+                        ${Object.entries(datos.tallas.dama).map(([talla, cantidad]) => {
+                            return `<span style="background: #fce7f3; color: #be185d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                DAMA ${talla}: ${cantidad}
+                            </span>`;
+                        }).join('')}
                     ` : ''}
                     ${datos.tallas.caballero && Object.keys(datos.tallas.caballero).length > 0 ? `
-                        <div>
-                            <strong style="font-size: 0.75rem; color: #1d4ed8; display: block; margin-bottom: 0.25rem;">CABALLERO</strong>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                                ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
-                                    return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                        ${talla}: ${cantidad}
-                                    </span>`;
-                                }).join('')}
-                            </div>
-                        </div>
+                        ${Object.entries(datos.tallas.caballero).map(([talla, cantidad]) => {
+                            return `<span style="background: #dbeafe; color: #1d4ed8; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                CABALLERO ${talla}: ${cantidad}
+                            </span>`;
+                        }).join('')}
                     ` : ''}
                     ${datos.tallas.sobremedida && Object.keys(datos.tallas.sobremedida).length > 0 ? `
-                        <div>
-                            <strong style="font-size: 0.75rem; color: #7c3aed; display: block; margin-bottom: 0.25rem;">SOBREMEDIDA</strong>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                                ${Object.entries(datos.tallas.sobremedida).map(([genero, cantidad]) => {
-                                    return `<span style="background: #f3e8ff; color: #7c3aed; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
-                                        ${genero} SOBREMEDIDA: ${cantidad}
-                                    </span>`;
-                                }).join('')}
-                            </div>
-                        </div>
+                        ${Object.entries(datos.tallas.sobremedida).map(([talla, cantidad]) => {
+                            return `<span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                SOBREMEDIDA ${talla}: ${cantidad}
+                            </span>`;
+                        }).join('')}
                     ` : ''}
                 </div>
             </div>
@@ -270,6 +256,13 @@ function generarTarjetaProceso(tipo, datos) {
                             let imgSrc = '';
                             if (img instanceof File) {
                                 imgSrc = URL.createObjectURL(img);
+                            } else if (img.file instanceof File) {
+                                // Objeto con File embebido: regenerar blob URL fresco
+                                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                                }
+                                imgSrc = URL.createObjectURL(img.file);
+                                img.previewUrl = imgSrc; // actualizar referencia
                             } else if (img.previewUrl) {
                                 // Imagen con preview (desde storage)
                                 imgSrc = img.previewUrl;
@@ -309,10 +302,10 @@ function generarTarjetaProceso(tipo, datos) {
                 </div>
             `;
         } else {
-            console.log(` [RENDER-TARJETA-${tipo}] Imágenes array existe pero está vacío`);
+            console.log(`⚠️ [RENDER-TARJETA-${tipo}] Imágenes array existe pero está vacío`);
         }
     } else {
-        console.log(` [RENDER-TARJETA-${tipo}] NO hay imágenes en datos.imagenes`, {
+        console.log(`⚠️ [RENDER-TARJETA-${tipo}] NO hay imágenes en datos.imagenes`, {
             tieneImagenes: !!datos.imagenes,
             esArray: Array.isArray(datos.imagenes),
             longitud: datos.imagenes?.length || 0
@@ -354,7 +347,7 @@ function generarTarjetaProceso(tipo, datos) {
             <!-- Contenido -->
             <div style="color: #374151; font-size: 0.875rem;">
                 <div style="margin-bottom: 0.75rem;">
-                    <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;"> UBICACIONES</strong>
+                    <strong style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">UBICACIONES</strong>
                     <div>${ubicacionesHTML}</div>
                 </div>
                 
@@ -389,9 +382,7 @@ window.editarProcesoDesdeModal = function(tipo) {
     console.log('   - Body children count:', document.body.children.length);
 
     // Obtener datos del proceso
-    //  PRIMERO buscar en procesosGuardados (almacenaje persistente)
-    // SI NO EXISTE, buscar en procesosSeleccionados (almacenaje temporal durante creación)
-    let proceso = window.procesosGuardados?.[tipo] || window.procesosSeleccionados?.[tipo];
+    const proceso = window.procesosSeleccionados[tipo];
     
     console.log(' [EDITAR-PROCESO-MODAL] Datos encontrados:', {
         tipo: tipo,
@@ -400,8 +391,7 @@ window.editarProcesoDesdeModal = function(tipo) {
         procesoId: proceso?.datos?.id,
         tieneUbicaciones: !!proceso?.datos?.ubicaciones,
         countUbicaciones: Array.isArray(proceso?.datos?.ubicaciones) ? proceso.datos.ubicaciones.length : 0,
-        countImagenes: (proceso?.datos?.imagenes?.length || 0),
-        fuente: window.procesosGuardados?.[tipo] ? 'procesosGuardados' : 'procesosSeleccionados'
+        countImagenes: (proceso?.datos?.imagenes?.length || 0)
     });
 
     if (!proceso?.datos) {
@@ -464,7 +454,7 @@ window.editarProcesoDesdeModal = function(tipo) {
                     window.tallasCantidadesProceso.dama = {};
                     const tallasDama = [];
                     
-                    //  FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
+                    // 🔥 FIX: Si DAMA tiene SOBREMEDIDA (número o objeto anidado), EXTRAERLA
                     for (const [talla, valor] of Object.entries(window.tallasRelacionales.DAMA)) {
                         if (talla === 'SOBREMEDIDA') {
                             // SOBREMEDIDA puede ser:
@@ -474,13 +464,13 @@ window.editarProcesoDesdeModal = function(tipo) {
                             if (typeof valor === 'number') {
                                 // SOBREMEDIDA como número: es para DAMA (género actual)
                                 window.tallasCantidadesProceso.sobremedida['DAMA'] = valor;
-                                console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (número) extraída:', valor);
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
                             } else if (typeof valor === 'object' && valor !== null) {
                                 // SOBREMEDIDA anidada: {DAMA: 34, CABALLERO: 20}
                                 for (const [genero, cantidad] of Object.entries(valor)) {
                                     window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                 }
-                                console.log('[EDITAR-PROCESO-MODAL]  DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
                             }
                         } else {
                             // Otras tallas: copiar directamente
@@ -497,20 +487,20 @@ window.editarProcesoDesdeModal = function(tipo) {
                     window.tallasCantidadesProceso.caballero = {};
                     const tallasCaballero = [];
                     
-                    //  FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
+                    // 🔥 FIX: Mismo tratamiento para CABALLERO (número o objeto anidado)
                     for (const [talla, valor] of Object.entries(window.tallasRelacionales.CABALLERO)) {
                         if (talla === 'SOBREMEDIDA') {
                             // SOBREMEDIDA puede ser número o objeto
                             if (typeof valor === 'number') {
                                 // SOBREMEDIDA como número: es para CABALLERO
                                 window.tallasCantidadesProceso.sobremedida['CABALLERO'] = valor;
-                                console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
                             } else if (typeof valor === 'object' && valor !== null) {
                                 // SOBREMEDIDA anidada: extraer por género
                                 for (const [genero, cantidad] of Object.entries(valor)) {
                                     window.tallasCantidadesProceso.sobremedida[genero] = cantidad;
                                 }
-                                console.log('[EDITAR-PROCESO-MODAL]  CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                                console.log('[EDITAR-PROCESO-MODAL] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
                             }
                         } else {
                             window.tallasCantidadesProceso.caballero[talla] = valor;
@@ -652,68 +642,38 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             const indice = idx + 1;
             //  Detectar si es URL o File (ANTES de usarlo)
             const isFile = img instanceof File;
+            const hasEmbeddedFile = !isFile && img && img.file instanceof File;
             const preview = document.getElementById(`proceso-foto-preview-${indice}`);
             
             if (preview) {
-                // 🔧 CRÍTICO: Extraer URL correctamente según el tipo de objeto
-                let imgUrl = '';
+                let imgUrl;
                 if (isFile) {
                     imgUrl = URL.createObjectURL(img);
-                } else if (typeof img === 'string') {
-                    // URL string directa
-                    imgUrl = agregarStorage(img);
-                } else if (typeof img === 'object' && img !== null) {
-                    // Objeto con propiedades URL
-                    if (img.previewUrl) {
-                        imgUrl = img.previewUrl;
-                    } else if (img.dataURL) {
-                        imgUrl = img.dataURL;
-                    } else if (img.src) {
-                        imgUrl = img.src;
-                    } else if (img.url) {
-                        imgUrl = agregarStorage(img.url);
-                    } else if (img.ruta_original) {
-                        imgUrl = agregarStorage(img.ruta_original);
-                    } else {
-                        console.warn(`[cargarDatosProcesoEnModal] Objeto imagen sin URL identificable:`, img);
-                        return;
+                } else if (hasEmbeddedFile) {
+                    // Objeto { file: File, previewUrl: '...' } → regenerar blob fresco
+                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                        try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
                     }
-                }
-                
-                if (!imgUrl) {
-                    console.warn(`[cargarDatosProcesoEnModal] No se pudo determinar URL para imagen ${idx}`);
-                    return;
+                    imgUrl = URL.createObjectURL(img.file);
+                    img.previewUrl = imgUrl;
+                } else if (typeof img === 'string') {
+                    imgUrl = img;
+                } else if (img && img.previewUrl) {
+                    imgUrl = img.previewUrl;
+                } else if (img && (img.url || img.ruta_original)) {
+                    imgUrl = img.url || img.ruta_original;
+                } else {
+                    imgUrl = '';
+                    console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);
                 }
                 
                 preview.innerHTML = `
-                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none;">
+                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                    <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
+                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                        ×
+                    </button>
                 `;
-                
-                // Agregar el botón de eliminar en el contenedor separado
-                const btnContainer = document.querySelector(`.btn-eliminar-proceso-${indice}`);
-                if (btnContainer) {
-                    btnContainer.innerHTML = `
-                        <button type="button" 
-                            style="position: absolute; top: 0; right: 0; width: 100%; height: 100%; background: #dc2626; color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.2s ease; pointer-events: auto;" 
-                            onmouseover="this.style.background='#991b1b'; this.style.transform='scale(1.1);';" 
-                            onmouseout="this.style.background='#dc2626'; this.style.transform='scale(1);';"
-                            title="Eliminar imagen">
-                            ×
-                        </button>
-                    `;
-                    
-                    // Agregar listener al button
-                    const btn = btnContainer.querySelector('button');
-                    if (btn) {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            console.log(`[cargarDatosProcesoEnModal] 🗑️ Click en botón eliminar para índice ${indice}`);
-                            eliminarImagenProceso(indice);
-                        }, true);
-                    }
-                }
             }
             
             //  Guardar según tipo
@@ -723,9 +683,8 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                     window.imagenesProcesoActual[idx] = img;
                 }
             } else {
-                // Es una URL existente → NO guardar en imagenesProcesoExistentes
-                // Ya está en los datos del proceso, no necesita ser almacenada en memoria temporal
-                console.log(`[cargarDatosProcesoEnModal]  Imagen existente cargada (no se guarda en array temporal)`);
+                // Es una URL existente → guardar en imagenesProcesoExistentes
+                window.imagenesProcesoExistentes.push(img);
             }
         }
     });
@@ -826,7 +785,7 @@ function cargarDatosProcesoEnModal(tipo, datos) {
         let caballeroTallas = datos.tallas.caballero || {};
         let sobremedidaTallas = datos.tallas.sobremedida || {};
         
-        //  FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada, EXTRAERLA
+        // 🔥 FIX: Si DAMA o CABALLERO tienen SOBREMEDIDA anidada, EXTRAERLA
         // Estructura incorrecta: {DAMA: {SOBREMEDIDA: {DAMA: 34}}} 
         // Debe convertirse a: {DAMA: {}} y sobremedidaTallas = {DAMA: 34}
         
@@ -837,12 +796,12 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                 // SOBREMEDIDA puede ser número o objeto anidado
                 if (typeof valor === 'number') {
                     sobremedidaTallas['DAMA'] = valor;
-                    console.log('[cargarDatosProcesoEnModal]  DAMA SOBREMEDIDA (número) extraída:', valor);
+                    console.log('[cargarDatosProcesoEnModal] 🔧 DAMA SOBREMEDIDA (número) extraída:', valor);
                 } else if (typeof valor === 'object' && valor !== null) {
                     for (const [genero, cantidad] of Object.entries(valor)) {
                         sobremedidaTallas[genero] = cantidad;
                     }
-                    console.log('[cargarDatosProcesoEnModal]  DAMA SOBREMEDIDA (objeto) extraída:', valor);
+                    console.log('[cargarDatosProcesoEnModal] 🔧 DAMA SOBREMEDIDA (objeto) extraída:', valor);
                 }
             } else {
                 damaTallasLimpias[talla] = valor;
@@ -857,12 +816,12 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                 // SOBREMEDIDA puede ser número o objeto anidado
                 if (typeof valor === 'number') {
                     sobremedidaTallas['CABALLERO'] = valor;
-                    console.log('[cargarDatosProcesoEnModal]  CABALLERO SOBREMEDIDA (número) extraída:', valor);
+                    console.log('[cargarDatosProcesoEnModal] 🔧 CABALLERO SOBREMEDIDA (número) extraída:', valor);
                 } else if (typeof valor === 'object' && valor !== null) {
                     for (const [genero, cantidad] of Object.entries(valor)) {
                         sobremedidaTallas[genero] = cantidad;
                     }
-                    console.log('[cargarDatosProcesoEnModal]  CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
+                    console.log('[cargarDatosProcesoEnModal] 🔧 CABALLERO SOBREMEDIDA (objeto) extraída:', valor);
                 }
             } else {
                 caballeroTallasLimpias[talla] = valor;
@@ -937,7 +896,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
     
     // Procesar URLs de imágenes
     const procesarUrlImagen = (img) => {
-        console.log(' [GALERIA-PROCESAR] Procesando imagen:', {
+        console.log('🔧 [GALERIA-PROCESAR] Procesando imagen:', {
             tipo: img instanceof File ? 'File' : typeof img,
             tienePreviewUrl: !!img?.previewUrl,
             tieneDataURL: !!img?.dataURL,

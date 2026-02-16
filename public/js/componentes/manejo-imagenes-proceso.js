@@ -10,28 +10,21 @@
  * @version 2.0.0
  */
 
-console.log(' Manejo de Imágenes de Procesos cargado...');
-
 /**
  * Manejar imagen de proceso individual
  * @param {HTMLInputElement} input - Input de tipo file
  * @param {number} procesoIndex - Índice del proceso (1, 2, 3)
  */
 window.manejarImagenProceso = function(input, procesoIndex) {
-    console.log(`[manejarImagenProceso] 📸 Manejando imagen de proceso ${procesoIndex}`);
-    
     if (!input.files || input.files.length === 0) {
-        console.log(`[manejarImagenProceso] 📭 No se seleccionaron archivos para proceso ${procesoIndex}`);
         return;
     }
     
     try {
         const file = input.files[0];
-        console.log(`[manejarImagenProceso] 📄 Archivo recibido para proceso ${procesoIndex}:`, file.name, file.type);
         
         // Validar que sea una imagen
         if (!file.type.startsWith('image/')) {
-            console.warn(`[manejarImagenProceso]  El archivo no es una imagen:`, file.type);
             mostrarModalError('Por favor selecciona un archivo de imagen válido');
             return;
         }
@@ -39,132 +32,111 @@ window.manejarImagenProceso = function(input, procesoIndex) {
         // Validar tamaño (máximo 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-            console.warn(`[manejarImagenProceso]  Archivo demasiado grande para proceso ${procesoIndex}:`, file.size);
             mostrarModalError('El archivo es demasiado grande (máximo 5MB)');
             return;
         }
         
-        // Crear preview usando blob URL en lugar de base64
-        const previewUrl = URL.createObjectURL(file);
-        console.log(`[manejarImagenProceso] 🖼️ Preview generado para proceso ${procesoIndex}:`, file.name);
+        // ✅ CAMBIO: Usar URL.createObjectURL en lugar de FileReader.readAsDataURL (NO base64)
+        const objectUrl = URL.createObjectURL(file);
         
-        try {
-            //  CRÍTICO: Usar el índice del cuadro (del modal) o del proceso según corresponda
-            // Si window._procesoQuadroIndex está definido, usarlo para el preview (es el cuadro 1, 2, o 3)
-            // procesoIndex siempre es para el storage
-            const previewIndex = window._procesoQuadroIndex || procesoIndex;
-            
-            // Actualizar el preview específico
-            const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
-            if (previewElement) {
-                // Limpiar contenido anterior
-                previewElement.innerHTML = '';
-                previewElement.style.background = '';
-                previewElement.style.border = '2px solid #0066cc';
-                
-                // Crear imagen
-                const imgElement = document.createElement('img');
-                imgElement.src = previewUrl;
-                imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; pointer-events: none;';
-                imgElement.onclick = () => {
-                    console.log(`[manejarImagenProceso] 🖼️ Click en imagen del proceso ${procesoIndex}`);
-                    // Abrir galería modal del componente (no el modal extra)
-                    const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
-                    const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
-                    const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
-                    
-                    if (typeof galeriaFunction === 'function') {
-                        // Obtener las imágenes del storage
-                        const imagenes = window.procesosImagenesStorage ? 
-                            window.procesosImagenesStorage.obtenerImagenes(procesoIndex).map(img => img.previewUrl) : 
-                            [previewUrl];
-                        galeriaFunction(imagenes);
-                    } else {
-                        console.warn(`[manejarImagenProceso]  Función de galería no encontrada para proceso ${procesoIndex}`);
-                    }
-                };
-                imgElement.onmouseover = () => imgElement.style.opacity = '0.8';
-                imgElement.onmouseout = imgElement.style.opacity = '1';
-                
-                previewElement.appendChild(imgElement);
-                
-                // Agregar el botón en el contenedor separado
-                const btnContainer = document.querySelector(`.btn-eliminar-proceso-${previewIndex}`);
-                if (btnContainer) {
-                    const btnEliminar = document.createElement('button');
-                    btnEliminar.type = 'button';
-                    btnEliminar.innerHTML = '×';
-                    btnEliminar.style.cssText = `
-                        position: absolute;
-                        top: 0;
-                        right: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: #dc2626;
-                        color: white;
-                        border: none;
-                        border-radius: 50%;
-                        cursor: pointer;
-                        font-size: 1rem;
-                        padding: 0;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-weight: bold;
-                        transition: all 0.2s;
-                        z-index: 20;
-                        pointer-events: auto;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                    `;
-                    btnEliminar.onmouseover = () => {
-                        btnEliminar.style.background = '#991b1b';
-                        btnEliminar.style.transform = 'scale(1.1)';
-                    };
-                    btnEliminar.onmouseout = () => {
-                        btnEliminar.style.background = '#dc2626';
-                        btnEliminar.style.transform = 'scale(1)';
-                    };
-                    btnEliminar.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        //  Pasar ambos índices: el del storage y el del preview HTML
-                        eliminarImagenProceso(previewIndex, procesoIndex);
-                    }, true); // Capture phase
-                    
-                    btnContainer.innerHTML = ''; // Limpiar contenedor
-                    btnContainer.appendChild(btnEliminar);
-                }
-                
-                console.log(`[manejarImagenProceso]  Preview actualizado para proceso ${procesoIndex} (preview index: ${previewIndex})`);
-                
-                // Actualizar drag & drop si es necesario
-                if (typeof window.actualizarDragDropProceso === 'function') {
-                    window.actualizarDragDropProceso(procesoIndex);
-                }
-            } else {
-                console.warn(`[manejarImagenProceso]  Preview encontrado con ID proceso-foto-preview-${previewIndex}`);
+        // Determinar el índice del cuadro visual vs el índice de storage
+        const previewIndex = window._procesoQuadroIndex || procesoIndex;
+        
+        // Actualizar el preview específico
+        const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
+        if (previewElement) {
+            // Limpiar objectURL anterior si existe (prevenir memory leaks)
+            if (previewElement._objectUrl) {
+                URL.revokeObjectURL(previewElement._objectUrl);
             }
+            previewElement._objectUrl = objectUrl;
             
-            // Guardar la imagen en el storage si está disponible
-            if (window.procesosImagenesStorage) {
-                window.procesosImagenesStorage.agregarImagen(procesoIndex, {
-                    file: file,
-                    previewUrl: previewUrl,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    fechaCreacion: new Date().toISOString()
-                });
-                console.log(`[manejarImagenProceso]  Imagen guardada en storage para proceso ${procesoIndex}`);
+            // Limpiar contenido anterior
+            previewElement.innerHTML = '';
+            previewElement.style.background = '';
+            previewElement.style.border = '2px solid #0066cc';
+            
+            // Crear imagen con blob URL
+            const imgElement = document.createElement('img');
+            imgElement.src = objectUrl;
+            imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;';
+            imgElement.onclick = () => {
+                const functionNamePascal = `abrirGaleriaProceso${procesoIndex}`;
+                const functionNameLower = `abrirGaleriaproceso${procesoIndex}`;
+                const galeriaFunction = window[functionNamePascal] || window[functionNameLower];
+                
+                if (typeof galeriaFunction === 'function') {
+                    const imagenes = window.procesosImagenesStorage ? 
+                        window.procesosImagenesStorage.obtenerImagenes(procesoIndex).map(img => img.previewUrl || (img.file ? URL.createObjectURL(img.file) : '')) : 
+                        [objectUrl];
+                    galeriaFunction(imagenes);
+                }
+            };
+            imgElement.onmouseover = () => imgElement.style.opacity = '0.8';
+            imgElement.onmouseout = () => imgElement.style.opacity = '1';
+            
+            // Botón para eliminar imagen
+            const btnEliminar = document.createElement('button');
+            btnEliminar.type = 'button';
+            btnEliminar.innerHTML = '×';
+            btnEliminar.style.cssText = `
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                width: 24px;
+                height: 24px;
+                background: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 16px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                transition: background 0.2s;
+                z-index: 10;
+            `;
+            btnEliminar.onmouseover = () => btnEliminar.style.background = '#dc2626';
+            btnEliminar.onmouseout = () => btnEliminar.style.background = '#ef4444';
+            btnEliminar.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                eliminarImagenProceso(previewIndex, procesoIndex);
+            };
+            
+            // Posicionar elementos
+            previewElement.style.position = 'relative';
+            previewElement.appendChild(imgElement);
+            previewElement.appendChild(btnEliminar);
+            
+            // Actualizar drag & drop si es necesario
+            if (typeof window.actualizarDragDropProceso === 'function') {
+                window.actualizarDragDropProceso(procesoIndex);
             }
-        } catch (error) {
-            console.error(`[manejarImagenProceso]  Error al procesar preview de imagen del proceso ${procesoIndex}:`, error);
-            mostrarModalError('Error al procesar la imagen');
         }
         
+        // ✅ CAMBIO: Guardar File object en storage (NO base64)
+        if (window.procesosImagenesStorage) {
+            window.procesosImagenesStorage.agregarImagen(procesoIndex, {
+                file: file,
+                previewUrl: objectUrl,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                fechaCreacion: new Date().toISOString()
+            });
+        }
+        
+        // ✅ NUEVO: Sincronizar con window.imagenesProcesoActual (usado por agregarProcesoAlPedido)
+        if (!window.imagenesProcesoActual) {
+            window.imagenesProcesoActual = [null, null, null];
+        }
+        window.imagenesProcesoActual[procesoIndex - 1] = file;
+        
     } catch (error) {
-        console.error(`[manejarImagenProceso]  Error general al procesar imagen del proceso ${procesoIndex}:`, error);
         mostrarModalError('Error al procesar la imagen');
     }
     
@@ -183,29 +155,16 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         procesoIndex = previewIndex;
     }
     
-    console.log(`[eliminarImagenProceso] 🗑️ Eliminando imagen del preview ${previewIndex} (storage index: ${procesoIndex})`);
-    
     try {
-        // 1. Eliminar del storage de procesos
-        if (window.procesosImagenesStorage) {
-            const imagenes = window.procesosImagenesStorage.obtenerImagenes(procesoIndex);
-            if (imagenes && imagenes.length > 0) {
-                // Eliminar la primera imagen del índice del proceso
-                window.procesosImagenesStorage.eliminarImagen(procesoIndex, 0);
-                console.log(`[eliminarImagenProceso] 🗑️ Imagen eliminada del storage del proceso ${procesoIndex}`);
-            }
-        }
-        
-        // 2. IMPORTANTE: Eliminar también de imagenesProcesoExistentes si está en modo edición
-        if (window.imagenesProcesoExistentes && Array.isArray(window.imagenesProcesoExistentes)) {
-            // Limpiar imagenes existentes del proceso actual
-            window.imagenesProcesoExistentes = [];
-            console.log(`[eliminarImagenProceso] 🗑️ Limpiadas imágenes existentes (imagenesProcesoExistentes)`);
-        }
-        
-        // 3. Restaurar el preview visual
         const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
         if (previewElement) {
+            // ✅ Limpiar objectURL si existe (prevenir memory leaks)
+            if (previewElement._objectUrl) {
+                URL.revokeObjectURL(previewElement._objectUrl);
+                previewElement._objectUrl = null;
+            }
+            
+            // Restaurar el placeholder
             previewElement.innerHTML = `
                 <div class="placeholder-content" style="text-align: center;">
                     <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
@@ -213,28 +172,27 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
                 </div>
             `;
             
+            // Restaurar estilos
             previewElement.style.background = '#f9fafb';
             previewElement.style.border = '2px dashed #0066cc';
             previewElement.style.transform = '';
             previewElement.style.boxShadow = '';
-            
-            console.log(`[eliminarImagenProceso]  Preview ${previewIndex} restaurado`);
         }
         
-        // 4. Limpiar también el contenedor del botón de eliminar
-        const btnContainer = document.querySelector(`.btn-eliminar-proceso-${previewIndex}`);
-        if (btnContainer) {
-            btnContainer.innerHTML = '';
-            console.log(`[eliminarImagenProceso]  Botón de eliminar limpiado para preview ${previewIndex}`);
+        // ✅ Sincronizar con window.imagenesProcesoActual
+        if (window.imagenesProcesoActual && window.imagenesProcesoActual[procesoIndex - 1]) {
+            window.imagenesProcesoActual[procesoIndex - 1] = null;
         }
         
-        // 5. Reconfigurar drag & drop
+        // NOTA: NO eliminar del storage aquí - ya se eliminó desde _eliminarDelStorage()
+        // Solo restaurar el preview visual
+        
+        // Reconfigurar drag & drop
         if (typeof window.setupDragDropProceso === 'function') {
             window.setupDragDropProceso(previewElement, procesoIndex);
         }
         
     } catch (error) {
-        console.error(`[eliminarImagenProceso]  Error al eliminar imagen del proceso ${procesoIndex}:`, error);
     }
 };
 
@@ -245,8 +203,6 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
  * @param {number} procesoIndex - Índice del proceso
  */
 window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
-    console.log(`[mostrarImagenAmpliada] 🖼️ Abriendo imagen ampliada del proceso ${procesoIndex}`);
-    
     // Crear modal
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -278,7 +234,6 @@ window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
     closeButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1.5rem;';
     closeButton.onclick = () => {
         modal.remove();
-        console.log(`[mostrarImagenAmpliada]  Modal cerrado para proceso ${procesoIndex}`);
     };
     
     contenido.appendChild(titulo);
@@ -304,15 +259,12 @@ window.mostrarImagenAmpliada = function(previewUrl, nombre, procesoIndex) {
     document.addEventListener('keydown', cerrarConEsc);
     
     document.body.appendChild(modal);
-    console.log(`[mostrarImagenAmpliada]  Modal abierto para proceso ${procesoIndex}`);
 };
 
 /**
  * Limpiar todas las imágenes de proceso
  */
 window.limpiarImagenesProcesos = function() {
-    console.log('[limpiarImagenesProcesos] 🧹 Limpiando todas las imágenes de proceso');
-    
     for (let i = 1; i <= 3; i++) {
         window.eliminarImagenProceso(i);
     }
@@ -320,10 +272,7 @@ window.limpiarImagenesProcesos = function() {
     // Limpiar storage si está disponible
     if (window.procesosImagenesStorage) {
         window.procesosImagenesStorage.limpiar();
-        console.log('[limpiarImagenesProcesos]  Storage de imágenes de procesos limpiado');
     }
-    
-    console.log('[limpiarImagenesProcesos]  Todas las imágenes de procesos limpiadas');
 };
 
 /**
@@ -347,6 +296,5 @@ window.obtenerImagenesProcesos = function() {
         }
     }
     
-    console.log('[obtenerImagenesProcesos]  Imágenes encontradas:', imagenes.length);
     return imagenes;
 };

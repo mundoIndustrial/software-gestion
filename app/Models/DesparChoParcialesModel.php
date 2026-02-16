@@ -34,10 +34,14 @@ class DesparChoParcialesModel extends Model
         'observaciones',
         'fecha_despacho',
         'usuario_id',
+        'entregado',
+        'fecha_entrega',
     ];
 
     protected $casts = [
         'fecha_despacho' => 'datetime',
+        'entregado' => 'boolean',
+        'fecha_entrega' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

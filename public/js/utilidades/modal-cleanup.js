@@ -85,53 +85,40 @@ class ModalCleanup {
 
     /**
      * Limpiar todos los storages globales
-     * IMPORTANTE: Solo limpia arrays CRÍTICOS, NO telas ni imágenes que fueron guardadas
-     * Las imágenes y telas se recargaron cuando el usuario abre en edición
      */
     static limpiarStorages() {
-        // NOTA: NO revocamos blob URLs aquí
-        // Las imágenes guardadas ya tienen rutas permanentes de BD
-        // Las blob URLs se revocarán cuando demos la vuelta y carguemos nuevo contenido
-        
-        console.log('[ModalCleanup.limpiarStorages] 🧹 INICIANDO LIMPIEZA DE STORAGES...');
-        
-        // Vaciar arrays de imágenes (pero conservar objeto si existe)
+        // 🔥 CRÍTICO: Limpiar storage de imágenes de prenda PRIMERO
+        // Esto vacía el array y revoca todas las URLs blob
         if (window.imagenesPrendaStorage) {
-            const imagenesAntes = window.imagenesPrendaStorage.obtenerImagenes?.()?.length || 0;
-            console.log(`[ModalCleanup.limpiarStorages] 📸 imagenesPrendaStorage ANTES: ${imagenesAntes} imágenes`);
             if (typeof window.imagenesPrendaStorage.limpiar === 'function') {
                 window.imagenesPrendaStorage.limpiar();
             } else if (window.imagenesPrendaStorage.images) {
+                // Fallback: limpiar directamente si el método no existe
+                window.imagenesPrendaStorage.images.forEach(img => {
+                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(img.previewUrl);
+                    }
+                });
                 window.imagenesPrendaStorage.images = [];
             }
-            const imagenesDepues = window.imagenesPrendaStorage.obtenerImagenes?.()?.length || 0;
-            console.log(`[ModalCleanup.limpiarStorages] 📸 imagenesPrendaStorage DESPUÉS: ${imagenesDepues} imágenes`);
         }
 
-        // 🔴 CRÍTICO: NO limpiar imagenesTelaStorage aquí
-        // Las imágenes de tela se necesitan durante el ciclo COMPLETO de edición
-        // Si se limpian aquí, se pierden las imágenes aunque sigan cargadas en telasCreacion
-        // Las imágenes de tela solo se limpiarán cuando se ABRA una NUEVA prenda (en prenda-editor-telas.js)
-        // ANTES: window.imagenesTelaStorage.limpiar() ❌
-        // AHORA: Se omite completamente esta limpieza
-        const imagenesTelaActuales = window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0;
-        console.log(`[ModalCleanup.limpiarStorages] 🧵 imagenesTelaStorage PRESERVADO con ${imagenesTelaActuales} imágenes (NO LIMPIADO)`);
+        // Limpiar storage de imágenes de tela
+        if (window.imagenesTelaStorage) {
+            if (typeof window.imagenesTelaStorage.limpiar === 'function') {
+                window.imagenesTelaStorage.limpiar();
+            }
+        }
 
-        //  🔴 CRÍTICO: NO limpiar window.telasCreacion aquí
-        // Estos datos fueron GUARDADOS en prendaData antes, y se limpiarán cuando se cargue nuevo contenido
-        // Si los limpiamos aquí, se perderán las referencias antes de que se guarden correctamente
-        // console.log('[ModalCleanup.limpiarStorages]  ⚠️ telasCreacion NO se limpia (datos guardados en prendaData)');
-        // if (window.telasCreacion) {
-        //     window.telasCreacion.length = 0;
-        // }
+        // 🔥 CRÍTICO: Limpiar telas agregadas (variable principal donde se guardan las telas)
+        if (window.telasAgregadas) {
+            window.telasAgregadas.length = 0;
+        }
         
-        //  🔴 CRÍTICO: NO limpiar window.telasAgregadas aquí
-        // Estos datos también fueron guardados y los necesitaremos en próximas cargas
-        // if (window.telasAgregadas) {
-        //     window.telasAgregadas.length = 0;
-        // }
-        
-        // Limpiar telas en edición (flujo de edición separado)
+        // Limpiar telas agregadas (AMBOS FLUJOS: CREACIÓN y EDICIÓN - SEPARADOS)
+        if (window.telasCreacion) {
+            window.telasCreacion.length = 0;
+        }
         if (window.telasEdicion) {
             window.telasEdicion.length = 0;
         }
@@ -147,34 +134,6 @@ class ModalCleanup {
         // Limpieza de variables
         if (window.tallasSeleccionadas) {
             window.tallasSeleccionadas = { dama: { tallas: [], tipo: null }, caballero: { tallas: [], tipo: null } };
-        }
-    }
-
-    /**
-     * Revocar blob URLs de imágenes (cuando se CARGA nuevo contenido)
-     * SOLO debe llamarse cuando realmente necesitamos liberar memoria
-     * @param {boolean} revocarPrenda - Si true, revoca blob URLs de prenda
-     * @param {boolean} revocarTelas - Si true, revoca blob URLs de telas
-     */
-    static revocarBlobURLs(revocarPrenda = true, revocarTelas = true) {
-        if (revocarPrenda && window.imagenesPrendaStorage) {
-            if (window.imagenesPrendaStorage.images) {
-                window.imagenesPrendaStorage.images.forEach(img => {
-                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                        URL.revokeObjectURL(img.previewUrl);
-                    }
-                });
-            }
-        }
-        
-        if (revocarTelas && window.imagenesTelaStorage) {
-            if (window.imagenesTelaStorage.images) {
-                window.imagenesTelaStorage.images.forEach(img => {
-                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                        URL.revokeObjectURL(img.previewUrl);
-                    }
-                });
-            }
         }
     }
 
@@ -225,7 +184,7 @@ class ModalCleanup {
 
         }
         
-        //  CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
+        // 🔥 CRÍTICO: Limpiar tallas de procesos (que se muestran en el contador)
         if (!preservar) {
             if (window.tallasSeleccionadasProceso) {
                 window.tallasSeleccionadasProceso = { dama: [], caballero: [] };
@@ -266,7 +225,7 @@ class ModalCleanup {
             telaPreview.style.display = 'none';
         }
 
-        //  CRÍTICO: Limpiar COMPLETAMENTE galería de fotos - STORAGE + DOM
+        // 🔥 CRÍTICO: Limpiar COMPLETAMENTE galería de fotos - STORAGE + DOM
         // Primero limpiar el servicio de imágenes (vacía array y revoca URLs)
         if (window.imagenesPrendaStorage) {
             window.imagenesPrendaStorage.limpiar?.();
@@ -294,7 +253,7 @@ class ModalCleanup {
         
         // DragDrop tela se reconfigura en shown.bs.modal, NO aquí
 
-        //  CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
+        // 🔥 CRÍTICO: Limpiar TODAS las tarjetas de géneros (DAMA, CABALLERO, UNISEX)
         const tarjetasGenerosContainer = document.getElementById('tarjetas-generos-container');
         if (tarjetasGenerosContainer) {
             tarjetasGenerosContainer.innerHTML = '';
@@ -326,13 +285,13 @@ class ModalCleanup {
             // contenedorTarjetas.innerHTML = ''; // COMENTADO: Esto borraba los procesos al abrir en edición
         }
         
-        //  CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
+        // 🔥 CRÍTICO: Limpiar resumen de tallas de procesos (el contador que muestra "Total: X unidades")
         const resumenTallas = document.getElementById('proceso-tallas-resumen');
         if (resumenTallas) {
             resumenTallas.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         }
         
-        //  CRÍTICO: Resetear el contador general de prendas también
+        // 🔥 CRÍTICO: Resetear el contador general de prendas también
         const totalPrendas = document.getElementById('total-prendas');
         if (totalPrendas) {
             totalPrendas.textContent = '0';
@@ -466,11 +425,11 @@ class ModalCleanup {
     static prepararParaNueva() {
 
         
-        //  CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
+        // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO, antes de limpiar
         // Esto asegura que limpiarFormulario() vea que estamos en modo CREACIÓN (no edición)
         window.prendaEditIndex = null;
         
-        //  CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
+        // 🔥 CRÍTICO: Resetear COMPLETAMENTE tallasRelacionales ANTES de cualquier otra limpieza
         // Esto previene que datos viejos de prenda anterior aparezcan en las tarjetas
         if (!window.tallasRelacionales) {
             window.tallasRelacionales = {};
@@ -480,10 +439,10 @@ class ModalCleanup {
         window.tallasRelacionales.UNISEX = {};
         window.tallasRelacionales.SOBREMEDIDA = {};
         
-        //  CRÍTICO: Limpiar imágenes de procesos
+        // 🔥 CRÍTICO: Limpiar imágenes de procesos
         window.imagenesProcesoActual = [null, null, null];
         
-        //  CRÍTICO: Limpiar TELAS - arrays en memoria
+        // 🔥 CRÍTICO: Limpiar TELAS - arrays en memoria
         if (window.telasAgregadas) {
             window.telasAgregadas.length = 0;
         }
@@ -491,7 +450,7 @@ class ModalCleanup {
             window.telasCreacion.length = 0;
         }
         
-        //  CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
+        // 🔥 CRÍTICO: Limpiar tabla de telas completamente y recrear la fila de entrada
         // Esto asegura que los inputs SIEMPRE estén presentes
         const tbody = document.getElementById('tbody-telas');
         if (tbody) {
@@ -544,7 +503,7 @@ class ModalCleanup {
         this.limpiarProcesos(false); // Limpiar TODO
         this.limpiarContenedores();
         
-        //  CRÍTICO: Cargar opciones de telas y colores para las datalist
+        // 🔥 CRÍTICO: Cargar opciones de telas y colores para las datalist
         // Esto restaura las sugerencias de autocomplete
         if (typeof window.cargarTelasDisponibles === 'function') {
             window.cargarTelasDisponibles();
@@ -565,11 +524,11 @@ class ModalCleanup {
     static prepararParaEditar(prendaIndex) {
 
         
-        //  IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
+        // 🔥 IMPORTANTE: Establecer índice de edición PRIMERO, antes de limpiar
         // Esto permite que limpiarFormulario() sepa que estamos en modo edición
         window.prendaEditIndex = prendaIndex;
         
-        //  CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
+        // 🔥 CRÍTICO: Limpiar imágenes de procesos cuando abrimos para editar
         window.imagenesProcesoActual = [null, null, null];
         
         // NO limpiar storages en modo edición - se cargarán los datos de la prenda
@@ -580,20 +539,20 @@ class ModalCleanup {
         // NO limpiar contenedores en modo edición - se cargarán los datos de la prenda
         // this.limpiarContenedores();
         
-        //  CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
+        // 🔥 CRÍTICO: Limpiar telasCreacion para que no interfiera con telasAgregadas
         // Cuando editamos una prenda que fue agregada desde creación, telasCreacion podría tener datos viejos
         if (window.telasCreacion) {
             window.telasCreacion.length = 0;
             console.log(' [prepararParaEditar] telasCreacion limpiado para modo edición');
         }
         
-        //  CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
+        // 🔥 CRÍTICO: Inicializar telasAgregadas si no existe (será llenado por cargarTelas)
         if (!window.telasAgregadas) {
             window.telasAgregadas = [];
             console.log(' [prepararParaEditar] telasAgregadas inicializado como array vacío');
         }
         
-        //  Cargar opciones de telas y colores para las datalist
+        // 🔥 Cargar opciones de telas y colores para las datalist
         if (typeof window.cargarTelasDisponibles === 'function') {
             window.cargarTelasDisponibles();
         }
@@ -616,11 +575,10 @@ class ModalCleanup {
 
     /**
      * Limpiar modal completamente (después de guardar)
-     * SÍNCRONO - Sin setTimeout para evitar race conditions
      */
     static limpiarDespuésDeGuardar() {
         const inicioTiempo = performance.now();
-        console.log(' [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza SÍNCRONA...');
+        console.log('🔧 [ModalCleanup.limpiarDespuésDeGuardar] INICIANDO limpieza...');
         
         try {
             // PASO 1: Limpiar formulario
@@ -655,17 +613,38 @@ class ModalCleanup {
             }
             console.log(`  ✓ PASO 4 completado en ${(performance.now() - paso4).toFixed(2)}ms`);
             
-            // PASO 5: Limpiar storages (SÍNCRONO - solo arrays, sin revocar URLs)
-            console.log('  → PASO 5: Limpiando storages...');
-            const paso5 = performance.now();
-            this.limpiarStorages();
-            this.limpiarCheckboxes();
-            this.limpiarProcesos();
-            this.limpiarContenedores();
-            console.log(`  ✓ PASO 5 completado en ${(performance.now() - paso5).toFixed(2)}ms`);
-            
             const tiempoTotal = performance.now() - inicioTiempo;
-            console.log(` [ModalCleanup.limpiarDespuésDeGuardar] COMPLETADO EN ${tiempoTotal.toFixed(2)}ms (SÍNCRONO)`);
+            console.log(` [ModalCleanup.limpiarDespuésDeGuardar] COMPLETADO EN ${tiempoTotal.toFixed(2)}ms`);
+            
+            // PASO 5: Limpiar el resto de forma ASÍNCRONA (no bloqueante)
+            console.log('  → PASO 5 (ASÍNCRONO): Programando limpiezas adicionales...');
+            setTimeout(() => {
+                try {
+                    console.log('    → Limpiando storages...');
+                    const pasoS1 = performance.now();
+                    this.limpiarStorages();
+                    console.log(`    ✓ Storages en ${(performance.now() - pasoS1).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando checkboxes...');
+                    const pasoS2 = performance.now();
+                    this.limpiarCheckboxes();
+                    console.log(`    ✓ Checkboxes en ${(performance.now() - pasoS2).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando procesos...');
+                    const pasoS3 = performance.now();
+                    this.limpiarProcesos();
+                    console.log(`    ✓ Procesos en ${(performance.now() - pasoS3).toFixed(2)}ms`);
+                    
+                    console.log('    → Limpiando contenedores...');
+                    const pasoS4 = performance.now();
+                    this.limpiarContenedores();
+                    console.log(`    ✓ Contenedores en ${(performance.now() - pasoS4).toFixed(2)}ms`);
+                    
+                    console.log('  ✓ PASO 5 (ASÍNCRONO) completado');
+                } catch (error) {
+                    console.error('   Error en limpieza asíncrona:', error);
+                }
+            }, 10);
 
         } catch (error) {
             console.error(' [ModalCleanup.limpiarDespuésDeGuardar] Error:', error);

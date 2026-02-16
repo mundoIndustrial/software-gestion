@@ -48,6 +48,12 @@ class PrendaModalManager {
             }
             modal.dispatchEvent(new CustomEvent('hidden.bs.modal', { bubbles: true }));
             console.log(` [Modal] Cerrado: ${modalId}`);
+            
+            // Resetear FSM para permitir reabrir
+            const fsm = window.__MODAL_FSM__;
+            if (fsm && fsm.obtenerEstado() !== 'CLOSED') {
+                fsm.estado = 'CLOSED';
+            }
         }
     }
 

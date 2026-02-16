@@ -171,6 +171,7 @@
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                             placeholder="Pendientes..."
                                             rows="1"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >{{ $item['pendientes'] ?? '' }}</textarea>
                                     </td>
                                     
@@ -216,6 +217,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >
                                     </td>
                                     
@@ -234,7 +236,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] }}"
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
-                                            @if($item['estado_bodega'] === 'Entregado')
+                                            @if($item['estado_bodega'] === 'Entregado' || ($esReadOnly ?? false))
                                                 disabled
                                             @endif
                                         >
@@ -250,6 +252,7 @@
                                                 data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                 data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                 data-original-area="{{ $item['area'] ?? '' }}"
+                                                @if($esReadOnly ?? false) disabled @endif
                                             >
                                                 <option value="">ÁREA</option>
                                                 <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
@@ -265,6 +268,7 @@
                                                 data-prenda-nombre="{{ $item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '' }}"
                                                 data-cantidad="{{ $item['cantidad_total'] }}"
                                                 data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
+                                                @if($esReadOnly ?? false) disabled @endif
                                             >
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
@@ -275,6 +279,7 @@
                                                 @endif
                                             </select>
 
+                                            @if(!($esReadOnly ?? false))
                                             <button
                                                 type="button"
                                                 onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
@@ -282,6 +287,11 @@
                                             >
                                                 💾 Guardar
                                             </button>
+                                            @else
+                                            <div class="w-full px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
+                                                Solo lectura
+                                            </div>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -336,6 +346,8 @@
                     <span class="text-slate-500">⏳ Cargando notas...</span>
                 </div>
             </div>
+            
+            @if(!($esReadOnly ?? false))
             <div class="border-t border-slate-200 pt-6">
                 <label class="block text-sm font-bold text-slate-900 mb-3">Agregar Nueva Nota:</label>
                 <textarea
@@ -361,6 +373,17 @@
                     </button>
                 </div>
             </div>
+            @else
+            <div class="border-t border-slate-200 pt-6 text-center">
+                <button
+                    type="button"
+                    onclick="cerrarModalNotas()"
+                    class="px-6 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-lg transition"
+                >
+                    Cerrar
+                </button>
+            </div>
+            @endif
         </div>
     </div>
 </div>

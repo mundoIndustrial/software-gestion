@@ -84,16 +84,16 @@
         // EXTRA: Bandera de debug basada en entorno Laravel
         window.APP_DEBUG = {{ app()->environment('local', 'staging') ? 'true' : 'false' }};
 
-        // Filtrar console.log: en producción suprime TODOS, en local solo filtra storage errors
-        const originalLog = console.log;
-        console.log = function(...args) {
-            const msg = String(args[0]);
-            if (msg.includes('Uncaught (in promise)') && msg.includes('storage is not allowed')) {
-                return;
-            }
-            if (!window.APP_DEBUG) return; // Producción: silenciar todos los logs
-            return originalLog.apply(console, args);
-        };
+        // ─── Protección global contra errores de storage/extensiones ───
+        // En producción: suprimir logs directos (los servicios usan Logger que ya controla esto)
+        // En desarrollo: permitir todo, solo filtrar errores de storage de extensiones
+        if (!window.APP_DEBUG) {
+            const _origLog = console.log;
+            const _origDebug = console.debug;
+            console.log = function() {}; // Producción: silenciar console.log directo
+            console.debug = function() {}; // Producción: silenciar console.debug
+            // console.warn y console.error permanecen intactos SIEMPRE
+        }
         
         // PASO 2: Si es una extensión, interceptar chrome.runtime.onMessage
         if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -258,6 +258,11 @@
     <!-- Fuentes -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- jQuery y Bootstrap 4 desde CDN (CRÍTICO - debe estar ANTES de app.js) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">

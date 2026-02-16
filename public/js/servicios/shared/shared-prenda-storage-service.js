@@ -18,7 +18,7 @@ class SharedPrendaStorageService {
             'image/jpg'
         ];
 
-        console.log('[SharedPrendaStorageService] ✓ Inicializado');
+        Logger.debug('Inicializado', 'SharedPrendaStorage');
     }
 
     /**
@@ -26,7 +26,7 @@ class SharedPrendaStorageService {
      * Retorna: {agregar: [], eliminar: [], mantener: []}
      */
     async procesarCambiosImagenes(imagenesActuales, imagenesNuevas) {
-        console.log('[SharedPrendaStorage] 🖼️ Procesando cambios de imágenes...');
+        Logger.debug('Procesando cambios de imágenes...', 'SharedPrendaStorage');
 
         const cambios = {
             agregar: [],    // Archivos nuevos
@@ -62,7 +62,7 @@ class SharedPrendaStorageService {
         cambios.agregar = imagenesNuevas
             .filter(img => (!img.id || img.id <= 0) && (img.archivo || img.file));
 
-        console.log('[SharedPrendaStorage] Cambios:', {
+        Logger.debug('Cambios de imágenes', 'SharedPrendaStorage', {
             mantener: cambios.mantener.length,
             agregar: cambios.agregar.length,
             eliminar: cambios.eliminar.length
@@ -77,10 +77,10 @@ class SharedPrendaStorageService {
      * @returns {Array} URLs de imágenes subidas
      */
     async subirImagenes(archivos) {
-        console.log('[SharedPrendaStorage] 📤 Subiendo imágenes...');
+        Logger.debug('Subiendo imágenes...', 'SharedPrendaStorage');
 
         if (!Array.isArray(archivos) || archivos.length === 0) {
-            console.log('[SharedPrendaStorage] Sin archivos para subir');
+            Logger.debug('Sin archivos para subir', 'SharedPrendaStorage');
             return [];
         }
 
@@ -92,7 +92,7 @@ class SharedPrendaStorageService {
             // Validar archivo
             const validacion = this.validarArchivo(archivo);
             if (!validacion.valido) {
-                console.warn(`[SharedPrendaStorage]  Archivo ${i + 1} inválido:`, validacion.mensaje);
+                Logger.warn(`Archivo ${i + 1} inválido: ${validacion.mensaje}`, 'SharedPrendaStorage');
                 continue;
             }
 
@@ -104,7 +104,7 @@ class SharedPrendaStorageService {
                 formData.append('orden', i);
 
                 // Subir
-                console.log(`[SharedPrendaStorage] Subiendo: ${archivo.name} (${this.formatoTamaño(archivo.size)})`);
+                Logger.debug(`Subiendo: ${archivo.name} (${this.formatoTamaño(archivo.size)})`, 'SharedPrendaStorage');
 
                 const response = await fetch(this.endpointBase, {
                     method: 'POST',
@@ -129,10 +129,10 @@ class SharedPrendaStorageService {
                     ruta_original: resultado.data.ruta_original
                 });
 
-                console.log(`[SharedPrendaStorage] ✓ Subido: ${url}`);
+                Logger.success(`Subido: ${url}`, 'SharedPrendaStorage');
 
             } catch (error) {
-                console.error(`[SharedPrendaStorage]  Error subiendo ${archivo.name}:`, error);
+                Logger.error(`Error subiendo ${archivo.name}`, 'SharedPrendaStorage', error);
                 // Continuar con el siguiente archivo
             }
         }
@@ -144,7 +144,7 @@ class SharedPrendaStorageService {
      * Eliminar imágenes por ID
      */
     async eliminarImagenes(ids) {
-        console.log('[SharedPrendaStorage] 🗑️ Eliminando imágenes:', ids);
+        Logger.debug(`Eliminando imágenes: ${ids}`, 'SharedPrendaStorage');
 
         if (!Array.isArray(ids) || ids.length === 0) {
             return { eliminadas: [], fallidas: [] };
@@ -166,10 +166,10 @@ class SharedPrendaStorageService {
                 }
 
                 resultado.eliminadas.push(id);
-                console.log(`[SharedPrendaStorage] ✓ Eliminada imagen ${id}`);
+                Logger.success(`Eliminada imagen ${id}`, 'SharedPrendaStorage');
 
             } catch (error) {
-                console.error(`[SharedPrendaStorage]  Error eliminando ${id}:`, error);
+                Logger.error(`Error eliminando imagen ${id}`, 'SharedPrendaStorage', error);
                 resultado.fallidas.push(id);
             }
         }
@@ -266,7 +266,7 @@ class SharedPrendaStorageService {
      */
     setAllowedMimeTypes(tipos) {
         this.allowedMimeTypes = tipos;
-        console.log('[SharedPrendaStorage] Tipos MIME permitidos actualizados:', tipos);
+        Logger.debug(`Tipos MIME permitidos actualizados`, 'SharedPrendaStorage', tipos);
     }
 
     /**
@@ -274,10 +274,10 @@ class SharedPrendaStorageService {
      */
     setMaxFileSize(bytes) {
         this.maxFileSize = bytes;
-        console.log('[SharedPrendaStorage] Tamaño máximo establecido:', this.formatoTamaño(bytes));
+        Logger.debug(`Tamaño máximo establecido: ${this.formatoTamaño(bytes)}`, 'SharedPrendaStorage');
     }
 }
 
 // Exportar
 window.SharedPrendaStorageService = SharedPrendaStorageService;
-console.log('[SharedPrendaStorageService] 🔐 Cargado (AISLADO DE COTIZACIONES)');
+Logger.debug('StorageService cargado', 'SharedPrendaStorage');

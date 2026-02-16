@@ -118,9 +118,9 @@ window.actualizarPreviewPrenda = function() {
         // Esto hará que el handler se reconfigure si es necesario
         if (window.dragDropManager && typeof window.dragDropManager.actualizarImagenesPrenda === 'function') {
             window.dragDropManager.actualizarImagenesPrenda(imagenes);
-            console.log('[actualizarPreviewPrenda]  DragDropManager notificado de cambios en imágenes');
+            console.log('[actualizarPreviewPrenda] ✅ DragDropManager notificado de cambios en imágenes');
         } else {
-            console.log('[actualizarPreviewPrenda]  DragDropManager no disponible para notificación');
+            console.log('[actualizarPreviewPrenda] ⚠️ DragDropManager no disponible para notificación');
         }
         
     } catch (e) {
@@ -190,7 +190,7 @@ window.actualizarPreviewTela = function() {
                 preview.appendChild(container);
             });
             
-            //  IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
+            // 🔥 IMPORTANTE: Configurar drag & drop en el preview cuando hay imágenes
             if (typeof window.setupDragDropTelaPreview === 'function') {
                 window.setupDragDropTelaPreview(preview);
                 console.log('[actualizarPreviewTela]  Drag & drop configurado en preview con imágenes');

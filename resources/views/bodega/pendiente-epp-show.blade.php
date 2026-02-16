@@ -162,6 +162,7 @@
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] }}"
                                             placeholder="Pendientes..."
                                             rows="1"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >{{ $item['pendientes'] ?? '' }}</textarea>
                                     </td>
                                     
@@ -207,6 +208,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >
                                     </td>
                                     
@@ -225,6 +227,7 @@
                                             data-talla="{{ $item['talla'] }}"
                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >
                                     </td>
                                     
@@ -242,6 +245,7 @@
                                             data-prenda-nombre="{{ $item['prenda_nombre'] ?? ($item['descripcion']['nombre_prenda'] ?? $item['descripcion']['nombre'] ?? '') }}"
                                             data-cantidad="{{ $item['cantidad_total'] ?? $item['cantidad'] ?? 0 }}"
                                             data-original-estado="{{ $item['epp_estado'] ?? '' }}"
+                                            @if($esReadOnly ?? false) disabled @endif
                                         >
                                             <option value="">ESTADO</option>
                                             <option value="Pendiente" {{ ($item['epp_estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
@@ -250,6 +254,7 @@
                                             <option value="Anulado" {{ ($item['epp_estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                         </select>
 
+                                        @if(!($esReadOnly ?? false))
                                         <button
                                             type="button"
                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}')"
@@ -257,6 +262,11 @@
                                         >
                                             💾 Guardar
                                         </button>
+                                        @else
+                                        <div class="w-full mt-1 px-2 py-1 bg-slate-100 text-slate-500 text-xs font-medium text-center rounded">
+                                            Solo lectura
+                                        </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -289,9 +299,9 @@
             <button onclick="cerrarModalNotas()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         <div class="px-6 py-6">
-            <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
-                <!-- Las notas se cargarán aquí -->
-            </div>
+            <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;"></div>
+            
+            @if(!($esReadOnly ?? false))
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Agregar nueva nota:</label>
                 <textarea
@@ -315,6 +325,32 @@
                         Cancelar
                     </button>
                 </div>
+            </div>
+            @else
+            <div class="text-center py-4">
+                <button
+                    type="button"
+                    onclick="cerrarModalNotas()"
+                    class="px-6 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-lg transition"
+                >
+                    Cerrar
+                </button>
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Factura -->
+<div id="modalFactura" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-9999 overflow-auto" style="z-index: 100000;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 my-8">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
+            <h2 class="text-lg font-semibold text-white">📄 Pedido</h2>
+            <button onclick="cerrarModalFactura()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
+        </div>
+        <div id="facturaContenido" class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 200px)">
+            <div class="flex justify-center items-center py-12">
+                <span class="text-slate-500">⏳ Cargando factura...</span>
             </div>
         </div>
     </div>
@@ -340,10 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function abrirModalFactura(pedidoId) {
-    // Abrir el pedido completo en una nueva pestaña
-    window.open(`/gestion-bodega/pedidos/${pedidoId}`, '_blank');
-}
+// La función abrirModalFactura está definida en bodega-pedidos.js
 
 function abrirModalNotas(numeroPedido, talla, prenda, tipo, id) {
     const modal = document.getElementById('modalNotas');
@@ -362,8 +395,8 @@ function abrirModalNotas(numeroPedido, talla, prenda, tipo, id) {
     fetch(`/gestion-bodega/notas/${numeroPedido}/${talla}`)
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                renderizarNotas(data.notas);
+            if (data.success && data.data) {
+                renderizarNotas(data.data);
             } else {
                 historial.innerHTML = '<div class="text-center text-slate-500">No hay notas</div>';
             }
@@ -384,21 +417,21 @@ function cerrarModalNotas() {
 function renderizarNotas(notas) {
     const historial = document.getElementById('notasHistorial');
     
-    if (notas.length === 0) {
+    if (!notas || notas.length === 0) {
         historial.innerHTML = '<div class="text-center text-slate-500">No hay notas</div>';
         return;
     }
     
     let html = '<div class="space-y-3">';
     notas.forEach(nota => {
-        const fecha = new Date(nota.created_at).toLocaleString('es-ES');
+        const fecha = new Date(nota.created_at || nota.fecha_completa).toLocaleString('es-ES');
         html += `
             <div class="bg-slate-50 rounded-lg p-3">
                 <div class="flex justify-between items-start mb-2">
                     <span class="font-medium text-slate-900">${nota.usuario_nombre}</span>
                     <span class="text-xs text-slate-500">${fecha}</span>
                 </div>
-                <p class="text-sm text-slate-700">${nota.nota}</p>
+                <p class="text-sm text-slate-700">${nota.contenido || nota.nota}</p>
             </div>
         `;
     });

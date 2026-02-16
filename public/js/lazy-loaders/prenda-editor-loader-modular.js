@@ -51,6 +51,10 @@ window.PrendaEditorLoader = (function() {
 
             // Módulos dependientes (manejadores de variaciones, etc.)
             '/js/modulos/crear-pedido/prendas/manejadores-variaciones.js?v=' + Date.now(),
+
+            // Procesos: renderizador de tarjetas y manejadores de checkboxes
+            '/js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js?v=' + Date.now(),
+            '/js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js?v=' + Date.now(),
         ];
 
         // ⚡ Cargar scripts en paralelo
@@ -72,10 +76,20 @@ window.PrendaEditorLoader = (function() {
     }
 
     /**
-     * Cargar un script individual
+     * Cargar un script individual (con deduplicación)
      */
     function loadScript(url) {
         return new Promise((resolve, reject) => {
+            // Extraer path sin query string para comparar
+            const urlPath = url.split('?')[0];
+            
+            // Verificar si el script ya está en el DOM (cargado por <script defer> del blade)
+            const existente = document.querySelector(`script[src*="${urlPath}"]`);
+            if (existente) {
+                console.log(`[PrendaEditor] Script ya existe en DOM, skip: ${urlPath}`);
+                return resolve();
+            }
+            
             const script = document.createElement('script');
             script.src = url;
             script.async = false;

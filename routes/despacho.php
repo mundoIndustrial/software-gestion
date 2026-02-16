@@ -48,4 +48,14 @@ Route::prefix('despacho')
         Route::get('/{pedido}/factura-datos', [DespachoController::class, 'obtenerFacturaDatos'])
             ->name('despacho.factura-datos')
             ->where('pedido', '[0-9]+');
+
+        // Marcar ítem como entregado
+        Route::post('/{pedido}/marcar-entregado', [DespachoController::class, 'marcarEntregado'])
+            ->name('despacho.marcar-entregado')
+            ->where('pedido', '[0-9]+');
+
+        // Obtener estado de entregas
+        Route::get('/{pedido}/estado-entregas', [DespachoController::class, 'obtenerEstadoEntregas'])
+            ->name('despacho.estado-entregas')
+            ->where('pedido', '[0-9]+');
     });

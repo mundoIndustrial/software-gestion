@@ -10,7 +10,7 @@
 class SharedPrendaValidationService {
     constructor(config = {}) {
         this.rules = config.rules || this.getReglasDefecto();
-        console.log('[SharedPrendaValidationService] ✓ Inicializado');
+        Logger.debug('Inicializado', 'SharedPrendaValidation');
     }
 
     /**
@@ -18,7 +18,7 @@ class SharedPrendaValidationService {
      * @returns {Array} Array de errores (vacío si no hay errores)
      */
     validar(prenda) {
-        console.log('[SharedPrendaValidation] 🔍 Validando prenda:', prenda.nombre);
+        Logger.debug(`Validando prenda: ${prenda.nombre}`, 'SharedPrendaValidation');
 
         const errores = [];
 
@@ -73,7 +73,7 @@ class SharedPrendaValidationService {
         const erroresGrave = errores.filter(e => e.severidad === 'error');
         const advertencias = errores.filter(e => e.severidad === 'warning');
 
-        console.log('[SharedPrendaValidation] Resultado:', {
+        Logger.debug('Resultado validación', 'SharedPrendaValidation', {
             valida: erroresGrave.length === 0,
             errores: erroresGrave.length,
             advertencias: advertencias.length
@@ -143,7 +143,7 @@ class SharedPrendaValidationService {
      * Validar campo individual
      */
     validarCampo(nombreCampo, valor) {
-        console.log(`[SharedPrendaValidation] Validando campo: ${nombreCampo}`);
+        Logger.debug(`Validando campo: ${nombreCampo}`, 'SharedPrendaValidation');
 
         switch (nombreCampo) {
             case 'nombre':
@@ -224,7 +224,7 @@ class SharedPrendaValidationService {
      */
     setReglas(nuevasReglas) {
         this.rules = { ...this.rules, ...nuevasReglas };
-        console.log('[SharedPrendaValidation] Reglas actualizadas');
+        Logger.debug('Reglas actualizadas', 'SharedPrendaValidation');
     }
 
     /**
@@ -232,10 +232,10 @@ class SharedPrendaValidationService {
      */
     resetearReglas() {
         this.rules = this.getReglasDefecto();
-        console.log('[SharedPrendaValidation] Reglas reseteadas a defecto');
+        Logger.debug('Reglas reseteadas a defecto', 'SharedPrendaValidation');
     }
 }
 
 // Exportar
 window.SharedPrendaValidationService = SharedPrendaValidationService;
-console.log('[SharedPrendaValidationService] 🔐 Cargado (AISLADO DE COTIZACIONES)');
+Logger.debug('ValidationService cargado', 'SharedPrendaValidation');

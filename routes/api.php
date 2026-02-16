@@ -732,3 +732,22 @@ Route::prefix('bodega')->name('bodega.')->middleware(['auth'])->group(function (
     Route::get('filtro-datos/{tipo}', [App\Http\Controllers\Bodega\PedidosController::class, 'obtenerDatosFiltro'])
         ->name('filtro-datos');
 });
+
+/**
+ * API Routes for Prenda Entregas (Supervisor de Pedidos)
+ * Gestiona el estado de entrega de prendas
+ */
+Route::withoutMiddleware(['api'])
+    ->middleware(['web', 'auth'])
+    ->prefix('prendas-entregas')
+    ->name('prendas-entregas.')
+    ->group(function () {
+    
+    // Toggle estado de entrega de una prenda
+    Route::post('{prendaPedidoId}/toggle', [App\Http\Controllers\PrendaEntregaController::class, 'toggleEntrega'])
+        ->name('toggle');
+    
+    // Obtener estado de entrega de una prenda
+    Route::get('{prendaPedidoId}/estado', [App\Http\Controllers\PrendaEntregaController::class, 'obtenerEstado'])
+        ->name('estado');
+});

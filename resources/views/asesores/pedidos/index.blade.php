@@ -7,7 +7,12 @@
     <!--  OPTIMIZADO: Solo CSS necesario para lista de pedidos -->
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/index.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos/page-loading.css') }}">
-    <!-- Otros CSS se cargan lazy cuando se editan prendas/EPP -->
+
+    <!-- CSS base para el modal de agregar/editar prenda (mismos que usar crear-pedido-nuevo) -->
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
     
     <!--  FIX GLOBAL: Posicionamiento de SweetAlert para modales grandes -->
     <style>
@@ -159,6 +164,17 @@
 
 <!-- Componente: Modal Editar EPP -->
 @include('asesores.pedidos.components.modal-editar-epp')
+
+{{-- modal-agregar-prenda-nueva YA se incluye desde components/modals.blade.php --}}
+{{-- NO duplicar aquí para evitar "Identifier already declared" en todos los scripts --}}
+
+<!-- Scripts adicionales para edición de prendas desde lista de pedidos -->
+@php $v = config('app.asset_version', time()); @endphp
+<script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-adapter.js') }}?v={{ $v }}"></script>
 
 <!-- Sistema de Actualización en Tiempo Real con WebSockets -->
 <!-- Nota: Los scripts de WebSockets se cargan automáticamente en el layout base para usuarios autenticados -->

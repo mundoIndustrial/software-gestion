@@ -56,6 +56,12 @@ class PrendaEditorService {
      * Determinar si debe obtener del servidor o usar datos locales
      */
     static debeObtenerDelServidor(prenda) {
+        // Si ya se trajo de BD (ej: adapter de pedidos), no re-fetch
+        if (prenda._fromDB) {
+            console.log('[📡 Service] Datos ya vienen de BD (_fromDB=true), skip fetch');
+            return false;
+        }
+
         const pedidoId = prenda.pedido_id || prenda.pedidoId;
         const prendaId = prenda.id || prenda.prenda_pedido_id;
         

@@ -356,7 +356,5 @@ class PrendaEditorTest {
  */
 window.testPrendaEditor = async function() {
     const test = new PrendaEditorTest();
-    return await test.ejecutarTodos();
+    return await test.ejecutarTodos();    
 };
-
-console.log(' Test suite cargado. Ejecuta: testPrendaEditor()');

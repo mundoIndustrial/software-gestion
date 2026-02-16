@@ -67,7 +67,7 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
     // NUEVO: Establecer el modo (crear o editar)
     modoActual = esEdicion ? 'editar' : 'crear';
     
-    //  FIX CRÍTICO: Establecer procesoActualIndex basándose en el orden de creación
+    // 🔧 FIX CRÍTICO: Establecer procesoActualIndex basándose en el orden de creación
     // Los índices 1, 2, 3 en window.procesosImagenesStorage corresponden al ORDEN de creación de procesos
     if (esEdicion && window.procesosSeleccionados?.[tipoProceso]?.indiceResultado !== undefined) {
         // En EDICIÓN: Usar el índice ya asignado
@@ -128,11 +128,6 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             if (typeof limpiarImagenesProceso === 'function') {
                 limpiarImagenesProceso();
             }
-            
-            // Inicializar listeners para los inputs de archivo
-            if (typeof inicializarListenersInputsArchivo === 'function') {
-                inicializarListenersInputsArchivo();
-            }
         } else {
             // En EDICIÓN: renderizar lo que ya está cargado
             // IMPORTANTE: Cargar las tallas del proceso existente en el window
@@ -140,70 +135,6 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
             if (procesoDatos && procesoDatos.tallas) {
                 window.tallasCantidadesProceso = { ...procesoDatos.tallas };
                 console.log(' [EDICIÓN] Tallas del proceso cargadas en tallas CantidadesProceso:', window.tallasCantidadesProceso);
-            }
-            
-            // CRÍTICO EN EDICIÓN: Cargar imágenes existentes del proceso
-            // Esto inicializa window.imagenesProcesoExistentes para sincronización posterior
-            if (procesoDatos && procesoDatos.imagenes && procesoDatos.imagenes.length > 0) {
-                window.imagenesProcesoExistentes = procesoDatos.imagenes;
-                console.log(' [EDICIÓN] Imágenes existentes cargadas en window.imagenesProcesoExistentes:', window.imagenesProcesoExistentes);
-                
-                // Mostrar las imágenes en el DOM del modal
-                procesoDatos.imagenes.forEach((imagen, idx) => {
-                    if (imagen && idx < 3) {
-                        const preview = document.getElementById(`proceso-foto-preview-${idx + 1}`);
-                        if (preview && imagen) {
-                            // Determinar URL de la imagen
-                            let imgSrc = '';
-                            if (typeof imagen === 'string') {
-                                imgSrc = imagen.startsWith('/') ? imagen : `/storage/${imagen}`;
-                            } else if (imagen.url) {
-                                imgSrc = imagen.url.startsWith('/') ? imagen.url : `/storage/${imagen.url}`;
-                            } else if (imagen.ruta) {
-                                imgSrc = imagen.ruta.startsWith('/') ? imagen.ruta : `/storage/${imagen.ruta}`;
-                            }
-                            
-                            if (imgSrc) {
-                                // IMPORTANTE: Asegurar position:relative para que el botón X funcione
-                                preview.style.position = 'relative';
-                                preview.innerHTML = `
-                                    <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="Imagen ${idx + 1}">
-                                    <button type="button" class="btn-eliminar-imagen" data-indice="${idx + 1}"
-                                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; z-index: 10;">
-                                        ×
-                                    </button>
-                                `;
-                                
-                                // Agregar listener al botón que no use onclick inline
-                                const btnEliminar = preview.querySelector('.btn-eliminar-imagen');
-                                if (btnEliminar) {
-                                    btnEliminar.addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        e.stopImmediatePropagation();
-                                        eliminarImagenProceso(idx + 1);
-                                    });
-                                }
-                                
-                                console.log(` [EDICIÓN] Imagen ${idx + 1} cargada en preview desde: ${imgSrc}`);
-                            }
-                        }
-                    }
-                });
-            } else {
-                // Si no hay imágenes, inicializar array vacío
-                window.imagenesProcesoExistentes = [];
-                console.log(' [EDICIÓN] Sin imágenes existentes, array inicializado vacío');
-            }
-            
-            // En EDICIÓN: Inicializar listeners para cualquier placeholder o imagen cargada
-            if (typeof restaurarListenersImagenesProceso === 'function') {
-                restaurarListenersImagenesProceso();
-            }
-            
-            // Inicializar listeners para los inputs de archivo
-            if (typeof inicializarListenersInputsArchivo === 'function') {
-                inicializarListenersInputsArchivo();
             }
             
             if (window.renderizarListaUbicaciones) {
@@ -273,41 +204,7 @@ window.cerrarModalProcesoGenerico = function(procesoGuardado = false) {
         }
     }
     
-    //  LIMPIEZA DE LISTENERS - Crítico para evitar acumulación
-    // Remover todos los listeners de los previews de imagen
-    for (let i = 1; i <= 3; i++) {
-        const preview = document.getElementById(`proceso-foto-preview-${i}`);
-        if (preview) {
-            // Remover ambos tipos de handlers
-            if (preview._handlerPlaceholder) {
-                preview.removeEventListener('click', preview._handlerPlaceholder);
-                preview._handlerPlaceholder = null;
-            }
-            if (preview._handlerImageLoaded) {
-                preview.removeEventListener('click', preview._handlerImageLoaded);
-                preview._handlerImageLoaded = null;
-            }
-        }
-    }
-    console.log('[cerrarModalProcesoGenerico] 🧹 Listeners de imágenes removidos');
-    
-    //  Remover listeners de inputs file
-    console.log('[cerrarModalProcesoGenerico] 🔍 ESTADO ACTUAL ANTES DE LIMPIAR:');
-    console.log('[cerrarModalProcesoGenerico]   - imagenesTelaStorage images:', window.imagenesTelaStorage?.obtenerImagenes?.()?.length || 0);
-    console.log('[cerrarModalProcesoGenerico]   - imagenesPrendaStorage images:', window.imagenesPrendaStorage?.obtenerImagenes?.()?.length || 0);
-    console.log('[cerrarModalProcesoGenerico]   - telasCreacion length:', window.telasCreacion?.length || 0);
-    
-    for (let i = 1; i <= 3; i++) {
-        const input = document.getElementById(`proceso-foto-input-${i}`);
-        if (input && input._changeHandler) {
-            input.removeEventListener('change', input._changeHandler);
-            input._changeHandler = null;
-            console.log(`[cerrarModalProcesoGenerico] 🧹 Listener de change removido del input ${i}`);
-        }
-    }
-    console.log('[cerrarModalProcesoGenerico] 🧹 Listeners de inputs removidos');
-    
-    //  LIMPIAR STORAGE DE IMÁGENES después de guardar (para evitar residuos en próximo proceso)
+    // 🔧 LIMPIAR STORAGE DE IMÁGENES después de guardar (para evitar residuos en próximo proceso)
     if (modoActual === 'crear' && procesoGuardado && window.procesoActualIndex !== undefined) {
         // Limpiar el storage de imágenes del índice usado para este proceso
         console.log(`[cerrarModalProcesoGenerico] 🧹 Limpiando storage de imágenes del índice ${window.procesoActualIndex}`);
@@ -336,29 +233,28 @@ let imagenesProcesoActual = [null, null, null];
 
 // Manejar upload de imagen individual
 window.manejarImagenProceso = function(input, indice) {
-    console.log(`[manejarImagenProceso] 🎬 MANEJADOR PRINCIPAL DE IMAGEN - indice=${indice}`);
-    
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
-        console.log(`[manejarImagenProceso] 📁 Archivo obtenido:`, file.name, `(${file.size} bytes)`);
         
-        // Guardar el File object directamente
+        //  CAMBIO: Guardar el File object directamente, NO convertir a base64
         imagenesProcesoActual[indice - 1] = file;
         
-        // Sincronizar con window.imagenesProcesoActual (usado en PATCH)
+        //  CRÍTICO: Sincronizar con window.imagenesProcesoActual (usado en PATCH)
         if (!window.imagenesProcesoActual) {
             window.imagenesProcesoActual = [null, null, null];
         }
         window.imagenesProcesoActual[indice - 1] = file;
-        console.log('[manejarImagenProceso]  Imagen guardada en window.imagenesProcesoActual');
+        console.log('[manejarImagenProceso]  Imagen guardada en window.imagenesProcesoActual:', {
+            indice: indice,
+            filename: file.name,
+            size: file.size,
+            totalImagenes: window.imagenesProcesoActual.filter(img => img instanceof File).length
+        });
         
-        // Mostrar preview usando URL.createObjectURL
+        // Mostrar preview usando URL.createObjectURL (más eficiente que base64)
         const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-        
         if (preview) {
             const objectUrl = URL.createObjectURL(file);
-            console.log(`[manejarImagenProceso] 🖼️ Mostrando preview...`);
-            
             preview.innerHTML = `
                 <img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
                 <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
@@ -366,19 +262,16 @@ window.manejarImagenProceso = function(input, indice) {
                     ×
                 </button>
             `;
-            
-            // Guardar URL para limpieza posterior
+            // Limpiar URL cuando el elemento se elimine (prevenir memory leaks)
             preview._objectUrl = objectUrl;
         }
-    } else {
-        console.warn(`[manejarImagenProceso]  Sin archivos en input`);
+        
+
     }
 };
 
 // Eliminar imagen del proceso
 window.eliminarImagenProceso = function(indice) {
-    console.log(`[eliminarImagenProceso] 🗑️ Eliminando imagen del preview ${indice} (storage index: ${indice})`);
-    
     // Limpiar URL.createObjectURL si existe
     const preview = document.getElementById(`proceso-foto-preview-${indice}`);
     if (preview && preview._objectUrl) {
@@ -427,63 +320,27 @@ window.eliminarImagenProceso = function(indice) {
                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${indice}</div>
             </div>
         `;
-        
-        //  ARQUITECTURA: Remover handler de imagen cargada, agregar handler de placeholder
-        preview.style.cursor = 'pointer';
-        
-        // Handler imagen cargada (previene propagación)
-        if (preview._handlerImageLoaded) {
-            preview.removeEventListener('click', preview._handlerImageLoaded);
-            preview._handlerImageLoaded = null;
-        }
-        
-        // Handler placeholder (abre selector)
-        if (preview._handlerPlaceholder) {
-            preview.removeEventListener('click', preview._handlerPlaceholder);
-        }
-        
-        const handlerPlaceholder = (function(idx) {
-            return function(e) {
-                e.stopPropagation();
-                abrirSelectorImagenProceso(idx);
-            };
-        })(indice);
-        
-        preview._handlerPlaceholder = handlerPlaceholder;
-        preview.addEventListener('click', handlerPlaceholder);
     }
     
     if (input) {
-        //  CRÍTICO: Limpiar completamente el input y su estado
         input.value = '';
-        // Limpiar flag de diálogo abierto (guard de v2)
-        input._isDialogOpening = false;
-        // Resetear atributos de validación
-        input.removeAttribute('aria-invalid');
-        input.removeAttribute('aria-describedby');
     }
     
-    console.log('[eliminarImagenProceso]  Preview ${indice} restaurado');
 
 };
 
 // Limpiar todas las imágenes del proceso
 function limpiarImagenesProceso() {
-    console.log('[limpiarImagenesProceso] 🧹 Iniciando limpieza de TODAS las imágenes');
-    
     // Limpiar URLs generadas
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
         if (preview && preview._objectUrl) {
             URL.revokeObjectURL(preview._objectUrl);
             preview._objectUrl = null;
-            console.log(`[limpiarImagenesProceso] 🔗 Object URL revocada para preview ${i}`);
         }
     }
     
     imagenesProcesoActual = [null, null, null];
-    
-    // Restaurar estado inicial en todos los previews y inputs
     for (let i = 1; i <= 3; i++) {
         const preview = document.getElementById(`proceso-foto-preview-${i}`);
         const input = document.getElementById(`proceso-foto-input-${i}`);
@@ -495,85 +352,12 @@ function limpiarImagenesProceso() {
                     <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${i}</div>
                 </div>
             `;
-            console.log(`[limpiarImagenesProceso] ✨ Preview ${i} restaurado a estado inicial`);
         }
         
         if (input) {
             input.value = '';
-            console.log(`[limpiarImagenesProceso] 🔄 Input ${i} resetado`);
         }
     }
-    console.log('[limpiarImagenesProceso]  Limpieza completada');
-}
-
-//  Inicializar listeners de inputs file con logs detallados
-// Se llama cuando se abre el modal para agregar event listeners al change de los inputs
-function inicializarListenersInputsArchivo() {
-    console.log('[inicializarListenersInputsArchivo] 📂 Inicializando listeners para inputs de archivo...');
-    
-    for (let i = 1; i <= 3; i++) {
-        const input = document.getElementById(`proceso-foto-input-${i}`);
-        
-        if (!input) {
-            console.warn(`[inicializarListenersInputsArchivo]  Input ${i} NO encontrado`);
-            continue;
-        }
-        
-        console.log(`[inicializarListenersInputsArchivo] 🔍 Input ${i} encontrado`);
-        
-        // Remover listeners anteriores si existen
-        if (input._changeHandler) {
-            input.removeEventListener('change', input._changeHandler);
-            console.log(`[inicializarListenersInputsArchivo] 🗑️ Handler anterior removido de input ${i}`);
-        }
-        
-        // Crear nuevo handler
-        const changeHandler = (function(idx) {
-            return function(e) {
-                console.log(`[inicializarListenersInputsArchivo-changeHandler] 🎬 EVENTO CHANGE DISPARADO - input ${idx}`);
-                console.log(`[inicializarListenersInputsArchivo-changeHandler] 📁 Archivos seleccionados:`, e.target.files.length);
-                
-                if (e.target.files && e.target.files.length > 0) {
-                    console.log(`[inicializarListenersInputsArchivo-changeHandler]  Delegando a manejarImagenProcesoConIndice()`);
-                    window.manejarImagenProcesoConIndice(e.target, idx);
-                } else {
-                    console.log(`[inicializarListenersInputsArchivo-changeHandler]  Sin archivos seleccionados`);
-                }
-            };
-        })(i);
-        
-        input._changeHandler = changeHandler;
-        input.addEventListener('change', changeHandler);
-        console.log(`[inicializarListenersInputsArchivo]  Handler de change agregado a input ${i}`);
-    }
-    
-    console.log('[inicializarListenersInputsArchivo]  Inicialización completada');
-}
-
-//  Restaurar/inicializar listeners para imágenes sin duplicación
-// Se llama cuando se abre el modal en EDICIÓN para asegurar que todos los previews tienen listeners
-function restaurarListenersImagenesProceso() {
-    console.log('[restaurarListenersImagenesProceso] 🎯 Verificando estado de previews en modo EDICIÓN...');
-    
-    // Con labels nativos, solo verificamos que los inputs existen y están accesibles
-    // El label maneja automáticamente la apertura del file dialog
-    for (let i = 1; i <= 3; i++) {
-        const input = document.getElementById(`proceso-foto-input-${i}`);
-        const label = document.querySelector(`label[for="proceso-foto-input-${i}"]`);
-        
-        if (!input) {
-            console.warn(`[restaurarListenersImagenesProceso]  Input ${i} no encontrado`);
-        }
-        if (!label) {
-            console.warn(`[restaurarListenersImagenesProceso]  Label ${i} no encontrado`);
-        }
-        
-        if (input && label) {
-            console.log(`[restaurarListenersImagenesProceso]  Preview ${i} listo con label nativo`);
-        }
-    }
-    
-    console.log('[restaurarListenersImagenesProceso] ✨ Estado verificado correctamente');
 }
 
 // Agregar ubicación a la lista
@@ -652,7 +436,7 @@ window.renderizarListaUbicaciones = function() {
                 tag.innerHTML = `
                     <div style="display: flex; align-items: flex-start; gap: 0.5rem; justify-content: space-between;">
                         <div style="flex: 1;">
-                            <strong style="display: block; margin-bottom: 0.25rem;"> ${ubicacionTexto}</strong>
+                            <strong style="display: block; margin-bottom: 0.25rem;">${ubicacionTexto}</strong>
                             <small style="color: #4b7c0f;">${desc}</small>
                         </div>
                         <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center; flex-shrink: 0;">
@@ -666,7 +450,7 @@ window.renderizarListaUbicaciones = function() {
             } else {
                 tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
                 tag.innerHTML = `
-                    <span> ${ubicacionTexto}</span>
+                    <span>${ubicacionTexto}</span>
                     <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
                         <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
                     </button>
@@ -681,7 +465,7 @@ window.renderizarListaUbicaciones = function() {
             ubicacionKey = ubicacion;
             tag.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;';
             tag.innerHTML = `
-                <span> ${ubicacionTexto}</span>
+                <span>${ubicacionTexto}</span>
                 <button type="button" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1rem; display: flex; align-items: center;">
                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
                 </button>
@@ -1524,7 +1308,7 @@ window.agregarProcesoAlPedido = function() {
     }
     
     try {
-        //  FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
+        // 🔧 FIX CRÍTICO: El storage procesosImagenesStorage tiene estructura {_imagenes: {1: [], 2: [], 3: []}}
         // Las imágenes se guardan por índice numérico (1, 2, 3), NO por nombre de proceso
         console.log('[agregarProcesoAlPedido] 📸 Buscando imágenes en window.procesosImagenesStorage...');
         console.log('[agregarProcesoAlPedido] 📌 procesoActual:', procesoActual);
@@ -1533,14 +1317,14 @@ window.agregarProcesoAlPedido = function() {
         
         let imagenesDelStorage = [];
         
-        //  CORRECCIÓN: Usar index específico establecido cuando el modal se abrió
+        // ✅ CORRECCIÓN: Usar index específico establecido cuando el modal se abrió
         if (window.procesosImagenesStorage && typeof window.procesosImagenesStorage.obtenerImagenes === 'function') {
             if (window.procesoActualIndex !== undefined && window.procesoActualIndex > 0) {
                 const imagenesEnIndice = window.procesosImagenesStorage.obtenerImagenes(window.procesoActualIndex);
                 console.log(`[agregarProcesoAlPedido] 🔢 Usando ÍNDICE ESPECÍFICO: ${window.procesoActualIndex} → ${imagenesEnIndice?.length || 0} imágenes`);
                 if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                     imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                    console.log(`[agregarProcesoAlPedido]  ENCONTRADAS ${imagenesDelStorage.length} imágenes en índice ${window.procesoActualIndex}`);
+                    console.log(`[agregarProcesoAlPedido] ✅ ENCONTRADAS ${imagenesDelStorage.length} imágenes en índice ${window.procesoActualIndex}`);
                 }
             } else {
                 console.warn('[agregarProcesoAlPedido]  procesoActualIndex NO definido, buscando en índices 1-3 como fallback...');
@@ -1550,7 +1334,7 @@ window.agregarProcesoAlPedido = function() {
                     console.log(`  [agregarProcesoAlPedido] Fallback: Índice ${idx}: ${imagenesEnIndice?.length || 0} imágenes`);
                     if (imagenesEnIndice && imagenesEnIndice.length > 0) {
                         imagenesDelStorage = imagenesEnIndice.filter(img => img !== null);
-                        console.log(`[agregarProcesoAlPedido]  FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imágenes en índice ${idx}`);
+                        console.log(`[agregarProcesoAlPedido] ⚠️ FALLBACK: ENCONTRADAS ${imagenesDelStorage.length} imágenes en índice ${idx}`);
                         break;
                     }
                 }
@@ -1562,7 +1346,7 @@ window.agregarProcesoAlPedido = function() {
             const imagenesNuevas = imagenesProcesoActual.filter(img => img !== null);
             if (imagenesNuevas.length > 0) {
                 imagenesDelStorage = imagenesNuevas;
-                console.log('[agregarProcesoAlPedido]  Fallback: Imágenes obtenidas desde imagenesProcesoActual:', imagenesDelStorage.length);
+                console.log('[agregarProcesoAlPedido] ✅ Fallback: Imágenes obtenidas desde imagenesProcesoActual:', imagenesDelStorage.length);
             }
         }
         
@@ -1626,7 +1410,7 @@ window.agregarProcesoAlPedido = function() {
             if (!window.procesosSeleccionados[procesoActual]) {
                 window.procesosSeleccionados[procesoActual] = {
                     tipo: procesoActual,
-                    indiceResultado: window.procesoActualIndex, //  Guardar el índice para futuras ediciones
+                    indiceResultado: window.procesoActualIndex, // 🔧 Guardar el índice para futuras ediciones
                     datos: null
                 };
             }
@@ -1635,17 +1419,7 @@ window.agregarProcesoAlPedido = function() {
             window.procesosSeleccionados[procesoActual].datos = datos;
             window.procesosSeleccionados[procesoActual].indiceResultado = window.procesoActualIndex; // Garantizar que el índice está guardado
             
-            // 🆕 GUARDAR TAMBIÉN en procesosGuardados (almacenaje persistente para ediciones futuras)
-            if (!window.procesosGuardados) {
-                window.procesosGuardados = {};
-            }
-            window.procesosGuardados[procesoActual] = {
-                tipo: procesoActual,
-                indiceResultado: window.procesoActualIndex,
-                datos: datos
-            };
-            
-            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en window.procesosSeleccionados y window.procesosGuardados:', {
+            console.log('[agregarProcesoAlPedido-GUARDADO] Proceso guardado en window.procesosSeleccionados:', {
                 tipo: procesoActual,
                 indice: window.procesoActualIndex,
                 datosGuardados: window.procesosSeleccionados[procesoActual].datos
@@ -1666,7 +1440,7 @@ window.agregarProcesoAlPedido = function() {
                 console.log('🆕 [EDICIÓN] NUEVO PROCESO detectado, agregando a window.procesosSeleccionados:', procesoActual);
                 window.procesosSeleccionados[procesoActual] = {
                     tipo: procesoActual,
-                    indiceResultado: window.procesoActualIndex, //  Guardar el índice para nuevos procesos
+                    indiceResultado: window.procesoActualIndex, // 🔧 Guardar el índice para nuevos procesos
                     datos: datos
                 };
                 console.log(' [EDICIÓN] Nuevo proceso agregado:', {
@@ -1674,14 +1448,6 @@ window.agregarProcesoAlPedido = function() {
                     indice: window.procesoActualIndex,
                     datos: window.procesosSeleccionados[procesoActual].datos
                 });
-                
-                // 🆕 TAMBIÉN GUARDAR en procesosGuardados
-                if (!window.procesosGuardados) {
-                    window.procesosGuardados = {};
-                }
-                window.procesosGuardados[procesoActual] = window.procesosSeleccionados[procesoActual];
-                console.log(' [EDICIÓN] Nuevo proceso también guardado en procesosGuardados');
-                
             } else if (window.procesosEditor) {
                 // EDICIÓN: Si el proceso YA EXISTE, usar ProcesosEditor para actualizar
                 console.log('✏️ [EDICIÓN] Proceso existente, usando ProcesosEditor para actualizar...');
@@ -1706,13 +1472,6 @@ window.agregarProcesoAlPedido = function() {
                 if (window.procesosSeleccionados[procesoActual]) {
                     window.procesosSeleccionados[procesoActual].indiceResultado = window.procesoActualIndex;
                 }
-                
-                // 🆕 TAMBIÉN GUARDAR en procesosGuardados
-                if (!window.procesosGuardados) {
-                    window.procesosGuardados = {};
-                }
-                window.procesosGuardados[procesoActual] = window.procesosSeleccionados[procesoActual];
-                console.log(' [EDICIÓN] Proceso existente también actualizado en procesosGuardados');
                 
                 console.log(' [EDICIÓN] Cambios registrados y guardados en window.procesosSeleccionados');
             }

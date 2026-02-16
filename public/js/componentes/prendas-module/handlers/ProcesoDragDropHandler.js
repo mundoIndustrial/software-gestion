@@ -113,6 +113,13 @@ class ProcesoDragDropHandler {
         
         // Solo procesar click izquierdo
         if (e.button !== 0) return;
+
+        // Guard: evitar doble apertura si abrirSelectorImagenProceso ya lo manejó
+        if (window._abrirSelectorGuard) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         
         // Obtener el preview
         const preview = document.getElementById(`proceso-foto-preview-${procesoNumero}`);

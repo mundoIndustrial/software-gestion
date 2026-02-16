@@ -614,10 +614,24 @@ class ObtenerPedidoDetalleService
             ->get(['talla', 'cantidad'])
             ->toArray();
 
+        $tallasUnisex = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->where('genero', 'UNISEX')
+            ->get(['talla', 'cantidad'])
+            ->toArray();
+
+        $tallasSobremedida = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prenda->id)
+            ->where('genero', 'SOBREMEDIDA')
+            ->get(['talla', 'cantidad'])
+            ->toArray();
+
         $prendaArray['tallas_dama'] = $tallasDama;
         $prendaArray['tallas_caballero'] = $tallasCaballero;
+        $prendaArray['tallas_unisex'] = $tallasUnisex;
+        $prendaArray['tallas_sobremedida'] = $tallasSobremedida;
 
-        Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero));
+        Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero) . ', Unisex: ' . count($tallasUnisex) . ', Sobremedida: ' . count($tallasSobremedida));
 
         // Variantes (mangas, broches, bolsillos)
         $variantes = [];
@@ -644,7 +658,7 @@ class ObtenerPedidoDetalleService
         $coloresTelas = [];
         $relaciones = DB::table('prenda_pedido_colores_telas')
             ->where('prenda_pedido_id', $prenda->id)
-            ->get(['id', 'color_id', 'tela_id'])
+            ->get(['id', 'color_id', 'tela_id', 'referencia'])
             ->toArray();
 
         Log::info(' [COLORES-TELAS-INICIO] Encontradas ' . count($relaciones) . ' relaciones color-tela');
@@ -668,7 +682,7 @@ class ObtenerPedidoDetalleService
                 'color_codigo' => $color->codigo ?? '',
                 'tela_id' => $rel->tela_id,
                 'tela_nombre' => $tela->nombre ?? 'Tela desconocida',
-                'tela_referencia' => $tela->referencia ?? '',
+                'tela_referencia' => $rel->referencia ?? $tela->referencia ?? '',
                 'fotos_tela' => array_map(function($f) {
                     return [
                         'ruta_original' => $f->ruta_original,

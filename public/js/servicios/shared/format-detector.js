@@ -225,11 +225,11 @@ class FormatDetector {
      */
     log(mensaje) {
         if (this.debugMode) {
-            console.log(`[FormatDetector] ${mensaje}`);
+            Logger.debug(mensaje, 'FormatDetector');
         }
     }
 }
 
 // Exportar
 window.FormatDetector = FormatDetector;
-console.log('[FormatDetector] 🔐 Cargado (DETECTOR DE FORMATO)');
+Logger.debug('FormatDetector cargado', 'FormatDetector');

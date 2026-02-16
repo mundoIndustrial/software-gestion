@@ -56,10 +56,34 @@ window.StateManager = (function() {
         },
 
         /**
-         * Agregar una asignación
+         * Agregar una asignación (MERGE: si ya existe, agrega colores sin sobrescribir)
          */
         agregarAsignacion(clave, asignacion) {
-            state.asignacionesColoresPorTalla[clave] = JSON.parse(JSON.stringify(asignacion));
+            const nueva = JSON.parse(JSON.stringify(asignacion));
+            const existente = state.asignacionesColoresPorTalla[clave];
+
+            if (existente && existente.colores && Array.isArray(existente.colores) && nueva.colores && Array.isArray(nueva.colores)) {
+                // Merge: agregar colores nuevos sin duplicar
+                nueva.colores.forEach(colorNuevo => {
+                    const yaExiste = existente.colores.find(c => c.nombre === colorNuevo.nombre);
+                    if (yaExiste) {
+                        // Si el color ya existe, sumar la cantidad
+                        yaExiste.cantidad = (parseInt(yaExiste.cantidad) || 0) + (parseInt(colorNuevo.cantidad) || 0);
+                    } else {
+                        existente.colores.push(colorNuevo);
+                    }
+                });
+                // Mantener los demás datos actualizados
+                existente.genero = nueva.genero || existente.genero;
+                existente.tela = nueva.tela || existente.tela;
+                existente.tipo = nueva.tipo || existente.tipo;
+                existente.talla = nueva.talla || existente.talla;
+                console.log('[StateManager] Asignación MERGED para clave:', clave, existente);
+            } else {
+                // No existe, crear nueva
+                state.asignacionesColoresPorTalla[clave] = nueva;
+                console.log('[StateManager] Asignación NUEVA para clave:', clave);
+            }
         },
 
         /**

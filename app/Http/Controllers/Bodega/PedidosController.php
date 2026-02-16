@@ -64,6 +64,7 @@ class PedidosController extends Controller
                     'totalPedidos' => $datos['pagination']['total_pedidos'] ?? 0,
                     'datosBodega' => $datos['datos_bodega'] ?? collect(),
                     'notasBodega' => $datos['notas_bodega'] ?? collect(),
+                    'esReadOnly' => $esReadOnly,
                 ]);
             }
             
@@ -105,6 +106,7 @@ class PedidosController extends Controller
                     'totalPedidos' => $datos['pagination']['total_pedidos'] ?? 0,
                     'datosBodega' => $datos['datos_bodega'] ?? collect(),
                     'notasBodega' => $datos['notas_bodega'] ?? collect(),
+                    'esReadOnly' => $esReadOnly,
                 ]);
             }
 
@@ -206,6 +208,10 @@ class PedidosController extends Controller
                     $datos['estadisticas']['total_epp_pendientes'] = count($datos['items']);
                 }
             }
+            
+            // Verificar si el usuario es de solo lectura
+            $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+            $datos['esReadOnly'] = $this->roleService->esReadOnly($rolesDelUsuario);
             
             return view('bodega.pendiente-epp-show', $datos);
             
@@ -309,6 +315,10 @@ class PedidosController extends Controller
                 'descripcion' => 'Mostrando solo artículos de Costura con estado Pendiente'
             ];
             
+            // Verificar si el usuario es de solo lectura
+            $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+            $datos['esReadOnly'] = $this->roleService->esReadOnly($rolesDelUsuario);
+            
             return view('bodega.pendiente-costura-show', $datos);
             
         } catch (\Exception $e) {
@@ -332,6 +342,14 @@ class PedidosController extends Controller
                 ->update(['viewed_at' => Carbon::now()]);
             
             $datos = $this->bodegaPedidoService->obtenerDetallePedido($pedidoId);
+            
+            // Verificar si el usuario es de solo lectura
+            $usuario = auth()->user();
+            $rolesDelUsuario = $usuario->getRoleNames()->toArray();
+            $esReadOnly = $this->roleService->esReadOnly($rolesDelUsuario);
+            
+            // Agregar la variable esReadOnly a los datos
+            $datos['esReadOnly'] = $esReadOnly;
             
             return view('bodega.show', $datos);
             
@@ -711,6 +729,15 @@ class PedidosController extends Controller
      */
     public function entregar(Request $request, $id): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             // Crear Command con CQRS
             $command = new EntregarPedidoCommand(
@@ -863,6 +890,15 @@ class PedidosController extends Controller
     }
     public function actualizarObservaciones(Request $request): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'id' => 'required|integer|exists:recibo_prendas,id',
@@ -904,6 +940,15 @@ class PedidosController extends Controller
      */
     public function actualizarFecha(Request $request): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'id' => 'required|integer|exists:recibo_prendas,id',
@@ -1023,6 +1068,15 @@ class PedidosController extends Controller
      */
     public function guardarDetallesTalla(Request $request): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
@@ -1067,6 +1121,15 @@ class PedidosController extends Controller
      */
     public function guardarPedidoCompleto(Request $request): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
@@ -1185,6 +1248,15 @@ class PedidosController extends Controller
      */
     public function guardarNota(Request $request): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'numero_pedido' => 'required|string',
@@ -1207,13 +1279,22 @@ class PedidosController extends Controller
     /**
      * Obtener historial de notas para un pedido y talla
      */
-    public function obtenerNotas(Request $request): JsonResponse
+    public function obtenerNotas(Request $request, $numero_pedido = null, $talla = null): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'numero_pedido' => 'required|string',
-                'talla' => 'required|string',
-            ]);
+            // Si vienen como parámetros de ruta (GET), usarlos directamente
+            if ($numero_pedido && $talla) {
+                $validated = [
+                    'numero_pedido' => $numero_pedido,
+                    'talla' => $talla,
+                ];
+            } else {
+                // Si vienen en el body (POST), validarlos
+                $validated = $request->validate([
+                    'numero_pedido' => 'required|string',
+                    'talla' => 'required|string',
+                ]);
+            }
 
             return $this->notaService->obtenerNotas($validated);
             
@@ -1232,6 +1313,15 @@ class PedidosController extends Controller
      */
     public function actualizarNota(Request $request, $notaId): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'contenido' => 'required|string|max:5000',
@@ -1254,6 +1344,15 @@ class PedidosController extends Controller
      */
     public function eliminarNota(Request $request, $notaId): JsonResponse
     {
+        // Validar que el usuario no sea de solo lectura
+        $rolesDelUsuario = auth()->user()->getRoleNames()->toArray();
+        if ($this->roleService->esReadOnly($rolesDelUsuario)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción. Tu rol es de solo lectura.'
+            ], 403);
+        }
+
         try {
             return $this->notaService->eliminarNota($notaId);
             

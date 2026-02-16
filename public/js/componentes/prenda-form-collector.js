@@ -193,19 +193,27 @@ class PrendaFormCollector {
                 // 2. Tiene previewUrl NO VACÍO
                 // 3. Tiene url NO VACÍO  
                 // 4. Tiene id de BD (prenda_foto_id)
+                // 5. Tiene ruta de almacenamiento (ruta, urlDesdeDB, enBD)
+                // 6. Tiene file que es File object (objeto con metadatos)
                 
                 const esFile = img instanceof File;
+                const tieneFileObj = img?.file instanceof File;
                 const tienePreviewUrl = img?.previewUrl && img.previewUrl.trim() !== '';
                 const tieneUrl = img?.url && img.url.trim() !== '';
                 const tieneIdBD = img?.id || img?.prenda_foto_id;
+                const tieneRutaBD = img?.ruta && typeof img.ruta === 'string' && img.ruta.trim() !== '';
+                const esDesdeDB = img?.urlDesdeDB === true || img?.enBD === true;
                 
-                const esValido = img !== null && img !== undefined && (esFile || tienePreviewUrl || tieneUrl || tieneIdBD);
+                const esValido = img !== null && img !== undefined && (esFile || tieneFileObj || tienePreviewUrl || tieneUrl || tieneIdBD || tieneRutaBD || esDesdeDB);
                 
                 console.log(`[prenda-form-collector] 🔍 FILTER [${filterIdx}]: esValido=${esValido}`, {
                     esFile,
+                    tieneFileObj: !!tieneFileObj,
                     tienePreviewUrl: !!tienePreviewUrl,
                     tieneUrl: !!tieneUrl,
                     tieneIdBD: !!tieneIdBD,
+                    tieneRutaBD: !!tieneRutaBD,
+                    esDesdeDB: !!esDesdeDB,
                     razon: !esValido ? (img === null || img === undefined ? 'null/undefined' : 'imagen vacía sin contenido') : 'válida'
                 });
                 
@@ -707,7 +715,8 @@ class PrendaFormCollector {
             return prendaData;
 
         } catch (error) {
-
+            console.error('[prenda-form-collector] ❌ ERROR CRÍTICO en construirPrendaDesdeFormulario:', error);
+            console.error('[prenda-form-collector] Stack:', error.stack);
             return null;
         }
     }

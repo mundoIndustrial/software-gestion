@@ -20,11 +20,19 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ !request()->query('aprobacion') ? 'active' : '' }}"
+                       class="menu-link {{ !request()->query('aprobacion') && !request()->query('estado') ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
                         <span class="menu-label">Pedidos</span>
                         <span class="badge-alert" id="ordenesPendientesCount" style="display: none;">0</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'Anulada']) }}"
+                       class="menu-link {{ request()->query('estado') === 'Anulada' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">cancel</span>
+                        <span class="menu-label">Pedidos Anulados</span>
                     </a>
                 </li>
             </ul>

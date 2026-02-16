@@ -226,6 +226,13 @@ window.AsignacionManager = (function() {
         },
 
         /**
+         * Obtener todas las asignaciones como objeto (keyed por clave)
+         */
+        obtenerAsignaciones() {
+            return StateManager.getAsignaciones();
+        },
+
+        /**
          * Obtener todas las asignaciones como array
          */
         obtenerTodasLasAsignaciones() {

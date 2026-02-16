@@ -96,7 +96,7 @@ function abrirEditarPrendas() {
  * USA EL MODAL DE "AGREGAR PRENDA NUEVA" para la edición
  */
 async function abrirEditarPrendaEspecifica(prendasIndex) {
-    console.log(' [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
+    console.log('🔥 [EDITAR-PRENDA] Abriendo modal de edición con índice:', prendasIndex);
     
     if (!window.prendasEdicion) {
         console.error(' No hay datos de prendas disponibles');
@@ -1202,17 +1202,9 @@ function cerrarModalPrendaNueva() {
         console.log('→ PASO 2: Ocultando modal...');
         const modal = document.getElementById('modal-agregar-prenda-nueva');
         if (modal) {
-            // Usar UIModalService para manejar el scroll del body
-            if (window.UI && typeof window.UI.cerrarModal === 'function') {
-                window.UI.cerrarModal('modal-agregar-prenda-nueva', {
-                    animate: false
-                });
-            } else {
-                // Fallback si UIModalService no está disponible
-                modal.style.setProperty('display', 'none', 'important');
-                document.body.style.overflow = '';
-            }
+            modal.style.setProperty('display', 'none', 'important');
             modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
         console.log('✓ PASO 2 completado - Modal debe estar invisible ahora');
         
@@ -1254,6 +1246,13 @@ function cerrarModalPrendaNueva() {
         // Las asignaciones deben persistir hasta que el pedido se cree completamente
         // Se limpiarán como último paso en crearPedido() después de enviar al backend
         console.log('→ PASO 6: Asignaciones de colores mantienen datos para crearPedido()');
+        
+        // PASO 7: Resetear FSM a CLOSED para permitir reabrir el modal
+        const fsm = window.__MODAL_FSM__;
+        if (fsm && fsm.obtenerEstado() !== 'CLOSED') {
+            console.log('→ PASO 7: Reseteando FSM desde', fsm.obtenerEstado(), 'a CLOSED');
+            fsm.estado = 'CLOSED';
+        }
         
     } catch (error) {
         console.error(' [cerrarModalPrendaNueva] Error:', error);
@@ -1397,7 +1396,7 @@ function limpiarFormularioPrendaNueva() {
         // DragDrop se reconfigura en shown.bs.modal, NO aquí
     }
     
-    //  CRÍTICO: Limpiar arrays de telas
+    // 🔥 CRÍTICO: Limpiar arrays de telas
     if (window.telasAgregadas) {
         window.telasAgregadas = [];
     }
@@ -1432,14 +1431,9 @@ function limpiarFormularioPrendaNueva() {
     if (window.imagenesPrendaStorage) {
         window.imagenesPrendaStorage.limpiar();
     }
-    
-    // 🔴 CRÍTICO: NO limpiar imagenesTelaStorage aquí
-    // Las imágenes de tela se cargan una sola vez cuando se abre la prenda
-    // y se preservan durante TODO el ciclo de edición de la prenda
-    // Solo se limpian cuando se ABRE una NUEVA prenda (en prenda-editor-telas.js)
-    // if (window.imagenesTelaStorage) {
-    //     window.imagenesTelaStorage.limpiar();
-    // }
+    if (window.imagenesTelaStorage) {
+        window.imagenesTelaStorage.limpiar();
+    }
 }
 
 /**
@@ -1664,7 +1658,7 @@ function configurarListenersModalPrenda() {
         return;
     }
     
-    // console.log(' [Modal] Configurando listeners...');
+    // console.log('🔧 [Modal] Configurando listeners...');
     
     // LISTENER DEL BOTÓN CERRAR
     btnCerrar.onclick = function(e) {
@@ -1684,7 +1678,7 @@ function configurarListenersModalPrenda() {
     if (modalOverlay) {
         modalOverlay.addEventListener('click', function(e) {
             if (e.target === modalOverlay) {
-                // console.log(' [Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
+                // console.log('[Modal] Click fuera del modal → Ejecutando cerrarModalPrendaNueva()');
                 cerrarModalPrendaNueva();
             }
         });
@@ -1724,7 +1718,7 @@ window.diagnosticarDelayModalCierre = function() {
     console.log('Para identificar el causante del delay de 3 segundos:\n');
     
     // Listar todos los timers activos
-    console.log(' Verificando procesos activos...\n');
+    console.log('📋 Verificando procesos activos...\n');
     
     // Buscar listeners de eventos en el documento
     const modalOverlay = document.getElementById('modal-agregar-prenda-nueva');

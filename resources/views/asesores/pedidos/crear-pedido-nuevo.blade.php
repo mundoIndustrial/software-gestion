@@ -73,6 +73,10 @@
                     <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
                 </div>
 
+                <div class="form-group">
+                    <label for="numero_pedido_editable">Número de Pedido</label>
+                    <input type="text" id="numero_pedido_editable" name="numero_pedido" readonly placeholder="Se asignará automáticamente" style="background-color: #f3f4f6; cursor: not-allowed;">
+                </div>
             </div>
         </div>
 
@@ -122,13 +126,13 @@
                 <span>3</span> Ítems del Pedido
             </h2>
 
-            <!-- Lista de ítems genéricos (readonly, después de agregar) -->
+            <!-- Lista de ítems genéricos -->
             <div id="lista-items-pedido" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <!-- Los ítems se agregarán aquí dinámicamente por ItemRenderer -->
+                <!-- Los ítems se agregarán aquí dinámicamente -->
             </div>
 
-            <!-- Formulario de entrada para prendas sin cotización (durante creación) -->
-            <div id="prendas-container-editable" style="margin-top: 1.5rem; display: none;">
+            <!-- Prendas del Pedido (dentro de Ítems del Pedido) -->
+            <div id="prendas-container-editable" style="margin-top: 1.5rem;">
                 <div class="empty-state">
                     <p>Agrega ítems al pedido</p>
                 </div>
@@ -164,6 +168,9 @@
 
     @php $v = config('app.asset_version'); @endphp
 
+    <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
+    <script defer src="{{ js_asset('js/utilidades/logger-app.js') }}?v={{ $v }}"></script>
+
     <!-- ─── Shared Services ─── -->
     <script defer src="{{ js_asset('js/servicios/shared/event-bus.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/servicios/shared/format-detector.js') }}?v={{ $v }}"></script>
@@ -173,10 +180,6 @@
     <script defer src="{{ js_asset('js/servicios/shared/shared-prenda-editor-service.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/servicios/shared/prenda-service-container.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/servicios/shared/initialization-helper.js') }}?v={{ $v }}"></script>
-
-    @if(config('app.debug'))
-    <script defer src="{{ js_asset('js/servicios/shared/system-validation-test.js') }}?v=1"></script>
-    @endif
 
     <!-- Inicializar contenedor de servicios (defer-compatible) -->
     <script>
@@ -232,15 +235,13 @@
     <script defer src="{{ js_asset('js/utilidades/modal-cleanup.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/tela-processor.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/prenda-data-builder.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/utilidades/logger-app.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/utilidades/validador-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/manejadores-procesos-prenda.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/gestor-modal-proceso-generico.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/procesos/renderizador-tarjetas-procesos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/procesos-imagenes-storage.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/componentes/manejo-imagenes-proceso.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/componentes/FileDialogStateManager.js') }}?v={{ $v }}"></script>
-    <script defer src="{{ js_asset('js/componentes/manejador-imagen-proceso-con-indice-v2.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 
     <!-- ESTILOS del componente tarjeta readonly -->
@@ -411,6 +412,7 @@
 <!-- ─── Final UI Scripts ─── -->
 <script defer src="{{ js_asset('js/modulos/crear-pedido/components/item-card-interactions.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-modal.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/drag-drop-procesos-estilo-prenda.js') }}?v={{ $v }}"></script>
 
 <!-- 🧪 TEST SUITE: Solo en desarrollo -->
 @if(config('app.debug'))

@@ -202,6 +202,9 @@ class SupervisorPedidosController extends Controller
             } else {
                 $query->where('estado', $estado);
             }
+        } else {
+            // Si NO hay filtro de estado específico, EXCLUIR pedidos anulados de la vista principal
+            $query->where('estado', '!=', 'Anulada');
         }
 
         // Filtro por asesora (por nombre)

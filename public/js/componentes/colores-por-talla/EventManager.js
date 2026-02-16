@@ -161,10 +161,55 @@ window.EventManager = (function() {
                 }
             },
             'btn-guardar-asignacion': () => {
-                window.ColoresPorTalla.wizardGuardarAsignacion();
-                setTimeout(() => {
-                    window.ColoresPorTalla.toggleVistaAsignacion();
-                }, 500);
+                const btnGuardar = document.getElementById('btn-guardar-asignacion');
+                const textoOriginal = btnGuardar ? btnGuardar.innerHTML : '';
+                
+                // Mostrar estado de carga
+                if (btnGuardar) {
+                    btnGuardar.disabled = true;
+                    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 0.5rem;"></span><span>Guardando...</span>';
+                    btnGuardar.style.opacity = '0.8';
+                    btnGuardar.style.pointerEvents = 'none';
+                }
+                
+                try {
+                    const resultado = window.ColoresPorTalla.wizardGuardarAsignacion();
+                    if (resultado) {
+                        // Mostrar éxito brevemente
+                        if (btnGuardar) {
+                            btnGuardar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">check_circle</span><span>¡Guardado!</span>';
+                            btnGuardar.classList.remove('btn-success');
+                            btnGuardar.classList.add('btn-success');
+                            btnGuardar.style.opacity = '1';
+                        }
+                        setTimeout(() => {
+                            // Restaurar botón
+                            if (btnGuardar) {
+                                btnGuardar.innerHTML = textoOriginal;
+                                btnGuardar.disabled = false;
+                                btnGuardar.style.pointerEvents = '';
+                                btnGuardar.style.opacity = '1';
+                            }
+                            window.ColoresPorTalla.toggleVistaAsignacion();
+                        }, 800);
+                    } else {
+                        // Restaurar botón si falla
+                        if (btnGuardar) {
+                            btnGuardar.innerHTML = textoOriginal;
+                            btnGuardar.disabled = false;
+                            btnGuardar.style.pointerEvents = '';
+                            btnGuardar.style.opacity = '1';
+                        }
+                    }
+                } catch (err) {
+                    console.error('[EventManager] Error al guardar:', err);
+                    if (btnGuardar) {
+                        btnGuardar.innerHTML = textoOriginal;
+                        btnGuardar.disabled = false;
+                        btnGuardar.style.pointerEvents = '';
+                        btnGuardar.style.opacity = '1';
+                    }
+                }
             },
             'wzd-btn-siguiente': () => window.WizardManager.pasoSiguiente(),
             'wzd-btn-atras': () => window.WizardManager.pasoAnterior()

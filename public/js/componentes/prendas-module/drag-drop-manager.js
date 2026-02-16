@@ -50,7 +50,7 @@ class DragDropManager {
     inicializar() {
         // Guard clause real: SI ya inicializado, SALIR completamente
         if (this.inicializado) {
-            UIHelperService.log('DragDropManager', ' Ya inicializado, ignorando llamada duplicada', 'info');
+            UIHelperService.log('DragDropManager', '✅ Ya inicializado, ignorando llamada duplicada', 'info');
             return this;  // ← Retorna AQUÍ, no continúa con el código abajo
         }
 
@@ -58,7 +58,7 @@ class DragDropManager {
 
         // Verificar dependencias antes de crear instancias
         if (!window.PrendaDragDropHandler || !window.TelaDragDropHandler || !window.ProcesoDragDropHandler) {
-            UIHelperService.log('DragDropManager', ' Dependencias no disponibles:', 'error');
+            UIHelperService.log('DragDropManager', '❌ Dependencias no disponibles:', 'error');
             UIHelperService.log('DragDropManager', `- PrendaDragDropHandler: ${!!window.PrendaDragDropHandler}`);
             UIHelperService.log('DragDropManager', `- TelaDragDropHandler: ${!!window.TelaDragDropHandler}`);
             UIHelperService.log('DragDropManager', `- ProcesoDragDropHandler: ${!!window.ProcesoDragDropHandler}`);
@@ -78,10 +78,10 @@ class DragDropManager {
         this._inicializarTelas();
         this._inicializarProcesos();
 
-        //  MARCAR como inicializado SOLO al final
+        // ✅ MARCAR como inicializado SOLO al final
         this.inicializado = true;
         
-        console.log('[DragDropManager]  Sistema de drag & drop inicializado correctamente');
+        console.log('[DragDropManager] ✅ Sistema de drag & drop inicializado correctamente');
         return this;
     }
 
@@ -95,7 +95,7 @@ class DragDropManager {
         }
 
         document.addEventListener('paste', (e) => {
-            UIHelperService.log('DragDropManager', ' EVENTO PASTE DETECTADO');
+            UIHelperService.log('DragDropManager', '📋 EVENTO PASTE DETECTADO');
             
             const preview = document.getElementById('nueva-prenda-foto-preview');
             const modal = document.getElementById('modal-agregar-prenda-nueva');
@@ -117,7 +117,7 @@ class DragDropManager {
                 return;
             }
             
-            UIHelperService.log('DragDropManager', ' Procesando pegado global...');
+            UIHelperService.log('DragDropManager', '✅ Procesando pegado global...');
             
             e.preventDefault();
             e.stopPropagation();
@@ -140,7 +140,7 @@ class DragDropManager {
                 
                 // Verificar si es una imagen
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    UIHelperService.log('DragDropManager', ` Imagen encontrada: ${item.type}`);
+                    UIHelperService.log('DragDropManager', `✅ Imagen encontrada: ${item.type}`);
                     foundImage = true;
                     
                     // Obtener el archivo
@@ -169,10 +169,10 @@ class DragDropManager {
                                 elementoCursor = document.elementFromPoint(clientX, clientY);
                                 UIHelperService.log('DragDropManager', `🎯 Elemento bajo cursor: ${elementoCursor?.id || elementoCursor?.tagName || 'desconocido'} (${clientX}, ${clientY})`);
                             } else {
-                                UIHelperService.log('DragDropManager', ` Posición del mouse no disponible, usando solo elemento activo`);
+                                UIHelperService.log('DragDropManager', `⚠️ Posición del mouse no disponible, usando solo elemento activo`);
                             }
                         } catch (error) {
-                            UIHelperService.log('DragDropManager', ` Error al obtener elemento bajo cursor: ${error.message}`);
+                            UIHelperService.log('DragDropManager', `⚠️ Error al obtener elemento bajo cursor: ${error.message}`);
                         }
                         
                         // 🔑 PRIORIDAD MEJORADA: Dar prioridad al elemento activo si está bien identificado
@@ -290,16 +290,16 @@ class DragDropManager {
                         if (!funcionManejo) {
                             handlerCorrecto = 'prendas (defecto)';
                             funcionManejo = window.manejarImagenesPrenda;
-                            UIHelperService.log('DragDropManager', ' Área no detectada, usando prendas por defecto');
+                            UIHelperService.log('DragDropManager', '⚠️ Área no detectada, usando prendas por defecto');
                         }
                         
                         // Usar la función de manejo correcta
                         if (typeof funcionManejo === 'function') {
-                            UIHelperService.log('DragDropManager', ` Llamando a manejarImagen${handlerCorrecto}...`);
+                            UIHelperService.log('DragDropManager', `✅ Llamando a manejarImagen${handlerCorrecto}...`);
                             funcionManejo(tempInput);
-                            UIHelperService.log('DragDropManager', ` Imagen procesada exitosamente en ${handlerCorrecto}`);
+                            UIHelperService.log('DragDropManager', `✅ Imagen procesada exitosamente en ${handlerCorrecto}`);
                         } else {
-                            UIHelperService.log('DragDropManager', ` manejarImagen${handlerCorrecto} no disponible`, 'error');
+                            UIHelperService.log('DragDropManager', `❌ manejarImagen${handlerCorrecto} no disponible`, 'error');
                         }
                         
                         // Salir después de procesar la primera imagen
@@ -312,13 +312,13 @@ class DragDropManager {
             
             // Si no se encontraron imágenes
             if (!foundImage) {
-                UIHelperService.log('DragDropManager', ' No se encontraron imágenes en el portapapeles', 'warn');
+                UIHelperService.log('DragDropManager', '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
                 UIHelperService.mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
             }
         }, true); // Usar captura para interceptar antes que otros listeners
         
         this.globalPasteListenerConfigurado = true;
-        // UIHelperService.log('DragDropManager', ' Listener global de paste configurado');
+        // UIHelperService.log('DragDropManager', '✅ Listener global de paste configurado');
     }
 
     /**
@@ -348,85 +348,33 @@ class DragDropManager {
      * @private
      */
     _inicializarTelas() {
-        // 🔴 CRÍTICO: LIMPIAR tabla de telas cuando se abre el modal
-        // Esto asegura que no haya telas residuales de la prenda anterior
-        if (window.PrendaEditorTelas && typeof window.PrendaEditorTelas.limpiarTabla === 'function') {
-            window.PrendaEditorTelas.limpiarTabla();
-        }
         
         // Configurar drag & drop en el botón
         const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
         if (dropZone) {
             this.telaHandler.configurarDropZone(dropZone);
-            UIHelperService.log('DragDropManager', ' Drop zone de telas configurada');
+            UIHelperService.log('DragDropManager', '✅ Drop zone de telas configurada');
         } else {
-            UIHelperService.log('DragDropManager', ' Drop zone de telas no encontrada', 'warn');
-        }
-        
-        // Configurar listener en el botón "Agregar imagen" (CON GUARD para evitar duplicados)
-        const btnAgregarImagenTela = document.getElementById('btn-agregar-imagen-tela');
-        if (btnAgregarImagenTela) {
-            // 🔴 CRÍTICO FIX: Prevenir listeners duplicados
-            if (!btnAgregarImagenTela._listenerAgregado) {
-                btnAgregarImagenTela.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
-                    if (fileInput) {
-                        fileInput.click();
-                        UIHelperService.log('DragDropManager', '🖱️ Click en botón Agregar imagen - abriendo file input');
-                    } else {
-                        UIHelperService.log('DragDropManager', ' File input no encontrado', 'error');
-                    }
-                });
-                btnAgregarImagenTela._listenerAgregado = true;
-                UIHelperService.log('DragDropManager', ' Listener agregado al botón "Agregar imagen de tela"');
-            } else {
-                UIHelperService.log('DragDropManager', ' ✓ Listener del botón YA EXISTE - ignorando duplicado', 'info');
-            }
-        } else {
-            UIHelperService.log('DragDropManager', ' Botón "Agregar imagen" no encontrado', 'warn');
-        }
-        
-        // Configurar listener en el file input (change event) (CON GUARD para evitar duplicados)
-        const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
-        if (fileInput) {
-            // 🔴 CRÍTICO FIX: Prevenir listeners duplicados
-            if (!fileInput._listenerAgregado) {
-                fileInput.addEventListener('change', (e) => {
-                    UIHelperService.log('DragDropManager', '📁 cambio detectado en file input');
-                    if (typeof window.manejarImagenTela === 'function') {
-                        window.manejarImagenTela(fileInput);
-                    } else {
-                        UIHelperService.log('DragDropManager', ' Función manejarImagenTela no disponible', 'error');
-                    }
-                });
-                fileInput._listenerAgregado = true;
-                UIHelperService.log('DragDropManager', ' Listener agregado al file input');
-            } else {
-                UIHelperService.log('DragDropManager', ' ✓ Listener del file input YA EXISTE - ignorando duplicado', 'info');
-            }
-        } else {
-            UIHelperService.log('DragDropManager', ' File input no encontrado', 'warn');
+            UIHelperService.log('DragDropManager', '❌ Drop zone de telas no encontrada', 'warn');
         }
         
         // Configurar drag & drop en el preview si ya hay imágenes
         const preview = document.getElementById('nueva-prenda-tela-preview');
         if (preview) {
-            UIHelperService.log('DragDropManager', ' Preview de telas encontrado');
+            UIHelperService.log('DragDropManager', '✅ Preview de telas encontrado');
             // En el modal de prendas, el preview de telas está oculto por defecto
             // No mostrar warning ya que es comportamiento normal
             if (preview.style.display !== 'none') {
                 this.telaHandler.configurarPreview(preview);
-                UIHelperService.log('DragDropManager', ' Preview de telas configurado');
+                UIHelperService.log('DragDropManager', '✅ Preview de telas configurado');
             } else {
-                UIHelperService.log('DragDropManager', ' Preview de telas oculto (comportamiento normal en modal de prendas)');
+                UIHelperService.log('DragDropManager', 'ℹ️ Preview de telas oculto (comportamiento normal en modal de prendas)');
             }
         } else {
-            UIHelperService.log('DragDropManager', ' Preview de telas no encontrado', 'warn');
+            UIHelperService.log('DragDropManager', '❌ Preview de telas no encontrado', 'warn');
         }
         
-        UIHelperService.log('DragDropManager', ' Sistema de telas inicializado');
+        UIHelperService.log('DragDropManager', '✅ Sistema de telas inicializado');
     }
 
     /**

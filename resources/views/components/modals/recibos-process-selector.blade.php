@@ -95,6 +95,7 @@
         align-items: center;
         transition: background 0.2s;
         user-select: none;
+        position: relative;
     }
 
     .prenda-header:hover {
@@ -104,6 +105,44 @@
     .prenda-header.expanded {
         background: #dbeafe;
         border-bottom: 2px solid #3b82f6;
+    }
+
+    .prenda-header.entregada {
+        background: #dbeafe !important;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .btn-entregar-prenda {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 12px;
+    }
+
+    .btn-entregar-prenda:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-entregar-prenda.entregado {
+        background: #3b82f6;
+        cursor: default;
+    }
+
+    .btn-entregar-prenda.entregado:hover {
+        background: #3b82f6;
+        transform: none;
+        box-shadow: none;
     }
 
     .prenda-title {
@@ -460,13 +499,25 @@
             const totalRecibos = recibos.length;
             const indicadorBodega = prenda.de_bodega == 1 ? ' <span style="color: #ef4444; font-size: 12px; font-weight: 600; margin-left: 8px;">(SE SACA DE BODEGA)</span>' : '';
 
+            // Verificar si la prenda está entregada
+            const estaEntregada = prenda.entrega?.entregado || false;
+            const claseEntregada = estaEntregada ? 'entregada' : '';
+            const claseBotonEntregado = estaEntregada ? 'entregado' : '';
+            const textoBoton = estaEntregada ? 'Entregado' : 'Entregar';
+            const colorBoton = estaEntregada ? '#3b82f6' : '#10b981';
+            const iconoBoton = estaEntregada ? 'fa-check-double' : 'fa-check-circle';
+
             html += `
                 <div class="prenda-accordion">
-                    <div class="prenda-header" onclick="togglePrendaAccordion(this, '${idAccordion}')">
+                    <div class="prenda-header ${claseEntregada}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}">
                         <div style="flex: 1;">
                             <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}</p>
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
+                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};">
+                            <i class="fas ${iconoBoton}"></i>
+                            <span>${textoBoton}</span>
+                        </button>
                         <div class="prenda-chevron">▼</div>
                     </div>
                     <div class="prenda-processes" id="${idAccordion}">
@@ -866,6 +917,81 @@
             }, 300);
         }, 3000);
     }
+
+    /**
+     * Toggle del estado de entrega de una prenda
+     * @param {HTMLElement} button - Botón que se clickeó
+     * @param {number} prendaId - ID de la prenda
+     */
+    window.toggleEntregarPrenda = async function(button, prendaId) {
+        const header = button.closest('.prenda-header');
+        const buttonText = button.querySelector('span');
+        const icon = button.querySelector('i');
+        const isEntregada = header.classList.contains('entregada');
+        const nuevoEstado = !isEntregada;
+        
+        // Deshabilitar botón mientras se procesa
+        button.disabled = true;
+        button.style.opacity = '0.6';
+        button.style.cursor = 'not-allowed';
+        
+        try {
+            // Guardar en base de datos
+            const response = await fetch(`/api/prendas-entregas/${prendaId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    entregado: nuevoEstado
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Error al actualizar estado');
+            }
+            
+            // Actualizar UI solo si la petición fue exitosa
+            if (nuevoEstado) {
+                // Cambiar a entregada
+                header.classList.add('entregada');
+                button.classList.add('entregado');
+                buttonText.textContent = 'Entregado';
+                button.style.background = '#3b82f6';
+                icon.className = 'fas fa-check-double';
+                
+                console.log(`[Prenda ${prendaId}] Estado cambiado a: ENTREGADA`, result.data);
+                mostrarMensajeExito(result.message || 'Prenda marcada como entregada');
+            } else {
+                // Cambiar a NO entregada
+                header.classList.remove('entregada');
+                button.classList.remove('entregado');
+                buttonText.textContent = 'Entregar';
+                button.style.background = '#10b981';
+                icon.className = 'fas fa-check-circle';
+                
+                console.log(`[Prenda ${prendaId}] Estado cambiado a: NO ENTREGADA`);
+                mostrarMensajeExito(result.message || 'Prenda marcada como no entregada');
+            }
+            
+        } catch (error) {
+            console.error(`[Prenda ${prendaId}] Error al actualizar estado:`, error);
+            alert('Error al actualizar el estado de entrega: ' + error.message);
+        } finally {
+            // Rehabilitar botón
+            button.disabled = false;
+            button.style.opacity = '1';
+            button.style.cursor = 'pointer';
+        }
+    };
 
     /**
      * Carga los datos de recibos y actualiza la vista

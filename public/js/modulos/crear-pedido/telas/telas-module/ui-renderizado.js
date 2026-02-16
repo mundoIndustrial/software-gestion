@@ -95,7 +95,7 @@ window.actualizarTablaTelas = function() {
     
     // Insertar las telas DESPUÉS de la fila de inputs (si existe)
     // Esto hace que el mensaje "No hay telas" o las telas existentes queden DEBAJO de los inputs
-    console.log('[actualizarTablaTelas] 📍 Insertando fragment en DOM...');
+    console.log('[actualizarTablaTelas] Insertando fragment en DOM...');
     if (filaInputs) {
         console.log('[actualizarTablaTelas] ✓ Insertando DESPUÉS de fila de inputs');
         filaInputs.parentNode.insertBefore(fragment, filaInputs.nextSibling);
@@ -132,6 +132,13 @@ function crearFilaTela(tela, index) {
                 return { file: img, previewUrl: blobUrl, nombre: img.name };
             }
             
+            // 🔴 PRIORIDAD: Si tiene File object, SIEMPRE crear nueva blob URL
+            // (la previewUrl puede ser una blob URL stale/revocada)
+            if (img.file && img.file instanceof File) {
+                const blobUrl = URL.createObjectURL(img.file);
+                return { ...img, previewUrl: blobUrl };
+            }
+            
             // Para edición, las imágenes guardadas tienen diferentes estructura
             // Si tiene ruta (URL del servidor), usarla
             if (img.ruta) {
@@ -143,18 +150,7 @@ function crearFilaTela(tela, index) {
                 return { ...img, previewUrl: img.url };
             }
             
-            // Si tiene previewUrl y no es un blob temporal, usarla directamente
-            if (img.previewUrl && !img.previewUrl.startsWith('blob:')) {
-                return { ...img, previewUrl: img.previewUrl };
-            }
-            
-            // Si tiene file (solo para creación), crear blob
-            if (img.file) {
-                const blobUrl = URL.createObjectURL(img.file);
-                return { ...img, previewUrl: blobUrl };
-            }
-            
-            // Si tiene previewUrl pero es blob temporal, mantenerlo
+            // Si tiene previewUrl (blob o URL del servidor), usarla directamente
             if (img.previewUrl) {
                 return { ...img, previewUrl: img.previewUrl };
             }

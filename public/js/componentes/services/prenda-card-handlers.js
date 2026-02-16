@@ -319,14 +319,10 @@ window.PrendaCardHandlers = {
                     if (esCrearNuevo && window.gestionItemsUI) {
 
                         window.gestionItemsUI.prendaEditIndex = prendaIndex;
+                        // 🔴 abrirModalAgregarPrendaNueva() YA detecta prendaEditIndex !== null
+                        // y llama a cargarPrendaEnModal() internamente (línea 373 de gestion-items-pedido.js).
+                        // NO hacer segunda llamada con setTimeout — causaba doble carga de la prenda.
                         window.gestionItemsUI.abrirModalAgregarPrendaNueva();
-                        
-                        // Esperar a que el modal se abra, se limpie y luego cargar datos
-                        // Aumentar delay para asegurar que modal-cleanup termine
-                        setTimeout(() => {
-
-                            window.gestionItemsUI.prendaEditor?.cargarPrendaEnModal(prenda, prendaIndex);
-                        }, 500);
                     }
                     // Si es pedido guardado, abrir modal simple de edición
                     else if (window.abrirEditarPrendaModal) {

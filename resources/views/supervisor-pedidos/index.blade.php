@@ -5,6 +5,14 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/supervisor-pedidos/index.css') }}">
+    <!-- CSS para modal-agregar-prenda-nueva y formularios de edición -->
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/crear-pedido-editable.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-modal-consistency.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/swal-z-index-fix.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
 @endpush
 
 @section('content')
@@ -20,7 +28,7 @@
                 color: white;
                 padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: 200px 140px 200px 140px 150px 150px;
+                grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
                 gap: 1.2rem;
                 font-weight: 600;
                 font-size: 0.8rem;
@@ -41,6 +49,12 @@
                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                     <span>Cliente</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                        <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Estado</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                     </button>
                 </div>
@@ -71,7 +85,7 @@
                 @foreach($ordenes as $orden)
                     <div style="
                         display: grid;
-                        grid-template-columns: 200px 140px 200px 140px 150px 150px;
+                        grid-template-columns: 200px 140px 200px 150px 140px 150px 150px;
                         gap: 1.2rem;
                         padding: 1rem;
                         border-bottom: 1px solid #e5e7eb;
@@ -181,6 +195,26 @@
                         <!-- Cliente -->
                         <div>
                             <span>{{ $orden->cliente }}</span>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div>
+                            @php
+                                $estadoColors = [
+                                    'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'text' => '#856404', 'label' => 'Pendiente Supervisor'],
+                                    'PENDIENTE_INSUMOS' => ['bg' => '#d1ecf1', 'text' => '#0c5460', 'label' => 'Pendiente Insumos'],
+                                    'En Ejecución' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'En Ejecución'],
+                                    'No iniciado' => ['bg' => '#e2e3e5', 'text' => '#383d41', 'label' => 'No Iniciado'],
+                                    'Entregado' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'Entregado'],
+                                    'Finalizada' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'Finalizada'],
+                                    'Anulada' => ['bg' => '#f8d7da', 'text' => '#721c24', 'label' => 'Anulada'],
+                                    'DEVUELTO_A_ASESORA' => ['bg' => '#f8d7da', 'text' => '#721c24', 'label' => 'Devuelto'],
+                                ];
+                                $estadoInfo = $estadoColors[$estado] ?? ['bg' => '#e2e3e5', 'text' => '#383d41', 'label' => $estado];
+                            @endphp
+                            <span style="background: {{ $estadoInfo['bg'] }}; color: {{ $estadoInfo['text'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">
+                                {{ $estadoInfo['label'] }}
+                            </span>
                         </div>
                         
                         <!-- Novedades -->
@@ -1046,6 +1080,13 @@
     <script src="{{ asset('js/lazy-loaders/prenda-editor-preloader.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/prenda-editor-loader-modular.js') }}"></script>
     <script src="{{ asset('js/lazy-loaders/epp-manager-loader.js') }}"></script>
+
+    <!-- Scripts para edición de prendas desde lista de pedidos (requeridos por editarPrendaDePedido) -->
+    <script defer src="{{ asset('js/modulos/crear-pedido/prendas/prenda-editor.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/crear-pedido/tallas/gestion-tallas.js') }}"></script>
+    <script defer src="{{ asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-form-collector.js') }}"></script>
+    <script defer src="{{ asset('js/componentes/prenda-editor-pedidos-adapter.js') }}"></script>
     
     <!-- Scripts para funcionalidad de asesores - Módulos Desacoplados -->
     <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>

@@ -13,11 +13,11 @@ class PrendasEditorHelper {
 
             await container.initialize();
             window.editorPrendas = container.getService('editor');
-            console.log(' Servicios de edición de prendas inicializados');
+            Logger.success('Servicios de edición de prendas inicializados', 'PrendasEditorHelper');
             
             return window.editorPrendas;
         } catch (error) {
-            console.error(' Error inicializando servicios:', error);
+            Logger.error('Error inicializando servicios', 'PrendasEditorHelper', error);
             throw error;
         }
     }
@@ -146,7 +146,7 @@ class PrendasEditorHelper {
     static on(eventName, callback) {
         const container = window.prendasServiceContainer;
         if (!container) {
-            console.warn('Service container no disponible');
+            Logger.warn('Service container no disponible', 'PrendasEditorHelper');
             return;
         }
 
@@ -162,7 +162,7 @@ class PrendasEditorHelper {
     static once(eventName, callback) {
         const container = window.prendasServiceContainer;
         if (!container) {
-            console.warn('Service container no disponible');
+            Logger.warn('Service container no disponible', 'PrendasEditorHelper');
             return;
         }
 
@@ -178,7 +178,7 @@ class PrendasEditorHelper {
     static setDebug(enabled = true) {
         const container = window.prendasServiceContainer;
         if (!container) {
-            console.warn('Service container no disponible');
+            Logger.warn('Service container no disponible', 'PrendasEditorHelper');
             return;
         }
 
@@ -203,4 +203,4 @@ class PrendasEditorHelper {
 // Exportar globalmente
 window.PrendasEditorHelper = PrendasEditorHelper;
 
-console.log('[PrendasEditorHelper] 🆗 Cargado y disponible globalmente');
+Logger.debug('PrendasEditorHelper cargado', 'PrendasEditorHelper');

@@ -770,6 +770,12 @@ async function abrirModalFactura(pedidoId) {
     const modal = document.getElementById('modalFactura');
     const contenido = document.getElementById('facturaContenido');
     
+    // Si el modal no existe en esta vista, abrir en nueva pestaña
+    if (!modal || !contenido) {
+        window.open(`/gestion-bodega/pedidos/${pedidoId}`, '_blank');
+        return;
+    }
+    
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';

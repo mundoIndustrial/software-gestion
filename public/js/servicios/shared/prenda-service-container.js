@@ -24,7 +24,7 @@ class PrendaServiceContainer {
         };
 
         if (this.config.debug) {
-            console.log('[PrendaServiceContainer]  Modo DEBUG habilitado');
+            Logger.debug('Modo DEBUG habilitado', 'PrendaServiceContainer');
         }
     }
 
@@ -34,11 +34,11 @@ class PrendaServiceContainer {
      */
     async initialize() {
         if (this.initialized) {
-            console.log('[PrendaServiceContainer]  Ya inicializado, ignorando...');
+            Logger.debug('Ya inicializado, ignorando...', 'PrendaServiceContainer');
             return;
         }
 
-        console.log('[PrendaServiceContainer] 🚀 Inicializando servicios compartidos...');
+        Logger.info('Inicializando servicios compartidos...', 'PrendaServiceContainer');
 
         try {
             // 1️⃣ EventBus
@@ -46,14 +46,14 @@ class PrendaServiceContainer {
             if (this.config.debug) {
                 this.services.eventBus.enableDebug(true);
             }
-            console.log('[PrendaServiceContainer] ✓ EventBus inicializado');
+            Logger.debug('EventBus inicializado', 'PrendaServiceContainer');
 
             // 2️⃣ FormatDetector
             this.services.formatDetector = new FormatDetector();
             if (this.config.debug) {
                 this.services.formatDetector.enableDebug(true);
             }
-            console.log('[PrendaServiceContainer] ✓ FormatDetector inicializado');
+            Logger.debug('FormatDetector inicializado', 'PrendaServiceContainer');
 
             // 3️⃣ DataService
             this.services.data = new SharedPrendaDataService({
@@ -62,20 +62,20 @@ class PrendaServiceContainer {
                 cacheTTL: this.config.cacheTTL,
                 formatDetector: this.services.formatDetector
             });
-            console.log('[PrendaServiceContainer] ✓ DataService inicializado');
+            Logger.debug('DataService inicializado', 'PrendaServiceContainer');
 
             // 4️⃣ StorageService
             this.services.storage = new SharedPrendaStorageService({
                 endpointBase: this.config.storageEndpoint,
                 maxFileSize: this.config.maxFileSize || 5 * 1024 * 1024
             });
-            console.log('[PrendaServiceContainer] ✓ StorageService inicializado');
+            Logger.debug('StorageService inicializado', 'PrendaServiceContainer');
 
             // 5️⃣ ValidationService
             this.services.validation = new SharedPrendaValidationService({
                 rules: this.config.validationRules
             });
-            console.log('[PrendaServiceContainer] ✓ ValidationService inicializado');
+            Logger.debug('ValidationService inicializado', 'PrendaServiceContainer');
 
             // 6️⃣ EditorService (orquestador principal)
             this.services.editor = new SharedPrendaEditorService({
@@ -84,21 +84,20 @@ class PrendaServiceContainer {
                 validationService: this.services.validation,
                 eventBus: this.services.eventBus
             });
-            console.log('[PrendaServiceContainer] ✓ EditorService inicializado');
+            Logger.debug('EditorService inicializado', 'PrendaServiceContainer');
 
             // 7️⃣ Conectar eventos
             this.conectarEventos();
-            console.log('[PrendaServiceContainer] ✓ Eventos conectados');
+            Logger.debug('Eventos conectados', 'PrendaServiceContainer');
 
             // Marcar como inicializado
             this.initialized = true;
             this.services.eventBus.emit('container:inicializado');
 
-            console.log('[PrendaServiceContainer]  TODOS LOS SERVICIOS INICIALIZADOS CORRECTAMENTE');
-            console.log('[PrendaServiceContainer] 🔐 AISLADO DE COTIZACIONES');
+            Logger.success('Todos los servicios inicializados correctamente', 'PrendaServiceContainer');
 
         } catch (error) {
-            console.error('[PrendaServiceContainer]  Error inicializando:', error);
+            Logger.error('Error inicializando servicios', 'PrendaServiceContainer', error);
             throw error;
         }
     }
@@ -142,18 +141,18 @@ class PrendaServiceContainer {
 
         // Cuando el editor carga datos, emitir evento para UI
         eventBus.on('editor:datos-cargados', (datos) => {
-            console.log('[PrendaServiceContainer] 📢 Evento: datos-cargados');
+            Logger.debug('Evento: datos-cargados', 'PrendaServiceContainer');
             // En la práctica, la UI se suscribe a este evento
         });
 
         // Cuando hay error
         eventBus.on('editor:error', (error) => {
-            console.error('[PrendaServiceContainer] 📢 Evento: error', error);
+            Logger.error('Evento: error', 'PrendaServiceContainer', error);
         });
 
         // Cuando se guarda
         eventBus.on('editor:guardado', (prenda) => {
-            console.log('[PrendaServiceContainer] 📢 Evento: guardado', prenda.nombre);
+            Logger.debug('Evento: guardado', 'PrendaServiceContainer', prenda.nombre);
         });
     }
 
@@ -161,7 +160,7 @@ class PrendaServiceContainer {
      * Limpiar recursos (logout, cambio de página, etc)
      */
     destroy() {
-        console.log('[PrendaServiceContainer] 🗑️ Destruyendo servicios...');
+        Logger.info('Destruyendo servicios...', 'PrendaServiceContainer');
 
         // Limpiar éventualmente
         if (this.services.data) {
@@ -175,7 +174,7 @@ class PrendaServiceContainer {
         this.services = {};
         this.initialized = false;
 
-        console.log('[PrendaServiceContainer] ✓ Servicios destruidos');
+        Logger.debug('Servicios destruidos', 'PrendaServiceContainer');
     }
 
     /**
@@ -204,7 +203,7 @@ class PrendaServiceContainer {
             this.services.formatDetector.enableDebug(enabled);
         }
 
-        console.log(`[PrendaServiceContainer] Debug: ${enabled ? 'HABILITADO' : 'DESHABILITADO'}`);
+        Logger.info(`Debug: ${enabled ? 'HABILITADO' : 'DESHABILITADO'}`, 'PrendaServiceContainer');
     }
 }
 
@@ -221,4 +220,4 @@ if (!window.prendasServiceContainer) {
 
 // Exportar
 window.PrendaServiceContainer = PrendaServiceContainer;
-console.log('[PrendaServiceContainer] 🔐 Contenedor cargado (AISLADO DE COTIZACIONES)');
+Logger.debug('Contenedor cargado', 'PrendaServiceContainer');

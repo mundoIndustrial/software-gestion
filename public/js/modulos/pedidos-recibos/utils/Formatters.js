@@ -364,6 +364,13 @@ export class Formatters {
             lineas.push(partes.join(' | '));
         }
 
+        // 2.5. Descripción de la prenda (antes de ubicaciones)
+        if (prenda.descripcion && prenda.descripcion.trim()) {
+            lineas.push('');
+            lineas.push('<strong>DESCRIPCIÓN:</strong>');
+            lineas.push(prenda.descripcion);
+        }
+
         // 3. Ubicaciones
         let ubicacionesArray = [];
         if (proceso.ubicaciones) {

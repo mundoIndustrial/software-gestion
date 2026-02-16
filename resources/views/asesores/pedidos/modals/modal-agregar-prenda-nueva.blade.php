@@ -1,5 +1,5 @@
 <!-- MODAL: Agregar Prenda Nueva (Sin Cotización) -->
-<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 99999; align-items: center; justify-content: center; overflow: hidden; padding: 2rem 0;">
+<div id="modal-agregar-prenda-nueva" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1050000; align-items: center; justify-content: center; overflow-y: auto; padding: 2rem 0;">
     <div class="modal-container modal-xl">
         <!-- Header -->
         <div class="modal-header modal-header-primary">
@@ -86,7 +86,7 @@
                         <label class="form-label-primary">
                             <span class="material-symbols-rounded">palette</span>COLOR, TELA Y REFERENCIA
                         </label>
-                        <button type="button" id="btn-asignar-colores-tallas" class="btn btn-primary btn-sm" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                        <button type="button" id="btn-asignar-colores-tallas" class="btn btn-primary btn-sm" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="abrirModalAsignarColores();">
                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">color_lens</span>Asignar por Talla
                         </button>
                     </div>
@@ -125,16 +125,14 @@
                                         <input type="text" id="nueva-prenda-referencia" placeholder="REF..." class="form-input" style="width: 100%; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
                                     </td>
                                     <td style="padding: 0.5rem; text-align: center; vertical-align: top; width: 20%; position: relative; overflow: visible;">
-                                        <!-- Botón para seleccionar imagen (listener manejado por FileInputManager) -->
-                                        <button type="button" id="btn-agregar-imagen-tela" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen">
+                                        <!-- Botón para seleccionar imagen -->
+                                        <button type="button" class="btn btn-success btn-flex" style="font-size: 0.75rem; padding: 0.5rem 1rem; transition: all 0.2s ease; margin-bottom: 8px; pointer-events: auto; background: rgb(37, 99, 235); transform: scale(1.05); box-shadow: rgba(59, 130, 246, 0.3) 0px 4px 12px;" title="Click para seleccionar imagen" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal-agregar-prenda-nueva-file-input').click(); return false;">
                                             <span class="material-symbols-rounded" style="font-size: 1.2rem; margin-right: 0.5rem;">image</span>
                                             <span style="font-size: 0.7rem;">Agregar imagen</span>
                                         </button>
-                                        <!-- Input file: listeners manejados por FileInputManager (NO usar onchange inline) -->
-                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela">
+                                        <input type="file" id="modal-agregar-prenda-nueva-file-input" accept="image/*" style="display: none;" aria-label="Imagen de la tela" onchange="manejarImagenTela(this)">
                                         
-                                        <!-- Drop-zone: listeners manejados por FileInputManager (NO usar ondragover, ondrop inline) -->
-                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;">
+                                        <div id="nueva-prenda-tela-drop-zone" class="tela-drop-zone" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; width: 100%; transition: all 0.2s ease; border: 2px dashed #0066cc; border-radius: 6px; padding: 8px; cursor: pointer; background: #f0f7ff;" data-zona="tela" data-estado="inicial" tabindex="0">
                                             <!-- Texto de ayuda -->
                                             <div style="text-align: center; color: #0066cc; font-size: 0.7rem; margin-top: 4px; pointer-events: none; font-weight: 500;">
                                                 <div class="material-symbols-rounded" style="font-size: 1.2rem;">cloud_upload</div>
@@ -154,187 +152,9 @@
                         </table>
                     </div>
                     
-                    <!-- VISTA 2: WIZARD - Asignar Colores por Talla (Oculta inicialmente) -->
-                    <div id="vista-asignacion-colores" style="display: none;">
-                        
-                        <!-- INDICADOR DE PROGRESO -->
-                        <div id="wizard-indicador-progreso" style="margin-bottom: 2rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                                <!-- PASO 0: TELA (solo visible si hay múltiples telas) -->
-                                <div id="paso-0-wrapper" style="flex: 1; text-align: center; display: none;">
-                                    <div id="paso-0-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">0</div>
-                                    <div style="font-size: 0.875rem; font-weight: 500; color: #1f2937;">Tela</div>
-                                </div>
-                                <div id="paso-0-linea" style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem; display: none;"></div>
-
-                                <!-- PASO 1: GÉNERO -->
-                                <div style="flex: 1; text-align: center;">
-                                    <div id="paso-1-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">1</div>
-                                    <div style="font-size: 0.875rem; font-weight: 500; color: #1f2937;">Género</div>
-                                </div>
-                                <div id="paso-1-linea" style="flex-grow: 1; height: 2px; background: #3b82f6; margin-bottom: 1.5rem;"></div>
-                                
-                                <!-- PASO 2: TALLA -->
-                                <div style="flex: 1; text-align: center;">
-                                    <div id="paso-2-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">2</div>
-                                    <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Talla</div>
-                                </div>
-                                <div id="paso-2-linea" style="flex-grow: 1; height: 2px; background: #d1d5db; margin-bottom: 1.5rem;"></div>
-                                
-                                <!-- PASO 3: COLORES -->
-                                <div style="flex: 1; text-align: center;">
-                                    <div id="paso-3-indicator" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #d1d5db; color: #6b7280; border-radius: 50%; font-weight: bold; margin: 0 auto 0.5rem;">3</div>
-                                    <div style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Colores</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PASO 0: SELECCIONAR TELA (solo visible si hay múltiples telas) -->
-                        <div id="wizard-paso-0" style="display: none;">
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; text-align: center;">
-                                <h3 style="color: #111827; margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 600;">Selecciona Tela</h3>
-                                <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.85rem;">¿Qué tela deseas asignar?</p>
-                                
-                                <div id="wizard-telas-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
-                                    <!-- Botones de tela dinámicos -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PASO 1: GÉNERO -->
-                        <div id="wizard-paso-1" style="display: block;">
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; text-align: center;">
-                                <h3 style="color: #111827; margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 600;">Selecciona Género</h3>
-                                <p style="color: #6b7280; margin: 0 0 1.5rem 0; font-size: 0.85rem;">¿Qué tipo de prenda es?</p>
-                                
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem;">
-                                    <button type="button" class="wizard-genero-btn" data-genero="dama" onclick="wizardSeleccionarGenero('dama')" style="padding: 1rem; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem; color: #374151; transition: all 0.2s;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem; color: #6b7280;">woman</span>
-                                        DAMA
-                                    </button>
-                                    
-                                    <button type="button" class="wizard-genero-btn" data-genero="caballero" onclick="wizardSeleccionarGenero('caballero')" style="padding: 1rem; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem; color: #374151; transition: all 0.2s;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem; color: #6b7280;">man</span>
-                                        CABALLERO
-                                    </button>
-                                    
-                                    <button type="button" class="wizard-genero-btn" data-genero="sobremedida" onclick="wizardSeleccionarGenero('sobremedida')" style="padding: 1rem; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem; color: #374151; transition: all 0.2s;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem; color: #6b7280;">accessibility_new</span>
-                                        SOBRE MEDIDA
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PASO 2: TALLA -->
-                        <div id="wizard-paso-2" style="display: none;">
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
-                                <h3 style="color: #111827; margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Selecciona Talla</h3>
-                                <div id="wizard-genero-seleccionado" style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.25rem;">Género: <strong style="color: #374151;">-- No seleccionado --</strong></div>
-                                
-                                <div id="wizard-tallas-contenedor" style="display: flex; flex-direction: column; gap: 1rem;">
-                                    <!-- Botones de talla dinámicos -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PASO 3: COLORES -->
-                        <div id="wizard-paso-3" style="display: none;">
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
-                                <h3 style="color: #111827; margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Asignar Colores y Cantidades</h3>
-                                <div id="wizard-resumen-seleccion" style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.25rem; background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        Género: <strong style="color: #374151;" id="wizard-genero-label">--</strong> | Talla: <strong style="color: #374151;" id="wizard-talla-label">--</strong>
-                                    </div>
-                                    <div style="background: #f3f4f6; padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #d1d5db; font-size: 0.85rem; white-space: nowrap;">
-                                        <span style="color: #6b7280;">Tela:</span> <strong style="color: #374151;" id="wizard-tela-label">--</strong>
-                                    </div>
-                                </div>
-                                
-                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-                                    <label style="font-weight: 600; color: #1f2937; font-size: 0.95rem; display: block; margin-bottom: 1rem;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle; margin-right: 0.5rem;">color_lens</span>COLORES DISPONIBLES
-                                    </label>
-                                    <div id="lista-colores-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem;"></div>
-                                </div>
-                                
-                                <div id="seccion-agregar-color-personalizado" style="background: white; border: 1px dashed #d1d5db; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
-                                    <label for="color-personalizado-input" style="font-size: 0.875rem; color: #6b7280; font-weight: 500; display: block; margin-bottom: 0.5rem;">O especificar color personalizado:</label>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <input type="text" id="color-personalizado-input" placeholder="Ej: ROJO, VERDE..." class="form-input" style="flex: 1; padding: 0.5rem; text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase();">
-                                        <label for="cantidad-color-personalizado" class="sr-only">Cantidad de color</label>
-                                        <input type="number" id="cantidad-color-personalizado" placeholder="Cant" class="form-input" style="width: 80px; padding: 0.5rem;" min="1" value="1">
-                                        <button type="button" class="btn btn-primary" onclick="agregarColorPersonalizado()" style="padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
-                                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">add</span>
-                                            <span>Agregar</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- BOTONES DE NAVEGACIÓN -->
-                        <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center; margin-top: 2rem;">
-                            <button type="button" id="wzd-btn-atras" class="btn btn-secondary" style="display: none;">
-                                <span class="material-symbols-rounded">arrow_back</span>Atrás
-                            </button>
-                            
-                            <div style="flex: 1;"></div>
-                            
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <button type="button" class="btn btn-secondary">
-                                    <span class="material-symbols-rounded">close</span>Cancelar
-                                </button>
-                                
-                                <button type="button" id="wzd-btn-siguiente" class="btn btn-primary" style="display: none; align-items: center; gap: 0.25rem;">
-                                    Siguiente<span class="material-symbols-rounded">arrow_forward</span>
-                                </button>
-                                
-                                <button type="button" id="btn-guardar-asignacion" class="btn btn-success" style="display: none; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 600;">
-                                    <span class="material-symbols-rounded">check_circle</span>Guardar Asignación
-                                </button>
-                            </div>
-                        </div>
-                        <input type="hidden" id="asignacion-genero-select" value="" aria-label="Género seleccionado para asignación">
-                        <input type="hidden" id="asignacion-talla-select" value="" aria-label="Talla seleccionada para asignación">
-                        <input type="hidden" id="contador-asignaciones" value="0" aria-label="Contador de asignaciones">
-                    </div>
-
-                    <!-- RESUMEN DE ASIGNACIONES (Visible cuando estás en "Asignar por Talla") -->
-                    <div id="seccion-resumen-asignaciones" style="display: none; margin-top: 1.5rem;">
-                        <label class="form-label-primary">
-                            <span class="material-symbols-rounded">checklist</span>RESUMEN DE ASIGNACIONES *
-                        </label>
-                        
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                                <thead>
-                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TELA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">GÉNERO</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TALLA</th>
-                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">COLOR</th>
-                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 100px;">CANTIDAD</th>
-                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px;">ACCIÓN</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-resumen-asignaciones-cuerpo"></tbody>
-                            </table>
-                        </div>
-                        
-                        <div id="msg-resumen-vacio" style="text-align: center; padding: 2rem; color: rgb(156, 163, 175); background: rgb(249, 250, 251); border-radius: 8px; border: 1px dashed rgb(209, 213, 219); margin-top: 1rem; display: block;">
-                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
-                            Sin asignaciones aún. Accede a "Asignar por Talla" para agregar.
-                        </div>
-                        
-                        <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-left: 4px solid #0369a1; border-radius: 4px;">
-                            <p style="margin: 0; font-size: 0.875rem; color: #075985;">
-                                <strong>Total asignado:</strong> <span id="total-asignaciones-resumen">0</span> unidades
-                            </p>
-                        </div>
-                    </div>
 
                     <!-- Tallas y Cantidades -->
+                    <!-- SECCIÓN 1: SELECCIONAR TALLAS POR GÉNERO -->
                     <div id="seccion-tallas-cantidades" style="margin-top: 1.5rem;">
                         <label class="form-label-primary">
                             <span class="material-symbols-rounded">straighten</span>TALLAS Y CANTIDADES *
@@ -377,6 +197,114 @@
                         <div class="total-box">
                             <span class="material-symbols-rounded">shopping_cart</span>
                             Total: <span id="total-prendas">0</span> unidades
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 2: RESUMEN DE ASIGNACIONES DE COLORES (Reemplaza la anterior) -->
+                    <div id="seccion-resumen-asignaciones" style="display: none; margin-top: 1.5rem;">
+                        <label class="form-label-primary">
+                            <span class="material-symbols-rounded">checklist</span>RESUMEN DE ASIGNACIONES *
+                        </label>
+                        
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TELA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">GÉNERO</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">TALLA</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600;">COLOR</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 100px;">CANTIDAD</th>
+                                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 60px;">ACCIÓN</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-resumen-asignaciones-cuerpo"></tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="msg-resumen-vacio" style="text-align: center; padding: 2rem; color: rgb(156, 163, 175); background: rgb(249, 250, 251); border-radius: 8px; border: 1px dashed rgb(209, 213, 219); margin-top: 1rem; display: none;">
+                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
+                            Sin asignaciones aún. Accede a "Asignar por Talla" para agregar.
+                        </div>
+                        
+                        <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-left: 4px solid #0369a1; border-radius: 4px;">
+                            <p style="margin: 0; font-size: 0.875rem; color: #075985;">
+                                <strong>Total asignado:</strong> <span id="total-asignaciones-resumen">0</span> unidades
+                            </p>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                            <button type="button" id="btn-asignar-colores-prenda" class="btn btn-primary" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
+                                <span class="material-symbols-rounded">palette</span>
+                                ASIGNAR MÁS COLORES A LAS TALLAS
+                            </button>
+                            <button type="button" id="btn-limpiar-asignaciones" class="btn btn-outline-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-weight: 600;">
+                                <span class="material-symbols-rounded">delete_outline</span>
+                                Limpiar Todo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal confirmación Limpiar Todo -->
+                <div id="modal-confirmar-limpiar" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-limpiar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 10060 !important;">
+                    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+                        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: none; padding: 1.25rem 1.5rem;">
+                                <h5 class="modal-title" id="modal-confirmar-limpiar-titulo" style="color: white; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">warning</span>
+                                    Confirmar limpieza
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" style="color: white; opacity: 0.8; text-shadow: none;">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="padding: 1.5rem; text-align: center;">
+                                <div style="margin-bottom: 1rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 3rem; color: #dc2626;">delete_forever</span>
+                                </div>
+                                <p style="font-size: 0.95rem; color: #374151; margin: 0 0 0.5rem 0; font-weight: 600;">¿Eliminar todas las asignaciones?</p>
+                                <p style="font-size: 0.825rem; color: #6b7280; margin: 0;">Se borrarán todos los colores y cantidades asignados a las tallas. Esta acción no se puede deshacer.</p>
+                            </div>
+                            <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="font-weight: 500; padding: 0.5rem 1.25rem;">Cancelar</button>
+                                <button type="button" id="btn-confirmar-limpiar-todo" class="btn btn-danger" style="font-weight: 600; padding: 0.5rem 1.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 1.1rem;">delete_forever</span>
+                                    Sí, limpiar todo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal confirmación Eliminar Asignación Individual -->
+                <div id="modal-confirmar-eliminar-asignacion" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-eliminar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 10060 !important;">
+                    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+                        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 1rem 1.25rem;">
+                                <h5 class="modal-title" id="modal-confirmar-eliminar-titulo" style="color: white; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 1.3rem;">warning</span>
+                                    Eliminar asignación
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" style="color: white; opacity: 0.8; text-shadow: none;">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="padding: 1.5rem; text-align: center;">
+                                <div style="margin-bottom: 1rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 3rem; color: #dc2626;">remove_circle</span>
+                                </div>
+                                <p style="font-size: 0.95rem; color: #374151; margin: 0 0 0.5rem 0; font-weight: 600;">¿Eliminar esta asignación?</p>
+                                <p id="modal-eliminar-detalle" style="font-size: 0.85rem; color: #6b7280; margin: 0; background: #f3f4f6; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 500;"></p>
+                            </div>
+                            <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.25rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="font-weight: 500; padding: 0.5rem 1.25rem;">Cancelar</button>
+                                <button type="button" id="btn-confirmar-eliminar-asignacion" class="btn btn-danger" style="font-weight: 600; padding: 0.5rem 1.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 1.1rem;">delete</span>
+                                    Sí, eliminar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -586,35 +514,84 @@ if (window.actualizarTablaTelas) {
 </script>
 
 <script>
-/**
- *  DEPRECATED: Drag-drop y paste handlers movidos a FileInputManager
- * 
- * Estos handlers inline causaban duplicación de listeners y doble-click.
- * Ahora se manejan centralizadamente en:
- * - public/js/componentes/file-input-manager.js
- * - public/js/componentes/prenda-modal-manager-v2.js
- * 
- * Los listeners son agregados automáticamente con inicialización idempotente,
- * evitando duplicación al abrir/cerrar el modal múltiples veces.
- */
+// Funciones para drag & drop de imágenes de tela
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.style.borderColor = '#3b82f6';
+    event.currentTarget.style.backgroundColor = '#eff6ff';
+}
 
-// Mantener funciones como fallback para compatibilidad (no se usan)
-window.handleDragOver = window.handleDragOver || function(event) {
-    console.warn('[Deprecated] handleDragOver - usar FileInputManager en su lugar');
-};
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.style.borderColor = '#d1d5db';
+    event.currentTarget.style.backgroundColor = '#f9fafb';
+}
 
-window.handleDragLeave = window.handleDragLeave || function(event) {
-    console.warn('[Deprecated] handleDragLeave - usar FileInputManager en su lugar');
-};
+function handleDropTela(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Restaurar estilos
+    event.currentTarget.style.borderColor = '#d1d5db';
+    event.currentTarget.style.backgroundColor = '#f9fafb';
+    
+    // Obtener archivos
+    const files = event.dataTransfer.files;
+    if (files.length === 0) return;
+    
+    // Simular input change
+    const input = document.getElementById('nueva-prenda-tela-imagen-input');
+    input.files = files;
+    manejarImagenTela(input);
+}
 
-window.handleDropTela = window.handleDropTela || function(event) {
-    console.warn('[Deprecated] handleDropTela - usar FileInputManager en su lugar');
-};
+// Función para manejar paste de imágenes
+document.addEventListener('paste', function(event) {
+    const activeElement = document.activeElement;
+    
+    // Verificar si estamos en un campo de tela
+    if (activeElement && (
+        activeElement.id === 'nueva-prenda-color' || 
+        activeElement.id === 'nueva-prenda-tela' || 
+        activeElement.id === 'nueva-prenda-referencia'
+    )) {
+        
+        const items = event.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    const input = document.getElementById('nueva-prenda-tela-imagen-input');
+                    
+                    // Crear un nuevo FileList
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                    
+                    manejarImagenTela(input);
+                    break;
+                }
+            }
+        }
+    }
+});
 </script>
 
 <!-- ─── Modal Prenda: colores-por-talla, drag-drop, FSM, loaders ─── -->
 <!-- En producción, js_asset() carga automáticamente .min.js si existe -->
 @php $v = config('app.asset_version'); @endphp
+
+<!-- NUEVA ARQUITECTURA: Máquina de Estados y Event Bus -->
+<script defer src="{{ js_asset('js/arquitectura/WizardStateMachine.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/arquitectura/WizardEventBus.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/arquitectura/WizardLifecycleManager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/arquitectura/WizardBootstrap.js') }}?v={{ $v }}"></script>
+
+<!-- MÓDULOS EXISTENTES -->
 <script defer src="{{ js_asset('js/componentes/colores-por-talla/StateManager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/colores-por-talla/DOMUtils.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/colores-por-talla/AsignacionManager.js') }}?v={{ $v }}"></script>
@@ -631,7 +608,6 @@ window.handleDropTela = window.handleDropTela || function(event) {
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/PrendaDragDropHandler.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/TelaDragDropHandler.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/handlers/ProcesoDragDropHandler.js') }}?v={{ $v }}"></script>
-<script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prendas-module/drag-drop-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/core/modal-mini-fsm.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/loaders/prenda-editor-basicos.js') }}?v={{ $v }}"></script>
@@ -644,7 +620,325 @@ window.handleDropTela = window.handleDropTela || function(event) {
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/modalHandlers/prenda-modal-manager.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/modulos/crear-pedido/prendas/services/prenda-editor-service.js') }}?v={{ $v }}"></script>
 
-<!-- 🚫 NOTA: prenda-editor.js ya se carga en la Blade padre (crear-pedido.blade.php, edit.blade.php, etc.)
-     Si se cargar aquí también, causará: "SyntaxError: Identifier 'PrendaEditor' has already been declared"
-     Ahora prenda-editor.js tiene protección contra redeclaración con typeof PrendaEditor === 'undefined'
--->
+<!-- NOTA: Estos módulos tienen protección interna contra redeclaración (typeof guard),
+     por lo que es seguro que se carguen tanto aquí como desde prenda-editor-loader-modular.js -->
+
+<!-- INCLUIR MODAL WIZARD DEDICADO -->
+@include('asesores.pedidos.modals.modal-asignar-colores-por-talla')
+
+<!-- Scripts para manejar el modal Bootstrap 4 -->
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/modal-manager.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/colores-por-talla/bootstrap-modal-init.js') }}?v={{ $v }}"></script>
+
+<!-- Funciones para abrir y cerrar modal de colores por talla -->
+<script>
+    /**
+     * Abre el modal de "Asignar Colores por Talla"
+     */
+    function abrirModalAsignarColores() {
+        // Verificar que jQuery está disponible
+        if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+            alert('Error: jQuery no está cargado. Por favor recarga la página.');
+            return;
+        }
+        
+        // Verificar que el modal existe
+        const $modal = jQuery('#modal-asignar-colores-por-talla');
+        if ($modal.length === 0) {
+            alert('Error: El modal no existe. Por favor recarga la página.');
+            return;
+        }
+        
+        // Verificar que Bootstrap modal está disponible
+        if (typeof $modal.modal !== 'function') {
+            alert('Error: Bootstrap Modal no está cargado. Por favor recarga la página.');
+            return;
+        }
+        
+        try {
+            // PASO 1: Obtener la tela seleccionada de la tabla
+            let telaSeleccionada = null;
+            
+            // Buscar primera fila de DATOS del tbody con tela (OPCIÓN 1)
+            // NOTA: La primera fila es la fila de inputs (tiene botón "agregarTelaNueva()"), hay que saltarla
+            const tbody = document.getElementById('tbody-telas');
+            if (tbody) {
+                const filas = Array.from(tbody.querySelectorAll('tr'));
+                // Buscar la primera fila que NO sea la fila de inputs
+                const filaDatos = filas.find(tr => !tr.querySelector('button[onclick="agregarTelaNueva()"]') && !tr.querySelector('#nueva-prenda-tela'));
+                if (filaDatos) {
+                    const tdTela = filaDatos.querySelector('td:first-child');
+                    if (tdTela) {
+                        telaSeleccionada = tdTela.textContent.trim().toUpperCase();
+                    }
+                }
+            }
+            
+            // OPCIÓN 2: Desde telasCreacion (cuando se crea nueva prenda)
+            if (!telaSeleccionada && window.telasCreacion && window.telasCreacion.length > 0) {
+                telaSeleccionada = window.telasCreacion[0].tela || window.telasCreacion[0].nombreTela || window.telasCreacion[0].nombre;
+            }
+            
+            // OPCIÓN 3: Desde telasAgregadas (cuando se edita prenda)
+            if (!telaSeleccionada && window.telasAgregadas && window.telasAgregadas.length > 0) {
+                telaSeleccionada = window.telasAgregadas[0].tela || window.telasAgregadas[0].nombreTela || window.telasAgregadas[0].nombre;
+            }
+            
+            // OPCIÓN 4: Desde telasEdicion (cuando se edita prenda)
+            if (!telaSeleccionada && window.telasEdicion && window.telasEdicion.length > 0) {
+                telaSeleccionada = window.telasEdicion[0].tela || window.telasEdicion[0].nombreTela || window.telasEdicion[0].nombre;
+            }
+            
+            // PASO 2: Guardar tela en StateManager si está disponible
+            if (telaSeleccionada) {
+                if (window.StateManager) {
+                    window.StateManager.setTelaSeleccionada(telaSeleccionada);
+                }
+            }
+            
+            // PASO 3: Resetear el modal al paso 1 (género)
+            if (typeof WizardManager !== 'undefined' && typeof WizardManager.irPaso === 'function') {
+                WizardManager.irPaso(1);
+            }
+            
+            // PASO 4: Abrir el modal
+            $modal.modal('show');
+        } catch (error) {
+            alert('Error al abrir el modal: ' + error.message);
+        }
+    }
+    
+    /**
+     * Cierra el modal de "Asignar Colores por Talla"
+     */
+    function cerrarModalAsignarColores() {
+        if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+            return;
+        }
+        
+        const $modal = jQuery('#modal-asignar-colores-por-talla');
+        if ($modal.length === 0) {
+            return;
+        }
+        
+        try {
+            $modal.modal('hide');
+        } catch (error) {
+        }
+    }
+    
+    /**
+     * Inicialización cuando el DOM esté listo
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        // Esperar a que jQuery esté disponible
+        let intentos = 0;
+        const maxIntentos = 50;
+        
+        const verificarJQuery = setInterval(() => {
+            intentos++;
+            
+            if (typeof jQuery !== 'undefined' && jQuery.fn.modal) {
+                clearInterval(verificarJQuery);
+                
+                // Configurar botones de la tabla de resumen
+                const btnAsignarColores = document.getElementById('btn-asignar-colores-prenda');
+                const btnLimpiarAsignaciones = document.getElementById('btn-limpiar-asignaciones');
+                
+                if (btnAsignarColores) {
+                    btnAsignarColores.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        // Obtener tela actual
+                        const telaActual = document.querySelector('#tela-seleccionada')?.value ||
+                                         (window.telasCreacion && window.telasCreacion[0]?.tela) ||
+                                         (window.telasCreacion && window.telasCreacion[0]?.nombreTela) ||
+                                         '--';
+                        
+                        // Establecer la tela en StateManager si existe
+                        if (window.StateManager && telaActual !== '--') {
+                            window.StateManager.setTelaSeleccionada(telaActual);
+                        }
+                        
+                        // Llamar al toggle para abrir el wizard
+                        if (window.ColoresPorTalla && typeof window.ColoresPorTalla.toggleVistaAsignacion === 'function') {
+                            window.ColoresPorTalla.toggleVistaAsignacion();
+                        }
+                    });
+                }
+                
+                if (btnLimpiarAsignaciones) {
+                    btnLimpiarAsignaciones.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // Crear overlay oscuro personalizado detrás del modal
+                        let overlay = document.getElementById('overlay-confirmar-limpiar');
+                        if (!overlay) {
+                            overlay = document.createElement('div');
+                            overlay.id = 'overlay-confirmar-limpiar';
+                            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10050;display:none;';
+                            document.body.appendChild(overlay);
+                        }
+                        overlay.style.display = 'block';
+                        // Abrir modal de confirmación
+                        jQuery('#modal-confirmar-limpiar').modal('show');
+                    });
+                    
+                    // Listener para el botón de confirmar dentro del modal
+                    const btnConfirmarLimpiar = document.getElementById('btn-confirmar-limpiar-todo');
+                    if (btnConfirmarLimpiar) {
+                        btnConfirmarLimpiar.addEventListener('click', function() {
+                            // Limpiar asignaciones
+                            if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
+                                window.StateManager.limpiarAsignaciones();
+                            }
+                            
+                            // Actualizar tabla
+                            if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                                window.ColoresPorTalla.actualizarTablaResumen();
+                            }
+                            
+                            // Actualizar otras secciones
+                            if (typeof crearTarjetaGenero === 'function') crearTarjetaGenero();
+                            if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
+                            
+                            // Cerrar modal de confirmación y remover overlay
+                            jQuery('#modal-confirmar-limpiar').modal('hide');
+                            const ov = document.getElementById('overlay-confirmar-limpiar');
+                            if (ov) ov.style.display = 'none';
+                        });
+                    }
+                }
+                
+                // Agregar listener delegado para botones de eliminar asignación (creados dinámicamente)
+                const tablaResumenBody = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+                if (tablaResumenBody) {
+                    // Variables para almacenar datos de eliminación pendiente
+                    let eliminacionPendiente = { clave: null, colorNombre: null };
+
+                    tablaResumenBody.addEventListener('click', function(e) {
+                        const btnEliminar = e.target.closest('.btn-eliminar-asignacion');
+                        if (btnEliminar) {
+                            e.preventDefault();
+                            const clave = btnEliminar.getAttribute('data-clave');
+                            const colorNombre = btnEliminar.getAttribute('data-color');
+                            
+                            // Guardar datos para cuando confirmen
+                            eliminacionPendiente = { clave, colorNombre };
+                            
+                            // Mostrar detalle en el modal
+                            const detalleEl = document.getElementById('modal-eliminar-detalle');
+                            if (detalleEl) {
+                                detalleEl.textContent = `Color: ${colorNombre} — Clave: ${clave}`;
+                            }
+                            
+                            // Crear overlay oscuro
+                            let overlay = document.getElementById('overlay-confirmar-eliminar');
+                            if (!overlay) {
+                                overlay = document.createElement('div');
+                                overlay.id = 'overlay-confirmar-eliminar';
+                                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10050;display:none;';
+                                document.body.appendChild(overlay);
+                            }
+                            overlay.style.display = 'block';
+                            
+                            // Abrir modal de confirmación
+                            jQuery('#modal-confirmar-eliminar-asignacion').modal('show');
+                        }
+                    });
+
+                    // Listener para confirmación de eliminar asignación individual
+                    const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-asignacion');
+                    if (btnConfirmarEliminar) {
+                        btnConfirmarEliminar.addEventListener('click', function() {
+                            const { clave, colorNombre } = eliminacionPendiente;
+                            if (!clave) return;
+
+                            // Eliminar del StateManager
+                            if (window.StateManager) {
+                                const asignaciones = window.StateManager.getAsignaciones();
+                                if (asignaciones[clave]) {
+                                    // Guardar datos ANTES de eliminar
+                                    const telaGuardada = asignaciones[clave]?.tela || '';
+                                    const claveParts = clave.split('-');
+                                    
+                                    delete asignaciones[clave];
+                                    window.StateManager.setAsignaciones(asignaciones);
+                                    
+                                    // Intentar guardar cambios en servidor (opcional, no bloquea)
+                                    try {
+                                        if (window.AsignacionManager && typeof window.AsignacionManager.guardarAsignacionesMultiples === 'function' && telaGuardada && claveParts.length >= 3) {
+                                            const genero = claveParts[0];
+                                            const tipo = claveParts[1];
+                                            const talla = claveParts.slice(2).join('-');
+                                            
+                                            const resultado = window.AsignacionManager.guardarAsignacionesMultiples(
+                                                genero,
+                                                [talla],
+                                                tipo,
+                                                telaGuardada,
+                                                {}
+                                            );
+                                            if (resultado && typeof resultado.catch === 'function') {
+                                                resultado.catch(err => console.error('[TablaResumen] Error al guardar:', err));
+                                            }
+                                        }
+                                    } catch(e) {
+                                        console.warn('[TablaResumen] No se pudo sincronizar eliminación con servidor:', e);
+                                    }
+                                    
+                                    // Actualizar tabla y otras secciones
+                                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                                        window.ColoresPorTalla.actualizarTablaResumen();
+                                    }
+                                    if (typeof crearTarjetaGenero === 'function') crearTarjetaGenero();
+                                    if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
+                                    
+                                    console.log('✅ Asignación eliminada');
+                                }
+                            }
+                            
+                            // Cerrar modal y overlay
+                            jQuery('#modal-confirmar-eliminar-asignacion').modal('hide');
+                            const ov = document.getElementById('overlay-confirmar-eliminar');
+                            if (ov) ov.style.display = 'none';
+                            eliminacionPendiente = { clave: null, colorNombre: null };
+                        });
+                    }
+                }
+                
+                // Actualizar tabla al cargar el modal
+                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.actualizarTablaResumen === 'function') {
+                    window.ColoresPorTalla.actualizarTablaResumen();
+                }
+                
+                return;
+            }
+            
+            if (intentos >= maxIntentos) {
+                clearInterval(verificarJQuery);
+                console.warn('⚠️ jQuery o Bootstrap Modal no disponibles después de 5 segundos');
+            }
+        }, 100);
+    });
+</script>
+
+<style>
+    /* Modales de confirmación encima de todo */
+    #modal-confirmar-limpiar,
+    #modal-confirmar-eliminar-asignacion {
+        z-index: 10060 !important;
+    }
+</style>
+
+<script>
+    // Ocultar overlays cuando los modales se cierren por cualquier medio (X, Cancelar, Escape, etc.)
+    jQuery(document).on('hidden.bs.modal', '#modal-confirmar-limpiar', function() {
+        const ov = document.getElementById('overlay-confirmar-limpiar');
+        if (ov) ov.style.display = 'none';
+    });
+    jQuery(document).on('hidden.bs.modal', '#modal-confirmar-eliminar-asignacion', function() {
+        const ov = document.getElementById('overlay-confirmar-eliminar');
+        if (ov) ov.style.display = 'none';
+    });
+</script>
+

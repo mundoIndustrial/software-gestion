@@ -136,9 +136,6 @@ class InvoiceRenderer {
                 <!-- Variantes detalladas -->
                 ${variantesHTML}
                 
-                <!-- Especificaciones -->
-                ${especificacionesHTML}
-                
                 <!-- Procesos -->
                 ${procesosListaHTML ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
@@ -156,29 +153,6 @@ class InvoiceRenderer {
     }
 
     renderizarEspecificaciones(prenda) {
-        const variacionesArray = [
-            prenda.manga ? { nombre: 'Manga', valor: prenda.manga, obs: prenda.obs_manga } : null,
-            prenda.broche ? { nombre: 'Broche', valor: prenda.broche, obs: prenda.obs_broche } : null,
-            prenda.tiene_bolsillos && prenda.obs_bolsillos ? { nombre: 'Bolsillo', valor: '', obs: prenda.obs_bolsillos } : null
-        ].filter(v => v !== null);
-        
-        if (variacionesArray.length > 0) {
-            return `
-                <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
-                    <div style="font-size: 11px !important; font-weight: 700; color: #1e40af; background: #eff6ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> ESPECIFICACIONES</div>
-                    <table style="width: 100%; font-size: 11px !important; border-collapse: collapse;">
-                        <tbody>
-                            ${variacionesArray.map((spec, idx) => `
-                                <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #f0f0f0;">
-                                    <td style="padding: 12px 12px; font-weight: 600; color: #334155; width: 35%; font-size: 11px !important;">${spec.nombre}</td>
-                                    <td style="padding: 12px 12px; color: #475569; font-size: 11px !important;">${spec.valor}${spec.obs ? ` <span style="color: #64748b; font-style: italic; font-size: 11px !important;">(${spec.obs})</span>` : ''}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
         return '';
     }
 
@@ -351,7 +325,7 @@ class InvoiceRenderer {
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <tr style="border-bottom: 1px solid #eee;">
                                     <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Ubicación:</td>
-                                    <td style="padding: 2px 3px;">${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(', ') : proc.ubicaciones}</td>
+                                    <td style="padding: 2px 3px;">${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(', ') : (typeof proc.ubicaciones === 'string' ? proc.ubicaciones.replace(/[\[\]"]/g, '') : proc.ubicaciones)}</td>
                                 </tr>
                             ` : ''}
                             ${proc.observaciones ? `

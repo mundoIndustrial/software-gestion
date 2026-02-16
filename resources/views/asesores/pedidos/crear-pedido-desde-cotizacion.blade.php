@@ -170,7 +170,10 @@
 @include('asesores.pedidos.modals.modal-agregar-epp')
 
 @push('scripts')
-    <!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS (cargar PRIMERO) -->
+    <!-- 🔧 Logger centralizado (DEBE cargar ANTES de cualquier servicio) -->
+    <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
+
+    <!-- 🆕 SERVICIOS COMPARTIDOS DE EDICIÓN DE PRENDAS -->
     <script src="{{ asset('js/servicios/shared/event-bus.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/format-detector.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/shared-prenda-validation-service.js') }}?v=1"></script>
@@ -179,7 +182,6 @@
     <script src="{{ asset('js/servicios/shared/shared-prenda-editor-service.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/prenda-service-container.js') }}?v=1"></script>
     <script src="{{ asset('js/servicios/shared/initialization-helper.js') }}?v=1"></script>
-    <script src="{{ asset('js/servicios/shared/system-validation-test.js') }}?v=1"></script>
     
     <!-- Inicializar contenedor de servicios -->
     <script>
@@ -267,8 +269,7 @@
     <script src="{{ asset('js/utilidades/tela-processor.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/utilidades/prenda-data-builder.js') }}?v={{ time() }}"></script>
     
-    <!-- UTILIDADES (Validación y Logging - Phase 3) -->
-    <script src="{{ asset('js/utilidades/logger-app.js') }}?v={{ time() }}"></script>
+    <!-- UTILIDADES (Validación - Phase 3, Logger ya cargado arriba) -->
     <script src="{{ asset('js/utilidades/validador-prenda.js') }}?v={{ time() }}"></script>
     
     <!-- UTILIDADES (Diagnóstico de Rutas de Telas) -->

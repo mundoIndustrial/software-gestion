@@ -42,8 +42,8 @@ class SharedPrendaDataService {
         // Detector de formato
         this.formatDetector = config.formatDetector || new FormatDetector();
 
-        console.log('[SharedPrendaDataService] ✓ Inicializado');
-        console.log('[SharedPrendaDataService] 🔐 Endpoint validado:', this.apiBaseUrl);
+        Logger.debug('Inicializado', 'SharedPrendaData');
+        Logger.debug(`Endpoint validado: ${this.apiBaseUrl}`, 'SharedPrendaData');
     }
 
     /**
@@ -58,7 +58,7 @@ class SharedPrendaDataService {
 
         if (esProhibido) {
             const msg = `🚨 VIOLACIÓN DE AISLAMIENTO: Intento de usar endpoint prohibido: ${endpoint}`;
-            console.error(msg);
+            Logger.error(msg, 'SharedPrendaData');
             throw new Error(msg);
         }
 
@@ -68,7 +68,7 @@ class SharedPrendaDataService {
         );
 
         if (!esPermitido) {
-            console.warn(` [SharedPrendaDataService] Endpoint inusual (pero permitido): ${endpoint}`);
+            Logger.warn(`Endpoint inusual (pero permitido): ${endpoint}`, 'SharedPrendaData');
         }
     }
 
@@ -77,7 +77,7 @@ class SharedPrendaDataService {
      * Cargar desde BD con normalización automática
      */
     async obtenerPrendPorId(prendaId) {
-        console.log(`[SharedPrendaData] 🔍 Obteniendo prenda ${prendaId}...`);
+        Logger.debug(`Obteniendo prenda ${prendaId}...`, 'SharedPrendaData');
 
         try {
             // 1️⃣ Verificar cache
@@ -86,7 +86,7 @@ class SharedPrendaDataService {
                 const age = Date.now() - this.cacheTimestamps.get(prendaId);
 
                 if (age < this.cacheTTL) {
-                    console.log(`[SharedPrendaData] ✓ Cache hit para prenda ${prendaId}`);
+                    Logger.debug(`Cache hit para prenda ${prendaId}`, 'SharedPrendaData');
                     return cached;
                 } else {
                     // Cache expirado
@@ -123,11 +123,11 @@ class SharedPrendaDataService {
                 this.cacheTimestamps.set(prendaId, Date.now());
             }
 
-            console.log(`[SharedPrendaData] ✓ Prenda cargada: ${prendaNormalizada.nombre}`);
+            Logger.success(`Prenda cargada: ${prendaNormalizada.nombre}`, 'SharedPrendaData');
             return prendaNormalizada;
 
         } catch (error) {
-            console.error('[SharedPrendaData]  Error obteniendo prenda:', error);
+            Logger.error('Error obteniendo prenda', 'SharedPrendaData', error);
             throw error;
         }
     }
@@ -136,13 +136,13 @@ class SharedPrendaDataService {
      * CREAR o ACTUALIZAR prenda
      */
     async guardarPrenda(prendaData) {
-        console.log('[SharedPrendaData] 💾 Guardando prenda...');
+        Logger.debug('Guardando prenda...', 'SharedPrendaData');
 
         try {
             // 🔐 VALIDACIÓN DE AISLAMIENTO
             // No permitir guardar datos que referencien cotizaciones
             if (prendaData.cotizacion_id !== undefined && prendaData.cotizacion_id !== null) {
-                console.warn(' [SharedPrendaData] Detectado cotizacion_id en datos, será limpiado según contexto');
+                Logger.warn('Detectado cotizacion_id en datos, será limpiado según contexto', 'SharedPrendaData');
                 
                 // Si es crear-desde-cotizacion, guardar como referencia histórica
                 if (prendaData.contexto === 'crear-desde-cotizacion') {
@@ -165,7 +165,7 @@ class SharedPrendaDataService {
                 ? `${this.apiBaseUrl}/${prendaData.id}`
                 : this.apiBaseUrl;
 
-            console.log(`[SharedPrendaData] ${metodo} ${endpoint}`);
+            Logger.debug(`${metodo} ${endpoint}`, 'SharedPrendaData');
 
             const response = await fetch(endpoint, {
                 method: metodo,
@@ -195,11 +195,11 @@ class SharedPrendaDataService {
                 this.cacheTimestamps.delete(prendaData.id);
             }
 
-            console.log('[SharedPrendaData] ✓ Prenda guardada:', prendaGuardada.nombre);
+            Logger.success(`Prenda guardada: ${prendaGuardada.nombre}`, 'SharedPrendaData');
             return prendaGuardada;
 
         } catch (error) {
-            console.error('[SharedPrendaData]  Error guardando:', error);
+            Logger.error('Error guardando prenda', 'SharedPrendaData', error);
             throw error;
         }
     }
@@ -208,7 +208,7 @@ class SharedPrendaDataService {
      * ELIMINAR prenda
      */
     async eliminarPrenda(prendaId) {
-        console.log(`[SharedPrendaData] 🗑️ Eliminando prenda ${prendaId}...`);
+        Logger.debug(`Eliminando prenda ${prendaId}...`, 'SharedPrendaData');
 
         try {
             const response = await fetch(`${this.apiBaseUrl}/${prendaId}`, {
@@ -227,11 +227,11 @@ class SharedPrendaDataService {
             this.cache.delete(prendaId);
             this.cacheTimestamps.delete(prendaId);
 
-            console.log('[SharedPrendaData] ✓ Prenda eliminada');
+            Logger.success('Prenda eliminada', 'SharedPrendaData');
             return true;
 
         } catch (error) {
-            console.error('[SharedPrendaData]  Error eliminando:', error);
+            Logger.error('Error eliminando prenda', 'SharedPrendaData', error);
             throw error;
         }
     }
@@ -243,11 +243,11 @@ class SharedPrendaDataService {
      * y transforma a estructura coherente
      */
     normalizarDesdeAPI(datos) {
-        console.log('[SharedPrendaData] 🔄 Normalizando datos...');
+        Logger.debug('Normalizando datos...', 'SharedPrendaData');
 
         // Detectar formato
         const formato = this.formatDetector.detectar(datos);
-        console.log('[SharedPrendaData] Formato detectado:', formato);
+        Logger.debug(`Formato detectado: ${formato}`, 'SharedPrendaData');
 
         let normalizado;
 
@@ -256,7 +256,7 @@ class SharedPrendaDataService {
         } else if (formato === 'ANTIGUO') {
             normalizado = this.transformarDesdeAntiguo(datos);
         } else {
-            console.warn('[SharedPrendaData]  Formato no reconocido, usando defaults');
+            Logger.warn('Formato no reconocido, usando defaults', 'SharedPrendaData');
             normalizado = this.crearPrendaDefecto();
         }
 
@@ -394,7 +394,7 @@ class SharedPrendaDataService {
     limpiarCache() {
         this.cache.clear();
         this.cacheTimestamps.clear();
-        console.log('[SharedPrendaData] 🗑️ Cache limpiado');
+        Logger.debug('Cache limpiado', 'SharedPrendaData');
     }
 
     /**
@@ -411,4 +411,4 @@ class SharedPrendaDataService {
 
 // Exportar
 window.SharedPrendaDataService = SharedPrendaDataService;
-console.log('[SharedPrendaDataService] 🔐 Cargado (AISLADO DE COTIZACIONES)');
+Logger.debug('DataService cargado', 'SharedPrendaData');

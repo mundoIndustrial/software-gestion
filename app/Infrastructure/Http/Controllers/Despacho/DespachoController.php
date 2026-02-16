@@ -126,4 +126,92 @@ class DespachoController extends Controller
             return response()->json(['error' => 'Error obteniendo datos de factura'], 500);
         }
     }
+
+    public function marcarEntregado(Request $request, PedidoProduccion $pedido)
+    {
+        try {
+            $validated = $request->validate([
+                'tipo_item' => 'required|in:prenda,epp',
+                'item_id' => 'required|integer',
+                'talla_id' => 'nullable|integer',
+                'genero' => 'nullable|in:DAMA,CABALLERO,UNISEX',
+            ]);
+
+            // Buscar si ya existe un registro
+            $despacho = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->where('tipo_item', $validated['tipo_item'])
+                ->where('item_id', $validated['item_id'])
+                ->where('talla_id', $validated['talla_id'] ?? null)
+                ->first();
+
+            if ($despacho) {
+                // Actualizar registro existente
+                $despacho->entregado = true;
+                $despacho->fecha_entrega = now();
+                $despacho->usuario_id = auth()->id();
+                $despacho->save();
+            } else {
+                // Crear nuevo registro
+                \App\Models\DesparChoParcialesModel::create([
+                    'pedido_id' => $pedido->id,
+                    'tipo_item' => $validated['tipo_item'],
+                    'item_id' => $validated['item_id'],
+                    'talla_id' => $validated['talla_id'] ?? null,
+                    'genero' => $validated['genero'] ?? null,
+                    'entregado' => true,
+                    'fecha_entrega' => now(),
+                    'usuario_id' => auth()->id(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ítem marcado como entregado',
+                'fecha_entrega' => now()->format('Y-m-d H:i:s'),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error al marcar como entregado', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+                'data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar como entregado: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function obtenerEstadoEntregas(PedidoProduccion $pedido)
+    {
+        try {
+            $entregas = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->where('entregado', true)
+                ->whereNotNull('fecha_entrega')
+                ->get()
+                ->map(function ($entrega) {
+                    return [
+                        'tipo_item' => $entrega->tipo_item,
+                        'item_id' => $entrega->item_id,
+                        'talla_id' => $entrega->talla_id,
+                        'entregado' => true,
+                        'fecha_entrega' => $entrega->fecha_entrega,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'entregas' => $entregas,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error al obtener estado de entregas', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estado de entregas',
+            ], 500);
+        }
+    }
 }

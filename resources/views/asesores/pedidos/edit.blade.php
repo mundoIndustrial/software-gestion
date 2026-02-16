@@ -211,7 +211,6 @@
 <script src="{{ asset('js/servicios/shared/shared-prenda-editor-service.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/prenda-service-container.js') }}?v=1"></script>
 <script src="{{ asset('js/servicios/shared/initialization-helper.js') }}?v=1"></script>
-<script src="{{ asset('js/servicios/shared/system-validation-test.js') }}?v=1"></script>
 <!-- Inicializar contenedor de servicios -->
 <script>
     if (document.readyState === 'loading') {

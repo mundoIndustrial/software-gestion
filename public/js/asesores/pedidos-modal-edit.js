@@ -223,17 +223,19 @@ function actualizarFilaTabla(pedidoId, pedidoActualizado) {
 }
 
 /**
- * abrirEditarPrendas() - Placeholder
- * La implementación real está en modal-prendas-lista.blade.php
+ * abrirEditarPrendas() - Placeholder (solo si no fue definida por modal-prendas-lista.blade.php)
  */
-function abrirEditarPrendas() {
-    console.log('[abrirEditarPrendas] Delegando a modal-prendas-lista');
+if (typeof window.abrirEditarPrendas !== 'function') {
+    window.abrirEditarPrendas = function() {
+        console.warn('[abrirEditarPrendas] No se cargó modal-prendas-lista');
+    };
 }
 
 /**
- * abrirEditarEPP() - Placeholder
- * La implementación real está en modal-editar-epp.blade.php
+ * abrirEditarEPP() - Placeholder (solo si no fue definida por modal-editar-epp.blade.php)
  */
-function abrirEditarEPP() {
-    console.log('[abrirEditarEPP] Delegando a modal-editar-epp');
+if (typeof window.abrirEditarEPP !== 'function') {
+    window.abrirEditarEPP = function() {
+        console.warn('[abrirEditarEPP] No se cargó modal-editar-epp');
+    };
 }

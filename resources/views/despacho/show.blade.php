@@ -43,22 +43,6 @@
         <form id="formDespacho" class="bg-white overflow-hidden">
             @csrf
 
-            <!-- Inputs de despacho -->
-            <div class="px-6 py-6 border-b border-slate-200 bg-slate-50">
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <label for="fecha_hora" class="block text-sm font-medium text-slate-700 mb-2">
-                            Fecha y Hora
-                        </label>
-                        <input type="datetime-local" 
-                               id="fecha_hora"
-                               name="fecha_hora"
-                               class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-                               value="{{ now()->format('Y-m-d\TH:i') }}">
-                    </div>
-                </div>
-            </div>
-
             <!-- Tabla de despacho -->
             <div class="overflow-x-auto lg:overflow-visible">
                 <table class="w-full text-sm min-w-[800px] lg:min-w-full border-collapse">
@@ -68,20 +52,14 @@
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Género</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Talla</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Cantidad</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 1</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 2</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Pendiente</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-20 text-xs lg:text-sm border-r border-slate-400">Parcial 3</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm">Pendiente</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-32 text-xs lg:text-sm">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaDespacho">
                         <!-- PRENDAS -->
                         @if($prendas->count() > 0)
                             <tr class="bg-slate-100 border-b-2 border-slate-400">
-                                <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="5" class="px-4 py-2 font-semibold text-slate-900">
                                     Prendas
                                 </td>
                             </tr>
@@ -188,53 +166,12 @@
                                             {{ $fila->cantidadTotal }}
                                         </td>
                                         
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
-                                                   value="0"
-                                                   placeholder="0">
-                                        </td>
-                                        
-                                        <td class="px-2 lg:px-4 py-3">
-                                            <input type="number" 
-                                                   class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
-                                                   value="0"
-                                                   placeholder="0">
+                                        <td class="px-2 lg:px-4 py-3 text-center">
+                                            <button type="button" 
+                                                    class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
+                                                    onclick="marcarEntregado(this)">
+                                                Entregar
+                                            </button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -244,7 +181,7 @@
                         <!-- EPP -->
                         @if($epps->count() > 0)
                             <tr class="bg-slate-100 border-b-2 border-slate-400">
-                                <td colspan="11" class="px-4 py-2 font-semibold text-slate-900">
+                                <td colspan="5" class="px-4 py-2 font-semibold text-slate-900">
                                     EPP
                                 </td>
                             </tr>
@@ -273,53 +210,12 @@
                                         {{ $fila->cantidadTotal }}
                                     </td>
                                     
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-inicial"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-1"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-1"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-2"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-2"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 parcial-input parcial-3"
-                                               value="0"
-                                               placeholder="0">
-                                    </td>
-                                    
-                                    <td class="px-2 lg:px-4 py-3">
-                                        <input type="number" 
-                                               class="w-full px-2 py-1 border border-slate-300 rounded text-center text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 pendiente-3"
-                                               value="0"
-                                               placeholder="0">
+                                    <td class="px-2 lg:px-4 py-3 text-center">
+                                        <button type="button" 
+                                                class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
+                                                onclick="marcarEntregado(this)">
+                                            Entregado
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -327,7 +223,7 @@
 
                         @if($prendas->count() === 0 && $epps->count() === 0)
                             <tr>
-                                <td colspan="11" class="px-6 py-12 text-center text-slate-500">
+                                <td colspan="5" class="px-6 py-12 text-center text-slate-500">
                                     No hay ítems en este pedido
                                 </td>
                             </tr>
@@ -336,21 +232,10 @@
                 </table>
             </div>
 
-            <!-- Botones de acción -->
-            <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-400 flex justify-between items-center">
+            <!-- Info de ítems -->
+            <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-400">
                 <div class="text-sm text-slate-600">
-                    <span class="font-medium">{{ $prendas->count() + $epps->count() }}</span> ítems
-                </div>
-                <div class="flex gap-2">
-                    <a href="{{ route('despacho.index') }}"
-                       class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
-                        Cancelar
-                    </a>
-                    <button type="submit"
-                            id="btnGuardar"
-                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded transition-colors">
-                        Guardar Despacho
-                    </button>
+                    <span class="font-medium">{{ $prendas->count() + $epps->count() }}</span> ítems en total
                 </div>
             </div>
         </form>
@@ -386,236 +271,104 @@
     </div>
 </div>
 
-<!-- Modal de Éxito -->
-<div id="modalExito" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <!-- Header -->
-        <div class="bg-green-50 px-6 py-4 border-b border-green-200">
-            <h2 class="text-lg font-semibold text-green-900">✓ Despacho Guardado</h2>
-        </div>
-        
-        <!-- Body -->
-        <div class="px-6 py-6">
-            <div class="flex items-start gap-4">
-                <div class="flex-shrink-0">
-                    <svg class="h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <p class="text-slate-700" id="modalMensaje">Despacho guardado correctamente</p>
-                    <p class="text-sm text-slate-500 mt-2" id="modalDetalles"></p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-            <button onclick="cerrarModalExito()" 
-                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
-                Cerrar
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- JavaScript para despacho -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables
-    const formDespacho = document.getElementById('formDespacho');
-    const btnGuardar = document.getElementById('btnGuardar');
-    const modalExito = document.getElementById('modalExito');
+console.log('✅ Script de despacho cargado correctamente');
 
-    // Cargar despachos guardados al cargar la página
-    cargarDespachos();
-
-    // Event listener para guardar
-    formDespacho.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        await guardarDespacho();
-    });
-
-    /**
-     * Cargar despachos guardados desde la base de datos
-     */
-    async function cargarDespachos() {
-        try {
-            const response = await fetch('{{ route("despacho.obtener", $pedido->id) }}', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                },
-            });
-
-            const data = await response.json();
-
-            if (data.despachos && data.despachos.length > 0) {
-                console.log('📥 Despachos cargados desde DB:', data.despachos);
-                
-                // Poblar los campos del formulario con los despachos guardados
-                data.despachos.forEach(despacho => {
-                    let fila;
-                    
-                    // Buscar fila: con talla_id si existe, sin talla_id si es null
-                    if (despacho.talla_id) {
-                        // Para prendas, buscar por talla_id (que es el item_id guardado)
-                        fila = document.querySelector(
-                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-talla-id="${despacho.talla_id}"]`
-                        );
-                        console.log(` Buscando: tipo=${despacho.tipo}, talla_id=${despacho.talla_id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
-                    } else {
-                        // Para items sin talla (EPPs), buscar solo por tipo e id
-                        const filas = document.querySelectorAll(
-                            `#tablaDespacho tr[data-tipo="${despacho.tipo}"][data-id="${despacho.id}"]`
-                        );
-                        fila = filas[0];
-                        console.log(` Buscando EPP: tipo=${despacho.tipo}, id=${despacho.id}`, fila ? '✓ Encontrada' : '✗ NO encontrada');
-                    }
-
-                    if (fila) {
-                        // Rellenar los valores guardados
-                        if (despacho.pendiente_inicial) {
-                            fila.querySelector('.pendiente-inicial').value = despacho.pendiente_inicial;
-                        }
-                        if (despacho.parcial_1) {
-                            fila.querySelector('.parcial-1').value = despacho.parcial_1;
-                        }
-                        if (despacho.pendiente_1) {
-                            fila.querySelector('.pendiente-1').value = despacho.pendiente_1;
-                        }
-                        if (despacho.parcial_2) {
-                            fila.querySelector('.parcial-2').value = despacho.parcial_2;
-                        }
-                        if (despacho.pendiente_2) {
-                            fila.querySelector('.pendiente-2').value = despacho.pendiente_2;
-                        }
-                        if (despacho.parcial_3) {
-                            fila.querySelector('.parcial-3').value = despacho.parcial_3;
-                        }
-                        if (despacho.pendiente_3) {
-                            fila.querySelector('.pendiente-3').value = despacho.pendiente_3;
-                        }
-                        console.log(' Fila poblada:', despacho);
-                    }
-                });
-                
-                console.log(' Todas las filas de la tabla:');
-                document.querySelectorAll('#tablaDespacho tr[data-tipo]').forEach(tr => {
-                    console.log('  -', tr.dataset);
-                });
-            }
-        } catch (error) {
-            console.error('Error al cargar despachos:', error);
-        }
-    }
-
-    /**
-     * Guardar despacho al servidor
-     */
-    async function guardarDespacho() {
-        const despachos = [];
-        const filas = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
-
-        filas.forEach(fila => {
-            const tipo = fila.dataset.tipo;
-            const id = parseInt(fila.dataset.id);
-            const tallaId = parseInt(fila.dataset.tallaId) || null;
-            
-            const pendienteInicial = parseInt(fila.querySelector('.pendiente-inicial').value) || 0;
-            const parcial1 = parseInt(fila.querySelector('.parcial-1').value) || 0;
-            const pendiente1 = parseInt(fila.querySelector('.pendiente-1').value) || 0;
-            const parcial2 = parseInt(fila.querySelector('.parcial-2').value) || 0;
-            const pendiente2 = parseInt(fila.querySelector('.pendiente-2').value) || 0;
-            const parcial3 = parseInt(fila.querySelector('.parcial-3').value) || 0;
-            const pendiente3 = parseInt(fila.querySelector('.pendiente-3').value) || 0;
-
-            console.log(`📤 Enviando: tipo=${tipo}, id=${id}, tallaId=${tallaId}, dataset=`, fila.dataset);
-
-            // Agregar siempre el registro (el usuario decide qué ingresar)
-            despachos.push({
-                tipo,
-                id,
+/**
+ * Marcar ítem como entregado
+ */
+async function marcarEntregado(button) {
+    const fila = button.closest('tr');
+    const tipo = fila.dataset.tipo;
+    const itemId = parseInt(fila.dataset.id);
+    const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
+    const genero = fila.dataset.genero || null;
+    
+    // Deshabilitar el botón mientras se procesa
+    button.disabled = true;
+    button.textContent = '⏳ Guardando...';
+    
+    try {
+        const response = await fetch('{{ route("despacho.marcar-entregado", $pedido->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({
+                tipo_item: tipo,
+                item_id: itemId,
                 talla_id: tallaId,
-                genero: tipo === 'prenda' ? (fila.dataset.genero || null) : null,  //  Agregar género para prendas
-                pendiente_inicial: pendienteInicial,
-                parcial_1: parcial1,
-                pendiente_1: pendiente1,
-                parcial_2: parcial2,
-                pendiente_2: pendiente2,
-                parcial_3: parcial3,
-                pendiente_3: pendiente3,
-            });
+                genero: genero,
+            }),
         });
-
-        if (despachos.length === 0) {
-            alert('No hay ítems para guardar');
-            return;
-        }
-
-        try {
-            btnGuardar.disabled = true;
-            btnGuardar.innerHTML = '⏳ Guardando...';
-
-            const response = await fetch('{{ route("despacho.guardar", $pedido->id) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                },
-                body: JSON.stringify({
-                    fecha_hora: document.getElementById('fecha_hora').value,
-                    despachos,
-                }),
-            });
-
-            // Verificar si la respuesta es JSON válido
-            const contentType = response.headers.get('content-type');
-            let data;
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Cambiar el botón a estado "Entregado"
+            button.textContent = '✓ Entregado';
+            button.classList.remove('bg-green-500', 'hover:bg-green-600');
+            button.classList.add('bg-slate-400', 'cursor-not-allowed');
             
-            if (contentType && contentType.includes('application/json')) {
-                data = await response.json();
-            } else {
-                const text = await response.text();
-                console.error(' Respuesta no es JSON:', text);
-                throw new Error('La respuesta del servidor no es JSON válido');
-            }
-
-            if (data.success) {
-                console.log(' Despacho guardado exitosamente');
-                
-                // Mostrar modal de éxito
-                mostrarModalExito(data);
-                
-                // Limpiar los inputs después de guardar exitosamente
-                const filasLimpiar = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
-                filasLimpiar.forEach(fila => {
-                    fila.querySelectorAll('input[type="number"]').forEach(input => {
-                        input.value = '';
-                    });
-                });
-                
-                // Recargar despachos guardados en tiempo real (sin reload completo)
-                setTimeout(() => {
-                    cargarDespachos();
-                }, 500);
-                
-            } else {
-                alert(' Error: ' + data.message);
-                if (data.errors) {
-                    console.error('Errores:', data.errors);
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert(' Error al guardar: ' + error.message);
-        } finally {
-            btnGuardar.disabled = false;
-            btnGuardar.innerHTML = '💾 Guardar Despacho';
+            // Agregar efecto visual a la fila: color azul pastel
+            fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
+            
+            console.log('✅ Ítem marcado como entregado:', data);
+        } else {
+            // Error: restaurar botón
+            button.textContent = 'Entregar';
+            button.disabled = false;
+            alert('Error al marcar como entregado: ' + data.message);
         }
+    } catch (error) {
+        console.error('Error al marcar como entregado:', error);
+        button.textContent = 'Entregar';
+        button.disabled = false;
+        alert('Error al marcar como entregado. Por favor, intenta de nuevo.');
     }
-});
+}
+
+/**
+ * Cargar estado inicial de entregas al cargar la página
+ */
+async function cargarEstadoEntregas() {
+    try {
+        const response = await fetch('{{ route("despacho.estado-entregas", $pedido->id) }}');
+        const data = await response.json();
+        
+        if (data.success && data.entregas) {
+            data.entregas.forEach(entrega => {
+                // Buscar la fila correspondiente
+                let selector = `tr[data-tipo="${entrega.tipo_item}"][data-id="${entrega.item_id}"]`;
+                if (entrega.talla_id) {
+                    selector += `[data-talla-id="${entrega.talla_id}"]`;
+                }
+                
+                const fila = document.querySelector(selector);
+                if (fila) {
+                    const button = fila.querySelector('button');
+                    if (button) {
+                        // Marcar como entregado visualmente
+                        button.textContent = '✓ Entregado';
+                        button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        button.classList.add('bg-slate-400', 'cursor-not-allowed');
+                        button.disabled = true;
+                        fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
+                    }
+                }
+            });
+            
+            console.log('✅ Estado de entregas cargado:', data.entregas.length, 'ítems entregados');
+        }
+    } catch (error) {
+        console.error('Error al cargar estado de entregas:', error);
+    }
+}
+
+// Cargar estado de entregas al cargar la página
+document.addEventListener('DOMContentLoaded', cargarEstadoEntregas);
 
 // ============ FUNCIONES GLOBALES PARA MODAL ============
 
@@ -630,7 +383,7 @@ async function abrirModalFactura(pedidoId) {
     contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
     
     try {
-        const response = await fetch(`/despacho/${pedidoId}/factura-datos`, {
+        const response = await fetch(`/despacho/@${pedidoId}/factura-datos`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -639,7 +392,7 @@ async function abrirModalFactura(pedidoId) {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: @${response.status}`);
         }
 
         let data;
@@ -697,32 +450,32 @@ function generarHTMLFactura(datos) {
                         <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                             <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                             <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
-                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
-                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
+                            @@${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
+                            @@${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
+                            @@${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
-                        ${prenda.variantes.map((var_item, varIdx) => `
-                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
-                                ${tieneManga ? `
+                        @${prenda.variantes.map((var_item, varIdx) => `
+                            <tr style="background: @${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">@${var_item.talla}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">@${var_item.cantidad}</td>
+                                @${tieneManga ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
-                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
+                                        @${var_item.manga ? `<strong>@${var_item.manga}</strong>` : '—'}
+                                        @${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.manga_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
-                                ${tieneBroche ? `
+                                @${tieneBroche ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
-                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
+                                        @${var_item.broche ? `<strong>@${var_item.broche}</strong>` : '—'}
+                                        @${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.broche_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
-                                ${tieneBolsillos ? `
+                                @${tieneBolsillos ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
-                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
+                                        @${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                        @${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.bolsillos_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
                             </tr>
@@ -737,12 +490,12 @@ function generarHTMLFactura(datos) {
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
             telaHTML = `
                 <div style="margin-bottom: 12px;">
-                    ${prenda.telas_array.map(tela => `
+                    @${prenda.telas_array.map(tela => `
                         <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
                             <span style="font-size: 11px; color: #374151;">
-                                <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
-                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
-                                ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
+                                <strong>Tela:</strong> @${tela.tela_nombre || '—'} 
+                                <strong style="margin-left: 12px;">Color:</strong> @${tela.color_nombre || '—'}
+                                @${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> @${tela.referencia}` : ''}
                             </span>
                         </div>
                     `).join('')}
@@ -751,8 +504,8 @@ function generarHTMLFactura(datos) {
         } else if (prenda.tela || prenda.color) {
             telaHTML = `
                 <div style="margin-bottom: 12px; font-size: 11px; color: #374151;">
-                    <strong>Tela:</strong> ${prenda.tela || '—'} 
-                    ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
+                    <strong>Tela:</strong> @${prenda.tela || '—'} 
+                    @${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> @${prenda.color}` : ''}
                 </div>
             `;
         }
@@ -762,27 +515,27 @@ function generarHTMLFactura(datos) {
         if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
             procesosHTML = `
                 <div style="margin-bottom: 0;">
-                    ${prenda.procesos.map(proc => `
+                    @${prenda.procesos.map(proc => `
                         <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
-                            ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">@${proc.nombre || proc.tipo}</div>
+                            @${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                     ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
+                                     @${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
                                 </div>
                             ` : ''}
-                            ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
+                            @${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                    ${[
-                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
+                                    @${[
+                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: @${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: @${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: @${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: @${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `@${genero}(@${cantidad})`).join(', ')}`] : [])
                                     ].join(' • ')}
                                 </div>
                             ` : ''}
-                            ${proc.observaciones ? `
+                            @${proc.observaciones ? `
                                 <div style="font-size: 10px; color: #6b7280;">
-                                    ${proc.observaciones}
+                                    @${proc.observaciones}
                                 </div>
                             ` : ''}
                         </div>
@@ -795,27 +548,27 @@ function generarHTMLFactura(datos) {
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
                 <!-- Header simple -->
                 <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
-                    ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA @${idx + 1}: @${prenda.nombre}@${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
+                    @${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">@${prenda.descripcion}</div>` : ''}
                 </div>
                 
                 <!-- Telas (movido aquí) -->
-                ${telaHTML}
+                @${telaHTML}
                 
                 <!-- Imagen pequeña -->
-                ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
+                @${(prenda.imagenes && prenda.imagenes.length > 0) ? `
                     <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
-                        <img src="${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <img src="@${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
                     </div>
                 ` : ''}
                 
                 <!-- Contenido compacto -->
-                <div style="${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
+                <div style="@${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
                     <!-- Variantes -->
-                    ${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
+                    @${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
                     
                     <!-- Procesos -->
-                    ${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
+                    @${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
                 </div>
                 
                 <div style="clear: both;"></div>
@@ -826,16 +579,16 @@ function generarHTMLFactura(datos) {
     // EPPs
     const eppsHTML = (datos.epps && datos.epps.length > 0) ? `
         <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
-            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (${datos.epps.length})</div>
+            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (@${datos.epps.length})</div>
             <div style="padding: 12px; space-y: 8px;">
-                ${datos.epps.map(epp => `
+                @${datos.epps.map(epp => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
                         <div style="flex: 1;">
-                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
-                            ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">@${epp.nombre_completo || epp.nombre}</div>
+                            @${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">@${epp.observaciones}</div>` : ''}
                         </div>
                         <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px;">
-                            ${epp.cantidad}
+                            @${epp.cantidad}
                         </div>
                     </div>
                 `).join('')}
@@ -847,16 +600,16 @@ function generarHTMLFactura(datos) {
     const totalHTML = `
         <div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">
             <div style="font-size: 12px; margin-bottom: 8px;">
-                <strong>Total Ítems:</strong> ${datos.total_items || 0}
+                <strong>Total Ítems:</strong> @${datos.total_items || 0}
             </div>
-            ${datos.valor_total ? `
+            @${datos.valor_total ? `
                 <div style="font-size: 12px; margin-bottom: 8px;">
-                    <strong>Subtotal:</strong> $${parseFloat(datos.valor_total).toLocaleString('es-CO')}
+                    <strong>Subtotal:</strong> $@${parseFloat(datos.valor_total).toLocaleString('es-CO')}
                 </div>
             ` : ''}
-            ${datos.total_general ? `
+            @${datos.total_general ? `
                 <div style="font-size: 14px; font-weight: 700; color: #1e40af; padding-top: 8px; border-top: 2px solid #d1d5db;">
-                    <strong>Total:</strong> $${parseFloat(datos.total_general).toLocaleString('es-CO')}
+                    <strong>Total:</strong> $@${parseFloat(datos.total_general).toLocaleString('es-CO')}
                 </div>
             ` : ''}
         </div>
@@ -870,141 +623,262 @@ function generarHTMLFactura(datos) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Número</div>
-                        <div style="font-weight: 600;">${datos.numero_pedido}</div>
+                        <div style="font-weight: 600;">@${datos.numero_pedido}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Cliente</div>
-                        <div style="font-weight: 600;">${datos.cliente}</div>
+                        <div style="font-weight: 600;">@${datos.cliente}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Asesora</div>
-                        <div style="font-weight: 600;">${datos.asesora}</div>
+                        <div style="font-weight: 600;">@${datos.asesora}</div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
-                        <div style="font-weight: 600;">${datos.forma_de_pago}</div>
+                        <div style="font-weight: 600;">@${datos.forma_de_pago}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
-                        <div style="font-weight: 600;">${datos.fecha}</div>
+                        <div style="font-weight: 600;">@${datos.fecha}</div>
                     </div>
                 </div>
             </div>
 
-            ${datos.observaciones ? `
+            @${datos.observaciones ? `
                 <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
                     <strong style="color: #92400e;"> Observaciones:</strong>
-                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
+                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">@${datos.observaciones}</div>
                 </div>
             ` : ''}
 
             <!-- Prendas -->
-            ${prendasHTML}
+            @${prendasHTML}
 
             <!-- EPPs -->
-            ${eppsHTML}
+            @${eppsHTML}
 
             <!-- Totales -->
-            ${totalHTML}
+            @${totalHTML}
         </div>
     `;
 }
 
 /**
- * Mostrar modal de éxito
- */
-function mostrarModalExito(data) {
-    const modal = document.getElementById('modalExito');
-    const mensaje = document.getElementById('modalMensaje');
-    const detalles = document.getElementById('modalDetalles');
-    
-    mensaje.textContent = '✓ ' + (data.message || 'Despacho guardado correctamente');
-    detalles.textContent = `${data.despachos_procesados} ítem(s) procesado(s) y guardado(s)`;
-    
-    modal.classList.remove('hidden');
-    
-    // Cerrar automáticamente después de 5 segundos
-    setTimeout(() => {
-        cerrarModalExito();
-    }, 5000);
-}
-
-/**
- * Cerrar modal de éxito
- */
-function cerrarModalExito() {
-    const modal = document.getElementById('modalExito');
-    modal.classList.add('hidden');
-}
-
-/**
- * Imprimir tabla de despacho vacía
+ * Imprimir tabla de despacho con 11 columnas originales
  */
 function imprimirTablaVacia() {
-    const tabla = document.querySelector('table');
-    
-    if (!tabla) {
-        alert('No se encontró la tabla');
-        return;
-    }
+    // Construir tabla HTML con 11 columnas para impresión
+    let tablaHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                <tr>
+                    <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0;">Descripción</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Género</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 50px;">Talla</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Cantidad</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 1</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 2</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 3</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
 
-    // Clonar la tabla
-    const tablaClonada = tabla.cloneNode(true);
+    // Obtener todas las filas de la tabla actual
+    const filas = document.querySelectorAll('#tablaDespacho tr[data-tipo]');
+    let ultimoTipo = '';
+    let ultimoId = null;
+    let grupoFilas = [];
 
-    // Hacer transparente el contenido de los inputs
-    const inputs = tablaClonada.querySelectorAll('input[type="number"]');
-    inputs.forEach(input => {
-        input.style.color = 'transparent';
-        input.style.background = 'white';
+    filas.forEach((fila, index) => {
+        const tipo = fila.dataset.tipo;
+        const id = fila.dataset.id;
+        
+        // Agregar encabezado de sección si cambia el tipo
+        if (tipo !== ultimoTipo) {
+            const nombreSeccion = tipo === 'prenda' ? 'Prendas' : 'EPP';
+            tablaHTML += `
+                <tr style="background: #f1f5f9;">
+                    <td colspan="11" style="padding: 8px 4px; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0;">${nombreSeccion}</td>
+                </tr>
+            `;
+            ultimoTipo = tipo;
+        }
+
+        // Detectar si esta fila tiene la celda de descripción (primera fila de un grupo)
+        const tds = fila.querySelectorAll('td');
+        const tieneDescripcion = tds.length >= 5; // Si tiene 5 columnas, tiene descripción y género
+
+        if (tieneDescripcion) {
+            // Es la primera fila de un grupo, obtener descripción y género
+            const cloneDesc = tds[0].cloneNode(true);
+            cloneDesc.querySelectorAll('button').forEach(btn => btn.remove());
+            const descripcion = cloneDesc.innerHTML;
+
+            const cloneGenero = tds[1].cloneNode(true);
+            cloneGenero.querySelectorAll('button').forEach(btn => btn.remove());
+            const genero = cloneGenero.textContent.trim() || '—';
+
+            const cloneTalla = tds[2].cloneNode(true);
+            cloneTalla.querySelectorAll('button').forEach(btn => btn.remove());
+            const talla = cloneTalla.textContent.trim() || '—';
+
+            const cloneCantidad = tds[3].cloneNode(true);
+            cloneCantidad.querySelectorAll('button').forEach(btn => btn.remove());
+            const cantidad = cloneCantidad.textContent.trim() || '0';
+
+            // Contar cuántas filas más tienen el mismo id (para rowspan)
+            let rowspan = 1;
+            for (let i = index + 1; i < filas.length; i++) {
+                if (filas[i].dataset.id === id && filas[i].dataset.tipo === tipo) {
+                    rowspan++;
+                } else {
+                    break;
+                }
+            }
+
+            // Primera fila con descripción y género
+            tablaHTML += `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 8px 4px; font-size: 10px; border: 1px solid #e2e8f0;" rowspan="${rowspan}">${descripcion}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;" rowspan="${rowspan}">${genero}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;">${talla}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #e2e8f0;">${cantidad}</td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                </tr>
+            `;
+        } else {
+            // Fila adicional sin descripción ni género (solo talla y cantidad)
+            const cloneTalla = tds[0].cloneNode(true);
+            cloneTalla.querySelectorAll('button').forEach(btn => btn.remove());
+            const talla = cloneTalla.textContent.trim() || '—';
+
+            const cloneCantidad = tds[1].cloneNode(true);
+            cloneCantidad.querySelectorAll('button').forEach(btn => btn.remove());
+            const cantidad = cloneCantidad.textContent.trim() || '0';
+
+            tablaHTML += `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;">${talla}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #e2e8f0;">${cantidad}</td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                </tr>
+            `;
+        }
     });
+
+    tablaHTML += `
+            </tbody>
+        </table>
+    `;
 
     // Crear ventana de impresión
     const ventana = window.open('', '', 'width=1200,height=800');
     
-    const htmlContent = '<!DOCTYPE html>' +
-        '<html lang="es">' +
-        '<head>' +
-        '<meta charset="UTF-8">' +
-        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-        '<title>Despacho - Imprimir</title>' +
-        '<style>' +
-        '@page { margin: 8mm; size: letter portrait; }' +
-        '* { margin: 0; padding: 0; box-sizing: border-box; }' +
-        'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; background: white; overflow-x: auto; }' +
-        'table { width: 100%; border-collapse: collapse; margin-top: 5px; }' +
-        'thead { background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }' +
-        'th { padding: 2px 1px; text-align: center; font-weight: 600; font-size: 12px; border: 1px solid #e2e8f0; line-height: 1; }' +
-        'th:first-child { font-size: 12px; padding: 3px 2px; }' +
-        'td { padding: 3px 2px; border: 1px solid #e2e8f0; font-size: 9px; }' +
-        'td:first-child { padding: 8px 3px; font-size: 12px; font-weight: 600; }' +
-        'tbody tr:nth-child(even) { background: white; }' +
-        'tbody tr.bg-slate-50 { background: #f1f5f9; }' +
-        'tbody tr.bg-slate-50 td { background: #f1f5f9; font-weight: 600; padding: 6px 2px; font-size: 10px; }' +
-        'input[type="number"] { width: 100%; border: 1px solid #cbd5e1; padding: 1px 0px; background: white; font-size: 8px; text-align: center; height: 16px; }' +
-        '@media print { body { margin: 0; padding: 0; } table { page-break-inside: avoid; } tr { page-break-inside: avoid; } }' +
-        '</style>' +
-        '</head>' +
-        '<body>' +
-        tablaClonada.outerHTML +
-        '<script>' +
-        'window.print();' +
-        'window.onafterprint = function() { window.close(); };' +
-        '<\/script>' +
-        '</body>' +
-        '</html>';
+    const htmlContent = `<!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Despacho - Imprimir</title>
+            <style>
+                @page { 
+                    margin: 5mm; 
+                    size: letter landscape; 
+                }
+                * { 
+                    margin: 0; 
+                    padding: 0; 
+                    box-sizing: border-box; 
+                }
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+                    font-size: 9px; 
+                    background: white; 
+                    padding: 0;
+                    margin: 0;
+                }
+                h2 { 
+                    text-align: center; 
+                    margin-bottom: 5px; 
+                    font-size: 14px;
+                    page-break-after: avoid;
+                }
+                p { 
+                    text-align: center; 
+                    margin-bottom: 8px; 
+                    font-size: 10px;
+                    page-break-after: avoid;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse;
+                    page-break-before: avoid;
+                }
+                thead {
+                    page-break-after: avoid;
+                }
+                tr { 
+                    page-break-inside: avoid; 
+                }
+                @media print { 
+                    body { 
+                        margin: 0; 
+                        padding: 0; 
+                    }
+                    h2, p {
+                        page-break-after: avoid;
+                    }
+                    table { 
+                        page-break-before: avoid;
+                        page-break-inside: auto;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div style="text-align: right; font-size: 10px; color: #666; margin-bottom: 10px;">
+                <strong>Fecha de impresión:</strong> ` + new Date().toLocaleString('es-CO', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }) + `
+            </div>
+            <h2>Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
+            <p>Cliente: {{ $pedido->cliente ?? '—' }}</p>
+            ` + tablaHTML + `
+            <script>
+                window.print();
+                window.onafterprint = function() { window.close(); };
+            <\/script>
+        </body>
+        </html>`;
     
     ventana.document.write(htmlContent);
     ventana.document.close();
 }
 
 </script>
-
-<style>
-    input[type="number"] {
-        font-variant-numeric: tabular-nums;
-    }
-</style>
 
 @endsection

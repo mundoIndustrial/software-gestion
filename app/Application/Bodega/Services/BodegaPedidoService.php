@@ -68,13 +68,19 @@ class BodegaPedidoService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
 
         // Obtener números de pedidos anulados desde pedidos_produccion
-        // (tolerante: ANULADA / ANULADO / ANULAD* con diferentes capitalizaciones/espacios)
+        // El ENUM tiene el valor exacto 'Anulada'
         $numerosAnulados = PedidoProduccion::query()
-            ->whereRaw("UPPER(TRIM(estado)) LIKE 'ANULAD%'")
+            ->where('estado', 'Anulada')
             ->pluck('numero_pedido')
             ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
+        
+        \Log::info('[BodegaPedidoService] Pedidos anulados encontrados', [
+            'total' => $numerosAnulados->count(),
+            'numeros' => $numerosAnulados->toArray(),
+            'query_sql' => PedidoProduccion::where('estado', 'Anulada')->toSql()
+        ]);
 
         // Cargar recibos por número de pedido SIN filtrar por estado del recibo,
         // para que el listado siempre muestre los pedidos anulados.

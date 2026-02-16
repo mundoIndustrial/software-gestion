@@ -26,7 +26,7 @@ class EventBus {
         listeners.push(callback);
 
         if (this.debugMode) {
-            console.log(`[EventBus] ✓ Listener agregado: ${eventName}`);
+            Logger.debug(`Listener agregado: ${eventName}`, 'EventBus');
         }
 
         // Retornar función para desuscribirse
@@ -57,7 +57,7 @@ class EventBus {
     emit(eventName, data = null) {
         if (!this.events.has(eventName)) {
             if (this.debugMode) {
-                console.log(`[EventBus]  Evento no tiene listeners: ${eventName}`);
+                Logger.debug(`Evento no tiene listeners: ${eventName}`, 'EventBus');
             }
             return;
         }
@@ -65,7 +65,7 @@ class EventBus {
         const listeners = this.events.get(eventName);
         
         if (this.debugMode) {
-            console.log(`[EventBus] 📢 Emitiendo: ${eventName}`, data);
+            Logger.debug(`Emitiendo: ${eventName}`, 'EventBus', data);
         }
 
         // Ejecutar listeners de forma asincrónica para evitar bloqueos
@@ -74,7 +74,7 @@ class EventBus {
                 try {
                     callback(data);
                 } catch (error) {
-                    console.error(`[EventBus]  Error en listener de ${eventName}:`, error);
+                    Logger.error(`Error en listener de ${eventName}`, 'EventBus', error);
                 }
             });
         });
@@ -87,7 +87,7 @@ class EventBus {
         if (this.events.has(eventName)) {
             this.events.delete(eventName);
             if (this.debugMode) {
-                console.log(`[EventBus] 🗑️ Listeners removidos: ${eventName}`);
+                Logger.debug(`Listeners removidos: ${eventName}`, 'EventBus');
             }
         }
     }
@@ -98,7 +98,7 @@ class EventBus {
     clear() {
         this.events.clear();
         if (this.debugMode) {
-            console.log(`[EventBus] 🗑️ Todos los eventos cleared`);
+            Logger.debug('Todos los eventos cleared', 'EventBus');
         }
     }
 
@@ -124,7 +124,7 @@ class EventBus {
     enableDebug(enabled = true) {
         this.debugMode = enabled;
         if (enabled) {
-            console.log('[EventBus]  Modo DEBUG habilitado');
+            Logger.debug('Modo DEBUG habilitado', 'EventBus');
         }
     }
 }

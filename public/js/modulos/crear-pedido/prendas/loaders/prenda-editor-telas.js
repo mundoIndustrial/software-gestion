@@ -13,40 +13,15 @@ class PrendaEditorTelas {
             telas: prenda.telasAgregadas?.map(t => t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
-        // 🔴 CRÍTICO: RESETEAR window.telasCreacion COMPLETAMENTE ANTES DE CARGAR
-        // Esto evita que telas de prenda anterior contaminen la prenda actual
-        console.log('[Telas] 💣 RESET EXPLOSIVO - Limpiando window.telasCreacion ANTES de cargar');
-        console.log('[Telas]   ANTES:', window.telasCreacion);
-        window.telasCreacion = [];
-        window.telasAgregadas = [];
-        console.log('[Telas]   DESPUÉS:', window.telasCreacion);
-        
-        // 🔴 CRÍTICO: LIMPIAR imagenesTelaStorage SOLO cuando se ABRE una NUEVA prenda
-        // NO limpiar durante guardado/cierre, eso se hace aquí al CARGAR
-        if (window.imagenesTelaStorage && typeof window.imagenesTelaStorage.limpiar === 'function') {
-            console.log('[Telas] 🧹 Limpiando OLD imagenesTelaStorage para NUEVA prenda');
-            const imagenesAntes = window.imagenesTelaStorage.obtenerImagenes?.() || [];
-            console.log('[Telas] 🧹 Imágenes de tela ANTES de limpiar:', imagenesAntes.length, imagenesAntes);
-            window.imagenesTelaStorage.limpiar();
-            const imagenesDespues = window.imagenesTelaStorage.obtenerImagenes?.() || [];
-            console.log('[Telas] 🧹 Imágenes de tela DESPUÉS de limpiar:', imagenesDespues.length);
-        }
-        
         // Buscar tabla
         const tablaTelas = document.querySelector('#tbody-telas');
         if (!tablaTelas) {
-            console.warn(' [Telas] No encontrado #tbody-telas');
+            console.warn('❌ [Telas] No encontrado #tbody-telas');
             return;
         }
         
-        // Encontrar fila de inputs usando el botón "Agregar" (selector más robusto)
-        // El botón tiene onclick="agregarTelaNueva()" que es más estable que buscar por ID
-        const todasLasFilas = Array.from(tablaTelas.querySelectorAll('tr'));
-        const filaInputs = todasLasFilas.find(tr => 
-            tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
-        );
-        
-        console.log('[Telas] Fila de inputs encontrada:', !!filaInputs);
+        // Encontrar fila de inputs (para agregar nuevas)
+        const filaInputs = tablaTelas.querySelector('[id="nueva-prenda-tela"]')?.closest('tr');
         
         // Eliminar filas viejas (excepto inputs)
         const filasExistentes = tablaTelas.querySelectorAll('tr');
@@ -63,221 +38,83 @@ class PrendaEditorTelas {
             prenda.telasAgregadas.forEach((tela, idx) => {
                 const fila = this._crearFilaTela(tela, idx);
                 
-                // 🔴 CAMBIO: Insertar DESPUÉS de la fila de inputs (no antes)
-                // Esto hace que la fila de inputs quede ARRIBA y las telas existentes ABAJO
+                // Insertar ANTES de la fila de inputs
                 if (filaInputs) {
-                    filaInputs.parentNode.insertBefore(fila, filaInputs.nextSibling);
+                    filaInputs.parentNode.insertBefore(fila, filaInputs);
                 } else {
                     tablaTelas.appendChild(fila);
                 }
                 
-                console.log(` [Telas] ${idx + 1}: ${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
+                console.log(`✅ [Telas] ${idx + 1}: ${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
             });
         }
         
-        //  Replicar a global para que sea editable
-        // ⚠️ CRÍTICO: NO usar JSON.stringify porque DESTRUYE File objects y blob URLs
-        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
-            // Hacer copia profunda que preserve File objects y datos de imagen
-            // Approach: spread cada tela y copiar su array de imágenes
+        // 🔥 Replicar a global para que sea editable
+        // 🔴 NO usar JSON.parse/stringify - destruye File objects y blob URLs
+        if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas)) {
             window.telasCreacion = prenda.telasAgregadas.map(tela => ({
                 ...tela,
-                imagenes: tela.imagenes ? [...tela.imagenes] : []  // Copia el array de imágenes sin procesar
+                imagenes: tela.imagenes ? [...tela.imagenes] : []
             }));
-            
-            // 🔍 DEBUG PROFUNDO: Mostrar exactamente qué se cargó
-            const detallesDebug = window.telasCreacion[0]?.imagenes?.map(img => ({
-                tipo: typeof img,
-                esFile: img instanceof File,
-                constructor: img?.constructor?.name || 'N/A',
-                toStringValor: Object.prototype.toString.call(img),
-                campos_enumerables: Object.keys(img || {}),
-                campos_propios: Object.getOwnPropertyNames(img || {}),
-                // Valores directos
-                previewUrl: img?.previewUrl,
-                ruta: img?.ruta,
-                ruta_original: img?.ruta_original,
-                ruta_webp: img?.ruta_webp,
-                url: img?.url,
-                id: img?.id,
-                stringify: JSON.stringify(img)
-            })) || [];
-            
-            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (SIN stringify/parse):', {
-                cantidad: window.telasCreacion.length,
-                primeraTela: window.telasCreacion[0]?.tela,
-                imagenesEnPrimera: window.telasCreacion[0]?.imagenes?.length,
-                detallesImagenesProfundo: detallesDebug
-            });
-            
-            // IMPORTANTE: Limpiar telasAgregadas para evitar conflicto en la colección de datos
-            window.telasAgregadas = [];
-        } else {
-            // 🔴 CRÍTICO: Si la prenda NO tiene telas (nueva prenda o sin telas), resetear telasCreacion
-            console.log('[Carga] 🧹 Prenda sin telas: reseteando window.telasCreacion a []');
-            window.telasCreacion = [];
-            window.telasAgregadas = [];
+            console.log('[Carga] 🧵 Telas replicadas en window.telasCreacion (preservando File objects):', window.telasCreacion.length);
         }
         
-        console.log(' [Telas] Completado');
-    }
-
-    /**
-     * 🧹 LIMPIAR TABLA DE TELAS
-     * Se ejecuta cuando se abre el modal (CREATE o EDIT)
-     * Elimina todas las filas exceptuando la fila de inputs
-     * TAMBIÉN RESETS window.telasCreacion para evitar fantasmas de prenda anterior
-     */
-    static limpiarTabla() {
-        console.log('═══════════════════════════════════════════════════');
-        console.log('[Telas.limpiarTabla] 🧹 INICIANDO LIMPIEZA');
-        console.log('═══════════════════════════════════════════════════');
-        
-        // Estado ANTES de limpiar
-        console.log('[Telas.limpiarTabla] 📊 ESTADO ANTES:');
-        console.log('  window.telasCreacion:', window.telasCreacion);
-        console.log('  window.telasCreacion.length:', window.telasCreacion?.length);
-        if (window.telasCreacion && window.telasCreacion.length > 0) {
-            console.log('  Primera tela:', window.telasCreacion[0]?.tela);
-            console.log('  Primera tela imagenes:', window.telasCreacion[0]?.imagenes?.length);
-        }
-        
-        // 🔴 CRÍTICO: Resetear variables globales PRIMERO
-        console.log('[Telas.limpiarTabla] 🧹 Reseteando variables globales...');
-        window.telasCreacion = [];
-        window.telasAgregadas = [];
-        
-        // Verificar que se reseteó
-        console.log('[Telas.limpiarTabla] ✓ DESPUÉS de resetear window.telasCreacion:', window.telasCreacion);
-        console.log('[Telas.limpiarTabla] ✓ DESPUÉS de resetear window.telasAgregadas:', window.telasAgregadas);
-        
-        const tablaTelas = document.querySelector('#tbody-telas');
-        if (!tablaTelas) {
-            console.warn('[Telas.limpiarTabla] ❌ No encontrado #tbody-telas');
-            return;
-        }
-
-        // Encontrar fila de inputs
-        const todasLasFilas = Array.from(tablaTelas.querySelectorAll('tr'));
-        console.log('[Telas.limpiarTabla] 📊 Total de filas en tabla:', todasLasFilas.length);
-        
-        const filaInputs = todasLasFilas.find(tr => 
-            tr.querySelector('button[onclick="agregarTelaNueva()"]') !== null
-        );
-        
-        console.log('[Telas.limpiarTabla] 📌 Fila de inputs encontrada:', !!filaInputs);
-
-        // Eliminar filas viejas (excepto inputs)
-        const filasExistentes = tablaTelas.querySelectorAll('tr');
-        let filasEliminadas = 0;
-        filasExistentes.forEach((fila, idx) => {
-            if (fila !== filaInputs) {
-                console.log(`[Telas.limpiarTabla] 🗑️ Eliminando fila ${idx}:`, fila.textContent.substring(0, 50));
-                fila.remove();
-                filasEliminadas++;
-            } else {
-                console.log(`[Telas.limpiarTabla] ✓ Conservando fila de inputs`);
-            }
-        });
-
-        console.log('[Telas.limpiarTabla] 🎉 COMPLETADO');
-        console.log('  - Filas eliminadas:', filasEliminadas);
-        console.log('  - telasCreacion reseteado a:', window.telasCreacion);
-        console.log('═══════════════════════════════════════════════════');
+        console.log('✅ [Telas] Completado');
     }
 
     /**
      * Crear fila de tela para la tabla
      * @private
+     * 🔴 IMPORTANTE: Usa DOM API (createElement) en vez de innerHTML para la imagen.
+     * Esto evita problemas con blob: URLs y onerror roto por parsing HTML.
      */
     static _crearFilaTela(tela, idx) {
         const fila = document.createElement('tr');
         fila.style.borderBottom = '1px solid #e5e7eb';
         
-        // Procesar imágenes de la tela
-        let imagenHTML = '';
+        // Determinar la fuente de imagen y el File object (si existe) para fallback
+        let imgSrc = '';
+        let fileParaFallback = null;
         
-        // Intentar obtener imagen de diferentes campos posibles
-        let imagenesArray = [];
-        
-        if (tela.imagenes) {
-            if (Array.isArray(tela.imagenes)) {
-                imagenesArray = tela.imagenes;
-            } else if (typeof tela.imagenes === 'object') {
-                // Si es un objeto, convertirlo a array
-                imagenesArray = [tela.imagenes];
-            } else if (typeof tela.imagenes === 'string') {
-                imagenesArray = [tela.imagenes];
-            }
-        } else if (tela.imagen) {
-            // Alternativa: campo "imagen" singular
-            imagenesArray = [tela.imagen];
-        } else if (tela.foto) {
-            // Otra alternativa: campo "foto"
-            imagenesArray = [tela.foto];
-        }
-        
-        if (imagenesArray && imagenesArray.length > 0) {
-            // Tomar la primera imagen válida
-            const imagenValida = imagenesArray.find(img => img !== null && img !== undefined);
+        if (tela.imagenes && Array.isArray(tela.imagenes) && tela.imagenes.length > 0) {
+            const imagenValida = tela.imagenes.find(img => img !== null && img !== undefined);
             if (imagenValida) {
-                let imgSrc = '';
-                
-                // Procesar según el tipo de imagen
-                if (typeof imagenValida === 'string') {
-                    // String: puede ser URL, ruta, o base64
+                if (imagenValida instanceof File) {
+                    fileParaFallback = imagenValida;
+                    imgSrc = URL.createObjectURL(imagenValida);
+                    console.log(`[Telas] 🔄 Blob URL creada para tela ${idx} desde File object crudo: ${imgSrc.substring(0, 60)}`);
+                } else if (typeof imagenValida === 'string') {
                     if (imagenValida.startsWith('data:') || imagenValida.startsWith('blob:')) {
                         imgSrc = imagenValida;
                     } else {
-                        // Ruta de archivo, agregar /storage/ si necesario
                         imgSrc = imagenValida.startsWith('/') ? imagenValida : '/storage/' + imagenValida;
                     }
-                } else if (imagenValida instanceof File) {
-                    // Si es un verdadero File object, crear blob URL
-                    imgSrc = URL.createObjectURL(imagenValida);
                 } else if (typeof imagenValida === 'object') {
-                    // Objeto con propiedades - intentar múltiples campos
-                    if (imagenValida.previewUrl) {
+                    if (imagenValida.file && imagenValida.file instanceof File) {
+                        fileParaFallback = imagenValida.file;
+                        imgSrc = URL.createObjectURL(imagenValida.file);
+                        imagenValida.previewUrl = imgSrc;
+                        console.log(`[Telas] 🔄 Blob URL reconstituida para tela ${idx} desde File object`);
+                    } else if (imagenValida.previewUrl && !imagenValida.previewUrl.startsWith('blob:')) {
+                        imgSrc = imagenValida.previewUrl;
+                    } else if (imagenValida.previewUrl && imagenValida.previewUrl.startsWith('blob:')) {
                         imgSrc = imagenValida.previewUrl;
                     } else if (imagenValida.dataURL) {
                         imgSrc = imagenValida.dataURL;
-                    } else if (imagenValida.src) {
-                        imgSrc = imagenValida.src;
-                    } else if (imagenValida.url) {
-                        imgSrc = imagenValida.url.startsWith('/') || imagenValida.url.startsWith('http') ? imagenValida.url : '/storage/' + imagenValida.url;
-                    } else if (imagenValida.ruta) {
-                        imgSrc = imagenValida.ruta.startsWith('/') ? imagenValida.ruta : '/storage/' + imagenValida.ruta;
-                    } else if (imagenValida.ruta_webp) {
-                        imgSrc = imagenValida.ruta_webp.startsWith('/') ? imagenValida.ruta_webp : '/storage/' + imagenValida.ruta_webp;
-                    } else if (imagenValida.ruta_original) {
-                        imgSrc = imagenValida.ruta_original.startsWith('/') ? imagenValida.ruta_original : '/storage/' + imagenValida.ruta_original;
+                    } else if (imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original) {
+                        const url = imagenValida.url || imagenValida.ruta || imagenValida.ruta_webp || imagenValida.ruta_original;
+                        imgSrc = url.startsWith('/') || url.startsWith('http') ? url : '/storage/' + url;
                     }
                 }
-                
-                if (imgSrc) {
-                    imagenHTML = `
-                        <img src="${imgSrc}" 
-                            style="max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;" 
-                            alt="Tela ${idx + 1}"
-                            onerror="const d=document.createElement('div'); d.style.cssText='font-size: 0.75rem; color: #9ca3af;'; d.textContent='(imagen no disponible)'; this.parentElement.innerHTML=''; this.parentElement.appendChild(d);">
-                    `;
-                } else {
-                    imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
-                }
-            } else {
-                imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
             }
-        } else {
-            imagenHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
         }
         
+        // Construir filas base con innerHTML (SIN la imagen - la imagen va por DOM API)
         fila.innerHTML = `
             <td style="padding: 0.5rem;">${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}</td>
             <td style="padding: 0.5rem;">${tela.color_nombre || tela.color || 'Sin color'}</td>
             <td style="padding: 0.5rem;">${tela.referencia || '-'}</td>
-            <td style="padding: 0.5rem; text-align: center; vertical-align: top;">
-                ${imagenHTML}
-            </td>
+            <td class="td-imagen-tela" style="padding: 0.5rem; text-align: center; vertical-align: top;"></td>
             <td style="padding: 0.5rem; text-align: center;">
                 <button type="button" class="btn btn-sm btn-danger" 
                     onclick="eliminarTela(${idx})"
@@ -286,6 +123,52 @@ class PrendaEditorTelas {
                 </button>
             </td>
         `;
+        
+        // 🔴 CONSTRUIR IMAGEN VÍA DOM API (evita problemas de innerHTML + blob: + onerror)
+        const tdImagen = fila.querySelector('.td-imagen-tela');
+        if (imgSrc && tdImagen) {
+            const img = document.createElement('img');
+            img.style.cssText = 'max-width: 80px; max-height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;';
+            img.alt = `Tela ${idx + 1}`;
+            
+            // Evento de error: si blob URL falla, intentar data URL como fallback
+            img.onerror = function() {
+                console.warn(`[Telas] ⚠️ Error cargando imagen tela ${idx}, src: ${img.src?.substring(0, 60)}`);
+                
+                // Si tenemos el File original, re-intentar con data URL (base64)
+                if (fileParaFallback && fileParaFallback instanceof File) {
+                    console.log(`[Telas] 🔄 Intentando fallback con FileReader (data URL) para tela ${idx}`);
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        img.onerror = null; // Evitar bucle infinito
+                        img.src = reader.result;
+                        console.log(`[Telas] ✅ Data URL cargada exitosamente para tela ${idx}`);
+                    };
+                    reader.onerror = function() {
+                        console.error(`[Telas] ❌ FileReader también falló para tela ${idx}`);
+                        img.style.display = 'none';
+                        tdImagen.innerHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(imagen no disponible)</div>';
+                    };
+                    reader.readAsDataURL(fileParaFallback);
+                } else {
+                    // Sin File para fallback, mostrar mensaje
+                    img.style.display = 'none';
+                    tdImagen.innerHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(imagen no disponible)</div>';
+                }
+            };
+            
+            // Evento de carga exitosa
+            img.onload = function() {
+                console.log(`[Telas] ✅ Imagen tela ${idx} cargada exitosamente`);
+            };
+            
+            // 🔴 Asignar src DESPUÉS de configurar onerror/onload
+            img.src = imgSrc;
+            tdImagen.appendChild(img);
+        } else if (tdImagen) {
+            tdImagen.innerHTML = '<div style="font-size: 0.75rem; color: #9ca3af;">(sin imagen)</div>';
+        }
+        
         return fila;
     }
 

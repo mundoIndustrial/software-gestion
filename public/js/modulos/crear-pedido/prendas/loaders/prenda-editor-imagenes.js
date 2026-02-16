@@ -143,7 +143,7 @@ class PrendaEditorImagenes {
      */
     static _extraerUrl(img) {
         if (typeof img === 'string') {
-            return img; // URL directa
+            return this._normalizarRuta(img);
         }
         
         if (img instanceof File) {
@@ -159,10 +159,29 @@ class PrendaEditorImagenes {
             }
             
             // Si no, intentar extraer URL de propiedades
-            return img.url || img.ruta || img.ruta_imagen || img.imagen || img.previewUrl || null;
+            const raw = img.url || img.ruta || img.ruta_webp || img.ruta_original || img.ruta_imagen || img.imagen || img.previewUrl || null;
+            return raw ? this._normalizarRuta(raw) : null;
         }
         
         return null;
+    }
+
+    /**
+     * Normalizar ruta de imagen agregando /storage/ si es necesario
+     * @private
+     */
+    static _normalizarRuta(src) {
+        if (!src) return null;
+        // Ya es absoluta, blob o data URL → no tocar
+        if (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:') || src.startsWith('/storage/')) {
+            return src;
+        }
+        // Ruta con / inicial pero sin /storage/ → agregar /storage
+        if (src.startsWith('/')) {
+            return '/storage' + src;
+        }
+        // Ruta relativa (ej: "pedidos/22/prenda/xxx.webp") → agregar /storage/
+        return '/storage/' + src;
     }
 
     /**

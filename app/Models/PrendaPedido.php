@@ -202,6 +202,16 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene un registro de entrega
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function entrega()
+    {
+        return $this->hasOne(PrendaEntrega::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Obtener el primer color de esta prenda (para compatibilidad con vistas antiguas)
      * Retorna el color del primer registro en prenda_pedido_colores_telas
      */

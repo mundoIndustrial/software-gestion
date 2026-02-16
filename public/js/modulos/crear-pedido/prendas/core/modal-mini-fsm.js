@@ -36,8 +36,6 @@
             
             // Validaciones
             this._validarModalExiste();
-            
-            console.log(`[ModalFSM] Inicializado para modal: ${modalId}`);
         }
 
         /**
@@ -46,10 +44,7 @@
          */
         _validarModalExiste() {
             const modal = document.getElementById(this.modalId);
-            if (!modal) {
-                console.warn(`[ModalFSM]  Modal no encontrado en DOM al iniciar: ${this.modalId}`);
-                // No es error fatal - el modal se puede cargar después
-            }
+            // No es error fatal - el modal se puede cargar después
         }
 
         /**
@@ -79,14 +74,10 @@
 
             // Guard: transición inválida
             if (!transicionesValidas[estadoAnterior]) {
-                console.error(`[ModalFSM] Estado inválido en tabla: ${estadoAnterior}`);
                 return false;
             }
 
             if (!transicionesValidas[estadoAnterior].includes(nuevoEstado)) {
-                console.warn(
-                    `[ModalFSM]  Transición rechazada: ${estadoAnterior} → ${nuevoEstado}`
-                );
                 return false;
             }
 
@@ -100,12 +91,6 @@
             } else if (nuevoEstado === 'CLOSED') {
                 this.timestamps.ultimaCierre = Date.now();
             }
-
-            // Log de transición
-            console.log(
-                `[ModalFSM]  Transición: ${estadoAnterior} → ${nuevoEstado}`,
-                contexto
-            );
 
             // Notificar listeners
             this._notifyListeners(nuevoEstado, estadoAnterior, contexto);
@@ -122,11 +107,6 @@
          */
         puedeAbrir() {
             const puede = this.estado === 'CLOSED';
-            if (!puede) {
-                console.warn(
-                    `[ModalFSM] Modal no puede abrir ahora (estado: ${this.estado})`
-                );
-            }
             return puede;
         }
 
@@ -181,7 +161,6 @@
                 const idx = this.stateChangeListeners.indexOf(callback);
                 if (idx > -1) {
                     this.stateChangeListeners.splice(idx, 1);
-                    console.log('[ModalFSM] Listener desuscrito');
                 }
             };
         }
@@ -214,9 +193,6 @@
 
     if (!window.__MODAL_FSM__) {
         window.__MODAL_FSM__ = new ModalMiniFSM('modal-agregar-prenda-nueva');
-        console.log('[ModalFSM]  Singleton creado en window.__MODAL_FSM__');
-    } else {
-        console.warn('[ModalFSM]  Ya existe window.__MODAL_FSM__, ignorando creación duplicada');
     }
 
     // Mantenimiento de historial de cambios (debug)

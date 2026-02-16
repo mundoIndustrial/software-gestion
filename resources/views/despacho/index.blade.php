@@ -1,6 +1,7 @@
-@extends('layouts.app-without-sidebar')
+@extends('layouts.app')
 
 @section('title', 'Módulo de Despacho')
+@section('page-title', 'Despacho')
 
 @section('content')
 <div class="min-h-screen bg-white">

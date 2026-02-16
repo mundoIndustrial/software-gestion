@@ -101,6 +101,9 @@ Route::middleware(['auth', 'bodega-access'])->prefix('gestion-bodega')->name('ge
     Route::post('/notas/obtener', [PedidosController::class, 'obtenerNotas'])
         ->name('obtener-notas');
     
+    Route::get('/notas/{numero_pedido}/{talla}', [PedidosController::class, 'obtenerNotas'])
+        ->name('obtener-notas-get');
+    
     // Actualizar y eliminar notas
     Route::post('/notas/{notaId}/actualizar', [PedidosController::class, 'actualizarNota'])
         ->name('actualizar-nota');

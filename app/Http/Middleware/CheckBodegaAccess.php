@@ -19,7 +19,15 @@ class CheckBodegaAccess
         }
 
         $user = $request->user();
-        $allowedRoles = ['bodeguero', 'Costura-Bodega', 'EPP-Bodega'];
+        $allowedRoles = [
+            'bodeguero', 
+            'Costura-Bodega', 
+            'EPP-Bodega',
+            'admin',
+            'supervisor-admin',
+            'supervisor_planta',
+            'despacho'
+        ];
         
         // Obtener roles del usuario
         $userRoles = $user->getRoleNames()->toArray();

@@ -55,18 +55,15 @@ let tiposMangaPromise = null;
 async function cargarTiposMangaDisponibles() {
     // Si ya tenemos datos en caché, retornar inmediatamente
     if (tiposMangaCache) {
-        console.log('[Manga] Usando cache de tipos de manga');
         return tiposMangaCache;
     }
     
     // Si hay una petición en curso, esperar a que termine
     if (tiposMangaPromise) {
-        console.log('[Manga] Esperando petición existente...');
         return await tiposMangaPromise;
     }
     
     // Crear nueva petición
-    console.log('[Manga] Cargando tipos de manga desde BD...');
     tiposMangaPromise = (async () => {
         try {
             // Usar ruta pública accesible para todos los roles
@@ -88,11 +85,9 @@ async function cargarTiposMangaDisponibles() {
                     });
                 }
                 
-                console.log('[Manga] Tipos cargados y cacheados:', result.data.length);
                 return result.data;
             }
         } catch (error) {
-            console.warn('[Manga] Error cargando tipos de manga:', error);
             return [];
         } finally {
             // Limpiar la promesa cuando termine
@@ -109,7 +104,6 @@ async function cargarTiposMangaDisponibles() {
 function limpiarCacheTiposManga() {
     tiposMangaCache = null;
     tiposMangaPromise = null;
-    console.log('[Manga] Caché limpiado');
 }
 
 // Exportar como funciones globales para uso en otros módulos
@@ -128,18 +122,15 @@ let tiposBrochePromise = null;
 async function cargarTiposBrocheBotonDisponibles() {
     // Si ya tenemos datos en caché, retornar inmediatamente
     if (tiposBrocheCache) {
-        console.log('[Broche] Usando cache de tipos de broche/botón');
         return tiposBrocheCache;
     }
     
     // Si hay una petición en curso, esperar a que termine
     if (tiposBrochePromise) {
-        console.log('[Broche] Esperando petición existente...');
         return await tiposBrochePromise;
     }
     
     // Crear nueva petición
-    console.log('[Broche] Cargando tipos de broche/botón desde BD...');
     tiposBrochePromise = (async () => {
         try {
             const response = await fetch('/api/public/tipos-broche-boton');
@@ -160,11 +151,9 @@ async function cargarTiposBrocheBotonDisponibles() {
                     });
                 }
                 
-                console.log('[Broche] Tipos cargados y cacheados:', result.data.length);
                 return result.data;
             }
         } catch (error) {
-            console.warn('[Broche] Error cargando tipos de broche:', error);
             return [];
         } finally {
             // Limpiar la promesa cuando termine
@@ -181,7 +170,6 @@ async function cargarTiposBrocheBotonDisponibles() {
 function limpiarCacheTiposBroche() {
     tiposBrocheCache = null;
     tiposBrochePromise = null;
-    console.log('[Broche] Caché limpiado');
 }
 
 // Exportar función global
@@ -206,7 +194,6 @@ async function procesarMangaInput(input) {
         );
         
         if (!existe) {
-            console.log('[Manga] Creando nuevo tipo de manga:', valor);
             
             // Crear el nuevo tipo de manga
             const response = await fetch('/api/public/tipos-manga', {
@@ -231,14 +218,9 @@ async function procesarMangaInput(input) {
                     newOption.dataset.id = result.data.id;
                     datalist.appendChild(newOption);
                 }
-                
-                console.log('[Manga] Tipo de manga creado:', result.data);
             }
-        } else {
-            console.log('[Manga] Tipo de manga ya existe:', valor);
         }
     } catch (error) {
-        console.warn('[Manga] Error procesando input:', error);
     }
 }
 
@@ -252,31 +234,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 🔄 Catálogos se cargan bajo demanda cuando se abre el modal
-    console.log('[DOMContentLoaded] Catálogos de telas y colores se cargarán bajo demanda');
 });
 
 /**
  * Cargar telas disponibles desde la BD
  */
 async function cargarTelasDisponibles() {
-    console.log('[Telas] Iniciando carga de telas disponibles...');
     try {
         const response = await fetch('/api/public/telas');
         const result = await response.json();
         
-        console.log('[Telas] Respuesta de API:', { 
-            success: result.success, 
-            count: result.data?.length || 0,
-            status: response.status
-        });
-        
         if (result.success && result.data) {
             telasDisponibles = result.data;
-            console.log('[Telas] Telas cargadas en memoria:', result.data.length);
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-telas');
-            console.log('[Telas] Buscando datalist con id "opciones-telas":', datalist ? ' Encontrado' : ' NO ENCONTRADO');
             
             if (datalist) {
                 datalist.innerHTML = '';
@@ -287,9 +259,6 @@ async function cargarTelasDisponibles() {
                     option.dataset.referencia = tela.referencia || '';
                     datalist.appendChild(option);
                 });
-                console.log('[Telas] Datalist actualizado con', result.data.length, 'telas');
-            } else {
-                console.warn('[Telas] Datalist "opciones-telas" no existe en el DOM');
             }
         } else {
             console.warn('[Telas] Respuesta no válida:', result);
@@ -306,24 +275,15 @@ async function cargarTelasDisponibles() {
  * Cargar colores disponibles desde la BD
  */
 async function cargarColoresDisponibles() {
-    console.log('[Colores] Iniciando carga de colores disponibles...');
     try {
         const response = await fetch('/api/public/colores');
         const result = await response.json();
         
-        console.log('[Colores] Respuesta de API:', { 
-            success: result.success, 
-            count: result.data?.length || 0,
-            status: response.status
-        });
-        
         if (result.success && result.data) {
             coloresDisponibles = result.data;
-            console.log('[Colores] Colores cargados en memoria:', result.data.length);
             
             // Actualizar datalist
             const datalist = document.getElementById('opciones-colores');
-            console.log('[Colores] Buscando datalist con id "opciones-colores":', datalist ? ' Encontrado' : ' NO ENCONTRADO');
             
             if (datalist) {
                 datalist.innerHTML = '';
@@ -334,9 +294,6 @@ async function cargarColoresDisponibles() {
                     option.dataset.codigo = color.codigo || '';
                     datalist.appendChild(option);
                 });
-                console.log('[Colores] Datalist actualizado con', result.data.length, 'colores');
-            } else {
-                console.warn('[Colores] Datalist "opciones-colores" no existe en el DOM');
             }
         } else {
             console.warn('[Colores] Respuesta no válida:', result);
@@ -375,25 +332,18 @@ window.cargarCatalogosModal = async function() {
     
     // Guard 1: Si hay una promise en flight, reutilizarla
     if (typeof PromiseCache !== 'undefined' && PromiseCache.has(CACHE_KEY)) {
-        console.log('[Catálogos] ✓ Promise en flight, reutilizando...');
         return PromiseCache.get(CACHE_KEY);
     }
 
     // Crear nueva promise de carga
     const catalogsPromise = (async () => {
         try {
-            console.log('[Catálogos] Iniciando carga de catálogos...');
             
             // Cargar en paralelo (Promise.all)
             const [telas, colores] = await Promise.all([
                 cargarTelasDisponibles(),
                 cargarColoresDisponibles()
             ]);
-            
-            console.log('[Catálogos]  Ambos catálogos cargados', {
-                telas: telas?.length || 0,
-                colores: colores?.length || 0
-            });
             
             return { telas, colores };
         } catch (error) {

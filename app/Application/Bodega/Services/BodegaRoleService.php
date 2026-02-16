@@ -52,11 +52,13 @@ class BodegaRoleService
     }
 
     /**
-     * Determinar si el usuario es de solo lectura (EPP o Costura)
+     * Determinar si el usuario es de solo lectura (EPP, Costura o Despacho)
      */
     public function esReadOnly(array $rolesDelUsuario): bool
     {
-        return in_array('Costura-Bodega', $rolesDelUsuario) || in_array('EPP-Bodega', $rolesDelUsuario);
+        return in_array('Costura-Bodega', $rolesDelUsuario) 
+            || in_array('EPP-Bodega', $rolesDelUsuario)
+            || in_array('despacho', $rolesDelUsuario);
     }
 
     /**

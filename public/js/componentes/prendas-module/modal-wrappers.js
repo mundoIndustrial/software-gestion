@@ -41,13 +41,13 @@ window.abrirModalPrendaNueva = function() {
     // Fallback: abrir el modal directamente si existe
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        //  Asegurar que estamos en modo CREATE (prendaEditIndex = null)
+        // 🔥 Asegurar que estamos en modo CREATE (prendaEditIndex = null)
         if (window.gestionItemsUI) {
             window.gestionItemsUI.prendaEditIndex = null;
         }
         window.prendaEditIndex = null;
         
-        //  Limpiar telas residuales ANTES de abrir el modal
+        // 🔥 Limpiar telas residuales ANTES de abrir el modal
         if (window.telasAgregadas) {
             window.telasAgregadas = [];
         }
@@ -59,20 +59,7 @@ window.abrirModalPrendaNueva = function() {
             tbodyTelas.innerHTML = '';
         }
 
-        // Usar UIModalService para manejar el scroll del body
-        if (window.UI && typeof window.UI.abrirModal === 'function') {
-            window.UI.abrirModal('modal-agregar-prenda-nueva', {
-                display: 'flex',
-                closeOnClickOutside: false,
-                closeOnEsc: true,
-                preventScroll: true
-            });
-        } else {
-            // Fallback si UIModalService no está disponible
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-        
+        modal.style.display = 'flex';
         // Limpiar formulario
         limpiarFormulario();
     }
@@ -83,7 +70,7 @@ window.abrirModalPrendaNueva = function() {
  * Delega a GestionItemsUI.cerrarModalAgregarPrendaNueva()
  */
 window.cerrarModalPrendaNueva = function() {
-    //  CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
+    // 🔥 CRÍTICO: Resetear prendaEditIndex PRIMERO para evitar confundir CREATE con EDIT
     if (window.gestionItemsUI) {
         window.gestionItemsUI.prendaEditIndex = null;
     }
@@ -97,16 +84,7 @@ window.cerrarModalPrendaNueva = function() {
     // Fallback: cerrar el modal directamente si existe
     const modal = document.getElementById('modal-agregar-prenda-nueva');
     if (modal) {
-        // Usar UIModalService para manejar el scroll del body
-        if (window.UI && typeof window.UI.cerrarModal === 'function') {
-            window.UI.cerrarModal('modal-agregar-prenda-nueva', {
-                animate: false
-            });
-        } else {
-            // Fallback si UIModalService no está disponible
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
+        modal.style.display = 'none';
     }
 };
 

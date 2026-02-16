@@ -313,6 +313,17 @@ class GestionItemsUI {
             // FSM → OPENING
             if (fsm) fsm.cambiarEstado('OPENING', { origen: 'abrirModalAgregarPrendaNueva' });
 
+            // Timeout de seguridad: si la FSM queda stuck en OPENING, forzar reset
+            if (fsm) {
+                clearTimeout(fsm._openingTimeout);
+                fsm._openingTimeout = setTimeout(() => {
+                    if (fsm.obtenerEstado() === 'OPENING') {
+                        console.warn('[abrirModal] Timeout: FSM stuck en OPENING, forzando CLOSED');
+                        fsm.estado = 'CLOSED';
+                    }
+                }, 5000);
+            }
+
             // 1. Cargar catálogos (deduplicado automáticamente)
             if (typeof window.cargarCatalogosModal === 'function') {
                 await window.cargarCatalogosModal();
@@ -394,8 +405,22 @@ class GestionItemsUI {
         const fsm = window.__MODAL_FSM__;
 
         try {
-            // FSM → CLOSING
-            if (fsm) fsm.cambiarEstado('CLOSING', { origen: 'cerrarModalAgregarPrendaNueva' });
+            // Limpiar timeout de seguridad
+            if (fsm) clearTimeout(fsm._openingTimeout);
+
+            // FSM → CLOSING (forzar desde cualquier estado)
+            if (fsm) {
+                const estadoActual = fsm.obtenerEstado();
+                if (estadoActual !== 'CLOSED') {
+                    if (estadoActual === 'OPEN') {
+                        fsm.cambiarEstado('CLOSING', { origen: 'cerrarModalAgregarPrendaNueva' });
+                    } else {
+                        // Si está en OPENING u otro estado, forzar directamente a CLOSED
+                        fsm.estado = 'CLOSED';
+                        console.log('[cerrarModal] FSM forzada a CLOSED desde:', estadoActual);
+                    }
+                }
+            }
 
             // Resetear bandera de nueva prenda desde cotización
             if (this.prendaEditor) {
