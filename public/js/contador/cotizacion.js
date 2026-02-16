@@ -57,7 +57,11 @@ function openCotizacionModal(cotizacionId) {
                     prendasAll.every(p => prendaTieneLogo(p))
                 );
 
-                const esSoloLogoFinal = esSoloLogo || esSoloLogoPorContenido;
+                // Si es COMBINADA, aunque todas las prendas tengan logo, igual necesitamos permitir
+                // ver ambas vistas (Prenda/Logo) sobre la misma prenda.
+                const esSoloLogoFinal = esCombinada
+                    ? false
+                    : (esSoloLogo || esSoloLogoPorContenido);
 
                 if (esSoloLogoFinal) {
                     modo = 'logo';
@@ -127,7 +131,7 @@ function openCotizacionModal(cotizacionId) {
                         ? prendas
                         : (modo === 'logo'
                             ? prendas.filter(p => prendaTieneLogo(p))
-                            : prendas.filter(p => !prendaTieneLogo(p))));
+                            : prendas));
 
                 if (prendasFiltradas && prendasFiltradas.length > 0) {
                     prendasFiltradas.forEach((prenda, index) => {
@@ -202,6 +206,46 @@ function openCotizacionModal(cotizacionId) {
                             </p>
                             <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
                                 <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${(() => {
+                                    // En vista LOGO: mostrar SOLO las ubicaciones/técnicas de logo.
+                                    // No usar la descripción concatenada de la prenda porque puede incluir reflectivo u otros textos.
+                                    if (modo === 'logo') {
+                                        const tecnicasPrendaArray = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
+                                            ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp && tp.prenda_id === prenda.id)
+                                            : [];
+
+                                        if (!tecnicasPrendaArray || tecnicasPrendaArray.length === 0) {
+                                            return '-';
+                                        }
+
+                                        // Consolidar ubicaciones por técnica
+                                        const ubicacionesPorTecnica = {};
+                                        tecnicasPrendaArray.forEach(tp => {
+                                            const tecnicaNombre = (tp && tp.tipo_logo_nombre) ? tp.tipo_logo_nombre : 'Logo';
+                                            if (!tp || !tp.ubicaciones) {
+                                                return;
+                                            }
+                                            let ubicacionesArray = Array.isArray(tp.ubicaciones)
+                                                ? tp.ubicaciones
+                                                : [String(tp.ubicaciones)];
+                                            ubicacionesArray = ubicacionesArray
+                                                .map(u => String(u).replace(/[\[\]"']/g, '').trim())
+                                                .filter(u => u);
+                                            if (ubicacionesArray.length === 0) {
+                                                return;
+                                            }
+                                            if (!ubicacionesPorTecnica[tecnicaNombre]) {
+                                                ubicacionesPorTecnica[tecnicaNombre] = [];
+                                            }
+                                            ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
+                                        });
+
+                                        const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
+                                            .map(([tecnica, ubicaciones]) => ubicaciones.join(', '))
+                                            .join(', ');
+
+                                        return (ubicacionesTexto || '-').replace(/\n/g, '<br>');
+                                    }
+
                                     let descripcionCompleta = prenda.descripcion_formateada || prenda.descripcion || '';
                                     
                                     // LIMPIEZA: Remover Bolsillos y Broche/Botón de la descripción concatenada
@@ -216,47 +260,12 @@ function openCotizacionModal(cotizacionId) {
                                     // Limpiar espacios múltiples y comas al inicio/final
                                     descripcionCompleta = descripcionCompleta.replace(/\s+/g, ' ').replace(/^,\s*|,\s*$/g, '').trim();
                                     
-                                    // Si hay técnicas de logo para esta prenda, agregar ubicaciones
-                                    const tecnicasPrendaArray = payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas 
-                                        ? payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id)
-                                        : [];
-                                    
-                                    if (tecnicasPrendaArray && tecnicasPrendaArray.length > 0) {
-                                        // Consolidar ubicaciones por técnica
-                                        const ubicacionesPorTecnica = {};
-                                        tecnicasPrendaArray.forEach(tp => {
-                                            const tecnicaNombre = tp.tipo_logo_nombre || 'Logo';
-                                            if (tp.ubicaciones) {
-                                                let ubicacionesArray = Array.isArray(tp.ubicaciones) ? tp.ubicaciones : [String(tp.ubicaciones)];
-                                                // Filtrar vacíos y remover corchetes y comillas
-                                                ubicacionesArray = ubicacionesArray
-                                                    .map(u => String(u).replace(/[\[\]"']/g, '').trim())
-                                                    .filter(u => u);
-                                                if (ubicacionesArray.length > 0) {
-                                                    if (!ubicacionesPorTecnica[tecnicaNombre]) {
-                                                        ubicacionesPorTecnica[tecnicaNombre] = [];
-                                                    }
-                                                    ubicacionesPorTecnica[tecnicaNombre] = ubicacionesPorTecnica[tecnicaNombre].concat(ubicacionesArray);
-                                                }
-                                            }
-                                        });
-                                        
-                                        // Agregar ubicaciones a la descripción SIN corchetes
-                                        if (Object.keys(ubicacionesPorTecnica).length > 0) {
-                                            // Solo agregar coma si ya hay descripción
-                                            if (descripcionCompleta) {
-                                                descripcionCompleta += ', ';
-                                            }
-                                            const ubicacionesTexto = Object.entries(ubicacionesPorTecnica)
-                                                .map(([tecnica, ubicaciones]) => ubicaciones.join(', '))
-                                                .join(', ');
-                                            descripcionCompleta += ubicacionesTexto;
-                                        }
-                                    }
+                                    // (modo logo se maneja arriba)
                                     
                                     // Agregar descripción y ubicaciones de prenda_cot_reflectivo
+                                    // SOLO en vista PRENDA. En vista LOGO se debe mostrar únicamente información de logo.
                                     console.log('Prenda:', prenda.nombre_prenda, 'prenda_cot_reflectivo:', prenda.prenda_cot_reflectivo);
-                                    if (prenda.prenda_cot_reflectivo) {
+                                    if (modo !== 'logo' && prenda.prenda_cot_reflectivo) {
                                         const pcrRef = prenda.prenda_cot_reflectivo;
                                         
                                         // Agregar descripción del reflectivo
@@ -279,11 +288,95 @@ function openCotizacionModal(cotizacionId) {
                                             descripcionCompleta += ubicacionesReflectivo;
                                         }
                                     }
+
+                                    // (modo logo se maneja arriba)
                                     
                                     return descripcionCompleta.replace(/\n/g, '<br>') || '-';
                                 })()}
                             </div>
                     `;
+
+                    // En vista LOGO el usuario solo quiere ver:
+                    // - Descripción (con ubicaciones ya agregadas arriba)
+                    // - Imágenes del logo (si existen)
+                    // No mostrar tallas, variantes, reflectivo, telas ni fotos de prenda.
+                    if (modo === 'logo') {
+                        const imagenesLogo = [];
+
+                        const logosPorUrl = new Map();
+                        const normalizarUrlLogo = (u) => {
+                            if (!u) return '';
+                            let url = String(u).trim();
+                            if (!url) return '';
+                            try {
+                                url = url.split('#')[0];
+                                url = url.split('?')[0];
+                            } catch (_) {
+                                // no-op
+                            }
+                            if (!url.startsWith('http')) {
+                                if (url.startsWith('storage/')) {
+                                    url = '/' + url;
+                                }
+                                if (!url.startsWith('/storage/')) {
+                                    url = '/storage/' + url.replace(/^\/+/, '').replace(/^storage\//, '');
+                                }
+                            }
+                            return url;
+                        };
+
+                        if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
+                            payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
+                                if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
+                                    tp.fotos.forEach((foto) => {
+                                        if (!foto || !foto.url) return;
+                                        const urlKey = normalizarUrlLogo(foto.url) || String(foto.url);
+                                        if (!urlKey) return;
+                                        if (!logosPorUrl.has(urlKey)) {
+                                            logosPorUrl.set(urlKey, urlKey);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        if (logosPorUrl.size > 0) {
+                            Array.from(logosPorUrl.values()).forEach((url) => {
+                                imagenesLogo.push(url);
+                            });
+                        }
+
+                        if (imagenesLogo.length > 0) {
+                            htmlPrendas += `
+                                <div style="margin-top: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start;">
+                            `;
+
+                            imagenesLogo.forEach((url, idx) => {
+                                htmlPrendas += `
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <img src="${url}" 
+                                             alt="Logo"
+                                             data-gallery="galeria-logo-${prenda.id}"
+                                             data-index="${idx}"
+                                             style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #1e5ba8; cursor: pointer; transition: all 0.3s;"
+                                             onclick="abrirImagenGrande('${url}', 'galeria-logo-${prenda.id}', ${idx})"
+                                             onmouseover="this.style.boxShadow='0 4px 12px rgba(30, 91, 168, 0.4)'; this.style.transform='scale(1.05)';"
+                                             onmouseout="this.style.boxShadow='none'; this.style.transform='scale(1)';"/>
+                                        <div style="margin-top: 0.5rem; background: linear-gradient(to right, #1e5ba8, #1e5ba8); padding: 0.5rem 0.75rem; border-radius: 4px; color: white; text-align: center; font-weight: 600; font-size: 0.7rem; white-space: nowrap;">
+                                            Logo
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            htmlPrendas += `
+                                </div>
+                            `;
+                        }
+
+                        htmlPrendas += `</div>`;
+                        return;
+                    }
 
                     // Mostrar tallas si existen (agrupadas por género)
                     if (prenda.tallas && prenda.tallas.length > 0) {
@@ -469,8 +562,8 @@ function openCotizacionModal(cotizacionId) {
                         }
                     }
 
-                    // Renderizar variaciones de técnicas prendas si existen (solo para cotizaciones con logo)
-                    if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas && Array.isArray(payload.logo_cotizacion.tecnicas_prendas)) {
+                    // Renderizar variaciones de técnicas prendas si existen (solo en vista LOGO)
+                    if (modo === 'logo' && payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas && Array.isArray(payload.logo_cotizacion.tecnicas_prendas)) {
                         // Buscar técnicas prendas para esta prenda
                         const tecnicasPrendaArray = payload.logo_cotizacion.tecnicas_prendas.filter(tp => tp.prenda_id === prenda.id);
                         
@@ -728,7 +821,7 @@ function openCotizacionModal(cotizacionId) {
                         return url;
                     };
                     
-                    if (payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
+                    if (modo === 'logo' && payload.logo_cotizacion && payload.logo_cotizacion.tecnicas_prendas) {
                         payload.logo_cotizacion.tecnicas_prendas.forEach(tp => {
                             if (tp.prenda_id === prenda.id && tp.fotos && tp.fotos.length > 0) {
                                 const tecnicaNombre = (tp.tipo_logo_nombre || (tp.tipoLogo && tp.tipoLogo.nombre) || 'Logo');
@@ -751,7 +844,7 @@ function openCotizacionModal(cotizacionId) {
                         });
                     }
 
-                    if (logosPorUrl.size > 0) {
+                    if (modo === 'logo' && logosPorUrl.size > 0) {
                         Array.from(logosPorUrl.values()).forEach((logo) => {
                             const tecnicas = Array.from(logo.tecnicas).filter(Boolean);
                             const textoTecnicas = tecnicas.join(', ');
@@ -782,8 +875,8 @@ function openCotizacionModal(cotizacionId) {
                         });
                     }
                     
-                    // Recolectar imagen de tela de logo_cotizacion.telas_prendas
-                    if (imgTela) {
+                    // Recolectar imagen de tela de logo_cotizacion.telas_prendas (solo en vista LOGO)
+                    if (modo === 'logo' && imgTela) {
                         imagenesParaMostrar.push({
                             grupo: 'Tela',
                             url: imgTela,

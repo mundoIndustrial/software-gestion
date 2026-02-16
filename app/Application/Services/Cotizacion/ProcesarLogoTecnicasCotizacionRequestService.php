@@ -224,15 +224,16 @@ final class ProcesarLogoTecnicasCotizacionRequestService
                 }
             }
 
-            // IMPORTANTE: al reutilizar una prenda del Paso 2 en el Paso 3, esa prenda YA tendrá técnicas/logo.
+            // IMPORTANTE: al reutilizar una prenda del Paso 2 en el Paso 3, esa prenda YA puede tener técnicas/logo.
             // Por lo tanto NO se puede filtrar por whereDoesntHave('logoCotizacionesTecnicas'), porque eso haría
             // que no se encuentre por prenda_paso2_index y termine creándose una nueva PrendaCot.
-            // La forma correcta de identificar las prendas creadas en Paso 2 es prenda_bodega = false.
+            //
+            // Antes se intentaba identificar "prendas del paso 2" con prenda_bodega=false, pero en el flujo real
+            // (especialmente en combinadas) una prenda del paso 2 puede guardarse con prenda_bodega=true.
+            // Eso rompe el mapeo por índice y causa duplicados en prendas_cot.
+            //
+            // Solución: usar un orden estable de TODAS las prendas de la cotización para resolver prenda_paso2_index.
             $prendasPaso2Ordenadas = PrendaCot::where('cotizacion_id', $cotizacionId)
-                ->where(function ($q) {
-                    $q->where('prenda_bodega', false)
-                        ->orWhereNull('prenda_bodega');
-                })
                 ->orderBy('created_at')
                 ->orderBy('id')
                 ->get()
