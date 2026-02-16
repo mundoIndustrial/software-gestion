@@ -22,15 +22,7 @@ Route::prefix('asistencia-personal')->group(function () {
  */
 Route::middleware(['web', 'auth'])->prefix('api/cartera')->group(function () {
     Route::prefix('rechazados')->group(function () {
-        // Endpoint de prueba
-        Route::get('/test', function () {
-            return response()->json([
-                'success' => true,
-                'message' => 'TEST_ENDPOINT_WORKING',
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
-        })->name('cartera.rechazados.test');
-        
+                
         Route::post('/clientes/sugerencias', function (\Illuminate\Http\Request $request) {
             try {
                 $busqueda = $request->input('busqueda', '');
