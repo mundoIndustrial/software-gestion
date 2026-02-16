@@ -67,7 +67,7 @@ final class ListPedidosLogoUseCase
             if ($isMinimalLogoRole) {
                 return [
                     'id' => $proceso->id,
-                    'numero_recibo' => $proceso->numero_recibo,
+                    'numero_recibo' => $proceso->numero_recibo_consecutivo,
                     'cliente' => $clienteNombre,
                     'created_at' => $proceso->created_at,
                     'area' => $proceso->area,
@@ -80,7 +80,7 @@ final class ListPedidosLogoUseCase
 
             return [
                 'id' => $proceso->id,
-                'numero_recibo' => $proceso->numero_recibo,
+                'numero_recibo' => $proceso->numero_recibo_consecutivo,
                 'cliente' => $clienteNombre,
                 'created_at' => $proceso->created_at,
                 'fecha_entrega' => $fechaEntrega,
