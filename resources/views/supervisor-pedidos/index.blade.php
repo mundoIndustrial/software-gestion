@@ -1069,6 +1069,9 @@
 <!-- Modal para Editar Procesos Genéricos -->
 @include('asesores.pedidos.modals.modal-proceso-generico')
 
+<!-- Modal para Confirmar Eliminación de Imagen de Proceso -->
+@include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
+
 @push('scripts')
     <!--  SERVICIOS CENTRALIZADOS (Requeridos para modal-editar-pedido) -->
     <script src="{{ asset('js/utilidades/validation-service.js') }}"></script>

@@ -203,17 +203,18 @@
             btnGuardar.className = 'btn btn-primary';
         }
 
-        // Si estábamos editando desde pedido, volver a la lista de prendas
-        if (window._editandoPrendaDePedido) {
-            const context = window._editandoPrendaDePedido;
-            window._editandoPrendaDePedido = null;
-            
-            // Re-abrir lista de prendas del pedido
-            setTimeout(function() {
-                if (typeof window.abrirEditarPrendas === 'function') {
-                    abrirEditarPrendas();
-                }
-            }, 250);
+        // Limpiar estado de edición
+        window._editandoPrendaDePedido = null;
+        
+        // Limpiar imágenes marcadas para eliminación
+        if (window.imagenesAEliminar) {
+            console.log('[PedidosAdapter] 🗑️ Limpiando imágenes marcadas para eliminación:', window.imagenesAEliminar.length);
+            window.imagenesAEliminar = [];
+        }
+        
+        // Limpiar otros estados temporales
+        if (window.procesosParaEliminarIds) {
+            window.procesosParaEliminarIds.clear();
         }
     };
 
@@ -547,7 +548,26 @@
             const imagenesNuevas = [];
             const imagenesExistentes = [];
             const imgs = datos.imagenes || [];
-            imgs.forEach((img) => {
+            
+            console.log('[PedidosAdapter] 🔍 DIAGNÓSTICO DE IMÁGENES:', {
+                'datos.imagenes': datos.imagenes,
+                'typeof datos.imagenes': typeof datos.imagenes,
+                'imgs.length': imgs.length,
+                'imgs': imgs,
+                'window.imagenesAEliminar': window.imagenesAEliminar
+            });
+            
+            imgs.forEach((img, index) => {
+                console.log(`[PedidosAdapter] 🖼️ Procesando imagen ${index}:`, {
+                    'img': img,
+                    'type': typeof img,
+                    'isFile': img instanceof File,
+                    'hasFile': img?.file instanceof File,
+                    'hasId': !!img.id,
+                    'hasUrl': !!img.url,
+                    'hasPreviewUrl': !!img.previewUrl
+                });
+                
                 if (img instanceof File) {
                     imagenesNuevas.push(img);
                 } else if (img?.file instanceof File) {
@@ -557,6 +577,13 @@
                     imagenesExistentes.push({ id: img.id, url: url });
                 }
             });
+            
+            console.log('[PedidosAdapter] 📊 RESULTADO IMÁGENES:', {
+                'imagenesNuevas': imagenesNuevas.length,
+                'imagenesExistentes': imagenesExistentes.length,
+                'imagenesExistentes_content': imagenesExistentes
+            });
+            
             imagenesNuevas.forEach((file) => formData.append('imagenes[]', file));
             formData.append('imagenes_existentes', JSON.stringify(imagenesExistentes));
             
@@ -630,6 +657,15 @@
             // Cerrar modal después de breve delay
             setTimeout(function() {
                 cerrarModalPrendaNueva();
+                
+                // Recargar página si estamos en supervisor-pedidos para mostrar cambios
+                const urlPrefix = _getUrlPrefix();
+                if (urlPrefix.context === 'supervisor') {
+                    console.log('[PedidosAdapter] 🔄 Recargando página de supervisor-pedidos para mostrar cambios');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 200);
+                }
             }, 1900);
 
         } catch (error) {
@@ -989,17 +1025,61 @@
             console.log('[PedidosAdapter] 🧵 Telas extraídas desde talla_colores (fallback):', prenda.telasAgregadas.length, 'telas');
         }
 
-        // ---- 4. IMÁGENES DE PRENDA: agregar /storage/ a rutas relativas ----
+        // ---- 4. IMÁGENES DE PRENDA: agregar /storage/ a rutas relativas y asegurar estructura correcta ----
         if (Array.isArray(prenda.imagenes)) {
             prenda.imagenes = prenda.imagenes.map(img => {
-                if (typeof img === 'string') {
-                    if (img.startsWith('/storage/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) return img;
-                    if (img.startsWith('/')) return '/storage' + img;
-                    return '/storage/' + img;
+                // Si ya es un objeto con id y url, normalizar la url
+                if (typeof img === 'object' && img !== null) {
+                    const url = img.url || img.ruta_webp || img.ruta_original || img.previewUrl || '';
+                    let normalizedUrl = url;
+                    
+                    if (url && typeof url === 'string') {
+                        if (url.startsWith('/storage/') || url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) {
+                            normalizedUrl = url;
+                        } else if (url.startsWith('/')) {
+                            normalizedUrl = '/storage' + url;
+                        } else {
+                            normalizedUrl = '/storage/' + url;
+                        }
+                    }
+                    
+                    return {
+                        id: img.id,
+                        url: normalizedUrl,
+                        previewUrl: normalizedUrl,
+                        ruta_original: normalizedUrl,
+                        ruta_webp: normalizedUrl,
+                        nombre: img.nombre || `imagen-${img.id}`,
+                        tamaño: img.tamaño || 0
+                    };
                 }
+                
+                // Si es string, convertir a objeto con estructura mínima
+                if (typeof img === 'string') {
+                    let normalizedUrl = img;
+                    if (img.startsWith('/storage/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) {
+                        normalizedUrl = img;
+                    } else if (img.startsWith('/')) {
+                        normalizedUrl = '/storage' + img;
+                    } else {
+                        normalizedUrl = '/storage/' + img;
+                    }
+                    
+                    return {
+                        id: null, // No hay ID si viene solo como string
+                        url: normalizedUrl,
+                        previewUrl: normalizedUrl,
+                        ruta_original: normalizedUrl,
+                        ruta_webp: normalizedUrl,
+                        nombre: 'imagen-sin-id',
+                        tamaño: 0
+                    };
+                }
+                
                 return img;
             });
             console.log('[PedidosAdapter] 🖼️ Imágenes de prenda normalizadas:', prenda.imagenes.length);
+            console.log('[PedidosAdapter] 🖼️ Detalle imágenes:', prenda.imagenes);
         }
 
         // ---- 5. NOMBRE: asegurar consistencia ----

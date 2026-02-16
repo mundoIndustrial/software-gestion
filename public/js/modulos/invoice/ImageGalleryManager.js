@@ -35,14 +35,15 @@ class ImageGalleryManager {
         if (typeof img === 'string') {
             url = img;
         } else if (typeof img === 'object') {
-            if (img.ruta_webp) {
+            // Orden correcto de prioridad para URLs de imágenes
+            if (img.url) {
+                url = img.url;
+            } else if (img.ruta_webp) {
                 url = img.ruta_webp;
             } else if (img.ruta_web) {
                 url = img.ruta_web;
             } else if (img.ruta_original) {
                 url = img.ruta_original;
-            } else if (img.url) {
-                url = img.url;
             } else if (img.ruta) {
                 url = img.ruta;
             } else if (img.path) {

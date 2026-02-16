@@ -160,23 +160,52 @@ class InvoiceRenderer {
         // 🔴 NUEVO: Verificar si hay colores asignados por talla
         const hayColorPorTalla = prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0;
         
+        // Debug logging para diagnóstico
+        console.log('[InvoiceRenderer] renderizarTela - Datos:', {
+            prendas_id: prenda.id,
+            telas_array: prenda.telas_array,
+            imagenes_tela: prenda.imagenes_tela,
+            hayColorPorTalla
+        });
+        
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
-            return prenda.telas_array.map(tela => `
+            return prenda.telas_array.map(tela => {
+                // Debug logging para cada tela
+                if (tela.fotos && tela.fotos.length > 0) {
+                    console.log('[InvoiceRenderer] Foto de tela encontrada:', {
+                        tela_nombre: tela.tela_nombre,
+                        fotos_count: tela.fotos.length,
+                        primera_foto: tela.fotos[0],
+                        url_extraida: window._extraerURLImagen(tela.fotos[0])
+                    });
+                }
+                
+                return `
                 <div style="margin-bottom: 8px; line-height: 1.4;">
                     ${tela.tela_nombre ? `<div><strong>Tela:</strong> ${tela.tela_nombre}</div>` : ''}
                     ${tela.color_nombre && !hayColorPorTalla ? `<div><strong>Color:</strong> ${tela.color_nombre}</div>` : ''}
                     ${tela.referencia ? `<div><strong>Ref:</strong> ${tela.referencia}</div>` : ''}
                     ${(tela.fotos && tela.fotos.length > 0) ? `<img src="${window._extraerURLImagen(tela.fotos[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(tela.fotos, 'Imágenes de ' + (tela.tela_nombre || 'Tela'))})" title="Click para ver todas las imágenes de tela">` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
         } else {
+            // Debug logging para fallback
+            if (prenda.imagenes_tela && prenda.imagenes_tela.length > 0) {
+                console.log('[InvoiceRenderer] Usando imagenes_tela fallback:', {
+                    imagenes_count: prenda.imagenes_tela.length,
+                    primera_imagen: prenda.imagenes_tela[0],
+                    url_extraida: window._extraerURLImagen(prenda.imagenes_tela[0])
+                });
+            }
+            
             return `
                 ${prenda.tela ? `<div><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
                 ${prenda.color && !hayColorPorTalla ? `<div><strong>Color:</strong> ${prenda.color}</div>` : ''}
                 ${prenda.ref ? `<div><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
                 ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
-                        <img src="${prenda.imagenes_tela[0]}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" title="Imagen de tela">
+                        <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" title="Imagen de tela">
                     </div>
                 ` : ''}
             `;

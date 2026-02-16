@@ -396,6 +396,50 @@ function eliminarImagen(tipo, id, button) {
         return;
     }
 
+    // Debug: Verificar condiciones
+    console.log('[eliminarImagen] 🔍 DIAGNÓSTICO:', {
+        pathname: window.location.pathname,
+        includesPrenda: window.location.pathname.includes('/prenda/'),
+        modalExists: !!document.getElementById('modal-agregar-prenda-nueva'),
+        modalVisible: document.getElementById('modal-agregar-prenda-nueva')?.style.display !== 'none',
+        id: id
+    });
+
+    // Si estamos en el modal de edición de prendas, marcar para eliminación en lugar de eliminar inmediatamente
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    const modalVisible = modal && modal.style.display !== 'none';
+    
+    if (modalVisible) {
+        console.log('[eliminarImagen] 🗑️ Modal de prendas detectado, marcando imagen para eliminación:', id);
+        
+        // Inicializar array si no existe
+        if (!window.imagenesAEliminar) {
+            window.imagenesAEliminar = [];
+        }
+        
+        // Agregar ID al array si no está ya
+        if (!window.imagenesAEliminar.includes(id)) {
+            window.imagenesAEliminar.push(id);
+            console.log('[eliminarImagen] ✅ Imagen marcada para eliminación:', {
+                id: id,
+                totalMarcadas: window.imagenesAEliminar.length,
+                todasLasMarcadas: window.imagenesAEliminar
+            });
+        }
+        
+        // Ocultar visualmente la imagen del preview
+        button.closest('.foto-item').style.opacity = '0.3';
+        button.closest('.foto-item').style.border = '2px dashed #e74c3c';
+        button.textContent = '✓';
+        button.style.background = '#27ae60';
+        
+        showToast('Imagen marcada para eliminación. Se eliminará al guardar los cambios.', 'info');
+        return;
+    }
+
+    console.log('[eliminarImagen] ⚠️ No se detectó modal de prendas, usando eliminación inmediata');
+
+    // Comportamiento original para otros casos (eliminación inmediata)
     fetch(`/supervisor-pedidos/imagen/${tipo}/${id}`, {
         method: 'DELETE',
         headers: {
@@ -420,7 +464,6 @@ function eliminarImagen(tipo, id, button) {
         }
     })
     .catch(error => {
-
         showToast('Error al eliminar la imagen', 'error');
     });
 }
