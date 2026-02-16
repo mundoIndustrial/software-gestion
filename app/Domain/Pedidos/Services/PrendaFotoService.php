@@ -7,33 +7,28 @@ use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 /**
- * @deprecated Este servicio NO usa el sistema centralizado de uploads
- * 
- *  PROBLEMA: Guarda directamente en /prendas/ (carpeta global)
- * USAR EN SU LUGAR: ImageUploadService con sistema temp/{uuid}/{tipo}/
- * 
- * Servicio para gestionar fotos de prendas (OBSOLETO)
+ * Servicio para gestionar fotos de prendas
  * 
  * Responsabilidades:
- * - Guardar imagen original
+ * - Guardar imagen original en carpeta por pedido
  * - Convertir a WebP
  * - Retornar rutas de ambas versiones
  */
 class PrendaFotoService
 {
-    private const STORAGE_PATH = 'prendas'; //  PROBLEMA: Carpeta global
     private const WEBP_QUALITY = 80;
 
     /**
      * Procesar y guardar foto de prenda
      * 
      * @param UploadedFile $archivo
+     * @param int|null $pedidoId - ID del pedido para organizar en carpetas
      * @return array ['ruta_original' => string, 'ruta_webp' => string]
      */
-    public function procesarFoto(UploadedFile $archivo): array
+    public function procesarFoto(UploadedFile $archivo, ?int $pedidoId = null): array
     {
         // 1. Guardar imagen original
-        $rutaOriginal = $this->guardarOriginal($archivo);
+        $rutaOriginal = $this->guardarOriginal($archivo, $pedidoId);
 
         // 2. Convertir a WebP
         $rutaWebp = $this->convertirAWebp($rutaOriginal);
@@ -45,15 +40,24 @@ class PrendaFotoService
     }
 
     /**
-     * Guardar imagen original con nombre Ãºnico
+     * Guardar imagen original con nombre único
      * 
      * @param UploadedFile $archivo
+     * @param int|null $pedidoId
      * @return string Ruta relativa guardada
      */
-    private function guardarOriginal(UploadedFile $archivo): string
+    private function guardarOriginal(UploadedFile $archivo, ?int $pedidoId = null): string
     {
         $nombreOriginal = $this->generarNombreUnico($archivo);
-        return $archivo->storeAs(self::STORAGE_PATH, $nombreOriginal, 'public');
+        
+        // Guardar en carpeta específica del pedido si existe
+        if ($pedidoId) {
+            $carpeta = "pedidos/{$pedidoId}/prendas";
+        } else {
+            $carpeta = "prendas";
+        }
+        
+        return $archivo->storeAs($carpeta, $nombreOriginal, 'public');
     }
 
     /**

@@ -48,6 +48,7 @@ use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 use App\Application\Pedidos\UseCases\ActualizarVariantePrendaUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
+use App\Application\Services\Asesores\GenerarScriptSQLService;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
@@ -60,6 +61,10 @@ use App\Application\Pedidos\DTOs\ActualizarPrendaPedidoDTO;
 use App\Application\Pedidos\DTOs\AgregarPrendaCompletaDTO;
 use App\Application\Pedidos\DTOs\ActualizarPrendaCompletaDTO;
 use App\Application\Pedidos\DTOs\RenderItemCardDTO;
+use App\Models\PrendaFotoPedido;
+use App\Models\PrendaFotoTelaPedido;
+use App\Models\PedidosProcesoImagenes;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * PedidosProduccionController - REFACTORIZADO CON CQRS
@@ -843,7 +848,7 @@ class PedidosProduccionController
             if ($request->hasFile('imagenes')) {
                 $prendaFotoService = new \App\Domain\Pedidos\Services\PrendaFotoService();
                 foreach ($request->file('imagenes') as $imagen) {
-                    $rutas = $prendaFotoService->procesarFoto($imagen);
+                    $rutas = $prendaFotoService->procesarFoto($imagen, $id);
                     $imagenesGuardadas[] = $rutas;
                 }
             }
@@ -857,7 +862,7 @@ class PedidosProduccionController
                         $telaFotoService = new \App\Domain\Pedidos\Services\TelaFotoService();
                         foreach ($value as $imagen) {
                             if ($imagen && $imagen->isValid()) {
-                                $rutas = $telaFotoService->procesarFoto($imagen);
+                                $rutas = $telaFotoService->procesarFoto($imagen, $id);
                                 $telasConImagenes[] = $rutas;
                             }
                         }
@@ -874,7 +879,7 @@ class PedidosProduccionController
                 if (strpos($key, 'fotos_tela[') === 0 && strpos($key, ']') !== false) {
                     if ($value && $value->isValid()) {
                         try {
-                            $rutas = $telaFotoService->procesarFoto($value);
+                            $rutas = $telaFotoService->procesarFoto($value, $id);
                             // Extraer índice: fotos_tela[0] => 0
                             preg_match('/fotos_tela\[(\d+)\]/', $key, $matches);
                             $indice = isset($matches[1]) ? (int)$matches[1] : count($fotosTelasProcesadas);
@@ -906,7 +911,7 @@ class PedidosProduccionController
                 foreach ($archivosTelaDirectos as $indice => $archivo) {
                     if ($archivo && $archivo->isValid()) {
                         try {
-                            $rutas = $telaFotoService->procesarFoto($archivo);
+                            $rutas = $telaFotoService->procesarFoto($archivo, $id);
                             $fotosTelasProcesadas[$indice] = $rutas;
                             Log::info('[PedidosProduccionController] Imagen de tela procesada (patrón fotos_tela[])', [
                                 'indice' => $indice,
@@ -932,7 +937,7 @@ class PedidosProduccionController
                 if (strpos($key, 'files_proceso_') === 0) {
                     if ($value && $value->isValid()) {
                         try {
-                            $rutas = $procesoFotoService->procesarFoto($value);
+                            $rutas = $procesoFotoService->procesarFoto($value, (int)$id);
                             $procesosConImagenes[] = $rutas;
                             Log::info('[PedidosProduccionController] Imagen de proceso procesada', [
                                 'key' => $key,
@@ -966,7 +971,7 @@ class PedidosProduccionController
                     
                     if ($archivo && $archivo->isValid()) {
                         try {
-                            $rutas = $procesoFotoService->procesarFoto($archivo);
+                            $rutas = $procesoFotoService->procesarFoto($archivo, (int)$id);
                             $fotosProcesoNuevo[$indice] = $rutas;
                             Log::info('[PedidosProduccionController] Imagen de proceso nuevo procesada', [
                                 'key' => $key,
@@ -995,21 +1000,101 @@ class PedidosProduccionController
                 }
             }
 
+            // 🔴 NUEVO: Procesar imágenes a eliminar
+            $imagenesAEliminar = [];
+            if ($request->input('imagenes_a_eliminar')) {
+                try {
+                    $input = $request->input('imagenes_a_eliminar');
+                    
+                    // 🔴 CRÍTICO: Manejar ambos casos
+                    // Caso 1: Ya es un array (Laravel lo parseó automáticamente)
+                    if (is_array($input)) {
+                        $imagenesAEliminar = $input;
+                    }
+                    // Caso 2: Es una cadena JSON (necesita decodificar)
+                    elseif (is_string($input)) {
+                        $imagenesAEliminar = json_decode($input, true) ?? [];
+                    }
+                    
+                    // Validar que sea un array válido
+                    if (!is_array($imagenesAEliminar)) {
+                        $imagenesAEliminar = [];
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('[PedidosProduccionController] Error procesando imagenes_a_eliminar', ['error' => $e->getMessage()]);
+                }
+                
+                // Eliminar imágenes del almacenamiento y BD
+                if (!empty($imagenesAEliminar)) {
+                    Log::info('[PedidosProduccionController] Eliminando imágenes marcadas', [
+                        'cantidad' => count($imagenesAEliminar),
+                        'ids' => $imagenesAEliminar
+                    ]);
+                    
+                    foreach ($imagenesAEliminar as $imagenId) {
+                        try {
+                            $imagen = PrendaFotoPedido::findOrFail($imagenId);
+                            
+                            // Eliminar archivos físicos
+                            if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                                Storage::disk('public')->delete($imagen->ruta_original);
+                            }
+                            if ($imagen->ruta_webp && $imagen->ruta_webp !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_webp)) {
+                                Storage::disk('public')->delete($imagen->ruta_webp);
+                            }
+                            
+                            // Eliminar registro de BD
+                            $imagen->forceDelete();
+                            
+                            Log::info('[PedidosProduccionController] Imagen eliminada', [
+                                'id' => $imagenId,
+                                'ruta_original' => $imagen->ruta_original,
+                                'ruta_webp' => $imagen->ruta_webp
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('[PedidosProduccionController] Error eliminando imagen', [
+                                'id' => $imagenId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+
             // Usar Use Case DDD
             Log::info('[PedidosProduccionController] Datos validados para actualizar prenda', [
-                'origen_recibido' => $validated['origen'] ?? 'NO ENVIADO',
-                'de_bodega_recibido' => $validated['de_bodega'] ?? 'NO ENVIADO',
-                'tallas_recibidas' => $validated['tallas'] ?? 'NO ENVIADAS',
-                'variantes_recibidas' => $validated['variantes'] ?? 'NO ENVIADAS',
-                'procesos' => $validated['procesos'] ?? 'NO ENVIADOS',
+                'origen_recibido' => $validated['origen'] ?? 'N/A',
+                'de_bodega_recibido' => $validated['de_bodega'] ?? 'N/A',
+                'tallas_recibidas' => $validated['tallas'] ?? '{}',
+                'variantes_recibidas' => $validated['variantes'] ?? '{}',
+                'procesos' => $validated['procesos'] ?? '[]',
                 'imagenes_procesadas' => count($imagenesGuardadas),
                 'imagenes_existentes' => count($imagenesExistentes),
-                'imagenes_a_eliminar' => $request->input('imagenes_a_eliminar') ? count((array)$request->input('imagenes_a_eliminar')) : 0,
+                'imagenes_a_eliminar' => count($imagenesAEliminar),
                 'fotos_telas_procesadas' => count($fotosTelasProcesadas),
                 'fotos_telas_detalles' => $fotosTelasProcesadas,
                 'fotos_proceso_nuevo_count' => count($fotosProcesoNuevo),
                 'novedad_recibida' => $validated['novedad'] ?? 'SIN NOVEDAD',
             ]);
+            
+            // 🔴 NUEVO: Extraer asignaciones_colores del FormData
+            // El frontend envía formData.append('asignaciones_colores', JSON.stringify(...))
+            if ($request->has('asignaciones_colores')) {
+                $asignacionesInput = $request->input('asignaciones_colores');
+                if (is_string($asignacionesInput)) {
+                    $validated['asignaciones_colores'] = json_decode($asignacionesInput, true);
+                } else {
+                    $validated['asignaciones_colores'] = $asignacionesInput;
+                }
+                // Si json_decode devuelve null, usar array vacío (señal de eliminar todo)
+                if (is_null($validated['asignaciones_colores'])) {
+                    $validated['asignaciones_colores'] = [];
+                }
+                \Log::info('[PedidosProduccionController] asignaciones_colores extraído del FormData', [
+                    'asignaciones_colores' => $validated['asignaciones_colores'],
+                    'es_vacio' => empty($validated['asignaciones_colores'])
+                ]);
+            }
             
             // IMPORTANTE: Usar $validated['prenda_id'], NO $id (que es pedido_id)
             $dto = ActualizarPrendaCompletaDTO::fromRequest($validated['prenda_id'], $validated, $imagenesGuardadas, $imagenesExistentes, $fotosTelasProcesadas, $fotosProcesoNuevo);
@@ -1755,6 +1840,163 @@ class PedidosProduccionController
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar variante: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /asesores/pedidos/{pedidoId}/imagen/{tipo}/{id}
+     * Eliminar imagen de prenda, tela o proceso
+     * 
+     * @param int $pedidoId - ID del pedido
+     * @param string $tipo - Tipo de imagen: 'prenda', 'tela', 'proceso'
+     * @param int $id - ID del registro de imagen
+     */
+    public function eliminarImagen(int $pedidoId, string $tipo, int $id): JsonResponse
+    {
+        try {
+            Log::info('[PedidosProduccionController] DELETE imagen', [
+                'pedido_id' => $pedidoId,
+                'tipo' => $tipo,
+                'id' => $id
+            ]);
+
+            // Determinar modelo según tipo
+            $modelClass = match($tipo) {
+                'prenda' => PrendaFotoPedido::class,
+                'tela' => PrendaFotoTelaPedido::class,
+                'proceso' => PedidosProcesoImagenes::class,
+                default => null
+            };
+
+            if (!$modelClass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipo de imagen no válido'
+                ], 400);
+            }
+
+            // Obtener imagen
+            $imagen = $modelClass::findOrFail($id);
+
+            Log::info('[PedidosProduccionController] Eliminando imagen', [
+                'tipo' => $tipo,
+                'id' => $id,
+                'ruta_original' => $imagen->ruta_original ?? 'N/A',
+                'ruta_webp' => $imagen->ruta_webp ?? 'N/A'
+            ]);
+
+            // Eliminar archivos físicos
+            $archivosEliminados = [];
+
+            // Eliminar archivo original
+            if ($imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_original)) {
+                Storage::disk('public')->delete($imagen->ruta_original);
+                $archivosEliminados[] = $imagen->ruta_original;
+                Log::info('[PedidosProduccionController] Archivo original eliminado', [
+                    'ruta' => $imagen->ruta_original
+                ]);
+            }
+
+            // Eliminar archivo WebP si es diferente
+            if ($imagen->ruta_webp && $imagen->ruta_webp !== $imagen->ruta_original && Storage::disk('public')->exists($imagen->ruta_webp)) {
+                Storage::disk('public')->delete($imagen->ruta_webp);
+                $archivosEliminados[] = $imagen->ruta_webp;
+                Log::info('[PedidosProduccionController] Archivo WebP eliminado', [
+                    'ruta' => $imagen->ruta_webp
+                ]);
+            }
+
+            // Eliminar registro de BD (forceDelete para SoftDeletes)
+            $imagen->forceDelete();
+
+            Log::info('[PedidosProduccionController] Imagen eliminada completamente', [
+                'tipo' => $tipo,
+                'id' => $id,
+                'archivos_eliminados' => $archivosEliminados
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen eliminada correctamente',
+                'archivos_eliminados' => $archivosEliminados
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] Imagen no encontrada', [
+                'tipo' => $tipo,
+                'id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Imagen no encontrada'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error eliminando imagen', [
+                'tipo' => $tipo,
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar script SQL completo del pedido
+     * 
+     * Genera un script SQL que contiene todos los INSERT necesarios para
+     * recrear el pedido con todas sus tablas y relaciones en otra base de datos.
+     */
+    public function generarScriptSQL(int $id): JsonResponse
+    {
+        try {
+            $pedido = PedidoProduccion::findOrFail($id);
+            
+            // Verificar que el usuario sea el dueño del pedido
+            if ($pedido->asesor_id !== auth()->id() && !auth()->user()->hasRole('supervisor')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a este pedido'
+                ], 403);
+            }
+
+            $service = new GenerarScriptSQLService();
+            $sql = $service->generarScript($id);
+
+            return response()->json([
+                'success' => true,
+                'sql' => $sql,
+                'pedido_numero' => $pedido->numero_pedido,
+                'cliente' => $pedido->cliente
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('[PedidosProduccionController] Pedido no encontrado para generar script SQL', [
+                'pedido_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('[PedidosProduccionController] Error generando script SQL', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar script SQL: ' . $e->getMessage()
             ], 500);
         }
     }

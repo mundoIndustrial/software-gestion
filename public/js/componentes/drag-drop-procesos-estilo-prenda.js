@@ -71,6 +71,11 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     
     // Evento click como alternativa
     newPreview.addEventListener('click', (e) => {
+        // 🔴 NO interceptar clicks en el botón eliminar imagen
+        if (e.target.closest('.btn-eliminar-imagen-proceso')) {
+            return; // Dejar que event delegation global lo maneje
+        }
+        
         e.preventDefault();
         e.stopPropagation();
         

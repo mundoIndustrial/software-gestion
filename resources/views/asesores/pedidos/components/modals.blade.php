@@ -53,3 +53,6 @@
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
+
+<!-- Modal de Confirmación de Eliminación de Imagen (FUERA del modal-proceso-generico para evitar aria-hidden) -->
+@include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')

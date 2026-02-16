@@ -160,12 +160,14 @@ final class ActualizarPrendaCompletaDTO
         }
 
         // Parsear asignaciones_colores si viene como JSON string
+        // 🔴 NUEVO: Usar array_key_exists para distinguir "no enviado" (null) de "enviado vacío" ([])
         $asignacionesColores = null;
-        if (!empty($data['asignaciones_colores'])) {
-            if (is_string($data['asignaciones_colores'])) {
-                $asignacionesColores = json_decode($data['asignaciones_colores'], true);
+        if (array_key_exists('asignaciones_colores', $data)) {
+            $raw = $data['asignaciones_colores'];
+            if (is_string($raw)) {
+                $asignacionesColores = json_decode($raw, true) ?? [];
             } else {
-                $asignacionesColores = $data['asignaciones_colores'];
+                $asignacionesColores = is_array($raw) ? $raw : [];
             }
         }
 

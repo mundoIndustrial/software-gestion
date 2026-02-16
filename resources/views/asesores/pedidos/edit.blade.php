@@ -196,6 +196,7 @@
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-proceso-generico')
+@include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/pedidos.css') }}">

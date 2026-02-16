@@ -160,8 +160,8 @@ const TARJETA_PROCESO_TEMPLATE = `
 // ========== CONTENEDOR IMAGEN PROCESO (PARA EDICIÓN) ==========
 const IMAGEN_PROCESO_EDICION_TEMPLATE = `
     <img src="{{imgUrl}}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
-    <button type="button" onclick="eliminarImagenProceso({{indice}}); event.stopPropagation();" 
-        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+    <button type="button" onclick="event.stopPropagation(); eliminarImagenProceso({{indice}});" 
+        style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;">
         ×
     </button>
 `;

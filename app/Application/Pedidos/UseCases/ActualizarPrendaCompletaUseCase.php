@@ -318,6 +318,7 @@ final class ActualizarPrendaCompletaUseCase
     /**
      * Actualizar asignaciones de colores por talla (prenda_pedido_talla_colores)
      * Patrón selectivo: null → no tocar, vacío → eliminar todo, con datos → replace all
+     * 🔴 NUEVO: Maneja tanto array vacío [] como objeto vacío {} como señal de eliminar
      */
     private function actualizarAsignacionesColores(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
@@ -330,7 +331,12 @@ final class ActualizarPrendaCompletaUseCase
             return strtoupper($t->genero) . '_' . $t->talla;
         });
 
-        if (empty($dto->asignacionesColores)) {
+        // 🔴 NUEVO: Verificar si está vacío (array [] o objeto {})
+        $estaVacio = empty($dto->asignacionesColores) || 
+                     (is_array($dto->asignacionesColores) && count($dto->asignacionesColores) === 0) ||
+                     (is_object($dto->asignacionesColores) && count((array)$dto->asignacionesColores) === 0);
+
+        if ($estaVacio) {
             // Eliminar todas las asignaciones de colores de todas las tallas
             foreach ($tallasMap as $talla) {
                 \DB::table('prenda_pedido_talla_colores')
@@ -338,7 +344,8 @@ final class ActualizarPrendaCompletaUseCase
                     ->delete();
             }
             \Log::info('[ActualizarPrendaCompletaUseCase] Asignaciones colores eliminadas (vacío)', [
-                'prenda_id' => $prenda->id
+                'prenda_id' => $prenda->id,
+                'tipo_vacio' => is_array($dto->asignacionesColores) ? 'array' : 'object'
             ]);
             return;
         }
@@ -632,8 +639,88 @@ final class ActualizarPrendaCompletaUseCase
         return $tela->id;
     }
 
+    // 🔴 NUEVO: Método auxiliar para procesar array de fotos de telas
+    private function procesarFotosTelasArray(PrendaPedido $prenda, array $fotosTelas): void
+    {
+        foreach ($fotosTelas as $idx => $foto) {
+            $colorTelaId = $foto['prenda_pedido_colores_telas_id'] ?? null;
+            $ruta = $foto['ruta_original'] ?? null;
+            $rutaWebp = $foto['ruta_webp'] ?? null;
+            
+            if (!$colorTelaId || !$ruta) {
+                \Log::warning('[ActualizarPrendaCompletaUseCase] Foto ignorada (sin color_tela_id o ruta)', [
+                    'color_tela_id' => $colorTelaId,
+                    'ruta' => $ruta,
+                    'indice' => $idx
+                ]);
+                continue;
+            }
+            
+            // Si no se asignó rutaWebp, generarla
+            if (!$rutaWebp) {
+                $rutaWebp = $this->generarRutaWebp($ruta);
+            }
+            
+            $datosFoto = [
+                'prenda_pedido_colores_telas_id' => $colorTelaId,
+                'ruta_original' => $ruta,
+                'ruta_webp' => $rutaWebp,
+                'orden' => $idx + 1,
+            ];
+            
+            // Verificar que no exista ya esta ruta exacta (evitar duplicados)
+            $existente = \App\Models\PrendaFotoTelaPedido::where('prenda_pedido_colores_telas_id', $colorTelaId)
+                ->where('ruta_original', $ruta)
+                ->first();
+            
+            if (!$existente) {
+                $fotoCreada = \App\Models\PrendaFotoTelaPedido::create($datosFoto);
+                \Log::info('[ActualizarPrendaCompletaUseCase] Foto de tela creada', [
+                    'foto_id' => $fotoCreada->id,
+                    'color_tela_id' => $colorTelaId,
+                    'ruta_original' => $ruta
+                ]);
+            } else {
+                \Log::info('[ActualizarPrendaCompletaUseCase] Foto de tela duplicada, ignorada', [
+                    'color_tela_id' => $colorTelaId,
+                    'ruta_original' => $ruta
+                ]);
+            }
+        }
+    }
+
     private function actualizarFotosTelas(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
     {
+        // 🔴 NUEVO: Si fotosTelas es null pero fotosTelasProcesadas tiene datos, procesarlas
+        // Esto ocurre cuando se agregan telas nuevas en la edición
+        if (is_null($dto->fotosTelas) && !empty($dto->fotosTelasProcesadas)) {
+            \Log::info('[ActualizarPrendaCompletaUseCase] Procesando fotosTelasProcesadas (sin fotosTelas)', [
+                'prenda_id' => $prenda->id,
+                'cantidad_fotos_procesadas' => count($dto->fotosTelasProcesadas)
+            ]);
+            
+            // Crear estructura de fotosTelas desde fotosTelasProcesadas
+            $fotosTelas = [];
+            foreach ($dto->fotosTelasProcesadas as $idx => $procesada) {
+                // Obtener la tela agregada recientemente (última tela color-tela)
+                $ultimaColorTela = $prenda->coloresTelas()->latest('id')->first();
+                
+                if ($ultimaColorTela) {
+                    $fotosTelas[] = [
+                        'prenda_pedido_colores_telas_id' => $ultimaColorTela->id,
+                        'ruta_original' => $procesada['ruta_original'] ?? null,
+                        'ruta_webp' => $procesada['ruta_webp'] ?? null,
+                    ];
+                }
+            }
+            
+            // Procesar como si vinieran en fotosTelas
+            if (!empty($fotosTelas)) {
+                $this->procesarFotosTelasArray($prenda, $fotosTelas);
+                return;
+            }
+        }
+        
         // Patrón SELECTIVO: Si es null, NO tocar (es actualizacion parcial)
         if (is_null($dto->fotosTelas)) {
             return;
@@ -884,6 +971,9 @@ final class ActualizarPrendaCompletaUseCase
                         ]);
                     }
 
+                    // 🔴 NUEVO: Sincronizar imágenes del proceso existente
+                    $this->sincronizarImagenesProceso($procesoExistente, $proceso, $dto);
+
                     \Log::info('[ActualizarPrendaCompletaUseCase] Proceso actualizado correctamente', [
                         'proceso_id' => $procesoId,
                         'ubicaciones_guardadas' => json_encode($ubicaciones)
@@ -1000,6 +1090,76 @@ final class ActualizarPrendaCompletaUseCase
 
                 // Agregar imágenes del proceso si existen
                 $this->agregarImagenesProceso($procesoCreado, $proceso, $dto, true);
+            }
+        }
+    }
+
+    /**
+     * Sincronizar imágenes de un proceso existente:
+     * 1. Si hay imagenes_existentes en el payload, eliminar las que ya no están
+     * 2. Si hay fotosProcesoNuevo en el DTO, agregar las nuevas
+     */
+    private function sincronizarImagenesProceso(
+        PedidosProcesosPrendaDetalle $procesoExistente,
+        array $proceso,
+        ActualizarPrendaCompletaDTO $dto
+    ): void {
+        $imagenesExistentesPayload = $proceso['imagenes_existentes'] ?? null;
+        
+        // Si el frontend envió imagenes_existentes, sincronizar (eliminar las que ya no están)
+        if (is_array($imagenesExistentesPayload)) {
+            $idsAConservar = array_filter(array_column($imagenesExistentesPayload, 'id'));
+            
+            $imagenesActuales = $procesoExistente->imagenes()->get();
+            $eliminadas = 0;
+            
+            foreach ($imagenesActuales as $imgActual) {
+                if (!in_array($imgActual->id, $idsAConservar)) {
+                    // Eliminar archivo físico del storage
+                    if ($imgActual->ruta_original) {
+                        $ruta = ltrim(str_replace('/storage/', '', $imgActual->ruta_original), '/');
+                        $rutaFisica = storage_path('app/public/' . $ruta);
+                        if (file_exists($rutaFisica)) {
+                            @unlink($rutaFisica);
+                        }
+                    }
+                    if ($imgActual->ruta_webp && $imgActual->ruta_webp !== $imgActual->ruta_original) {
+                        $rutaW = ltrim(str_replace('/storage/', '', $imgActual->ruta_webp), '/');
+                        $rutaFisicaWebp = storage_path('app/public/' . $rutaW);
+                        if (file_exists($rutaFisicaWebp)) {
+                            @unlink($rutaFisicaWebp);
+                        }
+                    }
+                    $imgActual->delete();
+                    $eliminadas++;
+                }
+            }
+            
+            if ($eliminadas > 0) {
+                \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes de proceso eliminadas', [
+                    'proceso_id' => $procesoExistente->id,
+                    'eliminadas' => $eliminadas,
+                    'conservadas' => count($idsAConservar)
+                ]);
+            }
+        }
+        
+        // Agregar nuevas imágenes (File uploads procesados por el controlador)
+        if (!empty($dto->fotosProcesoNuevo)) {
+            $orden = $procesoExistente->imagenes()->count() + 1;
+            foreach ($dto->fotosProcesoNuevo as $foto) {
+                if (!empty($foto) && is_array($foto)) {
+                    $procesoExistente->imagenes()->create([
+                        'ruta_original' => $foto['ruta_original'] ?? null,
+                        'ruta_webp' => $foto['ruta_webp'] ?? null,
+                        'orden' => $orden++,
+                        'es_principal' => 0,
+                    ]);
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Nueva imagen agregada a proceso existente', [
+                        'proceso_id' => $procesoExistente->id,
+                        'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
+                    ]);
+                }
             }
         }
     }

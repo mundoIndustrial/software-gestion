@@ -69,9 +69,9 @@
                         <span class="material-symbols-rounded">photo_camera</span>IMÁGENES (Máximo 3)
                     </label>
                     
-                    <div class="foto-panel" style="display: flex; gap: 0.75rem; flex-direction: row; align-items: flex-start; user-select: none;">
+                    <div class="foto-panel" style="display: flex; gap: 1rem; flex-direction: row; align-items: flex-start; user-select: none; padding: 10px 10px 0 0;">
                         <!-- Preview 1 -->
-                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" tabindex="0">
+                        <div id="proceso-foto-preview-1" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; overflow: visible; user-select: none;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 1</div>
@@ -80,7 +80,7 @@
                         <input type="file" id="proceso-foto-input-1" accept="image/*" style="display: none;" aria-label="Imagen 1 del Proceso" onchange="manejarImagenProcesoConIndice(this, 1)">
                         
                         <!-- Preview 2 -->
-                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" tabindex="0">
+                        <div id="proceso-foto-preview-2" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; overflow: visible; user-select: none;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 2</div>
@@ -89,7 +89,7 @@
                         <input type="file" id="proceso-foto-input-2" accept="image/*" style="display: none;" aria-label="Imagen 2 del Proceso" onchange="manejarImagenProcesoConIndice(this, 2)">
                         
                         <!-- Preview 3 -->
-                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; user-select: none;" tabindex="0">
+                        <div id="proceso-foto-preview-3" class="foto-preview-proceso" style="width: 120px; height: 120px; flex-shrink: 0; border: 2px dashed #0066cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; position: relative; overflow: visible; user-select: none;" tabindex="0">
                             <div class="placeholder-content" style="text-align: center;">
                                 <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
                                 <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen 3</div>

@@ -840,15 +840,18 @@ document.addEventListener('paste', function(event) {
                 if (btnLimpiarAsignaciones) {
                     btnLimpiarAsignaciones.addEventListener('click', function(e) {
                         e.preventDefault();
-                        // Crear overlay oscuro personalizado detrás del modal
-                        let overlay = document.getElementById('overlay-confirmar-limpiar');
-                        if (!overlay) {
-                            overlay = document.createElement('div');
-                            overlay.id = 'overlay-confirmar-limpiar';
-                            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1055000;display:none;';
-                            document.body.appendChild(overlay);
+                        // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                        const asesorWrapper = document.querySelector('.asesores-wrapper');
+                        if (asesorWrapper) {
+                            asesorWrapper.removeAttribute('aria-hidden');
                         }
-                        overlay.style.display = 'block';
+                        
+                        // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                        const overlayExistente = document.getElementById('overlay-confirmar-limpiar');
+                        if (overlayExistente) {
+                            overlayExistente.remove();
+                        }
+                        
                         // Abrir modal de confirmación
                         jQuery('#modal-confirmar-limpiar').modal('show');
                     });
@@ -872,11 +875,25 @@ document.addEventListener('paste', function(event) {
                             if (typeof actualizarTotalPrendas === 'function') actualizarTotalPrendas();
                             
                             // Cerrar modal de confirmación y remover overlay
-                            jQuery('#modal-confirmar-limpiar').modal('hide');
+                            const modalLimpiar = document.getElementById('modal-confirmar-limpiar');
+                            jQuery(modalLimpiar).modal('hide');
                             const ov = document.getElementById('overlay-confirmar-limpiar');
-                            if (ov) ov.style.display = 'none';
+                            if (ov) ov.remove();
+                            
+                            // 🔴 NUEVO: Remover aria-hidden del modal cuando se cierre
+                            if (modalLimpiar) {
+                                modalLimpiar.removeAttribute('aria-hidden');
+                            }
                         });
                     }
+                    
+                    // 🔴 NUEVO: Listener para remover aria-hidden cuando se cierre el modal
+                    jQuery('#modal-confirmar-limpiar').on('hidden.bs.modal', function() {
+                        const asesorWrapper = document.querySelector('.asesores-wrapper');
+                        if (asesorWrapper) {
+                            asesorWrapper.setAttribute('aria-hidden', 'true');
+                        }
+                    });
                 }
                 
                 // Agregar listener delegado para botones de eliminar asignación (creados dinámicamente)
@@ -901,15 +918,17 @@ document.addEventListener('paste', function(event) {
                                 detalleEl.textContent = `Color: ${colorNombre} — Clave: ${clave}`;
                             }
                             
-                            // Crear overlay oscuro
-                            let overlay = document.getElementById('overlay-confirmar-eliminar');
-                            if (!overlay) {
-                                overlay = document.createElement('div');
-                                overlay.id = 'overlay-confirmar-eliminar';
-                                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1055000;display:none;';
-                                document.body.appendChild(overlay);
+                            // 🔴 NUEVO: Remover aria-hidden del contenedor padre para que el modal sea accesible
+                            const asesorWrapper = document.querySelector('.asesores-wrapper');
+                            if (asesorWrapper) {
+                                asesorWrapper.removeAttribute('aria-hidden');
                             }
-                            overlay.style.display = 'block';
+                            
+                            // 🔴 NUEVO: Remover cualquier overlay existente antes de abrir el modal
+                            const overlayExistente = document.getElementById('overlay-confirmar-eliminar');
+                            if (overlayExistente) {
+                                overlayExistente.remove();
+                            }
                             
                             // Abrir modal de confirmación
                             jQuery('#modal-confirmar-eliminar-asignacion').modal('show');
@@ -970,7 +989,7 @@ document.addEventListener('paste', function(event) {
                             // Cerrar modal y overlay
                             jQuery('#modal-confirmar-eliminar-asignacion').modal('hide');
                             const ov = document.getElementById('overlay-confirmar-eliminar');
-                            if (ov) ov.style.display = 'none';
+                            if (ov) ov.remove();
                             eliminacionPendiente = { clave: null, colorNombre: null };
                         });
                     }

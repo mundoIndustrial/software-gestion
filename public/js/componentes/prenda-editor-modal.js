@@ -28,10 +28,13 @@ function abrirEditarPrendas() {
     let htmlListaPrendas = '<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">';
     
     if (prendas.length === 0) {
-        // Mostrar mensaje cuando la lista está vacía
+        // 🔴 NUEVO: NO mostrar contenedor vacío en modo edición
+        // El contenedor vacío solo debe aparecer en modo creación (cuando se abre el modal de agregar prenda nueva)
+        // En modo edición, este modal se usa para seleccionar qué prenda editar, así que si no hay prendas, 
+        // es un error de lógica que no debería ocurrir
         htmlListaPrendas += `
             <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
-                <p style="color: #6b7280; margin: 0;">No hay prendas agregadas aún</p>
+                <p style="color: #6b7280; margin: 0;">No hay prendas para editar</p>
             </div>
         `;
     } else {

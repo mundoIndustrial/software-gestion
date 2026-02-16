@@ -585,10 +585,29 @@ class ObtenerPedidoDetalleService
         $prendaArray['imagenes'] = ($prenda->fotos && $prenda->fotos->count() > 0) 
             ? $prenda->fotos->map(function($foto) {
                 Log::debug('🖼️ [FOTO-MAP] Procesando foto', [
+                    'id' => $foto->id,
                     'ruta_webp' => $foto->ruta_webp,
                     'ruta_original' => $foto->ruta_original
                 ]);
-                return $foto->ruta_webp ?? $foto->ruta_original ?? '';
+                // 🔴 NUEVO: Devolver objeto con ID y ruta para que el frontend pueda marcar para eliminación
+                // Normalizar rutas para agregar /storage/ si no lo tienen
+                $rutaWebp = $foto->ruta_webp ?? '';
+                $rutaOriginal = $foto->ruta_original ?? '';
+                
+                // Agregar /storage/ si no comienza con /storage/
+                if ($rutaWebp && !str_starts_with($rutaWebp, '/storage/')) {
+                    $rutaWebp = '/storage/' . ltrim($rutaWebp, '/');
+                }
+                if ($rutaOriginal && !str_starts_with($rutaOriginal, '/storage/')) {
+                    $rutaOriginal = '/storage/' . ltrim($rutaOriginal, '/');
+                }
+                
+                return [
+                    'id' => $foto->id,
+                    'url' => $rutaWebp ?: $rutaOriginal,
+                    'ruta_webp' => $rutaWebp,
+                    'ruta_original' => $rutaOriginal,
+                ];
             })->filter()->toArray() 
             : [];
         
@@ -699,7 +718,7 @@ class ObtenerPedidoDetalleService
             $coloresTelas[] = [
                 'id' => $rel->id,
                 'color_id' => $rel->color_id,
-                'color_nombre' => $color->nombre ?? 'Color desconocido',
+                'color_nombre' => $color->nombre ?? 'Sin color',
                 'color_codigo' => $color->codigo ?? '',
                 'tela_id' => $rel->tela_id,
                 'tela_nombre' => $tela->nombre ?? 'Tela desconocida',

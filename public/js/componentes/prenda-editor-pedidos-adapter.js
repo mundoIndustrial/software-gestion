@@ -438,8 +438,10 @@
             }
 
             // Asignaciones de colores por talla
-            if (datos.asignacionesColoresPorTalla && Object.keys(datos.asignacionesColoresPorTalla).length > 0) {
+            // 🔴 NUEVO: Enviar SIEMPRE si existe (incluso vacío {} para señalar "eliminar todo")
+            if (datos.asignacionesColoresPorTalla !== undefined && datos.asignacionesColoresPorTalla !== null) {
                 formData.append('asignaciones_colores', JSON.stringify(datos.asignacionesColoresPorTalla));
+                console.log('[PedidosAdapter] 🎨 asignaciones_colores enviado:', JSON.stringify(datos.asignacionesColoresPorTalla));
             }
 
             // Telas (JSON) - usar telasAgregadas o telas
@@ -472,10 +474,44 @@
 
             // Procesos (JSON) - transformar de objeto a array si es necesario
             if (datos.procesos) {
-                let procesosArray = datos.procesos;
-                if (!Array.isArray(procesosArray) && typeof procesosArray === 'object') {
-                    procesosArray = Object.entries(procesosArray).map(([tipo, proc]) => {
+                let procesosRaw = datos.procesos;
+                let procesosArray = [];
+                
+                if (!Array.isArray(procesosRaw) && typeof procesosRaw === 'object') {
+                    // 🔴 PASO 1: Extraer File images ANTES de transformar (se pierden en JSON.stringify)
+                    const filesPorProceso = {};
+                    Object.entries(procesosRaw).forEach(([tipo, proc], idx) => {
                         const d = proc?.datos || proc || {};
+                        const imagenes = d.imagenes || [];
+                        filesPorProceso[idx] = [];
+                        if (Array.isArray(imagenes)) {
+                            imagenes.forEach(img => {
+                                if (img instanceof File) {
+                                    filesPorProceso[idx].push(img);
+                                } else if (img?.file instanceof File) {
+                                    filesPorProceso[idx].push(img.file);
+                                }
+                            });
+                        }
+                    });
+                    
+                    // 🔴 PASO 2: Transformar a array con imagenes_existentes (URLs para el backend)
+                    procesosArray = Object.entries(procesosRaw).map(([tipo, proc]) => {
+                        const d = proc?.datos || proc || {};
+                        
+                        const imagenesExistentes = [];
+                        if (d.imagenes && Array.isArray(d.imagenes)) {
+                            d.imagenes.forEach(img => {
+                                if (img && !(img instanceof File) && !(img?.file instanceof File)) {
+                                    const url = img.url || img.ruta_original || img.ruta_webp || img.ruta || img.previewUrl || '';
+                                    const id = img.id || null;
+                                    if (url || id) {
+                                        imagenesExistentes.push({ id: id, url: url, ruta_original: img.ruta_original || url, ruta_webp: img.ruta_webp || '' });
+                                    }
+                                }
+                            });
+                        }
+                        
                         return {
                             id: d.id || undefined,
                             tipo_proceso_id: d.tipo_proceso_id || undefined,
@@ -484,24 +520,23 @@
                             ubicaciones: d.ubicaciones || [],
                             observaciones: d.observaciones || '',
                             tallas: d.tallas || {},
-                            estado: d.estado || 'PENDIENTE'
+                            estado: d.estado || 'PENDIENTE',
+                            imagenes_existentes: imagenesExistentes
                         };
                     });
-                }
-                formData.append('procesos', JSON.stringify(procesosArray));
-                
-                // Agregar imágenes de procesos como File objects
-                if (Array.isArray(procesosArray)) {
-                    procesosArray.forEach((proc, procIdx) => {
-                        if (proc.imagenes && Array.isArray(proc.imagenes)) {
-                            proc.imagenes.forEach((img, imgIdx) => {
-                                if (img instanceof File) {
-                                    formData.append(`fotosProcesoNuevo_${procIdx}`, img);
-                                }
-                            });
-                        }
+                    
+                    // 🔴 PASO 3: Agregar File images al FormData
+                    Object.entries(filesPorProceso).forEach(([idx, files]) => {
+                        files.forEach(file => {
+                            formData.append(`fotosProcesoNuevo_${idx}`, file);
+                        });
                     });
+                } else if (Array.isArray(procesosRaw)) {
+                    procesosArray = procesosRaw;
                 }
+                
+                formData.append('procesos', JSON.stringify(procesosArray));
+                console.log('[PedidosAdapter] 🔧 Procesos enviados:', procesosArray.length, 'procesos');
             }
 
             // Imágenes de prenda - separar nuevas (File) de existentes (BD)
@@ -520,6 +555,12 @@
             });
             imagenesNuevas.forEach((file) => formData.append('imagenes[]', file));
             formData.append('imagenes_existentes', JSON.stringify(imagenesExistentes));
+            
+            // 🔴 NUEVO: Agregar imágenes marcadas para eliminación
+            if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
+                formData.append('imagenes_a_eliminar', JSON.stringify(window.imagenesAEliminar));
+                console.log('[PedidosAdapter] 🗑️ Imágenes marcadas para eliminación:', window.imagenesAEliminar);
+            }
 
             const urlPrefix = _getUrlPrefix();
             const saveUrl = `${urlPrefix.save}/${pedidoId}/actualizar-prenda`;

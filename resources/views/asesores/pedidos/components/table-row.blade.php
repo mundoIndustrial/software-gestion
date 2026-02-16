@@ -147,6 +147,28 @@
         <i class="fas fa-edit"></i>
     </button>
 
+    <!-- Botón Generar Script SQL -->
+    @if(get_class($pedido) !== 'App\Models\LogoPedido')
+    <button onclick="generarScriptSQL({{ $pedido->id }})" title="Generar Script SQL" style="
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+    " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)'">
+        <i class="fas fa-database"></i>
+    </button>
+    @endif
+
     <!-- Botón Confirmar Corrección (solo si está en DEVUELTO_A_ASESORA) -->
     @if(trim($estado) === 'DEVUELTO_A_ASESORA')
     <button onclick="confirmarCorreccionPedido({{ $pedido->id }}, '{{ $numeroPedido }}')" title="Confirmar Corrección" style="

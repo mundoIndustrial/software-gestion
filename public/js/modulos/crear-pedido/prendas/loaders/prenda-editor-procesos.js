@@ -149,6 +149,11 @@ class PrendaEditorProcesos {
                 // 🔴 CRÍTICO: Marcar los checkboxes de procesos correspondientes
                 this._marcarCheckboxesProcesos(window.procesosSeleccionados);
                 
+                // 🔴 NUEVO: Configurar drag & drop para procesos
+                if (typeof configurarDragDropProcesos === 'function') {
+                    configurarDragDropProcesos();
+                }
+                
                 // Verificación final: asegurar que el contenedor es visible
                 const container = document.getElementById('contenedor-tarjetas-procesos');
                 if (container) {

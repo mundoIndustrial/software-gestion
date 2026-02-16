@@ -671,13 +671,28 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                     console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);
                 }
                 
+                console.log('[cargarDatosProcesoEnModal] 🖼️ Cargando imagen', indice, '- imgUrl:', imgUrl?.substring(0, 50) || 'N/A');
+                
+                preview.style.border = '2px solid #0066cc';
+                preview.style.background = 'transparent';
                 preview.innerHTML = `
                     <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
-                    <button type="button" onclick="eliminarImagenProceso(${indice}); event.stopPropagation();" 
-                        style="position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
-                        ×
-                    </button>
                 `;
+                
+                console.log('[cargarDatosProcesoEnModal] ✅ innerHTML reemplazado para imagen', indice);
+                
+                // 🔴 Crear botón eliminar con data-indice (event delegation global lo detectará)
+                // Esto sobrevive a cloneNode(true) de setupDragAndDropProceso
+                let deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
+                if (deleteBtn) deleteBtn.remove();
+                deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-eliminar-imagen-proceso';
+                deleteBtn.type = 'button';
+                deleteBtn.setAttribute('data-indice', indice);
+                deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
+                deleteBtn.textContent = '×';
+                preview.appendChild(deleteBtn);
+                console.log('[cargarDatosProcesoEnModal] ✅ Botón eliminar creado con data-indice:', indice);
             }
             
             //  Guardar según tipo

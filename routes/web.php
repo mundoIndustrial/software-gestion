@@ -1948,6 +1948,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // Actualizar prenda completa (con novedades) en un pedido existente
     Route::post('/pedidos/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
 
+    // Eliminar imagen de prenda, tela o proceso
+    Route::delete('/pedidos/{pedidoId}/imagen/{tipo}/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'eliminarImagen'])->where(['pedidoId' => '[0-9]+', 'id' => '[0-9]+'])->name('pedidos.eliminar-imagen');
+
     // ========================================
     // DATOS DE CATÁLOGOS (tipos de broche, manga, telas, colores, etc)
     // ========================================

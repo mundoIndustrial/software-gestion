@@ -167,6 +167,7 @@
 @include('asesores.pedidos.modals.modal-seleccionar-tallas')
 @include('asesores.pedidos.modals.modal-agregar-prenda-nueva')
 @include('asesores.pedidos.modals.modal-proceso-generico')
+@include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
 @include('asesores.pedidos.modals.modal-agregar-epp')
 
 @push('scripts')

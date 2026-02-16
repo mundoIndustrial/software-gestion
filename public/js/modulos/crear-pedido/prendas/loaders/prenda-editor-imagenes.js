@@ -79,13 +79,19 @@ class PrendaEditorImagenes {
         if (prenda.imagenes && Array.isArray(prenda.imagenes) && window.imagenesPrendaStorage?.establecerImagenes) {
             // IMPORTANTE: Procesar imágenes para crear blob URLs si es necesario
             const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
+                // 🔴 NUEVO: Asegurar que cada imagen tenga un ID (desde BD o generado)
+                const imagenConId = {
+                    ...img,
+                    id: img.id || img.imagen_id || null,  // Intentar obtener ID de BD
+                };
+                
                 // 🔴 CRITICAL FIX: Si tiene File object, SIEMPRE crear un blob URL NUEVO
                 // No importa si previewUrl existe - puede estar revocado
                 if (img.file instanceof File) {
                     console.log(`[prenda-editor-imagenes] 🔴 RECONSTITUYENDO blob URL para imagen ${idx} (File object presente)`);
                     const nuevoBlob = URL.createObjectURL(img.file);
                     return {
-                        ...img,
+                        ...imagenConId,
                         file: img.file,                    // ← Preservar el File object
                         previewUrl: nuevoBlob,             // ← NUEVO blob URL SIEMPRE desde File
                         nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
@@ -97,7 +103,7 @@ class PrendaEditorImagenes {
                 
                 // Si ya tiene previewUrl válido (blob o data URL), mantenerlo
                 if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
-                    return img;
+                    return imagenConId;
                 }
                 
                 // Si es una string (URL), usar como previewUrl
@@ -246,11 +252,37 @@ class PrendaEditorImagenes {
                 }).then((result) => {
                     if (!result.isConfirmed) { renderModal(); return; }
                     
-                    // Eliminar del storage
+                    // Obtener la imagen actual para obtener su ID de BD
+                    const imagenActual = currentImages[idx];
+                    const imagenId = imagenActual?.id;
+                    
+                    // 🔴 IMPORTANTE: NO eliminar del servidor aquí
+                    // Solo marcar para eliminación cuando se guarden los cambios
+                    // Esto permite al usuario cancelar la edición sin perder la imagen
+                    
+                    if (imagenId) {
+                        // Marcar imagen para eliminación (se eliminará al guardar)
+                        if (!window.imagenesAEliminar) {
+                            window.imagenesAEliminar = [];
+                        }
+                        if (!window.imagenesAEliminar.includes(imagenId)) {
+                            window.imagenesAEliminar.push(imagenId);
+                            console.log('[prenda-editor-imagenes] 📝 Imagen marcada para eliminación al guardar', {
+                                id: imagenId,
+                                totalMarcadas: window.imagenesAEliminar.length
+                            });
+                        }
+                    }
+                    
+                    // Eliminar del storage local SOLO
                     if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
                         const imgs = window.imagenesPrendaStorage.obtenerImagenes();
                         imgs.splice(idx, 1);
                         window.imagenesPrendaStorage.establecerImagenes(imgs);
+                        console.log('[prenda-editor-imagenes] 🗑️ Imagen eliminada del storage local (no de BD)', {
+                            imagenId: imagenId,
+                            imagenesRestantes: imgs.length
+                        });
                     }
                     
                     // Actualizar el preview del DOM

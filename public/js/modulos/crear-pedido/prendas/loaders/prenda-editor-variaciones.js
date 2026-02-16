@@ -10,14 +10,27 @@ class PrendaEditorVariaciones {
     static cargar(prenda) {
         console.log('⚙️ [Variaciones] Cargando manga, bolsillos, broche');
         console.log('⚙️ [Variaciones] Objeto prenda recibido:', prenda);
-        console.log('⚙️ [Variaciones] prenda.variaciones:', prenda?.variaciones);
-        console.log('⚙️ [Variaciones] prenda.manga:', prenda?.manga);
-        console.log('⚙️ [Variaciones] prenda.bolsillos:', prenda?.bolsillos);
-        console.log('⚙️ [Variaciones] prenda.broche:', prenda?.broche);
+        console.log('⚙️ [Variaciones] prenda.variantes (tipo):', typeof prenda?.variantes);
+        console.log('⚙️ [Variaciones] prenda.variantes (es array?):', Array.isArray(prenda?.variantes));
+        console.log('⚙️ [Variaciones] prenda.variantes (contenido):', prenda?.variantes);
         
-        this._cargarManga(prenda);
-        this._cargarBolsillos(prenda);
-        this._cargarBroche(prenda);
+        // 🔴 FIX: El backend devuelve variantes como ARRAY, no como objeto
+        // Usar la primera variante si es array
+        let varianteObj = prenda?.variantes;
+        if (Array.isArray(varianteObj) && varianteObj.length > 0) {
+            console.log('⚙️ [Variaciones] Detectado array de variantes, usando primera:', varianteObj[0]);
+            varianteObj = varianteObj[0];
+        }
+        
+        // Crear objeto con variantes para pasar a métodos
+        const prendaConVariantes = {
+            ...prenda,
+            variantes: varianteObj
+        };
+        
+        this._cargarManga(prendaConVariantes);
+        this._cargarBolsillos(prendaConVariantes);
+        this._cargarBroche(prendaConVariantes);
         
         console.log('✅ [Variaciones] Completado');
     }
@@ -36,9 +49,24 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        // 🔑 CRÍTICO: Buscar en prenda.variantes (no variaciones) - Aquí es donde se guarda realmente
-        const manga = prenda.variantes?.tipo_manga || prenda.variaciones?.manga || prenda.manga;
-        const obsValue = prenda.variantes?.obs_manga;
+        // 🔑 CRÍTICO: Aceptar ambos casos
+        // Caso 1: prenda.variantes es un OBJETO (desde otros lugares)
+        // Caso 2: prenda.variantes es un ARRAY (desde BD) - ya convertido a objeto en cargar()
+        const manga = prenda.variantes?.tipo_manga || 
+                     prenda.variantes?.manga ||
+                     prenda.variaciones?.manga || 
+                     prenda.manga;
+        const obsValue = prenda.variantes?.obs_manga || 
+                        prenda.variantes?.manga_obs;
+        
+        console.log('🔍 [Manga] Buscando manga:', {
+            'prenda.variantes.tipo_manga': prenda.variantes?.tipo_manga,
+            'prenda.variantes.manga': prenda.variantes?.manga,
+            'prenda.variaciones.manga': prenda.variaciones?.manga,
+            'prenda.manga': prenda.manga,
+            'manga_encontrado': manga,
+            'obs_encontrada': obsValue
+        });
         
         if (manga) {
             // Marcar checkbox
@@ -58,6 +86,8 @@ class PrendaEditorVariaciones {
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
             console.log('✅ [Manga] Cargado - Tipo:', manga, 'Obs:', obsValue);
+        } else {
+            console.log('ℹ️ [Manga] Sin manga para cargar');
         }
     }
 
@@ -74,9 +104,22 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        // 🔑 CRÍTICO: Buscar en prenda.variantes.tiene_bolsillos y obs_bolsillos
-        const tieneBolsillos = prenda.variantes?.tiene_bolsillos;
-        const obsValue = prenda.variantes?.obs_bolsillos;
+        // 🔑 CRÍTICO: Aceptar ambos casos
+        // Caso 1: prenda.variantes es un OBJETO
+        // Caso 2: prenda.variantes es un ARRAY (ya convertido a objeto en cargar())
+        const tieneBolsillos = prenda.variantes?.tiene_bolsillos || 
+                              prenda.variaciones?.bolsillos?.aplicar;
+        const obsValue = prenda.variantes?.obs_bolsillos || 
+                        prenda.variantes?.bolsillos_obs ||
+                        prenda.variaciones?.bolsillos?.observacion;
+        
+        console.log('🔍 [Bolsillos] Buscando bolsillos:', {
+            'prenda.variantes.tiene_bolsillos': prenda.variantes?.tiene_bolsillos,
+            'prenda.variantes.bolsillos_obs': prenda.variantes?.bolsillos_obs,
+            'prenda.variaciones.bolsillos': prenda.variaciones?.bolsillos,
+            'tieneBolsillos_encontrado': tieneBolsillos,
+            'obs_encontrada': obsValue
+        });
         
         if (tieneBolsillos || obsValue) {
             // Marcar checkbox
@@ -94,6 +137,8 @@ class PrendaEditorVariaciones {
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
             console.log('✅ [Bolsillos] Cargado - Obs:', obsValue);
+        } else {
+            console.log('ℹ️ [Bolsillos] Sin bolsillos para cargar');
         }
     }
 
@@ -111,9 +156,24 @@ class PrendaEditorVariaciones {
             return;
         }
 
-        // 🔑 CRÍTICO: Buscar en prenda.variantes.tipo_broche
-        const broche = prenda.variantes?.tipo_broche;
-        const obsValue = prenda.variantes?.obs_broche;
+        // 🔑 CRÍTICO: Aceptar ambos casos
+        // Caso 1: prenda.variantes es un OBJETO
+        // Caso 2: prenda.variantes es un ARRAY (ya convertido a objeto en cargar())
+        const broche = prenda.variantes?.tipo_broche || 
+                      prenda.variantes?.tipo_broche_boton ||
+                      prenda.variaciones?.broche?.tipo;
+        const obsValue = prenda.variantes?.obs_broche || 
+                        prenda.variantes?.broche_boton_obs ||
+                        prenda.variaciones?.broche?.observacion;
+        
+        console.log('🔍 [Broche] Buscando broche:', {
+            'prenda.variantes.tipo_broche': prenda.variantes?.tipo_broche,
+            'prenda.variantes.tipo_broche_boton': prenda.variantes?.tipo_broche_boton,
+            'prenda.variantes.broche_boton_obs': prenda.variantes?.broche_boton_obs,
+            'prenda.variaciones.broche': prenda.variaciones?.broche,
+            'broche_encontrado': broche,
+            'obs_encontrada': obsValue
+        });
         
         if (broche || obsValue) {
             // Marcar checkbox
@@ -156,6 +216,8 @@ class PrendaEditorVariaciones {
             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
             
             console.log('✅ [Broche] Cargado - Tipo:', broche, 'Obs:', obsValue);
+        } else {
+            console.log('ℹ️ [Broche] Sin broche para cargar');
         }
     }
 

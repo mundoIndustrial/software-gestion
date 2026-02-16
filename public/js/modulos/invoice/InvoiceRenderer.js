@@ -157,11 +157,14 @@ class InvoiceRenderer {
     }
 
     renderizarTela(prenda) {
+        // 🔴 NUEVO: Verificar si hay colores asignados por talla
+        const hayColorPorTalla = prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0;
+        
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
             return prenda.telas_array.map(tela => `
                 <div style="margin-bottom: 8px; line-height: 1.4;">
                     ${tela.tela_nombre ? `<div><strong>Tela:</strong> ${tela.tela_nombre}</div>` : ''}
-                    ${tela.color_nombre ? `<div><strong>Color:</strong> ${tela.color_nombre}</div>` : ''}
+                    ${tela.color_nombre && !hayColorPorTalla ? `<div><strong>Color:</strong> ${tela.color_nombre}</div>` : ''}
                     ${tela.referencia ? `<div><strong>Ref:</strong> ${tela.referencia}</div>` : ''}
                     ${(tela.fotos && tela.fotos.length > 0) ? `<img src="${window._extraerURLImagen(tela.fotos[0])}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(tela.fotos, 'Imágenes de ' + (tela.tela_nombre || 'Tela'))})" title="Click para ver todas las imágenes de tela">` : ''}
                 </div>
@@ -169,11 +172,11 @@ class InvoiceRenderer {
         } else {
             return `
                 ${prenda.tela ? `<div><strong>Tela:</strong> ${prenda.tela}</div>` : ''}
-                ${prenda.color ? `<div><strong>Color:</strong> ${prenda.color}</div>` : ''}
+                ${prenda.color && !hayColorPorTalla ? `<div><strong>Color:</strong> ${prenda.color}</div>` : ''}
                 ${prenda.ref ? `<div><strong>Ref:</strong> ${prenda.ref}</div>` : ''}
                 ${(prenda.imagenes_tela && prenda.imagenes_tela.length > 0) ? `
                     <div>
-                        <img src="${window._extraerURLImagen(prenda.imagenes_tela[0])}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer;" onclick="window._abrirGaleriaImagenesDesdeID(${window._registrarGalería(prenda.imagenes_tela, 'Imágenes de Tela')})" title="Click para ver todas las imágenes de tela">
+                        <img src="${prenda.imagenes_tela[0]}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; cursor: pointer; margin-top: 4px;" title="Imagen de tela">
                     </div>
                 ` : ''}
             `;
@@ -195,8 +198,23 @@ class InvoiceRenderer {
                                 const tallaRows = Object.entries(tallasObj).map(([talla, cant]) => {
                                     let coloresConCantidad = [];
                                     
-                                    // PRIMERO: Buscar en prenda.variantes (si viene del servidor)
-                                    if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+                                    // 🔴 NUEVO: PRIMERO: Buscar en prenda.talla_colores (datos del servidor)
+                                    if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                                        const coloresEnTalla = prenda.talla_colores.filter(tc => 
+                                            tc.genero && tc.genero.toUpperCase() === genero.toUpperCase() && 
+                                            tc.talla === talla
+                                        );
+                                        
+                                        if (coloresEnTalla.length > 0) {
+                                            coloresConCantidad = coloresEnTalla.map(c => ({
+                                                nombre: c.color_nombre || c.color || 'Sin color',
+                                                cantidad: c.cantidad || 1
+                                            }));
+                                        }
+                                    }
+                                    
+                                    // SEGUNDO: Si no encontró en talla_colores, buscar en prenda.variantes (si viene del servidor)
+                                    if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
                                         const varianteColor = prenda.variantes.find(v => v.talla === talla);
                                         if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {
                                             coloresConCantidad = varianteColor.colores_asignados.map(c => ({
@@ -206,7 +224,7 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // SEGUNDO: Si no encontró en variantes, buscar en asignacionesColoresPorTalla
+                                    // TERCERO: Si no encontró en variantes, buscar en asignacionesColoresPorTalla
                                     if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && typeof prenda.asignacionesColoresPorTalla === 'object') {
                                         // MÉTODO 1: Buscar por objeto con genero y talla
                                         const clavePorObjeto = Object.keys(prenda.asignacionesColoresPorTalla).find(clave => {
@@ -284,14 +302,27 @@ class InvoiceRenderer {
             const firstVar = prenda.variantes[0];
             const specs = [];
             
-            if (firstVar.manga) {
-                specs.push(`<div><strong>Manga:</strong> ${firstVar.manga}${firstVar.manga_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.manga_obs})</span>` : ''}</div>`);
+            // 🔑 CRÍTICO: Aceptar AMBOS formatos
+            // Formato 1: Desde BD (tipo_manga, tipo_broche_boton, tiene_bolsillos, manga_obs, broche_boton_obs, bolsillos_obs)
+            // Formato 2: Desde otros lugares (manga, broche, bolsillos, manga_obs, broche_obs, bolsillos_obs)
+            
+            const manga = firstVar.tipo_manga || firstVar.manga;
+            const mangaObs = firstVar.manga_obs;
+            
+            const broche = firstVar.tipo_broche_boton || firstVar.tipo_broche || firstVar.broche;
+            const brocheObs = firstVar.broche_boton_obs || firstVar.broche_obs || firstVar.obs_broche;
+            
+            const tieneBolsillos = firstVar.tiene_bolsillos || firstVar.bolsillos;
+            const bolsillosObs = firstVar.bolsillos_obs || firstVar.obs_bolsillos;
+            
+            if (manga) {
+                specs.push(`<div><strong>Manga:</strong> ${manga}${mangaObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${mangaObs})</span>` : ''}</div>`);
             }
-            if (firstVar.broche) {
-                specs.push(`<div><strong>${firstVar.broche}:</strong> Sí${firstVar.broche_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.broche_obs})</span>` : ''}</div>`);
+            if (broche) {
+                specs.push(`<div><strong>Botón:</strong> Sí${brocheObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${brocheObs})</span>` : ''}</div>`);
             }
-            if (firstVar.bolsillos) {
-                specs.push(`<div><strong>Bolsillo:</strong> Sí${firstVar.bolsillos_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.bolsillos_obs})</span>` : ''}</div>`);
+            if (tieneBolsillos) {
+                specs.push(`<div><strong>Bolsillo:</strong> Sí${bolsillosObs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${bolsillosObs})</span>` : ''}</div>`);
             }
             
             return specs.length > 0 ? specs.join('') : '<span style="color: #999; font-size: 11px;">Sin especificaciones</span>';

@@ -142,6 +142,12 @@ class FacturaPedidoService
         // Obtener procesos
         $procesos = $this->procesarProcesosPrenda($prenda);
 
+        // 🔴 NUEVO: Construir variantes (manga, broche, bolsillos) desde prenda.variantes
+        $variantesArray = $this->construirVariantesArray($prenda);
+        
+        // 🔴 NUEVO: Obtener colores asignados por talla desde BD
+        $tallaColores = $this->obtenerTallaColoresDesdeDB($prenda->id);
+
         // Construir prenda formateada
         return [
             'id' => $prenda->id,
@@ -160,10 +166,34 @@ class FacturaPedidoService
             'colores_array' => $datosTelas['colores'],
             'referencias_array' => $datosTelas['referencias'],
             'tallas' => $this->construirTallasPorGenero($prenda),
-            'variantes' => $variantes_formateadas,
+            'talla_colores' => $tallaColores,  // 🔴 NUEVO: Colores asignados por talla
+            'variantes' => $variantesArray,  // 🔴 AHORA: Array de variantes (manga, broche, bolsillos)
             'procesos' => $procesos,
             'generosConTallas' => $this->construirGenerosConTallas($prenda),
         ];
+    }
+
+    /**
+     * 🔴 NUEVO: Obtener colores asignados por talla desde BD
+     */
+    private function obtenerTallaColoresDesdeDB(int $prendaId): array
+    {
+        return \DB::table('prenda_pedido_talla_colores as ptc')
+            ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+            ->where('pt.prenda_pedido_id', $prendaId)
+            ->select([
+                'ptc.id',
+                'ptc.prenda_pedido_talla_id',
+                'pt.genero',
+                'pt.talla',
+                'ptc.tela_id',
+                'ptc.tela_nombre',
+                'ptc.color_id',
+                'ptc.color_nombre',
+                'ptc.cantidad'
+            ])
+            ->get()
+            ->toArray();
     }
 
     /**
@@ -272,6 +302,15 @@ class FacturaPedidoService
                     // Procesar fotos de esta combinación color-tela
                     $fotosColorTela = $this->procesarFotosColorTela($colorTela);
                     
+                    // 🔴 NUEVO: Obtener color o mostrar "Sin color"
+                    $colorNombre = $colorTela->color ? ($colorTela->color->nombre ?? null) : null;
+                    $colorCodigo = $colorTela->color ? ($colorTela->color->codigo ?? null) : null;
+                    
+                    // Si no hay color, mostrar "Sin color" en lugar de null o "Sin Color"
+                    if (!$colorNombre) {
+                        $colorNombre = 'Sin color';
+                    }
+
                     // Agregar a array estructurado
                     $telaItem = [
                         'id' => $colorTela->id,
@@ -281,9 +320,9 @@ class FacturaPedidoService
                         'tela_nombre' => $telaNombre,
                         'referencia' => $telaReferencia,
                         'tela_referencia' => $telaReferencia,
-                        'color' => $colorTela->color ? ($colorTela->color->nombre ?? null) : null,
-                        'color_nombre' => $colorTela->color ? ($colorTela->color->nombre ?? null) : null,
-                        'color_codigo' => $colorTela->color ? ($colorTela->color->codigo ?? null) : null,
+                        'color' => $colorNombre,
+                        'color_nombre' => $colorNombre,
+                        'color_codigo' => $colorCodigo,
                         'fotos' => $fotosColorTela,
                         'fotos_tela' => $fotosColorTela,
                         'imagenes' => $fotosColorTela,
@@ -668,6 +707,42 @@ class FacturaPedidoService
         }
         
         return $total;
+    }
+
+    /**
+     * 🔴 NUEVO: Construir array de variantes (manga, broche, bolsillos) desde prenda.variantes
+     * 
+     * Retorna un array con la primera variante que contiene:
+     * - tipo_manga (o manga)
+     * - tipo_broche_boton (o broche)
+     * - tiene_bolsillos (o bolsillos)
+     * - Observaciones correspondientes
+     */
+    private function construirVariantesArray($prenda): array
+    {
+        if (!$prenda->variantes || $prenda->variantes->count() === 0) {
+            return [];
+        }
+
+        $primeraVariante = $prenda->variantes->first();
+        
+        return [
+            [
+                'id' => $primeraVariante->id,
+                'tipo_manga' => $primeraVariante->tipoManga?->nombre ?? null,
+                'manga' => $primeraVariante->tipoManga?->nombre ?? null,
+                'manga_obs' => $primeraVariante->manga_obs ?? '',
+                'tipo_broche_boton' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
+                'tipo_broche' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
+                'broche' => $primeraVariante->tipoBrocheBoton?->nombre ?? null,
+                'broche_boton_obs' => $primeraVariante->broche_boton_obs ?? '',
+                'broche_obs' => $primeraVariante->broche_boton_obs ?? '',
+                'tiene_bolsillos' => (bool)($primeraVariante->tiene_bolsillos ?? false),
+                'bolsillos' => (bool)($primeraVariante->tiene_bolsillos ?? false),
+                'bolsillos_obs' => $primeraVariante->bolsillos_obs ?? '',
+                'obs_bolsillos' => $primeraVariante->bolsillos_obs ?? '',
+            ]
+        ];
     }
 
     /**

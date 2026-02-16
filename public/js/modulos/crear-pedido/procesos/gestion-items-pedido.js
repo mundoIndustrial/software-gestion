@@ -537,7 +537,17 @@ class GestionItemsUI {
                 this.prendas
             );
             
-            // 🔍 LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
+            // � IMPORTANTE: Agregar imágenes marcadas para eliminación
+            // Solo se eliminarán cuando se guarden los cambios
+            if (window.imagenesAEliminar && window.imagenesAEliminar.length > 0) {
+                prendaData.imagenes_a_eliminar = window.imagenesAEliminar;
+                console.log('[agregarPrendaNueva] 📝 Imágenes marcadas para eliminación:', {
+                    cantidad: window.imagenesAEliminar.length,
+                    ids: window.imagenesAEliminar
+                });
+            }
+            
+            // �🔍 LOGS CRÍTICOS: VER QUÉ SE RECOPILÓ
             console.log('\n═══════════════════════════════════════════════════════════════');
             console.log('[agregarPrendaNueva] 📦 DATOS RECOPILADOS POR prendaFormCollector:');
             console.log('═══════════════════════════════════════════════════════════════');

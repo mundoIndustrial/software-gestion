@@ -734,6 +734,21 @@ Route::prefix('bodega')->name('bodega.')->middleware(['auth'])->group(function (
 });
 
 /**
+ * API Routes for Generar Script SQL de Pedidos
+ * Genera script SQL completo para insertar pedido con todas sus relaciones
+ */
+Route::withoutMiddleware(['api'])
+    ->middleware(['web', 'auth'])
+    ->prefix('pedidos')
+    ->name('pedidos.')
+    ->group(function () {
+    
+    // Generar script SQL completo del pedido
+    Route::get('{id}/generar-script-sql', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'generarScriptSQL'])
+        ->name('generar-script-sql');
+});
+
+/**
  * API Routes for Prenda Entregas (Supervisor de Pedidos)
  * Gestiona el estado de entrega de prendas
  */

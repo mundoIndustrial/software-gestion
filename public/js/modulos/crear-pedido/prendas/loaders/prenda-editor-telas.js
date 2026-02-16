@@ -33,6 +33,16 @@ class PrendaEditorTelas {
         
         console.log('[Telas] Filas viejas eliminadas');
         
+        // 🔴 NUEVO: Cargar datalist de telas y colores
+        if (typeof cargarDatalistTelasColores === 'function') {
+            cargarDatalistTelasColores();
+        }
+        
+        // 🔴 NUEVO: Configurar drag & drop para telas
+        if (typeof configurarDragDropTela === 'function') {
+            configurarDragDropTela();
+        }
+        
         // Cargar telas nuevas
         if (prenda.telasAgregadas && Array.isArray(prenda.telasAgregadas) && prenda.telasAgregadas.length > 0) {
             prenda.telasAgregadas.forEach((tela, idx) => {
@@ -190,6 +200,315 @@ class PrendaEditorTelas {
         });
     }
 }
+
+// 🔴 NUEVO: Función global para eliminar tela en modal de edición
+window.eliminarTela = function(index, event) {
+    console.log('[eliminarTela] 🗑️ Iniciando eliminación de tela:', index);
+    
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    try {
+        const telas = window.telasCreacion;
+        if (!telas || index < 0 || index >= telas.length) {
+            console.warn('[eliminarTela] Índice inválido:', index);
+            return;
+        }
+        
+        const telaAEliminar = telas[index];
+        console.log('[eliminarTela] Tela a eliminar:', telaAEliminar);
+        
+        // Eliminar del array
+        telas.splice(index, 1);
+        console.log('[eliminarTela] ✅ Tela eliminada. Telas restantes:', telas.length);
+        
+        // Recargar tabla
+        const prenda = {
+            telasAgregadas: telas
+        };
+        PrendaEditorTelas.cargar(prenda);
+        
+    } catch (error) {
+        console.error('[eliminarTela] ❌ Error:', error);
+    }
+};
+
+// 🔴 NUEVO: Función global para agregar tela en modal de edición
+window.agregarTelaNueva = function() {
+    console.log('[agregarTelaNueva] 🟦 CLICK DETECTADO EN BOTÓN AGREGAR TELA');
+    
+    try {
+        // Obtener elementos del DOM
+        const colorElement = document.getElementById('nueva-prenda-color');
+        const telaElement = document.getElementById('nueva-prenda-tela');
+        const referenciaElement = document.getElementById('nueva-prenda-referencia');
+        
+        if (!colorElement || !telaElement || !referenciaElement) {
+            console.error('[agregarTelaNueva] ❌ Elementos del modal no encontrados');
+            return false;
+        }
+        
+        // Obtener valores
+        const color = colorElement.value.trim().toUpperCase();
+        const tela = telaElement.value.trim().toUpperCase();
+        const referencia = referenciaElement.value.trim().toUpperCase();
+        
+        console.log('[agregarTelaNueva] 📝 VALORES CAPTURADOS:', { color, tela, referencia });
+        
+        // 🔴 NUEVO: Validar solo tela (color y referencia son opcionales)
+        if (!tela) {
+            console.warn('[agregarTelaNueva] ❌ Validación fallida: tela es requerida');
+            alert('Por favor completa la Tela');
+            return false;
+        }
+        
+        // Verificar duplicados
+        const telaExistente = window.telasCreacion.find(t => 
+            t.color.toUpperCase() === color && 
+            t.tela.toUpperCase() === tela
+        );
+        
+        if (telaExistente) {
+            console.warn('[agregarTelaNueva] ⚠️ Tela ya existe');
+            alert('Esta tela ya está agregada');
+            return false;
+        }
+        
+        // Obtener imágenes temporales
+        const imagenesActuales = window.imagenesTelaModalNueva || [];
+        
+        // Crear objeto de tela
+        const nuevaTela = {
+            color: color,
+            tela: tela,
+            referencia: referencia,
+            imagenes: [...imagenesActuales],
+            fechaCreacion: new Date().toISOString()
+        };
+        
+        console.log('[agregarTelaNueva] 🆕 OBJETO TELA CREADO:', nuevaTela);
+        
+        // Agregar al array
+        window.telasCreacion.push(nuevaTela);
+        console.log('[agregarTelaNueva] ✅ Tela agregada. Total:', window.telasCreacion.length);
+        
+        // Limpiar campos
+        colorElement.value = '';
+        telaElement.value = '';
+        referenciaElement.value = '';
+        window.imagenesTelaModalNueva = [];
+        
+        // Limpiar preview
+        const preview = document.getElementById('nueva-prenda-tela-preview');
+        if (preview) {
+            preview.innerHTML = '';
+            preview.style.display = 'none';
+        }
+        
+        // Recargar tabla
+        const prenda = {
+            telasAgregadas: window.telasCreacion
+        };
+        PrendaEditorTelas.cargar(prenda);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('[agregarTelaNueva] ❌ Error:', error);
+        return false;
+    }
+};
+
+// 🔴 NUEVO: Función para cargar datalist de telas y colores
+window.cargarDatalistTelasColores = async function() {
+    console.log('[cargarDatalistTelasColores] 🔄 Iniciando carga de datalist');
+    
+    try {
+        // Cargar telas
+        const responseTelas = await fetch('/asesores/api/telas');
+        if (responseTelas.ok) {
+            let telas = await responseTelas.json();
+            // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
+            if (telas && typeof telas === 'object' && !Array.isArray(telas)) {
+                telas = Object.values(telas);
+            }
+            const datalistTelas = document.getElementById('opciones-telas');
+            if (datalistTelas && Array.isArray(telas)) {
+                datalistTelas.innerHTML = '';
+                telas.forEach(tela => {
+                    const option = document.createElement('option');
+                    option.value = tela.nombre;
+                    datalistTelas.appendChild(option);
+                });
+                console.log('[cargarDatalistTelasColores] ✅ Telas cargadas:', telas.length);
+            }
+        }
+        
+        // Cargar colores
+        const responseColores = await fetch('/asesores/api/colores');
+        if (responseColores.ok) {
+            let colores = await responseColores.json();
+            // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
+            if (colores && typeof colores === 'object' && !Array.isArray(colores)) {
+                colores = Object.values(colores);
+            }
+            const datalistColores = document.getElementById('opciones-colores');
+            if (datalistColores && Array.isArray(colores)) {
+                datalistColores.innerHTML = '';
+                colores.forEach(color => {
+                    const option = document.createElement('option');
+                    option.value = color.nombre;
+                    datalistColores.appendChild(option);
+                });
+                console.log('[cargarDatalistTelasColores] ✅ Colores cargados:', colores.length);
+            }
+        }
+    } catch (error) {
+        console.error('[cargarDatalistTelasColores] ❌ Error cargando datalist:', error);
+    }
+};
+
+// 🔴 NUEVO: Función para configurar drag & drop y paste en drop zones de tela
+window.configurarDragDropTela = function() {
+    console.log('[configurarDragDropTela] 🔄 Configurando drag & drop para telas');
+    
+    const dropZone = document.getElementById('nueva-prenda-tela-drop-zone');
+    if (!dropZone) {
+        console.warn('[configurarDragDropTela] ⚠️ Drop zone de tela no encontrada');
+        return;
+    }
+    
+    // Drag over
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.style.background = '#e0f2fe';
+        dropZone.style.borderColor = '#0066cc';
+    });
+    
+    // Drag leave
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.style.background = '#f0f7ff';
+        dropZone.style.borderColor = '#0066cc';
+    });
+    
+    // Drop
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.style.background = '#f0f7ff';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+            if (fileInput) {
+                fileInput.files = files;
+                // Disparar evento change
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        }
+    });
+    
+    // Paste
+    dropZone.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                const fileInput = document.getElementById('modal-agregar-prenda-nueva-file-input');
+                if (fileInput) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            }
+        }
+    });
+    
+    console.log('[configurarDragDropTela] ✅ Drag & drop configurado para telas');
+};
+
+// 🔴 NUEVO: Función para configurar drag & drop en previews de procesos
+window.configurarDragDropProcesos = function() {
+    console.log('[configurarDragDropProcesos] 🔄 Configurando drag & drop para procesos');
+    
+    // Configurar para cada preview de proceso (1, 2, 3)
+    for (let i = 1; i <= 3; i++) {
+        const preview = document.getElementById(`proceso-foto-preview-${i}`);
+        if (!preview) continue;
+        
+        // Drag over
+        preview.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            preview.style.background = '#e0f2fe';
+            preview.style.borderColor = '#0066cc';
+        });
+        
+        // Drag leave
+        preview.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            preview.style.background = '#f9fafb';
+            preview.style.borderColor = '#0066cc';
+        });
+        
+        // Drop
+        preview.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            preview.style.background = '#f9fafb';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById(`proceso-foto-input-${i}`);
+                if (fileInput) {
+                    fileInput.files = files;
+                    // Disparar evento change
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            }
+        });
+        
+        // Paste
+        preview.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    const fileInput = document.getElementById(`proceso-foto-input-${i}`);
+                    if (fileInput) {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                    }
+                }
+            }
+        });
+        
+        // Click para abrir file input
+        preview.addEventListener('click', (e) => {
+            const fileInput = document.getElementById(`proceso-foto-input-${i}`);
+            if (fileInput) {
+                fileInput.click();
+            }
+        });
+    }
+    
+    console.log('[configurarDragDropProcesos] ✅ Drag & drop configurado para procesos');
+};
 
 // Exportar
 if (typeof module !== 'undefined' && module.exports) {

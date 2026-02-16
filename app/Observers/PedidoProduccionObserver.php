@@ -150,6 +150,10 @@ class PedidoProduccionObserver
 
     /**
      * Manejar broadcasting de cambios importantes
+     * 
+     * DESACTIVADO: El broadcast causa error de CreateProcess en Windows
+     * Se puede reactivar cuando se implemente una solución asincrónica
+     * (ej: Queue, Redis, o WebSocket nativo)
      */
     private function handleBroadcastingChanges(PedidoProduccion $pedido): void
     {
@@ -157,7 +161,11 @@ class PedidoProduccionObserver
         $changedFields = $this->getChangedFields($pedido);
         
         if (!empty($changedFields)) {
-            $this->broadcastPedidoChange($pedido, 'updated', $changedFields);
+            // DESACTIVADO: $this->broadcastPedidoChange($pedido, 'updated', $changedFields);
+            Log::debug('[PedidoProduccionObserver] Broadcasting desactivado temporalmente', [
+                'pedido_id' => $pedido->id,
+                'changed_fields' => $changedFields,
+            ]);
         }
     }
 
