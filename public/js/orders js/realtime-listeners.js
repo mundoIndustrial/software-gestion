@@ -21,7 +21,11 @@ const RealtimeOrderHandler = {
         }
         
         if (!row) {
-
+            const esRegistros = window.location && window.location.pathname && window.location.pathname.includes('/registros');
+            const cambioEstado = changedFields && Array.isArray(changedFields) && changedFields.includes('estado');
+            if (esRegistros && cambioEstado) {
+                setTimeout(() => location.reload(), 300);
+            }
             return;
         }
 

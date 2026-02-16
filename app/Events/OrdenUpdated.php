@@ -31,7 +31,10 @@ class OrdenUpdated implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new Channel('supervisor-pedidos');
+        return [
+            new Channel('supervisor-pedidos'),
+            new Channel('ordenes'),
+        ];
     }
 
     /**
