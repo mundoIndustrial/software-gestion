@@ -2,13 +2,6 @@ import './bootstrap';
 
 /*
 |--------------------------------------------------------------------------
-| Bootstrap 4 (requiere jQuery global - cargado desde CDN)
-|--------------------------------------------------------------------------
-*/
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-
-/*
-|--------------------------------------------------------------------------
 | Alpine y Chart
 |--------------------------------------------------------------------------
 */
@@ -20,4 +13,4 @@ window.Chart = Chart;
 
 Alpine.start();
 
-console.log('✅ jQuery global y Bootstrap 4 cargados correctamente desde Vite');
+console.log('✅ Alpine y Chart cargados desde Vite');

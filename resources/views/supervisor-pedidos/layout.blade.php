@@ -34,11 +34,7 @@
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- jQuery (desde CDN permitido por CSP) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-    <!-- Bootstrap 4 JS (desde CDN permitido por CSP) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery y Bootstrap se cargan desde base.blade.php -->
 
     <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
     <script>

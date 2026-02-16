@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" onload="window._PAGE_FULLY_LOADED=true">
 <head>
-    <!-- jQuery y Bootstrap 4 - DEBE estar al inicio del head (antes de cualquier script que lo use) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
-
+    
     <!--  PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO  -->
     <script>
         // PASO 0: Capturar el error ANTES de que se lance - en el evento dispatchEvent
@@ -275,18 +272,36 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     </noscript>
 
-    <!-- jQuery forzado global para Bootstrap 4 -->
+    <!-- jQuery (debe cargarse PRIMERO y esperar a que esté disponible) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     
     <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
     
-    <!-- Bootstrap 4 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Esperar a que jQuery esté disponible antes de cargar Bootstrap -->
+    <script>
+        // Esperar a que jQuery esté completamente cargado
+        function waitForJQuery() {
+            if (typeof jQuery !== 'undefined') {
+                // jQuery está disponible, cargar Bootstrap
+                var bootstrapScript = document.createElement('script');
+                bootstrapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js';
+                bootstrapScript.onload = function() {
+                    console.log('✅ Bootstrap 4 cargado correctamente');
+                };
+                document.head.appendChild(bootstrapScript);
+            } else {
+                // Esperar y volver a intentar
+                setTimeout(waitForJQuery, 10);
+            }
+        }
+        
+        // Iniciar la espera
+        waitForJQuery();
+    </script>
     
-    <!-- Vite CSS y JS (sin Bootstrap) -->
-    <link rel="stylesheet" href="{{ asset('build/css/app-BHMndXNp.css') }}">
-    <script src="{{ asset('build/js/app-qEnPmd7K.js') }}"></script>
+    <!-- Vite assets (funciona en desarrollo y producción) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- Laravel Echo & Pusher JS cargado vía Vite en app.js (bootstrap.js) -->
     
