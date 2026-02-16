@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" onload="window._PAGE_FULLY_LOADED=true">
 <head>
+    <!-- jQuery y Bootstrap 4 - DEBE estar al inicio del head (antes de cualquier script que lo use) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+
     <!--  PREVENCIÓN NUCLEAR NIVEL 0 - ANTES DE TODO  -->
     <script>
         // PASO 0: Capturar el error ANTES de que se lance - en el evento dispatchEvent
@@ -259,10 +264,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- jQuery y Bootstrap 4 desde CDN permitido (cdnjs.cloudflare.com) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery y Bootstrap ya están cargados al inicio del head -->
 
     <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
