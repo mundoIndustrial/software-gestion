@@ -68,8 +68,8 @@
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                     data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
                                     data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
-                                    @if($item['estado_bodega'] === 'Omologar')
-                                        style="background-color: rgba(167, 93, 236, 0.18);"
+                                    @if($item['estado_bodega'] === 'Homologar')
+                                        style="background-color: rgba(147, 51, 234, 0.08);"
                                     @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
                                     @endif
@@ -273,7 +273,7 @@
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
                                                 <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Omologar" {{ ($item['estado_bodega'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
+                                                <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
                                                 @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
                                                 <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                                 @endif

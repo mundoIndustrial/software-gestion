@@ -207,7 +207,7 @@
                                     data-search="{{ strtolower($numeroPedido . ' ' . $item['asesor'] . ' ' . $item['empresa']) }}"
                                     @if($esAnulada)
                                         style="background-color: rgba(147, 51, 234, 0.1);"
-                                    @elseif($item['estado_bodega'] === 'Omologar')
+                                    @elseif($item['estado_bodega'] === 'Homologar')
                                         style="background-color: rgba(147, 51, 234, 0.08);"
                                     @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
@@ -422,7 +422,7 @@
                                                 <option value="">ESTADO</option>
                                                 <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
                                                 <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                <option value="Omologar" {{ ($item['estado_bodega'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
+                                                <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
                                                 @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
                                                 <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                                 @endif

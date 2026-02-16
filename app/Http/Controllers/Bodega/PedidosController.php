@@ -1089,9 +1089,9 @@ class PedidosController extends Controller
                 'observaciones_bodega' => 'nullable|string',
                 'fecha_entrega' => 'nullable|date',
                 'fecha_pedido' => 'nullable|date',
-                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
-                'costura_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
-                'epp_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
+                'estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
+                'costura_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
+                'epp_estado' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
                 'area' => 'nullable|string|in:Costura,EPP,Otro',
                 'last_updated_at' => 'nullable|string',
             ]);
@@ -1143,7 +1143,7 @@ class PedidosController extends Controller
                 'detalles.*.observaciones_bodega' => 'nullable|string',
                 'detalles.*.fecha_entrega' => 'nullable|date',
                 'detalles.*.area' => 'nullable|string|in:Costura,EPP,Otro',
-                'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Omologar',
+                'detalles.*.estado_bodega' => 'nullable|string|in:Pendiente,Entregado,Anulado,Homologar',
             ]);
 
             $usuario = auth()->user();

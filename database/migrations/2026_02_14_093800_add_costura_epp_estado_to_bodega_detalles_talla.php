@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::table('bodega_detalles_talla', function (Blueprint $table) {
             if (!Schema::hasColumn('bodega_detalles_talla', 'costura_estado')) {
-                $table->enum('costura_estado', ['Pendiente', 'Entregado', 'Anulado', 'Omologar'])
+                $table->enum('costura_estado', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
                     ->nullable()
                     ->after('estado_bodega');
             }
 
             if (!Schema::hasColumn('bodega_detalles_talla', 'epp_estado')) {
-                $table->enum('epp_estado', ['Pendiente', 'Entregado', 'Anulado', 'Omologar'])
+                $table->enum('epp_estado', ['Pendiente', 'Entregado', 'Anulado', 'Homologar'])
                     ->nullable()
                     ->after('costura_estado');
             }

@@ -71,7 +71,7 @@
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                     data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
                                     data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
-                                    @if(($item['epp_estado'] ?? null) === 'Omologar')
+                                    @if(($item['epp_estado'] ?? null) === 'Homologar')
                                         style="background-color: rgba(147, 51, 234, 0.08);"
                                     @elseif($item['estado_bodega'] === 'Entregado')
                                         style="background-color: rgba(37, 99, 235, 0.05);"
@@ -250,7 +250,7 @@
                                             <option value="">ESTADO</option>
                                             <option value="Pendiente" {{ ($item['epp_estado'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
                                             <option value="Entregado" {{ ($item['epp_estado'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                            <option value="Omologar" {{ ($item['epp_estado'] ?? null) === 'Omologar' ? 'selected' : '' }}>OMOLOGAR</option>
+                                            <option value="Homologar" {{ ($item['epp_estado'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
                                             <option value="Anulado" {{ ($item['epp_estado'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
                                         </select>
 
