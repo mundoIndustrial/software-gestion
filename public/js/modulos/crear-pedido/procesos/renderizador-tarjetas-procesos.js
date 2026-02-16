@@ -235,7 +235,36 @@ function generarTarjetaProceso(tipo, datos) {
     // HTML de imágenes
     let imagenesHTML = '';
     if (datos.imagenes && datos.imagenes.length > 0) {
-        const imagenesValidas = datos.imagenes.filter(img => img !== null && img !== undefined);
+        // 🔴 CRÍTICO: Filtrar imágenes eliminadas usando imagenesEliminadas
+        // imagenesEliminadas contiene null para imágenes eliminadas, objeto para válidas
+        // IMPORTANTE: imagenesEliminadas solo contiene las imágenes ORIGINALES (de BD)
+        // Las imágenes nuevas (File objects) no están en imagenesEliminadas
+        
+        let imagenesValidas = [];
+        
+        // Si hay imagenesEliminadas, usarla para filtrar las imágenes originales
+        if (datos.imagenesEliminadas && datos.imagenesEliminadas.length > 0) {
+            // Filtrar solo las imágenes originales usando imagenesEliminadas
+            // Las primeras N imágenes corresponden a imagenesEliminadas
+            const cantidadOriginales = datos.imagenesEliminadas.length;
+            const imagenesOriginales = datos.imagenes.slice(0, cantidadOriginales);
+            const imagenesNuevas = datos.imagenes.slice(cantidadOriginales);
+            
+            // Filtrar originales: solo incluir si no está marcada como null en imagenesEliminadas
+            const originalesFiltradas = imagenesOriginales.filter((img, idx) => {
+                return datos.imagenesEliminadas[idx] !== null;
+            });
+            
+            // Combinar: originales filtradas + todas las nuevas
+            imagenesValidas = [...originalesFiltradas, ...imagenesNuevas];
+            
+            console.log(`🖼️ [RENDER-TARJETA-${tipo}] Filtrando con imagenesEliminadas: ${imagenesValidas.length} válidas (${originalesFiltradas.length} originales + ${imagenesNuevas.length} nuevas) de ${datos.imagenes.length} totales`);
+        } else {
+            // Sin imagenesEliminadas: incluir todas las imágenes válidas
+            imagenesValidas = datos.imagenes.filter(img => img !== null && img !== undefined);
+            console.log(`🖼️ [RENDER-TARJETA-${tipo}] Sin imagenesEliminadas: ${imagenesValidas.length} imágenes válidas`);
+        }
+        
         console.log(`🖼️ [RENDER-TARJETA-${tipo}] Renderizando ${imagenesValidas.length} imágenes`, {
             imagenesArray: imagenesValidas.map(img => ({
                 tipo: img instanceof File ? 'File' : typeof img,
@@ -619,93 +648,144 @@ function cargarDatosProcesoEnModal(tipo, datos) {
     //  CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
     window.imagenesProcesoActual = [null, null, null];
     
-    //  CRÍTICO: Inicializar window.imagenesProcesoExistentes para procesos editados
-    window.imagenesProcesoExistentes = [];
+    //  CRÍTICO: Inicializar window.imagenesProcesoActual SIEMPRE al cargar un proceso
+    window.imagenesProcesoActual = [null, null, null];
     
     //  CRÍTICO: Inicializar ubicaciones si no existen
     if (!window.ubicacionesProcesoSeleccionadas) {
         window.ubicacionesProcesoSeleccionadas = [];
     }
     
-    // Limpiar imágenes anteriores
-    if (window.imagenesProcesoActual) {
-        window.imagenesProcesoActual = [null, null, null];
-
+    // 🔴 IMPORTANTE: Inicializar imagenesProcesoExistentes desde el proceso actual
+    // Esto preserva el estado de eliminación (null) entre aperturas del modal
+    const procesoActual = window.procesosSeleccionados?.[tipo];
+    
+    if (procesoActual?.datos?.imagenesEliminadas) {
+        // Restaurar el estado de eliminación desde el proceso guardado
+        window.imagenesProcesoExistentes = [...procesoActual.datos.imagenesEliminadas];
+        console.log('[cargarDatosProcesoEnModal] ✅ Restaurando imagenesProcesoExistentes desde proceso guardado:', {
+            length: window.imagenesProcesoExistentes.length,
+            contenido: window.imagenesProcesoExistentes.map((img, idx) => ({
+                index: idx,
+                esNull: img === null,
+                tipo: img === null ? 'null (eliminada)' : typeof img
+            }))
+        });
+    } else {
+        // Primera carga: inicializar desde las imágenes del proceso
+        // 🔴 CRÍTICO: Filtrar imágenes que tienen deleted_at (marcadas como eliminadas en BD)
+        const imagenesValidas = (datos.imagenes || []).filter(img => {
+            // Marcar como null si tiene deleted_at
+            if (img && img.deleted_at) {
+                console.log('[cargarDatosProcesoEnModal] 🗑️ Imagen con deleted_at encontrada, marcando como null:', img);
+                return false; // Filtrar (no incluir)
+            }
+            return img !== null && img !== undefined && img !== '';
+        });
+        window.imagenesProcesoExistentes = imagenesValidas.map(img => img || null);
+        console.log('[cargarDatosProcesoEnModal] 🔄 Primera carga: inicializando imagenesProcesoExistentes desde datos', {
+            length: window.imagenesProcesoExistentes.length,
+            imagenesConDeleted: (datos.imagenes || []).filter(img => img?.deleted_at).length
+        });
     }
     
-    //  NUEVO: Mantener imágenes existentes (URLs) separadas de las nuevas (Files)
-    if (!window.imagenesProcesoExistentes) {
-        window.imagenesProcesoExistentes = [];
+    // 🔴 CRÍTICO: Limpiar previews antes de cargar nuevas imágenes
+    // Esto asegura que las imágenes eliminadas no aparezcan
+    for (let i = 1; i <= 3; i++) {
+        const preview = document.getElementById(`proceso-foto-preview-${i}`);
+        if (preview) {
+            preview.style.border = '2px dashed #0066cc';
+            preview.style.background = '#f9fafb';
+            preview.innerHTML = `
+                <div class="placeholder-content" style="text-align: center;">
+                    <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
+                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${i}</div>
+                </div>
+            `;
+        }
     }
-    window.imagenesProcesoExistentes = [];
     
     // Cargar imágenes (soporte para formato antiguo 'imagen' y nuevo 'imagenes')
     const imagenes = datos.imagenes || (datos.imagen ? [datos.imagen] : []);
-    imagenes.forEach((img, idx) => {
-        if (img && idx < 3) {
-            const indice = idx + 1;
-            //  Detectar si es URL o File (ANTES de usarlo)
-            const isFile = img instanceof File;
-            const hasEmbeddedFile = !isFile && img && img.file instanceof File;
-            const preview = document.getElementById(`proceso-foto-preview-${indice}`);
-            
-            if (preview) {
-                let imgUrl;
-                if (isFile) {
-                    imgUrl = URL.createObjectURL(img);
-                } else if (hasEmbeddedFile) {
-                    // Objeto { file: File, previewUrl: '...' } → regenerar blob fresco
-                    if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
-                        try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
-                    }
-                    imgUrl = URL.createObjectURL(img.file);
-                    img.previewUrl = imgUrl;
-                } else if (typeof img === 'string') {
-                    imgUrl = img;
-                } else if (img && img.previewUrl) {
-                    imgUrl = img.previewUrl;
-                } else if (img && (img.url || img.ruta_original || img.ruta || img.ruta_webp)) {
-                    imgUrl = img.url || img.ruta_original || img.ruta_webp || img.ruta;
-                } else {
-                    imgUrl = '';
-                    console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);
-                }
-                
-                console.log('[cargarDatosProcesoEnModal] 🖼️ Cargando imagen', indice, '- imgUrl:', imgUrl?.substring(0, 50) || 'N/A');
-                
-                preview.style.border = '2px solid #0066cc';
-                preview.style.background = 'transparent';
-                preview.innerHTML = `
-                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
-                `;
-                
-                console.log('[cargarDatosProcesoEnModal] ✅ innerHTML reemplazado para imagen', indice);
-                
-                // 🔴 Crear botón eliminar con data-indice (event delegation global lo detectará)
-                // Esto sobrevive a cloneNode(true) de setupDragAndDropProceso
-                let deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
-                if (deleteBtn) deleteBtn.remove();
-                deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-eliminar-imagen-proceso';
-                deleteBtn.type = 'button';
-                deleteBtn.setAttribute('data-indice', indice);
-                deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
-                deleteBtn.textContent = '×';
-                preview.appendChild(deleteBtn);
-                console.log('[cargarDatosProcesoEnModal] ✅ Botón eliminar creado con data-indice:', indice);
-            }
-            
-            //  Guardar según tipo
-            if (isFile) {
-                // Es un File nuevo → guardar en imagenesProcesoActual
-                if (window.imagenesProcesoActual) {
-                    window.imagenesProcesoActual[idx] = img;
-                }
-            } else {
-                // Es una URL existente → guardar en imagenesProcesoExistentes
-                window.imagenesProcesoExistentes.push(img);
-            }
+    let previewIndex = 1; // Índice para los previews (1, 2, 3)
+    
+    imagenes.forEach((img, bdIndex) => {
+        // 🔴 IMPORTANTE: Filtrar imágenes null/undefined/vacías
+        if (!img || img === null || img === undefined || img === '') {
+            console.log('[cargarDatosProcesoEnModal] ⏭️ Saltando imagen', bdIndex, '(null/undefined)');
+            return; // Saltar esta imagen
         }
+        
+        // 🔴 IMPORTANTE: No cargar más de 3 imágenes
+        if (previewIndex > 3) {
+            console.log('[cargarDatosProcesoEnModal] ⏭️ Saltando imagen', bdIndex, '(máximo 3 imágenes)');
+            return;
+        }
+        
+        const indice = previewIndex;
+        //  Detectar si es URL o File (ANTES de usarlo)
+        const isFile = img instanceof File;
+        const hasEmbeddedFile = !isFile && img && img.file instanceof File;
+        const preview = document.getElementById(`proceso-foto-preview-${indice}`);
+        
+        if (preview) {
+            let imgUrl;
+            if (isFile) {
+                imgUrl = URL.createObjectURL(img);
+            } else if (hasEmbeddedFile) {
+                // Objeto { file: File, previewUrl: '...' } → regenerar blob fresco
+                if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(img.previewUrl); } catch(e) {}
+                }
+                imgUrl = URL.createObjectURL(img.file);
+                img.previewUrl = imgUrl;
+            } else if (typeof img === 'string') {
+                imgUrl = img;
+            } else if (img && img.previewUrl) {
+                imgUrl = img.previewUrl;
+            } else if (img && (img.url || img.ruta_original || img.ruta || img.ruta_webp)) {
+                imgUrl = img.url || img.ruta_original || img.ruta_webp || img.ruta;
+            } else {
+                imgUrl = '';
+                console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);
+            }
+            
+            console.log('[cargarDatosProcesoEnModal] 🖼️ Cargando imagen', indice, '- imgUrl:', imgUrl?.substring(0, 50) || 'N/A');
+            
+            preview.style.border = '2px solid #0066cc';
+            preview.style.background = 'transparent';
+            preview.innerHTML = `
+                <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+            `;
+            
+            console.log('[cargarDatosProcesoEnModal] ✅ innerHTML reemplazado para imagen', indice);
+            
+            // 🔴 Crear botón eliminar con data-indice (event delegation global lo detectará)
+            // Esto sobrevive a cloneNode(true) de setupDragAndDropProceso
+            let deleteBtn = preview.querySelector('.btn-eliminar-imagen-proceso');
+            if (deleteBtn) deleteBtn.remove();
+            deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-eliminar-imagen-proceso';
+            deleteBtn.type = 'button';
+            deleteBtn.setAttribute('data-indice', indice);
+            deleteBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10;';
+            deleteBtn.textContent = '×';
+            preview.appendChild(deleteBtn);
+            console.log('[cargarDatosProcesoEnModal] ✅ Botón eliminar creado con data-indice:', indice);
+        }
+        
+        //  Guardar según tipo
+        if (isFile) {
+            // Es un File nuevo → guardar en imagenesProcesoActual
+            if (window.imagenesProcesoActual) {
+                window.imagenesProcesoActual[previewIndex - 1] = img;
+            }
+        } else {
+            // Es una URL existente → guardar en imagenesProcesoExistentes
+            window.imagenesProcesoExistentes[previewIndex - 1] = img;
+        }
+        
+        previewIndex++; // Incrementar para el siguiente preview
     });
     
     // Cargar ubicaciones

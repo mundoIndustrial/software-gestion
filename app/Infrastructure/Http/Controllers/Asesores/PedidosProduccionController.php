@@ -954,11 +954,12 @@ class PedidosProduccionController
                 }
             }
 
-            // NUEVO: Procesar imágenes de procesos NUEVOS (vienen como fotosProcesoNuevo_0, fotosProcesoNuevo_1, etc.)
+            // NUEVO: Procesar imágenes de procesos NUEVOS (vienen como fotosProcesoNuevo_0[], fotosProcesoNuevo_1[], etc.)
+            // 🔴 CRÍTICO: Cada fotosProcesoNuevo_{idx} corresponde al proceso en posición {idx} del array de procesos
             $fotosProcesoNuevo = [];
             
             // Obtener dinámicamente todos los fotosProcesoNuevo_* del request
-            foreach ($request->all() as $key => $value) {
+            foreach ($request->allFiles() as $key => $files) {
                 if (strpos($key, 'fotosProcesoNuevo_') === 0) {
                     // Extraer el índice del nombre de la clave
                     preg_match('/fotosProcesoNuevo_(\d+)/', $key, $matches);
@@ -966,25 +967,31 @@ class PedidosProduccionController
                     
                     $indice = (int)$matches[1];
                     
-                    // Obtener el archivo REAL del request usando el mismo nombre de clave
-                    $archivo = $request->file($key);
+                    // Soportar tanto un solo archivo como array de archivos
+                    $archivos = is_array($files) ? $files : [$files];
                     
-                    if ($archivo && $archivo->isValid()) {
-                        try {
-                            $rutas = $procesoFotoService->procesarFoto($archivo, (int)$id);
-                            $fotosProcesoNuevo[$indice] = $rutas;
-                            Log::info('[PedidosProduccionController] Imagen de proceso nuevo procesada', [
-                                'key' => $key,
-                                'indice' => $indice,
-                                'archivo' => $archivo->getClientOriginalName(),
-                                'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
-                            ]);
-                        } catch (\Exception $e) {
-                            Log::warning('[PedidosProduccionController] Error procesando imagen de proceso nuevo', [
-                                'key' => $key,
-                                'indice' => $indice,
-                                'error' => $e->getMessage()
-                            ]);
+                    if (!isset($fotosProcesoNuevo[$indice])) {
+                        $fotosProcesoNuevo[$indice] = [];
+                    }
+                    
+                    foreach ($archivos as $archivo) {
+                        if ($archivo && $archivo->isValid()) {
+                            try {
+                                $rutas = $procesoFotoService->procesarFoto($archivo, (int)$id);
+                                $fotosProcesoNuevo[$indice][] = $rutas;
+                                Log::info('[PedidosProduccionController] Imagen de proceso procesada', [
+                                    'key' => $key,
+                                    'indice' => $indice,
+                                    'archivo' => $archivo->getClientOriginalName(),
+                                    'ruta_webp' => $rutas['ruta_webp'] ?? 'N/A'
+                                ]);
+                            } catch (\Exception $e) {
+                                Log::warning('[PedidosProduccionController] Error procesando imagen de proceso', [
+                                    'key' => $key,
+                                    'indice' => $indice,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
                         }
                     }
                 }

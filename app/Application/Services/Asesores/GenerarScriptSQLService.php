@@ -11,6 +11,7 @@ use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PedidosProcessImagenes;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\DB;
 
 class GenerarScriptSQLService
@@ -36,6 +37,14 @@ class GenerarScriptSQLService
         $sql .= "-- Cliente: " . $pedido->cliente . "\n";
         $sql .= "-- Generado: " . now()->format('Y-m-d H:i:s') . "\n";
         $sql .= "-- ============================================================\n\n";
+
+        // 0. Crear cliente si no existe
+        if ($pedido->cliente_id) {
+            $clienteExiste = Cliente::find($pedido->cliente_id);
+            if (!$clienteExiste) {
+                $sql .= $this->generarInsertCliente($pedido);
+            }
+        }
 
         // 1. Insertar pedido principal
         $sql .= $this->generarInsertPedido($pedido);
@@ -78,6 +87,25 @@ class GenerarScriptSQLService
         $sql .= "\n-- ============================================================\n";
         $sql .= "-- FIN DEL SCRIPT\n";
         $sql .= "-- ============================================================\n";
+
+        return $sql;
+    }
+
+    /**
+     * Generar INSERT para cliente
+     */
+    private function generarInsertCliente(PedidoProduccion $pedido): string
+    {
+        $values = [
+            $pedido->cliente_id,
+            $this->escaparString($pedido->cliente ?? ''),
+            $this->escaparDateTime(now()),
+            $this->escaparDateTime(now()),
+        ];
+
+        $sql = "INSERT INTO `clientes` (\n";
+        $sql .= "  `id`, `nombre`, `created_at`, `updated_at`\n";
+        $sql .= ") VALUES (" . implode(", ", $values) . ");\n\n";
 
         return $sql;
     }

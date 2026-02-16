@@ -24,10 +24,22 @@ class TelaFotoService
      * 
      * @param UploadedFile $archivo
      * @param int|null $pedidoId - Opcional para organizarlas por pedido
+     * @param bool $soloWebp - Si true, solo guarda WebP (modo edición). Si false, guarda original + WebP
      * @return array ['ruta_original' => string, 'ruta_webp' => string]
      */
-    public function procesarFoto(UploadedFile $archivo, ?int $pedidoId = null): array
+    public function procesarFoto(UploadedFile $archivo, ?int $pedidoId = null, bool $soloWebp = true): array
     {
+        // 🔴 CRÍTICO: En modo edición ($soloWebp=true), SOLO guardar WebP, nunca PNG
+        if ($soloWebp) {
+            // Guardar directamente como WebP sin guardar original
+            $rutaWebp = $this->guardarDirectoWebp($archivo, $pedidoId);
+            return [
+                'ruta_original' => $rutaWebp,  // Retornar WebP como original también
+                'ruta_webp' => $rutaWebp,
+            ];
+        }
+        
+        // Modo antiguo: guardar original + WebP
         // 1. Guardar imagen original
         $rutaOriginal = $this->guardarOriginal($archivo, $pedidoId);
 
@@ -98,6 +110,57 @@ class TelaFotoService
             
             // Si falla conversión, retornar original
             return $rutaOriginal;
+        }
+    }
+
+    /**
+     * 🔴 NUEVO: Guardar imagen directamente como WebP sin guardar PNG original
+     * Usado en modo edición para ahorrar espacio
+     * 
+     * @param UploadedFile $archivo
+     * @param int|null $pedidoId
+     * @return string Ruta relativa del archivo WebP
+     */
+    private function guardarDirectoWebp(UploadedFile $archivo, ?int $pedidoId = null): string
+    {
+        try {
+            // Crear manager de Intervention Image v3
+            $manager = new ImageManager(new Driver());
+            
+            // Cargar imagen desde el archivo subido
+            $imagen = $manager->read($archivo->get());
+
+            // Generar nombre único para WebP
+            $timestamp = now()->format('YmdHis');
+            $hash = substr(md5(uniqid()), 0, 8);
+            $nombreWebp = "tela_{$timestamp}_{$hash}.webp";
+            
+            // Determinar carpeta
+            if ($pedidoId) {
+                $carpeta = "pedidos/{$pedidoId}/tela";
+            } else {
+                $carpeta = "telas";
+            }
+            
+            // Ruta completa donde guardar
+            $rutaCompletaWebp = storage_path('app/public/' . $carpeta . '/' . $nombreWebp);
+            
+            // Crear directorio si no existe
+            @mkdir(dirname($rutaCompletaWebp), 0755, true);
+
+            // Guardar directamente como WebP
+            $imagen->toWebp(self::WEBP_QUALITY)->save($rutaCompletaWebp);
+            
+            // Retornar ruta relativa
+            return $carpeta . '/' . $nombreWebp;
+        } catch (\Exception $e) {
+            \Log::error('[TelaFotoService] Error guardando WebP directo', [
+                'archivo' => $archivo->getClientOriginalName(),
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            throw $e;
         }
     }
 

@@ -503,10 +503,7 @@ class ObtenerPedidoDetalleService
             ->where('pedido_produccion_id', $pedidoId)
             ->with([
                 'procesos' => function ($q) {
-                    $q->withTrashed()  //  INCLUIR SOFT-DELETED
-                      ->with(['tipoProceso', 'imagenes' => function ($q2) {
-                          $q2->withTrashed();  //  INCLUIR SOFT-DELETED
-                      }])
+                    $q->with(['tipoProceso', 'imagenes'])  // 🔴 NO usar withTrashed: excluir imágenes eliminadas
                       ->orderBy('created_at', 'desc');
                 },
                 'fotos' => function ($q) {

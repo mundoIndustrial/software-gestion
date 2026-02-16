@@ -526,9 +526,11 @@
                     });
                     
                     // 🔴 PASO 3: Agregar File images al FormData
+                    // Usar fotosProcesoNuevo_{procesoIdx}[] para soportar múltiples archivos por proceso
                     Object.entries(filesPorProceso).forEach(([idx, files]) => {
-                        files.forEach(file => {
-                            formData.append(`fotosProcesoNuevo_${idx}`, file);
+                        files.forEach((file, fileIdx) => {
+                            formData.append(`fotosProcesoNuevo_${idx}[]`, file);
+                            console.log(`[PedidosAdapter] 📸 Foto proceso[${idx}][${fileIdx}]: ${file.name}`);
                         });
                     });
                 } else if (Array.isArray(procesosRaw)) {

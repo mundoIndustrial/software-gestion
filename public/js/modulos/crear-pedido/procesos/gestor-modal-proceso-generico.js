@@ -1447,11 +1447,12 @@ window.agregarProcesoAlPedido = function() {
         console.log('[agregarProcesoAlPedido] 📌 procesoActualIndex:', window.procesoActualIndex);
         console.log('[agregarProcesoAlPedido] 📌 window.procesosImagenesStorage.obtenerImagenes:', typeof window.procesosImagenesStorage?.obtenerImagenes);
         
-        // 🔴 CRÍTICO: En modo EDICIÓN, solo usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
-        // NO usar imagenesDelStorage del storage porque no sabe cuáles fueron eliminadas en el modal
+        // 🔴 CRÍTICO: En modo EDICIÓN, usar imagenesExistentes (que ya tiene eliminadas marcadas como null)
+        // PERO TAMBIÉN capturar imágenes NUEVAS de imagenesProcesoActual (agregadas después de eliminar)
         const imagenesExistentes = (window.imagenesProcesoExistentes || []).filter(img => img !== null);
         
         let imagenesDelStorage = [];
+        let imagenesNuevasAgregadas = [];
         
         // Solo obtener del storage si NO estamos en edición (creación de nuevo proceso)
         if (modoActual !== 'editar') {
@@ -1490,11 +1491,17 @@ window.agregarProcesoAlPedido = function() {
                 }
             }
         } else {
-            console.log('[agregarProcesoAlPedido] 🔧 Modo EDICIÓN: Usando SOLO imagenesExistentes (storage ignorado)');
+            console.log('[agregarProcesoAlPedido] 🔧 Modo EDICIÓN: Usando imagenesExistentes + imágenes NUEVAS agregadas');
+            // 🔴 NUEVO: En modo EDICIÓN, también capturar imágenes NUEVAS de imagenesProcesoActual
+            // Esto permite agregar imágenes después de eliminar
+            imagenesNuevasAgregadas = (window.imagenesProcesoActual || []).filter(img => img !== null && img instanceof File);
+            console.log('[agregarProcesoAlPedido] 📸 Imágenes nuevas agregadas en edición:', imagenesNuevasAgregadas.length);
         }
         
         // Combinar: primero existentes (para mantener orden), luego nuevas
-        const imagenesValidas = [...imagenesExistentes, ...imagenesDelStorage];
+        // 🔴 CRÍTICO: Filtrar null/undefined para no renderizar imágenes eliminadas
+        const imagenesValidas = [...imagenesExistentes, ...imagenesDelStorage, ...imagenesNuevasAgregadas]
+            .filter(img => img !== null && img !== undefined && img !== '');
         
         console.log('[agregarProcesoAlPedido] 🖼️ IMÁGENES CAPTURADAS:', {
             imagenesDelStorage: imagenesDelStorage.length,
@@ -1520,6 +1527,12 @@ window.agregarProcesoAlPedido = function() {
         
         // IMPORTANTE: Usar tallasCantidadesProceso que contiene las cantidades DEL PROCESO
         // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
+        const cantidadOriginales = (window.imagenesProcesoExistentes || []).length;
+        const imagenesEliminadasArray = [
+            ...(window.imagenesProcesoExistentes || []),  // Originales (con nulls para eliminadas)
+            ...imagenesValidas.slice(cantidadOriginales)  // Nuevas
+        ];
+        
         const datos = {
             tipo: procesoActual,
             ubicaciones: window.ubicacionesProcesoSeleccionadas,
@@ -1529,8 +1542,31 @@ window.agregarProcesoAlPedido = function() {
                 caballero: { ...window.tallasCantidadesProceso?.caballero } || {},
                 sobremedida: { ...window.tallasCantidadesProceso?.sobremedida } || {}
             },
-            imagenes: imagenesValidas // Array de imágenes (existentes + nuevas)
+            imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
+            // 🔴 CRÍTICO: imagenesEliminadas debe contener TODAS las imágenes (originales + nuevas)
+            imagenesEliminadas: imagenesEliminadasArray
         };
+        
+        console.log('[agregarProcesoAlPedido] 🔍 DEBUG imagenesEliminadas:', {
+            cantidadOriginales: cantidadOriginales,
+            imagenesProcesoExistentes: window.imagenesProcesoExistentes?.map((img, idx) => ({
+                idx,
+                esNull: img === null,
+                tipo: typeof img
+            })),
+            imagenesValidas: imagenesValidas.map((img, idx) => ({
+                idx,
+                esFile: img instanceof File,
+                tipo: typeof img,
+                nombre: img?.name || img?.nombre || 'sin-nombre'
+            })),
+            imagenesEliminadasArray: imagenesEliminadasArray.map((img, idx) => ({
+                idx,
+                esNull: img === null,
+                esFile: img instanceof File,
+                tipo: typeof img
+            }))
+        });
         
         console.log('[agregarProcesoAlPedido] Datos capturados:', {
             tipo: procesoActual,

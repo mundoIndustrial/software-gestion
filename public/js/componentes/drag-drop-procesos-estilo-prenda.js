@@ -2,9 +2,13 @@
 // Sin logs para una experiencia limpia
 
 window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
-    // Limpiar event listeners anteriores clonando el elemento
-    const newPreview = previewElement.cloneNode(true);
-    previewElement.parentNode.replaceChild(newPreview, previewElement);
+    // 🔴 IMPORTANTE: NO clonar el elemento para evitar acumular listeners
+    // En su lugar, remover listeners anteriores y agregar nuevos
+    const preview = previewElement;
+    
+    // Remover todos los listeners anteriores clonando y reemplazando
+    const newPreview = preview.cloneNode(true);
+    preview.parentNode.replaceChild(newPreview, preview);
     
     // Prevenir comportamiento por defecto para todos los eventos
     const preventDefaults = (e) => {
@@ -13,9 +17,9 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
     };
     
     // Eventos de drag
-    newPreview.addEventListener('dragover', preventDefaults);
-    newPreview.addEventListener('dragenter', preventDefaults);
-    newPreview.addEventListener('dragleave', preventDefaults);
+    newPreview.addEventListener('dragover', preventDefaults, false);
+    newPreview.addEventListener('dragenter', preventDefaults, false);
+    newPreview.addEventListener('dragleave', preventDefaults, false);
     
     // Evento dragover con feedback visual
     newPreview.addEventListener('dragover', (e) => {
@@ -23,7 +27,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         newPreview.style.background = '#eff6ff';
         newPreview.style.border = '2px dashed #3b82f6';
         newPreview.style.opacity = '0.8';
-    });
+    }, false);
     
     // Evento dragleave para restaurar estilos
     newPreview.addEventListener('dragleave', (e) => {
@@ -31,7 +35,7 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         newPreview.style.background = '';
         newPreview.style.border = '';
         newPreview.style.opacity = '1';
-    });
+    }, false);
     
     // Evento drop - manejar archivos arrastrados
     newPreview.addEventListener('drop', (e) => {
@@ -67,24 +71,52 @@ window.setupDragAndDropProceso = function(previewElement, procesoIndex) {
         if (typeof window.manejarImagenProceso === 'function') {
             window.manejarImagenProceso(tempInput, procesoIndex);
         }
-    });
+    }, false);
     
-    // Evento click como alternativa
-    newPreview.addEventListener('click', (e) => {
-        // 🔴 NO interceptar clicks en el botón eliminar imagen
-        if (e.target.closest('.btn-eliminar-imagen-proceso')) {
-            return; // Dejar que event delegation global lo maneje
-        }
+    // 🔴 NUEVO: Usar event delegation a nivel del contenedor padre para evitar múltiples listeners
+    // Esto se ejecuta UNA sola vez por contenedor, no por cada preview
+    const fotoPanelContainer = newPreview.closest('.foto-panel');
+    if (fotoPanelContainer && !fotoPanelContainer._dragDropConfigured) {
+        fotoPanelContainer._dragDropConfigured = true;
         
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Abrir el selector de archivos específico del proceso
-        const inputProceso = document.getElementById(`proceso-foto-input-${procesoIndex}`);
-        if (inputProceso) {
-            inputProceso.click();
-        }
-    });
+        fotoPanelContainer.addEventListener('click', (e) => {
+            // Detectar si el click es en un preview (pero no en botón eliminar ni en img)
+            const preview = e.target.closest('.foto-preview-proceso');
+            if (!preview) return;
+            
+            // NO interceptar clicks en el botón eliminar
+            if (e.target.closest('.btn-eliminar-imagen-proceso')) {
+                return;
+            }
+            
+            // NO interceptar si el click es en la imagen misma
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Obtener el índice del preview (1, 2, 3)
+            const previewId = preview.id; // proceso-foto-preview-1
+            const index = previewId.replace('proceso-foto-preview-', '');
+            
+            // Abrir el selector de archivos
+            const inputProceso = document.getElementById(`proceso-foto-input-${index}`);
+            if (inputProceso) {
+                // 🔴 Flag para evitar doble apertura
+                if (!inputProceso._abiendoAhora) {
+                    inputProceso._abiendoAhora = true;
+                    inputProceso.click();
+                    setTimeout(() => {
+                        inputProceso._abiendoAhora = false;
+                    }, 300);
+                }
+            }
+        }, false);
+    }
 };
 
 // Configurar drag & drop para toda la sección

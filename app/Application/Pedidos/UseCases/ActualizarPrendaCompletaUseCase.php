@@ -910,7 +910,7 @@ final class ActualizarPrendaCompletaUseCase
         ]);
 
         // Procesar procesos: actualizar existentes o crear nuevos
-        foreach ($dto->procesos as $proceso) {
+        foreach ($dto->procesos as $procesoIdx => $proceso) {
             // Decodificar ubicaciones si vienen como JSON string
             $ubicaciones = $proceso['ubicaciones'] ?? null;
             if (is_string($ubicaciones)) {
@@ -972,7 +972,7 @@ final class ActualizarPrendaCompletaUseCase
                     }
 
                     // 🔴 NUEVO: Sincronizar imágenes del proceso existente
-                    $this->sincronizarImagenesProceso($procesoExistente, $proceso, $dto);
+                    $this->sincronizarImagenesProceso($procesoExistente, $proceso, $dto, $procesoIdx);
 
                     \Log::info('[ActualizarPrendaCompletaUseCase] Proceso actualizado correctamente', [
                         'proceso_id' => $procesoId,
@@ -1033,7 +1033,7 @@ final class ActualizarPrendaCompletaUseCase
                         ]);
                         
                         // Agregar imágenes del proceso si existen (es actualización, no creación)
-                        $this->agregarImagenesProceso($procesoExistente, $proceso, $dto, false);
+                        $this->agregarImagenesProceso($procesoExistente, $proceso, $dto, false, $procesoIdx);
                         
                         // Actualizar tallas del proceso si se proporcionan
                         if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
@@ -1089,7 +1089,7 @@ final class ActualizarPrendaCompletaUseCase
                 }
 
                 // Agregar imágenes del proceso si existen
-                $this->agregarImagenesProceso($procesoCreado, $proceso, $dto, true);
+                $this->agregarImagenesProceso($procesoCreado, $proceso, $dto, true, $procesoIdx);
             }
         }
     }
@@ -1102,7 +1102,8 @@ final class ActualizarPrendaCompletaUseCase
     private function sincronizarImagenesProceso(
         PedidosProcesosPrendaDetalle $procesoExistente,
         array $proceso,
-        ActualizarPrendaCompletaDTO $dto
+        ActualizarPrendaCompletaDTO $dto,
+        int $procesoIdx = 0
     ): void {
         $imagenesExistentesPayload = $proceso['imagenes_existentes'] ?? null;
         
@@ -1145,9 +1146,12 @@ final class ActualizarPrendaCompletaUseCase
         }
         
         // Agregar nuevas imágenes (File uploads procesados por el controlador)
-        if (!empty($dto->fotosProcesoNuevo)) {
+        // 🔴 CRÍTICO: Solo agregar las fotos que corresponden a ESTE proceso (por $procesoIdx)
+        // fotosProcesoNuevo[$procesoIdx] es un ARRAY de fotos [{ruta_original, ruta_webp}, ...]
+        if (!empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx])) {
+            $fotosDelProceso = $dto->fotosProcesoNuevo[$procesoIdx];
             $orden = $procesoExistente->imagenes()->count() + 1;
-            foreach ($dto->fotosProcesoNuevo as $foto) {
+            foreach ($fotosDelProceso as $foto) {
                 if (!empty($foto) && is_array($foto)) {
                     $procesoExistente->imagenes()->create([
                         'ruta_original' => $foto['ruta_original'] ?? null,
@@ -1157,6 +1161,7 @@ final class ActualizarPrendaCompletaUseCase
                     ]);
                     \Log::info('[ActualizarPrendaCompletaUseCase] Nueva imagen agregada a proceso existente', [
                         'proceso_id' => $procesoExistente->id,
+                        'procesoIdx' => $procesoIdx,
                         'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
                     ]);
                 }
@@ -1168,35 +1173,40 @@ final class ActualizarPrendaCompletaUseCase
         PedidosProcesosPrendaDetalle $procesoCreado,
         array $proceso,
         ActualizarPrendaCompletaDTO $dto,
-        bool $esProcesoNuevo = false
+        bool $esProcesoNuevo = false,
+        int $procesoIdx = 0
     ): void {
         \Log::info('[ActualizarPrendaCompletaUseCase] agregarImagenesProceso', [
             'proceso_id' => $procesoCreado->id,
+            'procesoIdx' => $procesoIdx,
             'es_proceso_nuevo' => $esProcesoNuevo,
             'tiene_fotosProcesoNuevo' => !empty($dto->fotosProcesoNuevo),
+            'tiene_foto_para_este_idx' => isset($dto->fotosProcesoNuevo[$procesoIdx]),
             'fotosProcesoNuevo_count' => count($dto->fotosProcesoNuevo ?? []),
         ]);
 
-        //  IMPORTANTE: Si hay fotosProcesoNuevo, SIEMPRE usarlas
-        // Sin importar si es un proceso nuevo o si estamos actualizando uno existente
-        // El usuario acaba de cargar estas imágenes en esto request
-        if (!empty($dto->fotosProcesoNuevo)) {
-            foreach ($dto->fotosProcesoNuevo as $idx => $foto) {
+        // 🔴 CRÍTICO: Solo agregar las fotos que corresponden a ESTE proceso (por $procesoIdx)
+        // fotosProcesoNuevo[$procesoIdx] es un ARRAY de fotos [{ruta_original, ruta_webp}, ...]
+        if (!empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx])) {
+            $fotosDelProceso = $dto->fotosProcesoNuevo[$procesoIdx];
+            $orden = 1;
+            foreach ($fotosDelProceso as $idx => $foto) {
                 if (!empty($foto) && is_array($foto)) {
                     $procesoCreado->imagenes()->create([
                         'ruta_original' => $foto['ruta_original'] ?? null,
                         'ruta_webp' => $foto['ruta_webp'] ?? null,
-                        'orden' => $idx + 1,
-                        'es_principal' => $idx === 0 ? 1 : 0,
+                        'orden' => $orden,
+                        'es_principal' => $orden === 1 ? 1 : 0,
                     ]);
                     \Log::info('[ActualizarPrendaCompletaUseCase] Imagen de proceso agregada', [
                         'proceso_id' => $procesoCreado->id,
-                        'indice' => $idx,
+                        'procesoIdx' => $procesoIdx,
                         'ruta_webp' => $foto['ruta_webp'] ?? 'N/A'
                     ]);
+                    $orden++;
                 }
             }
-            return; // No procesar fotosProcesosPorProceso si ya agregamos fotosProcesoNuevo
+            return; // No procesar fotosProcesosPorProceso si ya agregamos fotos para este proceso
         }
 
         // Si es un proceso EXISTENTE (sin fotosProcesoNuevo), usar fotosProcesosPorProceso

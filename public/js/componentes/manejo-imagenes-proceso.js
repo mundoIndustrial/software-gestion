@@ -155,44 +155,29 @@ window.eliminarImagenProceso = function(previewIndex, procesoIndex) {
         procesoIndex = previewIndex;
     }
     
-    try {
-        const previewElement = document.getElementById(`proceso-foto-preview-${previewIndex}`);
-        if (previewElement) {
-            // ✅ Limpiar objectURL si existe (prevenir memory leaks)
-            if (previewElement._objectUrl) {
-                URL.revokeObjectURL(previewElement._objectUrl);
-                previewElement._objectUrl = null;
-            }
-            
-            // Restaurar el placeholder
-            previewElement.innerHTML = `
-                <div class="placeholder-content" style="text-align: center;">
-                    <div class="material-symbols-rounded" style="font-size: 1.5rem; color: #6b7280;">add_photo_alternate</div>
-                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem;">Imagen ${previewIndex}</div>
-                </div>
-            `;
-            
-            // Restaurar estilos
-            previewElement.style.background = '#f9fafb';
-            previewElement.style.border = '2px dashed #0066cc';
-            previewElement.style.transform = '';
-            previewElement.style.boxShadow = '';
-        }
+    console.log('[eliminarImagenProceso] 🗑️ INICIANDO - previewIndex:', previewIndex, 'procesoIndex:', procesoIndex);
+    
+    // 🔴 Mostrar modal de confirmación en lugar de eliminar directamente
+    window._imagenAEliminarIndice = previewIndex;
+    
+    const modal = document.getElementById('modal-confirmar-eliminar-imagen-proceso');
+    console.log('[eliminarImagenProceso] 🔍 Modal confirmación encontrado?:', !!modal);
+    
+    if (modal) {
+        // Forzar z-index MÁXIMO con setAttribute para asegurar que se aplique
+        modal.style.display = 'flex !important';
+        modal.style.zIndex = '2147483648 !important';
+        modal.setAttribute('style', 'z-index: 2147483648 !important; display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0, 0, 0, 0.7) !important; backdrop-filter: blur(4px) !important; align-items: center !important; justify-content: center !important;');
         
-        // ✅ Sincronizar con window.imagenesProcesoActual
-        if (window.imagenesProcesoActual && window.imagenesProcesoActual[procesoIndex - 1]) {
-            window.imagenesProcesoActual[procesoIndex - 1] = null;
-        }
-        
-        // NOTA: NO eliminar del storage aquí - ya se eliminó desde _eliminarDelStorage()
-        // Solo restaurar el preview visual
-        
-        // Reconfigurar drag & drop
-        if (typeof window.setupDragDropProceso === 'function') {
-            window.setupDragDropProceso(previewElement, procesoIndex);
-        }
-        
-    } catch (error) {
+        console.log('[eliminarImagenProceso] ✅ Modal de confirmación mostrado');
+        console.log('[eliminarImagenProceso] 📊 Z-index forzado:', modal.style.zIndex);
+        console.log('[eliminarImagenProceso] 📊 Display:', modal.style.display);
+    } else {
+        console.error('[eliminarImagenProceso] ❌ MODAL NO ENCONTRADO - ID: modal-confirmar-eliminar-imagen-proceso');
+        console.log('[eliminarImagenProceso] 🔍 Modales en DOM:');
+        document.querySelectorAll('.modal-overlay').forEach((m, idx) => {
+            console.log('  [' + idx + '] ID: ' + m.id + ', Display: ' + m.style.display);
+        });
     }
 };
 
