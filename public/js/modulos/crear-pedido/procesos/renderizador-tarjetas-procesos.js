@@ -275,6 +275,10 @@ function generarTarjetaProceso(tipo, datos) {
                                 imgSrc = agregarStorage(img.url);
                             } else if (img.ruta_original) {
                                 imgSrc = agregarStorage(img.ruta_original);
+                            } else if (img.ruta_webp) {
+                                imgSrc = agregarStorage(img.ruta_webp);
+                            } else if (img.ruta) {
+                                imgSrc = agregarStorage(img.ruta);
                             } else if (typeof img === 'string') {
                                 imgSrc = agregarStorage(img);
                             }
@@ -660,8 +664,8 @@ function cargarDatosProcesoEnModal(tipo, datos) {
                     imgUrl = img;
                 } else if (img && img.previewUrl) {
                     imgUrl = img.previewUrl;
-                } else if (img && (img.url || img.ruta_original)) {
-                    imgUrl = img.url || img.ruta_original;
+                } else if (img && (img.url || img.ruta_original || img.ruta || img.ruta_webp)) {
+                    imgUrl = img.url || img.ruta_original || img.ruta_webp || img.ruta;
                 } else {
                     imgUrl = '';
                     console.warn(`[cargarDatosProcesoEnModal] Imagen ${indice} tipo no reconocido:`, img);

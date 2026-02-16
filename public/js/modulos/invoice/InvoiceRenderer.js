@@ -288,7 +288,7 @@ class InvoiceRenderer {
                 specs.push(`<div><strong>Manga:</strong> ${firstVar.manga}${firstVar.manga_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.manga_obs})</span>` : ''}</div>`);
             }
             if (firstVar.broche) {
-                specs.push(`<div><strong>Broche:</strong> ${firstVar.broche}${firstVar.broche_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.broche_obs})</span>` : ''}</div>`);
+                specs.push(`<div><strong>${firstVar.broche}:</strong> Sí${firstVar.broche_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.broche_obs})</span>` : ''}</div>`);
             }
             if (firstVar.bolsillos) {
                 specs.push(`<div><strong>Bolsillo:</strong> Sí${firstVar.bolsillos_obs ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${firstVar.bolsillos_obs})</span>` : ''}</div>`);
@@ -302,7 +302,7 @@ class InvoiceRenderer {
                 specs.push(`<div><strong>Manga:</strong> ${prenda.manga}${prenda.obs_manga ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_manga})</span>` : ''}</div>`);
             }
             if (prenda.broche) {
-                specs.push(`<div><strong>Broche:</strong> ${prenda.broche}${prenda.obs_broche ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_broche})</span>` : ''}</div>`);
+                specs.push(`<div><strong>${prenda.broche}:</strong> Sí${prenda.obs_broche ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_broche})</span>` : ''}</div>`);
             }
             if (prenda.tiene_bolsillos) {
                 specs.push(`<div><strong>Bolsillo:</strong> Sí${prenda.obs_bolsillos ? ` <span style="color: #64748b; font-style: italic; font-size: 10px;">(${prenda.obs_bolsillos})</span>` : ''}</div>`);

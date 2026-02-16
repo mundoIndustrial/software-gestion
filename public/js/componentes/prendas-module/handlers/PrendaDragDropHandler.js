@@ -227,16 +227,16 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             }
         }
         
-        // Si hay imágenes y la función de galería está disponible, abrir la galería
-        if (imagenesParaGaleria.length > 0 && typeof window.abrirGaleriaPrenda === 'function') {
-            UIHelperService.log('PrendaDragDropHandler', ` Abriendo galería modal con ${imagenesParaGaleria.length} imágenes`);
+        // Si hay imágenes, abrir galería modal
+        if (imagenesParaGaleria.length > 0 && typeof Swal !== 'undefined') {
+            UIHelperService.log('PrendaDragDropHandler', `Abriendo galería modal con ${imagenesParaGaleria.length} imágenes`);
             e.preventDefault();
             e.stopPropagation();
-            window.abrirGaleriaPrenda(imagenesParaGaleria);
+            this._abrirGaleriaDirecta(imagenesParaGaleria);
             return;
         }
         
-        // Si no hay imágenes o la galería no está disponible, abrir el selector de archivos
+        // Si no hay imágenes, abrir el selector de archivos
         UIHelperService.log('PrendaDragDropHandler', 'Abriendo selector de archivos');
         const inputFotos = document.getElementById('nueva-prenda-foto-input');
         if (inputFotos) {
@@ -298,6 +298,137 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
             UIHelperService.log('PrendaDragDropHandler', 'Función manejarImagenesPrenda no disponible', 'error');
             UIHelperService.mostrarModalError('No se pudo procesar las imágenes. Función de manejo no disponible.');
         }
+    }
+
+    /**
+     * Abrir galería modal directamente con array de URLs
+     * @param {Array<string>} imagenes - Array de URLs de imágenes
+     * @private
+     */
+    _abrirGaleriaDirecta(imagenes) {
+        if (!imagenes || imagenes.length === 0 || typeof Swal === 'undefined') return;
+
+        // Inyectar/actualizar CSS para z-index encima del modal de prenda (z-index: 1050000)
+        let galeriaStyle = document.getElementById('swal-galeria-zindex-style');
+        if (!galeriaStyle) {
+            galeriaStyle = document.createElement('style');
+            galeriaStyle.id = 'swal-galeria-zindex-style';
+            document.head.appendChild(galeriaStyle);
+        }
+        galeriaStyle.textContent = `
+            .swal-galeria-container {
+                z-index: 2000000 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .swal-galeria-container .swal2-popup {
+                margin: auto !important;
+            }
+        `;
+
+        let idx = 0;
+
+        const keyHandler = (e) => {
+            if (!window.__galeriaPrendaActiva) return;
+            if (e.key === 'ArrowLeft') { e.preventDefault(); document.getElementById('gal-prenda-prev')?.click(); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById('gal-prenda-next')?.click(); }
+        };
+
+        const eliminarImagenActual = () => {
+            Swal.fire({
+                title: '¿Eliminar imagen?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                customClass: { container: 'swal-galeria-container' }
+            }).then((result) => {
+                if (!result.isConfirmed) { renderModal(); return; }
+                
+                // Eliminar del storage
+                if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
+                    const imgs = window.imagenesPrendaStorage.obtenerImagenes();
+                    imgs.splice(idx, 1);
+                    window.imagenesPrendaStorage.establecerImagenes(imgs);
+                }
+                
+                // Eliminar de la lista local
+                imagenes.splice(idx, 1);
+                
+                // Actualizar preview DOM
+                if (typeof window.actualizarPreviewPrenda === 'function') {
+                    window.actualizarPreviewPrenda();
+                } else {
+                    const preview = document.getElementById('nueva-prenda-foto-preview');
+                    if (preview && typeof PrendaEditorImagenes !== 'undefined') {
+                        PrendaEditorImagenes._actualizarPreviewDOM(preview);
+                    }
+                }
+                
+                if (imagenes.length > 0) {
+                    idx = Math.min(idx, imagenes.length - 1);
+                    renderModal();
+                } else {
+                    const preview = document.getElementById('nueva-prenda-foto-preview');
+                    if (preview) {
+                        preview.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div></div>';
+                    }
+                    Swal.close();
+                }
+            });
+        };
+
+        const renderModal = () => {
+            if (imagenes.length === 0) { Swal.close(); return; }
+            const url = imagenes[idx];
+            Swal.fire({
+                html: `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:1rem;">
+                        <div style="position:relative; width:100%; max-width:620px;">
+                            <img src="${url}" alt="Foto prenda" style="width:100%; border-radius:8px; border:1px solid #e5e7eb; object-fit:contain; max-height:65vh;">
+                            ${imagenes.length > 1 ? `
+                                <button id="gal-prenda-prev" style="position:absolute; top:50%; left:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">‹</button>
+                                <button id="gal-prenda-next" style="position:absolute; top:50%; right:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">›</button>
+                            ` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <span style="font-size:0.9rem; color:#4b5563;">${idx + 1} / ${imagenes.length}</span>
+                            <button id="gal-prenda-delete" style="background:#dc2626; color:white; border:none; border-radius:6px; padding:0.4rem 1rem; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.3rem;">
+                                <span class="material-symbols-rounded" style="font-size:1rem;">delete</span> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true,
+                width: '75%',
+                customClass: { container: 'swal-galeria-container' },
+                didOpen: () => {
+                    window.__galeriaPrendaActiva = true;
+                    const prev = document.getElementById('gal-prenda-prev');
+                    const next = document.getElementById('gal-prenda-next');
+                    const del = document.getElementById('gal-prenda-delete');
+                    if (prev) prev.onclick = () => { idx = (idx - 1 + imagenes.length) % imagenes.length; renderModal(); };
+                    if (next) next.onclick = () => { idx = (idx + 1) % imagenes.length; renderModal(); };
+                    if (del) del.onclick = () => eliminarImagenActual();
+                    window.addEventListener('keydown', keyHandler);
+                },
+                willClose: () => {
+                    window.__galeriaPrendaActiva = false;
+                    window.removeEventListener('keydown', keyHandler);
+                }
+            });
+        };
+
+        renderModal();
     }
 
     /**

@@ -91,6 +91,40 @@ class PrendaEditorProcesos {
                 count: Object.keys(window.procesosSeleccionados).length,
                 contenido: window.procesosSeleccionados
             });
+            
+            // 🔴 CRÍTICO: Para procesos desde cotización, auto-aplicar "todas las tallas" si están vacías
+            // Los procesos de cotización vienen con talla_cantidad vacío - por defecto aplican a TODAS las tallas
+            const tallasRelacionales = window.tallasRelacionales || {};
+            const hayTallasEnPrenda = Object.keys(tallasRelacionales).length > 0;
+            
+            if (hayTallasEnPrenda && prenda.tipo === 'cotizacion') {
+                console.log('[Procesos] 🎯 Cotización detectada - auto-aplicando tallas a procesos sin tallas');
+                
+                // Construir objeto de tallas en formato proceso (lowercase keys)
+                const tallasParaProceso = {
+                    dama: tallasRelacionales.DAMA ? { ...tallasRelacionales.DAMA } : {},
+                    caballero: tallasRelacionales.CABALLERO ? { ...tallasRelacionales.CABALLERO } : {},
+                    sobremedida: tallasRelacionales.SOBREMEDIDA ? { ...tallasRelacionales.SOBREMEDIDA } : {}
+                };
+                
+                Object.entries(window.procesosSeleccionados).forEach(([key, proceso]) => {
+                    const datos = proceso.datos;
+                    // Verificar si tallas están vacías
+                    const tallasVacias = !datos.tallas || 
+                        (Object.keys(datos.tallas?.dama || {}).length === 0 && 
+                         Object.keys(datos.tallas?.caballero || {}).length === 0 &&
+                         Object.keys(datos.tallas?.sobremedida || {}).length === 0);
+                    const tallaCantidadVacia = !datos.talla_cantidad || 
+                        (Array.isArray(datos.talla_cantidad) && datos.talla_cantidad.length === 0) ||
+                        (typeof datos.talla_cantidad === 'object' && Object.keys(datos.talla_cantidad).length === 0);
+                    
+                    if (tallasVacias && tallaCantidadVacia) {
+                        datos.tallas = JSON.parse(JSON.stringify(tallasParaProceso));
+                        datos._aplicarTodasTallas = true; // Flag para indicar que fue auto-asignado
+                        console.log(`[Procesos] ✅ ${key}: tallas auto-asignadas (todas las de la prenda)`, datos.tallas);
+                    }
+                });
+            }
         }
         
         // 🎨 CRÍTICO: Usar el nuevo renderizador de tarjetas

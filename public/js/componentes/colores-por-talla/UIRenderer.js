@@ -446,30 +446,41 @@ window.UIRenderer = (function() {
                     const tallaDisplay = asignacion.talla; // Solo mostrar la talla, sin el tipo
                     const tela = asignacion.tela || '--';
                     
+                    const generoKey = asignacion.genero || '';
+                    const claveResumen = `${generoKey.toLowerCase()}-Letra-${tallaDisplay}`;
+                    
                     tr.innerHTML = `
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;">
+                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="tela">
                             ${tela}
                         </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;">
+                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="genero">
                             ${asignacion.genero.toUpperCase()}
                         </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;">
+                        <td style="padding: 0.75rem; text-align: left; color: #1f2937; font-weight: 500;" data-field="talla">
                             ${tallaDisplay}
                         </td>
-                        <td style="padding: 0.75rem; text-align: left; color: #1f2937;">
+                        <td style="padding: 0.75rem; text-align: left; color: #1f2937;" data-field="color">
                             ${color.nombre}
                         </td>
-                        <td style="padding: 0.75rem; text-align: center; font-weight: 500;">
+                        <td style="padding: 0.75rem; text-align: center; font-weight: 500;" data-field="cantidad">
                             ${cantidad}
                         </td>
                         <td style="padding: 0.75rem; text-align: center;">
-                            <button type="button" class="btn btn-danger btn-xs btn-eliminar-asignacion" 
-                                data-genero="${asignacion.genero}" 
-                                data-talla="${asignacion.talla}" 
-                                data-color="${color.nombre}" 
-                                style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
-                                <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
-                            </button>
+                            <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                <button type="button" class="btn-editar-asignacion" 
+                                    data-clave="${claveResumen}" data-color="${color.nombre}"
+                                    style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                    title="Editar fila">
+                                    ✎
+                                </button>
+                                <button type="button" class="btn btn-danger btn-xs btn-eliminar-asignacion" 
+                                    data-genero="${asignacion.genero}" 
+                                    data-talla="${asignacion.talla}" 
+                                    data-color="${color.nombre}" 
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                    <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
+                                </button>
+                            </div>
                         </td>
                     `;
                     
@@ -485,8 +496,81 @@ window.UIRenderer = (function() {
             
             // console.log('[UIRenderer.actualizarResumenAsignaciones]  COMPLETADO - Tabla actualizada con', filaCount, 'filas y', totalUnidades, 'unidades totales');
             
+            // Configurar edición inline para botones ✎
+            this._configurarEdicionInlineResumen(tbodyResumen);
+            
             // Configurar event delegation para los botones de eliminar
             this.configurarEventosEliminarAsignacion();
+        },
+
+        /**
+         * Configurar edición inline en la tabla resumen (botón ✎)
+         */
+        _configurarEdicionInlineResumen(tablaBody) {
+            tablaBody.querySelectorAll('.btn-editar-asignacion').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const fila = btn.closest('tr');
+                    const clave = btn.getAttribute('data-clave');
+                    const colorNombre = btn.getAttribute('data-color');
+                    
+                    const tdTela = fila.querySelector('[data-field="tela"]');
+                    const tdGenero = fila.querySelector('[data-field="genero"]');
+                    const tdTalla = fila.querySelector('[data-field="talla"]');
+                    const tdColor = fila.querySelector('[data-field="color"]');
+                    const tdCantidad = fila.querySelector('[data-field="cantidad"]');
+                    const tdAccion = fila.querySelector('td:last-child');
+                    if (!tdTela) return;
+
+                    const orig = {
+                        tela: tdTela.textContent.trim(),
+                        genero: tdGenero.textContent.trim(),
+                        talla: tdTalla.textContent.trim(),
+                        color: tdColor.textContent.trim(),
+                        cantidad: parseInt(tdCantidad.textContent.trim()) || 0
+                    };
+
+                    fila.style.background = '#eff6ff';
+                    tdTela.innerHTML = `<input type="text" list="opciones-telas" value="${orig.tela}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
+                    tdGenero.innerHTML = `<select style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;"><option value="DAMA" ${orig.genero==='DAMA'?'selected':''}>DAMA</option><option value="CABALLERO" ${orig.genero==='CABALLERO'?'selected':''}>CABALLERO</option><option value="UNISEX" ${orig.genero==='UNISEX'?'selected':''}>UNISEX</option></select>`;
+                    tdTalla.innerHTML = `<input type="text" value="${orig.talla}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;text-align:center;" onkeyup="this.value=this.value.toUpperCase()">`;
+                    tdColor.innerHTML = `<input type="text" list="opciones-colores" value="${orig.color}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
+                    tdCantidad.innerHTML = `<input type="number" min="0" value="${orig.cantidad}" style="width:70px;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-align:center;font-weight:600;">`;
+                    tdAccion.innerHTML = `<div style="display:flex;gap:0.25rem;justify-content:center;"><button type="button" class="btn-guardar-edicion" style="background:#dcfce7;border:none;color:#16a34a;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Guardar">✓</button><button type="button" class="btn-cancelar-edicion" style="background:#f3f4f6;border:none;color:#6b7280;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Cancelar">✕</button></div>`;
+
+                    const self = UIRenderer;
+                    tdAccion.querySelector('.btn-guardar-edicion').addEventListener('click', function(ev) {
+                        ev.preventDefault(); ev.stopPropagation();
+                        const nTela = tdTela.querySelector('input').value.trim().toUpperCase();
+                        const nGenero = tdGenero.querySelector('select').value;
+                        const nTalla = tdTalla.querySelector('input').value.trim().toUpperCase();
+                        const nColor = tdColor.querySelector('input').value.trim().toUpperCase();
+                        const nCantidad = parseInt(tdCantidad.querySelector('input').value) || 0;
+
+                        if (window.StateManager) {
+                            const asignaciones = window.StateManager.getAsignaciones();
+                            if (asignaciones[clave] && asignaciones[clave].colores) {
+                                asignaciones[clave].colores = asignaciones[clave].colores.filter(c => c.nombre !== colorNombre);
+                                if (asignaciones[clave].colores.length === 0) delete asignaciones[clave];
+                            }
+                            const nuevaClave = `${nGenero.toLowerCase()}-Letra-${nTalla}`;
+                            if (!asignaciones[nuevaClave]) {
+                                asignaciones[nuevaClave] = { genero: nGenero.toLowerCase(), tela: nTela, tipo: 'Letra', talla: nTalla, colores: [] };
+                            }
+                            asignaciones[nuevaClave].colores.push({ nombre: nColor, cantidad: nCantidad });
+                            window.StateManager.setAsignaciones(asignaciones);
+                        }
+                        self.actualizarResumenAsignaciones();
+                        console.log('[UIRenderer] ✅ Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
+                    });
+
+                    tdAccion.querySelector('.btn-cancelar-edicion').addEventListener('click', function(ev) {
+                        ev.preventDefault(); ev.stopPropagation();
+                        self.actualizarResumenAsignaciones();
+                    });
+                });
+            });
         },
 
         /**

@@ -248,7 +248,7 @@
                 </div>
 
                 <!-- Modal confirmación Limpiar Todo -->
-                <div id="modal-confirmar-limpiar" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-limpiar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 10060 !important;">
+                <div id="modal-confirmar-limpiar" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-limpiar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 1060000 !important;">
                     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
                         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                             <div class="modal-header" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: none; padding: 1.25rem 1.5rem;">
@@ -279,7 +279,7 @@
                 </div>
 
                 <!-- Modal confirmación Eliminar Asignación Individual -->
-                <div id="modal-confirmar-eliminar-asignacion" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-eliminar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 10060 !important;">
+                <div id="modal-confirmar-eliminar-asignacion" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-confirmar-eliminar-titulo" aria-hidden="true" data-backdrop="false" data-keyboard="true" style="z-index: 1060000 !important;">
                     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
                         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                             <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 1rem 1.25rem;">
@@ -689,14 +689,38 @@ document.addEventListener('paste', function(event) {
                 telaSeleccionada = window.telasEdicion[0].tela || window.telasEdicion[0].nombreTela || window.telasEdicion[0].nombre;
             }
             
-            // PASO 2: Guardar tela en StateManager si está disponible
-            if (telaSeleccionada) {
-                if (window.StateManager) {
-                    window.StateManager.setTelaSeleccionada(telaSeleccionada);
-                }
+            // VALIDACIÓN: Si no hay tela agregada, mostrar modal de advertencia
+            if (!telaSeleccionada) {
+                mostrarModalAdvertenciaTela();
+                return;
+            }
+
+            // PASO 2: Resetear wizard state y UI al paso 1 (género)
+            if (window.StateManager) {
+                window.StateManager.resetWizardState();
+                window.StateManager.setTelaSeleccionada(telaSeleccionada);
             }
             
-            // PASO 3: Resetear el modal al paso 1 (género)
+            // Resetear botones de género visualmente
+            document.querySelectorAll('.wizard-genero-btn').forEach(btn => {
+                btn.style.background = 'white';
+                btn.style.borderColor = '#d1d5db';
+                btn.style.color = '#374151';
+                btn.style.fontWeight = '500';
+            });
+            
+            // Resetear checkboxes de tallas
+            document.querySelectorAll('.wizard-talla-checkbox').forEach(cb => {
+                cb.checked = false;
+                const label = cb.closest('label');
+                if (label) {
+                    label.style.background = 'white';
+                    label.style.borderColor = '#d1d5db';
+                    label.style.fontWeight = '500';
+                    label.style.color = '#374151';
+                }
+            });
+            
             if (typeof WizardManager !== 'undefined' && typeof WizardManager.irPaso === 'function') {
                 WizardManager.irPaso(1);
             }
@@ -727,6 +751,52 @@ document.addEventListener('paste', function(event) {
         }
     }
     
+    /**
+     * Muestra modal de advertencia cuando no hay tela agregada
+     */
+    function mostrarModalAdvertenciaTela() {
+        // Remover modal previo si existe
+        const previo = document.getElementById('modal-advertencia-tela');
+        if (previo) previo.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-advertencia-tela';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1070000;animation:fadeInOverlay 0.2s ease;';
+
+        overlay.innerHTML = `
+            <div style="background:#fff;border-radius:12px;padding:2rem 2.5rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;animation:scaleInModal 0.25s ease;">
+                <div style="width:64px;height:64px;border-radius:50%;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                    <span class="material-symbols-rounded" style="font-size:2rem;color:#D97706;">warning</span>
+                </div>
+                <h3 style="margin:0 0 0.5rem;font-size:1.15rem;font-weight:700;color:#1f2937;">Tela requerida</h3>
+                <p style="margin:0 0 1.5rem;font-size:0.9rem;color:#6b7280;line-height:1.5;">
+                    Debes <strong>agregar al menos una tela</strong> antes de asignar cantidades por talla y color.
+                </p>
+                <button type="button" onclick="cerrarModalAdvertenciaTela()" style="background:#0066cc;color:#fff;border:none;padding:0.6rem 2rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s;">
+                    Entendido
+                </button>
+            </div>
+        `;
+
+        // Cerrar al hacer click en el fondo
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) cerrarModalAdvertenciaTela();
+        });
+
+        document.body.appendChild(overlay);
+    }
+
+    /**
+     * Cierra el modal de advertencia de tela
+     */
+    function cerrarModalAdvertenciaTela() {
+        const modal = document.getElementById('modal-advertencia-tela');
+        if (modal) {
+            modal.style.animation = 'fadeOutOverlay 0.2s ease';
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+
     /**
      * Inicialización cuando el DOM esté listo
      */
@@ -775,7 +845,7 @@ document.addEventListener('paste', function(event) {
                         if (!overlay) {
                             overlay = document.createElement('div');
                             overlay.id = 'overlay-confirmar-limpiar';
-                            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10050;display:none;';
+                            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1055000;display:none;';
                             document.body.appendChild(overlay);
                         }
                         overlay.style.display = 'block';
@@ -836,7 +906,7 @@ document.addEventListener('paste', function(event) {
                             if (!overlay) {
                                 overlay = document.createElement('div');
                                 overlay.id = 'overlay-confirmar-eliminar';
-                                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10050;display:none;';
+                                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1055000;display:none;';
                                 document.body.appendChild(overlay);
                             }
                             overlay.style.display = 'block';
@@ -926,7 +996,28 @@ document.addEventListener('paste', function(event) {
     /* Modales de confirmación encima de todo */
     #modal-confirmar-limpiar,
     #modal-confirmar-eliminar-asignacion {
-        z-index: 10060 !important;
+        z-index: 1060000 !important;
+    }
+    /* Wizard modal y su backdrop encima del modal de prenda */
+    #modal-asignar-colores-por-talla {
+        z-index: 1060000 !important;
+    }
+    #modal-asignar-colores-por-talla ~ .modal-backdrop,
+    .modal-backdrop {
+        z-index: 1055000 !important;
+    }
+
+    @keyframes fadeInOverlay {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes fadeOutOverlay {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+    @keyframes scaleInModal {
+        from { transform: scale(0.85); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
     }
 </style>
 

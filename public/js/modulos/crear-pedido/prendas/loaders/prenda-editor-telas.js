@@ -10,7 +10,7 @@ class PrendaEditorTelas {
     static cargar(prenda) {
         console.log('🧵 [Telas] Cargando:', {
             cantidad: prenda.telasAgregadas?.length || 0,
-            telas: prenda.telasAgregadas?.map(t => t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
+            telas: prenda.telasAgregadas?.map(t => t.nombre_tela || t.tela_nombre || t.tela || t.nombre || 'Sin nombre')
         });
         
         // Buscar tabla
@@ -45,7 +45,7 @@ class PrendaEditorTelas {
                     tablaTelas.appendChild(fila);
                 }
                 
-                console.log(`✅ [Telas] ${idx + 1}: ${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
+                console.log(`✅ [Telas] ${idx + 1}: ${tela.nombre_tela || tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}`);
             });
         }
         
@@ -111,7 +111,7 @@ class PrendaEditorTelas {
         
         // Construir filas base con innerHTML (SIN la imagen - la imagen va por DOM API)
         fila.innerHTML = `
-            <td style="padding: 0.5rem;">${tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}</td>
+            <td style="padding: 0.5rem;">${tela.nombre_tela || tela.tela_nombre || tela.tela || tela.nombre || 'Sin nombre'}</td>
             <td style="padding: 0.5rem;">${tela.color_nombre || tela.color || 'Sin color'}</td>
             <td style="padding: 0.5rem;">${tela.referencia || '-'}</td>
             <td class="td-imagen-tela" style="padding: 0.5rem; text-align: center; vertical-align: top;"></td>

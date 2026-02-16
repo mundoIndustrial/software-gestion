@@ -94,12 +94,60 @@ final class AgregarPrendaCompletaUseCase
             }
         }
 
+        // 4. Guardar novedad en pedidos_produccion.novedades
+        $this->guardarNovedad($prenda, $dto);
+
         return $prenda;
     }
 
     private function generarRutaWebp(string $rutaOriginal): string
     {
         return preg_replace('/\.[^.]+$/', '.webp', $rutaOriginal);
+    }
+
+    private function guardarNovedad(PrendaPedido $prenda, AgregarPrendaCompletaDTO $dto): void
+    {
+        if (is_null($dto->novedad) || empty(trim($dto->novedad))) {
+            return;
+        }
+
+        $pedido = $prenda->pedidoProduccion;
+        if (!$pedido) {
+            \Log::warning('[AgregarPrendaCompletaUseCase] No se encontró pedido para prenda', [
+                'prenda_id' => $prenda->id,
+            ]);
+            return;
+        }
+
+        $novedadesActuales = $pedido->novedades ?? '';
+
+        $usuarioAutenticado = \Auth::user();
+        $nombreAsesor = $usuarioAutenticado ? $usuarioAutenticado->name : 'Sistema';
+
+        // Obtener el primer rol del usuario (usando Spatie Laravel-permission)
+        if ($usuarioAutenticado && method_exists($usuarioAutenticado, 'roles')) {
+            $rolAsesor = $usuarioAutenticado->roles()->first()?->name ?? 'Sistema';
+        } else {
+            $rolAsesor = 'Sistema';
+        }
+
+        $nuevaNovedad = trim($dto->novedad);
+        $fechaHora = now()->format('d/m/Y h:i A');
+        $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor));
+        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - {$nuevaNovedad}";
+
+        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadConInfo;
+
+        $pedido->update([
+            'novedades' => $novedadesActualizadas,
+        ]);
+
+        \Log::info('[AgregarPrendaCompletaUseCase] Novedad guardada', [
+            'prenda_id' => $prenda->id,
+            'pedido_id' => $pedido->id,
+            'novedad' => $dto->novedad,
+            'nombre_asesor' => $nombreAsesor,
+        ]);
     }
 }
 

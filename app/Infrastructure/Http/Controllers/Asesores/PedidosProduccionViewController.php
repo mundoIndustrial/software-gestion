@@ -865,8 +865,47 @@ class PedidosProduccionViewController
                     $tallasDisponibles[] = $tallaCot->talla;
                     $tallasConCantidades[] = [
                         'talla' => $tallaCot->talla,
-                        'cantidad' => $tallaCot->cantidad
+                        'cantidad' => $tallaCot->cantidad,
+                        'genero_id' => $tallaCot->genero_id,
+                        'genero' => $tallaCot->genero ? $tallaCot->genero->nombre : 'DAMA',
+                        'color' => $tallaCot->color ?? ''
                     ];
+                }
+            }
+
+            // EXTRAER TELAS DESDE telas_multiples SI NO HAY TELAS DE OTRAS FUENTES
+            if (empty($telasFormato) && $prenda->variantes && count($prenda->variantes) > 0) {
+                $varTelas = $prenda->variantes[0];
+                $telasMultiplesRaw = $varTelas->telas_multiples ?? null;
+                
+                if ($telasMultiplesRaw) {
+                    $telasMultiples = is_string($telasMultiplesRaw) 
+                        ? json_decode($telasMultiplesRaw, true) 
+                        : (is_array($telasMultiplesRaw) ? $telasMultiplesRaw : []);
+                    
+                    if (is_array($telasMultiples) && count($telasMultiples) > 0) {
+                        foreach ($telasMultiples as $telaMulti) {
+                            $nombreTela = $telaMulti['tela'] ?? '';
+                            $colorTela = $telaMulti['color'] ?? '';
+                            $referenciaTela = $telaMulti['referencia'] ?? '';
+                            
+                            if (!empty($nombreTela)) {
+                                $telasFormato[] = [
+                                    'nombre_tela' => strtoupper($nombreTela),
+                                    'color' => strtoupper($colorTela),
+                                    'referencia' => $referenciaTela,
+                                    'imagenes' => [],
+                                    'origen' => 'telas_multiples'
+                                ];
+                            }
+                        }
+                        
+                        \Log::info('[OBTENER-PRENDA-COMPLETA] 🧵 TELAS EXTRAÍDAS DE telas_multiples:', [
+                            'prenda_id' => $prenda->id,
+                            'telas_count' => count($telasFormato),
+                            'telas' => $telasFormato
+                        ]);
+                    }
                 }
             }
 

@@ -64,6 +64,9 @@ final class ActualizarPrendaCompletaUseCase
         // 3. Actualizar tallas
         $this->actualizarTallas($prenda, $dto);
 
+        // 3.5. Actualizar asignaciones de colores por talla (prenda_pedido_talla_colores)
+        $this->actualizarAsignacionesColores($prenda, $dto);
+
         // 4. Actualizar variantes (manga, broche, bolsillos)
         $this->actualizarVariantes($prenda, $dto);
 
@@ -174,17 +177,21 @@ final class ActualizarPrendaCompletaUseCase
                 $ruta = $foto;
                 $rutaWebp = $ruta ? $this->generarRutaWebp($ruta) : null;
             } else if (is_array($foto)) {
-                // Formato completo: {'ruta_original': ..., 'ruta_webp': ...}
-                $ruta = $foto['ruta_original'] ?? $foto['path'] ?? null;
+                // Formato completo: soportar múltiples keys del frontend
+                $ruta = $foto['ruta_original'] ?? $foto['url'] ?? $foto['ruta'] ?? $foto['path'] ?? null;
                 $rutaWebp = $foto['ruta_webp'] ?? ($ruta ? $this->generarRutaWebp($ruta) : null);
             } else {
                 continue;
             }
 
             if ($ruta) {
-                $fotosNuevas[$ruta] = [
-                    'ruta_original' => $ruta,
-                    'ruta_webp' => $rutaWebp,
+                // Normalizar: quitar prefijo /storage/ si existe (BD guarda sin él)
+                $rutaNorm = preg_replace('#^/storage/#', '', $ruta);
+                $rutaWebpNorm = $rutaWebp ? preg_replace('#^/storage/#', '', $rutaWebp) : null;
+                
+                $fotosNuevas[$rutaNorm] = [
+                    'ruta_original' => $rutaNorm,
+                    'ruta_webp' => $rutaWebpNorm,
                     'orden' => $idx + 1,
                 ];
             }
@@ -192,11 +199,16 @@ final class ActualizarPrendaCompletaUseCase
 
         //  CAMBIO CLAVE: En edición, SOLO INSERTAR fotos nuevas sin eliminar las antiguas
         // Las fotos antiguas permanecen, solo se eliminan si el usuario las elimina manualmente
-        // desde el modal de galería o si vienen explícitamente marcadas para eliminar
+        
+        // Crear índice adicional por ruta_webp para buscar por ambas rutas
+        $fotosExistentesPorWebp = $prenda->fotos()->get()->keyBy(function($f) {
+            return $f->ruta_webp;
+        });
         
         // SOLO insertar fotos nuevas (las que ya existen se mantienen)
         foreach ($fotosNuevas as $ruta => $datosFoto) {
-            if (!isset($fotosExistentes[$ruta])) {
+            // Verificar si ya existe por ruta_original O por ruta_webp
+            if (!isset($fotosExistentes[$ruta]) && !isset($fotosExistentesPorWebp[$ruta])) {
                 $prenda->fotos()->create($datosFoto);
             }
         }
@@ -231,63 +243,56 @@ final class ActualizarPrendaCompletaUseCase
             return "{$t->genero}_{$t->talla}";
         });
 
-        // Nuevas tallas a guardar
+        // EDICIÓN SELECTIVA: Solo procesar géneros que tienen datos reales
+        // Géneros vacíos ({}) se ignoran → preservan tallas existentes de ese género
         $tallasNuevas = [];
-        $esSobremedidaPorGenero = [];
+        $generosConDatos = []; // Géneros que el usuario realmente envió con tallas
         
         foreach ($dto->cantidadTalla as $genero => $tallasCantidad) {
-            // Skip metadata keys that start with underscore
-            if (strpos($genero, '_') === 0) {
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Skipping metadata key', ['key' => $genero]);
+            // Skip metadata keys
+            if (strpos($genero, '_') === 0) continue;
+            
+            if (!is_array($tallasCantidad)) continue;
+
+            // Filtrar solo datos reales (excluir metadata keys como _es_sobremedida)
+            $tallasReales = array_filter($tallasCantidad, function($v, $k) {
+                return strpos($k, '_') !== 0;
+            }, ARRAY_FILTER_USE_BOTH);
+
+            // Si el género está vacío, NO lo procesamos → preservar tallas existentes
+            if (empty($tallasReales)) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Género vacío, preservando existentes', ['genero' => $genero]);
                 continue;
             }
+
+            $generosConDatos[] = strtoupper($genero);
+            $esSobremedida = !empty($tallasCantidad['_es_sobremedida']);
             
-            if (is_array($tallasCantidad)) {
-                // Check for sobremedida flag
-                $esSobremedida = !empty($tallasCantidad['_es_sobremedida']);
-                
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Procesando genero', [
-                    'genero' => $genero,
-                    'es_sobremedida' => $esSobremedida,
-                    'data' => $tallasCantidad
-                ]);
-                
-                foreach ($tallasCantidad as $talla => $cantidad) {
-                    // Skip metadata keys
-                    if (strpos($talla, '_') === 0) {
-                        \Log::debug('[ActualizarPrendaCompletaUseCase] Skipping metadata talla key', ['key' => $talla]);
-                        continue;
-                    }
-                    
-                    $key = "{$genero}_{$talla}";
-                    $tallasNuevas[$key] = [
-                        'genero' => $genero,
-                        'talla' => $talla,
-                        'cantidad' => (int) $cantidad,
-                        'es_sobremedida' => (int) $esSobremedida,
-                    ];
-                    
-                    \Log::debug('[ActualizarPrendaCompletaUseCase] Talla creada', [
-                        'key' => $key,
-                        'genero' => $genero,
-                        'talla' => $talla,
-                        'cantidad' => $cantidad,
-                        'es_sobremedida' => $esSobremedida
-                    ]);
-                }
+            foreach ($tallasReales as $talla => $cantidad) {
+                $key = strtoupper($genero) . "_{$talla}";
+                $tallasNuevas[$key] = [
+                    'genero' => strtoupper($genero),
+                    'talla' => $talla,
+                    'cantidad' => (int) $cantidad,
+                    'es_sobremedida' => (int) $esSobremedida,
+                ];
             }
         }
 
-        \Log::info('[ActualizarPrendaCompletaUseCase] Tallas nuevas preparadas', [
+        \Log::info('[ActualizarPrendaCompletaUseCase] Tallas nuevas preparadas (selectivo)', [
             'prenda_id' => $prenda->id,
             'cantidad' => count($tallasNuevas),
+            'generos_con_datos' => $generosConDatos,
             'tallas_nuevas' => $tallasNuevas
         ]);
 
-        // Eliminar tallas que ya no estÃ¡n en la nueva lista
+        // SELECTIVO: Solo eliminar tallas de géneros que el usuario envió con datos
+        // Tallas de géneros no enviados se preservan intactas
         foreach ($tallasExistentes as $key => $tallaRecord) {
-            if (!isset($tallasNuevas[$key])) {
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla existente', ['key' => $key]);
+            $generoExistente = $tallaRecord->genero;
+            // Solo tocar si el género fue enviado con datos
+            if (in_array($generoExistente, $generosConDatos) && !isset($tallasNuevas[$key])) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla de género modificado', ['key' => $key]);
                 $tallaRecord->delete();
             }
         }
@@ -295,32 +300,137 @@ final class ActualizarPrendaCompletaUseCase
         // Insertar o actualizar tallas
         foreach ($tallasNuevas as $key => $dataTalla) {
             if (isset($tallasExistentes[$key])) {
-                // Actualizar existente
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Actualizando talla existente', [
-                    'key' => $key,
-                    'datos' => $dataTalla
-                ]);
                 $tallasExistentes[$key]->update([
                     'cantidad' => $dataTalla['cantidad'],
                     'es_sobremedida' => $dataTalla['es_sobremedida'],
                 ]);
             } else {
-                // Crear nueva
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Creando talla nueva', [
-                    'key' => $key,
-                    'datos' => $dataTalla
-                ]);
-                $tallaNueva = $prenda->tallas()->create($dataTalla);
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Talla creada exitosamente', [
-                    'talla_id' => $tallaNueva->id,
-                    'key' => $key
-                ]);
+                $prenda->tallas()->create($dataTalla);
             }
         }
         
         \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Completado', [
             'prenda_id' => $prenda->id,
             'total_tallas' => $prenda->tallas()->count()
+        ]);
+    }
+
+    /**
+     * Actualizar asignaciones de colores por talla (prenda_pedido_talla_colores)
+     * Patrón selectivo: null → no tocar, vacío → eliminar todo, con datos → replace all
+     */
+    private function actualizarAsignacionesColores(PrendaPedido $prenda, ActualizarPrendaCompletaDTO $dto): void
+    {
+        if (is_null($dto->asignacionesColores)) {
+            return;
+        }
+
+        // Obtener todas las tallas de la prenda para hacer lookup genero+talla → talla_id
+        $tallasMap = $prenda->tallas()->get()->keyBy(function($t) {
+            return strtoupper($t->genero) . '_' . $t->talla;
+        });
+
+        if (empty($dto->asignacionesColores)) {
+            // Eliminar todas las asignaciones de colores de todas las tallas
+            foreach ($tallasMap as $talla) {
+                \DB::table('prenda_pedido_talla_colores')
+                    ->where('prenda_pedido_talla_id', $talla->id)
+                    ->delete();
+            }
+            \Log::info('[ActualizarPrendaCompletaUseCase] Asignaciones colores eliminadas (vacío)', [
+                'prenda_id' => $prenda->id
+            ]);
+            return;
+        }
+
+        // El frontend envía formato objeto: { "GENERO-TELA-TALLA": { genero, tela, talla, colores: [{nombre, cantidad}] } }
+        // O formato array plano: [ { genero, talla, tela, tela_id, color, color_id, cantidad } ]
+        $asignacionesPlanas = [];
+
+        foreach ($dto->asignacionesColores as $key => $asignacion) {
+            if (isset($asignacion['colores']) && is_array($asignacion['colores'])) {
+                // Formato objeto con colores anidados
+                foreach ($asignacion['colores'] as $colorData) {
+                    $asignacionesPlanas[] = [
+                        'genero' => strtoupper($asignacion['genero'] ?? ''),
+                        'talla' => $asignacion['talla'] ?? '',
+                        'tela_nombre' => $asignacion['tela'] ?? '',
+                        'tela_id' => $asignacion['tela_id'] ?? null,
+                        'color_nombre' => $colorData['nombre'] ?? '',
+                        'color_id' => $colorData['color_id'] ?? null,
+                        'cantidad' => (int)($colorData['cantidad'] ?? 0),
+                    ];
+                }
+            } else {
+                // Formato plano
+                $asignacionesPlanas[] = [
+                    'genero' => strtoupper($asignacion['genero'] ?? ''),
+                    'talla' => $asignacion['talla'] ?? '',
+                    'tela_nombre' => $asignacion['tela'] ?? $asignacion['tela_nombre'] ?? '',
+                    'tela_id' => $asignacion['tela_id'] ?? null,
+                    'color_nombre' => $asignacion['color'] ?? $asignacion['color_nombre'] ?? '',
+                    'color_id' => $asignacion['color_id'] ?? null,
+                    'cantidad' => (int)($asignacion['cantidad'] ?? 0),
+                ];
+            }
+        }
+
+        // Eliminar asignaciones existentes de las tallas afectadas
+        $generosAfectados = array_unique(array_column($asignacionesPlanas, 'genero'));
+        foreach ($tallasMap as $key => $talla) {
+            if (in_array(strtoupper($talla->genero), $generosAfectados)) {
+                \DB::table('prenda_pedido_talla_colores')
+                    ->where('prenda_pedido_talla_id', $talla->id)
+                    ->delete();
+            }
+        }
+
+        // Insertar nuevas asignaciones
+        $insertados = 0;
+        foreach ($asignacionesPlanas as $asig) {
+            if ($asig['cantidad'] <= 0) continue;
+
+            $tallaKey = $asig['genero'] . '_' . $asig['talla'];
+            $tallaRecord = $tallasMap[$tallaKey] ?? null;
+
+            if (!$tallaRecord) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Talla no encontrada para asignación color', [
+                    'key' => $tallaKey, 'prenda_id' => $prenda->id
+                ]);
+                continue;
+            }
+
+            // Resolver tela_id por nombre si no viene
+            $telaId = $asig['tela_id'];
+            if (!$telaId && !empty($asig['tela_nombre'])) {
+                $tela = \App\Models\TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($asig['tela_nombre'])])->first();
+                $telaId = $tela?->id;
+            }
+
+            // Resolver color_id por nombre si no viene
+            $colorId = $asig['color_id'];
+            if (!$colorId && !empty($asig['color_nombre'])) {
+                $color = \App\Models\ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($asig['color_nombre'])])->first();
+                $colorId = $color?->id;
+            }
+
+            \DB::table('prenda_pedido_talla_colores')->insert([
+                'prenda_pedido_talla_id' => $tallaRecord->id,
+                'tela_id' => $telaId ?? 0,
+                'tela_nombre' => $asig['tela_nombre'],
+                'color_id' => $colorId ?? 0,
+                'color_nombre' => $asig['color_nombre'],
+                'cantidad' => $asig['cantidad'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $insertados++;
+        }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] Asignaciones colores actualizadas', [
+            'prenda_id' => $prenda->id,
+            'insertados' => $insertados,
+            'total_recibidos' => count($asignacionesPlanas),
         ]);
     }
 
@@ -340,37 +450,56 @@ final class ActualizarPrendaCompletaUseCase
             return;
         }
 
-        \Log::info('[ActualizarPrendaCompletaUseCase] Variantes recibidas', [
-            'cantidad' => count($dto->variantes),
-            'variantes' => $dto->variantes,
+        // Normalizar variantes: el frontend puede enviar objeto plano o array de arrays
+        $variantes = $dto->variantes;
+
+        // Detectar si es objeto plano (tiene keys como tipo_manga, obs_manga, etc.)
+        // En ese caso, convertir a array de un solo elemento con nombres de BD
+        if (is_array($variantes) && !empty($variantes) && !isset($variantes[0]) && !is_array(reset($variantes))) {
+            // Es objeto plano del frontend → mapear nombres frontend → BD
+            $variantes = [[
+                'tipo_manga_id'        => $variantes['tipo_manga_id'] ?? null,
+                'tipo_broche_boton_id' => $variantes['tipo_broche_boton_id'] ?? $variantes['tipo_broche_id'] ?? null,
+                'manga_obs'            => $variantes['obs_manga'] ?? $variantes['manga_obs'] ?? null,
+                'broche_boton_obs'     => $variantes['obs_broche'] ?? $variantes['broche_boton_obs'] ?? null,
+                'tiene_bolsillos'      => $variantes['tiene_bolsillos'] ?? false,
+                'bolsillos_obs'        => $variantes['obs_bolsillos'] ?? $variantes['bolsillos_obs'] ?? null,
+            ]];
+        }
+
+        \Log::info('[ActualizarPrendaCompletaUseCase] Variantes recibidas (normalizadas)', [
+            'cantidad' => count($variantes),
+            'variantes' => $variantes,
         ]);
 
-        //  ACTUALIZACIÃ“N SELECTIVA
-        // Si hay variantes nuevas, reemplazar TODAS (no hay ID Ãºnico para actualizar parcialmente)
-        // Pero solo si explÃ­citamente se envÃ­a el array con datos
+        // ACTUALIZACIÓN SELECTIVA
         $varianteExistente = $prenda->variantes()->first();
         if ($varianteExistente) {
-            foreach ($dto->variantes as $variante) {
+            foreach ($variantes as $variante) {
+                if (!is_array($variante)) continue;
+                // Usar array_key_exists para detectar campos enviados (incluso si son null)
+                // Si el campo existe en el payload → actualizarlo (incluso a null = usuario lo desmarcó)
+                // Si el campo NO existe en el payload → no tocarlo
                 $upd = [];
-                // SOLO actualizar si el valor NO es null (preservar datos existentes)
-                if (array_key_exists("tipo_manga_id", $variante) && $variante["tipo_manga_id"] !== null) $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
-                if (array_key_exists("tipo_broche_boton_id", $variante) && $variante["tipo_broche_boton_id"] !== null) $upd["tipo_broche_boton_id"] = $variante["tipo_broche_boton_id"];
-                if (array_key_exists("manga_obs", $variante) && $variante["manga_obs"] !== null) $upd["manga_obs"] = $variante["manga_obs"];
-                if (array_key_exists("broche_boton_obs", $variante) && $variante["broche_boton_obs"] !== null) $upd["broche_boton_obs"] = $variante["broche_boton_obs"];
-                if (array_key_exists("tiene_bolsillos", $variante) && $variante["tiene_bolsillos"] !== null) $upd["tiene_bolsillos"] = $variante["tiene_bolsillos"];
-                if (array_key_exists("bolsillos_obs", $variante) && $variante["bolsillos_obs"] !== null) $upd["bolsillos_obs"] = $variante["bolsillos_obs"];
+                if (array_key_exists("tipo_manga_id", $variante)) $upd["tipo_manga_id"] = $variante["tipo_manga_id"];
+                if (array_key_exists("tipo_broche_boton_id", $variante)) $upd["tipo_broche_boton_id"] = $variante["tipo_broche_boton_id"];
+                if (array_key_exists("manga_obs", $variante)) $upd["manga_obs"] = $variante["manga_obs"];
+                if (array_key_exists("broche_boton_obs", $variante)) $upd["broche_boton_obs"] = $variante["broche_boton_obs"];
+                if (array_key_exists("tiene_bolsillos", $variante)) $upd["tiene_bolsillos"] = $variante["tiene_bolsillos"];
+                if (array_key_exists("bolsillos_obs", $variante)) $upd["bolsillos_obs"] = $variante["bolsillos_obs"];
                 if (!empty($upd)) $varianteExistente->update($upd);
             }
         } else {
-            foreach ($dto->variantes as $variante) {
-                $creada = $prenda->variantes()->create([
-                'tipo_manga_id' => $variante['tipo_manga_id'] ?? null,
-                'tipo_broche_boton_id' => $variante['tipo_broche_boton_id'] ?? null,
-                'manga_obs' => $variante['manga_obs'] ?? null,
-                'broche_boton_obs' => $variante['broche_boton_obs'] ?? null,
-                'tiene_bolsillos' => $variante['tiene_bolsillos'] ?? false,
-                'bolsillos_obs' => $variante['bolsillos_obs'] ?? null,
-            ]);
+            foreach ($variantes as $variante) {
+                if (!is_array($variante)) continue;
+                $prenda->variantes()->create([
+                    'tipo_manga_id' => $variante['tipo_manga_id'] ?? null,
+                    'tipo_broche_boton_id' => $variante['tipo_broche_boton_id'] ?? null,
+                    'manga_obs' => $variante['manga_obs'] ?? null,
+                    'broche_boton_obs' => $variante['broche_boton_obs'] ?? null,
+                    'tiene_bolsillos' => $variante['tiene_bolsillos'] ?? false,
+                    'bolsillos_obs' => $variante['bolsillos_obs'] ?? null,
+                ]);
             }
         }
     }
@@ -399,15 +528,21 @@ final class ActualizarPrendaCompletaUseCase
             $id = $colorTela['id'] ?? null;  // ID de relación existente
             
             // Fallback: buscar por nombres si no hay IDs
-            if (isset($colorTela['color_nombre']) && !$colorId) {
-                $colorId = $this->obtenerOCrearColor($colorTela['color_nombre']);
+            // Frontend puede enviar 'color_nombre' o 'color', y 'tela_nombre' o 'tela'
+            $colorNombre = $colorTela['color_nombre'] ?? $colorTela['color'] ?? null;
+            $telaNombre = $colorTela['tela_nombre'] ?? $colorTela['tela'] ?? null;
+            
+            if ($colorNombre && !$colorId) {
+                $colorId = $this->obtenerOCrearColor($colorNombre);
             }
             
-            if (isset($colorTela['tela_nombre']) && !$telaId) {
-                $telaId = $this->obtenerOCrearTela($colorTela['tela_nombre']);
+            if ($telaNombre && !$telaId) {
+                $telaId = $this->obtenerOCrearTela($telaNombre);
             }
             
-            if (!$colorId || !$telaId) {
+            // Solo requerir tela_id. color_id puede ser 0/null (sin color asignado)
+            if (!$telaId) {
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Tela sin tela_id, saltando', ['colorTela' => $colorTela]);
                 continue;
             }
             
@@ -426,20 +561,25 @@ final class ActualizarPrendaCompletaUseCase
             //  CREATE: Si NO viene con ID, crear nueva relación
             else {
                 // Verificar si ya existe esta combinación
-                $existente = $prenda->coloresTelas()
-                    ->where('color_id', $colorId)
-                    ->where('tela_id', $telaId)
-                    ->first();
+                $query = $prenda->coloresTelas()->where('tela_id', $telaId);
+                if ($colorId) {
+                    $query->where('color_id', $colorId);
+                }
+                $existente = $query->first();
                 
                 if (!$existente) {
                     $nueva = $prenda->coloresTelas()->create([
-                        'color_id' => $colorId,
+                        'color_id' => $colorId ?: null,
                         'tela_id' => $telaId,
                         'referencia' => $referencia
                     ]);
-                    $telaIdsEnPayload[] = $nueva->id;  //  Guardar ID de la nueva tela
+                    $telaIdsEnPayload[] = $nueva->id;
                 } else {
-                    $telaIdsEnPayload[] = $existente->id;  //  Guardar ID de la existente
+                    // Actualizar referencia si cambió
+                    if ($referencia !== null && $existente->referencia !== $referencia) {
+                        $existente->update(['referencia' => $referencia]);
+                    }
+                    $telaIdsEnPayload[] = $existente->id;
                 }
             }
         }
@@ -804,7 +944,25 @@ final class ActualizarPrendaCompletaUseCase
                         
                         // Agregar imágenes del proceso si existen (es actualización, no creación)
                         $this->agregarImagenesProceso($procesoExistente, $proceso, $dto, false);
-                        return;
+                        
+                        // Actualizar tallas del proceso si se proporcionan
+                        if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                            $procesoExistente->tallas()->delete();
+                            foreach ($proceso['tallas'] as $genero => $tallas) {
+                                if (!is_array($tallas)) continue;
+                                foreach ($tallas as $talla => $cantidad) {
+                                    if ($cantidad > 0) {
+                                        $procesoExistente->tallas()->create([
+                                            'genero' => strtoupper($genero),
+                                            'talla' => strtoupper($talla),
+                                            'cantidad' => (int)$cantidad,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        continue;
                     }
                 }
                 
@@ -819,6 +977,26 @@ final class ActualizarPrendaCompletaUseCase
                     'observaciones' => $proceso['observaciones'] ?? null,
                     'estado' => $proceso['estado'] ?? 'PENDIENTE',
                 ]);
+
+                // Crear tallas del proceso nuevo si se proporcionan
+                if (isset($proceso['tallas']) && is_array($proceso['tallas']) && !empty($proceso['tallas'])) {
+                    foreach ($proceso['tallas'] as $genero => $tallas) {
+                        if (!is_array($tallas)) continue;
+                        foreach ($tallas as $talla => $cantidad) {
+                            if ($cantidad > 0) {
+                                $procesoCreado->tallas()->create([
+                                    'genero' => strtoupper($genero),
+                                    'talla' => strtoupper($talla),
+                                    'cantidad' => (int)$cantidad,
+                                ]);
+                            }
+                        }
+                    }
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Tallas creadas para proceso nuevo', [
+                        'proceso_id' => $procesoCreado->id,
+                        'tallas' => $proceso['tallas']
+                    ]);
+                }
 
                 // Agregar imágenes del proceso si existen
                 $this->agregarImagenesProceso($procesoCreado, $proceso, $dto, true);
@@ -974,9 +1152,11 @@ final class ActualizarPrendaCompletaUseCase
             $rolAsesor = 'Sistema';
         }
         
-        // Formatear la novedad con información del asesor
+        // Formatear la novedad: Rol-Nombre-Fecha Hora:Min AM/PM - Novedad
         $nuevaNovedad = trim($dto->novedad);
-        $novedadConInfo = "[{$rolAsesor} - {$nombreAsesor} - " . now()->format('d/m/Y H:i') . "]\n{$nuevaNovedad}";
+        $fechaHora = now()->format('d/m/Y h:i A'); // 16/02/2026 12:01 AM
+        $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor)); // supervisor_pedidos → Supervisor pedidos
+        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - {$nuevaNovedad}";
         
         $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadConInfo;
 

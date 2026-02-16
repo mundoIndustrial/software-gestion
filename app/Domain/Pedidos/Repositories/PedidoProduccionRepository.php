@@ -36,7 +36,7 @@ class PedidoProduccionRepository
             'cotizacion.cliente',
             'cotizacion.tipoCotizacion',
             'prendas.variantes.tipoManga',
-            'prendas.variantes.tipoBroche',
+            'prendas.variantes.tipoBrocheBoton',
             'prendas.fotos',
             'prendas.fotosTelas',
             'prendas.coloresTelas.color',  // NUEVO: Cargar colores y telas desde tabla intermedia

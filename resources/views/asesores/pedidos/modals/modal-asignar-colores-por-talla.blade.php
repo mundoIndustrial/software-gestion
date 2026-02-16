@@ -1,5 +1,5 @@
 <!-- MODAL: Asignar Colores por Talla (Wizard Dedicado) -->
-<div id="modal-asignar-colores-por-talla" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-asignar-colores-titulo" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div id="modal-asignar-colores-por-talla" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-asignar-colores-titulo" aria-hidden="true" data-backdrop="static" data-keyboard="false" style="z-index: 1060000 !important;">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Header -->

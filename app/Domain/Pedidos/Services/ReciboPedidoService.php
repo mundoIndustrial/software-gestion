@@ -56,7 +56,7 @@ class ReciboPedidoService
         return PedidoProduccion::with([
             'cotizacion.cliente',
             'prendas.variantes.tipoManga',
-            'prendas.variantes.tipoBroche',
+            'prendas.variantes.tipoBrocheBoton',
             'prendas.procesos.tipoProceso',
             'prendas.procesos.imagenes',
             'epps.epp.categoria'

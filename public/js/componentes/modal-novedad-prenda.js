@@ -17,7 +17,7 @@ class ModalNovedadPrenda {
     constructor() {
         this.pedidoId = null;
         this.prendaData = null;
-        this.zIndexMaximoForzado = 999999;
+        this.zIndexMaximoForzado = 2000000;
     }
 
     /**

@@ -35,51 +35,56 @@ final class ActualizarPrendaCompletaDTO
         public readonly ?array $fotosTelasProcesadas = null,            // [ indice => { ruta_original, ruta_webp } ]
         public readonly ?array $fotosProcesoNuevo = null,              // [ indice => { ruta_original, ruta_webp } ] para procesos nuevos
         public readonly ?string $novedad = null,                       // Descripción de cambios realizados
+        public readonly ?array $asignacionesColores = null,              // [ { genero, talla, tela, color, cantidad } ] → prenda_pedido_talla_colores
     ) {}
 
     public static function fromRequest(int|string $prendaId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null, ?array $fotosTelasProcesadas = null, ?array $fotosProcesoNuevo = null): self
     {
-        // Parsear tallas (nuevo formato: array de objetos con genero, talla, cantidad, es_sobremedida)
-        $tallasArray = null;
+        // Parsear tallas - soporta 2 formatos:
+        // Formato A (edición): { "DAMA": {"M": 30}, "CABALLERO": {} }  → ya es cantidadTalla
+        // Formato B (creación): [ {"genero":"DAMA","talla":"M","cantidad":30} ] → convertir
+        $cantidadTalla = null;
         if (!empty($data['tallas'])) {
-            if (is_string($data['tallas'])) {
-                $tallasArray = json_decode($data['tallas'], true);
-            } else {
-                $tallasArray = $data['tallas'];
-            }
-            // Convertir a formato cantidad_talla manteniendo es_sobremedida
-            // Nuevo formato: { GENERO: { TALLA: CANTIDAD, _es_sobremedida: true } }
-            // Para tallas normales: DAMA: { S: 10, M: 5 }
-            // Para sobremedida: DAMA: { null: 34, _es_sobremedida: true }
-            $cantidadTalla = [];
-            if (is_array($tallasArray)) {
-                foreach ($tallasArray as $talla) {
-                    if (isset($talla['genero'], $talla['cantidad'])) {
-                        $genero = strtoupper($talla['genero']);
-                        if (!isset($cantidadTalla[$genero])) {
-                            $cantidadTalla[$genero] = [];
-                        }
-                        
-                        $tallaKey = $talla['talla'] ?? null;
-                        $cantidadTalla[$genero][$tallaKey] = $talla['cantidad'];
-                        
-                        // Preservar bandera es_sobremedida si existe
-                        if (!empty($talla['es_sobremedida'])) {
-                            $cantidadTalla[$genero]['_es_sobremedida'] = true;
+            $tallasArray = is_string($data['tallas']) ? json_decode($data['tallas'], true) : $data['tallas'];
+            
+            // Si el JSON decodificado es vacío ({} → []), no tocar tallas
+            if (is_array($tallasArray) && !empty($tallasArray)) {
+                // Detectar formato: si tiene keys numéricas con sub-arrays que tienen 'genero' → Formato B
+                // Si tiene keys como DAMA/CABALLERO/UNISEX → Formato A (ya es cantidadTalla)
+                $primeraKey = array_key_first($tallasArray);
+                $primerValor = reset($tallasArray);
+                
+                $esFormatoB = is_int($primeraKey) && is_array($primerValor) && isset($primerValor['genero']);
+                $esFormatoA = is_string($primeraKey) && in_array(strtoupper($primeraKey), ['DAMA', 'CABALLERO', 'UNISEX', 'SOBREMEDIDA']);
+                
+                if ($esFormatoA) {
+                    // Formato A: ya es {GENERO: {TALLA: CANTIDAD}} → usar directamente
+                    $cantidadTalla = $tallasArray;
+                } elseif ($esFormatoB) {
+                    // Formato B: [{genero, talla, cantidad}] → convertir
+                    $cantidadTalla = [];
+                    foreach ($tallasArray as $talla) {
+                        if (isset($talla['genero'], $talla['cantidad'])) {
+                            $genero = strtoupper($talla['genero']);
+                            if (!isset($cantidadTalla[$genero])) {
+                                $cantidadTalla[$genero] = [];
+                            }
+                            $tallaKey = $talla['talla'] ?? null;
+                            $cantidadTalla[$genero][$tallaKey] = $talla['cantidad'];
+                            if (!empty($talla['es_sobremedida'])) {
+                                $cantidadTalla[$genero]['_es_sobremedida'] = true;
+                            }
                         }
                     }
-                }
-            }
-        } else {
-            // Parsear cantidad_talla (formato antiguo) si viene como JSON string
-            $cantidadTalla = null;
-            if (!empty($data['cantidad_talla'])) {
-                if (is_string($data['cantidad_talla'])) {
-                    $cantidadTalla = json_decode($data['cantidad_talla'], true);
                 } else {
-                    $cantidadTalla = $data['cantidad_talla'];
+                    // Fallback: asumir formato A
+                    $cantidadTalla = $tallasArray;
                 }
             }
+            // Si tallasArray es vacío → cantidadTalla queda null → no tocar tallas existentes
+        } elseif (!empty($data['cantidad_talla'])) {
+            // Parsear cantidad_talla (formato directo) si viene como JSON string
+            $cantidadTalla = is_string($data['cantidad_talla']) ? json_decode($data['cantidad_talla'], true) : $data['cantidad_talla'];
         }
 
         // Parsear variantes si viene como JSON string
@@ -154,6 +159,16 @@ final class ActualizarPrendaCompletaDTO
             }
         }
 
+        // Parsear asignaciones_colores si viene como JSON string
+        $asignacionesColores = null;
+        if (!empty($data['asignaciones_colores'])) {
+            if (is_string($data['asignaciones_colores'])) {
+                $asignacionesColores = json_decode($data['asignaciones_colores'], true);
+            } else {
+                $asignacionesColores = $data['asignaciones_colores'];
+            }
+        }
+
         return new self(
             prendaId: $prendaId,
             nombrePrenda: $data['nombre_prenda'] ?? null,
@@ -168,20 +183,33 @@ final class ActualizarPrendaCompletaDTO
             variantes: $variantes,
             coloresTelas: $coloresTelas,
             fotosTelas: $fotosTelas,
-            //  FIX: IMPORTANTE - Usar $imagenesExistentes como base para eliminar imágenes correctamente
-            // Patrón MERGE:
-            // 1. Si hay imágenes nuevas + existentes -> MERGE ambas
-            // 2. Si solo hay existentes (usuario no agregó nuevas pero puede haber eliminado) -> usar existentes
-            // 3. Si está vacío (usuario eliminó todas) -> array vacío (que causa DELETE en UseCase)
-            // 4. Si no se envió nada -> null (no tocar imágenes)
-            fotos: isset($data['imagenes_existentes']) 
-                ? array_merge($imagenesExistentes ?? [], $imagenes ?? [])
-                : ((!empty($imagenes)) ? $imagenes : null),
+            //  FIX: Lógica de fotos para edición selectiva
+            // - Si hay imágenes nuevas (File uploads) → merge con existentes
+            // - Si hay imágenes a eliminar → pasar existentes (puede ser [] si eliminó todas)
+            // - Si imagenes_existentes tiene datos → preservar esas
+            // - Si no hay cambios (existentes=[], nuevas=[], sin eliminar) → null (NO TOCAR)
+            fotos: (function() use ($imagenes, $imagenesExistentes, $imagenesAEliminar, $data) {
+                $tieneNuevas = !empty($imagenes);
+                $tieneExistentes = !empty($imagenesExistentes);
+                $tieneEliminaciones = !empty($imagenesAEliminar);
+                
+                if ($tieneNuevas || $tieneExistentes) {
+                    // Hay contenido real → merge
+                    return array_merge($imagenesExistentes ?? [], $imagenes ?? []);
+                }
+                if ($tieneEliminaciones) {
+                    // Usuario eliminó imágenes pero no quedó ninguna → array vacío = eliminar todas
+                    return [];
+                }
+                // No hay cambios en imágenes → null = no tocar
+                return null;
+            })(),
             procesos: $procesos,
             fotosProcesosPorProceso: $fotosProcesosPorProceso,
             fotosTelasProcesadas: $fotosTelasProcesadas,
             fotosProcesoNuevo: $fotosProcesoNuevo,
             novedad: $data['novedad'] ?? null,
+            asignacionesColores: $asignacionesColores,
         );
     }
 }

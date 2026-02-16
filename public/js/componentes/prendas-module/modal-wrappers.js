@@ -56,7 +56,12 @@ window.abrirModalPrendaNueva = function() {
         }
         const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
-            tbodyTelas.innerHTML = '';
+            // Preservar fila de inputs para agregar nuevas telas
+            const filaInputs = tbodyTelas.querySelector('#nueva-prenda-tela')?.closest('tr');
+            const filas = tbodyTelas.querySelectorAll('tr');
+            filas.forEach(fila => {
+                if (fila !== filaInputs) fila.remove();
+            });
         }
 
         modal.style.display = 'flex';

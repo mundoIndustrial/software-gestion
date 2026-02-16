@@ -821,6 +821,7 @@ class PedidosProduccionController
                 'procesos' => 'nullable|json',
                 'fotos_procesos' => 'nullable|json',
                 'novedad' => 'required|string|max:500',
+                'asignaciones_colores' => 'nullable|json', // Colores por talla → prenda_pedido_talla_colores
                 'imagenes' => 'nullable|array',
                 'imagenes.*' => 'nullable|image|max:5120',
                 'imagenes_existentes' => 'nullable|json', // Imágenes existentes de BD a preservar

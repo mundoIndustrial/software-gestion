@@ -26,6 +26,15 @@
 
     console.log('[PedidosAdapter] ✅ Cargado');
 
+    // Detectar contexto: supervisor vs asesor basado en la URL actual
+    function _getUrlPrefix() {
+        const path = window.location.pathname;
+        if (path.startsWith('/supervisor-pedidos')) {
+            return { fetch: '/supervisor-pedidos', save: '/supervisor-pedidos', context: 'supervisor' };
+        }
+        return { fetch: '/asesores/pedidos-produccion', save: '/asesores/pedidos', context: 'asesor' };
+    }
+
     // ====================================================
     // 1. INICIALIZAR PrendaEditor global
     // ====================================================
@@ -49,6 +58,76 @@
     window.addEventListener('prendaEditorRefactoredReady', () => {
         setTimeout(initPrendaEditor, 100);
     });
+
+    // ====================================================
+    // 1b. FALLBACK: manejarImagenesPrenda (no cargado en pedidos/index)
+    // ====================================================
+    if (typeof window.manejarImagenesPrenda !== 'function') {
+        window.manejarImagenesPrenda = function(input) {
+            if (!input.files || input.files.length === 0) return;
+            try {
+                if (!window.imagenesPrendaStorage) {
+                    console.warn('[PedidosAdapter] imagenesPrendaStorage no disponible');
+                    return;
+                }
+                window.imagenesPrendaStorage.agregarImagen(input.files[0])
+                    .then(() => {
+                        if (typeof window.actualizarPreviewPrenda === 'function') {
+                            window.actualizarPreviewPrenda();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('[PedidosAdapter] Error al agregar imagen:', err.message);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({ icon: 'error', title: 'Error', text: err.message === 'MAX_LIMIT' ? 'Máximo 3 imágenes por prenda' : 'Error al procesar imagen: ' + err.message });
+                        }
+                    });
+            } catch (err) {
+                console.error('[PedidosAdapter] Error procesando imagen:', err);
+            }
+            input.value = '';
+        };
+        console.log('[PedidosAdapter] ✅ manejarImagenesPrenda definida (fallback)');
+    }
+
+    if (typeof window.actualizarPreviewPrenda !== 'function') {
+        window.actualizarPreviewPrenda = function() {
+            const preview = document.getElementById('nueva-prenda-foto-preview');
+            if (!preview || !window.imagenesPrendaStorage) return;
+            
+            const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+            if (typeof PrendaEditorImagenes !== 'undefined') {
+                PrendaEditorImagenes._actualizarPreviewDOM(preview);
+                // Reconfigurar click handler de galería
+                if (imagenes.length > 0) {
+                    PrendaEditorImagenes._configurarClickGaleria(preview, imagenes);
+                }
+            } else {
+                // Fallback mínimo sin PrendaEditorImagenes
+                preview.innerHTML = '';
+                imagenes.forEach((img, idx) => {
+                    const container = document.createElement('div');
+                    container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+                    const imgEl = document.createElement('img');
+                    imgEl.src = img.previewUrl || img.url || img.ruta || '';
+                    imgEl.alt = `Imagen ${idx + 1}`;
+                    imgEl.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+                    container.appendChild(imgEl);
+                    preview.appendChild(container);
+                });
+                if (imagenes.length === 0) {
+                    preview.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div></div>';
+                }
+            }
+            
+            const contador = document.getElementById('nueva-prenda-foto-contador');
+            if (contador) contador.textContent = imagenes.length > 0 ? (imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos') : '';
+            
+            const btn = document.getElementById('nueva-prenda-foto-btn');
+            if (btn) btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        };
+        console.log('[PedidosAdapter] ✅ actualizarPreviewPrenda definida (fallback)');
+    }
 
     // ====================================================
     // 2. cerrarModalPrendaNueva — Cierra el modal de prenda
@@ -100,7 +179,20 @@
         if (previewContainer) previewContainer.innerHTML = '';
 
         const telasBody = document.getElementById('tbody-telas');
-        if (telasBody) telasBody.innerHTML = '';
+        if (telasBody) {
+            // Preservar la fila de inputs (para agregar nuevas telas)
+            const filaInputs = telasBody.querySelector('#nueva-prenda-tela')?.closest('tr');
+            const filas = telasBody.querySelectorAll('tr');
+            filas.forEach(fila => {
+                if (fila !== filaInputs) fila.remove();
+            });
+            // Limpiar valores de la fila de inputs
+            if (filaInputs) {
+                filaInputs.querySelectorAll('input[type="text"]').forEach(inp => inp.value = '');
+                const preview = filaInputs.querySelector('#nueva-prenda-tela-preview');
+                if (preview) { preview.innerHTML = ''; preview.style.display = 'none'; }
+            }
+        }
 
         // Resetear botón a estado original
         const btnGuardar = document.getElementById('btn-guardar-prenda');
@@ -196,7 +288,7 @@
             }
         }
 
-        // Fallback: recolectar campos básicos manualmente
+        // Fallback: recolectar TODOS los campos manualmente
         const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
         const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
         const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
@@ -208,18 +300,89 @@
             return null;
         }
 
+        // Recolectar variantes del DOM
+        const variantes = _recolectarVariantesDelDOM();
+
+        // Recolectar imágenes del storage
+        let imagenesStorage = window.imagenesPrendaStorage?.obtenerImagenes?.() || [];
+        
+        // FALLBACK: Si el storage está vacío pero hay snapshot (imágenes originales de BD),
+        // usar el snapshot. Esto protege contra resets accidentales del storage.
+        if (imagenesStorage.length === 0 && window.imagenesPrendaStorage?.snapshotOriginal?.length > 0) {
+            console.log('[PedidosAdapter] ⚠️ Storage vacío pero snapshot tiene', window.imagenesPrendaStorage.snapshotOriginal.length, 'imágenes - usando snapshot como fallback');
+            imagenesStorage = window.imagenesPrendaStorage.snapshotOriginal;
+        }
+        
+        const imagenes = imagenesStorage.map(img => {
+            if (img instanceof File) return img;
+            if (img?.file instanceof File) return { file: img.file, previewUrl: img.previewUrl, nombre: img.nombre };
+            if (img?.url?.startsWith('/')) return { url: img.url, id: img.id, urlDesdeDB: true };
+            if (img?.ruta?.startsWith('/')) return { ruta: img.ruta, id: img.id, urlDesdeDB: true };
+            if (img?.previewUrl?.startsWith('/storage/')) return { url: img.previewUrl, id: img.id, urlDesdeDB: true };
+            return img;
+        });
+
+        // Deep copy de procesos
+        let procesos = {};
+        if (window.procesosSeleccionados && typeof window.procesosSeleccionados === 'object') {
+            Object.entries(window.procesosSeleccionados).forEach(([tipo, proc]) => {
+                procesos[tipo] = { ...proc };
+            });
+        }
+
         return {
             nombre_prenda: nombre,
             nombre: nombre,
             descripcion: descripcion,
+            origen: origenSelect,
             de_bodega: origenSelect === 'bodega' ? 1 : 0,
-            // Incluir tallas si existen
             tallas: window.tallasRelacionales || {},
-            // Incluir procesos si existen
-            procesos: window.procesosSeleccionados || [],
-            // Incluir telas si existen
-            telas: window.telasCreacion || window.telasAgregadas || []
+            procesos: procesos,
+            telas: window.telasCreacion || window.telasAgregadas || [],
+            variantes: variantes,
+            imagenes: imagenes
         };
+    }
+
+    /**
+     * Recolectar variantes (manga, bolsillos, broche) directamente del DOM
+     * @private
+     */
+    function _recolectarVariantesDelDOM() {
+        const variantes = {};
+        const checkManga = document.getElementById('aplica-manga');
+        if (checkManga && checkManga.checked) {
+            const mangaInput = document.getElementById('manga-input');
+            const mangaObs = document.getElementById('manga-obs');
+            variantes.tipo_manga = mangaInput?.value?.trim() || '';
+            variantes.obs_manga = mangaObs?.value || '';
+            if (variantes.tipo_manga) {
+                const datalist = document.getElementById('opciones-manga');
+                if (datalist) {
+                    for (let opt of datalist.options) {
+                        if (opt.value.toLowerCase() === variantes.tipo_manga.toLowerCase()) {
+                            variantes.tipo_manga_id = parseInt(opt.dataset.id);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        const checkBolsillos = document.getElementById('aplica-bolsillos');
+        if (checkBolsillos && checkBolsillos.checked) {
+            variantes.tiene_bolsillos = true;
+            variantes.obs_bolsillos = document.getElementById('bolsillos-obs')?.value || '';
+        }
+        const checkBroche = document.getElementById('aplica-broche');
+        if (checkBroche && checkBroche.checked) {
+            const brocheInput = document.getElementById('broche-input');
+            variantes.tipo_broche = brocheInput?.value || '';
+            variantes.obs_broche = document.getElementById('broche-obs')?.value || '';
+            const bVal = brocheInput?.value?.toLowerCase() || '';
+            if (bVal === 'broche') variantes.tipo_broche_boton_id = 1;
+            else if (bVal === 'boton') variantes.tipo_broche_boton_id = 2;
+        }
+        return variantes;
     }
 
     /**
@@ -233,13 +396,14 @@
             const novedad = await _pedirNovedad();
             if (novedad === null) return; // cancelado
 
-            // Mostrar loading
+            // Mostrar loading con z-index alto
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Guardando cambios...',
                     text: 'Actualizando la prenda',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
+                    customClass: { container: 'swal-galeria-container' },
                     didOpen: () => Swal.showLoading()
                 });
             }
@@ -252,49 +416,116 @@
             formData.append('novedad', novedad);
 
             // Origen / de_bodega
-            if (datos.de_bodega !== undefined) {
-                formData.append('de_bodega', datos.de_bodega);
-                formData.append('origen', datos.de_bodega == 1 ? 'bodega' : 'confeccion');
-            }
+            const origen = datos.origen || (datos.de_bodega == 1 ? 'bodega' : 'confeccion');
+            formData.append('origen', origen);
+            formData.append('de_bodega', datos.de_bodega !== undefined ? datos.de_bodega : (origen === 'bodega' ? 1 : 0));
 
-            // Tallas (JSON)
-            if (datos.tallas || datos.cantidad_talla) {
-                formData.append('tallas', JSON.stringify(datos.tallas || datos.cantidad_talla || {}));
+            // Tallas (JSON) - solo enviar si hay datos reales (no objeto vacío {})
+            const tallasData = datos.tallas || datos.cantidad_talla || null;
+            if (tallasData && typeof tallasData === 'object' && Object.keys(tallasData).length > 0) {
+                // Verificar que al menos un género tenga tallas con cantidad > 0
+                const tieneDataReal = Object.values(tallasData).some(genero => 
+                    typeof genero === 'object' && genero !== null && Object.keys(genero).filter(k => !k.startsWith('_')).length > 0
+                );
+                if (tieneDataReal) {
+                    formData.append('tallas', JSON.stringify(tallasData));
+                }
             }
 
             // Variantes (JSON)
-            if (datos.variantes) {
+            if (datos.variantes && Object.keys(datos.variantes).length > 0) {
                 formData.append('variantes', JSON.stringify(datos.variantes));
             }
 
-            // Colores y Telas (JSON)
-            if (datos.colores_telas || datos.telasAgregadas || datos.telas) {
-                const coloresTelas = datos.colores_telas || datos.telasAgregadas || datos.telas || [];
-                formData.append('colores_telas', JSON.stringify(coloresTelas));
+            // Asignaciones de colores por talla
+            if (datos.asignacionesColoresPorTalla && Object.keys(datos.asignacionesColoresPorTalla).length > 0) {
+                formData.append('asignaciones_colores', JSON.stringify(datos.asignacionesColoresPorTalla));
             }
 
-            // Procesos (JSON)
-            if (datos.procesos) {
-                formData.append('procesos', JSON.stringify(datos.procesos));
-            }
-
-            // Imágenes de prenda (File objects)
-            if (datos.imagenes && Array.isArray(datos.imagenes)) {
-                datos.imagenes.forEach((img, idx) => {
-                    if (img instanceof File) {
-                        formData.append('imagenes[]', img);
+            // Telas (JSON) - usar telasAgregadas o telas
+            const telas = datos.telasAgregadas || datos.colores_telas || datos.telas || [];
+            if (telas.length > 0) {
+                // Separar File objects de datos JSON
+                const telasJSON = telas.map((t, idx) => {
+                    const telaData = {
+                        tela: t.tela || t.nombre_tela || '',
+                        color: t.color || t.color_nombre || '',
+                        referencia: t.referencia || '',
+                        tela_id: t.tela_id || 0,
+                        color_id: t.color_id || 0,
+                        id: t.id || t._original_id || undefined
+                    };
+                    // Agregar File objects de imágenes de tela al FormData
+                    if (t.imagenes && Array.isArray(t.imagenes)) {
+                        t.imagenes.forEach((img, imgIdx) => {
+                            if (img instanceof File) {
+                                formData.append(`fotos_tela[${idx}]`, img);
+                            } else if (img?.file instanceof File) {
+                                formData.append(`fotos_tela[${idx}]`, img.file);
+                            }
+                        });
                     }
+                    return telaData;
                 });
+                formData.append('colores_telas', JSON.stringify(telasJSON));
             }
 
-            // Imágenes existentes a preservar
-            if (datos.imagenes_existentes) {
-                formData.append('imagenes_existentes', JSON.stringify(datos.imagenes_existentes));
+            // Procesos (JSON) - transformar de objeto a array si es necesario
+            if (datos.procesos) {
+                let procesosArray = datos.procesos;
+                if (!Array.isArray(procesosArray) && typeof procesosArray === 'object') {
+                    procesosArray = Object.entries(procesosArray).map(([tipo, proc]) => {
+                        const d = proc?.datos || proc || {};
+                        return {
+                            id: d.id || undefined,
+                            tipo_proceso_id: d.tipo_proceso_id || undefined,
+                            tipo: d.tipo || tipo,
+                            nombre: d.nombre || tipo,
+                            ubicaciones: d.ubicaciones || [],
+                            observaciones: d.observaciones || '',
+                            tallas: d.tallas || {},
+                            estado: d.estado || 'PENDIENTE'
+                        };
+                    });
+                }
+                formData.append('procesos', JSON.stringify(procesosArray));
+                
+                // Agregar imágenes de procesos como File objects
+                if (Array.isArray(procesosArray)) {
+                    procesosArray.forEach((proc, procIdx) => {
+                        if (proc.imagenes && Array.isArray(proc.imagenes)) {
+                            proc.imagenes.forEach((img, imgIdx) => {
+                                if (img instanceof File) {
+                                    formData.append(`fotosProcesoNuevo_${procIdx}`, img);
+                                }
+                            });
+                        }
+                    });
+                }
             }
 
-            console.log('[PedidosAdapter] 📤 Enviando a POST /asesores/pedidos/' + pedidoId + '/actualizar-prenda');
+            // Imágenes de prenda - separar nuevas (File) de existentes (BD)
+            const imagenesNuevas = [];
+            const imagenesExistentes = [];
+            const imgs = datos.imagenes || [];
+            imgs.forEach((img) => {
+                if (img instanceof File) {
+                    imagenesNuevas.push(img);
+                } else if (img?.file instanceof File) {
+                    imagenesNuevas.push(img.file);
+                } else if (img?.urlDesdeDB || img?.id || img?.url?.startsWith('/') || img?.ruta || img?.ruta_original || img?.ruta_webp || img?.previewUrl?.startsWith('/storage/')) {
+                    const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || img.previewUrl || '';
+                    imagenesExistentes.push({ id: img.id, url: url });
+                }
+            });
+            imagenesNuevas.forEach((file) => formData.append('imagenes[]', file));
+            formData.append('imagenes_existentes', JSON.stringify(imagenesExistentes));
 
-            const response = await fetch(`/asesores/pedidos/${pedidoId}/actualizar-prenda`, {
+            const urlPrefix = _getUrlPrefix();
+            const saveUrl = `${urlPrefix.save}/${pedidoId}/actualizar-prenda`;
+            console.log('[PedidosAdapter] 📤 Enviando a POST', saveUrl, '(contexto:', urlPrefix.context + ')');
+
+            const response = await fetch(saveUrl, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -315,7 +546,7 @@
                 }
                 console.error('[PedidosAdapter] Error API:', errorMsg);
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Error', `No se pudo guardar: ${errorMsg}`, 'error');
+                    Swal.fire({ icon: 'error', title: 'Error', text: `No se pudo guardar: ${errorMsg}`, customClass: { container: 'swal-galeria-container' } });
                 }
                 return;
             }
@@ -332,14 +563,15 @@
                 }
             }
 
-            // Mostrar éxito
+            // Mostrar éxito centrado encima del modal
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
                     title: '✅ Prenda actualizada',
                     text: 'Los cambios se guardaron correctamente',
                     timer: 1800,
-                    showConfirmButton: false
+                    showConfirmButton: false,
+                    customClass: { container: 'swal-galeria-container' }
                 });
             }
 
@@ -351,7 +583,7 @@
         } catch (error) {
             console.error('[PedidosAdapter] Error de red:', error);
             if (typeof Swal !== 'undefined') {
-                Swal.fire('Error', 'Error de conexión al guardar la prenda', 'error');
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión al guardar la prenda', customClass: { container: 'swal-galeria-container' } });
             }
         }
     }
@@ -368,6 +600,30 @@
                 return;
             }
 
+            // Inyectar CSS para z-index encima del modal de prenda (1050000)
+            let galeriaStyle = document.getElementById('swal-galeria-zindex-style');
+            if (!galeriaStyle) {
+                galeriaStyle = document.createElement('style');
+                galeriaStyle.id = 'swal-galeria-zindex-style';
+                document.head.appendChild(galeriaStyle);
+            }
+            galeriaStyle.textContent = `
+                .swal-galeria-container {
+                    z-index: 2000000 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                }
+                .swal-galeria-container .swal2-popup {
+                    margin: auto !important;
+                }
+            `;
+
             Swal.fire({
                 title: 'Novedad del cambio',
                 input: 'textarea',
@@ -378,6 +634,7 @@
                 confirmButtonText: '💾 Guardar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#10b981',
+                customClass: { container: 'swal-galeria-container' },
                 inputValidator: (value) => {
                     if (!value || !value.trim()) {
                         return 'Debes ingresar una novedad del cambio';
@@ -424,8 +681,10 @@
             let prendaCompleta = prenda; // fallback a datos locales
 
             if (pedidoId && prendaId) {
-                console.log('[PedidosAdapter] 📡 Fetching datos de BD:', `/asesores/pedidos-produccion/${pedidoId}/prenda/${prendaId}/datos`);
-                const response = await fetch(`/asesores/pedidos-produccion/${pedidoId}/prenda/${prendaId}/datos`, {
+                const urlPrefix = _getUrlPrefix();
+                const fetchUrl = `${urlPrefix.fetch}/${pedidoId}/prenda/${prendaId}/datos`;
+                console.log('[PedidosAdapter] 📡 Fetching datos de BD:', fetchUrl, '(contexto:', urlPrefix.context + ')');
+                const response = await fetch(fetchUrl, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
@@ -487,6 +746,17 @@
             } else {
                 console.error('[PedidosAdapter] prendaEditorGlobal no disponible, abriendo modal manualmente');
                 _abrirModalManual(prendaCompleta);
+            }
+
+            // ===== PASO 4: Cambiar botón y título a modo edición =====
+            const btnGuardar = document.getElementById('btn-guardar-prenda');
+            if (btnGuardar) {
+                btnGuardar.textContent = '💾 Guardar Cambios';
+                btnGuardar.className = 'btn btn-success';
+            }
+            const tituloModal = document.getElementById('modal-prenda-titulo');
+            if (tituloModal) {
+                tituloModal.textContent = 'Editar Prenda';
             }
 
         } catch (error) {
@@ -554,6 +824,48 @@
             console.log('[PedidosAdapter] 📏 Tallas normalizadas:', cantidadTalla);
         }
 
+        // ---- 1b. COLORES POR TALLA (prenda_pedido_talla_colores) → asignaciones ----
+        if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+            console.log('[PedidosAdapter] 🎨 Construyendo asignaciones desde talla_colores:', prenda.talla_colores.length, 'registros');
+
+            // Construir asignaciones (array plano para la tabla resumen)
+            prenda.asignaciones = prenda.talla_colores.map(tc => ({
+                tela: tc.tela_nombre || '',
+                genero: tc.genero || '',
+                talla: tc.talla || '',
+                color: tc.color_nombre || '',
+                cantidad: parseInt(tc.cantidad) || 0
+            }));
+
+            // Construir asignacionesColoresPorTalla (formato StateManager)
+            const coloresPorTalla = {};
+            prenda.talla_colores.forEach(tc => {
+                const genero = tc.genero || '';
+                const talla = tc.talla || '';
+                const tela = tc.tela_nombre || '';
+                const key = `${genero}-${tela}-${talla}`;
+
+                if (!coloresPorTalla[key]) {
+                    coloresPorTalla[key] = {
+                        genero: genero,
+                        tela: tela,
+                        tipo: genero,
+                        talla: talla,
+                        colores: []
+                    };
+                }
+
+                coloresPorTalla[key].colores.push({
+                    nombre: tc.color_nombre || '',
+                    cantidad: parseInt(tc.cantidad) || 0
+                });
+            });
+
+            prenda.asignacionesColoresPorTalla = coloresPorTalla;
+            console.log('[PedidosAdapter] 🎨 Asignaciones construidas:', prenda.asignaciones.length, 'filas');
+            console.log('[PedidosAdapter] 🎨 ColoresPorTalla:', Object.keys(coloresPorTalla).length, 'grupos');
+        }
+
         // ---- 2. VARIANTES: array → objeto plano ----
         if (Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             const v = prenda.variantes[0]; // Tomar primera variante
@@ -600,6 +912,29 @@
                 };
             });
             console.log('[PedidosAdapter] 🧵 Telas normalizadas:', prenda.telasAgregadas.length, 'telas');
+        }
+
+        // ---- 3b. FALLBACK TELAS: si no hay colores_telas pero sí talla_colores, extraer telas únicas ----
+        if ((!prenda.telasAgregadas || prenda.telasAgregadas.length === 0) &&
+            Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+            
+            const telasUnicas = new Map();
+            prenda.talla_colores.forEach(tc => {
+                const telaKey = `${tc.tela_id || ''}_${tc.tela_nombre || ''}`;
+                if (!telasUnicas.has(telaKey)) {
+                    telasUnicas.set(telaKey, {
+                        tela: tc.tela_nombre || '',
+                        tela_id: tc.tela_id || null,
+                        color: tc.color_nombre || '',
+                        color_id: tc.color_id || null,
+                        referencia: '',
+                        imagenes: []
+                    });
+                }
+            });
+            
+            prenda.telasAgregadas = Array.from(telasUnicas.values());
+            console.log('[PedidosAdapter] 🧵 Telas extraídas desde talla_colores (fallback):', prenda.telasAgregadas.length, 'telas');
         }
 
         // ---- 4. IMÁGENES DE PRENDA: agregar /storage/ a rutas relativas ----

@@ -2206,6 +2206,9 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::put('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar');
     Route::post('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
     
+    // Obtener datos de una prenda específica para edición modal (supervisor)
+    Route::get('/{pedidoId}/prenda/{prendaId}/datos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('prenda-datos');
+    
     // Actualizar prenda completa (con novedades) - Ruta adicional para edición de prendas desde el modal
     Route::post('/{id}/actualizar-prenda', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'actualizarPrendaCompleta'])->where('id', '[0-9]+')->name('pedidos.actualizar-prenda-completa');
     

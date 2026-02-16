@@ -28,6 +28,7 @@ final class AgregarPrendaCompletaDTO
         public readonly ?array $telas = null,                // Array de telas con detalles
         public readonly ?array $procesos = null,             // Procesos (bordado, estampado, etc)
         public readonly ?string $origen = null,              // Origen de la prenda
+        public readonly ?string $novedad = null,              // Novedad/justificación del cambio
     ) {}
 
     public static function fromRequest(int|string $pedidoId, array $data, ?array $imagenes = null, ?array $imagenesExistentes = null): self
@@ -62,6 +63,7 @@ final class AgregarPrendaCompletaDTO
             telas: $data['telas'] ?? null,
             procesos: $procesos,
             origen: $data['origen'] ?? null,
+            novedad: $data['novedad'] ?? null,
         );
     }
 }

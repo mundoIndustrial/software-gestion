@@ -292,7 +292,7 @@ window.abrirModalSeleccionarTallas = async function(genero) {
     
     const modal = document.createElement('div');
     modal.id = `modal-tallas-${genero}`;
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100001;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1060000;';
     
     const container = document.createElement('div');
     container.style.cssText = 'background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3);';
@@ -779,7 +779,7 @@ window.limpiarTallasSeleccionadas = function() {
 window.abrirModalSobremedida = async function() {
     const modal = document.createElement('div');
     modal.id = 'modal-sobremedida';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100001;';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1060000;';
     
     const container = document.createElement('div');
     container.style.cssText = 'background: white; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;';

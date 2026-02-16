@@ -517,7 +517,7 @@ class ObtenerPedidoDetalleService
                     $q->whereNull('deleted_at');  // Solo fotos de telas activas
                 },
                 'variantes' => function ($q) {
-                    $q->with(['tipoManga', 'tipoBroche']);
+                    $q->with(['tipoManga', 'tipoBrocheBoton']);
                 }
             ])
             ->firstOrFail();
@@ -633,6 +633,27 @@ class ObtenerPedidoDetalleService
 
         Log::info('👗 [TALLAS-TRANSFORMADAS] Dama: ' . count($tallasDama) . ', Caballero: ' . count($tallasCaballero) . ', Unisex: ' . count($tallasUnisex) . ', Sobremedida: ' . count($tallasSobremedida));
 
+        // === Colores por talla (prenda_pedido_talla_colores) ===
+        $tallaColores = DB::table('prenda_pedido_talla_colores as ptc')
+            ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+            ->where('pt.prenda_pedido_id', $prenda->id)
+            ->select([
+                'ptc.id',
+                'ptc.prenda_pedido_talla_id',
+                'pt.genero',
+                'pt.talla',
+                'ptc.tela_id',
+                'ptc.tela_nombre',
+                'ptc.color_id',
+                'ptc.color_nombre',
+                'ptc.cantidad'
+            ])
+            ->get()
+            ->toArray();
+
+        $prendaArray['talla_colores'] = $tallaColores;
+        Log::info('🎨 [TALLA-COLORES] Encontrados ' . count($tallaColores) . ' registros de colores por talla');
+
         // Variantes (mangas, broches, bolsillos)
         $variantes = [];
         if ($prenda->variantes) {
@@ -641,7 +662,7 @@ class ObtenerPedidoDetalleService
                     'id' => $var->id,
                     'tipo_manga' => $var->tipoManga?->nombre ?? 'Sin especificar',
                     'tipo_manga_id' => $var->tipo_manga_id,
-                    'tipo_broche_boton' => $var->tipoBroche?->nombre ?? 'Sin especificar',
+                    'tipo_broche_boton' => $var->tipoBrocheBoton?->nombre ?? 'Sin especificar',
                     'tipo_broche_boton_id' => $var->tipo_broche_boton_id,
                     'tiene_bolsillos' => (bool)$var->tiene_bolsillos,
                     'manga_obs' => $var->manga_obs,
@@ -729,7 +750,7 @@ class ObtenerPedidoDetalleService
         return [
             'id' => $proceso->id,
             'tipo' => $proceso->tipoProceso?->nombre ?? 'Tipo desconocido',
-            'ubicaciones' => $proceso->ubicaciones ? (is_array($proceso->ubicaciones) ? $proceso->ubicaciones : explode(',', $proceso->ubicaciones)) : [],
+            'ubicaciones' => $proceso->ubicaciones ? (is_array($proceso->ubicaciones) ? $proceso->ubicaciones : (json_decode($proceso->ubicaciones, true) ?? [$proceso->ubicaciones])) : [],
             'observaciones' => $proceso->observaciones ?? '',
             'tallas' => $tallasProceso,
             'imagenes' => $proceso->imagenes->map(function($img) {

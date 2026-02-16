@@ -65,4 +65,13 @@ class PrendaVariantePed extends Model
         // Usa la clase TipoBroche del archivo TipoBrocheBoton.php
         return $this->belongsTo('App\Models\TipoBrocheBoton', 'tipo_broche_boton_id');
     }
+
+    /**
+     * Alias de tipoBroche() para compatibilidad con eager loading
+     * Algunos servicios usan 'tipoBrocheBoton' como nombre de relación
+     */
+    public function tipoBrocheBoton(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\TipoBrocheBoton', 'tipo_broche_boton_id');
+    }
 }

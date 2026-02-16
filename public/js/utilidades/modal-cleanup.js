@@ -131,6 +131,19 @@ class ModalCleanup {
             window.tallasRelacionales.SOBREMEDIDA = {};
         }
 
+        // Limpiar asignaciones de colores por talla (StateManager + ColoresPorTalla)
+        if (window.StateManager) {
+            if (typeof window.StateManager.limpiarAsignaciones === 'function') {
+                window.StateManager.limpiarAsignaciones();
+            }
+            if (typeof window.StateManager.resetWizardState === 'function') {
+                window.StateManager.resetWizardState();
+            }
+        }
+        if (window.ColoresPorTalla && window.ColoresPorTalla.datos) {
+            window.ColoresPorTalla.datos = {};
+        }
+
         // Limpieza de variables
         if (window.tallasSeleccionadas) {
             window.tallasSeleccionadas = { dama: { tallas: [], tipo: null }, caballero: { tallas: [], tipo: null } };
@@ -291,6 +304,25 @@ class ModalCleanup {
             resumenTallas.innerHTML = '<p style="color: #9ca3af;">Selecciona tallas donde aplicar el proceso</p>';
         }
         
+        // Limpiar tabla de resumen de asignaciones de colores por talla (flujo 2)
+        const tablaResumenAsignaciones = document.getElementById('tabla-resumen-asignaciones-cuerpo');
+        if (tablaResumenAsignaciones) {
+            tablaResumenAsignaciones.innerHTML = '';
+        }
+        const seccionResumen = document.getElementById('seccion-resumen-asignaciones');
+        if (seccionResumen) {
+            seccionResumen.style.display = 'none';
+        }
+        const msgVacio = document.getElementById('msg-resumen-vacio');
+        if (msgVacio) {
+            msgVacio.style.display = 'block';
+        }
+        // Restaurar sección de tallas y cantidades (flujo 1) que pudo haber sido ocultada por flujo 2
+        const seccionTallasCantidades = document.getElementById('seccion-tallas-cantidades');
+        if (seccionTallasCantidades) {
+            seccionTallasCantidades.style.display = '';
+        }
+
         // 🔥 CRÍTICO: Resetear el contador general de prendas también
         const totalPrendas = document.getElementById('total-prendas');
         if (totalPrendas) {

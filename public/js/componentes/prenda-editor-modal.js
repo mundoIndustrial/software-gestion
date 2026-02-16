@@ -1234,7 +1234,12 @@ function cerrarModalPrendaNueva() {
         }
         const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
-            tbodyTelas.innerHTML = '';
+            // Preservar fila de inputs para agregar nuevas telas
+            const filaInputs = tbodyTelas.querySelector('#nueva-prenda-tela')?.closest('tr');
+            const filas = tbodyTelas.querySelectorAll('tr');
+            filas.forEach(fila => {
+                if (fila !== filaInputs) fila.remove();
+            });
         }
         console.log('✓ PASO 5 completado');
         
@@ -1496,7 +1501,12 @@ function cargarPrendaEnFormularioModal(prendaData) {
     if (prendaData.telasAgregadas && prendaData.telasAgregadas.length > 0) {
         const tbodyTelas = document.getElementById('tbody-telas');
         if (tbodyTelas) {
-            tbodyTelas.innerHTML = '';
+            // Preservar fila de inputs
+            const filaInputs = tbodyTelas.querySelector('#nueva-prenda-tela')?.closest('tr');
+            const filasAntiguas = tbodyTelas.querySelectorAll('tr');
+            filasAntiguas.forEach(fila => {
+                if (fila !== filaInputs) fila.remove();
+            });
             
             prendaData.telasAgregadas.forEach((tela, idx) => {
                 const row = document.createElement('tr');

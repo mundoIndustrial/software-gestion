@@ -386,6 +386,31 @@ class CargadorPrendasCotizacion {
                 console.log(`  [${idx}] "${tela.nombre_tela}" - "${tela.color}" -> referencia: "${tela.referencia}" | descripción: "${tela.descripcion}"`);
             });
             
+        } else if (prenda.variantes && typeof prenda.variantes === 'object' && !Array.isArray(prenda.variantes)) {
+            // Variantes es un objeto plano (ya procesado por el backend) - extraer telas_multiples
+            console.log('[transformarDatos]  Variantes es objeto plano, buscando telas_multiples');
+            let telasMultiples = prenda.variantes.telas_multiples;
+            if (typeof telasMultiples === 'string') {
+                try { telasMultiples = JSON.parse(telasMultiples); } catch(e) { telasMultiples = []; }
+            }
+            if (Array.isArray(telasMultiples) && telasMultiples.length > 0) {
+                telasMultiples.forEach((tela, idx) => {
+                    telasAgregadasTemp.push({
+                        id: tela.id || null,
+                        nombre_tela: tela.tela || tela.nombre_tela || '',
+                        color: tela.color || '',
+                        referencia: tela.referencia || '',
+                        descripcion: tela.descripcion || '',
+                        grosor: tela.grosor || '',
+                        composicion: tela.composicion || '',
+                        imagenes: Array.isArray(tela.imagenes) ? tela.imagenes : [],
+                        origen: 'variante_objeto_plano',
+                        tela_index: idx
+                    });
+                });
+                telasDesdeVariantes = telasAgregadasTemp;
+                console.log('[transformarDatos]  Telas desde variantes (objeto plano):', telasDesdeVariantes.length);
+            }
         } else {
             console.log('[transformarDatos]  La prenda no tiene variantes array');
         }
@@ -452,6 +477,83 @@ class CargadorPrendasCotizacion {
             tallasConCantidades = prenda.tallas;
             console.log('[transformarDatos] 📏 TALLAS CON CANTIDADES para cotización:', tallasConCantidades);
         }
+        
+        // 🔴 CRÍTICO: Convertir tallasConCantidades a formato cantidad_talla agrupado por género
+        // Estructura esperada: { DAMA: { S: 5, M: 10 }, CABALLERO: { L: 7 } }
+        let cantidadTallaDesdeBackend = {};
+        if (tallasConCantidades.length > 0) {
+            tallasConCantidades.forEach(t => {
+                const genero = (t.genero || 'DAMA').toUpperCase();
+                if (!cantidadTallaDesdeBackend[genero]) cantidadTallaDesdeBackend[genero] = {};
+                cantidadTallaDesdeBackend[genero][t.talla] = t.cantidad || 0;
+            });
+            console.log('[transformarDatos] 📏 cantidad_talla generado desde backend:', cantidadTallaDesdeBackend);
+        }
+
+        // 🎨 CONSTRUIR ASIGNACIONES DE COLOR POR TALLA desde prenda_tallas_cot.color
+        let asignacionesCotizacion = [];
+        let asignacionesColoresPorTallaCot = {};
+        
+        if (tallasConCantidades.length > 0) {
+            // Obtener nombre de tela desde la primera tela disponible
+            const telaName = telasFormato.length > 0 
+                ? (telasFormato[0].nombre_tela || telasFormato[0].tela || 'SIN TELA').toUpperCase()
+                : 'SIN TELA';
+            
+            tallasConCantidades.forEach(t => {
+                const colorRaw = (t.color || '').trim();
+                if (colorRaw === '') return; // Solo procesar tallas que tienen color asignado
+                
+                const genero = (t.genero || 'DAMA').toUpperCase();
+                const generoLower = genero.toLowerCase();
+                const talla = t.talla;
+                const color = colorRaw.toUpperCase();
+                const cantidad = t.cantidad || 0;
+                
+                // Determinar tipo de talla (Letra o Número)
+                const tipoTalla = /^\d+$/.test(talla) ? 'Número' : 'Letra';
+                
+                // Array plano para PrendaEditorColores
+                asignacionesCotizacion.push({
+                    tela: telaName,
+                    genero: genero,
+                    talla: talla,
+                    color: color,
+                    cantidad: cantidad
+                });
+                
+                // Objeto para StateManager (formato wizard)
+                const clave = `${generoLower}-${tipoTalla}-${talla}`;
+                if (!asignacionesColoresPorTallaCot[clave]) {
+                    asignacionesColoresPorTallaCot[clave] = {
+                        genero: generoLower,
+                        tela: telaName,
+                        tipo: tipoTalla,
+                        talla: talla,
+                        colores: []
+                    };
+                }
+                
+                // Agregar o sumar color
+                const existingColor = asignacionesColoresPorTallaCot[clave].colores.find(c => c.nombre === color);
+                if (existingColor) {
+                    existingColor.cantidad += cantidad;
+                } else {
+                    asignacionesColoresPorTallaCot[clave].colores.push({
+                        nombre: color,
+                        cantidad: cantidad
+                    });
+                }
+            });
+            
+            if (asignacionesCotizacion.length > 0) {
+                console.log('[transformarDatos] 🎨 ASIGNACIONES DE COLOR construidas desde cotización:', {
+                    total: asignacionesCotizacion.length,
+                    asignaciones: asignacionesCotizacion,
+                    stateManager: asignacionesColoresPorTallaCot
+                });
+            }
+        }
 
         // Estructura COMPLETA de prenda para el editor modal
         const prendaCompleta = {
@@ -473,7 +575,7 @@ class CargadorPrendasCotizacion {
             // TALLAS DISPONIBLES - SOLO array de tallas, sin cantidades
             // Frontend debe mostrar checkboxes/inputs SIN valores pre-llenados
             tallas_disponibles: tallasDisponibles,
-            cantidad_talla: {},  // Vacío - usuario digitará las cantidades
+            cantidad_talla: cantidadTallaDesdeBackend,  // Desde cotización: con cantidades por género
             
             // TALLAS CON CANTIDADES - Para cotizaciones (pre-selección)
             tallas: tallasConCantidades,
@@ -519,6 +621,10 @@ class CargadorPrendasCotizacion {
             
             // PROCESOS COMPLETOS
             procesos: procesosCompletos,
+            
+            // ASIGNACIONES DE COLOR POR TALLA (desde prenda_tallas_cot.color)
+            asignaciones: asignacionesCotizacion.length > 0 ? asignacionesCotizacion : undefined,
+            asignacionesColoresPorTalla: Object.keys(asignacionesColoresPorTallaCot).length > 0 ? asignacionesColoresPorTallaCot : undefined,
             
             // Metadata
             tipo: 'cotizacion',

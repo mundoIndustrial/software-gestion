@@ -53,7 +53,7 @@ class FacturaPedidoService
             'cotizacion.cliente',
             'cotizacion.tipoCotizacion',
             'prendas.variantes.tipoManga',
-            'prendas.variantes.tipoBroche',
+            'prendas.variantes.tipoBrocheBoton',
             'prendas.fotos',
             'prendas.fotosTelas',
             'prendas.coloresTelas.color',
@@ -188,9 +188,9 @@ class FacturaPedidoService
                 $especificaciones['manga'] = $primeraVariante->tipoManga->nombre;
             }
             
-            // Obtener broche con nombre
-            if ($primeraVariante->tipoBroche) {
-                $especificaciones['broche'] = $primeraVariante->tipoBroche->nombre;
+            // Obtener broche/botón con nombre
+            if ($primeraVariante->tipoBrocheBoton) {
+                $especificaciones['broche'] = $primeraVariante->tipoBrocheBoton->nombre;
             }
             
             // Obtener observaciones

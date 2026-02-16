@@ -565,17 +565,24 @@ window.ColoresPorTalla = (function() {
                     totalAsignaciones += cantidad;
                     
                     html += `
-                        <tr style="background: ${backgroundColor}; border-bottom: 1px solid #e5e7eb;">
-                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;">${tela || '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151;">${genero ? genero.toUpperCase() : '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;">${talla || '--'}</td>
-                            <td style="padding: 0.75rem; color: #374151;">${colorNombre}</td>
-                            <td style="padding: 0.75rem; text-align: center; color: #374151; font-weight: 600;">${cantidad}</td>
+                        <tr style="background: ${backgroundColor}; border-bottom: 1px solid #e5e7eb;" data-clave="${clave}" data-color-nombre="${colorNombre}">
+                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;" data-field="tela">${tela || '--'}</td>
+                            <td style="padding: 0.75rem; color: #374151;" data-field="genero">${genero ? genero.toUpperCase() : '--'}</td>
+                            <td style="padding: 0.75rem; color: #374151; font-weight: 500;" data-field="talla">${talla || '--'}</td>
+                            <td style="padding: 0.75rem; color: #374151;" data-field="color">${colorNombre}</td>
+                            <td style="padding: 0.75rem; text-align: center; color: #374151; font-weight: 600;" data-field="cantidad">${cantidad}</td>
                             <td style="padding: 0.75rem; text-align: center;">
-                                <button type="button" class="btn-eliminar-asignacion" data-clave="${clave}" data-color="${colorNombre}" 
-                                        style="background: #fee2e2; border: none; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
-                                    ✕
-                                </button>
+                                <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                    <button type="button" class="btn-editar-asignacion" data-clave="${clave}" data-color="${colorNombre}"
+                                        style="background: #dbeafe; border: none; color: #2563eb; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;"
+                                        title="Editar fila">
+                                        ✎
+                                    </button>
+                                    <button type="button" class="btn-eliminar-asignacion" data-clave="${clave}" data-color="${colorNombre}" 
+                                            style="background: #fee2e2; border: none; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                                        ✕
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -585,6 +592,9 @@ window.ColoresPorTalla = (function() {
 
         tablaBody.innerHTML = html;
         
+        // Configurar edición inline para botones ✎
+        _configurarEdicionInlineResumen(tablaBody);
+        
         // Actualizar total
         const totalElement = document.getElementById('total-asignaciones-resumen');
         if (totalElement) {
@@ -592,6 +602,84 @@ window.ColoresPorTalla = (function() {
         }
         
         console.log('[ColoresPorTalla] ✅ Tabla de resumen actualizada con', asignacionesArray.length, 'asignaciones, total:', totalAsignaciones);
+    }
+
+    /**
+     * Configurar edición inline en la tabla resumen
+     * Permite editar tela, género, talla, color y cantidad directamente en la fila
+     */
+    function _configurarEdicionInlineResumen(tablaBody) {
+        tablaBody.querySelectorAll('.btn-editar-asignacion').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const fila = btn.closest('tr');
+                const clave = btn.getAttribute('data-clave');
+                const colorNombre = btn.getAttribute('data-color');
+                _activarEdicionFila(fila, clave, colorNombre);
+            });
+        });
+    }
+
+    function _activarEdicionFila(fila, clave, colorNombreOriginal) {
+        const tdTela = fila.querySelector('[data-field="tela"]');
+        const tdGenero = fila.querySelector('[data-field="genero"]');
+        const tdTalla = fila.querySelector('[data-field="talla"]');
+        const tdColor = fila.querySelector('[data-field="color"]');
+        const tdCantidad = fila.querySelector('[data-field="cantidad"]');
+        const tdAccion = fila.querySelector('td:last-child');
+        if (!tdTela) return;
+
+        const original = {
+            tela: tdTela.textContent.trim(),
+            genero: tdGenero.textContent.trim(),
+            talla: tdTalla.textContent.trim(),
+            color: tdColor.textContent.trim(),
+            cantidad: parseInt(tdCantidad.textContent.trim()) || 0
+        };
+
+        fila.style.background = '#eff6ff';
+
+        tdTela.innerHTML = `<input type="text" list="opciones-telas" value="${original.tela}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
+        tdGenero.innerHTML = `<select style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;"><option value="DAMA" ${original.genero==='DAMA'?'selected':''}>DAMA</option><option value="CABALLERO" ${original.genero==='CABALLERO'?'selected':''}>CABALLERO</option><option value="UNISEX" ${original.genero==='UNISEX'?'selected':''}>UNISEX</option></select>`;
+        tdTalla.innerHTML = `<input type="text" value="${original.talla}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;text-align:center;" onkeyup="this.value=this.value.toUpperCase()">`;
+        tdColor.innerHTML = `<input type="text" list="opciones-colores" value="${original.color}" style="width:100%;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-transform:uppercase;" onkeyup="this.value=this.value.toUpperCase()">`;
+        tdCantidad.innerHTML = `<input type="number" min="0" value="${original.cantidad}" style="width:70px;padding:0.35rem;border:1px solid #93c5fd;border-radius:4px;font-size:0.8rem;text-align:center;font-weight:600;">`;
+
+        tdAccion.innerHTML = `<div style="display:flex;gap:0.25rem;justify-content:center;"><button type="button" class="btn-guardar-edicion" style="background:#dcfce7;border:none;color:#16a34a;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Guardar">✓</button><button type="button" class="btn-cancelar-edicion" style="background:#f3f4f6;border:none;color:#6b7280;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;font-weight:600;" title="Cancelar">✕</button></div>`;
+
+        tdAccion.querySelector('.btn-guardar-edicion').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            const nTela = tdTela.querySelector('input').value.trim().toUpperCase();
+            const nGenero = tdGenero.querySelector('select').value;
+            const nTalla = tdTalla.querySelector('input').value.trim().toUpperCase();
+            const nColor = tdColor.querySelector('input').value.trim().toUpperCase();
+            const nCantidad = parseInt(tdCantidad.querySelector('input').value) || 0;
+
+            // Actualizar StateManager: eliminar vieja, agregar nueva
+            if (window.StateManager) {
+                const asignaciones = window.StateManager.getAsignaciones();
+                // Eliminar color viejo de la clave original
+                if (asignaciones[clave] && asignaciones[clave].colores) {
+                    asignaciones[clave].colores = asignaciones[clave].colores.filter(c => c.nombre !== colorNombreOriginal);
+                    if (asignaciones[clave].colores.length === 0) delete asignaciones[clave];
+                }
+                // Agregar en la nueva clave
+                const nuevaClave = `${nGenero.toLowerCase()}-Letra-${nTalla}`;
+                if (!asignaciones[nuevaClave]) {
+                    asignaciones[nuevaClave] = { genero: nGenero.toLowerCase(), tela: nTela, tipo: 'Letra', talla: nTalla, colores: [] };
+                }
+                asignaciones[nuevaClave].colores.push({ nombre: nColor, cantidad: nCantidad });
+                window.StateManager.setAsignaciones(asignaciones);
+            }
+            actualizarTablaResumen();
+            console.log('[ColoresPorTalla] ✅ Fila editada:', { tela: nTela, genero: nGenero, talla: nTalla, color: nColor, cantidad: nCantidad });
+        });
+
+        tdAccion.querySelector('.btn-cancelar-edicion').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            actualizarTablaResumen();
+        });
     }
 
     /**
