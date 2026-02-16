@@ -1,13 +1,26 @@
 import './bootstrap';
 
-// jQuery y Bootstrap 4 ya están disponibles desde el CDN en base.blade.php
-// Solo verificar que estén disponibles globalmente
-if (typeof jQuery !== 'undefined') {
-    window.jQuery = jQuery;
-    window.$ = jQuery;
-    console.log('✅ jQuery disponible desde CDN');
-}
+/*
+|--------------------------------------------------------------------------
+| jQuery (instalado por npm)
+|--------------------------------------------------------------------------
+*/
+import $ from 'jquery';
+window.$ = $;
+window.jQuery = $;
 
+/*
+|--------------------------------------------------------------------------
+| Bootstrap 4 (requiere jQuery)
+|--------------------------------------------------------------------------
+*/
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
+/*
+|--------------------------------------------------------------------------
+| Alpine y Chart
+|--------------------------------------------------------------------------
+*/
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
 
@@ -15,3 +28,5 @@ window.Alpine = Alpine;
 window.Chart = Chart;
 
 Alpine.start();
+
+console.log('✅ jQuery y Bootstrap cargados correctamente desde Vite');

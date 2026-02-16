@@ -271,8 +271,8 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     </noscript>
 
-    <!-- Vite (contiene app.css y app.js críticos) -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Vite CSS (contiene estilos críticos) -->
+    @vite(['resources/css/app.css'])
     
     <!-- Laravel Echo & Pusher JS cargado vía Vite en app.js (bootstrap.js) -->
     
@@ -465,6 +465,9 @@
     
     <!--  PAYLOAD NORMALIZER v3 - CARGADO EN BLADE TEMPLATES INDIVIDUALES -->
     <!-- Payload normalizer: payload-normalizer.js -->
+    
+    <!-- Vite JS (jQuery y Bootstrap - DEBE estar al final del body) -->
+    @vite(['resources/js/app.js'])
 
 </body>
 </html>
