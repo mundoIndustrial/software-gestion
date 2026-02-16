@@ -506,6 +506,12 @@
             const textoBoton = estaEntregada ? 'Entregado' : 'Entregar';
             const colorBoton = estaEntregada ? '#3b82f6' : '#10b981';
             const iconoBoton = estaEntregada ? 'fa-check-double' : 'fa-check-circle';
+            const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+            const botonEntregarHtml = ocultarBotonEntregar ? '' : `
+                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};">
+                            <i class="fas ${iconoBoton}"></i>
+                            <span>${textoBoton}</span>
+                        </button>`;
 
             html += `
                 <div class="prenda-accordion">
@@ -514,10 +520,7 @@
                             <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}</p>
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
-                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};">
-                            <i class="fas ${iconoBoton}"></i>
-                            <span>${textoBoton}</span>
-                        </button>
+                        ${botonEntregarHtml}
                         <div class="prenda-chevron">▼</div>
                     </div>
                     <div class="prenda-processes" id="${idAccordion}">

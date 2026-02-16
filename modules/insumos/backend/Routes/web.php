@@ -1,6 +1,6 @@
 <?php
 
-use Modules\Insumos\Backend\Controllers\MaterialesController;
+use App\Http\Controllers\Insumos\InsumosController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -11,29 +11,29 @@ Route::middleware(['auth', 'insumos-access'])
     ->name('insumos.')
     ->group(function () {
         // Dashboard
-        Route::get('/dashboard', [MaterialesController::class, 'dashboard'])
+        Route::get('/dashboard', [InsumosController::class, 'dashboard'])
             ->name('dashboard');
 
         // Materiales
-        Route::get('/materiales', [MaterialesController::class, 'index'])
+        Route::get('/materiales', [InsumosController::class, 'materiales'])
             ->name('materiales.index');
 
-        Route::post('/materiales/{numeroPedido}', [MaterialesController::class, 'store'])
+        Route::post('/materiales/{numeroPedido}', [InsumosController::class, 'guardarMateriales'])
             ->name('materiales.store');
 
-        Route::post('/materiales/{numeroPedido}/guardar', [MaterialesController::class, 'guardarObservaciones'])
+        Route::post('/materiales/{numeroPedido}/guardar', [InsumosController::class, 'guardarMateriales'])
             ->name('materiales.guardar');
 
-        Route::post('/materiales/{numeroPedido}/eliminar', [MaterialesController::class, 'destroy'])
+        Route::post('/materiales/{numeroPedido}/eliminar', [InsumosController::class, 'eliminarMaterial'])
             ->name('materiales.destroy');
 
-        Route::post('/materiales/{numeroPedido}/cambiar-estado', [MaterialesController::class, 'cambiarEstado'])
+        Route::post('/materiales/{numeroPedido}/cambiar-estado', [InsumosController::class, 'cambiarEstado'])
             ->name('materiales.cambiar-estado');
 
-        Route::get('/api/materiales/{numeroPedido}', [MaterialesController::class, 'show'])
+        Route::get('/api/materiales/{numeroPedido}', [InsumosController::class, 'obtenerMateriales'])
             ->name('api.materiales');
 
-        Route::get('/api/filtros/{column}', [MaterialesController::class, 'obtenerFiltros'])
+        Route::get('/api/filtros/{column}', [InsumosController::class, 'obtenerValoresFiltro'])
             ->name('api.filtros');
 
         // Testing

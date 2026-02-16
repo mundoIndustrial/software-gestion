@@ -202,15 +202,15 @@ class InsumosController extends Controller
         // Construir query base - Filtrar por:
         // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada", "PENDIENTE_INSUMOS"
         // - Áreas: "Corte", "Creación de Orden"
-        $baseQuery = PedidoProduccion::where(function($q) {
-            // Estados permitidos
-            $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS']);
-        })->where(function($q) {
-            // Áreas permitidas
-            $q->where('area', 'LIKE', '%Corte%')
-              ->orWhere('area', 'LIKE', '%Creación%orden%')
-              ->orWhere('area', 'LIKE', '%Creación de orden%');
-        });
+        $baseQuery = PedidoProduccion::whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada', 'PENDIENTE_INSUMOS'])
+            ->where(function($q) {
+                $q->where('estado', 'PENDIENTE_INSUMOS')
+                  ->orWhere(function($q2) {
+                      $q2->where('area', 'LIKE', '%Corte%')
+                         ->orWhere('area', 'LIKE', '%Creación%orden%')
+                         ->orWhere('area', 'LIKE', '%Creación de orden%');
+                  });
+            });
         
         // Aplicar múltiples filtros (nuevo sistema)
         $hasFilters = false;
@@ -285,6 +285,10 @@ class InsumosController extends Controller
         // FILTRO: Eliminar pedidos que NO tienen prendas después del filtro
         // Si un pedido solo tiene prendas de_bodega:true, no debe mostrarse
         $ordenesFiltradas = $allOrdenes->filter(function($orden) {
+            if (in_array($orden->estado, ['Pendiente', 'PENDIENTE_INSUMOS'])) {
+                return true;
+            }
+
             return $orden->prendas && $orden->prendas->count() > 0;
         })->values();
         
