@@ -259,10 +259,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- jQuery y Bootstrap 4 desde CDN (CRÍTICO - debe estar ANTES de app.js) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery y Bootstrap se cargan desde Vite en app.js -->
 
     <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">

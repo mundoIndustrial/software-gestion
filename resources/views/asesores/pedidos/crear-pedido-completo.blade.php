@@ -295,11 +295,7 @@
 @endsection
 
 @section('scripts')
-<!-- jQuery (requerido por Bootstrap 4) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Bootstrap Modal (si no está incluido en layout) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery y Bootstrap se cargan desde Vite en app.js -->
 
 <!-- Librerías del formulario -->
 <script src="{{ asset('js/pedidos-produccion/PedidoFormManager.js') }}"></script>
@@ -398,8 +394,7 @@
     });
 </script>
 
-<!-- Estilos adicionales para Bootstrap si es necesario -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap CSS se carga desde Vite en app.js -->
 
 @endsection
 
