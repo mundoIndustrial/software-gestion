@@ -34,8 +34,11 @@
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- jQuery y Bootstrap se cargan desde Vite en app.js -->
-    @vite(['resources/js/app.js'])
+    <!-- jQuery (desde CDN permitido por CSP) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Bootstrap 4 JS (desde CDN permitido por CSP) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
 
     <!-- GLOBAL: Usuario autenticado disponible desde el inicio -->
     <script>

@@ -259,7 +259,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- jQuery y Bootstrap se cargan desde Vite en app.js -->
+    <!-- jQuery y Bootstrap 4 desde CDN permitido (cdnjs.cloudflare.com) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
 
     <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
@@ -465,9 +468,6 @@
     
     <!--  PAYLOAD NORMALIZER v3 - CARGADO EN BLADE TEMPLATES INDIVIDUALES -->
     <!-- Payload normalizer: payload-normalizer.js -->
-    
-    <!-- Vite JS (jQuery y Bootstrap - DEBE estar al final del body) -->
-    @vite(['resources/js/app.js'])
 
 </body>
 </html>
