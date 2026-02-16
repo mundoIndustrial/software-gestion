@@ -192,6 +192,51 @@ class PrendaEditor {
         }
 
         console.log(' [🔄 Carga] Datos cargados en formulario');
+        
+        // 🔴 CRÍTICO: Configurar drag & drop para prenda y procesos en modo edición
+        this._configurarDragDropEnEdicion();
+    }
+    
+    /**
+     * 🔴 NUEVO: Configurar drag & drop en modo edición
+     * @private
+     */
+    _configurarDragDropEnEdicion() {
+        console.log('[PrendaEditor] 🔄 Configurando drag & drop en modo edición...');
+        
+        // Opción 1: Usar DragDropManager si está disponible (reconfiguración)
+        if (typeof window.DragDropManager !== 'undefined') {
+            console.log('[PrendaEditor] Usando DragDropManager para reconfiguración...');
+            
+            // Reconfigurar prendas
+            if (typeof window.DragDropManager.reconfigurarPrendas === 'function') {
+                window.DragDropManager.reconfigurarPrendas();
+                console.log('[PrendaEditor] ✅ Drag & drop de prenda reconfigurado (DragDropManager)');
+            }
+            
+            // Reconfigurar procesos
+            if (typeof window.DragDropManager.reconfigurarProcesos === 'function') {
+                window.DragDropManager.reconfigurarProcesos();
+                console.log('[PrendaEditor] ✅ Drag & drop de procesos reconfigurado (DragDropManager)');
+            }
+        } else {
+            // Opción 2: Fallback a funciones globales
+            console.log('[PrendaEditor] DragDropManager no disponible, usando funciones globales...');
+            
+            if (typeof configurarDragDropPrenda === 'function') {
+                configurarDragDropPrenda();
+                console.log('[PrendaEditor] ✅ Drag & drop de prenda configurado');
+            } else {
+                console.warn('[PrendaEditor] ⚠️ configurarDragDropPrenda no disponible');
+            }
+            
+            if (typeof configurarDragDropProcesos === 'function') {
+                configurarDragDropProcesos();
+                console.log('[PrendaEditor] ✅ Drag & drop de procesos configurado');
+            } else {
+                console.warn('[PrendaEditor] ⚠️ configurarDragDropProcesos no disponible');
+            }
+        }
     }
 
     resetearEdicion() {

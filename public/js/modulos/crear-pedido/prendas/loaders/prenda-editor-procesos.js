@@ -150,6 +150,7 @@ class PrendaEditorProcesos {
                 this._marcarCheckboxesProcesos(window.procesosSeleccionados);
                 
                 // 🔴 NUEVO: Configurar drag & drop para procesos
+                // El renderizador debe llamar a esto después de renderizar
                 if (typeof configurarDragDropProcesos === 'function') {
                     configurarDragDropProcesos();
                 }

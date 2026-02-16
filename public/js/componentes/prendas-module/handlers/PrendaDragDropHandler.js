@@ -366,11 +366,10 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                 // Actualizar preview DOM
                 if (typeof window.actualizarPreviewPrenda === 'function') {
                     window.actualizarPreviewPrenda();
-                } else {
-                    const preview = document.getElementById('nueva-prenda-foto-preview');
-                    if (preview && typeof PrendaEditorImagenes !== 'undefined') {
-                        PrendaEditorImagenes._actualizarPreviewDOM(preview);
-                    }
+                } else if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
+                    // 🔴 ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
+                    // Usar actualizarPreviewDespuesDeAgregar() en su lugar
+                    PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                 }
                 
                 if (imagenes.length > 0) {

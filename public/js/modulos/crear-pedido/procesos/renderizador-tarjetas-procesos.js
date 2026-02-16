@@ -104,6 +104,12 @@ window.renderizarTarjetasProcesos = function() {
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     
+    // 🔴 NUEVO: Configurar drag & drop para procesos DESPUÉS de renderizar
+    if (typeof configurarDragDropProcesos === 'function') {
+        configurarDragDropProcesos();
+        console.log('[RENDER-PROCESOS] ✅ Drag & drop configurado para procesos');
+    }
+    
     console.log('✅ [RENDER-PROCESOS] Renderización completada', {
         tarjetasRenderizadas: container.querySelectorAll('.tarjeta-proceso').length,
         displayStyle: container.style.display,

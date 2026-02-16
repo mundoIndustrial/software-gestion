@@ -1107,40 +1107,58 @@ final class ActualizarPrendaCompletaUseCase
     ): void {
         $imagenesExistentesPayload = $proceso['imagenes_existentes'] ?? null;
         
-        // Si el frontend envió imagenes_existentes, sincronizar (eliminar las que ya no están)
+        // 🔴 CRÍTICO: Solo sincronizar si el frontend EXPLÍCITAMENTE envió imagenes_existentes
+        // Si es null/undefined = no hay cambios, no tocar las imágenes
+        // Si es array (incluso vacío) = hay cambios, sincronizar según la lista
+        // PERO: Si es array VACÍO Y no hay fotosProcesoNuevo para este proceso = NO eliminar nada
         if (is_array($imagenesExistentesPayload)) {
-            $idsAConservar = array_filter(array_column($imagenesExistentesPayload, 'id'));
+            // Verificar si hay cambios reales de imagen para este proceso
+            $hayFotosNuevas = !empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx]);
             
-            $imagenesActuales = $procesoExistente->imagenes()->get();
-            $eliminadas = 0;
-            
-            foreach ($imagenesActuales as $imgActual) {
-                if (!in_array($imgActual->id, $idsAConservar)) {
-                    // Eliminar archivo físico del storage
-                    if ($imgActual->ruta_original) {
-                        $ruta = ltrim(str_replace('/storage/', '', $imgActual->ruta_original), '/');
-                        $rutaFisica = storage_path('app/public/' . $ruta);
-                        if (file_exists($rutaFisica)) {
-                            @unlink($rutaFisica);
+            // Solo sincronizar si:
+            // 1. El array NO está vacío (hay imágenes a conservar), O
+            // 2. Hay fotos nuevas para este proceso (el usuario agregó imágenes)
+            if (!empty($imagenesExistentesPayload) || $hayFotosNuevas) {
+                $idsAConservar = array_filter(array_column($imagenesExistentesPayload, 'id'));
+                
+                $imagenesActuales = $procesoExistente->imagenes()->get();
+                $eliminadas = 0;
+                
+                foreach ($imagenesActuales as $imgActual) {
+                    if (!in_array($imgActual->id, $idsAConservar)) {
+                        // Eliminar archivo físico del storage
+                        if ($imgActual->ruta_original) {
+                            $ruta = ltrim(str_replace('/storage/', '', $imgActual->ruta_original), '/');
+                            $rutaFisica = storage_path('app/public/' . $ruta);
+                            if (file_exists($rutaFisica)) {
+                                @unlink($rutaFisica);
+                            }
                         }
-                    }
-                    if ($imgActual->ruta_webp && $imgActual->ruta_webp !== $imgActual->ruta_original) {
-                        $rutaW = ltrim(str_replace('/storage/', '', $imgActual->ruta_webp), '/');
-                        $rutaFisicaWebp = storage_path('app/public/' . $rutaW);
-                        if (file_exists($rutaFisicaWebp)) {
-                            @unlink($rutaFisicaWebp);
+                        if ($imgActual->ruta_webp && $imgActual->ruta_webp !== $imgActual->ruta_original) {
+                            $rutaW = ltrim(str_replace('/storage/', '', $imgActual->ruta_webp), '/');
+                            $rutaFisicaWebp = storage_path('app/public/' . $rutaW);
+                            if (file_exists($rutaFisicaWebp)) {
+                                @unlink($rutaFisicaWebp);
+                            }
                         }
+                        $imgActual->delete();
+                        $eliminadas++;
                     }
-                    $imgActual->delete();
-                    $eliminadas++;
                 }
-            }
-            
-            if ($eliminadas > 0) {
-                \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes de proceso eliminadas', [
+                
+                if ($eliminadas > 0) {
+                    \Log::info('[ActualizarPrendaCompletaUseCase] Imágenes de proceso eliminadas', [
+                        'proceso_id' => $procesoExistente->id,
+                        'eliminadas' => $eliminadas,
+                        'conservadas' => count($idsAConservar)
+                    ]);
+                }
+            } else {
+                // Array vacío y sin fotos nuevas = no hay cambios, no eliminar nada
+                \Log::info('[ActualizarPrendaCompletaUseCase] Sin cambios de imagen para proceso', [
                     'proceso_id' => $procesoExistente->id,
-                    'eliminadas' => $eliminadas,
-                    'conservadas' => count($idsAConservar)
+                    'procesoIdx' => $procesoIdx,
+                    'razon' => 'imagenes_existentes vacío y sin fotosProcesoNuevo'
                 ]);
             }
         }

@@ -206,7 +206,15 @@ class UIHelperService {
      */
     static limpiarEventListeners(element) {
         const newElement = element.cloneNode(true);
-        element.parentNode.replaceChild(newElement, element);
+        
+        // 🔴 CRÍTICO: Verificar si el elemento tiene padre antes de reemplazar
+        if (element.parentNode) {
+            element.parentNode.replaceChild(newElement, element);
+        } else {
+            // Si no tiene padre, solo devolver el clon (ya está limpio)
+            console.warn('[UIHelperService.limpiarEventListeners] ⚠️ Elemento sin padre, devolviendo clon');
+        }
+        
         return newElement;
     }
 

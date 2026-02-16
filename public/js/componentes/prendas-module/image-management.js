@@ -26,7 +26,26 @@ window.manejarImagenesPrenda = function(input) {
         
         window.imagenesPrendaStorage.agregarImagen(input.files[0])
             .then(() => {
-                actualizarPreviewPrenda();
+                // 🔴 CRÍTICO: Detectar si estamos en creación o edición
+                const modalCreacion = document.getElementById('modal-agregar-prenda-nueva');
+                const modalEdicion = document.querySelector('[id*="modal-editar"]') || document.querySelector('[class*="editar"]');
+                
+                console.log('[manejarImagenesPrenda] 🔄 Actualizando preview:', {
+                    enCreacion: !!modalCreacion?.style?.display !== 'none',
+                    enEdicion: !!modalEdicion
+                });
+                
+                // En creación: usar actualizarPreviewPrenda()
+                if (typeof actualizarPreviewPrenda === 'function') {
+                    actualizarPreviewPrenda();
+                    console.log('[manejarImagenesPrenda] ✅ Preview actualizado (creación)');
+                }
+                
+                // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
+                if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
+                    PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
+                    console.log('[manejarImagenesPrenda] ✅ Preview actualizado (edición)');
+                }
             })
             .catch(err => {
                 if (err.message === 'MAX_LIMIT') {
@@ -87,23 +106,33 @@ window.actualizarPreviewPrenda = function() {
             return;
         }
         
-        // Mostrar primera imagen
-        console.log('[actualizarPreviewPrenda] 🖼️ Mostrando primera imagen');
+        // 🔴 CRÍTICO: Mostrar SOLO UNA imagen a la vez con navegación
+        console.log('[actualizarPreviewPrenda] 🖼️ Mostrando primera imagen de ' + imagenes.length);
         preview.innerHTML = '';
         preview.style.cursor = 'pointer';
         
+        // Guardar todas las imágenes en el preview para navegación
+        preview.dataset.imagenes = JSON.stringify(imagenes);
+        preview.dataset.indiceActual = '0';
+        
+        // Renderizar solo la primera imagen
+        const container = document.createElement('div');
+        container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+        
         const img = document.createElement('img');
         img.src = imagenes[0].previewUrl;
-        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+        img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
         console.log('[actualizarPreviewPrenda] 🎬 Src de imagen:', img.src);
         
-        // NO asignar click handler aquí - PrendaDragDropHandler ya maneja los clicks
-        // El handler en PrendaDragDropHandler._onClickConImagenes() se encargará de abrir la galería
-        
-        preview.appendChild(img);
+        container.appendChild(img);
+        preview.appendChild(container);
         console.log('[actualizarPreviewPrenda]  Imagen agregada al preview');
         
+        // 🔴 NOTA: NO agregar controles de navegación en preview
+        // El usuario solo quiere ver la primera imagen, navegación en el modal
+        
         // Configurar drag & drop también cuando hay imágenes (para reemplazar)
+        // Esto ya configura paste, click, drag & drop automáticamente
         setupDragAndDropConImagen(preview, imagenes);
         
         if (contador) {
@@ -204,3 +233,108 @@ window.actualizarPreviewTela = function() {
         console.error('[actualizarPreviewTela] Error:', e);
     }
 }
+
+/**
+ * 🔴 NUEVO: Agregar controles de navegación para múltiples imágenes de prenda
+ * @param {HTMLElement} preview - Elemento preview
+ * @param {Array} imagenes - Array de imágenes
+ */
+window.agregarControlesNavegacionPrenda = function(preview, imagenes) {
+    // Crear contenedor de controles
+    const controles = document.createElement('div');
+    controles.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        gap: 0.5rem;
+    `;
+    
+    // Botón anterior
+    const btnAnterior = document.createElement('button');
+    btnAnterior.type = 'button';
+    btnAnterior.innerHTML = '◀ Anterior';
+    btnAnterior.style.cssText = `
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        background: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    `;
+    
+    // Indicador
+    const indicador = document.createElement('span');
+    indicador.style.cssText = `
+        font-size: 0.75rem;
+        color: #666;
+        flex: 1;
+        text-align: center;
+    `;
+    indicador.textContent = `1 de ${imagenes.length}`;
+    
+    // Botón siguiente
+    const btnSiguiente = document.createElement('button');
+    btnSiguiente.type = 'button';
+    btnSiguiente.innerHTML = 'Siguiente ▶';
+    btnSiguiente.style.cssText = `
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        background: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    `;
+    
+    // Función para cambiar imagen
+    const cambiarImagen = (nuevoIndice) => {
+        if (nuevoIndice < 0 || nuevoIndice >= imagenes.length) return;
+        
+        preview.dataset.indiceActual = nuevoIndice;
+        const img = imagenes[nuevoIndice];
+        
+        // Encontrar la imagen en el preview y reemplazarla
+        const imgEl = preview.querySelector('img');
+        if (imgEl) {
+            imgEl.src = img.previewUrl;
+            imgEl.alt = `Imagen ${nuevoIndice + 1}`;
+        }
+        
+        // Actualizar indicador
+        indicador.textContent = `${nuevoIndice + 1} de ${imagenes.length}`;
+        
+        // Actualizar estado de botones
+        btnAnterior.disabled = nuevoIndice === 0;
+        btnSiguiente.disabled = nuevoIndice === imagenes.length - 1;
+        
+        console.log(`[agregarControlesNavegacionPrenda] Navegando a imagen ${nuevoIndice + 1} de ${imagenes.length}`);
+    };
+    
+    // Event listeners
+    btnAnterior.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+        cambiarImagen(indiceActual - 1);
+    });
+    
+    btnSiguiente.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+        cambiarImagen(indiceActual + 1);
+    });
+    
+    // Agregar controles al preview
+    controles.appendChild(btnAnterior);
+    controles.appendChild(indicador);
+    controles.appendChild(btnSiguiente);
+    preview.appendChild(controles);
+    
+    // Inicializar estado de botones
+    btnAnterior.disabled = true;
+    btnSiguiente.disabled = imagenes.length <= 1;
+    
+    console.log(`[agregarControlesNavegacionPrenda] Controles de navegación agregados para ${imagenes.length} imágenes`);
+}
+

@@ -97,8 +97,20 @@ class DragDropManager {
         document.addEventListener('paste', (e) => {
             UIHelperService.log('DragDropManager', '📋 EVENTO PASTE DETECTADO');
             
-            const preview = document.getElementById('nueva-prenda-foto-preview');
-            const modal = document.getElementById('modal-agregar-prenda-nueva');
+            // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición)
+            let preview = document.getElementById('nueva-prenda-foto-preview');
+            let modal = document.getElementById('modal-agregar-prenda-nueva');
+            
+            // Si no está en modal de creación nueva, buscar en modal de edición
+            if (!modal || !preview) {
+                preview = document.getElementById('nueva-prenda-foto-preview');
+                modal = document.getElementById('modal-editar-prenda');
+                
+                // Si tampoco está en modal de edición, intentar con selector genérico
+                if (!modal) {
+                    modal = document.querySelector('[id*="modal"][id*="prenda"]');
+                }
+            }
             
             UIHelperService.log('DragDropManager', `Preview encontrado: ${!!preview}, Modal encontrado: ${!!modal}`);
             
@@ -602,10 +614,38 @@ window.setupGlobalPasteListener = () => {
 };
 
 window.setupDragAndDrop = (previewElement) => {
+    // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
+    if (!window.DragDropManager || !window.DragDropManager.inicializado) {
+        console.warn('[setupDragAndDrop] ⚠️ DragDropManager no inicializado, inicializando...');
+        if (!window.DragDropManager) {
+            window.DragDropManager = new DragDropManager();
+        }
+        window.DragDropManager.inicializar();
+    }
+    
+    if (!window.DragDropManager.prendaHandler) {
+        console.error('[setupDragAndDrop] ❌ prendaHandler no disponible');
+        return;
+    }
+    
     return window.DragDropManager.prendaHandler.configurarSinImagenes(previewElement);
 };
 
 window.setupDragAndDropConImagen = (previewElement, imagenesActuales) => {
+    // 🔴 CRÍTICO: Asegurar que DragDropManager esté inicializado
+    if (!window.DragDropManager || !window.DragDropManager.inicializado) {
+        console.warn('[setupDragAndDropConImagen] ⚠️ DragDropManager no inicializado, inicializando...');
+        if (!window.DragDropManager) {
+            window.DragDropManager = new DragDropManager();
+        }
+        window.DragDropManager.inicializar();
+    }
+    
+    if (!window.DragDropManager.prendaHandler) {
+        console.error('[setupDragAndDropConImagen] ❌ prendaHandler no disponible');
+        return;
+    }
+    
     return window.DragDropManager.prendaHandler.configurarConImagenes(previewElement, imagenesActuales);
 };
 

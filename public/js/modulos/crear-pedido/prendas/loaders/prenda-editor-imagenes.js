@@ -14,120 +14,47 @@ class PrendaEditorImagenes {
         });
         
         const preview = document.getElementById('nueva-prenda-foto-preview');
+        const contador = document.getElementById('nueva-prenda-foto-contador');
+        const btn = document.getElementById('nueva-prenda-foto-btn');
+        
         if (!preview) {
-            console.warn(' [Imagenes] No encontrado #nueva-prenda-foto-preview');
+            console.warn(' [Imagenes] Preview no encontrado');
             return;
         }
         
-        // Limpiar previos
+        // Limpiar preview
         preview.innerHTML = '';
         
-        // Cargar imágenes
-        if (prenda.imagenes && Array.isArray(prenda.imagenes)) {
-            prenda.imagenes.forEach((img, idx) => {
-                const container = document.createElement('div');
-                container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
-                
-                const imgEl = document.createElement('img');
-                
-                // Determinar URL de forma robusta
-                let src = this._extraerUrl(img);
-                
-                if (src) {
-                    imgEl.src = src;
-                    imgEl.alt = `Imagen ${idx + 1}`;
-                    imgEl.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
-                    
-                    // Agregar manejador de error para mostrar placeholder
-                    imgEl.onerror = function() {
-                        console.warn(` [Imagenes] Error cargando imagen ${idx + 1} desde: ${src}`);
-                        // Crear placeholder
-                        this.style.display = 'none';
-                        const placeholder = document.createElement('div');
-                        placeholder.style.cssText = `
-                            width: 100%;
-                            height: 150px;
-                            background: #f3f4f6;
-                            border: 2px dashed #d1d5db;
-                            border-radius: 4px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            flex-direction: column;
-                            color: #9ca3af;
-                            font-size: 13px;
-                            text-align: center;
-                        `;
-                        placeholder.innerHTML = `
-                            <div style="font-size: 24px; margin-bottom: 4px;">📷</div>
-                            <div>Imagen no disponible</div>
-                            <div style="font-size: 11px; margin-top: 2px;">${src.split('/').pop()}</div>
-                        `;
-                        container.appendChild(placeholder);
-                    };
-                    
-                    container.appendChild(imgEl);
-                    preview.appendChild(container);
-                    console.log(` [Imagenes] Imagen ${idx + 1} cargada`);
-                } else {
-                    console.warn(` [Imagenes] No se pudo extraer URL de imagen ${idx + 1}`);
-                }
-            });
-        }
-        
-        //  Replicar a global para que sea editable
-        if (prenda.imagenes && Array.isArray(prenda.imagenes) && window.imagenesPrendaStorage?.establecerImagenes) {
-            // IMPORTANTE: Procesar imágenes para crear blob URLs si es necesario
+        // 🔴 CRÍTICO: Renderizar EXACTAMENTE igual a creación
+        if (prenda.imagenes && Array.isArray(prenda.imagenes) && prenda.imagenes.length > 0) {
+            // Procesar imágenes
             const imagenesConBlobUrl = prenda.imagenes.map((img, idx) => {
-                // 🔴 NUEVO: Asegurar que cada imagen tenga un ID (desde BD o generado)
                 const imagenConId = {
                     ...img,
-                    id: img.id || img.imagen_id || null,  // Intentar obtener ID de BD
+                    id: img.id || img.imagen_id || null,
                 };
                 
-                // 🔴 CRITICAL FIX: Si tiene File object, SIEMPRE crear un blob URL NUEVO
-                // No importa si previewUrl existe - puede estar revocado
                 if (img.file instanceof File) {
-                    console.log(`[prenda-editor-imagenes] 🔴 RECONSTITUYENDO blob URL para imagen ${idx} (File object presente)`);
                     const nuevoBlob = URL.createObjectURL(img.file);
                     return {
                         ...imagenConId,
-                        file: img.file,                    // ← Preservar el File object
-                        previewUrl: nuevoBlob,             // ← NUEVO blob URL SIEMPRE desde File
+                        file: img.file,
+                        previewUrl: nuevoBlob,
                         nombre: img.nombre || img.file.name || `imagen-${idx + 1}`,
                         tamaño: img.tamaño || img.file.size,
-                        fileType: img.file.type,
-                        fileSize: img.file.size
                     };
                 }
                 
-                // Si ya tiene previewUrl válido (blob o data URL), mantenerlo
                 if (img.previewUrl && (img.previewUrl.startsWith('blob:') || img.previewUrl.startsWith('data:'))) {
                     return imagenConId;
                 }
                 
-                // Si es una string (URL), usar como previewUrl
-                if (typeof img === 'string') {
-                    return {
-                        previewUrl: img,
-                        url: img,
-                        nombre: `imagen-${idx + 1}`,
-                        tamaño: 0
-                    };
-                }
-                
-                // Si es un objeto pero no tiene previewUrl, crear uno
                 if (typeof img === 'object') {
-                    // Crear blob URL si es posible
-                    let blobUrl = img.previewUrl;
-                    if (!blobUrl && (img.url || img.ruta)) {
-                        blobUrl = img.url || img.ruta;
-                    }
-                    
+                    const url = img.url || img.ruta || img.ruta_webp || img.ruta_original || '';
                     return {
-                        ...img,
-                        previewUrl: blobUrl || img.url || img.ruta || '',
-                        url: img.url || img.ruta || '',
+                        ...imagenConId,
+                        previewUrl: url,
+                        url: url,
                         nombre: img.nombre || `imagen-${idx + 1}`,
                         tamaño: img.tamaño || 0
                     };
@@ -136,20 +63,136 @@ class PrendaEditorImagenes {
                 return img;
             });
             
-            window.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
-            console.log('[Carga] 📸 Imágenes replicadas en window.imagenesPrendaStorage');
-            
-            // Reconfigurar DragDrop handler para que click abra galería en vez de file input
-            if (window.DragDropManager && typeof window.DragDropManager.actualizarImagenesPrenda === 'function') {
-                window.DragDropManager.actualizarImagenesPrenda(imagenesConBlobUrl);
-                console.log('[Carga] 📸 DragDrop handler reconfigurado para modo con imágenes');
+            // Guardar en storage si está disponible
+            if (window.imagenesPrendaStorage) {
+                window.imagenesPrendaStorage.establecerImagenes(imagenesConBlobUrl);
             }
             
-            // Fallback: agregar click handler directo en el preview para abrir galería
-            this._configurarClickGaleria(preview, imagenesConBlobUrl);
+            // Renderizar SOLO la primera imagen (igual a creación)
+            const container = document.createElement('div');
+            container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+            
+            const img = document.createElement('img');
+            img.src = imagenesConBlobUrl[0].previewUrl;
+            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            
+            container.appendChild(img);
+            preview.appendChild(container);
+            
+            // Guardar datos en preview (igual a creación)
+            preview.dataset.imagenes = JSON.stringify(imagenesConBlobUrl);
+            preview.dataset.indiceActual = '0';
+            
+            // Actualizar contador
+            if (contador) {
+                contador.textContent = imagenesConBlobUrl.length === 1 ? '1 foto' : imagenesConBlobUrl.length + ' fotos';
+            }
+            
+            // Actualizar botón
+            if (btn) {
+                btn.style.display = imagenesConBlobUrl.length < 3 ? 'block' : 'none';
+            }
+            
+            // Configurar drag & drop (igual a creación)
+            setupDragAndDropConImagen(preview, imagenesConBlobUrl);
+            
+            // 🔴 NUEVO: Agregar listener de paste usando la función centralizada
+            this._agregarListenerPaste(preview);
+            console.log('[PrendaEditorImagenes] ✅ Listener de paste configurado en preview (cargar)');
+            
+            console.log('[Imagenes] ✅ Preview renderizado idéntico a creación');
+        } else {
+            // Sin imágenes
+            if (window.imagenesPrendaStorage) {
+                window.imagenesPrendaStorage.establecerImagenes([]);
+            }
+            
+            preview.innerHTML = '<div style="text-align: center;"><div class="material-symbols-rounded" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.25rem;">add_photo_alternate</div><div style="font-size: 0.7rem; color: #9ca3af;">Click o arrastra para agregar</div></div>';
+            preview.style.cursor = 'pointer';
+            
+            if (contador) contador.textContent = '';
+            if (btn) btn.style.display = 'block';
+            
+            setupDragAndDrop(preview);
         }
         
         console.log(' [Imagenes] Completado');
+    }
+    
+    /**
+     * Actualizar preview después de agregar imagen en edición
+     */
+    static actualizarPreviewDespuesDeAgregar() {
+        console.log('[PrendaEditorImagenes] 🔄 Actualizando preview después de agregar imagen');
+        
+        const preview = document.getElementById('nueva-prenda-foto-preview');
+        const contador = document.getElementById('nueva-prenda-foto-contador');
+        
+        if (!preview || !window.imagenesPrendaStorage) {
+            console.warn('[PrendaEditorImagenes] ⚠️ Preview o storage no disponible');
+            return;
+        }
+        
+        const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
+        console.log('[PrendaEditorImagenes] 📸 Imágenes en storage:', imagenes.length);
+        
+        // Limpiar preview
+        preview.innerHTML = '';
+        
+        // Mostrar SOLO la primera imagen
+        if (imagenes.length > 0) {
+            const container = document.createElement('div');
+            container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
+            
+            const img = document.createElement('img');
+            img.src = imagenes[0].previewUrl;
+            img.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
+            img.alt = 'Imagen 1';
+            
+            container.appendChild(img);
+            preview.appendChild(container);
+            
+            // Guardar datos en preview
+            preview.dataset.imagenes = JSON.stringify(imagenes);
+            preview.dataset.indiceActual = '0';
+            
+            console.log('[PrendaEditorImagenes] ✅ Preview actualizado - mostrando imagen 1 de ' + imagenes.length);
+        }
+        
+        // Actualizar contador
+        if (contador) {
+            contador.textContent = imagenes.length === 1 ? '1 foto' : imagenes.length + ' fotos';
+            console.log('[PrendaEditorImagenes] ✅ Contador actualizado:', contador.textContent);
+        }
+        
+        // Actualizar botón
+        const btn = document.getElementById('nueva-prenda-foto-btn');
+        if (btn) {
+            btn.style.display = imagenes.length < 3 ? 'block' : 'none';
+        }
+        
+        // 🔴 CRÍTICO: Re-agregar listener de paste después de actualizar preview
+        this._agregarListenerPaste(preview);
+    }
+    
+    /**
+     * Agregar listener de paste al preview
+     * @private
+     * 
+     * NOTA: El listener global de paste en DragDropManager ya maneja todo.
+     * Solo configuramos contenteditable para que el preview pueda recibir el foco.
+     */
+    static _agregarListenerPaste(preview) {
+        if (!preview) {
+            console.error('[PrendaEditorImagenes] ❌ Preview NO ENCONTRADO');
+            return;
+        }
+        
+        // 🔴 CRÍTICO: Hacer el preview contenteditable para que pueda recibir foco
+        preview.contentEditable = 'true';
+        preview.style.outline = 'none';
+        
+        console.log('[PrendaEditorImagenes] ✅ Preview configurado como contenteditable');
     }
 
     /**
@@ -285,8 +328,15 @@ class PrendaEditorImagenes {
                         });
                     }
                     
-                    // Actualizar el preview del DOM
-                    self._actualizarPreviewDOM(preview);
+                    // 🔴 CRÍTICO: Actualizar preview correctamente sin apilar
+                    // En edición: usar PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar()
+                    if (typeof PrendaEditorImagenes !== 'undefined' && typeof PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar === 'function') {
+                        PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
+                        console.log('[prenda-editor-imagenes] ✅ Preview actualizado después de eliminar (edición)');
+                    } else if (typeof window.actualizarPreviewPrenda === 'function') {
+                        // Fallback para creación
+                        window.actualizarPreviewPrenda();
+                    }
                     
                     // Si quedan imágenes, reabrir galería
                     const remaining = window.imagenesPrendaStorage?.obtenerImagenes() || [];
@@ -312,27 +362,32 @@ class PrendaEditorImagenes {
                 if (urls.length === 0) { Swal.close(); return; }
                 Swal.fire({
                     html: `
-                        <div style="display:flex; flex-direction:column; align-items:center; gap:1rem;">
-                            <div style="position:relative; width:100%; max-width:620px;">
-                                <img src="${urls[idx]}" alt="Foto prenda" style="width:100%; border-radius:8px; border:1px solid #e5e7eb; object-fit:contain; max-height:65vh;">
-                                ${urls.length > 1 ? `
-                                    <button id="gal-prenda-prev" style="position:absolute; top:50%; left:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">‹</button>
-                                    <button id="gal-prenda-next" style="position:absolute; top:50%; right:-16px; transform:translateY(-50%); background:#111827cc; color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">›</button>
-                                ` : ''}
-                            </div>
-                            <div style="display:flex; align-items:center; gap:1rem;">
-                                <span style="font-size:0.9rem; color:#4b5563;">${idx + 1} / ${urls.length}</span>
-                                <button id="gal-prenda-delete" style="background:#dc2626; color:white; border:none; border-radius:6px; padding:0.4rem 1rem; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.3rem;">
-                                    <span class="material-symbols-rounded" style="font-size:1rem;">delete</span> Eliminar
-                                </button>
-                            </div>
+                        <div style="display:flex !important; flex-direction:column !important; align-items:center !important; gap:1rem !important; width:100% !important; padding:2rem !important;">
+                        <div style="position:relative !important; width:100% !important; max-width:1200px !important;">
+                            <img src="${urls[idx]}" alt="Foto prenda" style="width:100% !important; height:auto !important; border-radius:8px !important; border:1px solid #e5e7eb !important; object-fit:contain !important; max-height:80vh !important; display:block !important;">
+                            
+                                <button id="gal-prenda-prev" style="position:absolute !important; top:50% !important; left:-50px !important; transform:translateY(-50%) !important; background:#111827cc !important; color:white !important; border:none !important; border-radius:50% !important; width:45px !important; height:45px !important; cursor:pointer !important; font-size:1.5rem !important; display:flex !important; align-items:center !important; justify-content:center !important; transition:all 0.2s !important; z-index:10 !important;">‹</button>
+                                <button id="gal-prenda-next" style="position:absolute !important; top:50% !important; right:-50px !important; transform:translateY(-50%) !important; background:#111827cc !important; color:white !important; border:none !important; border-radius:50% !important; width:45px !important; height:45px !important; cursor:pointer !important; font-size:1.5rem !important; display:flex !important; align-items:center !important; justify-content:center !important; transition:all 0.2s !important; z-index:10 !important;">›</button>
+                            
                         </div>
+                        <div style="display:flex !important; align-items:center !important; gap:1.5rem !important; margin-top:1rem !important;">
+                            <span style="font-size:1rem !important; color:#4b5563 !important; font-weight:500 !important;">${idx + 1} / ${urls.length}</span>
+                            <button id="gal-prenda-delete" style="background:#dc2626 !important; color:white !important; border:none !important; border-radius:6px !important; padding:0.6rem 1.2rem !important; cursor:pointer !important; font-size:0.9rem !important; display:flex !important; align-items:center !important; gap:0.5rem !important; transition:background 0.2s !important; font-weight:500 !important;">
+                                <span class="material-symbols-rounded" style="font-size:1.1rem !important;">delete</span> Eliminar
+                            </button>
+                        </div>
+                    </div>
                     `,
                     showConfirmButton: false,
                     showCloseButton: true,
-                    width: '75%',
+                    width: '95%',
                     customClass: { container: 'swal-galeria-container' },
                     didOpen: () => {
+                        // Aplicar max-width al popup
+                        const popup = document.querySelector('.swal2-popup');
+                        if (popup) {
+                            popup.style.maxWidth = '1400px !important';
+                        }
                         window.__galeriaPrendaActiva = true;
                         const prev = document.getElementById('gal-prenda-prev');
                         const next = document.getElementById('gal-prenda-next');
@@ -383,29 +438,115 @@ class PrendaEditorImagenes {
     }
     
     /**
-     * Actualizar el preview DOM desde el storage actual
+     * 🔴 ELIMINADO: _actualizarPreviewDOM()
+     * Esta función causaba que se apilaran todas las imágenes.
+     * Usar siempre PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar() en su lugar.
+     */
+
+    /**
+     * 🔴 NUEVO: Agregar controles de navegación para múltiples imágenes
      * @private
      */
-    static _actualizarPreviewDOM(preview) {
-        if (!preview) return;
-        const imgs = window.imagenesPrendaStorage?.obtenerImagenes() || [];
-        preview.innerHTML = '';
-        imgs.forEach((img, idx) => {
-            const container = document.createElement('div');
-            container.style.cssText = 'position: relative; margin-bottom: 0.5rem;';
-            const imgEl = document.createElement('img');
-            const src = this._extraerUrl(img);
-            if (src) {
-                imgEl.src = src;
-                imgEl.alt = `Imagen ${idx + 1}`;
-                imgEl.style.cssText = 'max-width: 100%; height: auto; border-radius: 4px;';
-                container.appendChild(imgEl);
-                preview.appendChild(container);
+    static _agregarControlesNavegacion(preview, imagenes) {
+        // Crear contenedor de controles
+        const controles = document.createElement('div');
+        controles.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            gap: 0.5rem;
+        `;
+        
+        // Botón anterior
+        const btnAnterior = document.createElement('button');
+        btnAnterior.type = 'button';
+        btnAnterior.innerHTML = '◀ Anterior';
+        btnAnterior.style.cssText = `
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        
+        // Indicador
+        const indicador = document.createElement('span');
+        indicador.style.cssText = `
+            font-size: 0.75rem;
+            color: #666;
+            flex: 1;
+            text-align: center;
+        `;
+        indicador.textContent = `1 de ${imagenes.length}`;
+        
+        // Botón siguiente
+        const btnSiguiente = document.createElement('button');
+        btnSiguiente.type = 'button';
+        btnSiguiente.innerHTML = 'Siguiente ▶';
+        btnSiguiente.style.cssText = `
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        
+        // Función para cambiar imagen
+        const cambiarImagen = (nuevoIndice) => {
+            if (nuevoIndice < 0 || nuevoIndice >= imagenes.length) return;
+            
+            preview.dataset.indiceActual = nuevoIndice;
+            const img = imagenes[nuevoIndice];
+            
+            // Encontrar la imagen en el preview y reemplazarla
+            const imgEl = preview.querySelector('img');
+            if (imgEl) {
+                const src = this._extraerUrl(img);
+                if (src) {
+                    imgEl.src = src;
+                    imgEl.alt = `Imagen ${nuevoIndice + 1}`;
+                }
             }
+            
+            // Actualizar indicador
+            indicador.textContent = `${nuevoIndice + 1} de ${imagenes.length}`;
+            
+            // Actualizar estado de botones
+            btnAnterior.disabled = nuevoIndice === 0;
+            btnSiguiente.disabled = nuevoIndice === imagenes.length - 1;
+            
+            console.log(`[Imagenes] Navegando a imagen ${nuevoIndice + 1} de ${imagenes.length}`);
+        };
+        
+        // Event listeners
+        btnAnterior.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+            cambiarImagen(indiceActual - 1);
         });
-        if (imgs.length === 0) {
-            preview.innerHTML = '<div class="foto-preview-content"><div class="material-symbols-rounded">add_photo_alternate</div><div class="foto-preview-text">Click para seleccionar o<br>Ctrl+V para pegar imagen</div></div>';
-        }
+        
+        btnSiguiente.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const indiceActual = parseInt(preview.dataset.indiceActual || '0');
+            cambiarImagen(indiceActual + 1);
+        });
+        
+        // Agregar controles al preview
+        controles.appendChild(btnAnterior);
+        controles.appendChild(indicador);
+        controles.appendChild(btnSiguiente);
+        preview.appendChild(controles);
+        
+        // Inicializar estado de botones
+        btnAnterior.disabled = true;
+        btnSiguiente.disabled = imagenes.length <= 1;
+        
+        console.log(`[Imagenes] Controles de navegación agregados para ${imagenes.length} imágenes`);
     }
 
     /**

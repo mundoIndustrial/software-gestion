@@ -97,7 +97,9 @@
             
             const imagenes = window.imagenesPrendaStorage.obtenerImagenes();
             if (typeof PrendaEditorImagenes !== 'undefined') {
-                PrendaEditorImagenes._actualizarPreviewDOM(preview);
+                // 🔴 ELIMINADO: _actualizarPreviewDOM() causaba apilamiento
+                // Usar actualizarPreviewDespuesDeAgregar() en su lugar
+                PrendaEditorImagenes.actualizarPreviewDespuesDeAgregar();
                 // Reconfigurar click handler de galería
                 if (imagenes.length > 0) {
                     PrendaEditorImagenes._configurarClickGaleria(preview, imagenes);

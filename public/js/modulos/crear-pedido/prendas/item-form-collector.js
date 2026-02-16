@@ -181,6 +181,17 @@ class ItemFormCollector {
                     Object.entries(prenda.procesos).forEach(([key, proceso]) => {
                         const datosProceso = proceso.datos || proceso;
                         
+                        // 🔴 CRÍTICO: Filtrar procesos marcados para eliminar
+                        // Si el proceso tiene ID y está en window.procesosParaEliminarIds (Set), NO incluirlo
+                        if (datosProceso.id && window.procesosParaEliminarIds && window.procesosParaEliminarIds.has(datosProceso.id)) {
+                            console.log('[ItemFormCollector] 🗑️ Proceso excluido (marcado para eliminar):', {
+                                procesoId: datosProceso.id,
+                                tipo: key,
+                                procesosParaEliminar: Array.from(window.procesosParaEliminarIds)
+                            });
+                            return; // Saltar este proceso
+                        }
+                        
                         // EXTRAER ARCHIVOS FILE DE LAS IMÁGENES DE PROCESOS
                         // MANTENER ESTRUCTURA CON UID PARA POSTERIOR ENRIQUECIMIENTO
                         if (datosProceso.imagenes && Array.isArray(datosProceso.imagenes)) {
