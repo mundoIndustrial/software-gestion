@@ -33,7 +33,7 @@ class PDFCotizacionHelper
                 'autoScriptToLang' => true,
                 'autoLangToFont' => true,
                 'use_kwt' => true, // Enable HTML to PDF conversion
-                'setAutoTopMargin' => 'stretch',
+                'setAutoTopMargin' => false,
                 'setAutoBottomMargin' => 'stretch',
                 'debug' => false, // Desactivar debug en producción
                 'showImageErrors' => false, // No mostrar errores de imagen

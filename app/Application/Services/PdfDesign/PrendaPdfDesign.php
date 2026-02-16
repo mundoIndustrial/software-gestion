@@ -67,6 +67,7 @@ class PrendaPdfDesign
     {
         return <<<'CSS'
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { margin: 0; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
         
