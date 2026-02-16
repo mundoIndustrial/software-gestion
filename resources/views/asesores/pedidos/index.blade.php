@@ -1394,8 +1394,6 @@
 <script src="{{ asset('js/componentes/manejo-imagenes-proceso.js') }}"></script>
 <script src="{{ asset('js/componentes/manejador-imagen-proceso-con-indice.js') }}"></script>
 
-<!-- Generador de Script SQL - Para exportar pedidos completos -->
-<script src="{{ asset('js/asesores/generar-script-sql.js') }}"></script>
 
 @endpush
 

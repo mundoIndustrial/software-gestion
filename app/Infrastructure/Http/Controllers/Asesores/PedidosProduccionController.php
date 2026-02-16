@@ -48,7 +48,6 @@ use App\Application\Pedidos\UseCases\ObtenerHistorialProcesosUseCase;
 use App\Application\Pedidos\UseCases\ActualizarVariantePrendaUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\DTOs\ObtenerProduccionPedidoDTO;
-use App\Application\Services\Asesores\GenerarScriptSQLService;
 use App\Application\Pedidos\DTOs\CrearProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\ActualizarProduccionPedidoDTO;
 use App\Application\Pedidos\DTOs\AnularProduccionPedidoDTO;
@@ -2028,57 +2027,5 @@ class PedidosProduccionController
         }
     }
 
-    /**
-     * Generar script SQL completo del pedido
-     * 
-     * Genera un script SQL que contiene todos los INSERT necesarios para
-     * recrear el pedido con todas sus tablas y relaciones en otra base de datos.
-     */
-    public function generarScriptSQL(int $id): JsonResponse
-    {
-        try {
-            $pedido = PedidoProduccion::findOrFail($id);
-            
-            // Verificar que el usuario sea el dueño del pedido
-            if ($pedido->asesor_id !== auth()->id() && !auth()->user()->hasRole('supervisor')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No tienes permiso para acceder a este pedido'
-                ], 403);
-            }
-
-            $service = new GenerarScriptSQLService();
-            $sql = $service->generarScript($id);
-
-            return response()->json([
-                'success' => true,
-                'sql' => $sql,
-                'pedido_numero' => $pedido->numero_pedido,
-                'cliente' => $pedido->cliente
-            ]);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::warning('[PedidosProduccionController] Pedido no encontrado para generar script SQL', [
-                'pedido_id' => $id
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Pedido no encontrado'
-            ], 404);
-
-        } catch (\Exception $e) {
-            Log::error('[PedidosProduccionController] Error generando script SQL', [
-                'pedido_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al generar script SQL: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }
 
