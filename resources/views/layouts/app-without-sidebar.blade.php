@@ -3,7 +3,7 @@
 @section('module', 'produccion')
 
 @section('body')
-<div class="container">
+<div class="app-container">
     <!-- SIN SIDEBAR PARA DESPACHO -->
 
     <div class="main-content" id="mainContent">

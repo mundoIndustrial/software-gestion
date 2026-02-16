@@ -3,7 +3,7 @@
 @section('module', 'produccion')
 
 @section('body')
-<div class="container">
+<div class="app-container">
     @include('layouts.sidebar')
 
     <div class="main-content" id="mainContent">

@@ -3,7 +3,7 @@
 @section('module', 'supervisor-asesores')
 
 @section('body')
-<div class="container">
+<div class="app-container">
     @include('components.sidebars.sidebar-supervisor-asesores')
 
     <div class="main-content" id="mainContent">

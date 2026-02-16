@@ -71,7 +71,7 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
     btn.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
       // También toggle la clase en el container para que la tabla se adapte
-      const container = document.querySelector(".container");
+      const container = document.querySelector(".app-container");
       if (container) {
         container.classList.toggle("sidebar-collapsed");
       }
@@ -120,7 +120,7 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
 // Restore sidebar state from localStorage on large screens
 if (window.innerWidth > 768 && sidebar) {
   const sidebarCollapsed = localStorage.getItem("sidebarCollapsed");
-  const container = document.querySelector(".container");
+  const container = document.querySelector(".app-container");
   const contadorWrapper = document.querySelector(".contador-wrapper");
   if (sidebarCollapsed === "true") {
     sidebar.classList.add("collapsed");

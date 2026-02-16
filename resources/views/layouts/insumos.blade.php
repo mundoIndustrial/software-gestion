@@ -3,7 +3,7 @@
 @section('module', 'insumos')
 
 @section('body')
-<div class="container">
+<div class="app-container">
     @include('insumos.sidebar')
 
     <main class="main-content">
