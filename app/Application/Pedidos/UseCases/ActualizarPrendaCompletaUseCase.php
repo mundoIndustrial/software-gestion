@@ -1420,9 +1420,12 @@ final class ActualizarPrendaCompletaUseCase
         if (empty($imagenesAEliminar)) {
             return;
         }
-
+        
         \Log::info('[ActualizarPrendaCompletaUseCase] Iniciando eliminación de imágenes', [
-            'cantidad' => count($imagenesAEliminar)
+            'cantidad' => count($imagenesAEliminar),
+            'primer_elemento' => $imagenesAEliminar[0] ?? 'no_existe',
+            'tipo_primer_elemento' => gettype($imagenesAEliminar[0] ?? null),
+            'estructura_completa' => $imagenesAEliminar
         ]);
 
         $imagenService = new \App\Domain\Pedidos\Services\ImagenService();

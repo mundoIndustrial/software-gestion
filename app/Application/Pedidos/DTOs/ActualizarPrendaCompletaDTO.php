@@ -154,6 +154,13 @@ final class ActualizarPrendaCompletaDTO
         if (!empty($data['imagenes_a_eliminar'])) {
             if (is_string($data['imagenes_a_eliminar'])) {
                 $imagenesAEliminar = json_decode($data['imagenes_a_eliminar'], true);
+                
+                // 🔴 NUEVO: Convertir array de IDs a array de objetos con estructura esperada
+                if (is_array($imagenesAEliminar)) {
+                    $imagenesAEliminar = array_map(function($id) {
+                        return ['id' => $id];
+                    }, $imagenesAEliminar);
+                }
             } else {
                 $imagenesAEliminar = $data['imagenes_a_eliminar'];
             }

@@ -57,6 +57,14 @@ class ImageStorageService {
      * IMPORTANTE: Preserva un snapshot existente (no lo sobrescribe)
      */
     establecerImagenes(nuevasImagenes) {
+        // 🔍 DIAGNÓSTICO: Capturar stack trace para identificar quién llama con array vacío
+        if (Array.isArray(nuevasImagenes) && nuevasImagenes.length === 0) {
+            console.warn('🔴 [ImageStorageService] LLAMADA CON ARRAY VACÍO - Stack trace:', {
+                caller: new Error().stack?.split('\n')[1]?.trim(),
+                stack: new Error().stack
+            });
+        }
+        
         if (!Array.isArray(nuevasImagenes)) {
             console.warn(' [ImageStorageService.establecerImagenes] No es un array válido');
             return;

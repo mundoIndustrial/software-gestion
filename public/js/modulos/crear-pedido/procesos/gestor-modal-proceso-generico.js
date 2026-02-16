@@ -1544,7 +1544,17 @@ window.agregarProcesoAlPedido = function() {
             },
             imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
             // 🔴 CRÍTICO: imagenesEliminadas debe contener TODAS las imágenes (originales + nuevas)
-            imagenesEliminadas: imagenesEliminadasArray
+            imagenesEliminadas: imagenesEliminadasArray.map(img => {
+                // Si la imagen eliminada tiene ID, incluirla para eliminación física
+                if (img && img.id) {
+                    return {
+                        id: img.id,
+                        ruta_original: img.ruta_original,
+                        ruta_webp: img.ruta_webp
+                    };
+                }
+                return img; // Imagen nueva eliminada (solo se descarta)
+            })
         };
         
         console.log('[agregarProcesoAlPedido] 🔍 DEBUG imagenesEliminadas:', {

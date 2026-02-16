@@ -102,8 +102,18 @@ class PrendaEditorImagenes {
             
             console.log('[Imagenes] ✅ Preview renderizado idéntico a creación');
         } else {
-            // Sin imágenes
+            // Sin imágenes - PERO verificar si ya hay imágenes en el storage antes de resetear
             if (window.imagenesPrendaStorage) {
+                const imagenesExistentes = window.imagenesPrendaStorage.obtenerImagenes();
+                if (imagenesExistentes && imagenesExistentes.length > 0) {
+                    console.log('🖼️ [Imagenes] ⚠️ prenda.imagenes está vacío pero hay imágenes en storage, preservando storage:', {
+                        cantidadStorage: imagenesExistentes.length,
+                        prendaImagenes: prenda.imagenes
+                    });
+                    // NO resetear el storage, mantener las imágenes existentes
+                    return;
+                }
+                console.log('🖼️ [Imagenes] ✅ No hay imágenes en prenda ni en storage, reseteando storage');
                 window.imagenesPrendaStorage.establecerImagenes([]);
             }
             

@@ -341,6 +341,61 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
         };
 
         const eliminarImagenActual = () => {
+            // 🔴 NUEVO: En modo edición, marcar para eliminación diferida en lugar de eliminar inmediatamente
+            const modal = document.getElementById('modal-agregar-prenda-nueva');
+            const modalVisible = modal && modal.style.display !== 'none';
+            
+            if (modalVisible) {
+                // Modo edición: marcar para eliminación diferida
+                console.log('[PrendaDragDropHandler] 🗑️ Modo edición detectado, marcando imagen para eliminación diferida');
+                
+                // Inicializar array si no existe
+                if (!window.imagenesAEliminar) {
+                    window.imagenesAEliminar = [];
+                }
+                
+                // Obtener imágenes del storage para encontrar el ID
+                if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.obtenerImagenes) {
+                    const imgs = window.imagenesPrendaStorage.obtenerImagenes();
+                    const imagenAEliminar = imgs[idx];
+                    
+                    // Agregar ID al array si tiene ID y no está ya marcada
+                    if (imagenAEliminar && imagenAEliminar.id && !window.imagenesAEliminar.includes(imagenAEliminar.id)) {
+                        window.imagenesAEliminar.push(imagenAEliminar.id);
+                        console.log('[PrendaDragDropHandler] ✅ Imagen marcada para eliminación diferida:', {
+                            id: imagenAEliminar.id,
+                            totalMarcadas: window.imagenesAEliminar.length
+                        });
+                        
+                        // Ocultar visualmente la imagen en la galería
+                        imagenes.splice(idx, 1);
+                        if (imagenes.length > 0) {
+                            idx = Math.min(idx, imagenes.length - 1);
+                            renderModal();
+                        } else {
+                            Swal.close();
+                        }
+                        
+                        // Actualizar preview DOM para mostrar imagen como eliminada
+                        if (typeof window.actualizarPreviewPrenda === 'function') {
+                            window.actualizarPreviewPrenda();
+                        }
+                        
+                        return;
+                    }
+                }
+                
+                // Si no se puede marcar para eliminación, mostrar mensaje
+                Swal.fire({
+                    title: 'No se puede eliminar',
+                    text: 'Esta imagen no se puede marcar para eliminación',
+                    icon: 'warning',
+                    customClass: { container: 'swal-galeria-container' }
+                });
+                return;
+            }
+            
+            // Modo creación: eliminación inmediata (comportamiento original)
             Swal.fire({
                 title: '¿Eliminar imagen?',
                 text: 'Esta acción no se puede deshacer',

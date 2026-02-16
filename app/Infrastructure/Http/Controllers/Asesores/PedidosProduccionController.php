@@ -1031,6 +1031,9 @@ class PedidosProduccionController
                     Log::warning('[PedidosProduccionController] Error procesando imagenes_a_eliminar', ['error' => $e->getMessage()]);
                 }
                 
+                // 🔴 ELIMINADO: No eliminar imágenes aquí - el UseCase se encarga de la eliminación
+                // Esto evita doble eliminación (Controller + UseCase)
+                /*
                 // Eliminar imágenes del almacenamiento y BD
                 if (!empty($imagenesAEliminar)) {
                     Log::info('[PedidosProduccionController] Eliminando imágenes marcadas', [
@@ -1066,6 +1069,12 @@ class PedidosProduccionController
                         }
                     }
                 }
+                */
+                
+                Log::info('[PedidosProduccionController] Imágenes a eliminar delegadas al UseCase', [
+                    'cantidad' => count($imagenesAEliminar ?? []),
+                    'ids' => $imagenesAEliminar ?? []
+                ]);
             }
 
             // 🔴 NUEVO: Procesar procesos a eliminar
