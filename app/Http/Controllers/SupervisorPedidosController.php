@@ -417,9 +417,9 @@ class SupervisorPedidosController extends Controller
             'rol' => $rol,
         ]);
 
-        //  Broadcast evento en tiempo real
-        broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades', 'motivo_revision']));
-        \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Revisión");
+        //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnóstico)
+        // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades', 'motivo_revision']));
+        \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} - Revisión (diagnóstico)");
 
         return response()->json([
             'success' => true,
@@ -468,9 +468,9 @@ class SupervisorPedidosController extends Controller
                     'tipo_cotizacion' => $orden->cotizacion->tipoCotizacion->nombre ?? 'N/A',
                 ]);
 
-                //  Broadcast evento en tiempo real
-                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
-                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Reflectiva");
+                //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnóstico)
+                // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
+                \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} - Aprobación Reflectiva (diagnóstico)");
 
                 return response()->json([
                     'success' => true,
@@ -492,9 +492,9 @@ class SupervisorPedidosController extends Controller
                     'area' => 'Insumos',
                 ]);
 
-                //  Broadcast evento en tiempo real
-                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
-                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación Normal");
+                //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnóstico)
+                // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'area']));
+                \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} - Aprobación Normal (diagnóstico)");
 
                 return response()->json([
                     'success' => true,
@@ -1225,8 +1225,8 @@ class SupervisorPedidosController extends Controller
             if (!empty($validated['fecha_estimada_de_entrega'])) $changedFields[] = 'fecha_estimada_de_entrega';
             
             if (!empty($changedFields)) {
-                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', $changedFields));
-                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} con campos:", $changedFields);
+                // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', $changedFields));
+                \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} con campos:", $changedFields);
             }
 
             \Log::info("Pedido #{$orden->numero_pedido} actualizado por " . auth()->user()->name);
