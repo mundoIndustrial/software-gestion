@@ -46,13 +46,39 @@ function editarTallasPersonalizadoPorGenero(element) {
 
     const prendaId = element.getAttribute('data-prenda-id');
     const generoKey = element.getAttribute('data-genero-key');
+    const colorKey = element.getAttribute('data-color-key');
     const tallasBase = element.getAttribute('data-tallas-base') || '';
     const textoPersonalizadoRaw = element.getAttribute('data-texto-personalizado') || '';
 
     const map = parseTextoPersonalizadoTallasMap(textoPersonalizadoRaw);
-    const valorActual = (map && (map[generoKey] !== undefined && map[generoKey] !== null))
-        ? String(map[generoKey])
-        : (map && map.global ? String(map.global) : '');
+
+    const getValorActual = () => {
+        // 1) Nuevo formato recomendado: {"AZUL": {"caballero": "...", "dama": "..."}}
+        if (map && colorKey && typeof map[colorKey] === 'object' && map[colorKey] !== null) {
+            const nested = map[colorKey];
+            if (nested && (nested[generoKey] !== undefined && nested[generoKey] !== null)) {
+                return String(nested[generoKey]);
+            }
+        }
+
+        // 2) Compatibilidad: clave plana "AZUL||caballero"
+        if (map && colorKey) {
+            const flatKey = `${colorKey}||${generoKey}`;
+            if (map[flatKey] !== undefined && map[flatKey] !== null) {
+                return String(map[flatKey]);
+            }
+        }
+
+        // 3) Legacy: por género sin color
+        if (map && (map[generoKey] !== undefined && map[generoKey] !== null)) {
+            return String(map[generoKey]);
+        }
+
+        // 4) Global
+        return (map && map.global) ? String(map.global) : '';
+    };
+
+    const valorActual = getValorActual();
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -99,7 +125,16 @@ function editarTallasPersonalizadoPorGenero(element) {
         const nuevoValor = (input.value || '').trim();
         const nuevoMap = { ...(map || {}) };
 
-        nuevoMap[generoKey] = nuevoValor;
+        // Si hay colorKey, guardar anidado por color para evitar colisiones
+        if (colorKey) {
+            const prev = (nuevoMap[colorKey] && typeof nuevoMap[colorKey] === 'object' && nuevoMap[colorKey] !== null)
+                ? nuevoMap[colorKey]
+                : {};
+            nuevoMap[colorKey] = { ...(prev || {}), [generoKey]: nuevoValor };
+        } else {
+            // Legacy: por género sin color
+            nuevoMap[generoKey] = nuevoValor;
+        }
         const rawToSave = stringifyTextoPersonalizadoTallasMap(nuevoMap);
 
         // Guardar en memoria

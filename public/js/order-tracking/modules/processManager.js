@@ -1,9 +1,3 @@
-/**
- * Módulo: ProcessManager
- * Responsabilidad: Gestionar operaciones sobre procesos (editar, eliminar)
- * Principio SOLID: Single Responsibility
- */
-
 const ProcessManager = (() => {
     /**
      * Abre el modal de edición de un proceso
@@ -111,7 +105,7 @@ const ProcessManager = (() => {
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    closeEditModal();
+                    return;
                 }
             });
             
@@ -229,7 +223,16 @@ const ProcessManager = (() => {
                         toast.addEventListener('mouseenter', Swal.stopTimer);
                         toast.addEventListener('mouseleave', Swal.resumeTimer);
                     },
-                    didClose: () => reloadTrackingModal()
+                    didClose: () => {
+                        if (typeof closeOrderTracking === 'function') {
+                            closeOrderTracking();
+                            return;
+                        }
+
+                        if (globalThis.TrackingUI && typeof globalThis.TrackingUI.hideModal === 'function') {
+                            globalThis.TrackingUI.hideModal();
+                        }
+                    }
                 });
                 Toast.fire({
                     icon: 'success',
@@ -253,18 +256,15 @@ const ProcessManager = (() => {
                     toast.addEventListener('mouseleave', Swal.resumeTimer);
                 }
             });
+
             Toast.fire({
                 icon: 'error',
                 title: 'Error al guardar',
                 text: error.message
             });
-        } finally {
-            btnGuardar.disabled = false;
-            btnGuardar.dataset.saving = 'false';
-            btnGuardar.textContent = textOriginal;
         }
     }
-    
+
     /**
      * Elimina un proceso
      */
@@ -311,114 +311,72 @@ const ProcessManager = (() => {
         }
         
         try {
+            const numeroPedido = (procesoData && procesoData.numero_pedido)
+                ? procesoData.numero_pedido
+                : document.getElementById('trackingOrderNumber')?.textContent.replace('#', '').trim();
+
+            if (!numeroPedido) {
+                throw new Error('Número de pedido no disponible');
+            }
+
+            const numeroPedidoNormalizado = /^[0-9]+$/.test(String(numeroPedido))
+                ? Number.parseInt(String(numeroPedido), 10)
+                : String(numeroPedido);
+
             if (!procesoData.id) {
                 throw new Error('ID de proceso no disponible');
             }
             
-            const result = await ApiClient.deleteProceso(procesoData.id, procesoData.numero_pedido);
+            const result = await ApiClient.deleteProceso(procesoData.id, numeroPedidoNormalizado);
             
             if (result.success) {
-                if (typeof showToast === 'function') {
-                    showToast('Proceso eliminado exitosamente', 'success');
-                } else {
-
+                // Remover inmediatamente el área de la UI (optimistic UI)
+                try {
+                    const timelineContainer = document.getElementById('trackingTimelineContainer');
+                    if (timelineContainer) {
+                        const cards = timelineContainer.querySelectorAll('.tracking-area-card');
+                        const cardToRemove = Array.from(cards).find((card) => {
+                            const nameEl = card.querySelector('.tracking-area-name span:last-child');
+                            return nameEl && nameEl.textContent.trim() === String(procesoData.proceso).trim();
+                        });
+                        const item = cardToRemove ? cardToRemove.closest('.tracking-timeline-item') : null;
+                        if (item) item.remove();
+                    }
+                } catch (e) {
+                    // Si falla la eliminación visual, igual continuamos con la recarga
                 }
-                
-                // 🆕 IMPORTANTE: El Observer ya actualizó el área en la BD
-                // Obtener la orden actualizada para saber cuál es la nueva área
-                const ordenResponse = await fetch(`/registros/${procesoData.numero_pedido}`);
-                const ordenActualizada = await ordenResponse.json();
-                const newAreaFromServer = ordenActualizada.area;
-                
 
-                
-                // Obtener los procesos actualizados (solo para referencia)
-                const procesosData = await fetch(`/api/ordenes/${procesoData.numero_pedido}/procesos`).then(r => r.json());
-                const procesos = procesosData.procesos || [];
-                
-
-                procesos.forEach((p, i) => {
-
+                // Mensaje correcto
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        const container = document.querySelector('.swal2-container');
+                        if (container) container.style.zIndex = '99999';
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                    }
                 });
-                
-                // Usar el área que el Observer ya actualizó en la BD
-                const newArea = newAreaFromServer;
-                
-                // Actualizar el área en la tabla usando UpdatesModule
-                if (newArea) {
-                    try {
-                        const updatesModule = window.UpdatesModule || globalThis.UpdatesModule;
-                        
-                        if (updatesModule) {
-                            let areaDropdown = null;
-                            const tabla = document.querySelector('table#tablaOrdenes tbody');
-                            if (tabla) {
-                                areaDropdown = tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`);
-                            }
-                            
-                            const oldArea = areaDropdown?.dataset.value || '';
-                            
 
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Área eliminada correctamente'
+                });
 
-
-
-
-                            
-                            await updatesModule.updateOrderArea(
-                                procesoData.numero_pedido,
-                                newArea,
-                                oldArea,
-                                areaDropdown
-                            );
-                            
-
-                        } else {
-
-                            const tabla = document.querySelector('table#tablaOrdenes tbody');
-                            const areaDropdown = tabla ? tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`) : null;
-                            if (areaDropdown) {
-                                areaDropdown.value = newArea;
-                                areaDropdown.dataset.value = newArea;
-                                areaDropdown.dataset.programmaticChange = 'true';
-                                areaDropdown.dispatchEvent(new Event('change', { bubbles: true }));
-
-                            }
-                        }
-                    } catch (error) {
-
-                    }
-                }
-                
-                // Recargar el modal después de un pequeño delay para asegurar que la BD esté actualizada
-                const numeroPedido = document.getElementById('trackingOrderNumber')?.textContent.replace('#', '');
-                if (numeroPedido) {
-                    // Esperar 300ms para asegurar que la BD esté actualizada
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    
-                    try {
-
-                        const data = await ApiClient.getOrderProcesos(numeroPedido);
-
-                        
-                        // Recargar el modal con los nuevos datos
-                        if (typeof displayOrderTrackingWithProcesos === 'function') {
-                            displayOrderTrackingWithProcesos(data);
-
-                        } else if (typeof reloadTrackingModal === 'function') {
-                            reloadTrackingModal();
-
-                        } else {
-
-                        }
-                    } catch (error) {
-
-                    }
+                // Recargar el modal en tiempo real sin cerrarlo, rehidratando datos completos
+                if (numeroPedido && typeof openOrderTracking === 'function') {
+                    // Esperar un poco para que el Observer termine de ajustar el área
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await openOrderTracking(numeroPedido);
                 }
                 
                 // Refrescar la tabla en segundo plano
 
                 setTimeout(() => {
-                    _refreshTableRow(procesoData.numero_pedido);
+                    _refreshTableRow(numeroPedido);
                 }, 500);
             } else {
                 throw new Error(result.message);
@@ -428,7 +386,25 @@ const ProcessManager = (() => {
             if (typeof showToast === 'function') {
                 showToast(`Error al eliminar: ${error.message}`, 'error');
             } else {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        const container = document.querySelector('.swal2-container');
+                        if (container) container.style.zIndex = '99999';
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                    }
+                });
 
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Error al eliminar',
+                    text: error.message
+                });
             }
         }
     }
@@ -449,7 +425,9 @@ const ProcessManager = (() => {
                 }
                 
                 const procesosData = await procesosResponse.json();
-                const procesos = procesosData.procesos || [];
+                const procesos = Array.isArray(procesosData)
+                    ? procesosData
+                    : (procesosData.procesos || []);
                 
 
                 procesos.forEach((p, i) => {
@@ -473,36 +451,31 @@ const ProcessManager = (() => {
                 
                 const newArea = proximoProceso.proceso;
                 
-                // Buscar la fila en la tabla
-                const tabla = document.querySelector('table#tablaOrdenes tbody');
-                if (!tabla) {
-
-                    return;
-                }
-                
-                const fila = tabla.querySelector(`tr[data-numero-pedido="${numeroPedido}"]`);
+                // Buscar la fila (soportar tabla clásica y layout moderno)
+                const fila = document.querySelector(`tr[data-numero-pedido="${numeroPedido}"]`) ||
+                    document.querySelector(`.table-row[data-orden-id="${numeroPedido}"]`);
                 if (!fila) {
-
                     return;
                 }
-                
+
                 // Actualizar el dropdown de área en la fila
-                const areaDropdown = fila.querySelector(`.area-dropdown[data-id="${numeroPedido}"]`);
-                if (areaDropdown) {
-                    const oldValue = areaDropdown.value;
-                    if (oldValue !== newArea) {
-                        areaDropdown.value = newArea;
-                        areaDropdown.dataset.value = newArea;
-                        
-                        // Disparar evento para actualizar visualmente
-                        areaDropdown.dispatchEvent(new Event('input', { bubbles: true }));
-                        
+                const areaDropdown = fila.querySelector(`.area-dropdown[data-orden-id="${numeroPedido}"]`) ||
+                    fila.querySelector(`.area-dropdown[data-id="${numeroPedido}"]`) ||
+                    fila.querySelector('.area-dropdown');
 
-                    } else {
+                if (!areaDropdown) {
+                    return;
+                }
 
-                    }
-                } else {
+                const oldValue = areaDropdown.dataset.value || areaDropdown.value;
+                if (oldValue !== newArea) {
+                    areaDropdown.value = newArea;
+                    areaDropdown.dataset.value = newArea;
+                    areaDropdown.dataset.programmaticChange = 'true';
 
+                    // Disparar eventos para actualizar visualmente (select/filters/listeners)
+                    areaDropdown.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+                    areaDropdown.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             } catch (error) {
 

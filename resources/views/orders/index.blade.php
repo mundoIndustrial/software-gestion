@@ -184,7 +184,7 @@
                                 <!-- Estado (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
+                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower(trim($orden->estado ?? 'pendiente'))) }}" data-orden-id="{{ $orden->numero_pedido ?? 'sin-numero' }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
                                                 <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
                                             @endforeach

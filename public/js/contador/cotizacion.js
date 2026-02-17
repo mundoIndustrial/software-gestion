@@ -389,6 +389,46 @@ function openCotizacionModal(cotizacionId) {
                             return esSobremedida && sinGenero;
                         });
 
+                        const parseTextoPersonalizadoTallasMapLocal = (texto) => {
+                            if (!texto || typeof texto !== 'string') return {};
+                            const t = texto.trim();
+                            if (!t) return {};
+                            if (t.startsWith('{') && t.endsWith('}')) {
+                                try {
+                                    const parsed = JSON.parse(t);
+                                    if (parsed && typeof parsed === 'object') return parsed;
+                                } catch (e) {
+                                    return {};
+                                }
+                            }
+                            const matchParen = t.match(/^\((.*)\)$/);
+                            if (matchParen) return { global: matchParen[1] };
+                            return { global: t };
+                        };
+
+                        const rawTextoPersonalizado = prenda.texto_personalizado_tallas || '';
+                        const textoMap = parseTextoPersonalizadoTallasMapLocal(rawTextoPersonalizado);
+
+                        const getTextoPersonalizadoValor = (colorKey, generoKey) => {
+                            if (textoMap && colorKey && typeof textoMap[colorKey] === 'object' && textoMap[colorKey] !== null) {
+                                const nested = textoMap[colorKey];
+                                if (nested && (nested[generoKey] !== undefined && nested[generoKey] !== null)) {
+                                    return String(nested[generoKey]);
+                                }
+                            }
+                            if (textoMap && colorKey) {
+                                const flatKey = `${colorKey}||${generoKey}`;
+                                if (textoMap[flatKey] !== undefined && textoMap[flatKey] !== null) {
+                                    return String(textoMap[flatKey]);
+                                }
+                            }
+                            if (textoMap && (textoMap[generoKey] !== undefined && textoMap[generoKey] !== null)) {
+                                return String(textoMap[generoKey]);
+                            }
+                            if (textoMap && textoMap.global) return String(textoMap.global);
+                            return '';
+                        };
+
                         const formatearGrupoTallas = (arr) => {
                             const items = (Array.isArray(arr) ? arr : [])
                                 .map(x => {
@@ -444,12 +484,22 @@ function openCotizacionModal(cotizacionId) {
                                 const sinTxt = formatearGrupoTallas(tallasSinGenero);
                                 const tieneSobremedidaEnGrupo = tallasSobremedida.length > 0;
 
-                                const line = (titulo, valor) => {
-                                    if (!valor) return '';
+                                const lineEditable = (titulo, generoKey, valorBase) => {
+                                    if (!valorBase) return '';
+                                    const valorParen = getTextoPersonalizadoValor(colorKey, generoKey);
                                     return `
                                         <div style="margin-top: 0.25rem;">
                                             <span style="color: #1e5ba8; font-size: 0.85rem; font-weight: 800;">${titulo}: </span>
-                                            <span style="color: #ef4444; font-weight: 800; font-size: 0.85rem;">${valor}</span>
+                                            <span
+                                                class="tallas-genero-edit"
+                                                data-prenda-id="${prenda.id}"
+                                                data-genero-key="${generoKey}"
+                                                data-color-key="${String(colorKey).replace(/"/g, '&quot;')}"
+                                                data-tallas-base="${valorBase.replace(/"/g, '&quot;')}"
+                                                data-texto-personalizado="${String(rawTextoPersonalizado).replace(/"/g, '&quot;')}"
+                                                style="color: #ef4444; font-weight: 800; font-size: 0.85rem; cursor: pointer;"
+                                                title="Doble click para editar el texto dentro de paréntesis"
+                                            >${valorBase} (${valorParen || ''})</span>
                                         </div>
                                     `;
                                 };
@@ -470,10 +520,10 @@ function openCotizacionModal(cotizacionId) {
 
                                 gruposHtml +=
                                     colorHeader +
-                                    line('Caballero', cabTxt) +
-                                    line('Dama', damaTxt) +
+                                    lineEditable('Caballero', 'caballero', cabTxt) +
+                                    lineEditable('Dama', 'dama', damaTxt) +
                                     sobremedidaLine +
-                                    line('Sin género', sinTxt);
+                                    lineEditable('Sin género', 'sin_genero', sinTxt);
                             });
 
                             htmlPrendas += `

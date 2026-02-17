@@ -1,30 +1,3 @@
-/**
- * orderTracking-v2.js - Versión SOLID
- * 
- * Arquitectura: 9 módulos especializados
- * - dateUtils.js: Manipulación de fechas
- * - holidayManager.js: Gestión de festivos
- * - areaMapper.js: Mapeos de áreas e iconos
- * - trackingService.js: Lógica de cálculo de recorrido
- * - trackingUI.js: Renderización de interfaz
- * - apiClient.js: Comunicación con servidor
- * - processManager.js: Gestión de procesos (editar/eliminar)
- * - tableManager.js: Actualización de tabla
- * - dropdownManager.js: Gestión de dropdowns
- * 
- * Principios SOLID aplicados:
- *  Single Responsibility: Cada módulo tiene una única responsabilidad
- *  Open/Closed: Fácil de extender sin modificar código existente
- *  Liskov Substitution: Interfaces consistentes
- *  Interface Segregation: Clientes solo conocen lo que necesitan
- *  Dependency Inversion: Dependen de abstracciones, no de implementaciones
- */
-
-
-
-/**
- * Función principal: Abre el modal de seguimiento del pedido
- */
 async function openOrderTracking(orderId) {
     try {
 
@@ -98,7 +71,19 @@ async function displayOrderTrackingWithProcesos(orderData) {
     const festivos = await HolidayManager.obtenerFestivos();
     
     // Procesos del API
-    const procesos = orderData.procesos || [];
+    const procesos = Array.isArray(orderData.procesos) ? orderData.procesos : [];
+    // Asegurar orden cronológico (CORTE -> COSTURA) por fecha_inicio
+    procesos.sort((a, b) => {
+        const fa = DateUtils.parseLocalDate(a?.fecha_inicio);
+        const fb = DateUtils.parseLocalDate(b?.fecha_inicio);
+        const ta = isNaN(fa?.getTime?.()) ? 0 : fa.getTime();
+        const tb = isNaN(fb?.getTime?.()) ? 0 : fb.getTime();
+
+        if (ta !== tb) return ta - tb;
+        const ia = Number.parseInt(String(a?.id ?? 0), 10) || 0;
+        const ib = Number.parseInt(String(b?.id ?? 0), 10) || 0;
+        return ia - ib;
+    });
     
     if (!procesos || procesos.length === 0) {
         TrackingUI.updateTotalDays(0);
@@ -176,6 +161,24 @@ function attachProcessButtonListeners(procesos) {
         // Buscar el proceso en la lista
         const proceso = procesos.find(p => p.proceso === processName);
         if (proceso) {
+            const procesosDistintos = Array.from(
+                new Set((procesos || []).map((p) => String(p.proceso || '').trim()).filter(Boolean))
+            );
+
+            if (procesosDistintos.length <= 1) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No se puede eliminar',
+                    text: 'No se puede eliminar el único proceso de una orden',
+                    confirmButtonColor: '#3b82f6',
+                    didOpen: (modal) => {
+                        const swalContainer = document.querySelector('.swal2-container');
+                        if (swalContainer) swalContainer.style.zIndex = '99999';
+                        modal.style.zIndex = '99999';
+                    }
+                });
+                return;
+            }
             eliminarProceso(JSON.stringify(proceso));
         }
     }, false);
@@ -302,7 +305,6 @@ function initializeOrderTracking() {
     // Inicializar modal
     initializeTrackingModal();
     
-    // Actualizar días en tabla
     setTimeout(() => {
         TableManager.updateDaysInTable();
     }, 500);
@@ -310,9 +312,6 @@ function initializeOrderTracking() {
 
 }
 
-/**
- * Inicializa los event listeners del modal
- */
 function initializeTrackingModal() {
     const modal = TrackingUI.getModal();
     const overlay = document.getElementById('trackingModalOverlay');
@@ -341,15 +340,12 @@ function initializeTrackingModal() {
     }
 }
 
-/**
- * Inicializar cuando el DOM esté listo
- */
 document.addEventListener('DOMContentLoaded', function() {
 
     initializeOrderTracking();
 });
 
-// Compatibilidad: Mantener acceso a funciones públicas
+
 window.openOrderTracking = openOrderTracking;
 window.closeOrderTracking = closeOrderTracking;
 window.displayOrderTracking = displayOrderTracking;

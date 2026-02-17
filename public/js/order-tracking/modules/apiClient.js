@@ -155,7 +155,8 @@ const ApiClient = (() => {
      */
     async function deleteProceso(procesId, numeroPedido) {
         try {
-            const response = await fetch(`/api/procesos/${procesId}/eliminar`, {
+            const url = `/api/procesos/${procesId}/eliminar?numero_pedido=${encodeURIComponent(numeroPedido ?? '')}`;
+            const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -165,7 +166,18 @@ const ApiClient = (() => {
             });
             
             if (!response.ok) {
-                throw new Error('Error al eliminar proceso');
+                let message = 'Error al eliminar proceso';
+                try {
+                    const errorData = await response.json();
+                    if (errorData?.message) {
+                        message = errorData.message;
+                    } else if (errorData?.errors) {
+                        message = JSON.stringify(errorData.errors);
+                    }
+                } catch (e) {
+                    // Si no es JSON, dejar mensaje genérico
+                }
+                throw new Error(message);
             }
             
             return await response.json();

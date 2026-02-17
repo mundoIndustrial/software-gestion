@@ -371,6 +371,34 @@ export class Formatters {
             lineas.push(prenda.descripcion);
         }
 
+        // 2.6. Variaciones de prenda (antes de ubicaciones)
+        // Incluye BOTÓN/BROCHE y BOLSILLOS desde prenda.variantes
+        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            const primerVariante = prenda.variantes[0];
+            const detalles = [];
+
+            if (primerVariante.bolsillos_obs && String(primerVariante.bolsillos_obs).trim()) {
+                detalles.push(`• <strong>BOLSILLOS:</strong> ${String(primerVariante.bolsillos_obs).toUpperCase()}`);
+            }
+
+            const brocheObs = primerVariante.broche_obs || primerVariante.broche_boton_obs;
+            if (brocheObs && String(brocheObs).trim()) {
+                let etiqueta = primerVariante.broche || 'BROCHE/BOTÓN';
+                etiqueta = String(etiqueta);
+                if (etiqueta.toLowerCase().includes('botón')) {
+                    etiqueta = 'BOTÓN';
+                } else if (etiqueta.toLowerCase().includes('broche')) {
+                    etiqueta = 'BROCHE';
+                }
+                detalles.push(`• <strong>${etiqueta.toUpperCase()}:</strong> ${String(brocheObs).toUpperCase()}`);
+            }
+
+            if (detalles.length > 0) {
+                lineas.push('');
+                detalles.forEach((detalle) => lineas.push(detalle));
+            }
+        }
+
         // 3. Ubicaciones
         let ubicacionesArray = [];
         if (proceso.ubicaciones) {

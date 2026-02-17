@@ -111,7 +111,8 @@ class RegistroOrdenUpdateService
                 'proceso' => $nuevaArea,
                 'fecha_inicio' => now()->toDateTimeString(),
                 'estado_proceso' => 'Pendiente',  // 🆕 Establecer estado como Pendiente
-                'encargado' => auth()->user()->name ?? 'Sistema'
+                // No asignar automáticamente encargado al cambiar área desde tabla
+                'encargado' => null
             ]);
             \Log::info("Proceso CREADO para pedido {$numeroPedido}: {$nuevaArea}", [
                 'estado_proceso' => 'Pendiente',
@@ -119,8 +120,8 @@ class RegistroOrdenUpdateService
             ]);
         } else {
             $procesoExistente->update([
-                'fecha_inicio' => now()->toDateTimeString(),
-                'encargado' => auth()->user()->name ?? 'Sistema'
+                // Solo actualizar la fecha; no pisar encargado
+                'fecha_inicio' => now()->toDateTimeString()
             ]);
             \Log::info("Proceso ACTUALIZADO para pedido {$numeroPedido}: {$nuevaArea}");
         }

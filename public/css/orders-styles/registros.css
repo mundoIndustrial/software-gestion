@@ -352,6 +352,10 @@ body.dark-theme .pagination-info {
   background-color: #06b6d4;
 }
 
+ .estado-dropdown.estado-pendiente {
+  background-color: #f59e0b;
+ }
+
 .estado-dropdown.estado-en-ejecución {
   background-color: #10b981;
 }
@@ -378,6 +382,11 @@ body.dark-theme .pagination-info {
   background: #06b6d4;
   color: white;
 }
+
+ .estado-dropdown option[value="Pendiente"] {
+  background: #f59e0b;
+  color: white;
+ }
 
 .estado-dropdown option[value="En Ejecución"] {
   background: #10b981;

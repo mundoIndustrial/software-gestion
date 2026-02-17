@@ -78,18 +78,26 @@ class EliminarProcesoUseCase
 
         // Eliminar de tabla antigua si existe
         if ($proceso) {
-            $totalProcesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
-                ->count();
+            $nombreProceso = $proceso->proceso;
 
-            if ($totalProcesos <= 1) {
+            // Validar por cantidad de procesos DISTINTOS (áreas) para la orden
+            $totalProcesosDistintos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->whereNull('deleted_at')
+                ->distinct('proceso')
+                ->count('proceso');
+
+            if ($totalProcesosDistintos <= 1) {
                 throw new \DomainException('No se puede eliminar el único proceso de una orden');
             }
 
-            $proceso->delete();
+            // Eliminar todos los registros del mismo proceso para evitar que reaparezca
+            ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->where('proceso', $nombreProceso)
+                ->delete();
 
             DB::table('procesos_historial')
                 ->where('numero_pedido', $numeroPedido)
-                ->where('proceso', $proceso->proceso)
+                ->where('proceso', $nombreProceso)
                 ->delete();
 
             return [

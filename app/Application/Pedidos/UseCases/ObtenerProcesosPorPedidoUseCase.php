@@ -43,7 +43,9 @@ class ObtenerProcesosPorPedidoUseCase
             ->get()
             ->groupBy('proceso')
             ->map(function($grupo) {
-                return $grupo->first();
+                // Mantener el registro más reciente de cada proceso
+                // (al venir ordenado ASC, el último es el más nuevo)
+                return $grupo->last();
             })
             ->values();
 
