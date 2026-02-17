@@ -630,7 +630,7 @@
             showCancelButton: true
         }).then((result) => {
             if (result.isConfirmed) {
-                const justificacion = document.getElementById('justificacionCambio').value.trim();
+                const justificacion = document.getElementById('justificacion-cambio').value.trim();
                 
                 if (!justificacion) {
                     showNotification('Debes ingresar una novedad del cambio', 'warning');

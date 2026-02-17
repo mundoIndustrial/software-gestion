@@ -77,8 +77,8 @@
                 </button>
                 @endif
                 
-                <!-- Notificaciones (oculto en despacho) -->
-                @if(!request()->is('despacho*'))
+                <!-- Notificaciones (oculto en despacho y bodega) -->
+                @if(!request()->is('despacho*') && !request()->is('gestion-bodega*'))
                 <div class="notification-dropdown">
                     <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones" aria-expanded="false" aria-controls="notificationMenu">
                         <span class="material-symbols-rounded" aria-hidden="true">notifications</span>

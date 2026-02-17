@@ -380,7 +380,7 @@ class InvoiceRenderer {
                 <div style="background: #f9f9f9; padding: 6px; margin: 4px 0; border-left: 3px solid #9ca3af; border-radius: 2px; font-size: 11px;">
                     <div style="font-weight: 700; color: #3b82f6; margin-bottom: 4px; text-transform: uppercase;">Proceso: ${proc.tipo || proc.nombre || `(ID: ${proc.tipo_proceso_id})`}</div>
                     
-                    ${(proc.ubicaciones?.length > 0 || proc.observaciones) ? `
+                    ${(proc.ubicaciones?.length > 0 || proc.observaciones || proc.tallas) ? `
                         <table style="width: 100%; font-size: 11px; margin-bottom: 4px; border-collapse: collapse;">
                             ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <tr style="border-bottom: 1px solid #eee;">
@@ -389,9 +389,15 @@ class InvoiceRenderer {
                                 </tr>
                             ` : ''}
                             ${proc.observaciones ? `
-                                <tr>
+                                <tr style="border-bottom: 1px solid #eee;">
                                     <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Observaciones:</td>
                                     <td style="padding: 2px 3px; font-size: 11px;">${proc.observaciones}</td>
+                                </tr>
+                            ` : ''}
+                            ${proc.tallas && typeof proc.tallas === 'object' && Object.keys(proc.tallas).length > 0 ? `
+                                <tr>
+                                    <td style="padding: 2px 3px; font-weight: 600; color: #6b7280; width: 25%;">Tallas:</td>
+                                    <td style="padding: 2px 3px; font-size: 11px;">${this.renderizarTallasProceso(proc.tallas)}</td>
                                 </tr>
                             ` : ''}
                         </table>
@@ -414,6 +420,33 @@ class InvoiceRenderer {
         }
         
         return '<div style="color: #999; font-size: 11px; font-style: italic;">Sin procesos asociados</div>';
+    }
+
+    renderizarTallasProceso(tallas) {
+        if (!tallas || typeof tallas !== 'object') {
+            return '<span style="color: #999; font-size: 10px;">Sin tallas</span>';
+        }
+        
+        const tallasArray = [];
+        
+        // Procesar cada género
+        Object.entries(tallas).forEach(([genero, tallasObj]) => {
+            if (tallasObj && typeof tallasObj === 'object' && Object.keys(tallasObj).length > 0) {
+                const generoUpper = genero.toUpperCase();
+                const tallasGenero = Object.entries(tallasObj)
+                    .filter(([talla, cantidad]) => cantidad > 0)
+                    .map(([talla, cantidad]) => `${talla}:${cantidad}`)
+                    .join(', ');
+                
+                if (tallasGenero) {
+                    tallasArray.push(`${generoUpper} (${tallasGenero})`);
+                }
+            }
+        });
+        
+        return tallasArray.length > 0 
+            ? tallasArray.join(' | ') 
+            : '<span style="color: #999; font-size: 10px;">Sin tallas asignadas</span>';
     }
 
     renderizarEPP(epps) {

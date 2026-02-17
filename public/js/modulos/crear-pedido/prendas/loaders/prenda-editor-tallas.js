@@ -59,6 +59,54 @@ class PrendaEditorTallas {
                 const input = tarjeta.querySelector(`input[data-talla="${talla}"]`);
                 if (input) {
                     input.value = cantidad || 0;
+                    // 🔥 AGREGAR EVENTO PARA ACTUALIZAR window.tallasRelacionales AL CAMBIAR
+                    input.addEventListener('change', () => {
+                        const nuevaCantidad = parseInt(input.value) || 0;
+                        console.log(`[Tallas] 🔄 Actualizando ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
+                        
+                        // Actualizar window.tallasRelacionales
+                        if (!window.tallasRelacionales) {
+                            window.tallasRelacionales = {};
+                        }
+                        if (!window.tallasRelacionales[genero]) {
+                            window.tallasRelacionales[genero] = {};
+                        }
+                        
+                        if (nuevaCantidad > 0) {
+                            window.tallasRelacionales[genero][talla] = nuevaCantidad;
+                        } else {
+                            delete window.tallasRelacionales[genero][talla];
+                        }
+                        
+                        console.log(`[Tallas] 📊 window.tallasRelacionales actualizado:`, window.tallasRelacionales);
+                        
+                        // Actualizar total
+                        this._actualizarTotal();
+                    });
+                    
+                    // 🔥 AGREGAR EVENTO input PARA ACTUALIZAR EN TIEMPO REAL
+                    input.addEventListener('input', () => {
+                        const nuevaCantidad = parseInt(input.value) || 0;
+                        console.log(`[Tallas] ⌨️ Input en tiempo real ${genero} - ${talla}: ${cantidad} → ${nuevaCantidad}`);
+                        
+                        // Actualizar window.tallasRelacionales
+                        if (!window.tallasRelacionales) {
+                            window.tallasRelacionales = {};
+                        }
+                        if (!window.tallasRelacionales[genero]) {
+                            window.tallasRelacionales[genero] = {};
+                        }
+                        
+                        if (nuevaCantidad > 0) {
+                            window.tallasRelacionales[genero][talla] = nuevaCantidad;
+                        } else {
+                            delete window.tallasRelacionales[genero][talla];
+                        }
+                        
+                        // Actualizar total
+                        this._actualizarTotal();
+                    });
+                    
                     console.log(` [Tallas] ${genero} - ${talla}: ${cantidad}`);
                 }
             });

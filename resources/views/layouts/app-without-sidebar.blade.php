@@ -129,6 +129,163 @@
         </main>
     </div>
 </div>
+
+<style>
+/* Estilos específicos para bodega - eliminar espacio innecesario */
+body[data-module="produccion"] .page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    background: transparent !important;
+}
+
+/* Asegurar que el contenido de bodega ocupe todo el ancho */
+body[data-module="produccion"] .min-h-screen {
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Eliminar cualquier espacio en el main-content para bodega */
+body[data-module="produccion"] .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+/* 🚨 CORRECCIÓN: Eliminar margen izquierdo de 200px del app-container */
+body[data-module="produccion"] .app-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+}
+
+/* 🚨 CORRECCIÓN: Forzar ancho completo del main-content */
+body[data-module="produccion"] .main-content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* 🚨 CORRECCIÓN: Forzar ancho completo del page-content */
+body[data-module="produccion"] .page-content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+</style>
+
+<script>
+/**
+ * Logs de diagnóstico para detectar espacio de sidebar
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 [DIAGNÓSTICO-SIDEBAR] Analizando espacio de sidebar...');
+    
+    // Verificar body y data attributes
+    const body = document.body;
+    console.log(`📄 [DIAGNÓSTICO-SIDEBAR] Body:`, {
+        module: body.getAttribute('data-module'),
+        className: body.className,
+        computedWidth: window.getComputedStyle(body).width,
+        computedMargin: window.getComputedStyle(body).margin,
+        computedPadding: window.getComputedStyle(body).padding
+    });
+    
+    // Verificar app-container
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) {
+        const appStyle = window.getComputedStyle(appContainer);
+        console.log(`📦 [DIAGNÓSTICO-SIDEBAR] App container:`, {
+            width: appContainer.width,
+            computedWidth: appStyle.width,
+            computedMargin: appStyle.margin,
+            computedPadding: appStyle.padding,
+            computedDisplay: appStyle.display,
+            computedFlexDirection: appStyle.flexDirection
+        });
+    }
+    
+    // Verificar main-content
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        const mainStyle = window.getComputedStyle(mainContent);
+        console.log(`🏠 [DIAGNÓSTICO-SIDEBAR] Main content:`, {
+            width: mainContent.offsetWidth,
+            computedWidth: mainStyle.width,
+            computedMargin: mainStyle.margin,
+            computedPadding: mainStyle.padding,
+            computedDisplay: mainStyle.display,
+            computedFlex: mainStyle.flex
+        });
+    }
+    
+    // Verificar page-content
+    const pageContent = document.querySelector('.page-content');
+    if (pageContent) {
+        const pageStyle = window.getComputedStyle(pageContent);
+        console.log(`📄 [DIAGNÓSTICO-SIDEBAR] Page content:`, {
+            width: pageContent.offsetWidth,
+            computedWidth: pageStyle.width,
+            computedMargin: pageStyle.margin,
+            computedPadding: pageStyle.padding,
+            computedPaddingLeft: pageStyle.paddingLeft,
+            computedPaddingRight: pageStyle.paddingRight,
+            computedDisplay: pageStyle.display
+        });
+    }
+    
+    // Verificar si hay elementos de sidebar ocultos
+    const sidebarElements = document.querySelectorAll('[class*="sidebar"], [class*="menu"], [id*="sidebar"], [id*="menu"]');
+    console.log(`🔍 [DIAGNÓSTICO-SIDEBAR] Elementos de sidebar encontrados:`, sidebarElements.length);
+    sidebarElements.forEach((el, index) => {
+        const style = window.getComputedStyle(el);
+        console.log(`  ${index + 1}. ${el.tagName}.${el.className}:`, {
+            display: style.display,
+            visibility: style.visibility,
+            width: style.width,
+            position: style.position
+        });
+    });
+    
+    // Verificar viewport vs contenido
+    const viewportWidth = window.innerWidth;
+    const pageContentWidth = pageContent ? pageContent.offsetWidth : 0;
+    const espacioOcupado = (pageContentWidth / viewportWidth) * 100;
+    
+    console.log(`📊 [DIAGNÓSTICO-SIDEBAR] Resumen de espacio:`, {
+        viewportWidth: viewportWidth,
+        pageContentWidth: pageContentWidth,
+        espacioOcupado: espacioOcupado.toFixed(2) + '%',
+        espacioNoOcupado: (100 - espacioOcupado).toFixed(2) + '%'
+    });
+    
+    // Detectar CSS rules que puedan afectar
+    setTimeout(() => {
+        const stylesheets = Array.from(document.styleSheets);
+        console.log(`🎨 [DIAGNÓSTICO-SIDEBAR] Analizando ${stylesheets.length} hojas de estilo...`);
+        
+        stylesheets.forEach((sheet, sheetIndex) => {
+            try {
+                const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                rules.forEach((rule, ruleIndex) => {
+                    if (rule.selectorText) {
+                        const selector = rule.selectorText.toLowerCase();
+                        if (selector.includes('sidebar') || selector.includes('main-content') || selector.includes('page-content')) {
+                            console.log(`  📋 Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.log(`  ⚠️ No se puede leer hoja ${sheetIndex}: ${e.message}`);
+            }
+        });
+    }, 1000);
+});
+</script>
 @endsection
 
 @push('styles')

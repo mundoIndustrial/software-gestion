@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-slate-50 w-full flex flex-col">
-    <div class="w-full">
+    <div class="w-full flex-shrink-0">
         <!-- Header -->
         <div class="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6">
             <div class="flex items-center justify-between">
@@ -38,8 +38,8 @@
         <div class="flex-1 overflow-hidden">
             <!-- Tabla Moderna de Detalles -->
             <div class="bg-white h-full overflow-hidden border border-slate-300 shadow-sm rounded">
-                <div class="overflow-x-auto h-full">
-                    <table class="w-full border-collapse h-screen" style="table-layout: fixed;">
+                <div class="overflow-x-auto h-full" style="height: calc(100vh - 120px);">
+                    <table class="w-full border-collapse" style="table-layout: auto;">
                         <!-- THEAD -->
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-300">
@@ -538,6 +538,78 @@ document.addEventListener('keydown', function(e) {
         cerrarModalFactura();
         cerrarModalNotas();
     }
+});
+
+/**
+ * Logs de diagnóstico para el diseño de la tabla - EPP
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 [DIAGNÓSTICO-EPP] Iniciando análisis de diseño...');
+    
+    // Verificar dimensiones del viewport
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    console.log(`📏 [DIAGNÓSTICO-EPP] Viewport: ${viewportWidth}x${viewportHeight}px`);
+    
+    // Verificar contenedor principal
+    const mainContainer = document.querySelector('.min-h-screen');
+    if (mainContainer) {
+        const mainRect = mainContainer.getBoundingClientRect();
+        console.log(`📦 [DIAGNÓSTICO-EPP] Contenedor principal:`, {
+            width: mainRect.width,
+            height: mainRect.height,
+            computedHeight: window.getComputedStyle(mainContainer).height,
+            classes: mainContainer.className
+        });
+    }
+    
+    // Verificar contenedor de la tabla
+    const tableContainer = document.querySelector('.overflow-x-auto');
+    if (tableContainer) {
+        const tableRect = tableContainer.getBoundingClientRect();
+        const computedStyle = window.getComputedStyle(tableContainer);
+        console.log(`🗂️ [DIAGNÓSTICO-EPP] Contenedor de tabla:`, {
+            width: tableRect.width,
+            height: tableRect.height,
+            computedHeight: computedStyle.height,
+            customHeight: computedStyle.getPropertyValue('height'),
+            overflowX: computedStyle.overflowX,
+            overflowY: computedStyle.overflowY,
+            classes: tableContainer.className
+        });
+    }
+    
+    // Verificar tabla
+    const table = document.querySelector('table');
+    if (table) {
+        const tableRect = table.getBoundingClientRect();
+        const tableStyle = window.getComputedStyle(table);
+        console.log(`📊 [DIAGNÓSTICO-EPP] Tabla:`, {
+            width: tableRect.width,
+            height: tableRect.height,
+            computedWidth: tableStyle.width,
+            computedHeight: tableStyle.height,
+            tableLayout: tableStyle.tableLayout,
+            scrollWidth: table.scrollWidth,
+            scrollHeight: table.scrollHeight,
+            classes: table.className
+        });
+    }
+    
+    // Verificar si hay scroll
+    setTimeout(() => {
+        const tableContainer = document.querySelector('.overflow-x-auto');
+        if (tableContainer) {
+            console.log(`🔄 [DIAGNÓSTICO-EPP] Estado del scroll:`, {
+                hasHorizontalScroll: tableContainer.scrollWidth > tableContainer.clientWidth,
+                hasVerticalScroll: tableContainer.scrollHeight > tableContainer.clientHeight,
+                scrollWidth: tableContainer.scrollWidth,
+                clientWidth: tableContainer.clientWidth,
+                scrollHeight: tableContainer.scrollHeight,
+                clientHeight: tableContainer.clientHeight
+            });
+        }
+    }, 1000);
 });
 </script>
 
