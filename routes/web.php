@@ -2177,6 +2177,9 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Detalles y aprobación de procesos
     Route::get('/procesos/{id}/detalles', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
     Route::post('/procesos/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');
+
+    // Fecha de llegada de recibo (autosave)
+    Route::post('/recibos/{id}/fecha-llegada', [App\Http\Controllers\SupervisorPedidosController::class, 'guardarFechaLlegadaRecibo'])->name('recibos.fecha-llegada');
     
     // Notificaciones
     Route::get('/notificaciones', [App\Http\Controllers\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');

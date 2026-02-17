@@ -36,6 +36,60 @@ class SupervisorPedidosController extends Controller
         }
     }
 
+    public function guardarFechaLlegadaRecibo($id)
+    {
+        try {
+            $recibo = \DB::table('consecutivos_recibos_pedidos')->where('id', $id)->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            $fechaLlegadaRaw = request()->input('fecha_llegada');
+            if ($fechaLlegadaRaw === null || $fechaLlegadaRaw === '') {
+                \DB::table('recibos_fechas_llegada')->updateOrInsert(
+                    ['recibo_id' => $id],
+                    ['fecha_llegada' => null, 'updated_at' => now(), 'created_at' => now()]
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Fecha de llegada actualizada',
+                    'data' => ['fecha_llegada' => null]
+                ]);
+            }
+
+            try {
+                $fechaLlegada = \Carbon\Carbon::parse($fechaLlegadaRaw);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fecha inválida'
+                ], 422);
+            }
+
+            \DB::table('recibos_fechas_llegada')->updateOrInsert(
+                ['recibo_id' => $id],
+                ['fecha_llegada' => $fechaLlegada, 'updated_at' => now(), 'created_at' => now()]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fecha de llegada actualizada',
+                'data' => ['fecha_llegada' => $fechaLlegada->format('Y-m-d H:i:s')]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar fecha de llegada del recibo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la fecha de llegada'
+            ], 500);
+        }
+    }
+
     /**
      * Actualizar el perfil del supervisor
      */
@@ -1342,9 +1396,20 @@ class SupervisorPedidosController extends Controller
                 ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
                 ->join('users as u', 'p.asesor_id', '=', 'u.id')
                 ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+                ->leftJoin('recibos_fechas_llegada as rfl', 'rfl.recibo_id', '=', 'crp.id')
                 ->leftJoin('pedidos_procesos_prenda_detalles as ppd', function($join) {
                     $join->on('pp.id', '=', 'ppd.prenda_pedido_id')
-                         ->where('ppd.estado', 'PENDIENTE');
+                         ->where(function ($q) {
+                             $q->where('ppd.tipo_recibo', '=', \DB::raw('crp.tipo_recibo'))
+                                 ->orWhere(function ($q2) {
+                                     $q2->whereNull('ppd.tipo_recibo')
+                                         ->whereRaw("ppd.tipo_proceso_id = (CASE crp.tipo_recibo WHEN 'BORDADO' THEN 2 WHEN 'ESTAMPADO' THEN 3 WHEN 'DTF' THEN 4 WHEN 'SUBLIMADO' THEN 5 ELSE NULL END)");
+                                 });
+                         })
+                         ->where(function ($q) {
+                             $q->whereNull('ppd.numero_recibo')
+                                 ->orWhere('ppd.numero_recibo', '=', \DB::raw('crp.consecutivo_actual'));
+                         });
                 })
                 ->select([
                     'p.created_at as fecha_creacion',
@@ -1355,14 +1420,12 @@ class SupervisorPedidosController extends Controller
                     'crp.tipo_recibo',
                     'pp.nombre_prenda',
                     'crp.id as recibo_id',
-                    'pp.id as prenda_id'
+                    'pp.id as prenda_id',
+                    'ppd.fecha_aprobacion',
+                    'rfl.fecha_llegada'
                 ])
                 ->whereIn('crp.tipo_recibo', ['BORDADO', 'ESTAMPADO', 'SUBLIMADO', 'DTF'])
                 ->where('crp.activo', 1)
-                ->where(function($query) {
-                    $query->whereNull('ppd.estado')
-                          ->orWhere('ppd.estado', 'PENDIENTE');
-                })
                 ->orderBy('p.created_at', 'desc')
                 ->get();
 
@@ -1490,6 +1553,8 @@ class SupervisorPedidosController extends Controller
                     ->update([
                         'estado' => 'APROBADO',
                         'fecha_aprobacion' => now(),
+                        'numero_recibo' => $recibo->consecutivo_actual,
+                        'tipo_recibo' => $recibo->tipo_recibo,
                         'aprobado_por' => auth()->id()
                     ]);
             }
