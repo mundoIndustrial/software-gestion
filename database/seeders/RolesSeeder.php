@@ -68,6 +68,11 @@ class RolesSeeder extends Seeder
                 'description' => 'Bordador - Operario que borda el diseño/logo en la prenda (solo ve Pedidos Logo en área BORDANDO)',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'control de calidad',
+                'description' => 'encargado de gestion de entregas de prendas control de calidad',
+                'requires_credentials' => true,
+            ],
         ];
 
         foreach ($roles as $role) {
