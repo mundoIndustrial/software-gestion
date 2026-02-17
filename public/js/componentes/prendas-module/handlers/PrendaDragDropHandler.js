@@ -341,11 +341,23 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
         };
 
         const eliminarImagenActual = () => {
-            // 🔴 NUEVO: En modo edición, marcar para eliminación diferida en lugar de eliminar inmediatamente
+            // 🔴 CORRECCIÓN: Detectar correctamente si estamos en modo edición o creación
             const modal = document.getElementById('modal-agregar-prenda-nueva');
             const modalVisible = modal && modal.style.display !== 'none';
             
-            if (modalVisible) {
+            // Detectar si es modo edición (hay datos de edición cargados)
+            const esModoEdicion = window.modoEdicion === true || 
+                                 (window.pedidoEditarId && window.pedidoEditarId > 0) ||
+                                 (window.pedidoEditarData && window.pedidoEditarData.pedido);
+            
+            console.log('[PrendaDragDropHandler] 🗑️ Modo detectado:', {
+                modalVisible,
+                esModoEdicion,
+                pedidoEditarId: window.pedidoEditarId,
+                modoEdicion: window.modoEdicion
+            });
+            
+            if (modalVisible && esModoEdicion) {
                 // Modo edición: marcar para eliminación diferida
                 console.log('[PrendaDragDropHandler] 🗑️ Modo edición detectado, marcando imagen para eliminación diferida');
                 
@@ -377,6 +389,30 @@ class PrendaDragDropHandler extends BaseDragDropHandler {
                         }
                         
                         // Actualizar preview DOM para mostrar imagen como eliminada
+                        if (typeof window.actualizarPreviewPrenda === 'function') {
+                            window.actualizarPreviewPrenda();
+                        }
+                        
+                        return;
+                    } else if (imagenAEliminar && !imagenAEliminar.id) {
+                        // Imagen nueva sin ID: eliminar inmediatamente del storage
+                        console.log('[PrendaDragDropHandler] 🗑️ Imagen nueva sin ID, eliminando inmediatamente');
+                        
+                        // Eliminar del storage
+                        if (window.imagenesPrendaStorage && window.imagenesPrendaStorage.eliminarImagen) {
+                            window.imagenesPrendaStorage.eliminarImagen(idx);
+                        }
+                        
+                        // Ocultar visualmente la imagen en la galería
+                        imagenes.splice(idx, 1);
+                        if (imagenes.length > 0) {
+                            idx = Math.min(idx, imagenes.length - 1);
+                            renderModal();
+                        } else {
+                            Swal.close();
+                        }
+                        
+                        // Actualizar preview DOM
                         if (typeof window.actualizarPreviewPrenda === 'function') {
                             window.actualizarPreviewPrenda();
                         }

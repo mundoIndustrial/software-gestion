@@ -379,7 +379,9 @@ window.confirmarEliminarImagenProceso = function() {
     }
     
     // Limpiar en array local y global
-    imagenesProcesoActual[indice - 1] = null;
+    if (typeof imagenesProcesoActual !== 'undefined') {
+        imagenesProcesoActual[indice - 1] = null;
+    }
     if (window.imagenesProcesoActual) {
         window.imagenesProcesoActual[indice - 1] = null;
     }
@@ -439,7 +441,10 @@ window.confirmarEliminarImagenProceso = function() {
     
     // Registrar cambio en editor de procesos
     if (window.procesosEditor) {
-        let imagenesParaRegistrar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        let imagenesParaRegistrar = [];
+        if (window.imagenesProcesoExistentes) {
+            imagenesParaRegistrar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        }
         if (window.imagenesProcesoActual) {
             window.imagenesProcesoActual.forEach(img => {
                 if (img instanceof File) imagenesParaRegistrar.push(img);
