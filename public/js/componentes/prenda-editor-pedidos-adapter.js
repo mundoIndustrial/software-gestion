@@ -963,6 +963,13 @@
         }
 
         // ---- 1b. COLORES POR TALLA (prenda_pedido_talla_colores) → asignaciones ----
+        console.log('[PedidosAdapter] 🐛 DEBUG: Verificando talla_colores ANTES de procesar', {
+            'existe': 'talla_colores' in prenda,
+            'es_array': Array.isArray(prenda.talla_colores),
+            'longitud': prenda.talla_colores?.length || 0,
+            'contenido': prenda.talla_colores
+        });
+        
         if (Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
             console.log('[PedidosAdapter] 🎨 Construyendo asignaciones desde talla_colores:', prenda.talla_colores.length, 'registros');
 
@@ -1002,7 +1009,20 @@
             prenda.asignacionesColoresPorTalla = coloresPorTalla;
             console.log('[PedidosAdapter] 🎨 Asignaciones construidas:', prenda.asignaciones.length, 'filas');
             console.log('[PedidosAdapter] 🎨 ColoresPorTalla:', Object.keys(coloresPorTalla).length, 'grupos');
+        } else {
+            console.log('[PedidosAdapter] ⚠️ talla_colores está vacío o no es array');
         }
+        
+        // DEBUG: Verificar estado FINAL de talla_colores
+        console.log('[PedidosAdapter] 🐛 DEBUG: Estado FINAL de talla_colores', {
+            'existe': 'talla_colores' in prenda,
+            'es_array': Array.isArray(prenda.talla_colores),
+            'longitud': prenda.talla_colores?.length || 0,
+            'asignaciones_existe': 'asignaciones' in prenda,
+            'asignaciones_longitud': prenda.asignaciones?.length || 0,
+            'asignacionesColoresPorTalla_existe': 'asignacionesColoresPorTalla' in prenda,
+            'asignacionesColoresPorTalla_keys': Object.keys(prenda.asignacionesColoresPorTalla || {}).length
+        });
 
         // ---- 2. VARIANTES: array → objeto plano ----
         if (Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {

@@ -669,6 +669,14 @@ class ObtenerPedidoDetalleService
 
         $prendaArray['talla_colores'] = $tallaColores;
         Log::info('🎨 [TALLA-COLORES] Encontrados ' . count($tallaColores) . ' registros de colores por talla');
+        
+        // DEBUG: Log detallado de talla_colores para supervisor-pedidos
+        Log::info('🐛 [DEBUG-TALLA-COLORES] Estructura completa de talla_colores', [
+            'cantidad' => count($tallaColores),
+            'contenido' => $tallaColores,
+            'prenda_id' => $prenda->id,
+            'pedido_id' => $pedidoId ?? 'unknown'
+        ]);
 
         // Variantes (mangas, broches, bolsillos)
         $variantes = [];

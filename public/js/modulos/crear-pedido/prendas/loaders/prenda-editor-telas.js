@@ -34,8 +34,15 @@ class PrendaEditorTelas {
         console.log('[Telas] Filas viejas eliminadas');
         
         // 🔴 NUEVO: Cargar datalist de telas y colores
+        console.log('[Telas] 🔄 Verificando si cargarDatalistTelasColores existe:', typeof cargarDatalistTelasColores);
         if (typeof cargarDatalistTelasColores === 'function') {
-            cargarDatalistTelasColores();
+            console.log('[Telas] ✅ Llamando a cargarDatalistTelasColores con pequeño retraso...');
+            // Pequeño retraso para asegurar que el DOM del modal esté listo
+            setTimeout(() => {
+                cargarDatalistTelasColores();
+            }, 100);
+        } else {
+            console.warn('[Telas] ⚠️ cargarDatalistTelasColores no existe');
         }
         
         // 🔴 NUEVO: Configurar drag & drop para telas
@@ -360,49 +367,113 @@ window.agregarTelaNueva = function() {
     }
 };
 
+// 🔴 NUEVO: Función de prueba para verificar APIs
+window.probarApisTelasColores = async function() {
+    console.log('[probarApisTelasColores] 🧪 Iniciando prueba de APIs...');
+    
+    try {
+        // Probar API de telas
+        console.log('[probarApisTelasColores] 📡 Probando /asesores/api/telas...');
+        const responseTelas = await fetch('/asesores/api/telas');
+        console.log('[probarApisTelasColores] 📡 Status telas:', responseTelas.status);
+        
+        if (responseTelas.ok) {
+            const dataTelas = await responseTelas.json();
+            console.log('[probarApisTelasColores] ✅ API telas funciona:', dataTelas);
+        } else {
+            console.error('[probarApisTelasColores] ❌ API telas falló:', responseTelas.status);
+        }
+        
+        // Probar API de colores
+        console.log('[probarApisTelasColores] 📡 Probando /asesores/api/colores...');
+        const responseColores = await fetch('/asesores/api/colores');
+        console.log('[probarApisTelasColores] 📡 Status colores:', responseColores.status);
+        
+        if (responseColores.ok) {
+            const dataColores = await responseColores.json();
+            console.log('[probarApisTelasColores] ✅ API colores funciona:', dataColores);
+        } else {
+            console.error('[probarApisTelasColores] ❌ API colores falló:', responseColores.status);
+        }
+        
+    } catch (error) {
+        console.error('[probarApisTelasColores] ❌ Error en prueba:', error);
+    }
+};
+
 // 🔴 NUEVO: Función para cargar datalist de telas y colores
 window.cargarDatalistTelasColores = async function() {
     console.log('[cargarDatalistTelasColores] 🔄 Iniciando carga de datalist');
     
     try {
+        console.log('[cargarDatalistTelasColores] 📡 Haciendo fetch a /asesores/api/telas...');
         // Cargar telas
         const responseTelas = await fetch('/asesores/api/telas');
+        console.log('[cargarDatalistTelasColores] 📡 Respuesta telas:', responseTelas.status, responseTelas.ok);
+        
         if (responseTelas.ok) {
-            let telas = await responseTelas.json();
+            const resultTelas = await responseTelas.json();
+            console.log('[cargarDatalistTelasColores] 📦 Datos telas recibidos:', resultTelas);
+            // Extraer el array de datos de la respuesta
+            let telas = resultTelas.data || resultTelas;
             // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
             if (telas && typeof telas === 'object' && !Array.isArray(telas)) {
                 telas = Object.values(telas);
             }
             const datalistTelas = document.getElementById('opciones-telas');
+            console.log('[cargarDatalistTelasColores] 🔍 Datalist telas encontrado:', !!datalistTelas);
+            console.log('[cargarDatalistTelasColores] 📊 Telas array válido:', Array.isArray(telas), 'cantidad:', telas?.length);
+            
             if (datalistTelas && Array.isArray(telas)) {
                 datalistTelas.innerHTML = '';
                 telas.forEach(tela => {
                     const option = document.createElement('option');
                     option.value = tela.nombre;
+                    option.setAttribute('data-id', tela.id);
+                    option.setAttribute('data-referencia', tela.referencia || '');
                     datalistTelas.appendChild(option);
                 });
                 console.log('[cargarDatalistTelasColores] ✅ Telas cargadas:', telas.length);
+            } else {
+                console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron telas o datalist no existe');
             }
+        } else {
+            console.error('[cargarDatalistTelasColores] ❌ Error en respuesta de telas:', responseTelas.status);
         }
         
         // Cargar colores
+        console.log('[cargarDatalistTelasColores] 📡 Haciendo fetch a /asesores/api/colores...');
         const responseColores = await fetch('/asesores/api/colores');
+        console.log('[cargarDatalistTelasColores] 📡 Respuesta colores:', responseColores.status, responseColores.ok);
+        
         if (responseColores.ok) {
-            let colores = await responseColores.json();
+            const resultColores = await responseColores.json();
+            console.log('[cargarDatalistTelasColores] 📦 Datos colores recibidos:', resultColores);
+            // Extraer el array de datos de la respuesta
+            let colores = resultColores.data || resultColores;
             // 🔴 NUEVO: Manejar caso donde API devuelve objeto en lugar de array
             if (colores && typeof colores === 'object' && !Array.isArray(colores)) {
                 colores = Object.values(colores);
             }
             const datalistColores = document.getElementById('opciones-colores');
+            console.log('[cargarDatalistTelasColores] 🔍 Datalist colores encontrado:', !!datalistColores);
+            console.log('[cargarDatalistTelasColores] 📊 Colores array válido:', Array.isArray(colores), 'cantidad:', colores?.length);
+            
             if (datalistColores && Array.isArray(colores)) {
                 datalistColores.innerHTML = '';
                 colores.forEach(color => {
                     const option = document.createElement('option');
                     option.value = color.nombre;
+                    option.setAttribute('data-id', color.id);
+                    option.setAttribute('data-codigo', color.codigo || '');
                     datalistColores.appendChild(option);
                 });
                 console.log('[cargarDatalistTelasColores] ✅ Colores cargados:', colores.length);
+            } else {
+                console.warn('[cargarDatalistTelasColores] ⚠️ No se encontraron colores o datalist no existe');
             }
+        } else {
+            console.error('[cargarDatalistTelasColores] ❌ Error en respuesta de colores:', responseColores.status);
         }
     } catch (error) {
         console.error('[cargarDatalistTelasColores] ❌ Error cargando datalist:', error);
@@ -553,3 +624,11 @@ window.configurarDragDropProcesos = function() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = PrendaEditorTelas;
 }
+
+// 🔍 DIAGNÓSTICO: Probar APIs al cargar el módulo
+console.log('[PrendaEditorTelas] 🔍 Módulo cargado, probando APIs...');
+setTimeout(() => {
+    if (typeof probarApisTelasColores === 'function') {
+        probarApisTelasColores();
+    }
+}, 1000);

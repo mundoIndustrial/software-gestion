@@ -883,6 +883,34 @@ class PedidoController extends Controller
                 }
             }
 
+            // Cargar talla_colores manualmente para cada prenda
+            if ($pedido->prendas) {
+                foreach ($pedido->prendas as $prenda) {
+                    $tallaColores = \DB::table('prenda_pedido_talla_colores as ptc')
+                        ->join('prenda_pedido_tallas as pt', 'ptc.prenda_pedido_talla_id', '=', 'pt.id')
+                        ->where('pt.prenda_pedido_id', $prenda->id)
+                        ->select([
+                            'ptc.id',
+                            'ptc.prenda_pedido_talla_id',
+                            'pt.genero',
+                            'pt.talla',
+                            'ptc.tela_id',
+                            'ptc.tela_nombre',
+                            'ptc.color_id',
+                            'ptc.color_nombre',
+                            'ptc.cantidad'
+                        ])
+                        ->get()
+                        ->toArray();
+                    
+                    $prenda->talla_colores = $tallaColores;
+                    
+                    \Log::info('[PedidoController] talla_colores cargados para prenda ' . $prenda->id, [
+                        'cantidad' => count($tallaColores)
+                    ]);
+                }
+            }
+
             // Transformar EPPs para incluir imágenes con rutas normalizadas
             $eppsList = [];
             if ($pedido->epps) {

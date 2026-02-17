@@ -1880,6 +1880,9 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     // Obtener datos de una prenda específica con procesos para edición modal
     Route::get('/pedidos-produccion/{pedidoId}/prenda/{prendaId}/datos', [\App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosPrendaEdicion'])->where('pedidoId', '[0-9]+')->where('prendaId', '[0-9]+')->name('pedidos.prenda-datos');
     
+    // Obtener datos completos de un pedido para edición (GET)
+    Route::get('/api/pedidos/{id}', [\App\Http\Controllers\Api_temp\PedidoController::class, 'obtenerDatosEdicion'])->where('id', '[0-9]+')->name('api.pedidos.obtener-datos');
+    
     Route::post('/api/pedidos', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'store'])->name('api.pedidos.store');
     Route::put('/api/pedidos/{id}', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'update'])->name('api.pedidos.update');
     Route::put('/api/pedidos/{id}/estado', [App\Infrastructure\Http\Controllers\Asesores\PedidosProduccionController::class, 'cambiarEstado'])->name('api.pedidos.cambiar-estado');
