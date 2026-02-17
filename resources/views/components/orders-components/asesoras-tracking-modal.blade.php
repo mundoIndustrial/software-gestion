@@ -28,12 +28,7 @@
                     <span class="asesoras-info-value" id="asesorasTrackingClient">-</span>
                 </div>
 
-                <!-- Área -->
-                <div class="asesoras-info-item">
-                    <span class="asesoras-info-label">Área:</span>
-                    <span class="asesoras-info-value" id="asesorasTrackingArea">-</span>
-                </div>
-
+                
                 <!-- Estado Actual -->
                 <div class="asesoras-info-item">
                     <span class="asesoras-info-label">Estado Actual:</span>
@@ -396,13 +391,7 @@ window.openAsesorasTrackingModal = async function(pedido) {
         document.getElementById('asesorasTrackingOrderNumber').textContent = pedido || '-';
         document.getElementById('asesorasTrackingClient').textContent = order.cliente_nombre || order.cliente || '-';
         
-        // Área
-        const area = order.area || 'Sin especificar';
-        const areaElement = document.getElementById('asesorasTrackingArea');
-        if (areaElement) {
-            areaElement.textContent = area;
-        }
-        
+                
         // Estado - Convertir a texto legible
         const estado = (typeof formatAsesorasOrderStatus === 'function' ? formatAsesorasOrderStatus(order.estado) : order.estado) || 'No iniciado';
         document.getElementById('asesorasTrackingStatus').textContent = estado;
@@ -607,9 +596,21 @@ function formatAsesorasOrderStatus(estado) {
         'PENDIENTE_SUPERVISOR': 'Pendiente por Aprobación',
         'APROBADO_SUPERVISOR': 'Aprobado',
         'EN_PRODUCCION': 'En Producción',
-        'FINALIZADO': 'Finalizado'
+        'FINALIZADO': 'Finalizado',
+        'pendiente_cartera': 'Pendiente Cartera',
+        'PENDIENTE_INSUMOS': 'Pendiente Insumos',
+        'No iniciado': 'No Iniciado',
+        'En Ejecución': 'En Ejecución',
+        'Anulada': 'Anulada',
+        'Pendiente': 'Pendiente'
     };
-    return statusMap[estado] || estado;
+    
+    // Si no está en el mapa, convertir guiones bajos a espacios y capitalizar
+    if (!statusMap[estado]) {
+        return estado.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    return statusMap[estado];
 }
 
 /**
