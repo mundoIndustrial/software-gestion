@@ -1541,6 +1541,153 @@ class RegistroOrdenQueryController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener seguimiento por prenda para un pedido
+     * GET /registros/{pedido}/seguimiento-prenda
+     */
+    public function getSeguimientoPorPrenda($pedido)
+    {
+        try {
+            \Log::info('[getSeguimientoPorPrenda] Iniciando consulta', [
+                'pedido_numero' => $pedido
+            ]);
+            
+            // Convertir numero_pedido a ID si es necesario
+            $pedidoModel = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
+            if (!$pedidoModel) {
+                $pedidoModel = \App\Models\PedidoProduccion::where('id', $pedido)->first();
+            }
+            
+            if (!$pedidoModel) {
+                return response()->json([
+                    'error' => 'Pedido no encontrado',
+                    'pedido' => $pedido
+                ], 404);
+            }
+            
+            $pedidoId = $pedidoModel->id;
+            
+            \Log::info('[getSeguimientoPorPrenda] Pedido encontrado', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $pedidoId
+            ]);
+            
+            // Obtener prendas del pedido
+            $prendas = \App\Models\PrendaPedido::where('pedido_produccion_id', $pedidoId)
+                ->with(['variantes', 'procesos.tipoProceso', 'tallas'])
+                ->get();
+            
+            $prendasConSeguimiento = [];
+            
+            foreach ($prendas as $prenda) {
+                // Obtener consecutivos de recibos para esta prenda
+                $consecutivos = \App\Models\ConsecutivosRecibosPedidos::where('prenda_id', $prenda->id)
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('activo', 1)
+                    ->get();
+                
+                // Obtener procesos de seguimiento por área
+                $procesosSeguimiento = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
+                    ->where('numero_pedido', $pedido)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                // Agrupar consecutivos por tipo de recibo
+                $seguimientosPorTipo = [];
+                foreach ($consecutivos as $consecutivo) {
+                    $seguimientosPorTipo[$consecutivo->tipo_recibo] = [
+                        'consecutivo_actual' => $consecutivo->consecutivo_actual,
+                        'consecutivo_inicial' => $consecutivo->consecutivo_inicial,
+                        'notas' => $consecutivo->notas,
+                    ];
+                }
+                
+                // Agrupar procesos por área
+                $seguimientosPorArea = [];
+                foreach ($procesosSeguimiento as $proceso) {
+                    $seguimientosPorArea[$proceso->proceso] = [
+                        'id' => $proceso->id,
+                        'proceso_prenda_id' => $proceso->prenda_pedido_id,
+                        'area' => $proceso->proceso,
+                        'estado' => $proceso->estado_proceso,
+                        'fecha_inicio' => $proceso->fecha_inicio,
+                        'fecha_fin' => $proceso->fecha_fin,
+                        'encargado' => $proceso->encargado,
+                        'observaciones' => $proceso->observaciones,
+                        'codigo_referencia' => $proceso->codigo_referencia,
+                        'dias_duracion' => $proceso->dias_duracion,
+                    ];
+                }
+                
+                // Construir array de cantidades por talla
+                $cantidadTalla = [];
+                foreach ($prenda->tallas as $talla) {
+                    $cantidadTalla[$talla->talla] = $talla->cantidad;
+                }
+
+                // Construir array de procesos para el frontend
+                $procesosArray = [];
+                foreach ($prenda->procesos as $proceso) {
+                    $procesosArray[] = [
+                        'id' => $proceso->id,
+                        'tipo_proceso_id' => $proceso->tipo_proceso_id,
+                        'tipo_proceso' => $proceso->tipoProceso ? [
+                            'id' => $proceso->tipoProceso->id,
+                            'nombre' => $proceso->tipoProceso->nombre,
+                            'slug' => $proceso->tipoProceso->slug,
+                            'color' => $proceso->tipoProceso->color,
+                            'icono' => $proceso->tipoProceso->icono,
+                        ] : null,
+                        'estado' => $proceso->estado,
+                        'observaciones' => $proceso->observaciones,
+                        'ubicaciones' => $proceso->ubicaciones,
+                    ];
+                }
+
+                $prendasConSeguimiento[] = [
+                    'id' => $prenda->id,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'descripcion' => $prenda->descripcion,
+                    'cantidad' => $prenda->cantidad_total,
+                    'cantidad_talla' => $cantidadTalla,
+                    'de_bodega' => $prenda->de_bodega,
+                    'seguimientos' => $seguimientosPorTipo,
+                    'seguimientos_por_area' => $seguimientosPorArea,
+                    'procesos' => $procesosArray,
+                    'consecutivos' => $consecutivos->toArray(), // Agregar consecutivos para el modal
+                    'total_procesos' => $prenda->procesos->count(),
+                    'total_variantes' => $prenda->variantes->count(),
+                ];
+            }
+            
+            \Log::info('[getSeguimientoPorPrenda] Datos obtenidos', [
+                'numero_pedido' => $pedido,
+                'total_prendas' => count($prendasConSeguimiento)
+            ]);
+            
+            return response()->json([
+                'pedido' => [
+                    'id' => $pedidoModel->id,
+                    'numero_pedido' => $pedidoModel->numero_pedido,
+                    'cliente' => $pedidoModel->cliente,
+                ],
+                'prendas' => $prendasConSeguimiento
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[getSeguimientoPorPrenda] Error: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error al obtener seguimiento por prenda',
+                'pedido' => $pedido,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 
 

@@ -1416,6 +1416,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     
     // Rutas con parámetros {pedido} - IMPORTANTE: rutas más específicas PRIMERO
     Route::get('/registros/{id}/recibos-datos', [RegistroOrdenQueryController::class, 'getRecibosDatos'])->name('registros.recibos-datos');
+    Route::get('/registros/{id}/seguimiento-prenda', [RegistroOrdenQueryController::class, 'getSeguimientoPorPrenda'])->name('registros.seguimiento-prenda');
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');
@@ -2633,4 +2634,27 @@ Broadcast::channel('despacho.observaciones', function ($user) {
 
 Broadcast::channel('asesores.observaciones', function ($user) {
     return true;
+});
+
+/**
+ * Web Routes for Proceso Seguimiento (Seguimiento por Áreas)
+ * Gestiona el seguimiento de producción por áreas (Corte, Costura, Bordado, etc.)
+ */
+Route::prefix('seguimiento-proceso')->name('seguimiento-proceso.')->group(function () {
+    
+    // Guardar un nuevo proceso de seguimiento
+    Route::post('/guardar', [App\Http\Controllers\ProcesoSeguimientoController::class, 'guardar'])
+        ->name('guardar');
+    
+    // Obtener procesos de una prenda
+    Route::get('/prenda/{prendaId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'obtenerPorPrenda'])
+        ->name('obtener-por-prenda');
+    
+    // Actualizar estado de un proceso
+    Route::put('/{procesoId}/estado', [App\Http\Controllers\ProcesoSeguimientoController::class, 'actualizarEstado'])
+        ->name('actualizar-estado');
+    
+    // Eliminar un proceso
+    Route::delete('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'eliminar'])
+        ->name('eliminar');
 });
