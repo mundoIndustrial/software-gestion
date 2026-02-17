@@ -321,9 +321,9 @@ class SupervisorPedidosController extends Controller
                 'timestamp' => now()
             ]);
 
-            //  Broadcast evento en tiempo real
-            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']));
-            \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} - Aprobación");
+            //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnóstico)
+            // broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['estado', 'novedades']));
+            \Log::info("Broadcast OMITIDO para pedido {$orden->numero_pedido} - Aprobación (diagnóstico)");
 
             return response()->json([
                 'success' => true,
