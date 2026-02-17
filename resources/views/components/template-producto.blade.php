@@ -65,7 +65,7 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
                             <i class="fas fa-image"></i> FOTOS PRENDA
                         </label>
-                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
+                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="manejarDragOver(event, this)" ondragleave="manejarDragLeave(event, this)">
                             <input type="file" name="productos_friendly[][fotos][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotos(this.files, this.closest('label'))" style="display: none;">
                             <div class="drop-zone-content" style="font-size: 0.75rem;">
                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
@@ -135,7 +135,7 @@
                                         <input type="text" id="referencia-input" name="productos_friendly[][telas][0][referencia]" class="referencia-input" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
                                     </td>
                                     <td style="padding: 14px; text-align: center; border-right: 1px solid #ddd;">
-                                        <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
+                                        <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="manejarDragOver(event, this)" ondragleave="manejarDragLeave(event, this)">
                                             <input type="file" name="productos_friendly[][telas][0][fotos][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
                                             <div class="drop-zone-content" style="font-size: 0.8rem;">
                                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: #0066cc; margin-bottom: 4px;"></i>

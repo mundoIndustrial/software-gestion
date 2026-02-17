@@ -7,6 +7,178 @@ let tiposDisponiblesPaso3 = [];
 let tecnicasSeleccionadasPaso3 = [];
 let contadorFilasPrendaPaso3 = 0;
 
+const DROPZONE_PASTE_HINT_TEXT_P3 = 'Pega la imagen con Ctrl+V';
+
+let dropzoneDestinoPegadoP3 = null;
+let pasteListenerRegistradoP3 = false;
+
+function clipboardTieneImagenP3() {
+    try {
+        if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+            return Promise.resolve(false);
+        }
+        return navigator.clipboard.read().then((items) => {
+            for (const item of items) {
+                if (!item || !item.types) continue;
+                if (item.types.some(t => typeof t === 'string' && t.startsWith('image/'))) {
+                    return true;
+                }
+            }
+            return false;
+        }).catch(() => false);
+    } catch (_) {
+        return Promise.resolve(false);
+    }
+}
+
+function aplicarPasteHintVisualP3(dropzone) {
+    if (!dropzone) return;
+
+    if (!dropzone.style.position || dropzone.style.position === 'static') {
+        dropzone.style.position = 'relative';
+    }
+
+    let overlay = dropzone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.setAttribute('data-dropzone-paste-overlay', '1');
+        overlay.style.cssText = [
+            'position:absolute',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(16,185,129,0.10)',
+            'border-radius:6px',
+            'font-weight:800',
+            'color:#047857',
+            'letter-spacing:0.3px',
+            'pointer-events:none',
+            'text-transform:uppercase',
+            'font-size:0.78rem'
+        ].join(';');
+        overlay.textContent = DROPZONE_PASTE_HINT_TEXT_P3;
+        dropzone.appendChild(overlay);
+    }
+}
+
+function limpiarPasteHintVisualP3(dropzone) {
+    if (!dropzone) return;
+    const overlay = dropzone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (overlay) overlay.remove();
+}
+
+function adjuntarPasteHintEnDropzoneP3(dropzone) {
+    if (!dropzone) return;
+    if (dropzone.getAttribute('data-paste-hint-bound') === '1') return;
+    dropzone.setAttribute('data-paste-hint-bound', '1');
+
+    dropzone.addEventListener('mouseenter', () => {
+        dropzoneDestinoPegadoP3 = dropzone;
+
+        clipboardTieneImagenP3().then((tiene) => {
+            if (!dropzone.matches(':hover')) return;
+
+            // No interferir con overlay de drag&drop
+            const tieneDragOverlay = !!dropzone.querySelector('[data-dropzone-overlay="1"]');
+            if (tieneDragOverlay) return;
+
+            if (tiene) {
+                aplicarPasteHintVisualP3(dropzone);
+            }
+        });
+    });
+
+    dropzone.addEventListener('mouseleave', () => {
+        if (dropzoneDestinoPegadoP3 === dropzone) {
+            dropzoneDestinoPegadoP3 = null;
+        }
+        limpiarPasteHintVisualP3(dropzone);
+    });
+
+    dropzone.addEventListener('dragover', () => {
+        limpiarPasteHintVisualP3(dropzone);
+    });
+
+    if (!pasteListenerRegistradoP3) {
+        pasteListenerRegistradoP3 = true;
+        document.addEventListener('paste', (e) => {
+            try {
+                if (!dropzoneDestinoPegadoP3) return;
+
+                const dtItems = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+                const archivos = dtItems
+                    .filter(i => i && i.kind === 'file')
+                    .map(i => i.getAsFile && i.getAsFile())
+                    .filter(f => f && f.type && f.type.startsWith('image/'));
+
+                if (archivos.length === 0) return;
+
+                const input = dropzoneDestinoPegadoP3.querySelector('input[type="file"]')
+                    || (dropzoneDestinoPegadoP3.closest('label') ? dropzoneDestinoPegadoP3.closest('label').querySelector('input[type="file"]') : null);
+
+                if (!input) return;
+
+                const dataTransfer = new DataTransfer();
+                archivos.forEach((f) => dataTransfer.items.add(f));
+                input.files = dataTransfer.files;
+
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+
+                try {
+                    limpiarPasteHintVisualP3(dropzoneDestinoPegadoP3);
+                } catch (_) {}
+            } catch (_) {}
+        });
+    }
+}
+
+function aplicarDropzoneVisualP3(dropzone, texto = 'Suelta para adjuntar') {
+    if (!dropzone) return;
+
+    dropzone.style.background = '#e8f1ff';
+    dropzone.style.borderColor = '#1e40af';
+
+    if (!dropzone.style.position || dropzone.style.position === 'static') {
+        dropzone.style.position = 'relative';
+    }
+
+    let overlay = dropzone.querySelector('[data-dropzone-overlay="1"]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.setAttribute('data-dropzone-overlay', '1');
+        overlay.style.cssText = [
+            'position:absolute',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(30,64,175,0.08)',
+            'border-radius:6px',
+            'font-weight:800',
+            'color:#1e40af',
+            'letter-spacing:0.3px',
+            'pointer-events:none',
+            'text-transform:uppercase',
+            'font-size:0.85rem'
+        ].join(';');
+        overlay.textContent = texto;
+        dropzone.appendChild(overlay);
+    } else {
+        overlay.textContent = texto;
+    }
+}
+
+function limpiarDropzoneVisualP3(dropzone) {
+    if (!dropzone) return;
+
+    dropzone.style.background = '#fafafa';
+    dropzone.style.borderColor = '#ddd';
+
+    const overlay = dropzone.querySelector('[data-dropzone-overlay="1"]');
+    if (overlay) overlay.remove();
+}
+
 // =========================================================
 // 2. FUNCIÓN AUXILIAR - OBTENER PRENDAS DEL PASO 2
 // =========================================================
@@ -578,22 +750,29 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 }
                 
                 dropzone.addEventListener('click', () => input.click());
+
+                try {
+                    adjuntarPasteHintEnDropzoneP3(dropzone);
+                } catch (_) {}
                 
                 dropzone.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    dropzone.style.background = '#e8f1ff';
-                    dropzone.style.borderColor = '#1e40af';
+                    aplicarDropzoneVisualP3(dropzone);
+                    try {
+                        limpiarPasteHintVisualP3(dropzone);
+                    } catch (_) {}
                 });
                 
                 dropzone.addEventListener('dragleave', () => {
-                    dropzone.style.background = '#fafafa';
-                    dropzone.style.borderColor = '#ddd';
+                    limpiarDropzoneVisualP3(dropzone);
                 });
                 
                 dropzone.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    dropzone.style.background = '#fafafa';
-                    dropzone.style.borderColor = '#ddd';
+                    limpiarDropzoneVisualP3(dropzone);
+                    try {
+                        limpiarPasteHintVisualP3(dropzone);
+                    } catch (_) {}
                     agregarImagenesDrop(Array.from(e.dataTransfer.files));
                 });
                 
@@ -857,22 +1036,29 @@ function abrirModalSeleccionarTecnicasCompartidas(tecnicas, imagenesCompartidas)
     
     // Setup dropzone
     dropzone.addEventListener('click', () => inputFile.click());
+
+    try {
+        adjuntarPasteHintEnDropzoneP3(dropzone);
+    } catch (_) {}
     
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        dropzone.style.background = '#e8f1ff';
-        dropzone.style.borderColor = '#1e40af';
+        aplicarDropzoneVisualP3(dropzone);
+        try {
+            limpiarPasteHintVisualP3(dropzone);
+        } catch (_) {}
     });
     
     dropzone.addEventListener('dragleave', () => {
-        dropzone.style.background = '#fafafa';
-        dropzone.style.borderColor = '#ddd';
+        limpiarDropzoneVisualP3(dropzone);
     });
     
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropzone.style.background = '#fafafa';
-        dropzone.style.borderColor = '#ddd';
+        limpiarDropzoneVisualP3(dropzone);
+        try {
+            limpiarPasteHintVisualP3(dropzone);
+        } catch (_) {}
         procesarArchivoCompartido(Array.from(e.dataTransfer.files));
     });
     

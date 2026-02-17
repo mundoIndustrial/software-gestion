@@ -5,10 +5,160 @@
 
 let productosCount = 0;
 
+const MAX_FOTOS_PRENDA = 3;
+const MAX_FOTOS_TELA = 3;
+
+const DROPZONE_PASTE_HINT_TEXT = 'Pega la imagen con Ctrl+V';
+
+let dropzoneDestinoPegado = null;
+let pasteListenerRegistrado = false;
+
 // Usar window para que sean accesibles desde otros módulos
 if (!window.fotosSeleccionadas) {
     window.fotosSeleccionadas = {};
 }
+
+function clipboardTieneImagen() {
+    try {
+        if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+            return Promise.resolve(false);
+        }
+        return navigator.clipboard.read().then((items) => {
+            for (const item of items) {
+                if (!item || !item.types) continue;
+                if (item.types.some(t => typeof t === 'string' && t.startsWith('image/'))) {
+                    return true;
+                }
+            }
+            return false;
+        }).catch(() => false);
+    } catch (_) {
+        return Promise.resolve(false);
+    }
+}
+
+function aplicarPasteHintVisual(dropZone) {
+    if (!dropZone) return;
+
+    if (!dropZone.style.position || dropZone.style.position === 'static') {
+        dropZone.style.position = 'relative';
+    }
+
+    let overlay = dropZone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.setAttribute('data-dropzone-paste-overlay', '1');
+        overlay.style.cssText = [
+            'position:absolute',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(16,185,129,0.10)',
+            'border-radius:6px',
+            'font-weight:800',
+            'color:#047857',
+            'letter-spacing:0.3px',
+            'pointer-events:none',
+            'text-transform:uppercase',
+            'font-size:0.78rem'
+        ].join(';');
+        overlay.textContent = DROPZONE_PASTE_HINT_TEXT;
+        dropZone.appendChild(overlay);
+    }
+}
+
+function limpiarPasteHintVisual(dropZone) {
+    if (!dropZone) return;
+    const overlay = dropZone.querySelector('[data-dropzone-paste-overlay="1"]');
+    if (overlay) overlay.remove();
+}
+
+function adjuntarPasteHintEnDropzone(dropZone) {
+    if (!dropZone) return;
+    if (dropZone.getAttribute('data-paste-hint-bound') === '1') return;
+    dropZone.setAttribute('data-paste-hint-bound', '1');
+
+    dropZone.addEventListener('mouseenter', () => {
+        dropzoneDestinoPegado = dropZone;
+
+        // No interferir con el estado drag-over
+        if (dropZone.classList && dropZone.classList.contains('drag-over')) return;
+
+        clipboardTieneImagen().then((tiene) => {
+            // Si el mouse ya no está encima, no mostrar
+            if (!dropZone.matches(':hover')) return;
+            if (dropZone.classList && dropZone.classList.contains('drag-over')) return;
+
+            if (tiene) {
+                aplicarPasteHintVisual(dropZone);
+            }
+        });
+    });
+
+    dropZone.addEventListener('mouseleave', () => {
+        if (dropzoneDestinoPegado === dropZone) {
+            dropzoneDestinoPegado = null;
+        }
+        limpiarPasteHintVisual(dropZone);
+    });
+
+    // Si se empieza a arrastrar, quitar hint de pegado
+    dropZone.addEventListener('dragover', () => {
+        limpiarPasteHintVisual(dropZone);
+    });
+
+    if (!pasteListenerRegistrado) {
+        pasteListenerRegistrado = true;
+        document.addEventListener('paste', (e) => {
+            try {
+                if (!dropzoneDestinoPegado) return;
+
+                const dtItems = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+                const archivos = dtItems
+                    .filter(i => i && i.kind === 'file')
+                    .map(i => i.getAsFile && i.getAsFile())
+                    .filter(f => f && f.type && f.type.startsWith('image/'));
+
+                if (archivos.length === 0) return;
+
+                const input = dropzoneDestinoPegado.querySelector('input[type="file"]')
+                    || (dropzoneDestinoPegado.closest('label') ? dropzoneDestinoPegado.closest('label').querySelector('input[type="file"]') : null);
+
+                if (!input) return;
+
+                const dataTransfer = new DataTransfer();
+                archivos.forEach((f) => dataTransfer.items.add(f));
+                input.files = dataTransfer.files;
+
+                // Disparar el flujo normal (prenda/tela) del input
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+
+                try {
+                    limpiarPasteHintVisual(dropzoneDestinoPegado);
+                } catch (_) {}
+            } catch (_) {}
+        });
+    }
+}
+
+function adjuntarPasteHintEnProducto(productoRoot) {
+    if (!productoRoot) return;
+
+    // Dropzone prenda (label del input de fotos)
+    const dropzonesPrenda = productoRoot.querySelectorAll('label[ondrop*="manejarDrop"], label[ondrop*="event.dataTransfer"], label[ondragover]');
+    dropzonesPrenda.forEach((dz) => adjuntarPasteHintEnDropzone(dz));
+
+    // Dropzones de tela (label dentro de fila-tela)
+    const dropzonesTela = productoRoot.querySelectorAll('.fila-tela label');
+    dropzonesTela.forEach((dz) => adjuntarPasteHintEnDropzone(dz));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        document.querySelectorAll('.producto-card').forEach((card) => adjuntarPasteHintEnProducto(card));
+    } catch (_) {}
+});
 if (!window.telasSeleccionadas) {
     window.telasSeleccionadas = {};
 }
@@ -42,6 +192,14 @@ function agregarProductoFriendly() {
     };
     const container = document.getElementById('productosContainer');
     container.appendChild(clone);
+
+    // Adjuntar ayuda visual de pegado a los nuevos dropzones del clon
+    try {
+        const nuevoProducto = container.lastElementChild;
+        if (nuevoProducto) {
+            adjuntarPasteHintEnProducto(nuevoProducto);
+        }
+    } catch (_) {}
     
     // DEBUG: Verificar que el campo hidden existe después de clonar
     setTimeout(() => {
@@ -155,8 +313,145 @@ function manejarDrop(event, dropZone) {
     if (!dropZone) {
         dropZone = event.currentTarget;
     }
-    dropZone.classList.remove('drag-over');
+    try {
+        limpiarDropzoneVisual(dropZone);
+    } catch (_) {}
+
+    // Si el dropzone pertenece a una fila de tela, manejar como fotos de tela
+    const filaTela = dropZone.closest('.fila-tela');
+    if (filaTela) {
+        agregarFotosTelaDesdeDrop(event.dataTransfer.files, dropZone);
+        return;
+    }
+
+    // Caso normal: fotos de prenda
     agregarFotos(event.dataTransfer.files, dropZone);
+}
+
+function manejarDragOver(event, dropZone) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!dropZone) {
+        dropZone = event.currentTarget;
+    }
+
+    aplicarDropzoneVisual(dropZone);
+}
+
+function manejarDragLeave(event, dropZone) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!dropZone) {
+        dropZone = event.currentTarget;
+    }
+
+    limpiarDropzoneVisual(dropZone);
+}
+
+function aplicarDropzoneVisual(dropZone) {
+    if (!dropZone) return;
+
+    dropZone.classList.add('drag-over');
+    dropZone.style.background = '#e8f1ff';
+    dropZone.style.borderColor = '#1e40af';
+
+    if (!dropZone.style.position || dropZone.style.position === 'static') {
+        dropZone.style.position = 'relative';
+    }
+
+    let overlay = dropZone.querySelector('[data-dropzone-overlay="1"]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.setAttribute('data-dropzone-overlay', '1');
+        overlay.style.cssText = [
+            'position:absolute',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(30,64,175,0.08)',
+            'border-radius:6px',
+            'font-weight:800',
+            'color:#1e40af',
+            'letter-spacing:0.3px',
+            'pointer-events:none',
+            'text-transform:uppercase',
+            'font-size:0.85rem'
+        ].join(';');
+        overlay.textContent = 'Suelta para adjuntar';
+        dropZone.appendChild(overlay);
+    }
+}
+
+function limpiarDropzoneVisual(dropZone) {
+    if (!dropZone) return;
+
+    dropZone.classList.remove('drag-over');
+    dropZone.style.background = '';
+    dropZone.style.borderColor = '';
+
+    const overlay = dropZone.querySelector('[data-dropzone-overlay="1"]');
+    if (overlay) overlay.remove();
+}
+
+function agregarFotosTelaDesdeDrop(files, dropZone) {
+    const productoCard = dropZone.closest('.producto-card');
+    if (!productoCard) return;
+
+    const productoId = productoCard.dataset.productoId;
+    const filaTelaActual = dropZone.closest('.fila-tela');
+    const telaIndex = filaTelaActual ? filaTelaActual.getAttribute('data-tela-index') : '0';
+
+    if (!window.telasSeleccionadas[productoId]) window.telasSeleccionadas[productoId] = {};
+    if (!window.telasSeleccionadas[productoId][telaIndex]) window.telasSeleccionadas[productoId][telaIndex] = [];
+
+    const container = productoCard.querySelector(`.fila-tela[data-tela-index="${telaIndex}"] .foto-tela-preview`);
+    if (!container) return;
+
+    // Contar fotos guardadas + nuevas en ESTE contenedor de tela
+    const fotosGuardadas = Array.from(container.querySelectorAll('[data-foto]:not([data-file-name])')).length;
+    const fotosNuevasActuales = window.telasSeleccionadas[productoId][telaIndex].length;
+    const totalActual = fotosGuardadas + fotosNuevasActuales;
+    const espacioDisponible = MAX_FOTOS_TELA - totalActual;
+
+    if (espacioDisponible <= 0) {
+        try {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Límite de imágenes',
+                text: `Máximo ${MAX_FOTOS_TELA} imágenes por tela`,
+                confirmButtonColor: '#1e40af'
+            });
+        } catch (_) {
+            alert(`Máximo ${MAX_FOTOS_TELA} imágenes por tela`);
+        }
+        return;
+    }
+
+    const soloImagenes = Array.from(files).filter(f => f && f.type && f.type.startsWith('image/'));
+    const fotosParaAgregar = soloImagenes.slice(0, espacioDisponible);
+    fotosParaAgregar.forEach((file) => {
+        window.telasSeleccionadas[productoId][telaIndex].push(file);
+    });
+
+    if (soloImagenes.length > fotosParaAgregar.length) {
+        const noAgregadas = soloImagenes.length - fotosParaAgregar.length;
+        try {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'info',
+                title: `Se omitieron ${noAgregadas} imagen(es) por el límite de ${MAX_FOTOS_TELA}`,
+                showConfirmButton: false,
+                timer: 2500
+            });
+        } catch (_) {}
+    }
+
+    // Mostrar preview SOLO de las fotos nuevas agregadas
+    mostrarPreviewFoto(fotosParaAgregar, container, container.querySelectorAll('div[data-foto]').length);
 }
 
 function agregarFotos(files, dropZone) {
@@ -179,18 +474,38 @@ function agregarFotos(files, dropZone) {
 
 
     
-    // Contar imágenes guardadas
-    const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
+    // Contar imágenes guardadas SOLO del preview de prenda (no mezclar con telas)
+    let contenedorPreviewPrenda = null;
+    const label = dropZone.closest('label');
+    if (label && label.parentElement) {
+        contenedorPreviewPrenda = label.parentElement.querySelector('.fotos-preview');
+    }
+    if (!contenedorPreviewPrenda) {
+        contenedorPreviewPrenda = productoCard ? productoCard.querySelector('.fotos-preview') : null;
+    }
+
+    const fotosGuardadas = contenedorPreviewPrenda
+        ? Array.from(contenedorPreviewPrenda.querySelectorAll('[data-foto]:not([data-foto-nueva])')).length
+        : 0;
     const fotosNuevasActuales = window.fotosSeleccionadas[productoId].length;
     const totalFotosActuales = fotosGuardadas + fotosNuevasActuales;
     
 
     
     // Calcular cuántas fotos podemos agregar
-    const espacioDisponible = 3 - totalFotosActuales;
+    const espacioDisponible = MAX_FOTOS_PRENDA - totalFotosActuales;
     
     if (espacioDisponible <= 0) {
-
+        try {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Límite de imágenes',
+                text: `Máximo ${MAX_FOTOS_PRENDA} imágenes por prenda`,
+                confirmButtonColor: '#1e40af'
+            });
+        } catch (_) {
+            alert(`Máximo ${MAX_FOTOS_PRENDA} imágenes por prenda`);
+        }
         return;
     }
     
@@ -200,6 +515,9 @@ function agregarFotos(files, dropZone) {
     const fotosParaAgregar = Array.from(files).slice(0, espacioDisponible);
     
     fotosParaAgregar.forEach((file, fileIndex) => {
+        if (file && !file.__uid) {
+            file.__uid = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
         window.fotosSeleccionadas[productoId].push(file);
         
         // Guardar con índice de prenda (similar a telaConIndice)
@@ -208,6 +526,7 @@ function agregarFotos(files, dropZone) {
         }
         window.imagenesEnMemoria.prendaConIndice.push({
             file: file,
+            uid: file ? file.__uid : null,
             prendaIndex: prendaIndex
         });
         
@@ -217,7 +536,16 @@ function agregarFotos(files, dropZone) {
     // Mostrar mensaje si no se pudieron agregar todas las fotos seleccionadas
     if (files.length > fotosParaAgregar.length) {
         const noAgregadas = files.length - fotosParaAgregar.length;
-
+        try {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'info',
+                title: `Se omitieron ${noAgregadas} imagen(es) por el límite de ${MAX_FOTOS_PRENDA}`,
+                showConfirmButton: false,
+                timer: 2500
+            });
+        } catch (_) {}
     }
     actualizarPreviewFotos(dropZone);
 }
@@ -260,17 +588,25 @@ function actualizarPreviewFotos(input) {
         return;
     }
     
-    // Obtener las fotos que ya están en el preview
-    const fotosEnPreview = Array.from(container.querySelectorAll('[data-foto-nueva]')).map(el => el.dataset.fileName);
+    // Asegurar UID por archivo
+    fotos.forEach((f) => {
+        if (f && !f.__uid) {
+            f.__uid = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+    });
+
+    // Obtener las fotos que ya están en el preview (por UID)
+    const fotosEnPreview = Array.from(container.querySelectorAll('[data-foto-nueva]')).map(el => el.dataset.fileUid);
     
     // Filtrar solo las fotos que NO están en el preview
-    const fotosNuevasParaMostrar = fotos.filter(file => !fotosEnPreview.includes(file.name));
+    const fotosNuevasParaMostrar = fotos.filter(file => file && !fotosEnPreview.includes(String(file.__uid || '')));
     
 
     
     fotosNuevasParaMostrar.forEach((file, index) => {
-        // Generar un ID único para esta foto (usando timestamp + random)
-        const fotoId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // Usar UID estable del archivo (para soportar nombres repetidos/pegados)
+        const fotoId = file.__uid || (Date.now() + '-' + Math.random().toString(36).substr(2, 9));
+        file.__uid = fotoId;
         
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -278,7 +614,8 @@ function actualizarPreviewFotos(input) {
             preview.setAttribute('data-foto', 'true');
             preview.setAttribute('data-foto-nueva', 'true'); // Marcar como foto nueva
             preview.setAttribute('data-foto-id', fotoId); // ID único en lugar de índice
-            preview.setAttribute('data-file-name', file.name); // Guardar nombre del archivo
+            preview.setAttribute('data-file-uid', String(fotoId));
+            preview.setAttribute('data-file-name', file.name || ''); // Guardar nombre del archivo
             preview.style.cssText = 'position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer;';
             const imagenSrc = e.target.result;
             
@@ -525,6 +862,7 @@ function eliminarFotoById(productoId, fotoId) {
     }
     
     const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
+    const fileUid = fotoAEliminar.getAttribute('data-file-uid');
     const fileName = fotoAEliminar.getAttribute('data-file-name');
     if (esGuardada) {
         // Es una foto guardada - mostrar modal de confirmación
@@ -604,11 +942,11 @@ function eliminarFotoById(productoId, fotoId) {
         });
     } else {
         // Es una foto nueva - eliminarla directamente sin confirmar
-        if (fotosSeleccionadas[productoId]) {
-            // Encontrar el índice en fotosSeleccionadas por nombre
-            const indexEnFotos = fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
+        if (window.fotosSeleccionadas && window.fotosSeleccionadas[productoId]) {
+            // Encontrar el índice en fotosSeleccionadas por UID (más robusto que name)
+            const indexEnFotos = window.fotosSeleccionadas[productoId].findIndex(f => String(f && f.__uid) === String(fileUid));
             if (indexEnFotos !== -1) {
-                fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
+                window.fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
 
             }
         }
@@ -618,7 +956,7 @@ function eliminarFotoById(productoId, fotoId) {
         // Actualizar imagenesEnMemoria
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
             window.imagenesEnMemoria.prendaConIndice = window.imagenesEnMemoria.prendaConIndice.filter(item => 
-                !(item.file && item.file.name === fileName)
+                !(String(item && item.uid) === String(fileUid))
             );
         }
     }
@@ -719,15 +1057,19 @@ function mostrarPreviewFoto(archivosNuevos, container, fotosExistentesAntes = 0)
     
     // Iterar SOLO sobre las fotos nuevas agregadas (no sobre input.files)
     archivosNuevos.forEach((file, index) => {
-        // Generar ID único para esta foto de tela
-        const fotoTelaId = Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-' + index;
+        // UID estable por archivo
+        if (file && !file.__uid) {
+            file.__uid = Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-' + index;
+        }
+        const fotoTelaId = file.__uid;
         
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.createElement('div');
             preview.setAttribute('data-foto', 'true');
             preview.setAttribute('data-foto-tela-id', fotoTelaId); // ID único
-            preview.setAttribute('data-file-name', file.name);
+            preview.setAttribute('data-file-uid', String(fotoTelaId));
+            preview.setAttribute('data-file-name', file.name || '');
             preview.style.cssText = 'position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer;';
             const imagenSrc = e.target.result;
             
@@ -823,6 +1165,7 @@ function eliminarFotoTelaById(fotoTelaId) {
     const filaTelaActual = container.closest('.fila-tela');
     const telaIndex = filaTelaActual ? filaTelaActual.getAttribute('data-tela-index') : '0';
     
+    const fileUid = fotoElement.getAttribute('data-file-uid');
     const fileName = fotoElement.getAttribute('data-file-name');
     
 
@@ -847,7 +1190,7 @@ function eliminarFotoTelaById(fotoTelaId) {
         if (productoCard) {
             const productoId = productoCard.dataset.productoId;
             if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
-                const indexEnTelas = window.telasSeleccionadas[productoId][telaIndex].findIndex(f => f.name === fileName);
+                const indexEnTelas = window.telasSeleccionadas[productoId][telaIndex].findIndex(f => String(f && f.__uid) === String(fileUid));
                 if (indexEnTelas !== -1) {
                     window.telasSeleccionadas[productoId][telaIndex].splice(indexEnTelas, 1);
 
