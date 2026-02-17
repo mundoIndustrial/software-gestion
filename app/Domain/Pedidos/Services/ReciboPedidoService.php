@@ -370,6 +370,9 @@ class ReciboPedidoService
                 'sobremedida' => []
             ];
             
+            // Obtener tallas del proceso desde pedidos_procesos_prenda_tallas
+            $procTallas = $this->obtenerTallasProceso($proc->id);
+            
             // Obtener ubicaciones
             $ubicaciones = [];
             if ($proc->ubicaciones) {
@@ -567,5 +570,51 @@ class ReciboPedidoService
         
         // Si no comienza ni con /storage/ ni con storage/, agregar /storage/ al inicio
         return '/storage/' . ltrim($ruta, '/');
+    }
+
+    /**
+     * Obtener tallas de un proceso desde pedidos_procesos_prenda_tallas
+     */
+    private function obtenerTallasProceso(int $procesoId): array
+    {
+        $tallas = [
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => []
+        ];
+        
+        try {
+            $tallasProceso = \DB::table('pedidos_procesos_prenda_tallas')
+                ->where('proceso_prenda_detalle_id', $procesoId)
+                ->get(['genero', 'talla', 'cantidad']);
+                
+            \Log::info('[RECIBO-SERVICE] Tallas del proceso', [
+                'procesoId' => $procesoId,
+                'cantidad' => $tallasProceso->count(),
+                'datos' => $tallasProceso->toArray()
+            ]);
+            
+            foreach ($tallasProceso as $talla) {
+                $genero = strtolower($talla->genero);
+                
+                if (isset($tallas[$genero])) {
+                    $tallas[$genero][$talla->talla] = $talla->cantidad;
+                }
+            }
+            
+            \Log::info('[RECIBO-SERVICE] Estructura final de tallas del proceso', [
+                'procesoId' => $procesoId,
+                'tallas' => $tallas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('[RECIBO-SERVICE] Error obteniendo tallas del proceso', [
+                'procesoId' => $procesoId,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        return $tallas;
     }
 }
