@@ -154,7 +154,7 @@
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}" id="role_{{ $role->id }}">
+                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" id="role_{{ $role->id }}">
                                     {{ $role->name }}
                                 </label>
                             @endforeach
@@ -194,7 +194,7 @@
                         <div id="edit_roles_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}" id="edit_role_{{ $role->id }}">
+                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" id="edit_role_{{ $role->id }}">
                                     {{ $role->name }}
                                 </label>
                             @endforeach

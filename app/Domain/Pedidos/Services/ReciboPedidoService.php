@@ -276,13 +276,83 @@ class ReciboPedidoService
     }
 
     /**
-     * Obtener tallas relacionales
+     * Obtener tallas relacionales con colores
      */
     private function obtenerTallasRelacionales(int $prendaId): array
     {
-        // Aquí iría la lógica para obtener tallas desde la tabla relacional
-        // Por ahora retornamos un array vacío como placeholder
-        return [];
+        $tallasPorGenero = [
+            'DAMA' => [],
+            'CABALLERO' => [],
+            'UNISEX' => []
+        ];
+        
+        // Obtener tallas desde prenda_pedido_talla_colores (flujo 2)
+        $tallasColores = \DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prendaId)
+            ->select(
+                'ppt.genero',
+                'ppt.talla',
+                'pptc.color_nombre',
+                'pptc.cantidad'
+            )
+            ->get();
+            
+        \Log::info('[RECIBO-SERVICE] Tallas colores encontrados', [
+            'prendaId' => $prendaId,
+            'cantidad' => $tallasColores->count(),
+            'datos' => $tallasColores->toArray()
+        ]);
+            
+        foreach ($tallasColores as $tallaColor) {
+            $genero = strtoupper($tallaColor->genero);
+            $talla = $tallaColor->talla;
+            $color = $tallaColor->color_nombre;
+            $cantidad = $tallaColor->cantidad;
+            
+            if (!isset($tallasPorGenero[$genero][$talla])) {
+                $tallasPorGenero[$genero][$talla] = [];
+            }
+            
+            $tallasPorGenero[$genero][$talla][] = [
+                'cantidad' => $cantidad,
+                'color' => $color
+            ];
+        }
+        
+        // Si no hay datos en flujo 2, intentar desde prenda_pedido_tallas (flujo 1)
+        if (empty($tallasColores)) {
+            \Log::info('[RECIBO-SERVICE] Usando flujo 1 - prenda_pedido_tallas');
+            
+            $tallasBasicas = \DB::table('prenda_pedido_tallas')
+                ->where('prenda_pedido_id', $prendaId)
+                ->select('genero', 'talla', 'cantidad')
+                ->get();
+                
+            \Log::info('[RECIBO-SERVICE] Tallas básicas encontradas', [
+                'prendaId' => $prendaId,
+                'cantidad' => $tallasBasicas->count(),
+                'datos' => $tallasBasicas->toArray()
+            ]);
+                
+            foreach ($tallasBasicas as $talla) {
+                $genero = strtoupper($talla->genero);
+                $tallaPorGenero = $talla->talla;
+                $cantidad = $talla->cantidad;
+                
+                $tallasPorGenero[$genero][$tallaPorGenero][] = [
+                    'cantidad' => $cantidad,
+                    'color' => 'Sin color'
+                ];
+            }
+        }
+        
+        \Log::info('[RECIBO-SERVICE] Estructura final de tallas', [
+            'prendaId' => $prendaId,
+            'tallasPorGenero' => $tallasPorGenero
+        ]);
+        
+        return $tallasPorGenero;
     }
 
     /**

@@ -443,27 +443,54 @@ export class Formatters {
      * Comparar si dos objetos de tallas son idénticos
      */
     static _sonTallasIguales(tallas1, tallas2) {
+        console.log('[Formatters._sonTallasIguales] 🔍 Comparando tallas:', {
+            tallas1,
+            tallas2
+        });
+        
         // Validación básica
-        if (!tallas1 || !tallas2) return false;
+        if (!tallas1 || !tallas2) {
+            console.log('[Formatters._sonTallasIguales] ❌ Una de las tallas es null/undefined');
+            return false;
+        }
         
         // Convertir ambas a objetos normalizados
         const norm1 = this._normalizarTallas(tallas1);
         const norm2 = this._normalizarTallas(tallas2);
         
+        console.log('[Formatters._sonTallasIguales] 📊 Tallas normalizadas:', {
+            norm1,
+            norm2
+        });
+        
         // Comparar estructura
         const keys1 = Object.keys(norm1).sort();
         const keys2 = Object.keys(norm2).sort();
         
-        if (keys1.length !== keys2.length) return false;
+        if (keys1.length !== keys2.length) {
+            console.log('[Formatters._sonTallasIguales] ❌ Diferente cantidad de géneros:', { keys1, keys2 });
+            return false;
+        }
         
         // Comparar cada clave y valor
         for (let i = 0; i < keys1.length; i++) {
-            if (keys1[i] !== keys2[i]) return false;
-            if (JSON.stringify(norm1[keys1[i]]) !== JSON.stringify(norm2[keys2[i]])) {
+            if (keys1[i] !== keys2[i]) {
+                console.log('[Formatters._sonTallasIguales] ❌ Diferentes géneros:', keys1[i], 'vs', keys2[i]);
+                return false;
+            }
+            const val1 = norm1[keys1[i]];
+            const val2 = norm2[keys2[i]];
+            if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+                console.log('[Formatters._sonTallasIguales] ❌ Diferentes valores:', {
+                    genero: keys1[i],
+                    val1,
+                    val2
+                });
                 return false;
             }
         }
         
+        console.log('[Formatters._sonTallasIguales] ✅ Tallas son IGUALES');
         return true;
     }
 
@@ -488,7 +515,18 @@ export class Formatters {
             Object.entries(tallas).forEach(([key, value]) => {
                 const genero = key.toLowerCase();
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                    resultado[genero] = value;
+                    // Nuevo formato: {DAMA: {M: [{cantidad: 1, color: "AQUA"}]}}
+                    resultado[genero] = {};
+                    Object.entries(value).forEach(([talla, datos]) => {
+                        if (Array.isArray(datos)) {
+                            // Nuevo formato con colores: sumar todas las cantidades
+                            const cantidadTotal = datos.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+                            resultado[genero][talla] = cantidadTotal;
+                        } else {
+                            // Formato antiguo: {DAMA: {M: 1}}
+                            resultado[genero][talla] = datos;
+                        }
+                    });
                 }
             });
         }
@@ -502,6 +540,20 @@ export class Formatters {
     static _agregarTallasFormato(lineas, tallas, generoDefault = 'dama') {
         console.log('[Formatters._agregarTallasFormato] 🎯 INPUT:', { tallas, generoDefault });
         console.log('[Formatters._agregarTallasFormato] 🎯 Tipo tallas:', typeof tallas, 'Es array:', Array.isArray(tallas));
+        
+        // Debug detallado de la estructura
+        if (typeof tallas === 'object' && tallas !== null) {
+            console.log('[Formatters._agregarTallasFormato] 🔍 Claves de tallas:', Object.keys(tallas));
+            Object.keys(tallas).forEach(key => {
+                const value = tallas[key];
+                console.log(`[Formatters._agregarTallasFormato] 🔍 Key "${key}":`, {
+                    tipo: typeof value,
+                    esArray: Array.isArray(value),
+                    valor: value,
+                    clavesInterna: typeof value === 'object' && value !== null ? Object.keys(value) : []
+                });
+            });
+        }
         
         const tallasDama = {};
         const tallasCalballero = {};
@@ -534,11 +586,11 @@ export class Formatters {
                 
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                     const genero = key.toLowerCase();
-                    Object.entries(value).forEach(([talla, cantidad]) => {
+                    Object.entries(value).forEach(([talla, datos]) => {
                         if (genero === 'dama') {
-                            tallasDama[talla] = cantidad;
+                            tallasDama[talla] = datos;
                         } else if (genero === 'caballero') {
-                            tallasCalballero[talla] = cantidad;
+                            tallasCalballero[talla] = datos;
                         }
                     });
                 } 
@@ -567,7 +619,16 @@ export class Formatters {
         // Renderizar DAMA
         if (Object.keys(tallasDama).length > 0) {
             const tallasStr = Object.entries(tallasDama)
-                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
+                .map(([talla, datos]) => {
+                    // Si datos es un array de objetos con cantidad y color (nuevo formato)
+                    if (Array.isArray(datos)) {
+                        return datos.map(d => `<span style="color: red;"><strong>${talla}: ${d.cantidad}-${d.color}</strong></span>`).join(', ');
+                    }
+                    // Si es solo cantidad (formato antiguo)
+                    else {
+                        return `<span style="color: red;"><strong>${talla}: ${datos}</strong></span>`;
+                    }
+                })
                 .join(', ');
             lineas.push(`DAMA: ${tallasStr}`);
             console.log('[Formatters._agregarTallasFormato]  DAMA agregado');
@@ -576,7 +637,16 @@ export class Formatters {
         // Renderizar CABALLERO
         if (Object.keys(tallasCalballero).length > 0) {
             const tallasStr = Object.entries(tallasCalballero)
-                .map(([talla, cant]) => `<span style="color: red;"><strong>${talla}: ${cant}</strong></span>`)
+                .map(([talla, datos]) => {
+                    // Si datos es un array de objetos con cantidad y color (nuevo formato)
+                    if (Array.isArray(datos)) {
+                        return datos.map(d => `<span style="color: red;"><strong>${talla}: ${d.cantidad}-${d.color}</strong></span>`).join(', ');
+                    }
+                    // Si es solo cantidad (formato antiguo)
+                    else {
+                        return `<span style="color: red;"><strong>${talla}: ${datos}</strong></span>`;
+                    }
+                })
                 .join(', ');
             lineas.push(`CABALLERO: ${tallasStr}`);
             console.log('[Formatters._agregarTallasFormato]  CABALLERO agregado');

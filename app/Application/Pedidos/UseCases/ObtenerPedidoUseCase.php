@@ -270,30 +270,69 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
     }
 
     /**
-     * Construir estructura de tallas: { GENERO: { TALLA: CANTIDAD } }
+     * Construir estructura de tallas: { GENERO: { TALLA: [{cantidad: X, color: Y}] } }
+     * Actualizado para soportar flujo 2 con colores por talla
      */
     private function construirEstructuraTallas($prenda): array
     {
-        $tallas = [];
-
-        try {
-            if ($prenda->tallas) {
-                foreach ($prenda->tallas as $talla) {
-                    $genero = $talla->genero ?? 'GENERAL';
-                    if (!isset($tallas[$genero])) {
-                        $tallas[$genero] = [];
-                    }
-                    $tallas[$genero][$talla->talla] = (int)$talla->cantidad;
-                }
+        $tallasPorGenero = [
+            'DAMA' => [],
+            'CABALLERO' => [],
+            'UNISEX' => []
+        ];
+        
+        // Obtener tallas desde prenda_pedido_talla_colores (flujo 2)
+        $tallasColores = \DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prenda->id)
+            ->select(
+                'ppt.genero',
+                'ppt.talla',
+                'pptc.color_nombre',
+                'pptc.cantidad'
+            )
+            ->get();
+            
+        foreach ($tallasColores as $tallaColor) {
+            $genero = strtoupper($tallaColor->genero);
+            $talla = $tallaColor->talla;
+            $color = $tallaColor->color_nombre;
+            $cantidad = $tallaColor->cantidad;
+            
+            if (!isset($tallasPorGenero[$genero][$talla])) {
+                $tallasPorGenero[$genero][$talla] = [];
             }
-        } catch (\Exception $e) {
-            Log::warning('Error construyendo estructura de tallas', [
-                'prenda_id' => $prenda->id ?? null,
-                'error' => $e->getMessage()
-            ]);
+            
+            $tallasPorGenero[$genero][$talla][] = [
+                'cantidad' => $cantidad,
+                'color' => $color
+            ];
+        }
+        
+        // Si no hay datos en flujo 2, intentar desde prenda_pedido_tallas (flujo 1)
+        if (empty($tallasColores)) {
+            try {
+                if ($prenda->tallas) {
+                    foreach ($prenda->tallas as $talla) {
+                        $genero = strtoupper($talla->genero ?? 'GENERAL');
+                        $tallaPorGenero = $talla->talla;
+                        $cantidad = (int)$talla->cantidad;
+                        
+                        $tallasPorGenero[$genero][$tallaPorGenero][] = [
+                            'cantidad' => $cantidad,
+                            'color' => 'Sin color'
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error construyendo estructura de tallas (flujo 1)', [
+                    'prenda_id' => $prenda->id ?? null,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
 
-        return $tallas;
+        return $tallasPorGenero;
     }
 
     /**

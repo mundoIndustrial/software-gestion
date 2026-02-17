@@ -278,14 +278,14 @@ class InvoiceLazyLoader {
         // Precargar módulos de factura si hay botones de factura en la página
         if (document.querySelector('[onclick*="verFacturaDelPedido"]')) {
             setTimeout(() => {
-                this.precargarModulosFactura();
+                this.cargarModulosFactura();
             }, 3000);
         }
         
         // Precargar módulos de recibos si hay botones de recibos
         if (document.querySelector('[onclick*="verRecibosDelPedido"]')) {
             setTimeout(() => {
-                this.precargarModulosRecibos();
+                this.cargarModulosRecibos();
             }, 4000);
         }
     }

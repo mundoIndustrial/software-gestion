@@ -51,7 +51,7 @@ function openEditModal(userId, name, email) {
     document.getElementById('edit_email').value = email;
     
     // Desmarcar todos los checkboxes primero
-    document.querySelectorAll('.edit-role-checkbox').forEach(checkbox => {
+    document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
         checkbox.checked = false;
     });
     
@@ -65,7 +65,7 @@ function openEditModal(userId, name, email) {
             const roleName = badge.textContent.trim();
             
             // Encontrar el checkbox correspondiente
-            document.querySelectorAll('.edit-role-checkbox').forEach(checkbox => {
+            document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
                 const label = checkbox.parentElement.querySelector('span');
                 if (label && label.textContent.trim() === roleName) {
                     checkbox.checked = true;
