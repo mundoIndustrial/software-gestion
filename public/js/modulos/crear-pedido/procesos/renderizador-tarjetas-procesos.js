@@ -1005,7 +1005,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
     
     const galeria = document.createElement('div');
     galeria.id = 'galeria-proceso-modal';
-    galeria.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center;';
+    galeria.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 999999999; display: flex; flex-direction: column; align-items: center; justify-content: center;';
     
     // Procesar URLs de imágenes
     const procesarUrlImagen = (img) => {
@@ -1061,7 +1061,7 @@ window.abrirGaleriaImagenesProceso = function(tipoProceso) {
     console.log('🖼️ [GALERIA] URL primera imagen procesada:', urlPrimeraImagen);
     
     galeria.innerHTML = `
-        <div style="position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999999;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 999999999;">
             <div style="color: white; font-size: 1rem; font-weight: 600;">
                 <i class="fas fa-images" style="margin-right: 0.5rem;"></i>
                 Galería - ${tipoProceso.charAt(0).toUpperCase() + tipoProceso.slice(1)}
