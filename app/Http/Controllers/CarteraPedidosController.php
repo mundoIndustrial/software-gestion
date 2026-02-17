@@ -8,6 +8,7 @@ use App\Domain\Pedidos\Services\PedidoSequenceService;
 use App\Events\OrdenUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CarteraPedidosController extends Controller
 {
