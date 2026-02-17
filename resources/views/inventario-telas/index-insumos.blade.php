@@ -16,6 +16,12 @@
         padding: 0 !important;
         margin: 0 !important;
     }
+
+    .main-content .inventario-telas-container {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 1.5rem !important;
+    }
     
     /* FIX: Remover max-width del container para insumos */
     .container {

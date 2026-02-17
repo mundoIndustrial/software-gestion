@@ -1,6 +1,6 @@
 {{-- Vista General de Inventario de Telas - Usable en cualquier layout --}}
 
-<link rel="stylesheet" href="{{ asset('css/inventario-telas/inventario.css') }}">
+<link rel="stylesheet" href="{{ asset('css/inventario-telas/inventario.css') }}?v={{ filemtime(public_path('css/inventario-telas/inventario.css')) }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <div class="inventario-telas-container">
