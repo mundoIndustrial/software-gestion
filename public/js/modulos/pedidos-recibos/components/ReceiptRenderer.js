@@ -255,6 +255,14 @@ export class ReceiptRenderer {
             genero: prendaData.genero
         });
 
+        // DEBUG: Verificar tallas del recibo
+        console.log(' [ReceiptRenderer._llenarDescripcion] RECIBO COMPLETO:', {
+            tipo_proceso: recibo.tipo_proceso,
+            tallas: recibo.tallas,
+            tallas_keys: recibo.tallas ? Object.keys(recibo.tallas) : 'SIN TALLAS',
+            tallas_caballero: recibo.tallas ? recibo.tallas.caballero : 'NO ENCONTRADO'
+        });
+
         let html = '';
         const tipoProcesoBajo = String(tipoProceso || '').toLowerCase();
 

@@ -430,7 +430,12 @@ export class Formatters {
         }
 
         // 5. Tallas
-        if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
+        if (proceso.tallas && Object.keys(proceso.tallas).length > 0) {
+            lineas.push('');
+            lineas.push('<strong>TALLAS</strong>');
+            this._agregarTallasFormato(lineas, proceso.tallas, prenda.genero);
+        } else if (prenda.tallas && Object.keys(prenda.tallas).length > 0) {
+            // Fallback: usar tallas de la prenda si el proceso no tiene
             lineas.push('');
             lineas.push('<strong>TALLAS</strong>');
             this._agregarTallasFormato(lineas, prenda.tallas, prenda.genero);

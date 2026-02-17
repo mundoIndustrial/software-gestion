@@ -283,6 +283,12 @@ abstract class AbstractObtenerUseCase
         $procesos = $procesosModelos->map(function ($proc) {
             $procArray = $proc->toArray();
             
+            \Log::info('[AbstractObtenerUseCase] Proceso antes de transformar tallas', [
+                'proceso_id' => $procArray['id'],
+                'tallas_crudas' => $procArray['tallas'] ?? 'no encontradas',
+                'cantidad_tallas_crudas' => isset($procArray['tallas']) ? count($procArray['tallas']) : 0
+            ]);
+            
             // Transformar tallas de array a objeto indexado por genero
             $tallasTransformadas = [
                 'dama' => [],
@@ -299,6 +305,14 @@ abstract class AbstractObtenerUseCase
                     $tallasTransformadas[$genero][$talla['talla']] = (int)$talla['cantidad'];
                 }
             }
+            
+            \Log::info('[AbstractObtenerUseCase] Proceso después de transformar tallas', [
+                'proceso_id' => $procArray['id'],
+                'tallas_transformadas' => $tallasTransformadas,
+                'cantidad_dama' => count($tallasTransformadas['dama']),
+                'cantidad_caballero' => count($tallasTransformadas['caballero']),
+                'cantidad_unisex' => count($tallasTransformadas['unisex'])
+            ]);
             
             $procArray['tallas'] = $tallasTransformadas;
             return $procArray;

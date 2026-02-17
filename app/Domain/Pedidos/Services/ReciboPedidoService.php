@@ -370,8 +370,8 @@ class ReciboPedidoService
                 'sobremedida' => []
             ];
             
-            // Obtener tallas del proceso desde pedidos_procesos_prenda_tallas
-            $procTallas = $this->obtenerTallasProceso($proc->id);
+            // Obtener tallas del proceso desde datos_adicionales o pedidos_procesos_prenda_tallas
+            $procTallas = $this->obtenerTallasProceso($proc);
             
             // Obtener ubicaciones
             $ubicaciones = [];
@@ -573,9 +573,9 @@ class ReciboPedidoService
     }
 
     /**
-     * Obtener tallas de un proceso desde pedidos_procesos_prenda_tallas
+     * Obtener tallas de un proceso desde pedidos_procesos_prenda_tallas o datos_adicionales
      */
-    private function obtenerTallasProceso(int $procesoId): array
+    private function obtenerTallasProceso($proceso): array
     {
         $tallas = [
             'dama' => [],
@@ -585,32 +585,71 @@ class ReciboPedidoService
         ];
         
         try {
+            // Primero buscar en tabla relacional (fuente principal de datos)
             $tallasProceso = \DB::table('pedidos_procesos_prenda_tallas')
-                ->where('proceso_prenda_detalle_id', $procesoId)
+                ->where('proceso_prenda_detalle_id', $proceso->id)
                 ->get(['genero', 'talla', 'cantidad']);
                 
-            \Log::info('[RECIBO-SERVICE] Tallas del proceso', [
-                'procesoId' => $procesoId,
+            \Log::info('[RECIBO-SERVICE] Tallas del proceso desde tabla relacional', [
+                'procesoId' => $proceso->id,
                 'cantidad' => $tallasProceso->count(),
                 'datos' => $tallasProceso->toArray()
             ]);
             
-            foreach ($tallasProceso as $talla) {
-                $genero = strtolower($talla->genero);
+            if ($tallasProceso->count() > 0) {
+                foreach ($tallasProceso as $talla) {
+                    $genero = strtolower($talla->genero);
+                    
+                    if (isset($tallas[$genero])) {
+                        $tallas[$genero][$talla->talla] = $talla->cantidad;
+                    }
+                }
                 
-                if (isset($tallas[$genero])) {
-                    $tallas[$genero][$talla->talla] = $talla->cantidad;
+                \Log::info('[RECIBO-SERVICE] Estructura final desde tabla relacional', [
+                    'procesoId' => $proceso->id,
+                    'tallas' => $tallas
+                ]);
+                
+                return $tallas;
+            }
+            
+            // Si no hay datos en tabla, intentar desde datos_adicionales (fallback)
+            if ($proceso->datos_adicionales) {
+                $datosAdicionales = is_string($proceso->datos_adicionales) 
+                    ? json_decode($proceso->datos_adicionales, true) 
+                    : $proceso->datos_adicionales;
+                
+                if (isset($datosAdicionales['tallas']) && is_array($datosAdicionales['tallas'])) {
+                    \Log::info('[RECIBO-SERVICE] Tallas encontradas en datos_adicionales (fallback)', [
+                        'procesoId' => $proceso->id,
+                        'tallas' => $datosAdicionales['tallas']
+                    ]);
+                    
+                    // Convertir claves a minúsculas para consistencia
+                    foreach ($datosAdicionales['tallas'] as $genero => $tallasGenero) {
+                        $generoLower = strtolower($genero);
+                        if (isset($tallas[$generoLower]) && is_array($tallasGenero)) {
+                            $tallas[$generoLower] = $tallasGenero;
+                        }
+                    }
+                    
+                    \Log::info('[RECIBO-SERVICE] Estructura final desde datos_adicionales', [
+                        'procesoId' => $proceso->id,
+                        'tallas' => $tallas
+                    ]);
+                    
+                    return $tallas;
                 }
             }
             
-            \Log::info('[RECIBO-SERVICE] Estructura final de tallas del proceso', [
-                'procesoId' => $procesoId,
+            \Log::info('[RECIBO-SERVICE] No se encontraron tallas para el proceso', [
+                'procesoId' => $proceso->id,
                 'tallas' => $tallas
             ]);
             
         } catch (\Exception $e) {
             \Log::error('[RECIBO-SERVICE] Error obteniendo tallas del proceso', [
-                'procesoId' => $procesoId,
+                'procesoId' => $proceso->id,
                 'error' => $e->getMessage()
             ]);
         }

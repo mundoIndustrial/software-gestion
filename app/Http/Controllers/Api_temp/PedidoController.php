@@ -738,6 +738,26 @@ class PedidoController extends Controller
             
             $responseData['ancho_metraje'] = $anchoMetrajeGeneral;
 
+            // DEBUG: Loguear estructura final de tallas antes de enviar
+            if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                foreach ($responseData['prendas'] as $prendaIndex => $prenda) {
+                    if (isset($prenda['procesos']) && is_array($prenda['procesos'])) {
+                        foreach ($prenda['procesos'] as $procIndex => $proceso) {
+                            if (isset($proceso['tallas'])) {
+                                \Log::info('[PedidoController] ESTRUCTURA FINAL DE TALLAS ANTES DE ENVIAR', [
+                                    'prenda_index' => $prendaIndex,
+                                    'proceso_index' => $procIndex,
+                                    'proceso_id' => $proceso['id'] ?? 'N/A',
+                                    'tallas_keys' => array_keys($proceso['tallas']),
+                                    'tallas_data' => $proceso['tallas'],
+                                    'caballero_data' => $proceso['tallas']['caballero'] ?? 'NO ENCONTRADO'
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $responseData
