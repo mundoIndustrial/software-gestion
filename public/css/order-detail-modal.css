@@ -324,7 +324,6 @@
         -webkit-print-color-adjust: exact !important;
         -moz-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        color-adjust: exact !important;
     }
     
     .date-box {
@@ -333,7 +332,6 @@
         -webkit-print-color-adjust: exact !important;
         -moz-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        color-adjust: exact !important;
     }
     
     .receipt-title {
@@ -346,11 +344,84 @@
     .order-detail-card {
         box-shadow: none !important;
         page-break-inside: avoid;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
     }
     
     .order-detail-modal-container {
         transform: scale(1) !important;
         transform-origin: center !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        position: relative !important;
+    }
+    
+    /* Forzar tamaño completo de página */
+    @page {
+        size: A4 portrait;
+        margin: 0.2cm;
+    }
+    
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    html {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        overflow: visible !important;
+    }
+    
+    /* Asegurar que el modal ocupe toda la página */
+    .order-detail-modal-container {
+        position: relative !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+        height: auto !important;
+        overflow: visible !important;
+        transform: none !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: 0 !important;
+        padding: 20px 0 !important;
+    }
+    
+    .order-detail-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        page-break-inside: avoid;
+        page-break-after: always;
+        margin: 0 auto !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Forzar que todo el contenido sea visible */
+    * {
+        overflow: visible !important;
+    }
+    
+    /* Evitar cortes en elementos importantes */
+    .order-date,
+    .order-asesor,
+    .order-forma-pago,
+    .order-cliente,
+    .order-descripcion,
+    .receipt-title {
+        page-break-inside: avoid !important;
+        overflow: visible !important;
     }
     
     /* Ocultar elementos no necesarios en impresión */
