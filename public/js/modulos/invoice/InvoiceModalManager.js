@@ -159,9 +159,32 @@ class InvoiceModalManager {
                         overflow: visible !important;
                     }
                     
-                    /* Forzar que todo el contenido sea visible */
-                    * {
+                    /* Forzar overflow visible en TODO excepto imágenes */
+                    *:not(img):not(video):not(canvas) {
                         overflow: visible !important;
+                    }
+                    
+                    /* Asegurar que las imágenes no se desborden al imprimir */
+                    #modal-factura-contenido img {
+                        max-width: 80px !important;
+                        max-height: 80px !important;
+                        width: auto !important;
+                        height: auto !important;
+                        object-fit: contain !important;
+                        overflow: hidden !important;
+                        page-break-inside: avoid !important;
+                    }
+                    
+                    /* Imágenes pequeñas (telas) */
+                    #modal-factura-contenido img[style*="40px"] {
+                        max-width: 40px !important;
+                        max-height: 40px !important;
+                    }
+                    
+                    /* Imágenes de procesos */
+                    #modal-factura-contenido img[style*="50px"] {
+                        max-width: 50px !important;
+                        max-height: 50px !important;
                     }
                     
                     /* Evitar cortes en elementos importantes */
@@ -498,8 +521,85 @@ class InvoiceModalManager {
     imprimirFacturaModal() {
         console.log('[InvoiceModalManager] Iniciando impresión de factura');
         
+        // Diagnosticar CSS antes de imprimir
+        this.diagnosticarCSSImpresion();
+        
         // Usar window.print() para imprimir el modal
         window.print();
+    }
+
+    /**
+     * Diagnostica qué CSS se está aplicando para impresión
+     */
+    diagnosticarCSSImpresion() {
+        console.log('[CSS-DIAGNOSTIC] 🔍 Iniciando diagnóstico de CSS para impresión...');
+        
+        // Verificar estilos de elementos clave
+        const elementos = [
+            'body',
+            '#modal-factura-overlay',
+            '#modal-factura',
+            '#modal-factura-contenido',
+            '#modal-factura-contenido img',
+            '#modal-factura-contenido div',
+            '#modal-factura-contenido table'
+        ];
+        
+        elementos.forEach(selector => {
+            const elemento = selector === 'body' ? document.body : document.querySelector(selector);
+            if (elemento) {
+                const estilos = window.getComputedStyle(elemento);
+                console.log(`[CSS-DIAGNOSTIC] 📋 ${selector}:`, {
+                    overflow: estilos.overflow,
+                    display: estilos.display,
+                    position: estilos.position,
+                    width: estilos.width,
+                    height: estilos.height,
+                    visibility: estilos.visibility
+                });
+            } else {
+                console.warn(`[CSS-DIAGNOSTIC] ⚠️ Elemento no encontrado: ${selector}`);
+            }
+        });
+        
+        // Verificar reglas @media print
+        console.log('[CSS-DIAGNOSTIC] 📄 Buscando reglas @media print...');
+        const reglas = Array.from(document.styleSheets).flatMap(sheet => {
+            try {
+                return Array.from(sheet.cssRules || []);
+            } catch (e) {
+                console.warn('[CSS-DIAGNOSTIC] No se puede acceder a reglas de:', sheet.href);
+                return [];
+            }
+        });
+        
+        const reglasPrint = reglas.filter(regla => {
+            return regla.type === CSSRule.MEDIA_RULE && 
+                   regla.media && 
+                   regla.media.mediaText.includes('print');
+        });
+        
+        console.log(`[CSS-DIAGNOSTIC] 📐 Reglas @media print encontradas: ${reglasPrint.length}`);
+        reglasPrint.forEach((regla, index) => {
+            console.log(`[CSS-DIAGNOSTIC] 📐 Regla ${index + 1}:`, regla.media.mediaText);
+            console.log(`[CSS-DIAGNOSTIC] 📐 Contenido:`, regla.cssText);
+        });
+        
+        // Verificar imágenes específicas
+        const imagenes = document.querySelectorAll('#modal-factura-contenido img');
+        console.log(`[CSS-DIAGNOSTIC] 🖼️ Imágenes encontradas: ${imagenes.length}`);
+        imagenes.forEach((img, index) => {
+            const estilos = window.getComputedStyle(img);
+            console.log(`[CSS-DIAGNOSTIC] 🖼️ Imagen ${index + 1}:`, {
+                src: img.src.substring(0, 50) + '...',
+                overflow: estilos.overflow,
+                'object-fit': estilos.objectFit,
+                width: estilos.width,
+                height: estilos.height
+            });
+        });
+        
+        console.log('[CSS-DIAGNOSTIC] ✅ Diagnóstico completado');
     }
 
     /**
