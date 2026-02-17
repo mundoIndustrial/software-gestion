@@ -449,7 +449,7 @@ async function abrirModalFactura(pedidoId) {
     contenido.innerHTML = '<div class="flex justify-center items-center py-12"><span class="text-slate-500">⏳ Cargando factura...</span></div>';
     
     try {
-        const response = await fetch(`/despacho/@${pedidoId}/factura-datos`, {
+        const response = await fetch(`/despacho/${pedidoId}/factura-datos`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -458,7 +458,7 @@ async function abrirModalFactura(pedidoId) {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: @${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         let data;
@@ -516,32 +516,32 @@ function generarHTMLFactura(datos) {
                         <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                             <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                             <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                            @@${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
-                            @@${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
-                            @@${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
+                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
+                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
+                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
-                        @${prenda.variantes.map((var_item, varIdx) => `
-                            <tr style="background: @${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">@${var_item.talla}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">@${var_item.cantidad}</td>
-                                @${tieneManga ? `
+                        ${prenda.variantes.map((var_item, varIdx) => `
+                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
+                                ${tieneManga ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        @${var_item.manga ? `<strong>@${var_item.manga}</strong>` : '—'}
-                                        @${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.manga_obs}</em>` : ''}
+                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
+                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
-                                @${tieneBroche ? `
+                                ${tieneBroche ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        @${var_item.broche ? `<strong>@${var_item.broche}</strong>` : '—'}
-                                        @${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.broche_obs}</em>` : ''}
+                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
+                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
-                                @${tieneBolsillos ? `
+                                ${tieneBolsillos ? `
                                     <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        @${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
-                                        @${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">@${var_item.bolsillos_obs}</em>` : ''}
+                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
+                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
                                     </td>
                                 ` : ''}
                             </tr>
@@ -556,12 +556,12 @@ function generarHTMLFactura(datos) {
         if (prenda.telas_array && Array.isArray(prenda.telas_array) && prenda.telas_array.length > 0) {
             telaHTML = `
                 <div style="margin-bottom: 12px;">
-                    @${prenda.telas_array.map(tela => `
+                    ${prenda.telas_array.map(tela => `
                         <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
                             <span style="font-size: 11px; color: #374151;">
-                                <strong>Tela:</strong> @${tela.tela_nombre || '—'} 
-                                <strong style="margin-left: 12px;">Color:</strong> @${tela.color_nombre || '—'}
-                                @${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> @${tela.referencia}` : ''}
+                                <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
+                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
+                                ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
                             </span>
                         </div>
                     `).join('')}
@@ -570,8 +570,8 @@ function generarHTMLFactura(datos) {
         } else if (prenda.tela || prenda.color) {
             telaHTML = `
                 <div style="margin-bottom: 12px; font-size: 11px; color: #374151;">
-                    <strong>Tela:</strong> @${prenda.tela || '—'} 
-                    @${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> @${prenda.color}` : ''}
+                    <strong>Tela:</strong> ${prenda.tela || '—'} 
+                    ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
                 </div>
             `;
         }
@@ -581,27 +581,27 @@ function generarHTMLFactura(datos) {
         if (prenda.procesos && Array.isArray(prenda.procesos) && prenda.procesos.length > 0) {
             procesosHTML = `
                 <div style="margin-bottom: 0;">
-                    @${prenda.procesos.map(proc => `
+                    ${prenda.procesos.map(proc => `
                         <div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">@${proc.nombre || proc.tipo}</div>
-                            @${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px;">${proc.nombre || proc.tipo}</div>
+                            ${proc.ubicaciones && proc.ubicaciones.length > 0 ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                     @${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
+                                     ${Array.isArray(proc.ubicaciones) ? proc.ubicaciones.join(' • ') : proc.ubicaciones}
                                 </div>
                             ` : ''}
-                            @${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
+                            ${proc.tallas && (proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 || proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 || proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 || proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0) ? `
                                 <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">
-                                    @${[
-                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: @${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: @${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: @${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `@${talla}(@${cantidad})`).join(', ')}`] : []),
-                                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: @${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `@${genero}(@${cantidad})`).join(', ')}`] : [])
+                                    ${[
+                                        ...(proc.tallas.dama && Object.keys(proc.tallas.dama).length > 0 ? [`Dama: ${Object.entries(proc.tallas.dama).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.caballero && Object.keys(proc.tallas.caballero).length > 0 ? [`Caballero: ${Object.entries(proc.tallas.caballero).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.unisex && Object.keys(proc.tallas.unisex).length > 0 ? [`Unisex: ${Object.entries(proc.tallas.unisex).map(([talla, cantidad]) => `${talla}(${cantidad})`).join(', ')}`] : []),
+                                        ...(proc.tallas.sobremedida && Object.keys(proc.tallas.sobremedida).length > 0 ? [`Sobremedida: ${Object.entries(proc.tallas.sobremedida).map(([genero, cantidad]) => `${genero}(${cantidad})`).join(', ')}`] : [])
                                     ].join(' • ')}
                                 </div>
                             ` : ''}
-                            @${proc.observaciones ? `
+                            ${proc.observaciones ? `
                                 <div style="font-size: 10px; color: #6b7280;">
-                                    @${proc.observaciones}
+                                    ${proc.observaciones}
                                 </div>
                             ` : ''}
                         </div>
@@ -614,27 +614,27 @@ function generarHTMLFactura(datos) {
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
                 <!-- Header simple -->
                 <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA @${idx + 1}: @${prenda.nombre}@${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
-                    @${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">@${prenda.descripcion}</div>` : ''}
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
+                    ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
                 </div>
                 
                 <!-- Telas (movido aquí) -->
-                @${telaHTML}
+                ${telaHTML}
                 
                 <!-- Imagen pequeña -->
-                @${(prenda.imagenes && prenda.imagenes.length > 0) ? `
+                ${(prenda.imagenes && prenda.imagenes.length > 0) ? `
                     <div style="float: right; margin-left: 12px; margin-bottom: 8px;">
-                        <img src="@${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <img src="${prenda.imagenes[0].ruta || prenda.imagenes[0].url || prenda.imagenes[0]}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
                     </div>
                 ` : ''}
                 
                 <!-- Contenido compacto -->
-                <div style="@${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
+                <div style="${(prenda.imagenes && prenda.imagenes.length > 0) ? 'margin-right: 100px;' : ''}">
                     <!-- Variantes -->
-                    @${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
+                    ${variantesHTML ? variantesHTML.replace(/margin: 12px 0/g, 'margin-bottom: 12px;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;').replace(/background: #f0f9ff/g, 'background: #f9fafb;').replace(/color: #1e40af/g, 'color: #374151;') : ''}
                     
                     <!-- Procesos -->
-                    @${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
+                    ${procesosHTML ? procesosHTML.replace(/margin: 12px 0/g, 'margin-bottom: 0;').replace(/border: 1px solid #e0e7ff/g, 'border: 1px solid #e5e7eb;') : ''}
                 </div>
                 
                 <div style="clear: both;"></div>
@@ -645,16 +645,16 @@ function generarHTMLFactura(datos) {
     // EPPs
     const eppsHTML = (datos.epps && datos.epps.length > 0) ? `
         <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
-            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (@${datos.epps.length})</div>
+            <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (${datos.epps.length})</div>
             <div style="padding: 12px; space-y: 8px;">
-                @${datos.epps.map(epp => `
+                ${datos.epps.map(epp => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
                         <div style="flex: 1;">
-                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">@${epp.nombre_completo || epp.nombre}</div>
-                            @${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">@${epp.observaciones}</div>` : ''}
+                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
+                            ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
                         </div>
                         <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px;">
-                            @${epp.cantidad}
+                            ${epp.cantidad}
                         </div>
                     </div>
                 `).join('')}
@@ -666,16 +666,16 @@ function generarHTMLFactura(datos) {
     const totalHTML = `
         <div style="margin: 12px 0; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 2px solid #d1d5db; text-align: right;">
             <div style="font-size: 12px; margin-bottom: 8px;">
-                <strong>Total Ítems:</strong> @${datos.total_items || 0}
+                <strong>Total Ítems:</strong> ${datos.total_items || 0}
             </div>
-            @${datos.valor_total ? `
+            ${datos.valor_total ? `
                 <div style="font-size: 12px; margin-bottom: 8px;">
-                    <strong>Subtotal:</strong> $@${parseFloat(datos.valor_total).toLocaleString('es-CO')}
+                    <strong>Subtotal:</strong> $${parseFloat(datos.valor_total).toLocaleString('es-CO')}
                 </div>
             ` : ''}
-            @${datos.total_general ? `
+            ${datos.total_general ? `
                 <div style="font-size: 14px; font-weight: 700; color: #1e40af; padding-top: 8px; border-top: 2px solid #d1d5db;">
-                    <strong>Total:</strong> $@${parseFloat(datos.total_general).toLocaleString('es-CO')}
+                    <strong>Total:</strong> $${parseFloat(datos.total_general).toLocaleString('es-CO')}
                 </div>
             ` : ''}
         </div>
@@ -689,44 +689,44 @@ function generarHTMLFactura(datos) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Número</div>
-                        <div style="font-weight: 600;">@${datos.numero_pedido}</div>
+                        <div style="font-weight: 600;">${datos.numero_pedido}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Cliente</div>
-                        <div style="font-weight: 600;">@${datos.cliente}</div>
+                        <div style="font-weight: 600;">${datos.cliente}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Asesora</div>
-                        <div style="font-weight: 600;">@${datos.asesora}</div>
+                        <div style="font-weight: 600;">${datos.asesora}</div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 8px;">
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Forma de Pago</div>
-                        <div style="font-weight: 600;">@${datos.forma_de_pago}</div>
+                        <div style="font-weight: 600;">${datos.forma_de_pago}</div>
                     </div>
                     <div>
                         <div style="font-size: 10px; opacity: 0.8;">Fecha</div>
-                        <div style="font-weight: 600;">@${datos.fecha}</div>
+                        <div style="font-weight: 600;">${datos.fecha}</div>
                     </div>
                 </div>
             </div>
 
-            @${datos.observaciones ? `
-                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
+            ${datos.observaciones ? `
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
                     <strong style="color: #92400e;"> Observaciones:</strong>
-                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">@${datos.observaciones}</div>
+                    <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
                 </div>
             ` : ''}
 
             <!-- Prendas -->
-            @${prendasHTML}
+            ${prendasHTML}
 
             <!-- EPPs -->
-            @${eppsHTML}
+            ${eppsHTML}
 
             <!-- Totales -->
-            @${totalHTML}
+            ${totalHTML}
         </div>
     `;
 }

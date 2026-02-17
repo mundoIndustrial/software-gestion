@@ -23,6 +23,7 @@ use Carbon\Carbon;
  * @property string $cliente
  * @property int|null $cliente_id
  * @property string|null $novedades
+ * @property string|null $observaciones
  * @property int|null $asesor_id
  * @property string|null $forma_de_pago
  * @property string|null $estado
@@ -59,6 +60,7 @@ class PedidoProduccion extends Model
         'cliente',
         'cliente_id',
         'novedades',
+        'observaciones',
         'asesor_id',
         'forma_de_pago',
         'estado',

@@ -50,6 +50,7 @@ class PedidoNormalizadorDTO
     public string $cliente;
     public ?string $asesora;
     public string $forma_de_pago;
+    public ?string $observaciones;
     public int $cliente_id;
     
     // Estructura normalizada
@@ -92,6 +93,7 @@ class PedidoNormalizadorDTO
         $dto->cliente = $json['cliente'] ?? '';
         $dto->asesora = $json['asesora'] ?? null;
         $dto->forma_de_pago = $json['forma_de_pago'] ?? 'Contado';
+        $dto->observaciones = $json['observaciones'] ?? null;
         $dto->cliente_id = $clienteId;
         
         // Normalizar prendas

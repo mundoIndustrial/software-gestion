@@ -645,6 +645,7 @@ class CrearPedidoEditableController extends Controller
                 'cliente' => $dtoPedido->cliente,
                 'asesora' => $dtoPedido->asesora,
                 'forma_de_pago' => $dtoPedido->forma_de_pago,
+                'observaciones' => $dtoPedido->observaciones,
                 'cliente_id' => $dtoPedido->cliente_id,
                 'items' => $dtoPedido->prendas,
                 'epps' => $dtoPedido->epps,

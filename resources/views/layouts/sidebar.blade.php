@@ -24,8 +24,56 @@
   </div>
 
   <div class="sidebar-content">
+    <!-- DESPACHO: Menú simplificado solo Gestión de Bodega -->
+    @if(request()->routeIs('despacho.*'))
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('despacho.index') }}"
+           class="menu-link {{ request()->routeIs('despacho.*') ? 'active' : '' }}"
+           aria-label="Módulo de Despacho">
+          <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
+          <span class="menu-label">Despacho</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos') ? 'active' : '' }}"
+           aria-label="Gestión de pedidos - Bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Pendientes Pedidos</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
+           aria-label="Pedidos anulados - Bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+          <span class="menu-label">Pedidos anulados</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
+           aria-label="Pendiente Costura">
+          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
+          <span class="menu-label">Pendiente Costura</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
+           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
+           aria-label="Pendiente EPP">
+          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
+          <span class="menu-label">Pendiente EPP</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
+    @elseif(auth()->user()->hasRole('bodeguero'))
     <!-- BODEGUERO: Menú simplificado solo Gestión de Bodega -->
-    @if(auth()->user()->hasRole('bodeguero'))
     <div class="menu-section">
       <span class="menu-section-title">Gestión de Bodega</span>
       <ul class="menu-list" role="navigation">

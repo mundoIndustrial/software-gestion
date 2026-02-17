@@ -1048,7 +1048,7 @@ function generarHTMLFactura(datos) {
             </div>
 
             ${datos.observaciones ? `
-                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 11px;">
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
                     <strong style="color: #92400e;"> Observaciones:</strong>
                     <div style="margin-top: 4px; white-space: pre-wrap; color: #666;">${datos.observaciones}</div>
                 </div>

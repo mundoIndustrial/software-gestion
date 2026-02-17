@@ -73,6 +73,13 @@
                     <input type="text" id="forma_de_pago_editable" name="forma_de_pago" value="{{ $pedido->forma_de_pago ?? '' }}">
                 </div>
             </div>
+
+            <div style="width: 100%; margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="observaciones_editable">Observaciones</label>
+                    <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido...">{{ $pedido->observaciones ?? '' }}</textarea>
+                </div>
+            </div>
         </div>
 
         <!-- PASO 2: Tipo de Ítem -->

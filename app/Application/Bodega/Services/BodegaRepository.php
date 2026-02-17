@@ -18,6 +18,8 @@ class BodegaRepository
     public function obtenerPedidosBase(array $estadosPermitidos): Collection
     {
         return ReciboPrenda::with(['asesor'])
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
             ->where(function($q) use ($estadosPermitidos) {
                 foreach($estadosPermitidos as $estado) {
                     $q->orWhereRaw('UPPER(TRIM(estado)) = ?', [strtoupper($estado)]);

@@ -46,16 +46,21 @@ class InvoiceRenderer {
                 <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px;">
                     <!-- Header Profesional -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #ddd; align-items: start;">
-                        <div style="font-size: 11px;">
-                            <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">${datos.cliente}</div>
-                            <div style="color: #666; font-size: 11px;">Asesor: ${datos.asesora}</div>
-                            <div style="color: #666; font-size: 11px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
+                        <div style="font-size: 13px;">
+                            <div style="font-weight: 700; color: #1a3a52; font-size: 13px; margin-bottom: 2px;">${datos.cliente}</div>
+                            <div style="color: #666; font-size: 13px;">Asesor: ${datos.asesora}</div>
+                            <div style="color: #666; font-size: 13px; margin-top: 3px;">Forma de Pago: <span style="font-weight: 600; color: #1a3a52;">${datos.forma_de_pago || 'No especificada'}</span></div>
+                            ${datos.observaciones ? `
+                                <div style="color: #666; font-size: 13px; margin-top: 3px;">
+                                    <strong>Observaciones:</strong> ${datos.observaciones}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div style="text-align: right; font-size: 11px;">
-                            <div style="font-weight: 700; color: #1a3a52; font-size: 11px; margin-bottom: 2px;">
+                        <div style="text-align: right; font-size: 13px;">
+                            <div style="font-weight: 700; color: #1a3a52; font-size: 13px; margin-bottom: 2px;">
                                 RECIBO DE PEDIDO #${datos.numero_pedido || datos.numero_pedido_temporal}
                             </div>
-                            <div style="color: #666; font-size: 11px;">${datos.fecha_creacion}</div>
+                            <div style="color: #666; font-size: 13px;">${datos.fecha_creacion}</div>
                         </div>
                     </div>
                     

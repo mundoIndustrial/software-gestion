@@ -24,6 +24,10 @@ class DespachoController extends Controller
         
         $query = PedidoProduccion::query();
         
+        // Excluir pedidos sin número de pedido
+        $query->whereNotNull('numero_pedido')
+              ->where('numero_pedido', '!=', '');
+        
         // Mostrar todos los pedidos excepto los rechazados o en cartera
         $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
         
