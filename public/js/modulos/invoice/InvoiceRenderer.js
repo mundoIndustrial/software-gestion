@@ -157,14 +157,21 @@ class InvoiceRenderer {
     }
 
     renderizarTela(prenda) {
-        // 🔴 NUEVO: Verificar si hay colores asignados por talla
-        const hayColorPorTalla = prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0;
+        // 🔴 NUEVO: Verificar si hay colores asignados por talla (múltiples fuentes)
+        const hayColorPorTalla = (
+            (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) ||
+            (prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) ||
+            (prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0)
+        );
         
         // Debug logging para diagnóstico
         console.log('[InvoiceRenderer] renderizarTela - Datos:', {
             prendas_id: prenda.id,
             telas_array: prenda.telas_array,
             imagenes_tela: prenda.imagenes_tela,
+            talla_colores: prenda.talla_colores,
+            asignaciones: prenda.asignaciones,
+            asignacionesColoresPorTalla: prenda.asignacionesColoresPorTalla,
             hayColorPorTalla
         });
         
@@ -242,7 +249,35 @@ class InvoiceRenderer {
                                         }
                                     }
                                     
-                                    // SEGUNDO: Si no encontró en talla_colores, buscar en prenda.variantes (si viene del servidor)
+                                    // 🔴 NUEVO: SEGUNDO: Buscar en prenda.asignaciones (datos del PedidosAdapter)
+                                    if (coloresConCantidad.length === 0 && prenda.asignaciones && Array.isArray(prenda.asignaciones) && prenda.asignaciones.length > 0) {
+                                        const coloresEnTalla = prenda.asignaciones.filter(a => 
+                                            a.genero && a.genero.toUpperCase() === genero.toUpperCase() && 
+                                            a.talla === talla
+                                        );
+                                        
+                                        if (coloresEnTalla.length > 0) {
+                                            coloresConCantidad = coloresEnTalla.map(c => ({
+                                                nombre: c.color || c.color_nombre || 'Sin color',
+                                                cantidad: c.cantidad || 1
+                                            }));
+                                        }
+                                    }
+                                    
+                                    // 🔴 NUEVO: TERCERO: Buscar en prenda.asignacionesColoresPorTalla (formato StateManager)
+                                    if (coloresConCantidad.length === 0 && prenda.asignacionesColoresPorTalla && Object.keys(prenda.asignacionesColoresPorTalla).length > 0) {
+                                        const key = `${genero.toUpperCase()}-${prenda.telas_array?.[0]?.tela_nombre || 'DRILL'}-${talla}`;
+                                        const asignacion = prenda.asignacionesColoresPorTalla[key];
+                                        
+                                        if (asignacion && asignacion.colores && Array.isArray(asignacion.colores)) {
+                                            coloresConCantidad = asignacion.colores.map(c => ({
+                                                nombre: c.nombre || c.color_nombre || 'Sin color',
+                                                cantidad: c.cantidad || 1
+                                            }));
+                                        }
+                                    }
+                                    
+                                    // CUARTO: Si no encontró en talla_colores, buscar en prenda.variantes (si viene del servidor)
                                     if (coloresConCantidad.length === 0 && prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
                                         const varianteColor = prenda.variantes.find(v => v.talla === talla);
                                         if (varianteColor && varianteColor.colores_asignados && Array.isArray(varianteColor.colores_asignados) && varianteColor.colores_asignados.length > 0) {

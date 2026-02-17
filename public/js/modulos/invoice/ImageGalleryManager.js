@@ -16,6 +16,7 @@ class ImageGalleryManager {
         window._registrarGalería = this.registrarGalería.bind(this);
         window._abrirGaleriaImagenesDesdeID = this.abrirGaleriaImagenesDesdeID.bind(this);
         window._abrirGaleriaImagenes = this.abrirGaleriaImagenes.bind(this);
+        window._limpiarGalerias = this.limpiarGalerias.bind(this);
         
         // Mantener compatibilidad con variables globales existentes
         window._galeríasPreview = this.galerías;
@@ -67,6 +68,21 @@ class ImageGalleryManager {
         }
         
         return '';
+    }
+
+    /**
+     * Limpia todas las galerías registradas
+     * Útil para evitar conflictos entre diferentes pedidos
+     */
+    limpiarGalerias() {
+        this.galerías = {};
+        this.idGaleria = 0;
+        
+        // Sincronizar con variable global para compatibilidad
+        window._idGaleriaPreview = 0;
+        window._galeríasPreview = this.galerías;
+        
+        console.log('[ImageGalleryManager] Galerías limpiadas');
     }
 
     /**

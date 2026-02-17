@@ -13,6 +13,58 @@
     <link rel="stylesheet" href="{{ asset('css/componentes/prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}">
+    
+    <!-- 🚨 FIX: Asegurar z-index correcto para modal de prendas en supervisor-pedidos -->
+    <style>
+        /* Modal específico para prendas debe estar por encima de todo */
+        #modal-agregar-prenda-nueva.modal-overlay {
+            z-index: 1050001 !important;
+        }
+        
+        /* Contenedor del modal también necesita z-index alto */
+        #modal-agregar-prenda-nueva .modal-container {
+            z-index: 1050002 !important;
+            position: relative;
+        }
+        
+        /* SweetAlert2 debe estar por debajo del modal de prendas */
+        .swal2-container {
+            z-index: 1050000 !important;
+        }
+        
+        /* 🚨 FIX: Manejar modal-backdrop de Bootstrap que está tapando el modal */
+        .modal-backdrop {
+            z-index: 999999 !important; /* Poner backdrop por debajo del modal */
+        }
+        
+        /* O mejor aún, ocultar backdrop cuando nuestro modal está activo */
+        #modal-agregar-prenda-nueva:not([style*="display: none"]) ~ .modal-backdrop,
+        #modal-agregar-prenda-nueva:not([style*="display: none"]) + .modal-backdrop {
+            display: none !important;
+        }
+        
+        /* Asegurar que el modal no sea afectado por aria-hidden */
+        #modal-agregar-prenda-nueva:not([style*="display: none"]) {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* 🚨 Modal de confirmación de limpiar asignaciones */
+        #modal-confirmar-limpiar {
+            z-index: 1060000 !important;
+        }
+        
+        #modal-confirmar-limpiar .modal-dialog {
+            z-index: 1060001 !important;
+            position: relative;
+        }
+        
+        /* Asegurar que el modal de confirmación no sea tapado */
+        #modal-confirmar-limpiar:not([style*="display: none"]) {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -1927,6 +1979,102 @@
         } else {
             initializeRealtimeListener();
         }
+    </script>
+
+    <!-- 🚨 SCRIPT ESPECÍFICO PARA SUPERVISOR-PEDIDOS: Botón limpiar asignaciones -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar a que jQuery esté disponible
+            const verificarJQuery = setInterval(function() {
+                if (typeof jQuery !== 'undefined' && jQuery.fn.modal) {
+                    clearInterval(verificarJQuery);
+                    
+                    // Configurar botón de limpiar asignaciones
+                    const btnLimpiarAsignaciones = document.getElementById('btn-limpiar-asignaciones');
+                    
+                    if (btnLimpiarAsignaciones) {
+                        btnLimpiarAsignaciones.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            console.log('[Supervisor-Pedidos] Botón limpiar asignaciones clickeado');
+                            
+                            // 🔧 Adaptación para supervisor-pedidos: Buscar contenedor principal
+                            const supervisorWrapper = document.querySelector('.supervisor-pedidos-container') || 
+                                                      document.querySelector('#mainContent') || 
+                                                      document.querySelector('main');
+                            if (supervisorWrapper) {
+                                supervisorWrapper.removeAttribute('aria-hidden');
+                            }
+                            
+                            // Remover cualquier overlay existente antes de abrir el modal
+                            const overlayExistente = document.getElementById('overlay-confirmar-limpiar');
+                            if (overlayExistente) {
+                                overlayExistente.remove();
+                            }
+                            
+                            // Abrir modal de confirmación
+                            try {
+                                jQuery('#modal-confirmar-limpiar').modal('show');
+                                console.log('[Supervisor-Pedidos] Modal de confirmación abierto (Bootstrap 4)');
+                            } catch (error) {
+                                console.error('[Supervisor-Pedidos] Error al abrir modal:', error);
+                                // Fallback: mostrar alert simple
+                                if (confirm('¿Eliminar todas las asignaciones de colores? Esta acción no se puede deshacer.')) {
+                                    // Ejecutar la función de limpiar
+                                    if (window.ColoresPorTalla && typeof window.ColoresPorTalla.limpiarTodo === 'function') {
+                                        window.ColoresPorTalla.limpiarTodo();
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Listener para el botón de confirmar dentro del modal
+                        const btnConfirmarLimpiar = document.getElementById('btn-confirmar-limpiar-todo');
+                        if (btnConfirmarLimpiar) {
+                            btnConfirmarLimpiar.addEventListener('click', function() {
+                                console.log('[Supervisor-Pedidos] Confirmado: Limpiar todo');
+                                
+                                // Ejecutar la función de limpiar
+                                if (window.ColoresPorTalla && typeof window.ColoresPorTalla.limpiarTodo === 'function') {
+                                    window.ColoresPorTalla.limpiarTodo();
+                                }
+                                
+                                // Actualizar total si existe la función
+                                if (typeof actualizarTotalPrendas === 'function') {
+                                    actualizarTotalPrendas();
+                                }
+                                
+                                // Cerrar modal de confirmación
+                                const modalLimpiar = document.getElementById('modal-confirmar-limpiar');
+                                if (modalLimpiar) {
+                                    jQuery(modalLimpiar).modal('hide');
+                                }
+                                
+                                // Remover overlay si existe
+                                const ov = document.getElementById('overlay-confirmar-limpiar');
+                                if (ov) ov.remove();
+                                
+                                console.log('[Supervisor-Pedidos] Limpieza completada');
+                            });
+                        }
+                        
+                        // Listener para remover aria-hidden cuando se cierre el modal
+                        jQuery('#modal-confirmar-limpiar').on('hidden.bs.modal', function() {
+                            const supervisorWrapper = document.querySelector('.supervisor-pedidos-container') || 
+                                                          document.querySelector('#mainContent') || 
+                                                          document.querySelector('main');
+                            if (supervisorWrapper) {
+                                supervisorWrapper.setAttribute('aria-hidden', 'true');
+                            }
+                        });
+                        
+                        console.log('[Supervisor-Pedidos] ✅ Botón limpiar asignaciones configurado');
+                    } else {
+                        console.log('[Supervisor-Pedidos] ⚠️ Botón limpiar asignaciones no encontrado');
+                    }
+                }
+            }, 100);
+        });
     </script>
 @endpush
 

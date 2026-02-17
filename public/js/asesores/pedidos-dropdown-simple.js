@@ -27,14 +27,22 @@ document.addEventListener('DOMContentLoaded', function() {
             tipoCotizacion = 'L';
         }
         
+        // SIEMPRE generar un menuId único basado en el pedidoId
+        const uniqueMenuId = `menu-ver-pedido-${pedidoId}`;
+        
+        // IMPORTANTE: Limpiar galerías anteriores para evitar conflictos entre pedidos
+        if (typeof window._limpiarGalerias === 'function') {
+            window._limpiarGalerias();
+        }
+        
         // Verificar si ya existe
-        if (document.getElementById(menuId)) {
-            return document.getElementById(menuId);
+        if (document.getElementById(uniqueMenuId)) {
+            return document.getElementById(uniqueMenuId);
         }
         
         // Crear el dropdown
         const dropdown = document.createElement('div');
-        dropdown.id = menuId;
+        dropdown.id = uniqueMenuId;
         dropdown.className = 'dropdown-menu';
         dropdown.style.cssText = `
             position: fixed;
@@ -389,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Crear dropdown si no existe
-            const dropdown = crearDropdownVer(buttonVer);
+    const dropdown = crearDropdownVer(buttonVer);
             
             // Abrir solo el dropdown del botón clickeado
             dropdown.style.display = 'block';

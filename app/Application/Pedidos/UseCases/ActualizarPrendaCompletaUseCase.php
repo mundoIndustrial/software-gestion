@@ -225,10 +225,26 @@ final class ActualizarPrendaCompletaUseCase
         }
 
         if (empty($dto->cantidadTalla)) {
-            // Si viene vacÃ­o, eliminar todas
+            // Si viene vacío, eliminar todas las tallas y sus colores asociados
             \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Empty array, deleting all', [
                 'prenda_id' => $prenda->id
             ]);
+            
+            // 🚨 IMPORTANTE: Eliminar primero todos los colores asociados
+            $tallas = $prenda->tallas()->get();
+            $totalColoresEliminados = 0;
+            foreach ($tallas as $talla) {
+                $coloresEliminados = $talla->coloresAsignados()->delete();
+                $totalColoresEliminados += $coloresEliminados;
+            }
+            
+            \Log::info('[ActualizarPrendaCompletaUseCase] Colores eliminados antes de eliminar tallas', [
+                'prenda_id' => $prenda->id,
+                'tallas_procesadas' => $tallas->count(),
+                'total_colores_eliminados' => $totalColoresEliminados
+            ]);
+            
+            // Luego eliminar todas las tallas
             $prenda->tallas()->delete();
             return;
         }
@@ -292,8 +308,45 @@ final class ActualizarPrendaCompletaUseCase
             $generoExistente = $tallaRecord->genero;
             // Solo tocar si el género fue enviado con datos
             if (in_array($generoExistente, $generosConDatos) && !isset($tallasNuevas[$key])) {
-                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla de género modificado', ['key' => $key]);
-                $tallaRecord->delete();
+                \Log::debug('[ActualizarPrendaCompletaUseCase] Eliminando talla de género modificado', [
+                    'key' => $key,
+                    'talla_id' => $tallaRecord->id,
+                    'colores_asociados_count' => $tallaRecord->coloresAsignados()->count()
+                ]);
+                
+                // 🚨 IMPORTANTE: Eliminar primero los colores asociados (cascade manual)
+                try {
+                    $coloresEliminados = $tallaRecord->coloresAsignados()->delete();
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Colores eliminados en cascada', [
+                        'talla_id' => $tallaRecord->id,
+                        'colores_eliminados' => $coloresEliminados
+                    ]);
+                    
+                    // Luego eliminar la talla
+                    $tallaEliminada = $tallaRecord->delete();
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Talla eliminada', [
+                        'talla_id' => $tallaRecord->id,
+                        'talla_eliminada' => $tallaEliminada,
+                        'key' => $key
+                    ]);
+                    
+                    // Verificar que realmente se eliminó
+                    $tallaDespuesDeEliminar = \DB::table('prenda_pedido_tallas')->where('id', $tallaRecord->id)->first();
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Verificación post-eliminación', [
+                        'talla_id' => $tallaRecord->id,
+                        'existe_despues_de_eliminar' => $tallaDespuesDeEliminar !== null,
+                        'datos_despues' => $tallaDespuesDeEliminar
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    \Log::error('[ActualizarPrendaCompletaUseCase] Error al eliminar talla', [
+                        'talla_id' => $tallaRecord->id,
+                        'key' => $key,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw $e;
+                }
             }
         }
 
@@ -309,9 +362,20 @@ final class ActualizarPrendaCompletaUseCase
             }
         }
         
+        // 🔍 VERIFICACIÓN FINAL: Mostrar todas las tallas que quedaron
+        $tallasFinales = $prenda->tallas()->get();
         \Log::info('[ActualizarPrendaCompletaUseCase] actualizarTallas - Completado', [
             'prenda_id' => $prenda->id,
-            'total_tallas' => $prenda->tallas()->count()
+            'total_tallas' => $tallasFinales->count(),
+            'tallas_restantes' => $tallasFinales->map(function($t) {
+                return [
+                    'id' => $t->id,
+                    'genero' => $t->genero,
+                    'talla' => $t->talla,
+                    'cantidad' => $t->cantidad,
+                    'key' => $t->genero . '_' . $t->talla
+                ];
+            })->toArray()
         ]);
     }
 

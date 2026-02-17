@@ -220,9 +220,48 @@ window.eliminarTela = function(index, event) {
         const telaAEliminar = telas[index];
         console.log('[eliminarTela] Tela a eliminar:', telaAEliminar);
         
+        // 🚨 IMPORTANTE: Eliminar tallas asociadas a esta tela
+        if (window.tallasRelacionales && typeof window.tallasRelacionales === 'object') {
+            console.log('[eliminarTela] 🧹 Eliminando tallas asociadas a la tela:', telaAEliminar.tela);
+            
+            let tallasEliminadas = 0;
+            for (const genero in window.tallasRelacionales) {
+                if (window.tallasRelacionales.hasOwnProperty(genero)) {
+                    // Eliminar todas las tallas de este género
+                    const generoData = window.tallasRelacionales[genero];
+                    console.log('[eliminarTela] 🗑️ Eliminando tallas del género:', genero, 'tallas:', Object.keys(generoData));
+                    
+                    // Limpiar todas las tallas de este género
+                    window.tallasRelacionales[genero] = {};
+                    tallasEliminadas += Object.keys(generoData).length;
+                }
+            }
+            
+            console.log('[eliminarTela] ✅ Tallas eliminadas:', tallasEliminadas);
+            
+            // Actualizar el total de prendas
+            if (typeof actualizarTotalPrendas === 'function') {
+                actualizarTotalPrendas();
+            }
+            
+            // Recargar las tarjetas de tallas para reflejar los cambios
+            if (window.PrendaEditorTallas && typeof window.PrendaEditorTallas.cargar === 'function') {
+                const prenda = {
+                    cantidad_talla: window.tallasRelacionales || {}
+                };
+                window.PrendaEditorTallas.cargar(prenda);
+            }
+        }
+        
         // Eliminar del array
         telas.splice(index, 1);
         console.log('[eliminarTela] ✅ Tela eliminada. Telas restantes:', telas.length);
+        
+        // 🚨 IMPORTANTE: Limpiar asignaciones de colores asociadas
+        if (window.StateManager && typeof window.StateManager.limpiarAsignaciones === 'function') {
+            console.log('[eliminarTela] 🎨 Limpiando asignaciones de colores');
+            window.StateManager.limpiarAsignaciones();
+        }
         
         // Recargar tabla
         const prenda = {
