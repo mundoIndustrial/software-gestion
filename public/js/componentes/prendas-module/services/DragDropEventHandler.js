@@ -161,11 +161,7 @@ class DragDropEventHandler {
         this.elemento.addEventListener('paste', (e) => {
             if (!this.estaActivo) return;
             
-            UIHelperService.log('DragDropEventHandler', ' EVENTO PASTE LOCAL DETECTADO');
-            
-            // Prevenir comportamiento por defecto
-            e.preventDefault();
-            e.stopPropagation();
+            UIHelperService.log('DragDropEventHandler', '📋 EVENTO PASTE LOCAL DETECTADO');
             
             // Obtener archivos del portapapeles
             const items = e.clipboardData.items;
@@ -173,6 +169,27 @@ class DragDropEventHandler {
                 UIHelperService.log('DragDropEventHandler', 'No hay items en el portapapeles local');
                 return;
             }
+            
+            // Primero verificar si hay imágenes en el portapapeles
+            let foundImage = false;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    foundImage = true;
+                    break;
+                }
+            }
+            
+            // Si no hay imágenes, permitir el comportamiento normal del navegador
+            if (!foundImage) {
+                UIHelperService.log('DragDropEventHandler', '📝 No hay imágenes en el portapapeles local, permitiendo pegado normal de texto');
+                return; // No interceptar, dejar que el navegador maneje el pegado
+            }
+            
+            // Si hay imágenes, interceptar el evento para procesarlas
+            UIHelperService.log('DragDropEventHandler', '🖼️ Imágenes detectadas en portapapeles local, interceptando para procesar');
+            e.preventDefault();
+            e.stopPropagation();
             
             // Filtrar archivos según configuración
             const archivos = this._filtrarArchivos(items);

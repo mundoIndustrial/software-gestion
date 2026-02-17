@@ -97,6 +97,26 @@ class DragDropManager {
         document.addEventListener('paste', (e) => {
             UIHelperService.log('DragDropManager', '📋 EVENTO PASTE DETECTADO');
             
+            // 🔴 CRÍTICO: Verificar si el elemento activo es un campo de texto que debe permitir pegar texto
+            const elementoActivo = document.activeElement;
+            const esCampoTexto = elementoActivo && (
+                elementoActivo.tagName === 'TEXTAREA' ||
+                elementoActivo.tagName === 'INPUT' && (
+                    elementoActivo.type === 'text' ||
+                    elementoActivo.type === 'search' ||
+                    elementoActivo.type === 'email' ||
+                    elementoActivo.type === 'url' ||
+                    elementoActivo.type === 'tel'
+                ) ||
+                elementoActivo.contentEditable === 'true'
+            );
+            
+            // Si es un campo de texto, permitir el comportamiento normal del navegador
+            if (esCampoTexto) {
+                UIHelperService.log('DragDropManager', `📝 Campo de texto detectado (${elementoActivo.tagName}${elementoActivo.type ? ':' + elementoActivo.type : ''}), permitiendo pegado normal`);
+                return; // No interceptar, dejar que el navegador maneje el pegado
+            }
+            
             // 🔴 CRÍTICO: Soportar AMBOS modales (creación nueva Y edición)
             let preview = document.getElementById('nueva-prenda-foto-preview');
             let modal = document.getElementById('modal-agregar-prenda-nueva');
@@ -131,9 +151,6 @@ class DragDropManager {
             
             UIHelperService.log('DragDropManager', '✅ Procesando pegado global...');
             
-            e.preventDefault();
-            e.stopPropagation();
-            
             // Obtener items del portapapeles
             const items = e.clipboardData.items;
             if (!items || items.length === 0) {
@@ -143,17 +160,36 @@ class DragDropManager {
             
             UIHelperService.log('DragDropManager', `Items disponibles: ${items.length}`);
             
+            // Primero verificar si hay imágenes en el portapapeles
             let foundImage = false;
-            
-            // Buscar imágenes en el portapapeles
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 UIHelperService.log('DragDropManager', `Item ${i}: ${item.type}, ${item.kind}`);
                 
                 // Verificar si es una imagen
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    UIHelperService.log('DragDropManager', `✅ Imagen encontrada: ${item.type}`);
                     foundImage = true;
+                    break;
+                }
+            }
+            
+            // Si no hay imágenes, permitir el comportamiento normal
+            if (!foundImage) {
+                UIHelperService.log('DragDropManager', '📝 No hay imágenes en el portapapeles, permitiendo pegado normal de texto');
+                return;
+            }
+            
+            // Si hay imágenes, interceptar el evento para procesarlas
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Buscar y procesar imágenes
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                
+                // Verificar si es una imagen
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    UIHelperService.log('DragDropManager', `✅ Imagen encontrada: ${item.type}`);
                     
                     // Obtener el archivo
                     const file = item.getAsFile();
@@ -164,7 +200,6 @@ class DragDropManager {
                         const tempInput = UIHelperService.crearInputTemporal([file]);
                         
                         // Determinar qué handler usar según el elemento activo y el cursor
-                        const elementoActivo = document.activeElement;
                         let elementoCursor = null;
                         let handlerCorrecto = null;
                         let funcionManejo = null;
@@ -322,9 +357,9 @@ class DragDropManager {
                 }
             }
             
-            // Si no se encontraron imágenes
+            // Si no se encontraron imágenes (pero ya verificamos que sí había)
             if (!foundImage) {
-                UIHelperService.log('DragDropManager', '⚠️ No se encontraron imágenes en el portapapeles', 'warn');
+                UIHelperService.log('DragDropManager', '⚠️ No se encontraron imágenes procesables en el portapapeles', 'warn');
                 UIHelperService.mostrarModalError('El portapapeles no contiene imágenes válidas. Por favor copia una imagen primero.');
             }
         }, true); // Usar captura para interceptar antes que otros listeners
