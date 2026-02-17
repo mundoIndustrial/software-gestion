@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Crear dropdown para botón Ver
-    function crearDropdownVer(button) {
+window.crearDropdownVer = function(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
         const pedidoId = button.getAttribute('data-pedido-id'); // ID de pedidos_produccion

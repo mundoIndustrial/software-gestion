@@ -1292,125 +1292,22 @@
     <!-- Scripts para Recibos/Procesos -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>
     
-    <!-- Script para activar dropdowns en supervisor -->
+    <!-- Función para toggle de factura (compatible con order-detail-modal) -->
     <script>
-        let dropdownAbierto = {};
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('[Supervisor Dropdowns] DOMContentLoaded iniciado');
-            console.log('[Supervisor Dropdowns] Buscando botones btn-ver-dropdown...');
-            
-            const botones = document.querySelectorAll('.btn-ver-dropdown');
-            console.log(`[Supervisor Dropdowns] Encontrados ${botones.length} botones`);
-            
-            // Cuando se haga clic en cualquier botón btn-ver-dropdown, abrir el dropdown
-            document.addEventListener('click', function(e) {
-                const btnVerDropdown = e.target.closest('.btn-ver-dropdown');
-                if (btnVerDropdown) {
-                    console.log('[Supervisor Dropdowns] Clic en botón Ver');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const menuId = btnVerDropdown.getAttribute('data-menu-id');
-                    console.log(`[Supervisor Dropdowns] menuId: ${menuId}`);
-                    
-                    // Crear el dropdown si no existe
-                    let dropdown = document.getElementById(menuId);
-                    console.log(`[Supervisor Dropdowns] Dropdown existe: ${dropdown !== null}`);
-                    
-                    if (!dropdown) {
-                        console.log(`[Supervisor Dropdowns] Creando dropdown ${menuId}...`);
-                        // Usar la función crearDropdownVer del script pedidos-dropdown-simple.js
-                        if (typeof crearDropdownVer === 'function') {
-                            console.log('[Supervisor Dropdowns] Función crearDropdownVer disponible');
-                            // Llamar a la función interna
-                            dropdown = crearDropdownVer(btnVerDropdown);
-                            console.log(`[Supervisor Dropdowns] Dropdown creado: ${dropdown !== null}`);
-                            dropdownAbierto[menuId] = false; // Inicializar estado
-                        } else {
-                            console.error('[Supervisor Dropdowns] Función crearDropdownVer NO disponible');
-                        }
-                    }
-                    
-                    if (dropdown) {
-                        console.log(`[Supervisor Dropdowns] Estado actual: ${dropdownAbierto[menuId] ? 'ABIERTO' : 'CERRADO'}`);
-                        
-                        // Cerrar otros dropdowns abiertos
-                        Object.keys(dropdownAbierto).forEach(id => {
-                            if (id !== menuId && dropdownAbierto[id]) {
-                                const otroDropdown = document.getElementById(id);
-                                if (otroDropdown) {
-                                    otroDropdown.style.display = 'none';
-                                    otroDropdown.style.pointerEvents = 'none';
-                                    dropdownAbierto[id] = false;
-                                    console.log(`[Supervisor Dropdowns] Cerrado dropdown anterior: ${id}`);
-                                }
-                            }
-                        });
-                        
-                        // Toggle del dropdown actual
-                        if (!dropdownAbierto[menuId]) {
-                            // Posicionar el dropdown cerca del botón
-                            const rect = btnVerDropdown.getBoundingClientRect();
-                            dropdown.style.top = (rect.bottom + 5) + 'px';
-                            dropdown.style.left = (rect.left) + 'px';
-                            dropdown.style.display = 'block';
-                            dropdown.style.pointerEvents = 'auto';
-                            dropdownAbierto[menuId] = true;
-                            console.log('[Supervisor Dropdowns] Dropdown abierto');
-                        } else {
-                            dropdown.style.display = 'none';
-                            dropdown.style.pointerEvents = 'none';
-                            dropdownAbierto[menuId] = false;
-                            console.log('[Supervisor Dropdowns] Dropdown cerrado');
-                        }
-                    } else {
-                        console.error('[Supervisor Dropdowns] No se pudo crear el dropdown');
-                    }
-                }
-            });
-            
-            // Cerrar dropdown al hacer clic afuera
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.btn-ver-dropdown') && !e.target.closest('.dropdown-menu')) {
-                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                        const id = menu.id;
-                        if (dropdownAbierto[id]) {
-                            menu.style.display = 'none';
-                            menu.style.pointerEvents = 'none';
-                            dropdownAbierto[id] = false;
-                        }
-                    });
-                }
-            });
-        });
-        
-        // Función para cerrar dropdowns
-        function closeDropdown() {
-            console.log('[closeDropdown] Cerrando dropdowns');
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                const id = menu.id;
-                menu.style.display = 'none';
-                menu.style.pointerEvents = 'none';
-                dropdownAbierto[id] = false;
-            });
+    window.toggleFactura = function() {
+        // Usar Galeria si está disponible
+        if (typeof Galeria !== 'undefined' && Galeria.toggleFactura) {
+            Galeria.toggleFactura('order-detail-modal-wrapper', 'btn-factura', 'btn-galeria');
         }
+    };
+
+    // Función para abrir imagen en grande desde la galería
+    window.abrirModalImagenProcesoGrande = (function() {
+        let galleryManagerLoaded = false;
+        let GalleryManager = null;
         
-        // Función para toggle de factura (compatible con order-detail-modal)
-        window.toggleFactura = function() {
-            // Usar Galeria si está disponible
-            if (typeof Galeria !== 'undefined' && Galeria.toggleFactura) {
-                Galeria.toggleFactura('order-detail-modal-wrapper', 'btn-factura', 'btn-galeria');
-            }
-        };
-        
-        // Función para abrir imagen en grande desde la galería
-        window.abrirModalImagenProcesoGrande = (function() {
-            let galleryManagerLoaded = false;
-            let GalleryManager = null;
-            
-            return async function(indice, fotosJSON) {
-                console.log('[GalleryManager] Intentando abrir imagen:', indice);
+        return async function(indice, fotosJSON) {
+            console.log('[GalleryManager] Intentando abrir imagen:', indice);
                 
                 // Si ya está cargado, usar directamente
                 if (galleryManagerLoaded && GalleryManager) {
