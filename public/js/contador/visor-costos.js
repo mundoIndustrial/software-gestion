@@ -414,6 +414,31 @@ function mostrarPrendaVisor(indice) {
     const tecnicas = visorCostosActual?.cotizacionData?.logo_cotizacion?.tecnicas_prendas;
     const esPrendaLogo = Array.isArray(tecnicas) ? tecnicas.some(tp => tp.prenda_id === prenda.id) : false;
 
+    // Detectar prenda combinada: tiene variaciones/telas/manga y además tiene logo con ubicaciones
+    const tieneVariaciones = !!(
+        (detalles.color && String(detalles.color).trim() !== '') ||
+        (detalles.manga_nombre && String(detalles.manga_nombre).trim() !== '') ||
+        (Array.isArray(detalles.telas_info) && detalles.telas_info.length > 0) ||
+        (detalles.tela && String(detalles.tela).trim() !== '')
+    );
+    const tieneLogoConUbicaciones = Array.isArray(tecnicas)
+        ? tecnicas.some(tp => tp.prenda_id === prenda.id && tp.ubicaciones && String(tp.ubicaciones).trim() !== '')
+        : false;
+    const esPrendaCombinada = tieneVariaciones && tieneLogoConUbicaciones;
+
+    // Si es prenda combinada, mostrar SOLO la imagen principal de la prenda
+    if (esPrendaCombinada) {
+        const fotoPrincipal = Array.isArray(detalles.fotos) && detalles.fotos.length > 0 ? detalles.fotos[0] : null;
+        if (fotoPrincipal) {
+            imagenesParaMostrar.push({
+                grupo: 'Prenda',
+                url: fotoPrincipal,
+                titulo: `${detalles.nombre_prenda || 'Prenda'} 1`,
+                color: '#1e5ba8'
+            });
+        }
+    } else
+
     // En cotizaciones combinadas:
     // - Si la prenda es de logo: mostrar imágenes de logo
     // - Si no: mostrar imágenes de prenda

@@ -1,10 +1,4 @@
-/**
- * Modal de Cálculo de Costos por Prenda
- * Archivo: modal-calculo-costos.js
- * Descripción: Gestiona el modal para calcular costos por prenda en cotizaciones
- */
 
-// Agregar estilos CSS para z-index alto en SweetAlert
 if (!document.getElementById('swal-high-z-index-style')) {
     const style = document.createElement('style');
     style.id = 'swal-high-z-index-style';
@@ -24,6 +18,89 @@ let prendasModalActuales = [];
 
 // Almacenamiento temporal de costos de todas las prendas
 let costosTodasPrendas = {};
+
+const DEFAULT_ITEMS_COSTOS = [
+    'COSTO GENERAL',
+    'CORTE',
+    'HILO',
+    'PLOTTER',
+    'BOLSA'
+];
+
+let hayCostosGuardadosEnCotizacion = false;
+
+function crearFilaItem({ item = '', precio = '' } = {}) {
+    const row = document.createElement('div');
+    row.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 150px 80px;
+        gap: 0;
+        background: #f5f5f5;
+        border-radius: 8px;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        flex-shrink: 0;
+        min-height: 50px;
+    `;
+
+    const precioValue = precio === null || precio === undefined || precio === '' ? '' : (parseFloat(precio) || 0);
+    row.innerHTML = `
+        <input type="text" 
+               placeholder="Ej: Corte, Confección, Bordado..."
+               value="${String(item ?? '')}"
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+               onchange="window.actualizarTotal()">
+        <input type="number" 
+               placeholder="0.00"
+               value="${precioValue}"
+               step="0.01"
+               min="0"
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
+               onchange="window.actualizarTotal()">
+        <button onclick="window.eliminarFilaItem(this)" 
+                style="padding: 0.75rem; background: transparent; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; transition: all 0.2s; width: 100%; height: 100%;"
+                onmouseover="this.style.background='#fee2e2'"
+                onmouseout="this.style.background='transparent'"
+                title="Eliminar item">
+            ×
+        </button>
+    `;
+
+    return row;
+}
+
+function renderItemsEnTabla(items, { limpiar = true } = {}) {
+    const body = document.getElementById('tablaPreciosBody');
+    if (!body) return;
+    if (limpiar) body.innerHTML = '';
+    (Array.isArray(items) ? items : []).forEach(i => {
+        body.appendChild(crearFilaItem({ item: i?.item ?? '', precio: i?.precio ?? '' }));
+    });
+    window.actualizarTotal();
+}
+
+function aplicarDefaultsEnTablaSiAplica(prendaCotId) {
+    if (hayCostosGuardadosEnCotizacion) return;
+    if (!prendaCotId) return;
+    if (costosTodasPrendas[prendaCotId] && Array.isArray(costosTodasPrendas[prendaCotId].items) && costosTodasPrendas[prendaCotId].items.length > 0) {
+        return;
+    }
+
+    const prendasTabs = document.querySelectorAll('#prendasTabs button');
+    const tabActual = prendasTabs[prendaActualIndex];
+    const nombrePrenda = tabActual?.dataset?.nombreBase?.trim() || tabActual?.textContent.trim() || `Prenda ${prendaActualIndex}`;
+    const descripcion = document.getElementById('prendasDescripcion')?.textContent?.trim() || '';
+
+    const defaults = DEFAULT_ITEMS_COSTOS.map(n => ({ item: n, precio: '' }));
+    costosTodasPrendas[prendaCotId] = {
+        prenda_cot_id: prendaCotId,
+        nombre: nombrePrenda,
+        descripcion: descripcion,
+        items: defaults
+    };
+    renderItemsEnTabla(defaults);
+}
 
 /**
  * Abre el modal de cálculo de costos
@@ -162,10 +239,7 @@ window.abrirModalCalculoCostos = function(cotizacionId, cliente) {
             
             // Mostrar primera prenda
             window.cambiarPrendaTab(prendas[0].id, prendas);
-            
-            // Inicializar tabla vacía
-            window.limpiarTablaPrecios();
-            
+
             // Cargar items guardados si existen
             window.cargarItemsGuardados(cotizacionId);
             
@@ -213,6 +287,10 @@ window.cambiarPrendaTab = function(prendaId, prendas) {
     // Cargar costos guardados de esta prenda si existen
     const prendaActual = prendas[prendaActualIndex];
     cargarCostosPrendaDesdeMemoria(prendaActual ? prendaActual.id : null);
+
+    const tabActual = document.querySelectorAll('#prendasTabs button')[prendaActualIndex];
+    const prendaCotIdActual = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
+    aplicarDefaultsEnTablaSiAplica(prendaCotIdActual);
 }
 
 /**
@@ -275,51 +353,7 @@ window.guardarCostosPrendaActual = function() {
 function cargarCostosPrendaDesdeMemoria(prendaCotId) {
     if (prendaCotId && costosTodasPrendas[prendaCotId]) {
         const costos = costosTodasPrendas[prendaCotId];
-        const body = document.getElementById('tablaPreciosBody');
-        body.innerHTML = '';
-        
-        costos.items.forEach(item => {
-            const row = document.createElement('div');
-            row.style.cssText = `
-                display: grid;
-                grid-template-columns: 1fr 150px 80px;
-                gap: 0;
-                background: #f5f5f5;
-                border-radius: 8px;
-                align-items: center;
-                overflow: hidden;
-                border: 1px solid #e5e7eb;
-                flex-shrink: 0;
-                min-height: 50px;
-            `;
-            
-            row.innerHTML = `
-                <input type="text" 
-                       placeholder="Ej: Corte, Confección, Bordado..."
-                       value="${item.item || ''}"
-                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
-                       onchange="window.actualizarTotal()">
-                <input type="number" 
-                       placeholder="0.00"
-                       value="${parseFloat(item.precio) || 0}"
-                       step="0.01"
-                       min="0"
-                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #0f172a;"
-                       onchange="window.actualizarTotal()">
-                <button onclick="window.eliminarFilaItem(this)" 
-                        style="padding: 0.75rem; background: transparent; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; transition: all 0.2s; width: 100%; height: 100%;"
-                        onmouseover="this.style.background='#fee2e2'"
-                        onmouseout="this.style.background='transparent'"
-                        title="Eliminar item">
-                    ×
-                </button>
-            `;
-            
-            body.appendChild(row);
-        });
-        
-        window.actualizarTotal();
-
+        renderItemsEnTabla(costos.items);
     }
 }
 
@@ -419,7 +453,8 @@ window.cargarItemsGuardados = function(cotizacionId) {
     fetch(`/contador/costos/obtener/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.costos && data.costos.length > 0) {
+            hayCostosGuardadosEnCotizacion = !!(data.success && data.costos && data.costos.length > 0);
+            if (hayCostosGuardadosEnCotizacion) {
 
                 
                 // Obtener todos los tabs de prendas
@@ -451,6 +486,10 @@ window.cargarItemsGuardados = function(cotizacionId) {
                 const tabActual = prendasTabs[prendaActualIndex];
                 const prendaCotIdActual = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
                 cargarCostosPrendaDesdeMemoria(prendaCotIdActual);
+            } else {
+                const tabActual = document.querySelectorAll('#prendasTabs button')[prendaActualIndex];
+                const prendaCotIdActual = tabActual?.dataset?.prendaCotId ? parseInt(tabActual.dataset.prendaCotId, 10) : null;
+                aplicarDefaultsEnTablaSiAplica(prendaCotIdActual);
             }
         })
         .catch(error => {
@@ -465,6 +504,7 @@ window.cargarItemsGuardados = function(cotizacionId) {
 window.cerrarModalCalculoCostos = function() {
     document.getElementById('calculoCostosModal').style.display = 'none';
     window.costosPorPrenda = {};
+    hayCostosGuardadosEnCotizacion = false;
 }
 
 /**
