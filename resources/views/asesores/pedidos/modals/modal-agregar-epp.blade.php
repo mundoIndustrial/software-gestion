@@ -1,17 +1,17 @@
 <!-- Modal Agregar EPP al Pedido -->
 <div id="modalAgregarEPP" class="fixed inset-0 bg-black/50 flex items-center justify-center" style="display: none; z-index: 999999;">
-    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden max-h-screen overflow-y-auto" style="z-index: 1000000;">
+    <div class="bg-white rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden" style="z-index: 1000000; max-height: 90vh; display: flex; flex-direction: column;">
         
         <!-- Header Azul -->
-        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center flex-shrink-0">
             <h2 class="text-white text-lg font-bold">Agregar EPP al Pedido</h2>
             <button onclick="cerrarModalAgregarEPP()" class="text-white hover:bg-blue-700 p-1 rounded transition">
                 <i class="material-symbols-rounded">close</i>
             </button>
         </div>
 
-        <!-- Body -->
-        <div class="p-6 space-y-4">
+        <!-- Body con scroll -->
+        <div class="p-6 space-y-4 overflow-y-auto flex-1" style="max-height: calc(90vh - 140px);">
             
             <!-- Buscador -->
             <div>
@@ -161,8 +161,8 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+        <!-- Footer fijo -->
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
             <button onclick="cerrarModalAgregarEPP()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition text-sm">
                 Cancelar
             </button>

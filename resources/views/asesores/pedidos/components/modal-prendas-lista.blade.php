@@ -16,16 +16,10 @@
             let htmlListaPrendas = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
             
             if (prendas.length === 0) {
-                // Mostrar botón para agregar prenda si la lista está vacía
+                // Mostrar mensaje simple sin botón de agregar
                 htmlListaPrendas += `
                     <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px; border: 2px dashed #d1d5db;">
-                        <p style="color: #6b7280; margin: 0 0 1rem 0;">No hay prendas agregadas aún</p>
-                        <button onclick="abrirAgregarPrenda()" 
-                            style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s;"
-                            onmouseover="this.style.backgroundColor='#059669'"
-                            onmouseout="this.style.backgroundColor='#10b981'">
-                            ➕ Agregar Prenda
-                        </button>
+                        <p style="color: #6b7280; margin: 0;">Este pedido no tiene prendas</p>
                     </div>
                 `;
             } else {
