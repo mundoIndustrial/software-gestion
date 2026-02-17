@@ -344,9 +344,9 @@ class CarteraPedidosController extends Controller
                 'numero_pedido' => $pedido->numero_pedido // debe ser null
             ]);
 
-            //  Broadcast evento en tiempo real
-            broadcast(new OrdenUpdated($pedido->fresh(), 'updated', ['estado', 'novedades']));
-            \Log::info("Broadcast enviado para pedido #{$pedido->id} - Rechazo desde CARTERA");
+            //  Broadcast evento en tiempo real (temporalmente deshabilitado para diagnosticar)
+            // broadcast(new OrdenUpdated($pedido->fresh(), 'updated', ['estado', 'novedades']));
+            \Log::info("Broadcast OMITIDO para pedido #{$pedido->id} - Rechazo desde CARTERA (diagnóstico)");
             
             return response()->json([
                 'success' => true,
