@@ -140,6 +140,6 @@ return [
     |
     */
 
-    'asset_version' => env('ASSET_VERSION', '1.0.5'),
+    'asset_version' => env('ASSET_VERSION', '1.0.6'),
 
 ];

@@ -94,6 +94,20 @@ class InvoiceModalManager {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
+                        width: 100% !important;
+                        height: 100vh !important;
+                        overflow: visible !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    html {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
+                        width: 100% !important;
+                        height: 100vh !important;
+                        overflow: visible !important;
                     }
                     
                     /* Estilos del overlay */
@@ -101,31 +115,37 @@ class InvoiceModalManager {
                         position: static !important;
                         top: 0 !important;
                         left: 0 !important;
-                        width: 100% !important;
+                        width: 100vw !important;
+                        min-height: 100vh !important;
                         height: auto !important;
                         background: white !important;
                         z-index: auto !important;
-                        padding: 0 !important;
+                        padding: 20px 0 !important;
                         margin: 0 !important;
                         border: none !important;
                         box-shadow: none !important;
                         backdrop-filter: none !important;
                         animation: none !important;
+                        overflow: visible !important;
                     }
                     
                     /* Estilos del modal */
                     #modal-factura {
-                        position: static !important;
+                        position: relative !important;
                         width: 100% !important;
                         max-width: 100% !important;
-                        max-height: none !important;
+                        min-height: 100vh !important;
+                        height: auto !important;
                         box-shadow: none !important;
                         border-radius: 0 !important;
                         border: none !important;
                         padding: 20px !important;
-                        margin: 0 !important;
+                        margin: 0 auto !important;
                         overflow: visible !important;
                         animation: none !important;
+                        page-break-inside: avoid;
+                        page-break-after: always;
+                        box-sizing: border-box !important;
                     }
                     
                     /* Ocultar header con botones */
@@ -136,16 +156,27 @@ class InvoiceModalManager {
                     /* Mostrar contenido de la factura */
                     #modal-factura > div {
                         display: block !important;
+                        overflow: visible !important;
                     }
                     
-                    /* Fondo transparente */
-                    html {
-                        background: white !important;
+                    /* Forzar que todo el contenido sea visible */
+                    * {
+                        overflow: visible !important;
+                    }
+                    
+                    /* Evitar cortes en elementos importantes */
+                    #modal-factura-contenido,
+                    #modal-factura-contenido table,
+                    #modal-factura-contenido tr,
+                    #modal-factura-contenido td {
+                        page-break-inside: avoid !important;
+                        overflow: visible !important;
                     }
                     
                     /* Páginas */
                     @page {
-                        margin: 0.5cm;
+                        size: A4 portrait;
+                        margin: 0.2cm;
                     }
                 }
                 
