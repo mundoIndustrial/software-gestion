@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('dropdowns-container');
     const menuHeight = 150;
     
+    // Limpiar modales abiertos al cargar la página
+    const overlayFacturaViejo = document.getElementById('modal-factura-overlay');
+    if (overlayFacturaViejo) {
+        overlayFacturaViejo.remove();
+    }
+    
     // Crear dropdown para botón Ver
     function crearDropdownVer(button) {
         const menuId = button.getAttribute('data-menu-id');
@@ -52,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (esRutaInsumos) {
             // Para insumos, mostrar "Ver Recibos" como en supervisor
             dropdownHTML = `
-                <button onclick="abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -73,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (tipoCotizacion === 'L') {
             // Solo Logo
             dropdownHTML = `
-                <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -94,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (tipoCotizacion === 'PL') {
             // Prenda + Logo (Combinada)
             dropdownHTML = `
-                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -112,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-receipt" style="color: #f59e0b;"></i> Ver Pedido
                 </button>
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); verFacturaLogo(${logoPedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -132,8 +138,10 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         } else {
             // Prenda o Reflectivo (solo costura) - MODIFICADO: Usar modal de prendas como en registros
+            console.log('[crearDropdownVer] Creando dropdown para pedido', {pedido, pedidoId, menuId});
+            console.log('[crearDropdownVer] Número de pedido a usar:', pedido);
             dropdownHTML = `
-                <button onclick="verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); console.log('Dropdown click - pedido:', '${pedido}', 'pedidoId:', ${pedidoId}); verFacturaDelPedido('${pedido}', ${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -160,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (esRutaSupervisor) {
             dropdownHTML += `
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
+                <button onclick="(window.cerrarModalFactura && window.cerrarModalFactura()); abrirSelectorRecibos(${pedidoId}); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -349,30 +357,45 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdown.style.left = buttonRect.left + 'px';
     }
     
-    // Delegación de eventos para botón Ver
+    // Delegación de eventos para botón Ver - Con cierre automático de otros
     document.addEventListener('click', function(e) {
         const buttonVer = e.target.closest('.btn-ver-dropdown');
         
         if (buttonVer) {
+            const pedidoId = buttonVer.getAttribute('data-pedido-id');
+            const pedido = buttonVer.getAttribute('data-pedido');
+            const menuId = buttonVer.getAttribute('data-menu-id');
+            
+            console.log('[pedidos-dropdown] ========== CLICK EN BOTÓN VER ==========');
+            console.log('[pedidos-dropdown] Atributos del botón clickeado:',{pedidoId, pedido, menuId});
+            console.log('[pedidos-dropdown] Elemento clickeado:', e.target);
+            console.log('[pedidos-dropdown] Button element:', buttonVer);
+            
             e.stopPropagation();
+            
+            // IMPORTANTE: Cerrar TODOS los dropdowns abiertos PRIMERO
+            console.log('[pedidos-dropdown] Cerrando todos los dropdowns...');
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // IMPORTANTE: Cerrar modales de factura abiertos si existen
+            const overlayFactura = document.getElementById('modal-factura-overlay');
+            console.log('[pedidos-dropdown] Modal factura existe:', !!overlayFactura);
+            
+            if (overlayFactura && typeof window.cerrarModalFactura === 'function') {
+                console.log('[pedidos-dropdown] Cerrando modal factura...');
+                window.cerrarModalFactura();
+            }
             
             // Crear dropdown si no existe
             const dropdown = crearDropdownVer(buttonVer);
             
-            // Cerrar todos los otros menús
-            document.querySelectorAll('.dropdown-menu').forEach(m => {
-                if (m.id !== dropdown.id) {
-                    m.style.display = 'none';
-                }
-            });
+            // Abrir solo el dropdown del botón clickeado
+            dropdown.style.display = 'block';
+            posicionarDropdown(buttonVer, dropdown);
             
-            // Toggle el menú actual
-            if (dropdown.style.display === 'none') {
-                dropdown.style.display = 'block';
-                posicionarDropdown(buttonVer, dropdown);
-            } else {
-                dropdown.style.display = 'none';
-            }
+            console.log('[pedidos-dropdown] Dropdown abierto para pedido:', pedidoId);
         }
     });
     

@@ -134,11 +134,20 @@ class CarteraPedidosController extends Controller
      */
     public function aprobarPedido($id, Request $request)
     {
+        $inicio = microtime(true);
+        
         try {
-            $resultado = DB::transaction(function () use ($id, $request) {
+            Log::info('[CARTERA] Iniciando aprobación de pedido', [
+                'pedido_id' => $id,
+                'usuario_id' => auth()->id(),
+                'timestamp' => now()->toDateTimeString()
+            ]);
+
+            $resultado = DB::transaction(function () use ($id, $request, &$inicio) {
                 $pedido = PedidoProduccion::find($id);
                 
                 if (!$pedido) {
+                    Log::warning('[CARTERA] Pedido no encontrado', ['pedido_id' => $id]);
                     return [
                         'success' => false,
                         'message' => 'Pedido no encontrado',
@@ -147,9 +156,44 @@ class CarteraPedidosController extends Controller
                     ];
                 }
                 
+                // Validar que el pedido esté en estado pendiente de cartera
+                if ($pedido->estado !== 'pendiente_cartera') {
+                    Log::warning('[CARTERA] Pedido no está en estado pendiente de cartera', [
+                        'pedido_id' => $id,
+                        'estado_actual' => $pedido->estado
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => 'El pedido no está en estado pendiente de cartera. Estado actual: ' . $pedido->estado,
+                        'pedido' => null,
+                        'numero_pedido' => null
+                    ];
+                }
+                
                 // Generar número de pedido correlativo solo al aprobar usando servicio centralizado
-                $pedidoSequenceService = app(PedidoSequenceService::class);
-                $siguienteNumero = $pedidoSequenceService->generarNumeroPedido();
+                try {
+                    $pedidoSequenceService = app(PedidoSequenceService::class);
+                    $siguienteNumero = $pedidoSequenceService->generarNumeroPedido();
+                    
+                    Log::info('[CARTERA] Número de pedido generado', [
+                        'pedido_id' => $id,
+                        'numero_pedido' => $siguienteNumero,
+                        'tiempo_secuencia' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('[CARTERA] Error al generar número de pedido', [
+                        'pedido_id' => $id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    
+                    return [
+                        'success' => false,
+                        'message' => 'Error al generar número de pedido: ' . $e->getMessage(),
+                        'pedido' => null,
+                        'numero_pedido' => null
+                    ];
+                }
                 
                 // Obtener ID de usuario autenticado o null para evitar foreign key issues
                 $usuarioId = auth()->check() ? auth()->user()->id : null;
@@ -162,12 +206,21 @@ class CarteraPedidosController extends Controller
                 ]);
                 
                 // Generar consecutivo COSTURA-BODEGA cuando CARTERA aprueba
-                $this->generarConsecutivoCosturaBodega($pedido);
+                try {
+                    $this->generarConsecutivoCosturaBodega($pedido);
+                } catch (\Exception $e) {
+                    Log::warning('[CARTERA] Error al generar consecutivo COSTURA-BODEGA (no crítico)', [
+                        'pedido_id' => $id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // No fallar la transacción por esto
+                }
                 
-                \Log::info('[CARTERA] Pedido aprobado y número generado', [
+                Log::info('[CARTERA] Pedido aprobado exitosamente', [
                     'pedido_id' => $pedido->id,
                     'numero_pedido_generado' => $siguienteNumero,
-                    'aprobado_por' => $usuarioId
+                    'aprobado_por' => $usuarioId,
+                    'tiempo_total' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
                 ]);
                 
                 return [
@@ -178,27 +231,59 @@ class CarteraPedidosController extends Controller
                 ];
             });
             
-            //  Si la transacción fue exitosa, dispara el broadcast FUERA de la transacción
+            // Si la transacción fue exitosa, intentar enviar broadcast (separado de la transacción)
             if ($resultado['success'] && $resultado['pedido']) {
-                broadcast(new \App\Events\OrdenUpdated($resultado['pedido'], 'created', ['numero_pedido', 'estado']));
-                \Log::info(" Broadcast enviado para pedido {$resultado['numero_pedido']} desde CARTERA", [
-                    'evento' => 'created',
-                    'numero_pedido' => $resultado['numero_pedido'],
-                    'timestamp' => now()
-                ]);
+                $broadcastInicio = microtime(true);
+                
+                try {
+                    // Intentar broadcast con timeout corto para no bloquear
+                    broadcast(new \App\Events\OrdenUpdated($resultado['pedido'], 'created', ['numero_pedido', 'estado']));
+                    
+                    Log::info('[CARTERA] Broadcast enviado exitosamente', [
+                        'pedido_id' => $resultado['pedido']->id,
+                        'numero_pedido' => $resultado['numero_pedido'],
+                        'tiempo_broadcast' => round((microtime(true) - $broadcastInicio) * 1000, 2) . 'ms'
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    // El broadcast falló pero la aprobación fue exitosa
+                    Log::warning('[CARTERA] Broadcast falló (no crítico)', [
+                        'pedido_id' => $resultado['pedido']->id,
+                        'numero_pedido' => $resultado['numero_pedido'],
+                        'error' => $e->getMessage(),
+                        'tiempo_broadcast' => round((microtime(true) - $broadcastInicio) * 1000, 2) . 'ms'
+                    ]);
+                    
+                    // No afectar el resultado principal
+                }
             }
             
             return response()->json([
                 'success' => $resultado['success'],
                 'message' => $resultado['message'],
-                'numero_pedido' => $resultado['numero_pedido']
+                'numero_pedido' => $resultado['numero_pedido'],
+                'tiempo_total' => round((microtime(true) - $inicio) * 1000, 2) . 'ms'
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('Error en CarteraPedidosController::aprobarPedido: ' . $e->getMessage());
+            $tiempoError = round((microtime(true) - $inicio) * 1000, 2);
+            
+            Log::error('[CARTERA] Error crítico en aprobarPedido', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'tiempo' => $tiempoError . 'ms',
+                'usuario_id' => auth()->id()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error al aprobar: ' . $e->getMessage()
+                'message' => 'Error al aprobar pedido: ' . $e->getMessage(),
+                'debug_info' => [
+                    'pedido_id' => $id,
+                    'tiempo' => $tiempoError . 'ms',
+                    'error_code' => $e->getCode()
+                ]
             ], 500);
         }
     }

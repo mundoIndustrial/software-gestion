@@ -502,7 +502,18 @@
                     procesosArray = Object.entries(procesosRaw).map(([tipo, proc]) => {
                         const d = proc?.datos || proc || {};
                         
+                        console.log(`[PedidosAdapter] 🔍 DIAGNÓSTICO Proceso ${tipo}:`, {
+                            tieneImagenes: !!d.imagenes,
+                            tieneImagenesEliminadas: !!d.imagenesEliminadas,
+                            cantidadImagenes: d.imagenes?.length || 0,
+                            cantidadEliminadas: d.imagenesEliminadas?.length || 0,
+                            datosKeys: Object.keys(d)
+                        });
+                        
                         const imagenesExistentes = [];
+                        const imagenesAEliminar = [];
+                        
+                        // Procesar imágenes: separar existentes de eliminadas
                         if (d.imagenes && Array.isArray(d.imagenes)) {
                             d.imagenes.forEach(img => {
                                 if (img && !(img instanceof File) && !(img?.file instanceof File)) {
@@ -515,7 +526,38 @@
                             });
                         }
                         
-                        return {
+                        // 🔴 CRÍTICO: También incluir imágenes que fueron eliminadas (marcadas como null)
+                        if (d.imagenesEliminadas && Array.isArray(d.imagenesEliminadas)) {
+                            console.log(`[PedidosAdapter] 🔍 DEBUGGING imagenesEliminadas para ${tipo}:`, {
+                                length: d.imagenesEliminadas.length,
+                                items: d.imagenesEliminadas.map((img, idx) => ({
+                                    idx,
+                                    esNull: img === null,
+                                    tipo: typeof img,
+                                    tieneId: !!img?.id,
+                                    id: img?.id,
+                                    ruta: img?.ruta_original,
+                                    claves: typeof img === 'object' ? Object.keys(img || {}) : 'N/A'
+                                }))
+                            });
+                            d.imagenesEliminadas.forEach(img => {
+                                // 🔴 WICHTIG: Backend espera objeto completo con {id, ruta_original, ruta_webp}
+                                const tieneIdentificador = img && (img.id || img.ruta_original);
+                                if (tieneIdentificador) {
+                                    const imagenAEliminar = {
+                                        id: img.id || undefined,
+                                        ruta_original: img.ruta_original || img.url || '',
+                                        ruta_webp: img.ruta_webp || ''
+                                    };
+                                    imagenesAEliminar.push(imagenAEliminar);
+                                    console.log(`[PedidosAdapter] ✅ Objeto AGREGADO a imagenesAEliminar:`, imagenAEliminar);
+                                } else {
+                                    console.log(`[PedidosAdapter] ⚠️ IMAGEN RECHAZADA - sin ID ni ruta:`, img);
+                                }
+                            });
+                        }
+                        
+                        const procesoEnvio = {
                             id: d.id || undefined,
                             tipo_proceso_id: d.tipo_proceso_id || undefined,
                             tipo: d.tipo || tipo,
@@ -526,6 +568,14 @@
                             estado: d.estado || 'PENDIENTE',
                             imagenes_existentes: imagenesExistentes
                         };
+                        
+                        // Incluir imágenes a eliminar si hay
+                        if (imagenesAEliminar.length > 0) {
+                            procesoEnvio.imagenes_a_eliminar = imagenesAEliminar;
+                            console.log(`[PedidosAdapter] 🗑️ Proceso ${tipo}: ${imagenesAEliminar.length} imagen(es) marcada(s) para eliminar:`, imagenesAEliminar);
+                        }
+                        
+                        return procesoEnvio;
                     });
                     
                     // 🔴 PASO 3: Agregar File images al FormData

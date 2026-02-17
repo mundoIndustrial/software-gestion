@@ -182,6 +182,53 @@ class DespachoController extends Controller
         }
     }
 
+    public function deshacerEntregado(Request $request, PedidoProduccion $pedido)
+    {
+        try {
+            $validated = $request->validate([
+                'tipo_item' => 'required|in:prenda,epp',
+                'item_id' => 'required|integer',
+                'talla_id' => 'nullable|integer',
+            ]);
+
+            // Buscar el registro de entrega
+            $despacho = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->where('tipo_item', $validated['tipo_item'])
+                ->where('item_id', $validated['item_id'])
+                ->where('talla_id', $validated['talla_id'] ?? null)
+                ->where('entregado', true)
+                ->first();
+
+            if (!$despacho) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró registro de entrega para deshacer',
+                ], 404);
+            }
+
+            // Deshacer el marcado como entregado
+            $despacho->entregado = false;
+            $despacho->fecha_entrega = null;
+            $despacho->usuario_id = auth()->id();
+            $despacho->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marcado como entregado deshecho correctamente',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error al deshacer marcado como entregado', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+                'data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al deshacer marcado como entregado: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function obtenerEstadoEntregas(PedidoProduccion $pedido)
     {
         try {

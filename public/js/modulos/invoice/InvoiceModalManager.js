@@ -19,6 +19,20 @@ class InvoiceModalManager {
      * Crea y muestra el modal con la factura
      */
     crearModalFactura(datos) {
+        console.log('[InvoiceModalManager] INICIO crearModalFactura', {pedido_id: datos.id});
+        
+        // IMPORTANTE: Remover TODOS los modales anteriores completamente
+        // Usar querySelectorAll para eliminar posibles duplicados
+        const modalesAnteriores = document.querySelectorAll('#modal-factura-overlay');
+        console.log('[InvoiceModalManager] Modales encontrados para eliminar:', modalesAnteriores.length);
+        
+        modalesAnteriores.forEach((modal, index) => {
+            console.log('[InvoiceModalManager] Eliminando modal anterior', {index, id: modal.id});
+            modal.remove();
+        });
+        
+        console.log('[InvoiceModalManager] Verificando si quedaron modales:', document.querySelectorAll('#modal-factura-overlay').length);
+        
         // Agregar estilos si no existen
         this.agregarEstilos();
         
@@ -30,11 +44,12 @@ class InvoiceModalManager {
         
         // Agregar al DOM
         document.body.appendChild(modal);
+        console.log('[InvoiceModalManager] Modal añadido al DOM');
         
         // Configurar eventos
         this.configurarEventos();
         
-        console.log('[InvoiceModalManager] Modal de factura creado');
+        console.log('[InvoiceModalManager] Modal de factura creado exitosamente');
     }
 
     /**
@@ -425,18 +440,25 @@ class InvoiceModalManager {
      * Cierra el modal de factura
      */
     cerrarModalFactura() {
+        console.log('[InvoiceModalManager] INICIO cerrarModalFactura');
+        
         const overlay = document.getElementById('modal-factura-overlay');
+        console.log('[InvoiceModalManager] Modal encontrado para cerrar:', !!overlay);
+        
         if (overlay) {
-            overlay.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => {
-                overlay.remove();
-            }, 300);
+            // Removing directly without animation to prevent stacking issues
+            console.log('[InvoiceModalManager] Eliminando modal del DOM');
+            overlay.remove();
+            console.log('[InvoiceModalManager] Modal eliminado - verificando:', document.getElementById('modal-factura-overlay') === null);
         }
         
         // Ocultar loading si está activo
         if (window.loadingManager) {
+            console.log('[InvoiceModalManager] Ocultando loading');
             window.loadingManager.ocultarCargando();
         }
+        
+        console.log('[InvoiceModalManager] Cierre completado');
     }
 
     /**

@@ -490,21 +490,44 @@ class PedidosProduccionViewController
                         ->where('proceso_prenda_detalle_id', $procesoRow->proceso_id)
                         ->where('deleted_at', null)
                         ->orderBy('orden')
-                        ->select('ruta_webp', 'ruta_original', 'es_principal')
+                        ->select('id', 'ruta_webp', 'ruta_original', 'es_principal')
                         ->get();
                     
                     $imagenesFormato = $imagenesProc->map(function($img) {
-                        $ruta = str_replace('\\', '/', $img->ruta_webp ?? $img->ruta_original);
-                        if (strpos($ruta, '/storage/') === 0) {
-                            return $ruta;
+                        // 🔴 CRÍTICO: Devolver objeto completo con TODOS los campos, no solo URL
+                        $ruta_webp = str_replace('\\', '/', $img->ruta_webp ?? '');
+                        $ruta_original = str_replace('\\', '/', $img->ruta_original ?? '');
+                        
+                        // Normalizar ruta_webp
+                        if ($ruta_webp) {
+                            if (strpos($ruta_webp, '/storage/') !== 0) {
+                                if (strpos($ruta_webp, 'storage/') === 0) {
+                                    $ruta_webp = '/' . $ruta_webp;
+                                } elseif (strpos($ruta_webp, '/') !== 0) {
+                                    $ruta_webp = '/storage/' . $ruta_webp;
+                                }
+                            }
                         }
-                        if (strpos($ruta, 'storage/') === 0) {
-                            return '/' . $ruta;
+                        
+                        // Normalizar ruta_original
+                        if ($ruta_original) {
+                            if (strpos($ruta_original, '/storage/') !== 0) {
+                                if (strpos($ruta_original, 'storage/') === 0) {
+                                    $ruta_original = '/' . $ruta_original;
+                                } elseif (strpos($ruta_original, '/') !== 0) {
+                                    $ruta_original = '/storage/' . $ruta_original;
+                                }
+                            }
                         }
-                        if (strpos($ruta, '/') !== 0) {
-                            return '/storage/' . $ruta;
-                        }
-                        return $ruta;
+                        
+                        // Retornar objeto completo con id y ambas rutas
+                        return [
+                            'id' => $img->id,
+                            'ruta_webp' => $ruta_webp,
+                            'ruta_original' => $ruta_original,
+                            'url' => $ruta_webp ?: $ruta_original, // Para compatibilidad con frontend
+                            'es_principal' => $img->es_principal ?? false
+                        ];
                     })->toArray();
                     
                     // Parsear JSON fields

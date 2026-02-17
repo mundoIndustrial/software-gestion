@@ -58,4 +58,9 @@ Route::prefix('despacho')
         Route::get('/{pedido}/estado-entregas', [DespachoController::class, 'obtenerEstadoEntregas'])
             ->name('despacho.estado-entregas')
             ->where('pedido', '[0-9]+');
+
+        // Deshacer marcado como entregado
+        Route::post('/{pedido}/deshacer-entregado', [DespachoController::class, 'deshacerEntregado'])
+            ->name('despacho.deshacer-entregado')
+            ->where('pedido', '[0-9]+');
     });

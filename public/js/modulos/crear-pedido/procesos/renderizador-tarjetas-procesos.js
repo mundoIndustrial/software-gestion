@@ -788,6 +788,14 @@ function cargarDatosProcesoEnModal(tipo, datos) {
             }
         } else {
             // Es una URL existente → guardar en imagenesProcesoExistentes
+            // 🔴 CRÍTICO: Guardar el OBJETO COMPLETO con id y ruta_original
+            console.log('[cargarDatosProcesoEnModal] 🔍 GUARDANDO OBJETO en imagenesProcesoExistentes[' + (previewIndex - 1) + ']:', {
+                tipoImg: typeof img,
+                esString: typeof img === 'string',
+                tieneId: !!img?.id,
+                tieneRutaOriginal: !!img?.ruta_original,
+                contenidoCompleto: img
+            });
             window.imagenesProcesoExistentes[previewIndex - 1] = img;
         }
         

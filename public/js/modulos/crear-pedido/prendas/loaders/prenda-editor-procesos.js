@@ -47,10 +47,22 @@ class PrendaEditorProcesos {
                     // 🔴 Normalizar imágenes: asegurar prefijo /storage/ para rutas de servidor
                     const datosNormalizados = { ...proceso, tipo: tipo };
                     if (datosNormalizados.imagenes && Array.isArray(datosNormalizados.imagenes)) {
+                        console.log(`[PROCESOS-LOADER] 🖼️ Imágenes recibidas para ${tipo}:`, {
+                            cantidad: datosNormalizados.imagenes.length,
+                            primeraprimera: datosNormalizados.imagenes[0],
+                            tipo_primera: typeof datosNormalizados.imagenes[0],
+                            esObjeto: datosNormalizados.imagenes[0] instanceof Object
+                        });
                         datosNormalizados.imagenes = datosNormalizados.imagenes.map(img => {
                             if (typeof img === 'string') {
                                 if (img.startsWith('/') || img.startsWith('http') || img.startsWith('blob:') || img.startsWith('data:')) return img;
                                 return '/storage/' + img;
+                            }
+                            // Si es objeto, asegurar que tiene las rutas normalizadas
+                            if (typeof img === 'object' && img !== null) {
+                                if (img.ruta_webp && !img.ruta_webp.startsWith('/')) img.ruta_webp = '/storage/' + img.ruta_webp;
+                                if (img.ruta_original && !img.ruta_original.startsWith('/')) img.ruta_original = '/storage/' + img.ruta_original;
+                                if (img.url && !img.url.startsWith('/')) img.url = '/storage/' + img.url;
                             }
                             return img;
                         });

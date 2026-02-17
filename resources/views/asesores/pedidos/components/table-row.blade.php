@@ -18,7 +18,8 @@
                 $numeroPedidoBusqueda = $pedido->numero_pedido ?? '-';
             }
         } else {
-            $numeroPedidoBusqueda = isset($pedido->numero_pedido) ? ('#' . $pedido->numero_pedido) : ('#' . ($pedido->numero_pedido_mostrable ?? '-'));
+            // Para PedidoProduccion, usar numero_pedido si existe, sino mostrar el ID
+            $numeroPedidoBusqueda = (!empty($pedido->numero_pedido)) ? ('#' . $pedido->numero_pedido) : ('#' . $pedido->id);
         }
     }
     $clienteBusqueda = $pedido->cliente ?? '-';
@@ -76,7 +77,8 @@
 <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
     <!-- Botón Ver (con dropdown) -->
     @php
-        $numeroPedido = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->numero_pedido : $pedido->numero_pedido;
+        // Usar la misma lógica que $numeroPedidoBusqueda para consistencia
+        $numeroPedido = $numeroPedidoBusqueda;
         $pedidoId = $pedido->id;
         $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
         $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';

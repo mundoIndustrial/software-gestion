@@ -307,10 +307,11 @@ async function marcarEntregado(button) {
         const data = await response.json();
         
         if (data.success) {
-            // Cambiar el botón a estado "Entregado"
-            button.textContent = '✓ Entregado';
+            // Cambiar el botón a estado "Entregado" con opción de deshacer
+            button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
-            button.classList.add('bg-slate-400', 'cursor-not-allowed');
+            button.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            button.onclick = function() { deshacerEntregado(this); };
             
             // Agregar efecto visual a la fila: color azul pastel
             fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
@@ -327,6 +328,71 @@ async function marcarEntregado(button) {
         button.textContent = 'Entregar';
         button.disabled = false;
         alert('Error al marcar como entregado. Por favor, intenta de nuevo.');
+    }
+}
+
+/**
+ * Deshacer marcado como entregado
+ */
+async function deshacerEntregado(button) {
+    const fila = button.closest('tr');
+    const tipo = fila.dataset.tipo;
+    const itemId = parseInt(fila.dataset.id);
+    const tallaId = fila.dataset.tallaId ? parseInt(fila.dataset.tallaId) : null;
+    
+    // Confirmar con el usuario
+    if (!confirm('¿Estás seguro de deshacer el marcado como entregado?')) {
+        return;
+    }
+    
+    // Deshabilitar el botón mientras se procesa
+    button.disabled = true;
+    button.innerHTML = '⏳ Deshaciendo...';
+    
+    try {
+        const response = await fetch('{{ route("despacho.deshacer-entregado", $pedido->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({
+                tipo_item: tipo,
+                item_id: itemId,
+                talla_id: tallaId,
+            }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Restaurar el botón a estado inicial
+            button.innerHTML = 'Entregar';
+            button.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            button.classList.add('bg-green-500', 'hover:bg-green-600');
+            button.onclick = function() { marcarEntregado(this); };
+            
+            // Quitar efecto visual de la fila
+            fila.style.backgroundColor = '';
+            
+            console.log('✅ Marcado como entregado deshecho:', data);
+        } else {
+            // Error: restaurar botón a estado entregado
+            button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+            button.classList.remove('bg-green-500', 'hover:bg-green-600');
+            button.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            button.onclick = function() { deshacerEntregado(this); };
+            alert('Error al deshacer marcado como entregado: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error al deshacer marcado como entregado:', error);
+        button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+        button.classList.remove('bg-green-500', 'hover:bg-green-600');
+        button.classList.add('bg-orange-500', 'hover:bg-orange-600');
+        button.onclick = function() { deshacerEntregado(this); };
+        alert('Error al deshacer marcado como entregado. Por favor, intenta de nuevo.');
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -350,11 +416,11 @@ async function cargarEstadoEntregas() {
                 if (fila) {
                     const button = fila.querySelector('button');
                     if (button) {
-                        // Marcar como entregado visualmente
-                        button.textContent = '✓ Entregado';
+                        // Marcar como entregado visualmente con opción de deshacer
+                        button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
                         button.classList.remove('bg-green-500', 'hover:bg-green-600');
-                        button.classList.add('bg-slate-400', 'cursor-not-allowed');
-                        button.disabled = true;
+                        button.classList.add('bg-orange-500', 'hover:bg-orange-600');
+                        button.onclick = function() { deshacerEntregado(this); };
                         fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
                     }
                 }

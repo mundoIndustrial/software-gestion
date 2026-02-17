@@ -649,7 +649,15 @@
                             <i class="fas fa-check" style="font-size: 0.8rem;"></i> Confirmar
                         </button>
                     @else
-                        <button onclick="verFacturaDelPedido('', {{ $pedido->id }})" style="
+                        <button class="btn-ver-dropdown" 
+                                data-menu-id="menu-ver-{{ $pedido->id }}" 
+                                data-pedido="{{ $pedido->numero_pedido ?? '' }}" 
+                                data-pedido-id="{{ $pedido->id }}" 
+                                data-logo-pedido-id="" 
+                                data-tipo-cotizacion="{{ $pedido->cotizacion?->tipoCotizacion?->codigo ?? '' }}" 
+                                data-es-logo="0" 
+                                title="Ver Pedido" 
+                                style="
                             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                             color: white;
                             border: none;

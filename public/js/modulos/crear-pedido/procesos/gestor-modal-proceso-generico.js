@@ -63,6 +63,10 @@ window.abrirModalProcesoGenerico = function(tipoProceso, esEdicion = false) {
         return;
     }
     
+    // 🔴 CRÍTICO: Resetear storage de imágenes eliminadas cuando se abre un nuevo modal
+    window.imagenesEliminadasProcesoStorage = [];
+    console.log('[abrirModalProcesoGenerico] 🔄 Storage de imágenes eliminadas reseteado');
+    
     procesoActual = tipoProceso;
     // NUEVO: Establecer el modo (crear o editar)
     modoActual = esEdicion ? 'editar' : 'crear';
@@ -380,17 +384,48 @@ window.confirmarEliminarImagenProceso = function() {
         window.imagenesProcesoActual[indice - 1] = null;
     }
     
-    // Marcar como eliminada en imagenesProcesoExistentes
-    let imagenesParaEnviar = [];
+    // 🔴 CRÍTICO: Guardar la imagen ANTES de marcarla como null
     if (window.imagenesProcesoExistentes && window.imagenesProcesoExistentes.length > (indice - 1)) {
+        const imagenAeliminarObj = window.imagenesProcesoExistentes[indice - 1];
+        
+        // Inicializar array de eliminadas si no existe
+        if (!window.imagenesEliminadasProcesoStorage) {
+            window.imagenesEliminadasProcesoStorage = [];
+        }
+        
+        // Guardar el objeto completo de la imagen a eliminar
+        // IMPORTANTE: Usar ruta_original como identificador único (algunos objetos no tienen .id)
+        if (imagenAeliminarObj && (imagenAeliminarObj.id || imagenAeliminarObj.ruta_original)) {
+            const identificador = imagenAeliminarObj.id || imagenAeliminarObj.ruta_original;
+            // Verificar que no esté duplicado
+            const yaGuardado = window.imagenesEliminadasProcesoStorage.some(img => {
+                return (img.id || img.ruta_original) === identificador;
+            });
+            if (!yaGuardado) {
+                window.imagenesEliminadasProcesoStorage.push(imagenAeliminarObj);
+                console.log('[confirmarEliminarImagenProceso] 💾 Imagen GUARDADA en storage de eliminadas:', {
+                    id: imagenAeliminarObj.id,
+                    ruta: imagenAeliminarObj.ruta_original,
+                    identificador: identificador,
+                    totalEliminadas: window.imagenesEliminadasProcesoStorage.length,
+                    contenidoStorage: window.imagenesEliminadasProcesoStorage
+                });
+            }
+        } else {
+            console.warn('[confirmarEliminarImagenProceso] ⚠️ Imagen sin ID ni ruta_original, no se pudo guardar:', imagenAeliminarObj);
+        }
+        
+        // AHORA marcar como null
         window.imagenesProcesoExistentes[indice - 1] = null;
-        imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        const imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
         console.log('[confirmarEliminarImagenProceso] 🗑️ Imagen existente marcada como eliminada:', {
             indice: indice - 1,
-            imagenesRestantes: imagenesParaEnviar.length
+            imagenesRestantes: imagenesParaEnviar.length,
+            storageLlenado: window.imagenesEliminadasProcesoStorage
         });
     } else {
         // Combinar imágenes existentes + nuevas que quedan
+        let imagenesParaEnviar = [];
         if (window.imagenesProcesoExistentes) {
             imagenesParaEnviar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
         }
@@ -399,13 +434,18 @@ window.confirmarEliminarImagenProceso = function() {
                 if (img instanceof File) imagenesParaEnviar.push(img);
             });
         }
+        console.log('[confirmarEliminarImagenProceso] Imágenes restantes:', imagenesParaEnviar.length);
     }
-    
-    console.log('[confirmarEliminarImagenProceso] Imágenes restantes:', imagenesParaEnviar.length);
     
     // Registrar cambio en editor de procesos
     if (window.procesosEditor) {
-        window.procesosEditor.registrarCambioImagenes(imagenesParaEnviar);
+        let imagenesParaRegistrar = window.imagenesProcesoExistentes.filter(img => img !== null && img !== undefined && img !== '');
+        if (window.imagenesProcesoActual) {
+            window.imagenesProcesoActual.forEach(img => {
+                if (img instanceof File) imagenesParaRegistrar.push(img);
+            });
+        }
+        window.procesosEditor.registrarCambioImagenes(imagenesParaRegistrar);
     }
     
     // Restaurar preview a estado vacío con estilo correcto
@@ -1528,10 +1568,9 @@ window.agregarProcesoAlPedido = function() {
         // IMPORTANTE: Usar tallasCantidadesProceso que contiene las cantidades DEL PROCESO
         // NO window.tallasRelacionales que son las cantidades DE LA PRENDA
         const cantidadOriginales = (window.imagenesProcesoExistentes || []).length;
-        const imagenesEliminadasArray = [
-            ...(window.imagenesProcesoExistentes || []),  // Originales (con nulls para eliminadas)
-            ...imagenesValidas.slice(cantidadOriginales)  // Nuevas
-        ];
+        
+        // 🔴 CRÍTICO: Usar storage de eliminadas, no nulls
+        const imagenesEliminadasArray = window.imagenesEliminadasProcesoStorage || [];
         
         const datos = {
             tipo: procesoActual,
@@ -1543,27 +1582,35 @@ window.agregarProcesoAlPedido = function() {
                 sobremedida: { ...window.tallasCantidadesProceso?.sobremedida } || {}
             },
             imagenes: imagenesValidas, // Array de imágenes (existentes + nuevas)
-            // 🔴 CRÍTICO: imagenesEliminadas debe contener TODAS las imágenes (originales + nuevas)
-            imagenesEliminadas: imagenesEliminadasArray.map(img => {
-                // Si la imagen eliminada tiene ID, incluirla para eliminación física
-                if (img && img.id) {
-                    return {
-                        id: img.id,
-                        ruta_original: img.ruta_original,
-                        ruta_webp: img.ruta_webp
-                    };
-                }
-                return img; // Imagen nueva eliminada (solo se descarta)
-            })
+            // 🔴 CRÍTICO: imagenesEliminadas debe contener IDs de imágenes a eliminar
+            imagenesEliminadas: imagenesEliminadasArray
+                .map(img => {
+                    // Ya están filtradas en el storage, solo mapear
+                    if (img && img.id) {
+                        return {
+                            id: img.id,
+                            ruta_original: img.ruta_original,
+                            ruta_webp: img.ruta_webp
+                        };
+                    }
+                    return img;
+                })
+                .filter(img => img !== null && img !== undefined) // ✅ Filtrar por si acaso
         };
+        
+        // ✅ VERIFICAR: imagenesEliminadas se asignó correctamente
+        console.log('[agregarProcesoAlPedido] ✅ OBJETO datos CONSTRUIDO:', {
+            tipo: datos.tipo,
+            tieneImagenes: !!datos.imagenes,
+            tieneImagenesEliminadas: !!datos.imagenesEliminadas,
+            imagenesEliminadasContent: datos.imagenesEliminadas,
+            storageEliminadas: window.imagenesEliminadasProcesoStorage
+        });
         
         console.log('[agregarProcesoAlPedido] 🔍 DEBUG imagenesEliminadas:', {
             cantidadOriginales: cantidadOriginales,
-            imagenesProcesoExistentes: window.imagenesProcesoExistentes?.map((img, idx) => ({
-                idx,
-                esNull: img === null,
-                tipo: typeof img
-            })),
+            storageLength: (window.imagenesEliminadasProcesoStorage || []).length,
+            storageContent: window.imagenesEliminadasProcesoStorage,
             imagenesValidas: imagenesValidas.map((img, idx) => ({
                 idx,
                 esFile: img instanceof File,
@@ -1661,6 +1708,10 @@ window.agregarProcesoAlPedido = function() {
         // 🔴 NUEVO: Capturar modo ANTES de cerrar el modal (cerrar resetea modoActual a 'crear')
         const modoAntesDeCerrar = modoActual;
         console.log('[agregarProcesoAlPedido] Modo capturado antes de cerrar:', modoAntesDeCerrar);
+        
+        // 🔴 CRÍTICO: Resetear storage de eliminadas después de guardar
+        window.imagenesEliminadasProcesoStorage = [];
+        console.log('[agregarProcesoAlPedido] ✅ Storage de eliminadas reseteado después de guardar');
         
         // Cerrar modal indicando que el proceso fue guardado exitosamente
         cerrarModalProcesoGenerico(true);

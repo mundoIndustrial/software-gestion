@@ -1106,6 +1106,7 @@ final class ActualizarPrendaCompletaUseCase
         int $procesoIdx = 0
     ): void {
         $imagenesExistentesPayload = $proceso['imagenes_existentes'] ?? null;
+        $imagenesAEliminarPayload = $proceso['imagenes_a_eliminar'] ?? null;
         
         // 🔴 CRÍTICO: Solo sincronizar si el frontend EXPLÍCITAMENTE envió imagenes_existentes
         // Si es null/undefined = no hay cambios, no tocar las imágenes
@@ -1114,11 +1115,13 @@ final class ActualizarPrendaCompletaUseCase
         if (is_array($imagenesExistentesPayload)) {
             // Verificar si hay cambios reales de imagen para este proceso
             $hayFotosNuevas = !empty($dto->fotosProcesoNuevo) && isset($dto->fotosProcesoNuevo[$procesoIdx]);
+            $hayImagenesAEliminar = !empty($imagenesAEliminarPayload) && is_array($imagenesAEliminarPayload);
             
             // Solo sincronizar si:
             // 1. El array NO está vacío (hay imágenes a conservar), O
-            // 2. Hay fotos nuevas para este proceso (el usuario agregó imágenes)
-            if (!empty($imagenesExistentesPayload) || $hayFotosNuevas) {
+            // 2. Hay fotos nuevas para este proceso (el usuario agregó imágenes), O
+            // 3. Hay imágenes explícitamente marcadas para eliminar
+            if (!empty($imagenesExistentesPayload) || $hayFotosNuevas || $hayImagenesAEliminar) {
                 $idsAConservar = array_filter(array_column($imagenesExistentesPayload, 'id'));
                 
                 $imagenesActuales = $procesoExistente->imagenes()->get();
@@ -1154,11 +1157,11 @@ final class ActualizarPrendaCompletaUseCase
                     ]);
                 }
             } else {
-                // Array vacío y sin fotos nuevas = no hay cambios, no eliminar nada
+                // Array vacío, sin fotos nuevas Y sin imágenes a eliminar = no hay cambios, no eliminar nada
                 \Log::info('[ActualizarPrendaCompletaUseCase] Sin cambios de imagen para proceso', [
                     'proceso_id' => $procesoExistente->id,
                     'procesoIdx' => $procesoIdx,
-                    'razon' => 'imagenes_existentes vacío y sin fotosProcesoNuevo'
+                    'razon' => 'imagenes_existentes vacío, sin fotosProcesoNuevo, y sin imagenes_a_eliminar'
                 ]);
             }
         }

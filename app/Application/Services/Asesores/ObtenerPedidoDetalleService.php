@@ -770,8 +770,44 @@ class ObtenerPedidoDetalleService
             'observaciones' => $proceso->observaciones ?? '',
             'tallas' => $tallasProceso,
             'imagenes' => $proceso->imagenes->map(function($img) {
-                return $img->ruta_webp ?? $img->ruta_original ?? '';
-            })->filter()->toArray() ?? [],
+                // 🔴 CRÍTICO: Devolver objeto completo con TODOS los campos, no solo URL
+                $ruta_webp = str_replace('\\', '/', $img->ruta_webp ?? '');
+                $ruta_original = str_replace('\\', '/', $img->ruta_original ?? '');
+                
+                // Normalizar ruta_webp
+                if ($ruta_webp) {
+                    if (strpos($ruta_webp, '/storage/') !== 0) {
+                        if (strpos($ruta_webp, 'storage/') === 0) {
+                            $ruta_webp = '/' . $ruta_webp;
+                        } elseif (strpos($ruta_webp, '/') !== 0) {
+                            $ruta_webp = '/storage/' . $ruta_webp;
+                        }
+                    }
+                }
+                
+                // Normalizar ruta_original
+                if ($ruta_original) {
+                    if (strpos($ruta_original, '/storage/') !== 0) {
+                        if (strpos($ruta_original, 'storage/') === 0) {
+                            $ruta_original = '/' . $ruta_original;
+                        } elseif (strpos($ruta_original, '/') !== 0) {
+                            $ruta_original = '/storage/' . $ruta_original;
+                        }
+                    }
+                }
+                
+                // Retornar objeto completo con id y ambas rutas
+                return [
+                    'id' => $img->id,
+                    'ruta_webp' => $ruta_webp,
+                    'ruta_original' => $ruta_original,
+                    'url' => $ruta_webp ?: $ruta_original, // Para compatibilidad con frontend
+                    'es_principal' => $img->es_principal ?? false
+                ];
+            })->filter(function($img) {
+                // Filtrar: devolver solo si tiene ruta_webp o ruta_original
+                return $img['ruta_webp'] || $img['ruta_original'];
+            })->toArray() ?? [],
         ];
     }
 }

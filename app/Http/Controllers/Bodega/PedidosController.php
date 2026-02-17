@@ -375,10 +375,29 @@ class PedidosController extends Controller
             }
             
             $query = BodegaDetalleTalla::porArea('Costura')
-                ->porEstado('Pendiente')
-                ->orderBy('fecha_entrega', 'asc');
+                ->porEstado('Pendiente');
 
             \Log::info('Query construida, total registros: ' . $query->count());
+
+            // Agrupar por numero_pedido para evitar duplicación
+            $query->select([
+                'numero_pedido',
+                DB::raw('MIN(id) as id'),
+                DB::raw('MIN(empresa) as empresa'),
+                DB::raw('MIN(asesor) as asesor'),
+                DB::raw('MIN(prenda_nombre) as prenda_nombre'),
+                DB::raw('MIN(area) as area'),
+                DB::raw('MIN(estado_bodega) as estado_bodega'),
+                DB::raw('MIN(fecha_entrega) as fecha_entrega'),
+                DB::raw('MIN(created_at) as created_at'),
+                DB::raw('SUM(cantidad) as cantidad_total'),
+                DB::raw('SUM(pendientes) as pendientes_total'),
+                DB::raw('MIN(talla) as talla_ejemplo')
+            ])
+            ->groupBy('numero_pedido');
+            // orderBy temporalmente eliminado para evitar conflicto con count()
+
+            \Log::info('Query con groupBy simplificado construida');
 
             // Aplicar búsqueda general
             if ($request->filled('search')) {
@@ -471,6 +490,9 @@ class PedidosController extends Controller
                                         ->take($porPagina)
                                         ->get();
 
+            // Ordenar por fecha_entrega después de obtener los resultados
+            $pedidosPorPagina = $pedidosPorPagina->sortBy('fecha_entrega');
+
             // Obtener estadísticas
             $estadisticas = BodegaDetalleTalla::obtenerEstadisticasCostura();
             
@@ -494,16 +516,16 @@ class PedidosController extends Controller
                     'estado' => $detalle->estado_bodega,
                     'area' => $detalle->area,
                     'prenda' => $detalle->prenda_nombre,
-                    'talla' => $detalle->talla,
-                    'cantidad' => $detalle->cantidad,
-                    'pendientes' => $detalle->pendientes,
+                    'talla' => $detalle->talla_ejemplo, // Usar talla_ejemplo del groupBy
+                    'cantidad' => $detalle->cantidad_total, // Usar cantidad_total del groupBy
+                    'pendientes' => $detalle->pendientes_total, // Usar pendientes_total del groupBy
                     'observaciones' => $detalle->observaciones_bodega,
                     'fecha_pedido' => $detalle->fecha_pedido,
                     'fecha_entrega' => $detalle->fecha_entrega,
                     'usuario_bodega' => $detalle->usuario_bodega_nombre,
                     'created_at' => $detalle->created_at,
                     'updated_at' => $detalle->updated_at,
-                    'tiene_pendientes' => $detalle->pendientes > 0,
+                    'tiene_pendientes' => $detalle->pendientes_total > 0, // Usar pendientes_total
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];
             })->toArray(); // Convertir a array
@@ -554,10 +576,29 @@ class PedidosController extends Controller
             }
             
             $query = BodegaDetalleTalla::porArea('EPP')
-                ->porEstado('Pendiente')
-                ->orderBy('fecha_entrega', 'asc');
+                ->porEstado('Pendiente');
 
             \Log::info('Query construida, total registros: ' . $query->count());
+
+            // Agrupar por numero_pedido para evitar duplicación
+            $query->select([
+                'numero_pedido',
+                DB::raw('MIN(id) as id'),
+                DB::raw('MIN(empresa) as empresa'),
+                DB::raw('MIN(asesor) as asesor'),
+                DB::raw('MIN(prenda_nombre) as prenda_nombre'),
+                DB::raw('MIN(area) as area'),
+                DB::raw('MIN(estado_bodega) as estado_bodega'),
+                DB::raw('MIN(fecha_entrega) as fecha_entrega'),
+                DB::raw('MIN(created_at) as created_at'),
+                DB::raw('SUM(cantidad) as cantidad_total'),
+                DB::raw('SUM(pendientes) as pendientes_total'),
+                DB::raw('MIN(talla) as talla_ejemplo')
+            ])
+            ->groupBy('numero_pedido');
+            // orderBy temporalmente eliminado para evitar conflicto con count()
+
+            \Log::info('Query con groupBy simplificado construida');
 
             // Aplicar búsqueda general
             if ($request->filled('search')) {
@@ -650,6 +691,9 @@ class PedidosController extends Controller
                                         ->take($porPagina)
                                         ->get();
 
+            // Ordenar por fecha_entrega después de obtener los resultados
+            $pedidosPorPagina = $pedidosPorPagina->sortBy('fecha_entrega');
+
             // Obtener estadísticas
             $estadisticas = [
                 'total' => BodegaDetalleTalla::porArea('EPP')->count(),
@@ -679,16 +723,16 @@ class PedidosController extends Controller
                     'estado' => $detalle->estado_bodega,
                     'area' => $detalle->area,
                     'prenda' => $detalle->prenda_nombre,
-                    'talla' => $detalle->talla,
-                    'cantidad' => $detalle->cantidad,
-                    'pendientes' => $detalle->pendientes,
+                    'talla' => $detalle->talla_ejemplo, // Usar talla_ejemplo del groupBy
+                    'cantidad' => $detalle->cantidad_total, // Usar cantidad_total del groupBy
+                    'pendientes' => $detalle->pendientes_total, // Usar pendientes_total del groupBy
                     'observaciones' => $detalle->observaciones_bodega,
                     'fecha_pedido' => $detalle->fecha_pedido,
                     'fecha_entrega' => $detalle->fecha_entrega,
                     'usuario_bodega' => $detalle->usuario_bodega_nombre,
                     'created_at' => $detalle->created_at,
                     'updated_at' => $detalle->updated_at,
-                    'tiene_pendientes' => $detalle->pendientes > 0,
+                    'tiene_pendientes' => $detalle->pendientes_total > 0, // Usar pendientes_total
                     'esta_retrasado' => $detalle->fecha_entrega && $detalle->fecha_entrega < now(),
                 ];
             })->toArray(); // Convertir a array

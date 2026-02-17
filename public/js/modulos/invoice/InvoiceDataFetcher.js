@@ -67,36 +67,41 @@ class InvoiceDataFetcher {
      * Abre la vista previa de factura para un pedido guardado
      */
     async verFacturaDelPedido(numeroPedido, pedidoId) {
-        console.log('[InvoiceDataFetcher] Iniciando vista de factura:', { numeroPedido, pedidoId });
+        console.log('[InvoiceDataFetcher] INICIO verFacturaDelPedido', { numeroPedido, pedidoId });
         
         try {
             // Mostrar spinner de carga
             if (window.loadingManager) {
+                console.log('[InvoiceDataFetcher] Mostrando loading...');
                 window.loadingManager.mostrarCargando('Cargando factura...');
             }
             
             // Obtener datos del pedido desde el servidor
+            console.log('[InvoiceDataFetcher] Obteniendo datos del servidor para pedido:', pedidoId);
             const datos = await this.obtenerDatosFactura(pedidoId);
             
             console.log('[InvoiceDataFetcher] Datos obtenidos:', {
                 prendas_existe: !!datos.prendas,
-                prendas_count: datos.prendas?.length || 0
+                prendas_count: datos.prendas?.length || 0,
+                pedido_id: datos.id
             });
             
             // Usar el modal de visualización
             if (typeof window.invoiceModalManager?.crearModalFactura === 'function') {
+                console.log('[InvoiceDataFetcher] Llamando a invoiceModalManager.crearModalFactura');
                 window.invoiceModalManager.crearModalFactura(datos);
             } else if (typeof crearModalFacturaDesdeListaPedidos === 'function') {
+                console.log('[InvoiceDataFetcher] Usando fallback crearModalFacturaDesdeListaPedidos');
                 crearModalFacturaDesdeListaPedidos(datos);
             } else {
-                console.warn('[InvoiceDataFetcher] Modal no disponible, usando fallback');
+                console.warn('[InvoiceDataFetcher] Modal no disponible, usando fallback abrirModalEditarPedido');
                 if (typeof abrirModalEditarPedido === 'function') {
                     abrirModalEditarPedido(pedidoId, datos, 'ver');
                 }
             }
             
         } catch (error) {
-            console.error('[InvoiceDataFetcher] Error en vista de factura:', error);
+            console.error('[InvoiceDataFetcher] Error en verFacturaDelPedido:', error);
             
             if (window.loadingManager) {
                 window.loadingManager.ocultarCargando();

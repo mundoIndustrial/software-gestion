@@ -12,6 +12,8 @@ use App\Domain\PedidoProduccion\Listeners\NotificarClientePedidoCreado;
 use App\Domain\PedidoProduccion\Listeners\ActualizarCachePedidos;
 use App\Domain\PedidoProduccion\Listeners\RegistrarAuditoriaPedido;
 use App\Domain\PedidoProduccion\Listeners\ActualizarEstadisticasPrendas;
+use App\Observers\DespachoParcialesObserver;
+use App\Models\DesparChoParcialesModel;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Events\Dispatcher as LaravelDispatcher;
 
@@ -52,6 +54,9 @@ class EventServiceProvider extends ServiceProvider
         
         // Registrar listeners de dominio
         $this->registerDomainEventListeners($dispatcher);
+
+        // Registrar observers
+        DesparChoParcialesModel::observe(DespachoParcialesObserver::class);
     }
 
     /**
