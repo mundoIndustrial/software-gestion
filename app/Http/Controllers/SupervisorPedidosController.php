@@ -1322,6 +1322,212 @@ class SupervisorPedidosController extends Controller
     }
 
     /**
+     * Mostrar vista de pendientes de bordados y estampados por recibos
+     */
+    public function pendientesBordadoEstampado()
+    {
+        try {
+            // Debug: Verificar qué tipos de recibos existen
+            $tiposRecibos = \DB::table('consecutivos_recibos_pedidos')
+                ->select('tipo_recibo', 'activo', \DB::raw('count(*) as total'))
+                ->whereIn('tipo_recibo', ['BORDADO', 'ESTAMPADO', 'SUBLIMADO', 'DTF'])
+                ->where('activo', 1)
+                ->groupBy('tipo_recibo', 'activo')
+                ->get();
+            
+            \Log::info('DEBUG - Tipos de recibos encontrados:', $tiposRecibos->toArray());
+            
+            // Obtener procesos pendientes a través de consecutivos_recibos_pedidos
+            $procesosPendientes = \DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+                ->join('users as u', 'p.asesor_id', '=', 'u.id')
+                ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+                ->leftJoin('pedidos_procesos_prenda_detalles as ppd', function($join) {
+                    $join->on('pp.id', '=', 'ppd.prenda_pedido_id')
+                         ->where('ppd.estado', 'PENDIENTE');
+                })
+                ->select([
+                    'p.created_at as fecha_creacion',
+                    'crp.consecutivo_actual as numero_recibo',
+                    'p.cliente',
+                    'p.id as pedido_id',
+                    'u.name as asesor',
+                    'crp.tipo_recibo',
+                    'pp.nombre_prenda',
+                    'crp.id as recibo_id',
+                    'pp.id as prenda_id'
+                ])
+                ->whereIn('crp.tipo_recibo', ['BORDADO', 'ESTAMPADO', 'SUBLIMADO', 'DTF'])
+                ->where('crp.activo', 1)
+                ->where(function($query) {
+                    $query->whereNull('ppd.estado')
+                          ->orWhere('ppd.estado', 'PENDIENTE');
+                })
+                ->orderBy('p.created_at', 'desc')
+                ->get();
+
+            \Log::info('DEBUG - Procesos pendientes encontrados:', ['count' => $procesosPendientes->count(), 'data' => $procesosPendientes->toArray()]);
+
+            // Calcular cantidad total de prendas por recibo
+            $procesosConCantidad = $procesosPendientes->map(function($proceso) {
+                $cantidadTotal = 0;
+                
+                if ($proceso->prenda_id) {
+                    // Obtener tallas desde prenda_pedido_tallas
+                    $cantidadTotal = \DB::table('prenda_pedido_tallas')
+                        ->where('prenda_pedido_id', $proceso->prenda_id)
+                        ->sum('cantidad');
+                }
+                
+                $proceso->cantidad_total_prendas = $cantidadTotal;
+                return $proceso;
+            });
+
+            return view('supervisor-pedidos.pendientes-bordado-estampado', compact('procesosConCantidad'));
+
+        } catch (\Exception $e) {
+            \Log::error('Error al cargar pendientes logo: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar los datos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtener detalles de un recibo específico
+     */
+    public function obtenerDetallesProceso($id)
+    {
+        try {
+            $recibo = \DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
+                ->join('users as u', 'p.asesor_id', '=', 'u.id')
+                ->leftJoin('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+                ->leftJoin('pedidos_procesos_prenda_detalles as ppd', 'pp.id', '=', 'ppd.prenda_pedido_id')
+                ->select([
+                    'crp.*',
+                    'p.cliente',
+                    'p.created_at as fecha_creacion',
+                    'u.name as asesor',
+                    'pp.nombre_prenda',
+                    'ppd.estado',
+                    'ppd.observaciones'
+                ])
+                ->where('crp.id', $id)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            // Obtener tallas de la prenda
+            $tallas = [];
+            if ($recibo->prenda_id) {
+                $tallas = \DB::table('prenda_pedido_tallas')
+                    ->where('prenda_pedido_id', $recibo->prenda_id)
+                    ->get(['genero', 'talla', 'cantidad']);
+            }
+
+            // Obtener imágenes del proceso si existe
+            $imagenes = [];
+            if ($recibo->prenda_id) {
+                $imagenes = \DB::table('pedidos_procesos_imagenes')
+                    ->join('pedidos_procesos_prenda_detalles as ppd', 'pedidos_procesos_imagenes.proceso_prenda_detalle_id', '=', 'ppd.id')
+                    ->where('ppd.prenda_pedido_id', $recibo->prenda_id)
+                    ->orderBy('pedidos_procesos_imagenes.orden')
+                    ->get(['pedidos_procesos_imagenes.ruta_original', 'pedidos_procesos_imagenes.ruta_webp']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $recibo->id,
+                    'nombre_prenda' => $recibo->nombre_prenda ?? 'N/A',
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'estado' => $recibo->estado ?? 'PENDIENTE',
+                    'observaciones' => $recibo->observaciones,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'cliente' => $recibo->cliente,
+                    'asesor' => $recibo->asesor,
+                    'fecha_creacion' => $recibo->fecha_creacion,
+                    'tallas' => $tallas,
+                    'imagenes' => $imagenes
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener detalles del recibo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los detalles: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Aprobar un recibo
+     */
+    public function aprobarProceso($id)
+    {
+        try {
+            // Obtener el recibo
+            $recibo = \DB::table('consecutivos_recibos_pedidos')->where('id', $id)->first();
+            
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            // Actualizar el proceso asociado si existe
+            $actualizado = 0;
+            if ($recibo->prenda_id) {
+                $actualizado = \DB::table('pedidos_procesos_prenda_detalles')
+                    ->where('prenda_pedido_id', $recibo->prenda_id)
+                    ->where('estado', 'PENDIENTE')
+                    ->update([
+                        'estado' => 'APROBADO',
+                        'fecha_aprobacion' => now(),
+                        'aprobado_por' => auth()->id()
+                    ]);
+            }
+
+            if ($actualizado > 0 || !$recibo->prenda_id) {
+                // Si no hay proceso asociado o se actualizó correctamente, marcar el recibo como inactivo
+                \DB::table('consecutivos_recibos_pedidos')
+                    ->where('id', $id)
+                    ->update(['activo' => 0]);
+
+                \Log::info('Recibo aprobado', [
+                    'recibo_id' => $id,
+                    'tipo_recibo' => $recibo->tipo_recibo,
+                    'aprobado_por' => auth()->id(),
+                    'fecha_aprobacion' => now()
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Recibo aprobado correctamente'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo aprobar el recibo. Es posible que ya esté aprobado o no exista el proceso asociado.'
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error al aprobar recibo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aprobar el recibo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Construir descripción con tallas por prenda (igual que en módulo asesores)
      * Usa el método generarDescripcionDetallada de cada prenda para obtener la descripción completa
      * 

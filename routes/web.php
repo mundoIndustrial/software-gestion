@@ -2171,6 +2171,13 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     Route::get('/perfil/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'profile'])->name('profile');
     Route::post('/perfil/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'updateProfile'])->name('update-profile');
     
+    // Pendientes Bordados-Estampado
+    Route::get('/pendientes-bordado-estampado', [App\Http\Controllers\SupervisorPedidosController::class, 'pendientesBordadoEstampado'])->name('pendientes-bordado-estampado');
+    
+    // Detalles y aprobación de procesos
+    Route::get('/procesos/{id}/detalles', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDetallesProceso'])->name('procesos.detalles');
+    Route::post('/procesos/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarProceso'])->name('procesos.aprobar');
+    
     // Notificaciones
     Route::get('/notificaciones', [App\Http\Controllers\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');
     Route::post('/notificaciones/marcar-todas-leidas', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('mark-all-read');

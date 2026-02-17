@@ -28,6 +28,14 @@
                     </a>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.pendientes-bordado-estampado') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-bordado-estampado') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">brush</span>
+                        <span class="menu-label">Pendientes Logo</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index', ['estado' => 'Anulada']) }}"
                        class="menu-link {{ request()->query('estado') === 'Anulada' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
