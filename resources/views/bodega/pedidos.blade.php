@@ -725,6 +725,9 @@ console.log('*** ROL ACTUAL: {{ auth()->user()->getRoleNames()->first() ?? "Sin 
 // Variable global con el ID del usuario actual
 window.usuarioActualId = {{ auth()->user()->id }};
 
+// Variable global para determinar si es admin
+window.__usuarioEsAdmin = {{ auth()->user()->hasRole('admin') ? 'true' : 'false' }};
+
 /**
  * Auto-resize textareas para Pendientes y Observaciones
  */
@@ -1601,5 +1604,49 @@ if (document.readyState === 'loading') {
     inicializarSelectoresEstado();
 }
 </script>
+
+<!-- Modal de Confirmación (Eliminar Nota) -->
+<div id="modalConfirmarEliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100002;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="bg-red-600 px-6 py-4 border-b border-red-200">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <span class="material-symbols-rounded">warning</span>
+                Confirmar Eliminación
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-gray-700">¿Estás seguro de que deseas eliminar esta nota? Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3 justify-end">
+            <button type="button" onclick="cerrarModalConfirmarEliminar()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmarEliminar" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition">
+                Eliminar Nota
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Alerta (Mensajes) -->
+<div id="modalAlerta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-9999" style="z-index: 100003;">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div id="alertaHeader" class="px-6 py-4 border-b">
+            <h3 id="alertaTitulo" class="text-lg font-semibold text-white flex items-center gap-2">
+                <span id="alertaIcono" class="material-symbols-rounded">info</span>
+                Mensaje
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <p id="alertaMensaje" class="text-gray-700">Mensaje del sistema</p>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+            <button type="button" onclick="cerrarModalAlerta()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endpush

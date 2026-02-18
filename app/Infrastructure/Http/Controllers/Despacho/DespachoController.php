@@ -7,15 +7,18 @@ use App\Models\PedidoProduccion;
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\DesparChoParcialesModel;
 use App\Models\Role;
+use App\Models\ReciboPrenda;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
+use App\Application\Bodega\Services\BodegaPedidoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class DespachoController extends Controller
 {
@@ -23,6 +26,7 @@ class DespachoController extends Controller
         private ObtenerFilasDespachoUseCase $obtenerFilas,
         private GuardarDespachoUseCase $guardarDespacho,
         private PedidoProduccionRepository $pedidoRepository,
+        private BodegaPedidoService $bodegaPedidoService,
     ) {}
 
     /**
@@ -336,6 +340,66 @@ class DespachoController extends Controller
         }
     }
 
+    // ===== MÉTODOS UNIFICADOS PARA PENDIENTES (COSTURA + EPP) =====
+
+    /**
+     * Vista unificada de pendientes de costura y EPP para despacho
+     */
+    public function pendientesUnificados(Request $request)
+    {
+        $search = $request->query('search', '');
+        $tipo = $request->query('tipo', 'todos'); // 'costura', 'epp', 'todos'
+        
+        return view('despacho.pendientes-unificados', [
+            'search' => $search,
+            'tipo' => $tipo
+        ]);
+    }
+
+    /**
+     * API para obtener pendientes de costura
+     */
+    public function obtenerPendientesCostura(Request $request)
+    {
+        try {
+            $search = $request->query('search', '');
+            
+            // Pedidos pendientes de costura (usar la misma lógica que bodega)
+            $query = PedidoProduccion::query()
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '')
+                ->where('estado', 'PENDIENTE_INSUMOS');
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('numero_pedido', 'like', "%{$search}%")
+                      ->orWhere('cliente', 'like', "%{$search}%");
+                });
+            }
+            
+            $pedidos = $query->orderBy('created_at', 'desc')->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedidos->map(function ($pedido) {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                        'tipo' => 'costura'
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pendientes de costura: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     // ==================== OBSERVACIONES ====================
 
     public function resumenObservaciones(Request $request): JsonResponse
@@ -543,5 +607,142 @@ class DespachoController extends Controller
             'success' => true,
             'message' => 'Observación eliminada correctamente',
         ]);
+    }
+
+    /**
+     * API para obtener pendientes de EPP
+     */
+    public function obtenerPendientesEpp(Request $request)
+    {
+        try {
+            $search = $request->query('search', '');
+            
+            // Pedidos pendientes de EPP (usar la misma lógica que bodega)
+            $query = PedidoProduccion::query()
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '')
+                ->where('estado', 'No iniciado');
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('numero_pedido', 'like', "%{$search}%")
+                      ->orWhere('cliente', 'like', "%{$search}%");
+                });
+            }
+            
+            $pedidos = $query->orderBy('created_at', 'desc')->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedidos->map(function ($pedido) {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente' => $pedido->cliente,
+                        'estado' => $pedido->estado,
+                        'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                        'tipo' => 'epp'
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pendientes de EPP: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API para obtener todos los pendientes unificados
+     */
+    public function obtenerPendientesUnificados(Request $request)
+    {
+        try {
+            $search = $request->query('search', '');
+            $tipo = $request->query('tipo', 'todos');
+            
+            $pendientes = collect();
+            
+            // Obtener pendientes de costura
+            if ($tipo === 'todos' || $tipo === 'costura') {
+                $costuraResponse = $this->obtenerPendientesCostura($request);
+                if ($costuraResponse->getData()->success) {
+                    $pendientes = $pendientes->merge($costuraResponse->getData()->data);
+                }
+            }
+            
+            // Obtener pendientes de EPP
+            if ($tipo === 'todos' || $tipo === 'epp') {
+                $eppResponse = $this->obtenerPendientesEpp($request);
+                if ($eppResponse->getData()->success) {
+                    $pendientes = $pendientes->merge($eppResponse->getData()->data);
+                }
+            }
+            
+            // Ordenar por fecha de creación
+            $pendientes = $pendientes->sortByDesc('fecha_creacion')->values();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pendientes,
+                'total' => $pendientes->count(),
+                'costura_count' => $pendientes->where('tipo', 'costura')->count(),
+                'epp_count' => $pendientes->where('tipo', 'epp')->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pendientes unificados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar HTML para la factura
+     */
+    private function generarHTMLFactura($datos): string
+    {
+        return view('despacho.partials.factura-content', compact('datos'))->render();
+    }
+
+    /**
+     * Mostrar detalles de pedido pendiente (vista igual a bodega)
+     */
+    public function showPendienteUnificado($id)
+    {
+        try {
+            // Usar el mismo servicio que bodega para obtener detalles completos
+            $datos = $this->bodegaPedidoService->obtenerDetallePedido($id, true); // <- true para despacho
+            
+            // DEBUG: Ver qué datos vienen del servicio
+            \Log::info('[DESPACHO] Datos del servicio', [
+                'pedido_id' => $id,
+                'pedido' => $datos['pedido'] ?? 'null',
+                'items_count' => isset($datos['items']) ? count($datos['items']) : 0,
+                'primer_item' => isset($datos['items'][0]) ? [
+                    'numero_pedido' => $datos['items'][0]['numero_pedido'] ?? 'N/A',
+                    'tallas_count' => isset($datos['items'][0]['tallas']) ? count($datos['items'][0]['tallas']) : 0,
+                    'tallas' => $datos['items'][0]['tallas'] ?? 'null',
+                    'descripcion' => $datos['items'][0]['descripcion'] ?? 'null'
+                ] : 'null'
+            ]);
+            
+            // Verificar que sea un pedido pendiente
+            if (!in_array($datos['pedido']['estado'] ?? '', ['PENDIENTE_INSUMOS', 'No iniciado'])) {
+                return redirect()->route('despacho.pendientes')
+                    ->with('error', 'Este pedido no es un pendiente válido');
+            }
+            
+            return view('despacho.show-pendiente-bodega', $datos);
+        } catch (\Exception $e) {
+            \Log::error('[DESPACHO] Error al mostrar detalles del pedido pendiente', [
+                'pedido_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('despacho.pendientes')
+                ->with('error', 'Error al cargar el pedido: ' . $e->getMessage());
+        }
     }
 }

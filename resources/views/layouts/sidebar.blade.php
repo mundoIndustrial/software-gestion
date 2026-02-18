@@ -78,27 +78,19 @@
         </a>
       </li>
       <li class="menu-item">
+        <a href="{{ route('despacho.pendientes') }}"
+           class="menu-link {{ request()->routeIs('despacho.pendientes') ? 'active' : '' }}"
+           aria-label="Pendientes Unificados">
+          <span class="material-symbols-rounded" aria-hidden="true">pending_actions</span>
+          <span class="menu-label">Pendientes</span>
+        </a>
+      </li>
+      <li class="menu-item">
         <a href="{{ route('gestion-bodega.pedidos-anulados') }}"
            class="menu-link {{ request()->routeIs('gestion-bodega.pedidos-anulados') ? 'active' : '' }}"
            aria-label="Pedidos anulados - Bodega">
           <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
           <span class="menu-label">Pedidos anulados</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pendientes-costura') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-costura') ? 'active' : '' }}"
-           aria-label="Pendiente Costura">
-          <span class="material-symbols-rounded" aria-hidden="true">checklist</span>
-          <span class="menu-label">Pendiente Costura</span>
-        </a>
-      </li>
-      <li class="menu-item">
-        <a href="{{ route('gestion-bodega.pendientes-epp') }}"
-           class="menu-link {{ request()->routeIs('gestion-bodega.pendientes-epp') ? 'active' : '' }}"
-           aria-label="Pendiente EPP">
-          <span class="material-symbols-rounded" aria-hidden="true">shield</span>
-          <span class="menu-label">Pendiente EPP</span>
         </a>
       </li>
       </ul>
@@ -385,6 +377,15 @@
            aria-label="Ver módulo de contador">
           <span class="material-symbols-rounded" aria-hidden="true">calculate</span>
           <span class="menu-label">Contador</span>
+        </a>
+      </li>
+
+      <li class="menu-item">
+        <a href="{{ route('epp.gestion') }}"
+           class="menu-link {{ request()->routeIs('epp.*') ? 'active' : '' }}"
+           aria-label="Gestionar EPPs">
+          <span class="material-symbols-rounded" aria-hidden="true">health_and_safety</span>
+          <span class="menu-label">EPPs</span>
         </a>
       </li>
       </ul>

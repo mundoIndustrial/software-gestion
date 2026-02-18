@@ -401,6 +401,10 @@ Route::middleware('api')->delete('epp/imagenes/{imagenId}', [\App\Infrastructure
 Route::middleware('api')->get('epp', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'index'])
     ->name('epp.index');
 
+// Endpoint simplificado para gestión (con relación de categoría)
+Route::middleware('api')->get('epp/gestion', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'indexSimple'])
+    ->name('epp.gestion-api');
+
 // Buscar EPP por término
 Route::middleware('api')->get('epps/buscar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'buscar'])
     ->name('epp.buscar');
@@ -419,28 +423,77 @@ Route::middleware('api')->get('epp-debug', function() {
             'count' => $epps->count(),
             'data' => $epps->map(fn($e) => [
                 'id' => $e->id,
-                'codigo' => $e->codigo,
                 'nombre_completo' => $e->nombre_completo,
+                'marca' => $e->marca,
+                'tipo' => $e->tipo,
                 'activo' => $e->activo,
-            ])->toArray(),
+                'categoria_id' => $e->categoria_id
+            ])
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
             'error' => $e->getMessage(),
             'file' => $e->getFile(),
-            'line' => $e->getLine(),
+            'line' => $e->getLine()
         ], 500);
     }
 })->name('epp.debug');
 
+// Debug: Verificar tabla epps completa
+Route::middleware('api')->get('epp-debug-full', function() {
+    try {
+        $totalEpps = \App\Models\Epp::count();
+        $eppsActivos = \App\Models\Epp::where('activo', true)->count();
+        $eppsInactivos = \App\Models\Epp::where('activo', false)->count();
+        
+        // Obtener primeros 10 EPPs con todos los campos
+        $epps = \App\Models\Epp::limit(10)->get();
+        
+        return response()->json([
+            'success' => true,
+            'estadisticas' => [
+                'total' => $totalEpps,
+                'activos' => $eppsActivos,
+                'inactivos' => $eppsInactivos
+            ],
+            'data' => $epps->toArray()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+})->name('epp.debug-full');
+
 Route::middleware('api')->get('epp/categorias/all', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categorias'])
     ->name('epp.categorias');
+
+// Endpoint simplificado para categorías (directo desde modelo)
+Route::middleware('api')->get('epp/categorias/simple', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'categoriasSimple'])
+    ->name('epp.categorias-simple');
 
 // Ruta para crear EPP movida arriba (POST epp ahora usa crearEppSimple)
 
 Route::middleware('api')->get('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'show'])
     ->name('epp.show');
+
+// CRUD completo para EPPs
+Route::middleware('api')->put('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'update'])
+    ->name('epp.update');
+
+Route::middleware('api')->delete('epp/{id}', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'destroy'])
+    ->name('epp.destroy');
+
+// Endpoints alternativos para compatibilidad con frontend
+Route::middleware('api')->post('epp/{id}/actualizar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'actualizarDirecto'])
+    ->name('epp.actualizar-directo');
+
+Route::middleware('api')->post('epp/{id}/eliminar', [\App\Infrastructure\Http\Controllers\Epp\EppController::class, 'eliminarDirecto'])
+    ->name('epp.eliminar-directo');
 
 // Gestión de EPP en pedidos - Rutas RESTful
 Route::middleware('api')->prefix('pedidos/{pedido}/epps')->name('pedidos.epps.')->group(function () {

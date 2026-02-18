@@ -95,4 +95,27 @@ Route::prefix('despacho')
             ->name('despacho.observaciones.eliminar')
             ->where('pedido', '[0-9]+')
             ->where('observacionId', '[A-Za-z0-9\-]+');
+
+        // ===== RUTAS UNIFICADAS PARA DESPACHO =====
+        
+        // Vista unificada de pendientes (Costura + EPP)
+        Route::get('/pendientes', [DespachoController::class, 'pendientesUnificados'])
+            ->name('despacho.pendientes');
+
+        // API para obtener pendientes de costura
+        Route::get('/api/pendientes-costura', [DespachoController::class, 'obtenerPendientesCostura'])
+            ->name('despacho.api.pendientes-costura');
+
+        // API para obtener pendientes de EPP
+        Route::get('/api/pendientes-epp', [DespachoController::class, 'obtenerPendientesEpp'])
+            ->name('despacho.api.pendientes-epp');
+
+        // API para obtener todos los pendientes unificados
+        Route::get('/api/pendientes-todos', [DespachoController::class, 'obtenerPendientesUnificados'])
+            ->name('despacho.api.pendientes-todos');
+
+        // Mostrar detalles de pedido pendiente (unificado)
+        Route::get('/pendientes/{id}', [DespachoController::class, 'showPendienteUnificado'])
+            ->name('despacho.pendientes-show')
+            ->where('id', '[0-9]+');
     });

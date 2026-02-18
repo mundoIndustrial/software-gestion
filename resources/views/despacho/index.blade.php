@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.despacho-standalone')
 
 @section('title', 'Módulo de Despacho')
 @section('page-title', 'Despacho')
 
 @section('content')
-<div class="min-h-screen bg-white">
+<div class="despacho-index min-h-screen bg-white">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="border-b border-slate-200 px-6 py-6">

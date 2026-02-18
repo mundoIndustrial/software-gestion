@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Epp extends Model
 {
-        use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'nombre_completo',
@@ -52,6 +52,14 @@ class Epp extends Model
     // {
     //     return $this->hasMany(EppImagen::class, 'epp_id');
     // }
+
+    /**
+     * Relación: Un EPP pertenece a una categoría
+     */
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(EppCategoria::class, 'categoria_id');
+    }
 
     /**
      * Relación: Un EPP puede estar en muchos pedidos (a través de PedidoEpp)

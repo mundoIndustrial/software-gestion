@@ -92,15 +92,26 @@ class BodegaNotaService
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($nota) {
+                    // Determinar fecha de creación y última modificación
+                    $fechaCreacion = $nota->created_at;
+                    $fechaModificacion = $nota->updated_at;
+                    $fueEditada = $fechaCreacion->lt($fechaModificacion);
+                    
+                    // Usar fecha de modificación si fue editada, sino fecha de creación
+                    $fechaMostrar = $fueEditada ? $fechaModificacion : $fechaCreacion;
+                    
                     return [
                         'id' => $nota->id,
                         'usuario_id' => $nota->usuario_id,
                         'contenido' => $nota->contenido,
                         'usuario_nombre' => $nota->usuario_nombre,
                         'usuario_rol' => $nota->usuario_rol,
-                        'fecha' => $nota->created_at->format('d/m/Y'),
-                        'hora' => $nota->created_at->format('H:i:s'),
-                        'fecha_completa' => $nota->created_at->format('d/m/Y H:i:s'),
+                        'fecha' => $fechaMostrar->format('d/m/Y'),
+                        'hora' => $fechaMostrar->format('H:i:s'),
+                        'fecha_completa' => $fechaMostrar->format('d/m/Y H:i:s'),
+                        'created_at' => $fechaCreacion->toISOString(),
+                        'updated_at' => $fechaModificacion->toISOString(),
+                        'fue_editada' => $fueEditada,
                     ];
                 });
 
@@ -135,9 +146,10 @@ class BodegaNotaService
                 ], 403);
             }
 
-            // Actualizar la nota
+            // Actualizar la nota (updated_at se actualiza automáticamente)
             $nota->update([
                 'contenido' => $validatedData['contenido'],
+                'updated_at' => now(), // Forzar actualización de fecha
             ]);
 
             return response()->json([

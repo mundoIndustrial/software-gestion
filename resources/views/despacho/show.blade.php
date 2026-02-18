@@ -1,4 +1,4 @@
-@extends('layouts.app-without-sidebar')
+@extends('layouts.despacho-standalone')
 
 @section('title', "Despacho - Pedido {$pedido->numero_pedido}")
 
@@ -496,54 +496,77 @@ function cerrarModalFactura() {
  * Generar HTML de la factura - IGUAL QUE EN ASESORES
  */
 function generarHTMLFactura(datos) {
+    // DEBUG: Ver estructura de datos
+    console.log('📋 [FACTURA] Estructura completa:', datos);
+    console.log('📋 [FACTURA] Prendas:', datos.prendas);
+    if (datos.prendas && datos.prendas[0]) {
+        console.log('📋 [FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log('📋 [FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log('📋 [FACTURA] Variantes:', datos.prendas[0].variantes);
+    }
+    
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
         return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
     // Generar las tarjetas de prendas
     const prendasHTML = datos.prendas.map((prenda, idx) => {
-        // Variantes tabla
+        // Usar TALLAS en lugar de variantes
         let variantesHTML = '';
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // Verificar qué columnas tienen datos
-            const tieneManga = prenda.variantes.some(v => v.manga);
-            const tieneBroche = prenda.variantes.some(v => v.broche);
-            const tieneBolsillos = prenda.variantes.some(v => v.bolsillos);
-            
+        if (prenda.descripcion && prenda.descripcion.tallas && Array.isArray(prenda.descripcion.tallas) && prenda.descripcion.tallas.length > 0) {
             variantesHTML = `
                 <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                             <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                             <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
-                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
-                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prenda.descripcion.tallas.map((talla_item, varIdx) => `
+                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
+            // Fallback por si vienen directamente en tallas
+            variantesHTML = `
+                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prenda.tallas.map((talla_item, varIdx) => `
+                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            // Fallback por si vienen como variantes
+            variantesHTML = `
+                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${prenda.variantes.map((var_item, varIdx) => `
                             <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
-                                ${tieneManga ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
-                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
-                                ${tieneBroche ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
-                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
-                                ${tieneBolsillos ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
-                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad || 0}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -737,20 +760,20 @@ function generarHTMLFactura(datos) {
 function imprimirTablaVacia() {
     // Construir tabla HTML con 11 columnas para impresión
     let tablaHTML = `
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+        <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
+            <thead style="background: #f1f5f9; border-bottom: 2px solid #000;">
                 <tr>
-                    <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0;">Descripción</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Género</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 50px;">Talla</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Cantidad</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 1</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 2</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 70px;">Parcial 3</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #000;">Descripción</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Género</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 50px;">Talla</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Cantidad</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 1</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 2</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 70px;">Parcial 3</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
                 </tr>
             </thead>
             <tbody>
@@ -771,7 +794,7 @@ function imprimirTablaVacia() {
             const nombreSeccion = tipo === 'prenda' ? 'Prendas' : 'EPP';
             tablaHTML += `
                 <tr style="background: #f1f5f9;">
-                    <td colspan="11" style="padding: 8px 4px; font-weight: 600; font-size: 11px; border: 1px solid #e2e8f0;">${nombreSeccion}</td>
+                    <td colspan="11" style="padding: 8px 4px; font-weight: 600; font-size: 11px; border: 1px solid #000;">${nombreSeccion}</td>
                 </tr>
             `;
             ultimoTipo = tipo;
@@ -811,18 +834,18 @@ function imprimirTablaVacia() {
 
             // Primera fila con descripción y género
             tablaHTML += `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 8px 4px; font-size: 10px; border: 1px solid #e2e8f0;" rowspan="${rowspan}">${descripcion}</td>
-                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;" rowspan="${rowspan}">${genero}</td>
-                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;">${talla}</td>
-                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #e2e8f0;">${cantidad}</td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                <tr style="border-bottom: 1px solid #000;">
+                    <td style="padding: 8px 4px; font-size: 10px; border: 1px solid #000;" rowspan="${rowspan}">${descripcion}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;" rowspan="${rowspan}">${genero}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${talla}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${cantidad}</td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
                 </tr>
             `;
         } else {
@@ -836,16 +859,16 @@ function imprimirTablaVacia() {
             const cantidad = cloneCantidad.textContent.trim() || '0';
 
             tablaHTML += `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #e2e8f0;">${talla}</td>
-                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #e2e8f0;">${cantidad}</td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
-                    <td style="padding: 4px; border: 1px solid #e2e8f0;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                <tr style="border-bottom: 1px solid #000;">
+                    <td style="padding: 8px 4px; text-align: center; font-size: 10px; border: 1px solid #000;">${talla}</td>
+                    <td style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 10px; border: 1px solid #000;">${cantidad}</td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
+                    <td style="padding: 4px; border: 1px solid #000;"><input type="text" style="width: 100%; border: none; text-align: center; font-size: 10px; padding: 2px;"></td>
                 </tr>
             `;
         }
@@ -868,7 +891,7 @@ function imprimirTablaVacia() {
             <style>
                 @page { 
                     margin: 5mm; 
-                    size: letter landscape; 
+                    size: letter portrait; 
                 }
                 * { 
                     margin: 0; 
@@ -921,19 +944,24 @@ function imprimirTablaVacia() {
             </style>
         </head>
         <body>
-            <div style="text-align: right; font-size: 10px; color: #666; margin-bottom: 10px;">
-                <strong>Fecha de impresión:</strong> ` + new Date().toLocaleString('es-CO', { 
-                    year: 'numeric', 
-                    month: '2-digit', 
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                }) + `
-            </div>
-            <h2>Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
-            <p>Cliente: {{ $pedido->cliente ?? '—' }}</p>
-            ` + tablaHTML + `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 20px; border: 3px solid #000; border-radius: 10px; background: #f9fafb;">
+                <div style="text-align: left;">
+                    <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: bold; color: #000;">Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
+                    <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? '—' }}</p>
+                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creación:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin: 0; font-size: 11px; color: #666;"><strong>Fecha de impresión:</strong></p>
+                    <p style="margin: 0; font-size: 10px; color: #666;">` + new Date().toLocaleString('es-CO', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    }) + `</p>
+                </div>
+            </div>` + tablaHTML + `
             <script>
                 window.print();
                 window.onafterprint = function() { window.close(); };

@@ -133,6 +133,83 @@ class EppController extends Controller
     }
 
     /**
+     * GET /api/epp/gestion
+     * 
+     * Endpoint simplificado para vista de gestión (incluye relación con categoría)
+     */
+    public function indexSimple(Request $request): JsonResponse
+    {
+        try {
+            $termino = $request->query('q');
+            $categoria = $request->query('categoria');
+            $page = $request->query('page', 1);
+            $perPage = $request->query('per_page', 20);
+
+            // Query simple sin relaciones para evitar errores
+            $query = Epp::query();
+
+            // Búsqueda
+            if ($termino) {
+                $query->where(function($q) use ($termino) {
+                    $q->where('nombre_completo', 'LIKE', "%{$termino}%")
+                      ->orWhere('marca', 'LIKE', "%{$termino}%");
+                });
+            }
+
+            // Filtro por categoría
+            if ($categoria) {
+                $query->where('categoria_id', $categoria);
+            }
+
+            // Filtro por activos (por defecto)
+            if (!$request->has('mostrar_inactivos')) {
+                $query->where('activo', 1);
+            }
+
+            // Paginación
+            $total = $query->count();
+            $epps = $query->offset(($page - 1) * $perPage)
+                          ->limit($perPage)
+                          ->orderBy('nombre_completo')
+                          ->get();
+
+            \Log::info('[EppController] indexSimple - Resultados', [
+                'total' => $total,
+                'epps_count' => $epps->count(),
+                'page' => $page,
+                'per_page' => $perPage,
+                'termino' => $termino,
+                'categoria' => $categoria,
+                'primer_epp' => $epps->first() ? $epps->first()->toArray() : null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $epps,
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[EppController] Error en indexSimple:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar EPPs: ' . $e->getMessage(),
+                'debug_info' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            ], 500);
+        }
+    }
+
+    /**
      * POST /api/epp
      * 
      * Crear nuevo EPP
@@ -214,7 +291,7 @@ class EppController extends Controller
             \Log::info('[EppController::crearEppSimple] Datos validados:', $validated);
 
             // Obtener otros parámetros opcionales
-            $categoria_id = $request->input('categoria_id', 19);
+            $categoria_id = $request->input('categoria_id', null);
             $tipo = $request->input('tipo', 'PRODUCTO');
             $activo = filter_var($request->input('activo', true), FILTER_VALIDATE_BOOLEAN);
 
@@ -303,6 +380,37 @@ class EppController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener categorías',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/epp/categorias/simple
+     * 
+     * Obtener todas las categorías (método simplificado)
+     */
+    public function categoriasSimple(): JsonResponse
+    {
+        try {
+            $categorias = \App\Models\EppCategoria::where('activo', true)
+                ->orderBy('nombre')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $categorias,
+                'total' => $categorias->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[EppController] Error en categoriasSimple:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener categorías: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -841,6 +949,173 @@ class EppController extends Controller
                 'success' => false,
                 'message' => 'Error al buscar EPPs',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * PUT /api/epp/{id}
+     * 
+     * Actualizar EPP existente
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        try {
+            $epp = Epp::findOrFail($id);
+
+            $validated = $request->validate([
+                'nombre_completo' => 'required|string|max:500',
+                'marca' => 'nullable|string|max:100',
+                'tipo' => 'required|in:PRODUCTO,SERVICIO',
+                'talla' => 'nullable|string|max:100',
+                'color' => 'nullable|string|max:100',
+                'categoria_id' => 'nullable|integer|exists:epp_categorias,id',
+                'descripcion' => 'nullable|string',
+                'activo' => 'required|boolean',
+            ]);
+
+            $epp->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'EPP actualizado exitosamente',
+                'data' => $epp,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'EPP no encontrado',
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('[EppController] Error actualizando EPP:', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar EPP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/epp/{id}
+     * 
+     * Eliminar EPP (soft delete)
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            $epp = Epp::findOrFail($id);
+            
+            // Soft delete
+            $epp->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'EPP eliminado exitosamente',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'EPP no encontrado',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('[EppController] Error eliminando EPP:', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar EPP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/epp/{id}/actualizar
+     * 
+     * Endpoint alternativo para actualizar (compatibilidad con frontend)
+     */
+    public function actualizarDirecto(Request $request, int $id): JsonResponse
+    {
+        return $this->update($request, $id);
+    }
+
+    /**
+     * POST /api/epp/{id}/eliminar
+     * 
+     * Endpoint alternativo para eliminar (compatibilidad con frontend)
+     */
+    public function eliminarDirecto(int $id): JsonResponse
+    {
+        return $this->destroy($id);
+    }
+
+    /**
+     * GET /epp
+     * 
+     * Vista de gestión completa de EPPs
+     */
+    public function vistaGestion()
+    {
+        try {
+            \Log::info('[EppController] Accediendo a vistaGestion SIN middleware');
+            
+            // Probar a cargar datos para verificar que funciona
+            $epps = \App\Models\Epp::limit(5)->get();
+            \Log::info('[EppController] EPPs cargados:', ['count' => $epps->count()]);
+            
+            return view('epp.index');
+        } catch (\Exception $e) {
+            \Log::error('[EppController] Error en vistaGestion:', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Devolver vista simple con mensaje de error
+            return view('epp.index')->with('error', 'Error cargando la vista: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /epp/test
+     * 
+     * Método de prueba para depuración
+     */
+    public function test()
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'message' => 'EPP Controller funciona correctamente',
+                'epp_count' => \App\Models\Epp::count(),
+                'epp_sample' => \App\Models\Epp::limit(3)->get()->toArray(),
+                'routes' => [
+                    'epp' => route('epp.gestion'),
+                    'epp_test' => route('epp.test')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ], 500);
         }
     }

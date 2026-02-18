@@ -2543,6 +2543,18 @@ require __DIR__.'/despacho.php';
 require __DIR__.'/bodega.php';
 
 // ========================================
+// RUTAS DE EPP (GESTIÓN COMPLETA)
+// ========================================
+Route::prefix('epp')->name('epp.')->group(function () {
+    Route::get('/', [App\Infrastructure\Http\Controllers\Epp\EppController::class, 'vistaGestion'])
+        ->name('gestion');
+    
+    // Ruta de prueba
+    Route::get('/test', [App\Infrastructure\Http\Controllers\Epp\EppController::class, 'test'])
+        ->name('test');
+});
+
+// ========================================
 
 // ========================================
 // RUTAS WEB PARA ACTIVACIÓN DE RECIBOS (JSON)

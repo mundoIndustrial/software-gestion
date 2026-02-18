@@ -178,116 +178,6 @@ body[data-module="produccion"] .page-content {
 }
 </style>
 
-<script>
-/**
- * Logs de diagnóstico para detectar espacio de sidebar
- */
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 [DIAGNÓSTICO-SIDEBAR] Analizando espacio de sidebar...');
-    
-    // Verificar body y data attributes
-    const body = document.body;
-    console.log(`📄 [DIAGNÓSTICO-SIDEBAR] Body:`, {
-        module: body.getAttribute('data-module'),
-        className: body.className,
-        computedWidth: window.getComputedStyle(body).width,
-        computedMargin: window.getComputedStyle(body).margin,
-        computedPadding: window.getComputedStyle(body).padding
-    });
-    
-    // Verificar app-container
-    const appContainer = document.querySelector('.app-container');
-    if (appContainer) {
-        const appStyle = window.getComputedStyle(appContainer);
-        console.log(`📦 [DIAGNÓSTICO-SIDEBAR] App container:`, {
-            width: appContainer.width,
-            computedWidth: appStyle.width,
-            computedMargin: appStyle.margin,
-            computedPadding: appStyle.padding,
-            computedDisplay: appStyle.display,
-            computedFlexDirection: appStyle.flexDirection
-        });
-    }
-    
-    // Verificar main-content
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent) {
-        const mainStyle = window.getComputedStyle(mainContent);
-        console.log(`🏠 [DIAGNÓSTICO-SIDEBAR] Main content:`, {
-            width: mainContent.offsetWidth,
-            computedWidth: mainStyle.width,
-            computedMargin: mainStyle.margin,
-            computedPadding: mainStyle.padding,
-            computedDisplay: mainStyle.display,
-            computedFlex: mainStyle.flex
-        });
-    }
-    
-    // Verificar page-content
-    const pageContent = document.querySelector('.page-content');
-    if (pageContent) {
-        const pageStyle = window.getComputedStyle(pageContent);
-        console.log(`📄 [DIAGNÓSTICO-SIDEBAR] Page content:`, {
-            width: pageContent.offsetWidth,
-            computedWidth: pageStyle.width,
-            computedMargin: pageStyle.margin,
-            computedPadding: pageStyle.padding,
-            computedPaddingLeft: pageStyle.paddingLeft,
-            computedPaddingRight: pageStyle.paddingRight,
-            computedDisplay: pageStyle.display
-        });
-    }
-    
-    // Verificar si hay elementos de sidebar ocultos
-    const sidebarElements = document.querySelectorAll('[class*="sidebar"], [class*="menu"], [id*="sidebar"], [id*="menu"]');
-    console.log(`🔍 [DIAGNÓSTICO-SIDEBAR] Elementos de sidebar encontrados:`, sidebarElements.length);
-    sidebarElements.forEach((el, index) => {
-        const style = window.getComputedStyle(el);
-        console.log(`  ${index + 1}. ${el.tagName}.${el.className}:`, {
-            display: style.display,
-            visibility: style.visibility,
-            width: style.width,
-            position: style.position
-        });
-    });
-    
-    // Verificar viewport vs contenido
-    const viewportWidth = window.innerWidth;
-    const pageContentWidth = pageContent ? pageContent.offsetWidth : 0;
-    const espacioOcupado = (pageContentWidth / viewportWidth) * 100;
-    
-    console.log(`📊 [DIAGNÓSTICO-SIDEBAR] Resumen de espacio:`, {
-        viewportWidth: viewportWidth,
-        pageContentWidth: pageContentWidth,
-        espacioOcupado: espacioOcupado.toFixed(2) + '%',
-        espacioNoOcupado: (100 - espacioOcupado).toFixed(2) + '%'
-    });
-    
-    // Detectar CSS rules que puedan afectar
-    setTimeout(() => {
-        const stylesheets = Array.from(document.styleSheets);
-        console.log(`🎨 [DIAGNÓSTICO-SIDEBAR] Analizando ${stylesheets.length} hojas de estilo...`);
-        
-        stylesheets.forEach((sheet, sheetIndex) => {
-            try {
-                const rules = Array.from(sheet.cssRules || sheet.rules || []);
-                rules.forEach((rule, ruleIndex) => {
-                    if (rule.selectorText) {
-                        const selector = rule.selectorText.toLowerCase();
-                        if (selector.includes('sidebar') || selector.includes('main-content') || selector.includes('page-content')) {
-                            console.log(`  📋 Hoja ${sheetIndex}, Regla ${ruleIndex}: ${rule.selectorText}`);
-                        }
-                    }
-                });
-            } catch (e) {
-                console.log(`  ⚠️ No se puede leer hoja ${sheetIndex}: ${e.message}`);
-            }
-        });
-    }, 1000);
-});
-</script>
-@endsection
-
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/top-nav.css') }}">
     <style>
@@ -298,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             width: 100% !important;
         }
 
+        /* Solo aplicar estos estilos si realmente hay un .container */
         .container {
             display: flex;
             width: 100vw !important;
@@ -323,9 +214,21 @@ document.addEventListener('DOMContentLoaded', function() {
             max-width: 100% !important;
         }
 
+        /* Evitar conflictos con tablas - NO forzar estilos en .main-content */
         .main-content {
-            margin: 0 !important;
-            padding: 0 !important;
+            margin: initial !important;
+            padding: initial !important;
+        }
+        
+        /* Asegurar que las tablas no se vean afectadas */
+        table {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        th, td {
+            visibility: visible !important;
+            opacity: 1 !important;
         }
     </style>
 @endpush

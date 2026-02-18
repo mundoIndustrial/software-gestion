@@ -71,6 +71,78 @@ if (typeof window.abrirModalNotas !== 'function') {
     };
 }
 
+// Funciones globales para modales
+window.mostrarAlerta = function(titulo, mensaje, tipo = 'info') {
+    const modal = document.getElementById('modalAlerta');
+    const header = document.getElementById('alertaHeader');
+    const tituloEl = document.getElementById('alertaTitulo');
+    const icono = document.getElementById('alertaIcono');
+    const mensajeEl = document.getElementById('alertaMensaje');
+    
+    // Configurar según tipo
+    const configuraciones = {
+        success: {
+            bgColor: 'bg-green-600',
+            borderColor: 'border-green-200',
+            icono: 'check_circle'
+        },
+        error: {
+            bgColor: 'bg-red-600',
+            borderColor: 'border-red-200',
+            icono: 'error'
+        },
+        warning: {
+            bgColor: 'bg-orange-600',
+            borderColor: 'border-orange-200',
+            icono: 'warning'
+        },
+        info: {
+            bgColor: 'bg-blue-600',
+            borderColor: 'border-blue-200',
+            icono: 'info'
+        }
+    };
+    
+    const config = configuraciones[tipo] || configuraciones.info;
+    
+    // Aplicar configuración
+    header.className = `${config.bgColor} px-6 py-4 border-b ${config.borderColor}`;
+    tituloEl.innerHTML = `<span class="material-symbols-rounded">${config.icono}</span>${titulo}`;
+    mensajeEl.textContent = mensaje;
+    
+    // Mostrar modal
+    modal.classList.remove('hidden');
+};
+
+window.cerrarModalAlerta = function() {
+    const modal = document.getElementById('modalAlerta');
+    modal.classList.add('hidden');
+};
+
+window.cerrarModalConfirmarEliminar = function() {
+    const modal = document.getElementById('modalConfirmarEliminar');
+    modal.classList.add('hidden');
+};
+
+// Función para confirmar eliminación
+window.confirmarEliminarNota = function(callback) {
+    const modal = document.getElementById('modalConfirmarEliminar');
+    const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+    
+    // Limpiar eventos anteriores
+    const nuevoBtn = btnConfirmar.cloneNode(true);
+    btnConfirmar.parentNode.replaceChild(nuevoBtn, btnConfirmar);
+    
+    // Agregar nuevo evento
+    nuevoBtn.addEventListener('click', function() {
+        callback();
+        cerrarModalConfirmarEliminar();
+    });
+    
+    // Mostrar modal
+    modal.classList.remove('hidden');
+};
+
 if (typeof window.cargarNotas !== 'function') {
     window.cargarNotas = async function(numeroPedido, talla) {
         try {
@@ -138,16 +210,26 @@ if (typeof window.cargarNotas !== 'function') {
                     const puedeEditar = (String(nota.usuario_id) === String(window.usuarioActualId)) || (window.__usuarioEsAdmin === true);
                     const contenidoSeguro = String(nota.contenido ?? '').replace(/\\/g, '\\\\').replace(/`/g, '\\`');
                     const botones = puedeEditar ? `
-                        <button onclick="window.editarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Editar">✏️</button>
-                        <button onclick="window.eliminarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;" title="Eliminar">🗑️</button>
+                        <button onclick="window.editarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#e2e8f0;color:#0f172a;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;" title="Editar">
+                            <span class="material-symbols-rounded" style="font-size:14px;">edit</span>
+                        </button>
+                        <button onclick="window.eliminarNota(${nota.id}, '${numeroPedido}', '${talla}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;" title="Eliminar">
+                            <span class="material-symbols-rounded" style="font-size:14px;">delete</span>
+                        </button>
                     ` : '';
 
                     html += `
                         <div data-nota-id="${nota.id}" data-numero-pedido="${numeroPedido}" data-talla="${talla}" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;">
                             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-                                <div style="font-weight:700;color:#0f172a;font-size:13px;">${nota.usuario_nombre ?? ''}</div>
+                                <div>
+                                    <div style="font-weight:700;color:#0f172a;font-size:13px;">${nota.usuario_nombre ?? ''}</div>
+                                    ${nota.usuario_rol ? `<div style="font-size:11px;color:#64748b;font-weight:500;">${nota.usuario_rol}</div>` : ''}
+                                </div>
                                 <div style="display:flex;gap:10px;align-items:center;">
-                                    <div style="color:#64748b;font-size:12px;white-space:nowrap;">${nota.fecha_completa ?? ((nota.fecha ?? '') + ' ' + (nota.hora ?? ''))}</div>
+                                    <div style="color:#64748b;font-size:12px;white-space:nowrap;">
+                                        ${nota.fecha_completa ?? ((nota.fecha ?? '') + ' ' + (nota.hora ?? ''))}
+                                        ${nota.fue_editada ? '<span style="color:#059669;font-size:10px;margin-left:4px;">(editado)</span>' : ''}
+                                    </div>
                                     ${botones}
                                 </div>
                             </div>
@@ -155,7 +237,7 @@ if (typeof window.cargarNotas !== 'function') {
                         </div>
                     `;
 
-                    textAreaContent += `${nota.usuario_nombre ?? ''} - ${nota.contenido ?? ''}\n`;
+                    textAreaContent += `${nota.usuario_nombre ?? ''}${nota.usuario_rol ? ' (' + nota.usuario_rol + ')' : ''} - ${nota.contenido ?? ''}\n`;
                 });
                 html += '</div>';
                 if (historial && debeRenderizarHistorial) {
@@ -323,7 +405,7 @@ if (typeof window.editarNota !== 'function') {
         btnGuardar.addEventListener('click', async () => {
             const contenido = (textarea.value || '').trim();
             if (!contenido) {
-                alert('La nota no puede estar vacía');
+                mostrarAlerta('Error de Validación', 'La nota no puede estar vacía', 'warning');
                 textarea.focus();
                 return;
             }
@@ -344,7 +426,7 @@ if (typeof window.editarNota !== 'function') {
 
                 const data = await r.json().catch(() => null);
                 if (!r.ok || !data || data.success === false) {
-                    alert('Error: ' + (data?.message || 'No se pudo actualizar la nota'));
+                    mostrarAlerta('Error al Actualizar', 'Error: ' + (data?.message || 'No se pudo actualizar la nota'), 'error');
                     btnGuardar.disabled = false;
                     btnCancelar.disabled = false;
                     return;
@@ -355,7 +437,7 @@ if (typeof window.editarNota !== 'function') {
                 }
             } catch (err) {
                 console.error('Error editarNota:', err);
-                alert('Error al actualizar la nota');
+                mostrarAlerta('Error de Conexión', 'Error al actualizar la nota', 'error');
                 btnGuardar.disabled = false;
                 btnCancelar.disabled = false;
             }
@@ -365,19 +447,19 @@ if (typeof window.editarNota !== 'function') {
 
 if (typeof window.eliminarNota !== 'function') {
     window.eliminarNota = function(notaId, numeroPedido, talla) {
-        if (!confirm('¿Eliminar esta nota?')) return;
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        fetch(`/gestion-bodega/notas/${notaId}/eliminar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf,
-            }
-        })
+        confirmarEliminarNota(function() {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            fetch(`/gestion-bodega/notas/${notaId}/eliminar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                }
+            })
         .then(r => r.json())
         .then(data => {
             if (!data || data.success === false) {
-                alert('Error: ' + (data?.message || 'No se pudo eliminar la nota'));
+                mostrarAlerta('Error al Eliminar', 'Error: ' + (data?.message || 'No se pudo eliminar la nota'), 'error');
                 return;
             }
             if (typeof window.cargarNotas === 'function') {
@@ -386,7 +468,8 @@ if (typeof window.eliminarNota !== 'function') {
         })
         .catch(err => {
             console.error('Error eliminarNota:', err);
-            alert('Error al eliminar la nota');
+            mostrarAlerta('Error de Conexión', 'Error al eliminar la nota', 'error');
+        });
         });
     };
 }
@@ -447,7 +530,7 @@ if (typeof window.guardarNota !== 'function') {
             }
 
             if (!contenido) {
-                alert('Por favor, escribe una nota antes de guardar');
+                mostrarAlerta('Nota Vacía', 'Por favor, escribe una nota antes de guardar', 'warning');
                 return;
             }
 
@@ -468,7 +551,7 @@ if (typeof window.guardarNota !== 'function') {
 
             const data = await response.json().catch(() => null);
             if (!response.ok || !data || data.success === false) {
-                alert('Error: ' + ((data && data.message) ? data.message : 'No se pudo guardar la nota'));
+                mostrarAlerta('Error al Guardar', 'Error: ' + ((data && data.message) ? data.message : 'No se pudo guardar la nota'), 'error');
                 return;
             }
 
@@ -484,7 +567,7 @@ if (typeof window.guardarNota !== 'function') {
             }
         } catch (e) {
             console.error('Error en guardarNota fallback:', e);
-            alert('Error al guardar la nota: ' + (e.message || e));
+            mostrarAlerta('Error al Guardar', 'Error al guardar la nota: ' + (e.message || e), 'error');
         }
     };
 }
@@ -831,54 +914,72 @@ function cerrarModalFactura() {
  * Generar HTML de la factura
  */
 function generarHTMLFactura(datos) {
+    // DEBUG: Ver estructura de datos
+    console.log('📋 [BODEGA-FACTURA] Estructura completa:', datos);
+    console.log('📋 [BODEGA-FACTURA] Prendas:', datos.prendas);
+    if (datos.prendas && datos.prendas[0]) {
+        console.log('📋 [BODEGA-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log('📋 [BODEGA-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log('📋 [BODEGA-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log('📋 [BODEGA-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log('📋 [BODEGA-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log('📋 [BODEGA-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
+    }
+    
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
         return '<div style="color: #dc2626; padding: 1rem; border: 1px solid #fca5a5; border-radius: 6px; background: #fee2e2;"> Error: No se pudieron cargar las prendas del pedido.</div>';
     }
 
     // Generar las tarjetas de prendas
     const prendasHTML = datos.prendas.map((prenda, idx) => {
-        // Variantes tabla
+        // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
-        if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
-            // Verificar qué columnas tienen datos
-            const tieneManga = prenda.variantes.some(v => v.manga);
-            const tieneBroche = prenda.variantes.some(v => v.broche);
-            const tieneBolsillos = prenda.variantes.some(v => v.bolsillos);
+        if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
+            // Convertir objeto de géneros a array de tallas
+            let todasLasTallas = [];
+            Object.keys(prenda.tallas).forEach(genero => {
+                if (typeof prenda.tallas[genero] === 'object') {
+                    Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
+                        todasLasTallas.push({ talla, cantidad });
+                    });
+                }
+            });
             
+            if (todasLasTallas.length > 0) {
+                variantesHTML = `
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${todasLasTallas.map((talla_item, varIdx) => `
+                                <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                    <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
+            // Fallback por si vienen como variantes
             variantesHTML = `
                 <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                             <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
                             <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                            ${tieneManga ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Manga</th>` : ''}
-                            ${tieneBroche ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Botón/Broche</th>` : ''}
-                            ${tieneBolsillos ? `<th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Bolsillos</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
                         ${prenda.variantes.map((var_item, varIdx) => `
                             <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad}</td>
-                                ${tieneManga ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.manga ? `<strong>${var_item.manga}</strong>` : '—'}
-                                        ${var_item.manga_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.manga_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
-                                ${tieneBroche ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.broche ? `<strong>${var_item.broche}</strong>` : '—'}
-                                        ${var_item.broche_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.broche_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
-                                ${tieneBolsillos ? `
-                                    <td style="padding: 6px 8px; color: #6b7280; font-size: 11px;">
-                                        ${var_item.bolsillos ? `<strong>Sí</strong>` : '—'}
-                                        ${var_item.bolsillos_obs ? `<br><em style="color: #9ca3af; font-size: 10px;">${var_item.bolsillos_obs}</em>` : ''}
-                                    </td>
-                                ` : ''}
+                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${var_item.talla || 'N/A'}</td>
+                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${var_item.cantidad || 0}</td>
                             </tr>
                         `).join('')}
                     </tbody>
