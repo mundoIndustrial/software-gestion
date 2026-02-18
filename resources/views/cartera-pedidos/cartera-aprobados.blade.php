@@ -378,7 +378,7 @@
             <!-- ESTADO VACÍO -->
             <div id="emptyState" class="empty-state-cartera" style="display: none;">
                 <span class="material-symbols-rounded">check_circle</span>
-                <p>No hay pedidos aprobados</p>
+                <p>No hay pedidos aprobados por cartera</p>
             </div>
 
             <!-- ESTADO DE CARGA -->

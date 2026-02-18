@@ -383,11 +383,12 @@ class CarteraPedidosController extends Controller
             $perPage = max(1, min($perPage, 100));
             $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
             
-            // Estados de aprobados
-            $estadosAprobados = ['PENDIENTE_SUPERVISOR'];
+            // Estados permitidos para mostrar
+            $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
             
-            // Construir query
-            $query = PedidoProduccion::whereIn('estado', $estadosAprobados);
+            // Construir query: pedidos aprobados por cartera con estados permitidos
+            $query = PedidoProduccion::whereNotNull('aprobado_por_cartera_en')
+                                   ->whereIn('estado', $estadosPermitidos);
             
             // Aplicar búsqueda general
             if (!empty($search)) {
