@@ -265,4 +265,42 @@ class DespachoEstadoService
 
         return $resultados;
     }
+
+    /**
+     * Determinar el estado de entrega de un pedido
+     * 
+     * @param int $pedidoId
+     * @return string 'sin_entregar'|'parcial'|'completo'
+     */
+    public function obtenerEstadoEntrega(int $pedidoId): string
+    {
+        try {
+            $despachos = DesparChoParcialesModel::where('pedido_id', $pedidoId)
+                ->activo()
+                ->get();
+
+            if ($despachos->isEmpty()) {
+                return 'sin_entregar';
+            }
+
+            $entregados = $despachos->where('entregado', true)->count();
+            $total = $despachos->count();
+
+            if ($entregados === 0) {
+                return 'sin_entregar';
+            } elseif ($entregados === $total) {
+                return 'completo';
+            } else {
+                return 'parcial';
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error al obtener estado de entrega', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return 'sin_entregar';
+        }
+    }
 }

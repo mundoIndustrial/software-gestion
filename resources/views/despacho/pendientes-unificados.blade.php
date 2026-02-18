@@ -582,7 +582,7 @@ async function cargarPedidos() {
         const params = new URLSearchParams();
         if (searchActual) params.append('search', searchActual);
         
-        const response = await fetch(`/despacho/api/pendientes-todos?${params}`);
+        const response = await fetch(`/despacho/api/todos-pedidos?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -609,8 +609,17 @@ function renderizarPedidos(pedidos) {
         return;
     }
     
-    container.innerHTML = pedidos.map(pedido => `
-        <div class="table-row">
+    container.innerHTML = pedidos.map(pedido => {
+        // Determinar clase de color según estado de entrega
+        let colorClass = '';
+        if (pedido.estado_entrega === 'completo') {
+            colorClass = 'bg-blue-100';
+        } else if (pedido.estado_entrega === 'parcial') {
+            colorClass = 'bg-yellow-100';
+        }
+        
+        return `
+        <div class="table-row ${colorClass}">
             <div>
                 <a href="/despacho/pendientes/${pedido.id}" 
                    class="btn-action btn-primary">
@@ -633,7 +642,8 @@ function renderizarPedidos(pedidos) {
                 ${pedido.fecha_creacion}
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function getEstadoClass(estado) {

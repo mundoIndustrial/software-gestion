@@ -89,7 +89,11 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidos as $pedido)
-                                <tr class="hover:bg-slate-50 transition-colors" data-pedido-id="{{ $pedido->id }}">
+                                <tr class="hover:bg-slate-50 transition-colors 
+                                    @if($pedido->estado_entrega === 'completo') bg-blue-100
+                                    @elseif($pedido->estado_entrega === 'parcial') bg-yellow-100
+                                    @endif" 
+                                    data-pedido-id="{{ $pedido->id }}">
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('despacho.show', $pedido->id) }}"
                                            class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">

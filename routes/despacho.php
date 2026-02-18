@@ -114,6 +114,10 @@ Route::prefix('despacho')
         Route::get('/api/pendientes-todos', [DespachoController::class, 'obtenerPendientesUnificados'])
             ->name('despacho.api.pendientes-todos');
 
+        // API para obtener todos los pedidos con estados solicitados
+        Route::get('/api/todos-pedidos', [DespachoController::class, 'obtenerTodosLosPedidos'])
+            ->name('despacho.api.todos-pedidos');
+
         // Mostrar detalles de pedido pendiente (unificado)
         Route::get('/pendientes/{id}', [DespachoController::class, 'showPendienteUnificado'])
             ->name('despacho.pendientes-show')

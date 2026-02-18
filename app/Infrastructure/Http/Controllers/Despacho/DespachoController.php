@@ -13,6 +13,7 @@ use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use App\Application\Bodega\Services\BodegaPedidoService;
+use App\Domain\Pedidos\Despacho\Services\DespachoEstadoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,7 @@ class DespachoController extends Controller
         private GuardarDespachoUseCase $guardarDespacho,
         private PedidoProduccionRepository $pedidoRepository,
         private BodegaPedidoService $bodegaPedidoService,
+        private DespachoEstadoService $despachoEstadoService,
     ) {}
 
     /**
@@ -38,7 +40,7 @@ class DespachoController extends Controller
         $search = $request->input('search', '');
         
         $query = PedidoProduccion::query()
-            ->whereIn('estado', ['En Ejecución', 'Entregado', 'Pendiente', 'PENDIENTE_SUPERVISOR'])
+            ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
             ->orderByDesc('created_at');
         
         if ($search) {
@@ -49,6 +51,12 @@ class DespachoController extends Controller
         }
         
         $pedidos = $query->paginate(20)->withQueryString();
+        
+        // Agregar estado de entrega a cada pedido
+        $pedidos->getCollection()->transform(function ($pedido) {
+            $pedido->estado_entrega = $this->despachoEstadoService->obtenerEstadoEntrega($pedido->id);
+            return $pedido;
+        });
         
         return view('despacho.index', compact('pedidos', 'search'));
     }
@@ -696,6 +704,49 @@ class DespachoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener pendientes unificados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API para obtener todos los pedidos con estados solicitados
+     */
+    public function obtenerTodosLosPedidos(Request $request)
+    {
+        try {
+            $search = $request->query('search', '');
+            
+            $query = PedidoProduccion::query()
+                ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
+                ->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '')
+                ->orderByDesc('created_at');
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('numero_pedido', 'like', "%{$search}%")
+                      ->orWhere('cliente', 'like', "%{$search}%");
+                });
+            }
+            
+            $pedidos = $query->get();
+            
+            // Agregar estado de entrega a cada pedido
+            $pedidos->transform(function ($pedido) {
+                $pedido->estado_entrega = $this->despachoEstadoService->obtenerEstadoEntrega($pedido->id);
+                $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—';
+                return $pedido;
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedidos,
+                'total' => $pedidos->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos: ' . $e->getMessage()
             ], 500);
         }
     }
