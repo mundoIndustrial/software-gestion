@@ -975,7 +975,7 @@ class BodegaPedidoService
     /**
      * Registrar la entrega de una prenda cuando un pedido cambia a estado 'Entregado'
      */
-    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId): EntregaPrenda
+    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId): \App\Models\BodegaDetallesTalla
     {
         try {
             return app(EntregaService::class)->registrarEntregaPrenda($datosPrenda, $pedidoProduccionId);

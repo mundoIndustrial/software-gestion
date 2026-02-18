@@ -2,8 +2,9 @@
 
 namespace App\Application\Services;
 
-use App\Models\EntregaPrenda;
+use App\Models\BodegaDetallesTalla;
 use App\Models\PedidoProduccion;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +13,7 @@ class EntregaService
     /**
      * Registrar la entrega de una prenda cuando un pedido cambia a estado 'Entregado'
      */
-    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId): EntregaPrenda
+    public function registrarEntregaPrenda(array $datosPrenda, int $pedidoProduccionId): BodegaDetallesTalla
     {
         try {
             // Obtener información del pedido
@@ -21,20 +22,21 @@ class EntregaService
                 throw new \Exception("Pedido no encontrado con ID: {$pedidoProduccionId}");
             }
             
-            // Registrar la entrega
-            $entrega = EntregaPrenda::create([
+            // Registrar la entrega en bodega_detalles_talla
+            $entrega = BodegaDetallesTalla::create([
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'numero_pedido' => $pedido->numero_pedido,
                 'prenda_nombre' => $datosPrenda['prenda_nombre'] ?? '',
                 'talla' => $datosPrenda['talla'] ?? '',
                 'cantidad' => $datosPrenda['cantidad'] ?? 0,
-                'cliente' => $pedido->cliente ?? '',
                 'asesor' => $datosPrenda['asesor'] ?? '',
-                'fecha_entrega' => now()->format('Y-m-d'),
-                'hora_entrega' => now()->format('H:i:s'),
-                'usuario_entrega_id' => auth()->id(),
-                'usuario_entrega_nombre' => auth()->user()->name ?? '',
-                'observaciones_entrega' => $datosPrenda['observaciones_entrega'] ?? null,
+                'empresa' => $pedido->cliente ?? '',
+                'fecha_pedido' => $pedido->created_at ?? now(),
+                'fecha_entrega' => now(),
+                'estado_bodega' => 'Entregado',
+                'usuario_bodega_id' => auth()->id(),
+                'usuario_bodega_nombre' => auth()->user()->name ?? '',
+                'observaciones_bodega' => $datosPrenda['observaciones_entrega'] ?? 'Entregado desde bodega',
             ]);
             
             \Log::info('[ENTREGA] Entrega de prenda registrada', [
@@ -45,8 +47,8 @@ class EntregaService
                 'cantidad' => $datosPrenda['cantidad'],
                 'cliente' => $pedido->cliente,
                 'usuario' => auth()->user()->name,
-                'fecha_entrega' => $entrega->fecha_entrega->format('Y-m-d'),
-                'hora_entrega' => $entrega->hora_entrega,
+                'fecha_entrega' => $entrega->fecha_entrega->format('Y-m-d H:i:s'),
+                'estado_bodega' => $entrega->estado_bodega,
             ]);
             
             return $entrega;
