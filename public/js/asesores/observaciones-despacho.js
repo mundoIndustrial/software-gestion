@@ -213,16 +213,17 @@
             });
             const data = await r.json().catch(() => null);
             if (!r.ok || !data || data.success === false) {
-                alert('Error: ' + (data?.message || 'No se pudo guardar la observación'));
+                mostrarNotificacion(data?.message || 'No se pudo guardar la observación', 'error');
                 return;
             }
 
+            mostrarNotificacion('Observación guardada exitosamente', 'success');
             if (textarea) textarea.value = '';
             await cargarObservacionesDespachoAsesores();
             cerrarModalObservacionesDespachoAsesores();
         } catch (e) {
             console.error('Error guardando observación despacho asesores:', e);
-            alert('Error al guardar la observación');
+            mostrarNotificacion('Error al guardar la observación', 'error');
         } finally {
             if (btn) btn.disabled = false;
         }
@@ -342,30 +343,165 @@
         });
     }
 
+    // ==================== MODALES PERSONALIZADOS ====================
+    function mostrarModalConfirmacion(titulo, mensaje, onConfirmar, onCancelar) {
+        const modalId = 'modalConfirmacionAsesores';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; font-family: system-ui, -apple-system, sans-serif;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #ffffff; border-radius: 16px; padding: 28px 32px;
+                max-width: 400px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+                animation: modalSlideIn 0.2s ease-out;
+            ">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                    <div style="
+                        width: 44px; height: 44px; border-radius: 12px;
+                        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                        display: flex; align-items: center; justify-content: center;
+                    ">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #0f172a;">${titulo}</h3>
+                </div>
+                <p style="margin: 0 0 24px 0; font-size: 14px; color: #475569; line-height: 1.6; padding-left: 56px;">${mensaje}</p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-left: 56px;">
+                    <button id="btnCancelarModal" style="
+                        padding: 10px 18px; border: 1px solid #e2e8f0; border-radius: 10px;
+                        background: #f8fafc; color: #475569; font-size: 14px; font-weight: 500;
+                        cursor: pointer; transition: all 0.15s;
+                    ">Cancelar</button>
+                    <button id="btnConfirmarModal" style="
+                        padding: 10px 18px; border: none; border-radius: 10px;
+                        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                        color: #fff; font-size: 14px; font-weight: 500;
+                        cursor: pointer; transition: all 0.15s; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+                    ">Eliminar</button>
+                </div>
+            </div>
+            <style>@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }</style>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                if (onCancelar) onCancelar();
+            }
+        });
+
+        document.getElementById('btnCancelarModal').addEventListener('click', () => {
+            modal.remove();
+            if (onCancelar) onCancelar();
+        });
+
+        document.getElementById('btnConfirmarModal').addEventListener('click', () => {
+            modal.remove();
+            if (onConfirmar) onConfirmar();
+        });
+    }
+
+    function mostrarNotificacion(mensaje, tipo = 'success', duracion = 3000) {
+        const notifId = 'notificacionAsesores' + Date.now();
+        const notif = document.createElement('div');
+        notif.id = notifId;
+
+        const colores = {
+            success: { bg: '#10b981', icon: '#22c55e', shadow: 'rgba(16, 185, 129, 0.3)' },
+            error: { bg: '#dc2626', icon: '#ef4444', shadow: 'rgba(220, 38, 38, 0.3)' },
+            warning: { bg: '#f59e0b', icon: '#fbbf24', shadow: 'rgba(245, 158, 11, 0.3)' }
+        };
+        const c = colores[tipo] || colores.success;
+
+        const iconos = {
+            success: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+            error: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+            warning: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`
+        };
+
+        notif.style.cssText = `
+            position: fixed; top: 24px; right: 24px;
+            background: white; border-radius: 12px; padding: 16px 20px;
+            box-shadow: 0 20px 25px -5px ${c.shadow}, 0 10px 10px -5px rgba(0,0,0,0.04);
+            display: flex; align-items: center; gap: 14px;
+            z-index: 10000; min-width: 300px; max-width: 400px;
+            border-left: 4px solid ${c.icon};
+            animation: notifSlideIn 0.3s ease-out;
+            font-family: system-ui, -apple-system, sans-serif;
+        `;
+
+        notif.innerHTML = `
+            <div style="
+                width: 36px; height: 36px; border-radius: 10px;
+                background: ${c.bg}; display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+            ">${iconos[tipo]}</div>
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 14px; font-weight: 500; color: #0f172a;">${tipo === 'success' ? 'Éxito' : tipo === 'error' ? 'Error' : 'Atención'}</p>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">${mensaje}</p>
+            </div>
+            <button id="btnCerrarNotif" style="
+                background: none; border: none; padding: 4px; cursor: pointer;
+                color: #94a3b8; transition: color 0.15s;
+            ">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <style>@keyframes notifSlideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }</style>
+        `;
+
+        document.body.appendChild(notif);
+
+        const cerrar = () => {
+            notif.style.animation = 'notifSlideIn 0.2s ease-out reverse';
+            setTimeout(() => notif.remove(), 200);
+        };
+
+        document.getElementById('btnCerrarNotif').addEventListener('click', cerrar);
+        setTimeout(cerrar, duracion);
+    }
+
     async function eliminarObservacionDespachoAsesores(observacionId) {
         const pedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
         if (!pedidoId) return;
-        if (!confirm('¿Eliminar esta observación?')) return;
 
-        try {
-            const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/eliminar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': __csrfToken(),
-                },
-            });
-            const data = await r.json().catch(() => null);
-            if (!r.ok || !data || data.success === false) {
-                alert('Error: ' + (data?.message || 'No se pudo eliminar la observación'));
-                return;
+        mostrarModalConfirmacion(
+            'Eliminar observación',
+            '¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.',
+            async () => {
+                try {
+                    const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/${observacionId}/eliminar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': __csrfToken(),
+                        },
+                    });
+                    const data = await r.json().catch(() => null);
+                    if (!r.ok || !data || data.success === false) {
+                        mostrarNotificacion(data?.message || 'No se pudo eliminar la observación', 'error');
+                        return;
+                    }
+                    mostrarNotificacion('Observación eliminada correctamente', 'success');
+                    await cargarObservacionesDespachoAsesores();
+                } catch (e) {
+                    console.error('Error eliminando observación despacho asesores:', e);
+                    mostrarNotificacion('Error al eliminar la observación', 'error');
+                }
             }
-
-            await cargarObservacionesDespachoAsesores();
-        } catch (e) {
-            console.error('Error eliminando observación despacho asesores:', e);
-            alert('Error al eliminar la observación');
-        }
+        );
     }
 
     window.abrirModalObservacionesDespachoAsesores = abrirModalObservacionesDespachoAsesores;

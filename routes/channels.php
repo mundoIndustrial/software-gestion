@@ -90,3 +90,10 @@ Broadcast::channel('despacho.observaciones', function ($user) {
 Broadcast::channel('asesores.observaciones', function ($user) {
     return true; // Canal público
 });
+
+/**
+ * Canal público para ordenes - nuevos pedidos aprobados
+ */
+Broadcast::channel('ordenes', function ($user) {
+    return true; // Canal público
+});

@@ -229,15 +229,16 @@
             });
             const data = await r.json().catch(() => null);
             if (!r.ok || !data || data.success === false) {
-                alert('Error: ' + (data?.message || 'No se pudo guardar la observación'));
+                mostrarNotificacion(data?.message || 'No se pudo guardar la observación', 'error');
                 return;
             }
+            mostrarNotificacion('Observación guardada exitosamente', 'success');
             if (textarea) textarea.value = '';
             await cargarObservacionesDespachoIndex();
             cerrarModalObservacionesDespachoIndex();
         } catch (e) {
             console.error('Error guardando observación despacho index:', e);
-            alert('Error al guardar la observación');
+            mostrarNotificacion('Error al guardar la observación', 'error');
         } finally {
             if (btn) btn.disabled = false;
         }
@@ -353,28 +354,164 @@
         });
     }
 
+    // ==================== MODALES PERSONALIZADOS ====================
+    function mostrarModalConfirmacion(titulo, mensaje, onConfirmar, onCancelar) {
+        const modalId = 'modalConfirmacionDespacho';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10001; font-family: system-ui, -apple-system, sans-serif;
+        `;
+
+        modal.innerHTML = `
+            <div style="
+                background: #ffffff; border-radius: 16px; padding: 28px 32px;
+                max-width: 400px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+                animation: modalSlideIn 0.2s ease-out;
+            ">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                    <div style="
+                        width: 44px; height: 44px; border-radius: 12px;
+                        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                        display: flex; align-items: center; justify-content: center;
+                    ">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #0f172a;">${titulo}</h3>
+                </div>
+                <p style="margin: 0 0 24px 0; font-size: 14px; color: #475569; line-height: 1.6; padding-left: 56px;">${mensaje}</p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-left: 56px;">
+                    <button id="btnCancelarModal" style="
+                        padding: 10px 18px; border: 1px solid #e2e8f0; border-radius: 10px;
+                        background: #f8fafc; color: #475569; font-size: 14px; font-weight: 500;
+                        cursor: pointer; transition: all 0.15s;
+                    ">Cancelar</button>
+                    <button id="btnConfirmarModal" style="
+                        padding: 10px 18px; border: none; border-radius: 10px;
+                        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                        color: #fff; font-size: 14px; font-weight: 500;
+                        cursor: pointer; transition: all 0.15s; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+                    ">Eliminar</button>
+                </div>
+            </div>
+            <style>@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }</style>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                if (onCancelar) onCancelar();
+            }
+        });
+
+        document.getElementById('btnCancelarModal').addEventListener('click', () => {
+            modal.remove();
+            if (onCancelar) onCancelar();
+        });
+
+        document.getElementById('btnConfirmarModal').addEventListener('click', () => {
+            modal.remove();
+            if (onConfirmar) onConfirmar();
+        });
+    }
+
+    function mostrarNotificacion(mensaje, tipo = 'success', duracion = 3000) {
+        const notifId = 'notificacionDespacho' + Date.now();
+        const notif = document.createElement('div');
+        notif.id = notifId;
+
+        const colores = {
+            success: { bg: '#10b981', icon: '#22c55e', shadow: 'rgba(16, 185, 129, 0.3)' },
+            error: { bg: '#dc2626', icon: '#ef4444', shadow: 'rgba(220, 38, 38, 0.3)' },
+            warning: { bg: '#f59e0b', icon: '#fbbf24', shadow: 'rgba(245, 158, 11, 0.3)' }
+        };
+        const c = colores[tipo] || colores.success;
+
+        const iconos = {
+            success: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+            error: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+            warning: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`
+        };
+
+        notif.style.cssText = `
+            position: fixed; top: 24px; right: 24px;
+            background: white; border-radius: 12px; padding: 16px 20px;
+            box-shadow: 0 20px 25px -5px ${c.shadow}, 0 10px 10px -5px rgba(0,0,0,0.04);
+            display: flex; align-items: center; gap: 14px;
+            z-index: 10000; min-width: 300px; max-width: 400px;
+            border-left: 4px solid ${c.icon};
+            animation: notifSlideIn 0.3s ease-out;
+            font-family: system-ui, -apple-system, sans-serif;
+        `;
+
+        notif.innerHTML = `
+            <div style="
+                width: 36px; height: 36px; border-radius: 10px;
+                background: ${c.bg}; display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0;
+            ">${iconos[tipo]}</div>
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 14px; font-weight: 500; color: #0f172a;">${tipo === 'success' ? 'Éxito' : tipo === 'error' ? 'Error' : 'Atención'}</p>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">${mensaje}</p>
+            </div>
+            <button id="btnCerrarNotif" style="
+                background: none; border: none; padding: 4px; cursor: pointer;
+                color: #94a3b8; transition: color 0.15s;
+            ">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <style>@keyframes notifSlideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }</style>
+        `;
+
+        document.body.appendChild(notif);
+
+        const cerrar = () => {
+            notif.style.animation = 'notifSlideIn 0.2s ease-out reverse';
+            setTimeout(() => notif.remove(), 200);
+        };
+
+        document.getElementById('btnCerrarNotif').addEventListener('click', cerrar);
+        setTimeout(cerrar, duracion);
+    }
+
     async function eliminarObservacionDespachoIndex(observacionId) {
         const pedidoId = window.__despachoObsCtx?.pedidoId;
         if (!pedidoId) return;
-        if (!confirm('¿Eliminar esta observación?')) return;
-        try {
-            const r = await fetch(`/despacho/${pedidoId}/observaciones/${observacionId}/eliminar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': __despachoObsCsrfToken(),
-                },
-            });
-            const data = await r.json().catch(() => null);
-            if (!r.ok || !data || data.success === false) {
-                alert('Error: ' + (data?.message || 'No se pudo eliminar la observación'));
-                return;
+        mostrarModalConfirmacion(
+            'Eliminar observación',
+            '¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.',
+            async () => {
+                try {
+                    const r = await fetch(`/despacho/${pedidoId}/observaciones/${observacionId}/eliminar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': __despachoObsCsrfToken(),
+                        },
+                    });
+                    const data = await r.json().catch(() => null);
+                    if (!r.ok || !data || data.success === false) {
+                        mostrarNotificacion(data?.message || 'No se pudo eliminar la observación', 'error');
+                        return;
+                    }
+                    mostrarNotificacion('Observación eliminada correctamente', 'success');
+                    await cargarObservacionesDespachoIndex();
+                } catch (e) {
+                    console.error('Error eliminando observación despacho index:', e);
+                    mostrarNotificacion('Error al eliminar la observación', 'error');
+                }
             }
-            await cargarObservacionesDespachoIndex();
-        } catch (e) {
-            console.error('Error eliminando observación despacho index:', e);
-            alert('Error al eliminar la observación');
-        }
+        );
     }
 
     window.abrirModalObservacionesDespachoIndex = abrirModalObservacionesDespachoIndex;
@@ -382,6 +519,105 @@
     window.guardarObservacionDespachoIndex = guardarObservacionDespachoIndex;
     window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
     window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
+
+    // ==================== INSERTAR PEDIDO EN TIEMPO REAL ====================
+    function getEstadoBadgeClass(estado) {
+        const classes = {
+            'PENDIENTE_SUPERVISOR': 'bg-blue-100 text-blue-800',
+            'APROBADO_SUPERVISOR': 'bg-yellow-100 text-yellow-800',
+            'EN_PRODUCCION': 'bg-orange-100 text-orange-800',
+            'FINALIZADO': 'bg-green-100 text-green-800',
+            'En Ejecución': 'bg-orange-100 text-orange-800',
+            'Entregado': 'bg-green-100 text-green-800',
+            'Pendiente': 'bg-blue-100 text-blue-800',
+            'No iniciado': 'bg-slate-100 text-slate-800',
+            'Anulada': 'bg-red-100 text-red-800',
+            'PENDIENTE_INSUMOS': 'bg-purple-100 text-purple-800'
+        };
+        return classes[estado] || 'bg-slate-100 text-slate-800';
+    }
+
+    function insertarPedidoEnTabla(orden) {
+        const tbody = document.querySelector('tbody.divide-y');
+        if (!tbody) {
+            console.warn('[Despacho] No se encontró tbody para insertar pedido');
+            return;
+        }
+
+        const pedidoId = orden.id;
+        const numeroPedido = orden.numero_pedido || orden.pedido || orden.id;
+        const cliente = orden.cliente || orden.cliente_nombre || '—';
+        const estado = orden.estado || orden.state || 'Pendiente';
+        const estadoDisplay = estado.replace(/_/g, ' ');
+        const fechaCreacion = orden.fecha_de_creacion_de_orden || orden.created_at || '—';
+        const fechaEntrega = orden.fecha_estimada_de_entrega || orden.fecha_estimada || '—';
+
+        // Formatear fechas
+        const formatDate = (dateStr) => {
+            if (!dateStr || dateStr === '—') return '—';
+            try {
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch (e) { return '—'; }
+        };
+
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-slate-50 transition-colors';
+        row.setAttribute('data-pedido-id', pedidoId);
+        row.innerHTML = `
+            <td class="px-6 py-4 text-center">
+                <a href="/despacho/${pedidoId}"
+                   class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
+                    Ver
+                </a>
+            </td>
+            <td class="px-6 py-4 font-medium text-slate-900">
+                ${numeroPedido}
+            </td>
+            <td class="px-6 py-4 text-slate-600">
+                ${cliente}
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex gap-2 items-start">
+                    <textarea
+                        class="despacho-observaciones-preview w-56 px-2 py-1 border border-slate-300 rounded text-xs bg-slate-50 resize-none"
+                        rows="2"
+                        readonly
+                        data-pedido-id="${pedidoId}"
+                    ></textarea>
+                    <button
+                        type="button"
+                        onclick="abrirModalObservacionesDespachoIndex(${pedidoId}, '${String(numeroPedido).replace(/'/g, "\\'")}')"
+                        class="despacho-obs-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                        data-pedido-id="${pedidoId}"
+                        style="position:relative"
+                        title="Ver/agregar observaciones"
+                    >
+                        💬
+                    </button>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="inline-block px-2 py-1 rounded text-xs font-medium ${getEstadoBadgeClass(estado)}">
+                    ${estadoDisplay}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-center text-slate-600 text-xs">
+                ${formatDate(fechaCreacion)}
+            </td>
+            <td class="px-6 py-4 text-center text-slate-600 text-xs">
+                ${formatDate(fechaEntrega)}
+            </td>
+        `;
+
+        // Insertar al principio del tbody
+        tbody.insertBefore(row, tbody.firstChild);
+
+        // Cargar preview de observaciones
+        cargarPreviewObservacionesDespacho(pedidoId);
+
+        console.log(`[Despacho] Pedido ${pedidoId} insertado en la tabla`);
+    }
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtime() {
@@ -391,7 +627,7 @@
             return;
         }
 
-        // Escuchar canal general de despacho
+        // Escuchar canal general de despacho (observaciones)
         window.Echo.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log('[Despacho] Evento recibido:', e);
@@ -419,6 +655,36 @@
 
                 // Recargar el preview del textarea
                 cargarPreviewObservacionesDespacho(pedidoId);
+            });
+
+        // Escuchar canal de ordenes para nuevos pedidos aprobados
+        window.Echo.channel('ordenes')
+            .listen('.orden.updated', (e) => {
+                console.log('[Despacho] Evento orden.updated recibido:', e);
+
+                // Solo procesar si es un pedido nuevo (created) o actualizado
+                if (e?.action === 'created' || e?.action === 'updated') {
+                    const orden = e?.orden;
+                    if (!orden || !orden.id) return;
+
+                    // Verificar si el pedido está en estado que debe mostrarse en despacho
+                    const estadosDespacho = ['PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'No iniciado', 'En Ejecución', 'Pendiente'];
+                    const estado = orden.estado || orden.state;
+
+                    if (estadosDespacho.includes(estado)) {
+                        // Verificar si el pedido ya existe en la tabla
+                        const existingRow = document.querySelector(`tr[data-pedido-id="${orden.id}"]`);
+
+                        if (existingRow) {
+                            // El pedido ya existe, actualizar datos si es necesario
+                            console.log(`[Despacho] Pedido ${orden.id} ya existe en la tabla`);
+                        } else {
+                            // Es un pedido nuevo, insertar dinámicamente en la tabla
+                            insertarPedidoEnTabla(orden);
+                            mostrarNotificacion(`Nuevo pedido aprobado: ${orden.numero_pedido || orden.pedido || orden.id}`, 'success');
+                        }
+                    }
+                }
             });
 
         // Escuchar canales específicos de cada pedido visible en la página

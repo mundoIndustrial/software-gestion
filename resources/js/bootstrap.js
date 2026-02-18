@@ -73,8 +73,11 @@ function initializeEcho() {
     const metaReverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content');
     const metaReverbPort = document.querySelector('meta[name="reverb-port"]')?.getAttribute('content');
     
+    // Usar la misma IP/hostname de la página actual (evita problemas de red)
+    const currentHost = window.location.hostname;
+    
     // Fallback a variables de entorno compiladas (para compatibilidad)
-    let wsHost = metaReverbHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
+    let wsHost = metaReverbHost || currentHost || import.meta.env.VITE_REVERB_HOST || 'localhost';
     let wsPort = parseInt(metaReverbPort || import.meta.env.VITE_REVERB_PORT) || 8080;
     
     // Detectar si está en producción por el hostname

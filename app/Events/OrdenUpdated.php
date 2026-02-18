@@ -38,6 +38,14 @@ class OrdenUpdated implements ShouldBroadcastNow
     }
 
     /**
+     * The event's broadcast name.
+     */
+    public function broadcastAs(): string
+    {
+        return 'orden.updated';
+    }
+
+    /**
      * Get the data to broadcast.
      */
     public function broadcastWith()
