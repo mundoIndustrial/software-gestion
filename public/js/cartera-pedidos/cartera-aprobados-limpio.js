@@ -47,7 +47,7 @@ window.cargarPedidos = async function() {
     
     // Agregar paginación
     params.append('page', currentPage);
-    params.append('limit', pedidosPorPagina);
+    params.append('per_page', pedidosPorPagina);
     
     if (params.toString()) {
       url += '?' + params.toString();
