@@ -36,8 +36,31 @@
                     <span class="text-slate-500">Cliente:</span>
                     <span class="font-medium text-slate-900 ml-2">{{ $pedido->cliente ?? '—' }}</span>
                 </div>
+                <div>
+                    <span class="text-slate-500">Asesor:</span>
+                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->asesor->name ?? 'Sin asignar' }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-500">Forma de Pago:</span>
+                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->forma_de_pago ?? 'No especificada' }}</span>
+                </div>
             </div>
         </div>
+        
+        <!-- OBSERVACIONES DESTACADAS -->
+        @if($pedido->observaciones)
+            <div class="mx-6 mb-3">
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <svg style="width: 18px; height: 18px; color: #000;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <strong style="color: #000;"> Observaciones:</strong>
+                    </div>
+                    <div style="white-space: pre-wrap; color: #000;">{{ $pedido->observaciones }}</div>
+                </div>
+            </div>
+        @endif
 
         <!-- Formulario de despacho -->
         <form id="formDespacho" class="bg-white overflow-hidden">
@@ -472,8 +495,16 @@ async function abrirModalFactura(pedidoId) {
         }
 
         if (data) {
+            // DEBUG: Ver qué datos estamos recibiendo
+            console.log('🔍 [DESPACHO] Datos recibidos del backend:', data);
+            console.log('🔍 [DESPACHO] Estructura:', Object.keys(data));
+            
+            // Extraer datos como lo hace bodega
+            const payload = (data && typeof data === 'object' && data.data) ? data.data : data;
+            console.log('🔍 [DESPACHO] Payload final:', payload);
+            
             // Generar HTML de la factura
-            const htmlFactura = generarHTMLFactura(data);
+            const htmlFactura = generarHTMLFactura(payload);
             contenido.innerHTML = htmlFactura;
         } else {
             contenido.innerHTML = '<div class="text-center text-red-600 py-6"> Error al cargar la factura</div>';
@@ -493,16 +524,19 @@ function cerrarModalFactura() {
 }
 
 /**
- * Generar HTML de la factura - IGUAL QUE EN ASESORES
+ * Generar HTML de la factura - VERSIÓN BODEGA
  */
 function generarHTMLFactura(datos) {
     // DEBUG: Ver estructura de datos
-    console.log('📋 [FACTURA] Estructura completa:', datos);
-    console.log('📋 [FACTURA] Prendas:', datos.prendas);
+    console.log('📋 [DESPACHO-FACTURA] Estructura completa:', datos);
+    console.log('📋 [DESPACHO-FACTURA] Prendas:', datos.prendas);
     if (datos.prendas && datos.prendas[0]) {
-        console.log('📋 [FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
-        console.log('📋 [FACTURA] Tallas:', datos.prendas[0].tallas);
-        console.log('📋 [FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log('📋 [DESPACHO-FACTURA] Primera prenda claves:', Object.keys(datos.prendas[0]));
+        console.log('📋 [DESPACHO-FACTURA] Tallas:', datos.prendas[0].tallas);
+        console.log('📋 [DESPACHO-FACTURA] Descripción:', datos.prendas[0].descripcion);
+        console.log('📋 [DESPACHO-FACTURA] Variantes:', datos.prendas[0].variantes);
+        console.log('📋 [DESPACHO-FACTURA] Variantes[0]:', datos.prendas[0].variantes?.[0]);
+        console.log('📋 [DESPACHO-FACTURA] Variantes length:', datos.prendas[0].variantes?.length);
     }
     
     if (!datos || !datos.prendas || !Array.isArray(datos.prendas)) {
@@ -511,47 +545,39 @@ function generarHTMLFactura(datos) {
 
     // Generar las tarjetas de prendas
     const prendasHTML = datos.prendas.map((prenda, idx) => {
-        // Usar TALLAS en lugar de variantes
+        // Usar TALLAS primero que es donde están los datos correctos
         let variantesHTML = '';
-        if (prenda.descripcion && prenda.descripcion.tallas && Array.isArray(prenda.descripcion.tallas) && prenda.descripcion.tallas.length > 0) {
-            variantesHTML = `
-                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
-                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${prenda.descripcion.tallas.map((talla_item, varIdx) => `
-                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+        if (prenda.tallas && typeof prenda.tallas === 'object' && Object.keys(prenda.tallas).length > 0) {
+            // Convertir objeto de géneros a array de tallas
+            let todasLasTallas = [];
+            Object.keys(prenda.tallas).forEach(genero => {
+                if (typeof prenda.tallas[genero] === 'object') {
+                    Object.entries(prenda.tallas[genero]).forEach(([talla, cantidad]) => {
+                        todasLasTallas.push({ talla, cantidad });
+                    });
+                }
+            });
+            
+            if (todasLasTallas.length > 0) {
+                variantesHTML = `
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
+                                <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-            // Fallback por si vienen directamente en tallas
-            variantesHTML = `
-                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                            <th style="padding: 6px 8px; text-align: left; font-weight: 600; color: #374151;">Talla</th>
-                            <th style="padding: 6px 8px; text-align: center; font-weight: 600; color: #374151;">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${prenda.tallas.map((talla_item, varIdx) => `
-                            <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
-                                <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+                        </thead>
+                        <tbody>
+                            ${todasLasTallas.map((talla_item, varIdx) => `
+                                <tr style="background: ${varIdx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; font-weight: 600; color: #374151;">${talla_item.talla || 'N/A'}</td>
+                                    <td style="padding: 6px 8px; text-align: center; color: #6b7280;">${talla_item.cantidad || 0}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
         } else if (prenda.variantes && Array.isArray(prenda.variantes) && prenda.variantes.length > 0) {
             // Fallback por si vienen como variantes
             variantesHTML = `
@@ -637,7 +663,7 @@ function generarHTMLFactura(datos) {
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; padding: 16px;">
                 <!-- Header simple -->
                 <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #374151;">PRENDA ${idx + 1}: ${prenda.nombre_prenda || prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
                     ${prenda.descripcion ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
                 </div>
                 

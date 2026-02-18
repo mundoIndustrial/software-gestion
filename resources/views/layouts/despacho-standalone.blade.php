@@ -259,10 +259,12 @@
 
 <!-- Scripts específicos -->
 @if(request()->is(['despacho/*']))
+<!-- Scripts de Invoice comentados para usar estilo bodega
 <script src="{{ asset('js/modulos/invoice/InvoiceDataFetcher.js') }}"></script>
 <script src="{{ asset('js/modulos/invoice/ModalManager.js') }}"></script>
 <script src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}"></script>
 <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
+-->
 @endif
 
 @stack('scripts')

@@ -180,19 +180,11 @@ class DespachoController extends Controller
     public function obtenerFacturaDatos(PedidoProduccion $pedido): JsonResponse
     {
         try {
-            $pedido->load(['cliente', 'prendas.pedidoProduccion', 'epps.epp']);
+            // Usar el mismo servicio que bodega para obtener datos completos
+            $facturaService = new \App\Domain\Pedidos\Services\FacturaPedidoService();
+            $datos = $facturaService->obtenerDatosFactura($pedido->id);
             
-            return response()->json([
-                'success' => true,
-                'pedido' => [
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'cliente' => $pedido->cliente?->nombre,
-                    'cliente_empresa' => $pedido->cliente_empresa,
-                    'fecha_creacion' => $pedido->created_at?->toISOString(),
-                    'estado' => $pedido->estado,
-                ],
-            ]);
+            return response()->json($datos);
         } catch (\Exception $e) {
             Log::error('Error al obtener datos de factura', [
                 'pedido_id' => $pedido->id,
