@@ -28,7 +28,6 @@ class EntregaPrenda extends Model
     
     protected $casts = [
         'fecha_entrega' => 'datetime',
-        'hora_entrega' => 'time',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
