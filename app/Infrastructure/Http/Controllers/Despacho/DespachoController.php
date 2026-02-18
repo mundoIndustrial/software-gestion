@@ -58,7 +58,7 @@ class DespachoController extends Controller
      */
     public function show(PedidoProduccion $pedido)
     {
-        $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+        $pedido->load(['cliente', 'prendas.pedidoProduccion', 'epps.epp']);
         
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
         
@@ -120,7 +120,7 @@ class DespachoController extends Controller
      */
     public function printDespacho(PedidoProduccion $pedido)
     {
-        $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+        $pedido->load(['cliente', 'prendas.pedidoProduccion', 'epps.epp']);
         
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
         $prendas = $filas->where('tipo', 'prenda');
@@ -180,7 +180,7 @@ class DespachoController extends Controller
     public function obtenerFacturaDatos(PedidoProduccion $pedido): JsonResponse
     {
         try {
-            $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+            $pedido->load(['cliente', 'prendas.pedidoProduccion', 'epps.epp']);
             
             return response()->json([
                 'success' => true,
