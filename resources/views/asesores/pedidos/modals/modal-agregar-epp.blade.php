@@ -96,6 +96,43 @@
                 </div>
             </div>
 
+            <!-- Sección de Fotos (opcional) -->
+            <div id="seccionFotosEPP" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-sm font-medium text-gray-700">Fotos del EPP (Opcional)</label>
+                    <button type="button" onclick="agregarFotoEPP()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-medium flex items-center gap-1 hover:bg-blue-700 transition">
+                        <i class="material-symbols-rounded" style="font-size: 16px;">add_photo_alternate</i>
+                        Agregar Foto
+                    </button>
+                </div>
+                
+                <!-- Contenedor de imágenes -->
+                <div id="contenedorFotosEPP" class="grid grid-cols-3 gap-3 mb-4 border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] transition-all"
+                     ondrop="handleDropEPP(event)"
+                     ondragover="handleDragOverEPP(event)"
+                     ondragleave="handleDragLeaveEPP(event)">
+                    
+                    <!-- Mensaje inicial -->
+                    <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
+                        <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
+                        <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
+                        <p class="text-xs">Formatos: JPG, PNG, GIF, WebP</p>
+                    </div>
+                    
+                    <!-- Las imágenes se agregarán aquí dinámicamente -->
+                </div>
+                
+                <!-- Input oculto para subir archivos -->
+                <input 
+                    type="file" 
+                    id="inputFotosEPP" 
+                    multiple 
+                    accept="image/*" 
+                    style="display: none;"
+                    onchange="manejarSubidaFotosEPP(this)"
+                >
+            </div>
+
             <!-- Cantidad y Talla -->
             <!-- Solo Cantidad -->
             <div id="formularioAgregarEPP" style="display: none;">
@@ -284,6 +321,14 @@ function mostrarProductoEPP(producto) {
         console.log(' [mostrarProductoEPP] Nombre actualizado:', nombreElement.value);
     }
 
+    // Mostrar sección de fotos
+    const seccionFotos = document.getElementById('seccionFotosEPP');
+    console.log(' [mostrarProductoEPP] Sección fotos encontrada:', !!seccionFotos);
+    if (seccionFotos) {
+        seccionFotos.style.display = 'block';
+        console.log(' [mostrarProductoEPP] Sección fotos visible - display:', seccionFotos.style.display);
+    }
+
     // Mostrar formulario
     const formulario = document.getElementById('formularioAgregarEPP');
     console.log(' [mostrarProductoEPP] Elemento formulario encontrado:', !!formulario);
@@ -346,13 +391,16 @@ function agregarEPPALista() {
     }
 
     // Agregar a la lista (usar el nombre del producto seleccionado, readonly)
-    eppAgregadosList.push({
+    const eppData = {
         id: productoSeleccionadoEPP.id,
         nombre_completo: productoSeleccionadoEPP.nombre_completo || productoSeleccionadoEPP.nombre,
         cantidad: parseInt(cantidad),
         observaciones: observaciones,
+        imagenes: [...window.fotosEPP], // Incluir las fotos agregadas
         imagen: productoSeleccionadoEPP.imagen
-    });
+    };
+
+    eppAgregadosList.push(eppData);
 
     console.log(' EPP agregado a lista:', eppAgregadosList[eppAgregadosList.length - 1]);
 
@@ -381,16 +429,6 @@ function agregarEPPALista() {
     // 🔑 IMPORTANTE: Limpiar buscador y desseleccionar producto
     document.getElementById('inputBuscadorEPP').value = '';
     productoSeleccionadoEPP = null;
-
-    // Deshabilitar campos
-    document.getElementById('cantidadEPP').disabled = true;
-    document.getElementById('observacionesEPP').disabled = true;
-    document.getElementById('btnAgregarALista').disabled = true;
-
-    // Enfocar buscador para agregar otro
-    document.getElementById('inputBuscadorEPP').focus();
-    
-    console.log(' Formulario limpiado. Listo para agregar otro EPP');
 }
 
 function renderizarTablaEPP() {
@@ -444,6 +482,9 @@ function resetearFormularioEPP() {
     document.getElementById('observacionesEPP').disabled = true;
     document.getElementById('observacionesEPP').value = '';
     document.getElementById('btnAgregarALista').disabled = true;
+
+    // Limpiar fotos del EPP
+    limpiarFotosEPP();
 
     actualizarEstilosCampos();
 }
@@ -893,8 +934,248 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Exportar función globalmente para que sea accesible desde otros scripts
+window.abrirModalAgregarEPP = abrirModalAgregarEPP;
+window.cerrarModalAgregarEPP = cerrarModalAgregarEPP;
 window.editarEPPAgregado = editarEPPAgregado;
 window.guardarEdicionEPP = guardarEdicionEPP;
+
+// Funciones para manejar fotos de EPP
+window.fotosEPP = [];
+window.fotosEPPEliminadas = [];
+
+function agregarFotoEPP() {
+    document.getElementById('inputFotosEPP').click();
+}
+
+function manejarSubidaFotosEPP(input) {
+    const archivos = input.files;
+    const pedidoId = window.pedidoIdActual || 31; // ID del pedido actual
+    
+    console.log(`📸 [manejarSubidaFotosEPP] Seleccionados ${archivos.length} archivos para el pedido ${pedidoId}`);
+    
+    Array.from(archivos).forEach((archivo, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const base64Data = e.target.result;
+            const nombreArchivo = archivo.name;
+            const extension = nombreArchivo.split('.').pop().toLowerCase();
+            
+            // Validar que sea una imagen
+            if (!['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
+                console.warn(`[manejarSubidaFotosEPP] Archivo no válido: ${nombreArchivo}`);
+                return;
+            }
+            
+            // Crear objeto de imagen
+            const imagen = {
+                id: Date.now() + '_' + index,
+                nombre: nombreArchivo,
+                base64: base64Data,
+                extension: extension,
+                size: archivo.size,
+                pedido_epp_id: null, // Se asignará al guardar
+                ruta_original: null,
+                ruta_webp: null,
+                principal: 0,
+                orden: 0
+            };
+            
+            // Agregar a la lista temporal
+            window.fotosEPP.push(imagen);
+            
+            // Mostrar vista previa
+            mostrarVistaPreviaFoto(imagen);
+            
+            console.log(`[manejarSubidaFotosEPP] Foto agregada: ${nombreArchivo}`);
+        };
+        
+        reader.readAsDataURL(archivo);
+    });
+}
+
+function mostrarVistaPreviaFoto(imagen) {
+    const contenedor = document.getElementById('contenedorFotosEPP');
+    
+    // Ocultar mensaje inicial si está visible
+    const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+    if (mensajeDragDrop) {
+        mensajeDragDrop.style.display = 'none';
+    }
+    
+    // Crear elemento de imagen con atributo data-foto-id
+    const divImagen = document.createElement('div');
+    divImagen.className = 'relative group';
+    divImagen.setAttribute('data-foto-id', imagen.id);
+    divImagen.innerHTML = `
+        <div class="relative overflow-hidden rounded-lg border-2 border-gray-200">
+            <img src="${imagen.base64}" alt="${imagen.nombre}" class="w-full h-32 object-cover">
+            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button type="button" onclick="eliminarFotoEPP(${imagen.id})" class="bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="mostrar-symbols-rounded text-sm">delete</i>
+                </button>
+            </div>
+            <div class="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-tl">
+                ${imagen.nombre}
+            </div>
+        </div>
+    `;
+    
+    contenedor.appendChild(divImagen);
+    
+    // Mostrar sección de fotos si no está visible
+    document.getElementById('seccionFotosEPP').style.display = 'block';
+}
+
+function eliminarFotoEPP(fotoId) {
+    console.log(`[eliminarFotoEPP] Intentando eliminar foto con ID: ${fotoId}`);
+    console.log(`[eliminarFotoEPP] Fotos actuales:`, window.fotosEPP.map(f => ({ id: f.id, nombre: f.nombre })));
+    
+    // Eliminar de la lista temporal
+    window.fotosEPP = window.fotosEPP.filter(foto => foto.id !== fotoId);
+    
+    // Eliminar del DOM usando el ID correcto
+    const elemento = document.querySelector(`#contenedorFotosEPP > div[data-foto-id="${fotoId}"]`);
+    if (elemento) {
+        elemento.remove();
+        console.log(`[eliminarFotoEPP] Elemento DOM eliminado para ID: ${fotoId}`);
+    } else {
+        console.warn(`[eliminarFotoEPP] No se encontró elemento con ID: ${fotoId}`);
+        
+        // Intentar buscar por el nombre del archivo como fallback
+        const elementos = document.querySelectorAll('#contenedorFotosEPP > div');
+        elementos.forEach(elemento => {
+            const img = element.querySelector('img');
+            if (img && img.alt && img.alt.includes(fotoId.toString())) {
+                elemento.remove();
+                console.log(`[eliminarFotoEPP] Elemento eliminado por nombre: ${img.alt}`);
+                return;
+            }
+        });
+    }
+    
+    console.log(`[eliminarFotoEPP] Fotos restantes: ${window.fotosEPP.length}`);
+    
+    // Si no hay más fotos, mostrar mensaje inicial
+    if (window.fotosEPP.length === 0) {
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = 'flex';
+        }
+        document.getElementById('seccionFotosEPP').style.display = 'none';
+    }
+}
+
+function limpiarFotosEPP() {
+    window.fotosEPP = [];
+    document.getElementById('contenedorFotosEPP').innerHTML = `
+        <div id="mensajeDragDrop" class="col-span-3 flex flex-col items-center justify-center text-gray-400">
+            <i class="material-symbols-rounded text-4xl mb-2">cloud_upload</i>
+            <p class="text-sm">Arrastra imágenes aquí o haz clic en "Agregar Foto"</p>
+            <p class="text-xs">Formatos: JPG, PNG, GIF, WebP</p>
+        </div>
+    `;
+    document.getElementById('seccionFotosEPP').style.display = 'none';
+    console.log('[limpiarFotosEPP] Fotos limpiadas');
+}
+
+// Funciones para Drag and Drop
+function handleDragOverEPP(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const contenedor = document.getElementById('contenedorFotosEPP');
+    contenedor.classList.add('border-blue-400', 'bg-blue-50');
+    contenedor.classList.remove('border-gray-300');
+    
+    // Ocultar mensaje inicial si hay imágenes
+    if (window.fotosEPP.length > 0) {
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = 'none';
+        }
+    }
+}
+
+function handleDragLeaveEPP(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const contenedor = document.getElementById('contenedorFotosEPP');
+    contenedor.classList.remove('border-blue-400', 'bg-blue-50');
+    contenedor.classList.add('border-gray-300');
+    
+    // Mostrar mensaje inicial si no hay imágenes
+    if (window.fotosEPP.length === 0) {
+        const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+        if (mensajeDragDrop) {
+            mensajeDragDrop.style.display = 'flex';
+        }
+    }
+}
+
+function handleDropEPP(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const contenedor = document.getElementById('contenedorFotosEPP');
+    if (contenedor) {
+        contenedor.classList.remove('border-blue-400', 'bg-blue-50');
+        contenedor.classList.add('border-gray-300');
+    }
+    
+    const archivos = event.dataTransfer.files;
+    const pedidoId = window.pedidoIdActual || 31;
+    
+    console.log(`📸 [handleDropEPP] Se arrastraron ${archivos.length} archivos para el pedido ${pedidoId}`);
+    
+    // Ocultar mensaje inicial
+    const mensajeDragDrop = document.getElementById('mensajeDragDrop');
+    if (mensajeDragDrop) {
+        mensajeDragDrop.style.display = 'none';
+    }
+    
+    // Procesar cada archivo arrastrado
+    Array.from(archivos).forEach((archivo, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const base64Data = e.target.result;
+            const nombreArchivo = archivo.name;
+            const extension = nombreArchivo.split('.').pop().toLowerCase();
+            
+            // Validar que sea una imagen
+            if (!['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
+                console.warn(`[handleDropEPP] Archivo no válido: ${nombreArchivo}`);
+                return;
+            }
+            
+            // Crear objeto de imagen
+            const imagen = {
+                id: Date.now() + '_' + index + '_drop',
+                nombre: nombreArchivo,
+                base64: base64Data,
+                extension: extension,
+                size: archivo.size,
+                pedido_epp_id: null, // Se asignará al guardar
+                ruta_original: null,
+                ruta_webp: null,
+                principal: 0,
+                orden: 0
+            };
+            
+            // Agregar a la lista temporal
+            window.fotosEPP.push(imagen);
+            
+            // Mostrar vista previa
+            mostrarVistaPreviaFoto(imagen);
+            
+            console.log(`[handleDropEPP] Foto arrastrada: ${nombreArchivo}`);
+        };
+        
+        reader.readAsDataURL(archivo);
+    });
+}
 </script>
 
 <style>
