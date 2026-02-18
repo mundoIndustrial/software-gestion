@@ -709,23 +709,28 @@ class DespachoController extends Controller
     }
 
     /**
-     * API para obtener todos los pedidos con estados solicitados (excluyendo entregados en bodega)
+     * API para obtener todos los pedidos con estados solicitados (excluyendo completamente entregados en bodega)
      */
     public function obtenerTodosLosPedidos(Request $request)
     {
         try {
             $search = $request->query('search', '');
             
-            // Obtener IDs de pedidos que ya están entregados en bodega_detalles_talla
-            $pedidosEntregadosEnBodega = \DB::table('bodega_detalles_talla')
-                ->where('estado_bodega', 'Entregado')
-                ->distinct()
+            // Obtener IDs de pedidos que están COMPLETAMENTE entregados en bodega
+            // Solo se excluye si TODAS las prendas de Costura están con estado 'Entregado'
+            $pedidosCompletamenteEntregados = \DB::table('bodega_detalles_talla')
+                ->select('pedido_produccion_id')
+                ->selectRaw('COUNT(*) as total_prendas')
+                ->selectRaw('SUM(CASE WHEN estado_bodega = \'Entregado\' AND area = \'Costura\' THEN 1 ELSE 0 END) as entregados')
+                ->where('area', 'Costura') // Solo considerar prendas de Costura
+                ->groupBy('pedido_produccion_id')
+                ->havingRaw('total_prendas = entregados') // Solo si TODAS están entregadas
                 ->pluck('pedido_produccion_id')
                 ->toArray();
             
             $query = PedidoProduccion::query()
                 ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
-                ->whereNotIn('id', $pedidosEntregadosEnBodega) // Excluir entregados en bodega
+                ->whereNotIn('id', $pedidosCompletamenteEntregados) // Excluir completamente entregados
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '!=', '')
                 ->orderByDesc('created_at');
@@ -750,7 +755,7 @@ class DespachoController extends Controller
                 'success' => true,
                 'data' => $pedidos,
                 'total' => $pedidos->count(),
-                'excluidos_bodega' => count($pedidosEntregadosEnBodega)
+                'excluidos_completamente' => count($pedidosCompletamenteEntregados)
             ]);
         } catch (\Exception $e) {
             return response()->json([
