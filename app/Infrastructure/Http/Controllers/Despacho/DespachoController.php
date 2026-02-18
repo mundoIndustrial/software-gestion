@@ -709,15 +709,23 @@ class DespachoController extends Controller
     }
 
     /**
-     * API para obtener todos los pedidos con estados solicitados
+     * API para obtener todos los pedidos con estados solicitados (excluyendo entregados en bodega)
      */
     public function obtenerTodosLosPedidos(Request $request)
     {
         try {
             $search = $request->query('search', '');
             
+            // Obtener IDs de pedidos que ya están entregados en bodega_detalles_talla
+            $pedidosEntregadosEnBodega = \DB::table('bodega_detalles_talla')
+                ->where('estado_bodega', 'Entregado')
+                ->distinct()
+                ->pluck('pedido_produccion_id')
+                ->toArray();
+            
             $query = PedidoProduccion::query()
                 ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
+                ->whereNotIn('id', $pedidosEntregadosEnBodega) // Excluir entregados en bodega
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '!=', '')
                 ->orderByDesc('created_at');
@@ -741,7 +749,8 @@ class DespachoController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $pedidos,
-                'total' => $pedidos->count()
+                'total' => $pedidos->count(),
+                'excluidos_bodega' => count($pedidosEntregadosEnBodega)
             ]);
         } catch (\Exception $e) {
             return response()->json([
