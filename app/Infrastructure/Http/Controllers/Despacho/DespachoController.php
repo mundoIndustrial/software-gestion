@@ -717,14 +717,17 @@ class DespachoController extends Controller
             $search = $request->query('search', '');
             
             // Obtener IDs de pedidos que están COMPLETAMENTE entregados en bodega
-            // Solo se excluye si TODAS las prendas de Costura están con estado 'Entregado'
+            // Considera tanto prendas de Costura como EPPs
             $pedidosCompletamenteEntregados = \DB::table('bodega_detalles_talla')
                 ->select('pedido_produccion_id')
-                ->selectRaw('COUNT(*) as total_prendas')
-                ->selectRaw('SUM(CASE WHEN estado_bodega = \'Entregado\' AND area = \'Costura\' THEN 1 ELSE 0 END) as entregados')
-                ->where('area', 'Costura') // Solo considerar prendas de Costura
+                ->selectRaw('COUNT(*) as total_items')
+                ->selectRaw('SUM(CASE WHEN estado_bodega = \'Entregado\' THEN 1 ELSE 0 END) as entregados')
+                ->where(function($query) {
+                    $query->where('area', 'Costura')
+                          ->orWhere('area', 'EPP');
+                })
                 ->groupBy('pedido_produccion_id')
-                ->havingRaw('total_prendas = entregados') // Solo si TODAS están entregadas
+                ->havingRaw('total_items = entregados') // Solo si TODOS los items están entregados
                 ->pluck('pedido_produccion_id')
                 ->toArray();
             
