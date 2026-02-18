@@ -215,6 +215,24 @@ window.crearDropdownVer = function(button) {
             " onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
                 <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
             </button>
+            <div style="height: 1px; background: #e5e7eb;"></div>
+            <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #374151;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+            " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
+                <i class="fas fa-comment-dots" style="color: #3b82f6;"></i> Observaciones despacho
+            </button>
         `;
         
         dropdown.innerHTML = dropdownHTML;
@@ -289,6 +307,23 @@ window.crearDropdownVer = function(button) {
                 justify-content: center;
             " onmouseover="this.style.background='#f0fdf4'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)'">
                 <i class="fas fa-tasks"></i>
+            </button>
+            <div style="height: 1px; background: #e5e7eb;"></div>
+            <button onclick="abrirModalObservacionesDespachoAsesores(${pedidoId}, '${pedido}'); closeDropdown()" title="Observaciones despacho" style="
+                width: 100%;
+                text-align: center;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #3b82f6;
+                font-size: 1.25rem;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            " onmouseover="this.style.background='#f0f9ff'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)'">
+                <i class="fas fa-comment-dots"></i>
             </button>
             ${estado === 'Anulada' ? `
                 <div style="height: 1px; background: #e5e7eb;"></div>

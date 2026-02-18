@@ -189,6 +189,7 @@
     //  Configurar variables globales
     window.fetchUrl = '/registros';
     window.modalContext = 'pedidos';
+    window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 
     //  REFACTORIZADO: verMotivoanulacion() - Usar UIModalService
     function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
@@ -874,6 +875,7 @@
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
+<script src="{{ asset('js/asesores/observaciones-despacho.js') }}"></script>
 
 <!--  TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>

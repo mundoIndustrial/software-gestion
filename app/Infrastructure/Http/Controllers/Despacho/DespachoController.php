@@ -4,11 +4,18 @@ namespace App\Infrastructure\Http\Controllers\Despacho;
 
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
+use App\Models\PedidoObservacionesDespacho;
+use App\Models\DesparChoParcialesModel;
+use App\Models\Role;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Domain\Pedidos\Repositories\PedidoProduccionRepository;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DespachoController extends Controller
 {
@@ -18,18 +25,16 @@ class DespachoController extends Controller
         private PedidoProduccionRepository $pedidoRepository,
     ) {}
 
+    /**
+     * Listar pedidos disponibles para despacho
+     */
     public function index(Request $request)
     {
-        $search = $request->query('search', '');
+        $search = $request->input('search', '');
         
-        $query = PedidoProduccion::query();
-        
-        // Excluir pedidos sin número de pedido
-        $query->whereNotNull('numero_pedido')
-              ->where('numero_pedido', '!=', '');
-        
-        // Mostrar todos los pedidos excepto los rechazados o en cartera
-        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA']);
+        $query = PedidoProduccion::query()
+            ->whereIn('estado', ['En Ejecución', 'Entregado', 'Pendiente', 'PENDIENTE_SUPERVISOR'])
+            ->orderByDesc('created_at');
         
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -38,205 +43,220 @@ class DespachoController extends Controller
             });
         }
         
-        $pedidos = $query->paginate(15);
-        return view('despacho.index', ['pedidos' => $pedidos, 'search' => $search]);
+        $pedidos = $query->paginate(20)->withQueryString();
+        
+        return view('despacho.index', compact('pedidos', 'search'));
     }
 
+    /**
+     * Mostrar detalle de despacho para un pedido
+     */
     public function show(PedidoProduccion $pedido)
     {
-        $prendas = $this->obtenerFilas->obtenerPrendas($pedido->id);
-        $epps = $this->obtenerFilas->obtenerEpp($pedido->id);
-        return view('despacho.show', [
-            'pedido' => $pedido,
-            'prendas' => $prendas,
-            'epps' => $epps,
-        ]);
-    }
-
-    public function guardarDespacho(Request $request, PedidoProduccion $pedido)
-    {
-        $validated = $request->validate([
-            'despachos' => 'required|array',
-            'fecha_hora' => 'nullable|date_format:Y-m-d\TH:i',
-            'cliente_empresa' => 'nullable|string',
-        ]);
-
-        $fechaHora = null;
-        if ($validated['fecha_hora']) {
-            $fechaHora = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['fecha_hora']);
-        }
-
-        $control = new ControlEntregasDTO(
-            pedidoId: $pedido->id,
-            numeroPedido: $pedido->numero_pedido,
-            cliente: $pedido->cliente,
-            fechaHora: $fechaHora,
-            clienteEmpresa: $validated['cliente_empresa'] ?? $pedido->cliente,
-            despachos: $validated['despachos'],
-        );
-
-        return response()->json($this->guardarDespacho->ejecutar($control));
-    }
-
-    public function printDespacho(PedidoProduccion $pedido)
-    {
+        $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+        
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
-        return view('despacho.print', ['pedido' => $pedido, 'filas' => $filas]);
+        
+        $prendas = $filas->where('tipo', 'prenda');
+        $epps = $filas->where('tipo', 'epp');
+        
+        return view('despacho.show', compact('pedido', 'prendas', 'epps'));
     }
 
-    public function obtenerDespachos(PedidoProduccion $pedido)
-    {
-        $despachos = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
-            ->whereNull('deleted_at')
-            ->get()
-            ->map(function ($d) {
-                return [
-                    'tipo' => $d->tipo_item,
-                    'id' => $d->item_id,
-                    'talla_id' => $d->talla_id,
-                    'pendiente_inicial' => $d->pendiente_inicial,
-                    'parcial_1' => $d->parcial_1,
-                    'pendiente_1' => $d->pendiente_1,
-                    'parcial_2' => $d->parcial_2,
-                    'pendiente_2' => $d->pendiente_2,
-                    'parcial_3' => $d->parcial_3,
-                    'pendiente_3' => $d->pendiente_3,
-                ];
-            });
-
-        return response()->json(['despachos' => $despachos]);
-    }
-
-    public function obtenerFacturaDatos(PedidoProduccion $pedido)
-    {
-        try {
-            // Usar el repositorio que ya obtiene los datos completos (igual que asesores)
-            $datos = $this->pedidoRepository->obtenerDatosFactura($pedido->id);
-
-            // Asegurar que la estructura mínima esté presente y validar tipo
-            if (!is_array($datos)) {
-                \Log::warning('[DESPACHO] obtenerFacturaDatos: respuesta inesperada (no es array)', ['pedido_id' => $pedido->id, 'datos' => $datos]);
-                $datos = ['prendas' => [], 'epps' => [], 'total_items' => 0];
-            }
-
-            if (!array_key_exists('prendas', $datos) || !is_array($datos['prendas'])) {
-                \Log::warning('[DESPACHO] obtenerFacturaDatos: llave "prendas" faltante o inválida', ['pedido_id' => $pedido->id, 'keys' => array_keys((array)$datos)]);
-                $datos['prendas'] = [];
-            }
-
-            return response()->json($datos);
-        } catch (\Exception $e) {
-            \Log::error('[DESPACHO] Error en obtenerFacturaDatos', ['pedido_id' => $pedido->id, 'error' => $e->getMessage()]);
-            return response()->json(['error' => 'Error obteniendo datos de factura'], 500);
-        }
-    }
-
-    public function marcarEntregado(Request $request, PedidoProduccion $pedido)
+    /**
+     * Guardar control de entregas (despacho)
+     */
+    public function guardarDespacho(Request $request, PedidoProduccion $pedido): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'tipo_item' => 'required|in:prenda,epp',
-                'item_id' => 'required|integer',
-                'talla_id' => 'nullable|integer',
-                'genero' => 'nullable|in:DAMA,CABALLERO,UNISEX',
+                'despachos' => 'required|array',
+                'despachos.*.tipo' => 'required|string|in:prenda,epp',
+                'despachos.*.id' => 'required|integer',
+                'despachos.*.talla_id' => 'nullable|integer',
+                'despachos.*.genero' => 'nullable|string',
+                'despachos.*.pendiente_inicial' => 'required|integer|min:0',
+                'despachos.*.parcial_1' => 'nullable|integer|min:0',
+                'despachos.*.pendiente_1' => 'nullable|integer|min:0',
+                'despachos.*.parcial_2' => 'nullable|integer|min:0',
+                'despachos.*.pendiente_2' => 'nullable|integer|min:0',
+                'despachos.*.parcial_3' => 'nullable|integer|min:0',
+                'despachos.*.pendiente_3' => 'nullable|integer|min:0',
+                'cliente_empresa' => 'nullable|string',
+                'fecha_hora' => 'nullable|string',
             ]);
 
-            // Buscar si ya existe un registro
-            $despacho = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
-                ->where('tipo_item', $validated['tipo_item'])
-                ->where('item_id', $validated['item_id'])
-                ->where('talla_id', $validated['talla_id'] ?? null)
-                ->first();
+            $control = new ControlEntregasDTO(
+                pedidoId: $pedido->id,
+                numeroPedido: $pedido->numero_pedido,
+                despachos: $validated['despachos'],
+                clienteEmpresa: $validated['cliente_empresa'] ?? '',
+                fechaHora: $validated['fecha_hora'] ?? now()->toDateTimeString(),
+            );
 
-            if ($despacho) {
-                // Actualizar registro existente
-                $despacho->entregado = true;
-                $despacho->fecha_entrega = now();
-                $despacho->usuario_id = auth()->id();
-                $despacho->save();
-            } else {
-                // Crear nuevo registro
-                \App\Models\DesparChoParcialesModel::create([
-                    'pedido_id' => $pedido->id,
-                    'tipo_item' => $validated['tipo_item'],
-                    'item_id' => $validated['item_id'],
-                    'talla_id' => $validated['talla_id'] ?? null,
-                    'genero' => $validated['genero'] ?? null,
-                    'entregado' => true,
-                    'fecha_entrega' => now(),
-                    'usuario_id' => auth()->id(),
-                ]);
-            }
+            $resultado = $this->guardarDespacho->ejecutar($control);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Ítem marcado como entregado',
-                'fecha_entrega' => now()->format('Y-m-d H:i:s'),
-            ]);
+            return response()->json($resultado);
         } catch (\Exception $e) {
-            \Log::error('[DESPACHO] Error al marcar como entregado', [
+            Log::error('Error al guardar despacho', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
-                'data' => $request->all(),
             ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al marcar como entregado: ' . $e->getMessage(),
+                'message' => 'Error al guardar: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public function deshacerEntregado(Request $request, PedidoProduccion $pedido)
+    /**
+     * Vista de impresión del control de entregas
+     */
+    public function printDespacho(PedidoProduccion $pedido)
+    {
+        $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+        
+        $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
+        $prendas = $filas->where('tipo', 'prenda');
+        $epps = $filas->where('tipo', 'epp');
+        
+        return view('despacho.print', compact('pedido', 'prendas', 'epps'));
+    }
+
+    /**
+     * Obtener despachos guardados para un pedido
+     */
+    public function obtenerDespachos(PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $despachos = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->get()
+                ->map(function ($despacho) {
+                    return [
+                        'id' => $despacho->id,
+                        'tipo_item' => $despacho->tipo_item,
+                        'item_id' => $despacho->item_id,
+                        'talla_id' => $despacho->talla_id,
+                        'genero' => $despacho->genero,
+                        'pendiente_inicial' => $despacho->pendiente_inicial,
+                        'parcial_1' => $despacho->parcial_1,
+                        'pendiente_1' => $despacho->pendiente_1,
+                        'parcial_2' => $despacho->parcial_2,
+                        'pendiente_2' => $despacho->pendiente_2,
+                        'parcial_3' => $despacho->parcial_3,
+                        'pendiente_3' => $despacho->pendiente_3,
+                        'observaciones' => $despacho->observaciones,
+                        'entregado' => $despacho->entregado,
+                        'fecha_entrega' => $despacho->fecha_entrega?->toISOString(),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'despachos' => $despachos,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener despachos', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener despachos',
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener datos de factura para un pedido
+     */
+    public function obtenerFacturaDatos(PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $pedido->load(['cliente', 'prendas.prenda', 'epps.epp']);
+            
+            return response()->json([
+                'success' => true,
+                'pedido' => [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente?->nombre,
+                    'cliente_empresa' => $pedido->cliente_empresa,
+                    'fecha_creacion' => $pedido->created_at?->toISOString(),
+                    'estado' => $pedido->estado,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener datos de factura', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos',
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar ítem como entregado
+     */
+    public function marcarEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'tipo_item' => 'required|in:prenda,epp',
+                'tipo_item' => 'required|string|in:prenda,epp',
                 'item_id' => 'required|integer',
                 'talla_id' => 'nullable|integer',
             ]);
 
-            // Buscar el registro de entrega
-            $despacho = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+            $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
                 ->where('tipo_item', $validated['tipo_item'])
                 ->where('item_id', $validated['item_id'])
-                ->where('talla_id', $validated['talla_id'] ?? null)
-                ->where('entregado', true)
+                ->when($validated['talla_id'], function ($q) use ($validated) {
+                    $q->where('talla_id', $validated['talla_id']);
+                })
                 ->first();
 
             if (!$despacho) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró registro de entrega para deshacer',
+                    'message' => 'Ítem no encontrado',
                 ], 404);
             }
 
-            // Deshacer el marcado como entregado
-            $despacho->entregado = false;
-            $despacho->fecha_entrega = null;
-            $despacho->usuario_id = auth()->id();
-            $despacho->save();
+            $despacho->update([
+                'entregado' => true,
+                'fecha_entrega' => now(),
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Marcado como entregado deshecho correctamente',
+                'message' => 'Ítem marcado como entregado',
             ]);
         } catch (\Exception $e) {
-            \Log::error('[DESPACHO] Error al deshacer marcado como entregado', [
+            Log::error('Error al marcar como entregado', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
-                'data' => $request->all(),
             ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al deshacer marcado como entregado: ' . $e->getMessage(),
+                'message' => 'Error al procesar',
             ], 500);
         }
     }
 
-    public function obtenerEstadoEntregas(PedidoProduccion $pedido)
+    /**
+     * Obtener estado de entregas
+     */
+    public function obtenerEstadoEntregas(PedidoProduccion $pedido): JsonResponse
     {
         try {
-            $entregas = \App\Models\DesparChoParcialesModel::where('pedido_id', $pedido->id)
+            $entregas = DesparChoParcialesModel::where('pedido_id', $pedido->id)
                 ->where('entregado', true)
                 ->whereNotNull('fecha_entrega')
                 ->get()
@@ -255,14 +275,273 @@ class DespachoController extends Controller
                 'entregas' => $entregas,
             ]);
         } catch (\Exception $e) {
-            \Log::error('[DESPACHO] Error al obtener estado de entregas', [
+            Log::error('Error al obtener estado de entregas', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
             ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener estado de entregas',
+                'message' => 'Error al obtener estado',
             ], 500);
         }
+    }
+
+    /**
+     * Deshacer marcado como entregado
+     */
+    public function deshacerEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'tipo_item' => 'required|string|in:prenda,epp',
+                'item_id' => 'required|integer',
+                'talla_id' => 'nullable|integer',
+            ]);
+
+            $despacho = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->where('tipo_item', $validated['tipo_item'])
+                ->where('item_id', $validated['item_id'])
+                ->when($validated['talla_id'], function ($q) use ($validated) {
+                    $q->where('talla_id', $validated['talla_id']);
+                })
+                ->first();
+
+            if (!$despacho) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ítem no encontrado',
+                ], 404);
+            }
+
+            $despacho->update([
+                'entregado' => false,
+                'fecha_entrega' => null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Marcado deshecho',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al deshacer entregado', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar',
+            ], 500);
+        }
+    }
+
+    // ==================== OBSERVACIONES ====================
+
+    public function resumenObservaciones(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pedido_ids' => 'required|array',
+            'pedido_ids.*' => 'integer',
+        ]);
+
+        $pedidoIds = $validated['pedido_ids'];
+        $usuario = auth()->user();
+        $usuarioId = $usuario?->id;
+
+        // Contar observaciones no leídas (estado = 0) por pedido
+        // Excluir las creadas por el mismo usuario
+        $resumen = PedidoObservacionesDespacho::query()
+            ->whereIn('pedido_produccion_id', $pedidoIds)
+            ->where('estado', 0)
+            ->where(function ($q) use ($usuarioId) {
+                $q->whereNull('usuario_id')
+                  ->orWhere('usuario_id', '!=', $usuarioId);
+            })
+            ->selectRaw('pedido_produccion_id, COUNT(*) as unread')
+            ->groupBy('pedido_produccion_id')
+            ->pluck('unread', 'pedido_produccion_id')
+            ->toArray();
+
+        // Construir respuesta con todos los pedidos
+        $resultado = [];
+        foreach ($pedidoIds as $pedidoId) {
+            $resultado[$pedidoId] = [
+                'unread' => (int) ($resumen[$pedidoId] ?? 0),
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $resultado,
+        ]);
+    }
+
+    public function marcarLeidas(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        $usuario = auth()->user();
+        $usuarioId = $usuario?->id;
+
+        // Marcar como leídas (estado = 1) las observaciones no leídas de otros usuarios
+        PedidoObservacionesDespacho::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->where('estado', 0)
+            ->where(function ($q) use ($usuarioId) {
+                $q->whereNull('usuario_id')
+                  ->orWhere('usuario_id', '!=', $usuarioId);
+            })
+            ->update(['estado' => 1]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observaciones marcadas como leídas',
+        ]);
+    }
+
+    public function obtenerObservaciones(PedidoProduccion $pedido): JsonResponse
+    {
+        $rows = PedidoObservacionesDespacho::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $observaciones = $rows->map(function ($row) {
+            return [
+                'id' => (string) $row->uuid,
+                'contenido' => $row->contenido,
+                'usuario_id' => $row->usuario_id,
+                'usuario_nombre' => $row->usuario_nombre,
+                'usuario_rol' => $row->usuario_rol,
+                'ip_address' => $row->ip_address,
+                'estado' => (int) $row->estado,
+                'created_at' => optional($row->created_at)->toISOString(),
+                'updated_at' => optional($row->updated_at)->toISOString(),
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => $observaciones,
+        ]);
+    }
+
+    public function guardarObservacion(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        $validated = $request->validate([
+            'contenido' => 'required|string|max:5000',
+        ]);
+
+        $usuario = auth()->user();
+
+        $uuid = Str::uuid();
+        $row = PedidoObservacionesDespacho::create([
+            'pedido_produccion_id' => $pedido->id,
+            'uuid' => $uuid,
+            'contenido' => $validated['contenido'],
+            'usuario_id' => $usuario?->id,
+            'usuario_nombre' => $usuario?->name,
+            'usuario_rol' => $usuario?->getCurrentRole()?->name ?? null,
+            'ip_address' => $request->ip(),
+            'estado' => 0,
+        ]);
+
+        $observacion = [
+            'id' => (string) $row->uuid,
+            'contenido' => $row->contenido,
+            'usuario_id' => $row->usuario_id,
+            'usuario_nombre' => $row->usuario_nombre,
+            'usuario_rol' => $row->usuario_rol,
+            'ip_address' => $row->ip_address,
+            'estado' => (int) $row->estado,
+            'created_at' => optional($row->created_at)->toISOString(),
+            'updated_at' => optional($row->updated_at)->toISOString(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observación guardada exitosamente',
+            'data' => $observacion,
+        ]);
+    }
+
+    public function actualizarObservacion(Request $request, PedidoProduccion $pedido, string $observacionId): JsonResponse
+    {
+        $validated = $request->validate([
+            'contenido' => 'required|string|max:5000',
+        ]);
+
+        $row = PedidoObservacionesDespacho::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->where('uuid', $observacionId)
+            ->first();
+
+        if (!$row) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Observación no encontrada',
+            ], 404);
+        }
+
+        $usuario = auth()->user();
+        $ownerId = $row->usuario_id;
+        if ((string) $ownerId !== (string) ($usuario?->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para editar esta observación',
+            ], 403);
+        }
+
+        $row->contenido = $validated['contenido'];
+        $row->save();
+
+        $payload = [
+            'id' => (string) $row->uuid,
+            'contenido' => $row->contenido,
+            'usuario_id' => $row->usuario_id,
+            'usuario_nombre' => $row->usuario_nombre,
+            'usuario_rol' => $row->usuario_rol,
+            'ip_address' => $row->ip_address,
+            'estado' => (int) $row->estado,
+            'created_at' => optional($row->created_at)->toISOString(),
+            'updated_at' => optional($row->updated_at)->toISOString(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observación actualizada correctamente',
+            'data' => $payload,
+        ]);
+    }
+
+    public function eliminarObservacion(Request $request, PedidoProduccion $pedido, string $observacionId): JsonResponse
+    {
+
+        $row = PedidoObservacionesDespacho::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->where('uuid', $observacionId)
+            ->first();
+
+        if (!$row) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Observación no encontrada',
+            ], 404);
+        }
+
+        $usuario = auth()->user();
+        $ownerId = $row->usuario_id;
+        if ((string) $ownerId !== (string) ($usuario?->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para eliminar esta observación',
+            ], 403);
+        }
+
+        $row->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Observación eliminada correctamente',
+        ]);
     }
 }

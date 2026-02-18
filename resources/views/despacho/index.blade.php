@@ -74,6 +74,9 @@
                                     Cliente
                                 </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
+                                    Observaciones
+                                </th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     Estado
                                 </th>
                                 <th class="px-6 py-3 text-center font-medium text-slate-700">
@@ -86,7 +89,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-200">
                             @foreach($pedidos as $pedido)
-                                <tr class="hover:bg-slate-50 transition-colors">
+                                <tr class="hover:bg-slate-50 transition-colors" data-pedido-id="{{ $pedido->id }}">
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('despacho.show', $pedido->id) }}"
                                            class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
@@ -98,6 +101,26 @@
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">
                                         {{ $pedido->cliente ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-2 items-start">
+                                            <textarea
+                                                class="despacho-observaciones-preview w-56 px-2 py-1 border border-slate-300 rounded text-xs bg-slate-50 resize-none"
+                                                rows="2"
+                                                readonly
+                                                data-pedido-id="{{ $pedido->id }}"
+                                            ></textarea>
+                                            <button
+                                                type="button"
+                                                onclick="abrirModalObservacionesDespachoIndex({{ $pedido->id }}, '{{ addslashes($pedido->numero_pedido) }}')"
+                                                class="despacho-obs-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                                                data-pedido-id="{{ $pedido->id }}"
+                                                style="position:relative"
+                                                title="Ver/agregar observaciones"
+                                            >
+                                                💬
+                                            </button>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <span class="inline-block px-2 py-1 rounded text-xs font-medium
@@ -152,4 +175,44 @@
         </div>
     </div>
 </div>
+
+<div id="modalObservacionesDespachoIndex" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center overflow-auto" style="z-index: 9999;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 my-8">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
+            <h2 id="modalObsDespachoTitle" class="text-lg font-semibold text-white">Observaciones</h2>
+            <button onclick="cerrarModalObservacionesDespachoIndex()"
+                    class="text-white hover:text-slate-200 text-2xl leading-none">
+                ✕
+            </button>
+        </div>
+
+        <div class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 260px)">
+            <div id="observacionesDespachoIndexHistorial" class="space-y-3"></div>
+            <div class="mt-6">
+                <label class="block text-xs font-medium text-slate-700 mb-2">Nueva observación</label>
+                <textarea id="observacionesDespachoIndexNueva"
+                          class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white resize-none"
+                          rows="3"
+                          placeholder="Escribe la observación..."></textarea>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0">
+            <button onclick="cerrarModalObservacionesDespachoIndex()"
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cerrar
+            </button>
+            <button id="btnGuardarObservacionDespachoIndex" onclick="guardarObservacionDespachoIndex()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
+window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
+</script>
+<script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection

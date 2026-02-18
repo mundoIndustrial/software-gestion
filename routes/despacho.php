@@ -63,4 +63,36 @@ Route::prefix('despacho')
         Route::post('/{pedido}/deshacer-entregado', [DespachoController::class, 'deshacerEntregado'])
             ->name('despacho.deshacer-entregado')
             ->where('pedido', '[0-9]+');
+
+        // ==================== OBSERVACIONES (JSON) ====================
+        // Resumen de observaciones no leídas (batch)
+        Route::post('/observaciones/resumen', [DespachoController::class, 'resumenObservaciones'])
+            ->name('despacho.observaciones.resumen');
+
+        // Marcar observaciones como leídas
+        Route::post('/{pedido}/observaciones/marcar-leidas', [DespachoController::class, 'marcarLeidas'])
+            ->name('despacho.observaciones.marcar-leidas')
+            ->where('pedido', '[0-9]+');
+
+        // Obtener observaciones del pedido
+        Route::get('/{pedido}/observaciones', [DespachoController::class, 'obtenerObservaciones'])
+            ->name('despacho.observaciones.obtener')
+            ->where('pedido', '[0-9]+');
+
+        // Guardar nueva observación
+        Route::post('/{pedido}/observaciones/guardar', [DespachoController::class, 'guardarObservacion'])
+            ->name('despacho.observaciones.guardar')
+            ->where('pedido', '[0-9]+');
+
+        // Actualizar una observación existente (por id interno en JSON)
+        Route::post('/{pedido}/observaciones/{observacionId}/actualizar', [DespachoController::class, 'actualizarObservacion'])
+            ->name('despacho.observaciones.actualizar')
+            ->where('pedido', '[0-9]+')
+            ->where('observacionId', '[A-Za-z0-9\-]+');
+
+        // Eliminar una observación existente (por id interno en JSON)
+        Route::post('/{pedido}/observaciones/{observacionId}/eliminar', [DespachoController::class, 'eliminarObservacion'])
+            ->name('despacho.observaciones.eliminar')
+            ->where('pedido', '[0-9]+')
+            ->where('observacionId', '[A-Za-z0-9\-]+');
     });

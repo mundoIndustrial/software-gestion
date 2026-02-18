@@ -56,3 +56,37 @@
 
 <!-- Modal de Confirmación de Eliminación de Imagen (FUERA del modal-proceso-generico para evitar aria-hidden) -->
 @include('asesores.pedidos.modals.modal-confirmar-eliminar-imagen-proceso')
+
+<div id="modalObservacionesDespachoAsesores" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center overflow-auto" style="z-index: 999999;">
+    <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 my-8">
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
+            <h2 id="modalObsDespachoAsesoresTitle" class="text-lg font-semibold text-white">Observaciones despacho</h2>
+            <button onclick="cerrarModalObservacionesDespachoAsesores()"
+                    class="text-white hover:text-slate-200 text-2xl leading-none">
+                ✕
+            </button>
+        </div>
+
+        <div class="px-6 py-6 overflow-y-auto" style="max-height: calc(100vh - 260px)">
+            <div id="observacionesDespachoAsesoresHistorial" class="space-y-3"></div>
+            <div class="mt-6">
+                <label class="block text-xs font-medium text-slate-700 mb-2">Nueva observación</label>
+                <textarea id="observacionesDespachoAsesoresNueva"
+                          class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white resize-none"
+                          rows="3"
+                          placeholder="Escribe la observación..."></textarea>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0">
+            <button onclick="cerrarModalObservacionesDespachoAsesores()"
+                    class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                Cerrar
+            </button>
+            <button id="btnGuardarObservacionDespachoAsesores" onclick="guardarObservacionDespachoAsesores()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors">
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>

@@ -97,6 +97,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
         width: 36px;
         height: 36px;
         box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);

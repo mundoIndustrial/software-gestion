@@ -1799,6 +1799,32 @@ Route::middleware(['auth', 'role:asesor,admin,supervisor_pedidos,despacho'])->pr
     
     // Confirmar corrección de pedido
     Route::post('/pedidos/{id}/confirmar-correccion', [App\Infrastructure\Http\Controllers\Asesores\AsesoresController::class, 'confirmarCorreccion'])->where('id', '[0-9]+')->name('pedidos.confirmar-correccion');
+
+    // ==================== OBSERVACIONES DESPACHO (JSON) ====================
+    Route::post('/pedidos/observaciones-despacho/resumen', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'resumen'])
+        ->name('pedidos.observaciones-despacho.resumen');
+
+    Route::get('/pedidos/{pedido}/observaciones-despacho', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'obtener'])
+        ->where('pedido', '[0-9]+')
+        ->name('pedidos.observaciones-despacho.obtener');
+
+    Route::post('/pedidos/{pedido}/observaciones-despacho/guardar', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'guardar'])
+        ->where('pedido', '[0-9]+')
+        ->name('pedidos.observaciones-despacho.guardar');
+
+    Route::post('/pedidos/{pedido}/observaciones-despacho/marcar-leidas', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'marcarLeidas'])
+        ->where('pedido', '[0-9]+')
+        ->name('pedidos.observaciones-despacho.marcar-leidas');
+
+    Route::post('/pedidos/{pedido}/observaciones-despacho/{observacionId}/actualizar', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'actualizar'])
+        ->where('pedido', '[0-9]+')
+        ->where('observacionId', '[A-Za-z0-9\-]+')
+        ->name('pedidos.observaciones-despacho.actualizar');
+
+    Route::post('/pedidos/{pedido}/observaciones-despacho/{observacionId}/eliminar', [App\Infrastructure\Http\Controllers\Asesores\ObservacionesDespachoController::class, 'eliminar'])
+        ->where('pedido', '[0-9]+')
+        ->where('observacionId', '[A-Za-z0-9\-]+')
+        ->name('pedidos.observaciones-despacho.eliminar');
     
     // ========================================
     // SISTEMA DE ÓRDENES CON BORRADORES
