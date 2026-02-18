@@ -7,6 +7,7 @@ use App\Models\PedidoProduccion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use App\Events\ObservacionDespachoCreada;
 use Illuminate\Support\Str;
 
 
@@ -152,6 +153,9 @@ class ObservacionesDespachoController extends Controller
             'estado' => 0,
         ]);
 
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
+
         $observacion = [
             'id' => (string) $row->uuid,
             'contenido' => $row->contenido,
@@ -205,6 +209,9 @@ class ObservacionesDespachoController extends Controller
         $row->contenido = $validated['contenido'];
         $row->save();
 
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
+
         $payload = [
             'id' => (string) $row->uuid,
             'contenido' => $row->contenido,
@@ -252,6 +259,9 @@ class ObservacionesDespachoController extends Controller
         }
 
         $row->delete();
+
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
 
         return response()->json([
             'success' => true,

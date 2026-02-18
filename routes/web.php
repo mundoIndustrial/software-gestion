@@ -2607,3 +2607,23 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
         ], 500);
     }
 })->name('procesos.activar-recibo-simple');
+
+// ========================================
+// BROADCASTING AUTH ROUTES (WebSocket)
+// ========================================
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::routes(['middleware' => ['auth']]);
+
+// Canal público para observaciones (no requiere auth adicional)
+Broadcast::channel('pedido.{pedidoId}', function ($user, $pedidoId) {
+    return true; // Cualquier usuario autenticado puede escuchar
+});
+
+Broadcast::channel('despacho.observaciones', function ($user) {
+    return true;
+});
+
+Broadcast::channel('asesores.observaciones', function ($user) {
+    return true;
+});

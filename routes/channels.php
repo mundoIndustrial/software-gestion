@@ -67,3 +67,26 @@ Broadcast::channel('bodega-notas-{numero_pedido}-{talla}', function ($user, $num
 Broadcast::channel('supervisor-pedidos', function ($user) {
     return $user->hasRole(['supervisor_pedidos', 'admin']) || $user->hasRole('asesor');
 });
+
+/**
+ * Canales para Observaciones Despacho (Tiempo Real)
+ * Canal público para observaciones de un pedido específico
+ */
+Broadcast::channel('pedido.{pedidoId}', function ($user, $pedidoId) {
+    // Cualquier usuario autenticado puede escuchar observaciones de pedidos
+    return true; // Canal público para simplificar
+});
+
+/**
+ * Canal público para despacho - observaciones
+ */
+Broadcast::channel('despacho.observaciones', function ($user) {
+    return true; // Canal público
+});
+
+/**
+ * Canal público para asesores - observaciones
+ */
+Broadcast::channel('asesores.observaciones', function ($user) {
+    return true; // Canal público
+});

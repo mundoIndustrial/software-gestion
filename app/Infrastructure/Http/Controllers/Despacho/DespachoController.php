@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Events\ObservacionDespachoCreada;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -509,6 +510,9 @@ class DespachoController extends Controller
             'estado' => 0,
         ]);
 
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
+
         $observacion = [
             'id' => (string) $row->uuid,
             'contenido' => $row->contenido,
@@ -558,6 +562,9 @@ class DespachoController extends Controller
         $row->contenido = $validated['contenido'];
         $row->save();
 
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
+
         $payload = [
             'id' => (string) $row->uuid,
             'contenido' => $row->contenido,
@@ -602,6 +609,9 @@ class DespachoController extends Controller
         }
 
         $row->delete();
+
+        // Broadcast event
+        broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
 
         return response()->json([
             'success' => true,

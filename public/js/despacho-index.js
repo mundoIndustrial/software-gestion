@@ -383,6 +383,71 @@
     window.editarObservacionDespachoIndex = editarObservacionDespachoIndex;
     window.eliminarObservacionDespachoIndex = eliminarObservacionDespachoIndex;
 
+    // ==================== WEBSOCKET / REALTIME ====================
+    function setupObservacionesRealtime() {
+        if (!window.Echo) {
+            console.warn('[Despacho] Echo no disponible, reintentando en 2s...');
+            setTimeout(setupObservacionesRealtime, 2000);
+            return;
+        }
+
+        // Escuchar canal general de despacho
+        window.Echo.channel('despacho.observaciones')
+            .listen('.observacion.despacho', (e) => {
+                console.log('[Despacho] Evento recibido:', e);
+                const pedidoId = e?.pedido_id;
+                if (!pedidoId) return;
+
+                // Actualizar badge para el pedido afectado
+                __renderBadge(pedidoId, 1); // Mostrar al menos 1
+
+                // Si el modal está abierto para este pedido, recargar observaciones
+                const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                    cargarObservacionesDespachoIndex();
+                    // Marcar como leídas automáticamente
+                    fetch(`/despacho/${pedidoId}/observaciones/marcar-leidas`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': __despachoObsCsrfToken(),
+                            'Accept': 'application/json',
+                        },
+                    }).catch(() => {});
+                    __clearBadge(pedidoId);
+                }
+
+                // Recargar el preview del textarea
+                cargarPreviewObservacionesDespacho(pedidoId);
+            });
+
+        // Escuchar canales específicos de cada pedido visible en la página
+        const rows = document.querySelectorAll('tr[data-pedido-id]');
+        rows.forEach(row => {
+            const pedidoId = row.getAttribute('data-pedido-id');
+            if (!pedidoId) return;
+
+            window.Echo.channel(`pedido.${pedidoId}`)
+                .listen('.observacion.despacho', (e) => {
+                    console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
+
+                    // Actualizar badge
+                    refrescarBadgesObservacionesDespacho();
+
+                    // Si el modal está abierto, recargar
+                    const currentPedidoId = window.__despachoObsCtx?.pedidoId;
+                    if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                        cargarObservacionesDespachoIndex();
+                    }
+
+                    // Recargar preview
+                    cargarPreviewObservacionesDespacho(pedidoId);
+                });
+        });
+
+        console.log('[Despacho] WebSocket configurado para observaciones');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
@@ -394,6 +459,9 @@
                 }
                 // Refresh badges after loading previews
                 await refrescarBadgesObservacionesDespacho();
+
+                // Setup WebSocket para tiempo real
+                setupObservacionesRealtime();
             };
             ejecutar();
         } catch (e) {

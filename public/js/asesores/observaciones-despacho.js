@@ -374,9 +374,74 @@
     window.editarObservacionDespachoAsesores = editarObservacionDespachoAsesores;
     window.eliminarObservacionDespachoAsesores = eliminarObservacionDespachoAsesores;
 
+    // ==================== WEBSOCKET / REALTIME ====================
+    function setupObservacionesRealtimeAsesores() {
+        if (!window.Echo) {
+            console.warn('[Asesores] Echo no disponible, reintentando en 2s...');
+            setTimeout(setupObservacionesRealtimeAsesores, 2000);
+            return;
+        }
+
+        // Escuchar canal general de asesores
+        window.Echo.channel('asesores.observaciones')
+            .listen('.observacion.despacho', (e) => {
+                console.log('[Asesores] Evento recibido:', e);
+                const pedidoId = e?.pedido_id;
+                if (!pedidoId) return;
+
+                // Actualizar badge para el pedido afectado
+                __renderBadge(pedidoId, 1);
+
+                // Si el modal está abierto para este pedido, recargar observaciones
+                const currentPedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
+                if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                    cargarObservacionesDespachoAsesores();
+                    // Marcar como leídas automáticamente
+                    fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': __csrfToken(),
+                            'Accept': 'application/json',
+                        },
+                    }).catch(() => {});
+                    __clearBadge(pedidoId);
+                }
+
+                // Refrescar todos los badges
+                setTimeout(refrescarBadgesObservacionesDespachoAsesores, 500);
+            });
+
+        // Escuchar canales específicos de cada pedido visible
+        const rows = document.querySelectorAll('[data-pedido-id]');
+        rows.forEach(row => {
+            const pedidoId = row.getAttribute('data-pedido-id');
+            if (!pedidoId) return;
+
+            window.Echo.channel(`pedido.${pedidoId}`)
+                .listen('.observacion.despacho', (e) => {
+                    console.log(`[Asesores] Evento en pedido ${pedidoId}:`, e);
+
+                    // Actualizar badge
+                    refrescarBadgesObservacionesDespachoAsesores();
+
+                    // Si el modal está abierto, recargar
+                    const currentPedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
+                    if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                        cargarObservacionesDespachoAsesores();
+                    }
+                });
+        });
+
+        console.log('[Asesores] WebSocket configurado para observaciones');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         refrescarBadgesObservacionesDespachoAsesores();
         setInterval(refrescarBadgesObservacionesDespachoAsesores, 30000);
+
+        // Setup WebSocket para tiempo real
+        setupObservacionesRealtimeAsesores();
     });
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
