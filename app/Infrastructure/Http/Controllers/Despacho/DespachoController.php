@@ -781,10 +781,11 @@ class DespachoController extends Controller
                 ] : 'null'
             ]);
             
-            // Verificar que sea un pedido pendiente
-            if (!in_array($datos['pedido']['estado'] ?? '', ['PENDIENTE_INSUMOS', 'No iniciado'])) {
+            // Verificar que sea un pedido con estado permitido
+            $estadosPermitidos = ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
+            if (!in_array($datos['pedido']['estado'] ?? '', $estadosPermitidos)) {
                 return redirect()->route('despacho.pendientes')
-                    ->with('error', 'Este pedido no es un pendiente válido');
+                    ->with('error', 'Este pedido no tiene un estado válido para despacho');
             }
             
             return view('despacho.show-pendiente-bodega', $datos);
