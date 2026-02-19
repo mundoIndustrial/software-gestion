@@ -490,13 +490,30 @@ class InvoiceRenderer {
     }
 
     renderizarEPP(epps) {
+        console.log('[InvoiceRenderer] renderizarEPP - INICIO', {
+            epps_existe: !!epps,
+            epps_es_array: Array.isArray(epps),
+            epps_length: epps ? epps.length : 0,
+            epps_data: epps,
+            timestamp: new Date().toISOString()
+        });
+        
         if (epps && epps.length > 0) {
-            return `
+            const resultado = `
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #6b7280;">
                     <div style="font-weight: 700; color: #374151; font-size: 11px; margin-bottom: 8px;">
-                        EQUIPO DE PROTECCIÓN PERSONAL (${epps.length})
+                        ⚡ EQUIPO DE PROTECCIÓN PERSONAL (${epps.length}) - ACTUALIZADO
                     </div>
                     ${epps.map((epp, idx) => {
+                        console.log(`[InvoiceRenderer] Procesando EPP ${idx}:`, {
+                            nombre: epp.nombre_completo || epp.nombre,
+                            cantidad: epp.cantidad,
+                            imagenes_existe: !!epp.imagenes,
+                            imagenes_es_array: Array.isArray(epp.imagenes),
+                            imagenes_length: epp.imagenes ? epp.imagenes.length : 0,
+                            imagenes: epp.imagenes
+                        });
+                        
                         // Estandarizar: crear propiedad 'imagen' si no existe pero hay 'imagenes'
                         if (!epp.imagen && epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) {
                             epp.imagen = epp.imagenes[0];
@@ -504,6 +521,12 @@ class InvoiceRenderer {
                         
                         // Generar HTML para las imágenes del EPP
                         const imagenesHTML = this.renderizarImagenesEPP(epp.imagenes || []);
+                        
+                        console.log(`[InvoiceRenderer] HTML generado para EPP ${idx}:`, {
+                            imagenes_html_length: imagenesHTML.length,
+                            tiene_imagenes: imagenesHTML.length > 0,
+                            imagenes_html_preview: imagenesHTML.substring(0, 200)
+                        });
                         
                         return `
                         <div style="background: white; border: 1px solid #d1d5db; border-left: 4px solid #6b7280; padding: 8px; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid;">
@@ -521,10 +544,14 @@ class InvoiceRenderer {
                             <!-- Imágenes del EPP -->
                             ${imagenesHTML ? `
                                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">Imágenes</div>
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes ? epp.imagenes.length : 0})</div>
                                     ${imagenesHTML}
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <div style="margin-top: 8px; padding: 8px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px;">
+                                    <div style="color: #92400e; font-size: 11px; font-weight: 600;">⚠️ Sin imágenes disponibles</div>
+                                </div>
+                            `}
                             
                             ${epp.observaciones ? `
                                 <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
@@ -537,7 +564,18 @@ class InvoiceRenderer {
                     }).join('')}
                 </div>
             `;
+            
+            console.log('[InvoiceRenderer] renderizarEPP - HTML FINAL GENERADO:', {
+                length: resultado.length,
+                preview: resultado.substring(0, 500),
+                contiene_imagenes: resultado.includes('img src'),
+                timestamp: new Date().toISOString()
+            });
+            
+            return resultado;
         }
+        
+        console.log('[InvoiceRenderer] renderizarEPP - SIN EPPs');
         return '';
     }
 
@@ -588,7 +626,7 @@ class InvoiceRenderer {
                         <div style="position: relative; border-radius: 3px; overflow: hidden; background: #f9fafb; border: 1px solid #e5e7eb; aspect-ratio: 1; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
                              onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'; this.querySelector('.hover-overlay').style.opacity='1';"
                              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'; this.querySelector('.hover-overlay').style.opacity='0';"
-                             onclick="window.invoiceRenderer.abrirModalImagen('${imgUrl}', '${imgTitle.replace(/'/g, "\\'")}')"
+                             onclick="window.abrirModalImagen('${imgUrl}', '${imgTitle.replace(/'/g, "\\'")}')"
                              title="Click para ver imagen completa">
                             <img src="${imgUrl}" 
                                  alt="${imgTitle}" 

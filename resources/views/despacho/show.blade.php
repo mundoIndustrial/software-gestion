@@ -3,6 +3,9 @@
 @section('title', "Despacho - Pedido {$pedido->numero_pedido}")
 
 @push('scripts')
+<!-- Modal de Imágenes -->
+<script src="{{ asset('js/ImageModal.js') }}"></script>
+
 <script>
 // Conexión WebSocket para actualizaciones en tiempo real
 let socket = null;
@@ -880,17 +883,60 @@ function generarHTMLFactura(datos) {
         <div style="margin: 12px 0; padding: 0; background: #ffffff; border-radius: 6px; border: 1px solid #e0e7ff; overflow: hidden;">
             <div style="font-size: 12px !important; font-weight: 700; color: #1e40af; background: #f0f9ff; margin: 0; padding: 12px 12px; border-bottom: 2px solid #bfdbfe;"> EPP (${datos.epps.length})</div>
             <div style="padding: 12px; space-y: 8px;">
-                ${datos.epps.map(epp => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
-                            ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                ${datos.epps.map(epp => {
+                    // Debug logging para EPPs en despacho
+                    console.log('🖼️ [DESPACHO-FACTURA] EPP con imágenes:', {
+                        nombre: epp.nombre_completo || epp.nombre,
+                        cantidad: epp.cantidad,
+                        imagenes_existe: !!epp.imagenes,
+                        imagenes_es_array: Array.isArray(epp.imagenes),
+                        imagenes_length: epp.imagenes ? epp.imagenes.length : 0,
+                        imagenes: epp.imagenes
+                    });
+                    
+                    // Generar HTML para imágenes si existen
+                    const imagenesHTML = (epp.imagenes && Array.isArray(epp.imagenes) && epp.imagenes.length > 0) ? `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">🖼️ Imágenes (${epp.imagenes.length})</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px;">
+                                ${epp.imagenes.map((imagen, index) => {
+                                    let imgUrl = '';
+                                    if (typeof imagen === 'string') {
+                                        imgUrl = imagen;
+                                    } else if (imagen.ruta_web) {
+                                        imgUrl = imagen.ruta_web.startsWith('/') ? imagen.ruta_web : `/storage/${imagen.ruta_web}`;
+                                    } else if (imagen.url) {
+                                        imgUrl = imagen.url.startsWith('/') ? imagen.url : `/storage/${imagen.url}`;
+                                    }
+                                    
+                                    return imgUrl ? `
+                                        <div style="position: relative; border-radius: 3px; overflow: hidden; background: #f9fafb; border: 1px solid #e5e7eb; aspect-ratio: 1; cursor: pointer;" 
+                                             title="Click para ver imagen completa"
+                                             onclick="window.abrirModalImagen('${imgUrl}', '${(epp.nombre_completo || epp.nombre || 'Imagen EPP').replace(/'/g, "\\'")}')">
+                                            <img src="${imgUrl}" 
+                                                 alt="Imagen EPP" 
+                                                 style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                                 onerror="this.style.display='none'; this.parentElement.innerHTML='⚠️';">
+                                        </div>
+                                    ` : '';
+                                }).join('')}
+                            </div>
                         </div>
-                        <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px;">
-                            ${epp.cantidad}
+                    ` : '';
+                    
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
+                                ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                                ${imagenesHTML}
+                            </div>
+                            <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px; margin-top: 4px;">
+                                ${epp.cantidad}
+                            </div>
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         </div>
     ` : '';

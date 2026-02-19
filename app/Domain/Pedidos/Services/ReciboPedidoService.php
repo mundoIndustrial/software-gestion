@@ -497,6 +497,11 @@ class ReciboPedidoService
     {
         $epps = [];
         
+        \Log::info('[RECIBOS-SERVICE] Procesando EPPs para recibo', [
+            'pedido_id' => $pedido->id,
+            'epps_count' => $pedido->epps->count()
+        ]);
+        
         foreach ($pedido->epps as $pedidoEpp) {
             $eppFormato = [
                 'id' => $pedidoEpp->id,
@@ -513,13 +518,30 @@ class ReciboPedidoService
             
             // Obtener imágenes del EPP
             $imagenes = $this->obtenerImagenesEpp($pedidoEpp->id);
+            
+            \Log::info('[RECIBOS-SERVICE] Imágenes obtenidas para EPP', [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'imagenes_count' => count($imagenes),
+                'imagenes' => $imagenes
+            ]);
+            
             if (!empty($imagenes)) {
                 $eppFormato['imagenes'] = $imagenes;
                 $eppFormato['imagen'] = $imagenes[0] ?? null;
             }
             
+            \Log::info('[RECIBOS-SERVICE] EPP procesado', [
+                'pedido_epp_id' => $pedidoEpp->id,
+                'epp_formato' => $eppFormato
+            ]);
+            
             $epps[] = $eppFormato;
         }
+        
+        \Log::info('[RECIBOS-SERVICE] EPPs finales procesados', [
+            'pedido_id' => $pedido->id,
+            'epps_finales' => $epps
+        ]);
         
         return $epps;
     }
@@ -536,8 +558,28 @@ class ReciboPedidoService
                 ->orderBy('orden', 'asc')
                 ->get($const['select']);
             
+            \Log::info('[RECIBOS-SERVICE] Imágenes EPP encontradas', [
+                'pedido_epp_id' => $pedidoEppId,
+                'cantidad' => $imagenesData->count(),
+                'datos' => $imagenesData->toArray()
+            ]);
+            
             if ($imagenesData->count() > 0) {
-                return $imagenesData->pluck('ruta_web')->filter()->toArray();
+                $imagenes = [];
+                foreach ($imagenesData as $imagen) {
+                    // Priorizar ruta_web, luego ruta_original
+                    $ruta = $imagen->ruta_web ?? $imagen->ruta_original;
+                    if ($ruta) {
+                        $imagenes[] = $this->normalizarRutaImagen($ruta);
+                    }
+                }
+                
+                \Log::info('[RECIBOS-SERVICE] Imágenes EPP procesadas', [
+                    'pedido_epp_id' => $pedidoEppId,
+                    'imagenes_finales' => $imagenes
+                ]);
+                
+                return $imagenes;
             }
         } catch (\Exception $e) {
             \Log::error('[RECIBOS-REPO] Error obteniendo imágenes de EPP:', [

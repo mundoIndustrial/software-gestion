@@ -487,6 +487,9 @@
     <script defer src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}"></script>
     @endif
     
+    <!-- Modal de Imágenes Genérico -->
+    <script src="{{ asset('js/ImageModal.js') }}"></script>
+    
     <!-- Page-specific scripts -->
     @stack('scripts')
     

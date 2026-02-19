@@ -220,15 +220,33 @@ class InvoiceModalManager {
      * Genera el HTML de la factura usando el renderer disponible
      */
     generarHTMLFactura(datos) {
+        console.log('[InvoiceModalManager] INICIO generarHTMLFactura', {
+            datos_recibidos: !!datos,
+            datos_keys: datos ? Object.keys(datos) : [],
+            epps_existe: !!(datos && datos.epps),
+            epps_count: datos && datos.epps ? datos.epps.length : 0,
+            timestamp: new Date().toISOString()
+        });
+        
         if (typeof window.generarHTMLFactura === 'function') {
             try {
                 const datosPedido = datos.data || datos;
                 console.log('[InvoiceModalManager] Generando HTML con datos:', {
                     prendas_existe: !!datosPedido.prendas,
-                    prendas_count: datosPedido.prendas?.length || 0
+                    prendas_count: datosPedido.prendas?.length || 0,
+                    epps_existe: !!datosPedido.epps,
+                    epps_count: datosPedido.epps?.length || 0,
+                    epps_data: datosPedido.epps
                 });
                 
                 const htmlFactura = window.generarHTMLFactura(datosPedido);
+                
+                console.log('[InvoiceModalManager] HTML generado:', {
+                    length: htmlFactura.length,
+                    contiene_actualizado: htmlFactura.includes('ACTUALIZADO'),
+                    contiene_imagenes: htmlFactura.includes('img src'),
+                    preview: htmlFactura.substring(0, 300)
+                });
                 
                 if (!htmlFactura || htmlFactura.trim().length === 0) {
                     throw new Error('HTML vacío generado');

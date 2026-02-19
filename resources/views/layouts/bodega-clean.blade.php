@@ -56,6 +56,7 @@
     @endauth
     
     <script src="{{ asset('js/bodega-pedidos.js') }}"></script>
+    <script src="{{ asset('js/ImageModal.js') }}"></script>
     @stack('scripts')
 </body>
 </html>
