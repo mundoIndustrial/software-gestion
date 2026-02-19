@@ -9,6 +9,7 @@ console.log('[REALTIME-COT] === ARCHIVO CARGADO ===');
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
     console.warn('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
+    // No usar return aquí, simplemente salir del bloque
 } else {
     window.realtimeCotizacionesLoaded = true;
 
