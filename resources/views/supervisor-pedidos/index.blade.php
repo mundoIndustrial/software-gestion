@@ -1813,7 +1813,9 @@
                 console.log('[Realtime Supervisor]  Echo está listo, inicializando suscripción...');
                 
                 try {
-                    window.Echo.channel('supervisor-pedidos')
+                    // Usar EchoInstance que es la instancia real, no el constructor
+                    const echoInstance = window.EchoInstance || window.Echo;
+                    echoInstance.channel('supervisor-pedidos')
                         .listen('OrdenUpdated', (data) => {
                             console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
                             

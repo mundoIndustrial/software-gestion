@@ -6,8 +6,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- Meta tags para Reverb WebSocket (valores públicos para el cliente) -->
+    @auth
+    <meta name="user-id" content="{{ auth()->id() }}">
+    <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+    <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
     <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
     <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
+    @endauth
     
     <title>@yield('title', 'Supervisor de Pedidos') - MundoIndustrial</title>
 
@@ -235,6 +241,11 @@
     @stack('styles')
 
     @vite(['resources/js/app.js'])
+
+    <!-- Laravel Echo & WebSockets para supervisor-pedidos -->
+    @auth
+    <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    @endauth
 
 </head>
     <!-- Sidebar Supervisor Pedidos (Componente propio) -->
