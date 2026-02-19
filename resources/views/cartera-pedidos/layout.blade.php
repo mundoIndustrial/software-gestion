@@ -1007,7 +1007,7 @@
 
     <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para usuarios autorizados) -->
     @auth
-    @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos') || auth()->user()->hasRole('despacho'))
+    @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos') || auth()->user()->hasRole('despacho') || auth()->user()->hasRole('cartera'))
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
     @endif
     @endauth

@@ -109,6 +109,54 @@ class PedidosRealtimeRefresh {
             return;
         }
 
+        // /cartera/pedidos: escuchar canal público de pedidos creados (pendiente_cartera)
+        if (this.isCarteraPage) {
+            try {
+                if (this.debug) {
+                    console.log('🔌 [PedidosRealtime] Cartera/pedidos detectado, suscribiendo a canales públicos');
+                }
+
+                // Canal público: pedidos creados
+                this.echoChannel = window.EchoInstance.channel('pedidos.creados')
+                    .listen('.pedido.creado', (event) => {
+                        if (this.debug) console.log('➕ [PedidosRealtime] Pedido creado recibido (cartera):', event?.pedido?.id);
+
+                        // Refrescar lista (la API ya filtra por pendiente_cartera)
+                        if (typeof window.cargarPedidos === 'function') {
+                            window.cargarPedidos();
+                        }
+                    })
+                    .error((error) => {
+                        console.error(' [PedidosRealtime] Error en canal pedidos.creados:', error);
+                        this.usingWebSockets = false;
+                        this.showConnectionIndicator('Echo Error', 'error');
+                        this.startPollingFallback();
+                    });
+
+                // Canal público: actualizaciones generales (si aplica)
+                window.EchoInstance.channel('despacho.pedidos')
+                    .listen('.pedido.actualizado', (event) => {
+                        if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (cartera):', event?.pedido?.id);
+                        if (typeof window.cargarPedidos === 'function') {
+                            window.cargarPedidos();
+                        }
+                    })
+                    .error((error) => {
+                        console.error(' [PedidosRealtime] Error en canal despacho.pedidos:', error);
+                    });
+
+                this.usingWebSockets = true;
+                if (this.debug) console.log(' [PedidosRealtime] WebSockets activo para cartera/pedidos - SIN POLLING');
+                return;
+
+            } catch (error) {
+                console.error(' [PedidosRealtime] Error configurando WebSocket (cartera/pedidos):', error);
+                this.usingWebSockets = false;
+                this.startPollingFallback();
+                return;
+            }
+        }
+
         // Obtener user ID desde meta tags
         const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
 
@@ -649,6 +697,11 @@ class PedidosRealtimeRefresh {
 
 // Inicializar cuando el DOM esté listo con patrón singleton
 document.addEventListener('DOMContentLoaded', () => {
+    const realtimeDebug = (
+        window.location.search.includes('realtimeDebug=1') ||
+        window.localStorage?.getItem('realtimeDebug') === '1'
+    );
+
     // Destruir instancia existente si la hay
     if (window.pedidosRealtimeRefresh) {
         window.pedidosRealtimeRefresh.destroy();
@@ -660,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
             checkInterval: 30000, // 30 segundos
             autoStart: true,
-            debug: false // Desactivar logs en producción
+            debug: realtimeDebug // Activable por querystring/localStorage
         });
     }
 });
@@ -671,10 +724,15 @@ if (document.readyState === 'loading') {
 } else {
     // DOM ya cargado, inicializar inmediatamente
     if (!window.pedidosRealtimeRefresh) {
+        const realtimeDebug = (
+            window.location.search.includes('realtimeDebug=1') ||
+            window.localStorage?.getItem('realtimeDebug') === '1'
+        );
+
         window.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
             checkInterval: 30000,
             autoStart: true,
-            debug: false // Desactivar logs en producción
+            debug: realtimeDebug // Activable por querystring/localStorage
         });
     }
 }
