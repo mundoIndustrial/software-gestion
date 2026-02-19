@@ -140,7 +140,15 @@
                                         @endphp
                                         @if($rowspan > 0)
                                             <td class="px-2 py-3 text-center text-[10px] text-black border-r border-slate-300" rowspan="{{ $rowspan }}" style="width: 6%;">
-                                                {{ $talla['talla'] }}
+                                                @php
+                                                    // Verificar si la talla es un hash MD5 y mostrar vacío en ese caso
+                                                    $tallaMostrar = $talla['talla'] ?? '';
+                                                    // Si parece un hash MD5 (32 caracteres hexadecimales), mostrar vacío
+                                                    if (strlen($tallaMostrar) === 32 && ctype_xdigit($tallaMostrar)) {
+                                                        $tallaMostrar = '';
+                                                    }
+                                                @endphp
+                                                {{ $tallaMostrar }}
                                             </td>
                                         @endif
                                         

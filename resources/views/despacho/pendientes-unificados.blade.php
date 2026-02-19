@@ -386,20 +386,57 @@
 }
 
 .estado-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    display: inline-block;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.estado-pendiente-insumos {
-    background: #fed7aa;
-    color: #9a3412;
+.estado-pendiente {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #92400e;
+    border: 1px solid #f59e0b;
 }
 
 .estado-no-iniciado {
-    background: #e0e7ff;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
     color: #3730a3;
+    border: 1px solid #a5b4fc;
+}
+
+.estado-pendiente-insumos {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    color: #9a3412;
+    border: 1px solid #fbbf24;
+}
+
+.estado-en-ejecucion {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    border: 1px solid #60a5fa;
+}
+
+.estado-anulado {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #b91c1c;
+    border: 1px solid #f87171;
+}
+
+.estado-pendiente-supervisor {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    color: #6b21a8;
+    border: 1px solid #a78bfa;
+}
+
+.estado-devuelto-asesora {
+    background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+    color: #a16207;
+    border: 1px solid #fbbf24;
 }
 
 .btn-action {
@@ -525,7 +562,31 @@
                 <p>Cargando pendientes...</p>
             </div>
         </div>
+        
+        <!-- Controles de paginación -->
+        <div id="paginationContainer" class="pagination-container" style="display: none;">
+            <div class="pagination-info">
+                <span id="paginationText">Mostrando 0 de 0 resultados</span>
+            </div>
+            <div class="pagination-controls">
+                <button id="btnPrevPage" class="pagination-btn" onclick="cambiarPagina(-1)" disabled>
+                    <span class="material-symbols-rounded">chevron_left</span>
+                </button>
+                <div class="pagination-pages">
+                    <span id="currentPage">1</span>
+                    <span class="pagination-separator">de</span>
+                    <span id="totalPages">1</span>
+                </div>
+                <button id="btnNextPage" class="pagination-btn" onclick="cambiarPagina(1)" disabled>
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>
+            </div>
+        </div>
     </div>
+    <!-- Botón flotante para limpiar filtros -->
+    <button onclick="limpiarTodosLosFiltros()" class="floating-btn clear-filters-btn" title="Limpiar todos los filtros">
+        <span class="material-symbols-rounded">filter_alt_off</span>
+    </button>
 </div>
 
 <!-- Modal de Filtros -->
@@ -553,10 +614,15 @@
 @push('scripts')
 <script>
 let searchActual = '{{ $search }}' || '';
+let currentPage = 1;
+let paginationData = null;
 
 // Cargar pedidos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
     cargarPedidos();
+    
+    // Inicializar estado del botón flotante
+    actualizarBotonFlotante();
     
     // Configurar búsqueda en tiempo real
     const searchInput = document.getElementById('searchInput');
@@ -565,7 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
             searchActual = this.value;
+            currentPage = 1; // Resetear a primera página al buscar
             cargarPedidos();
+            actualizarBotonFlotante();
         }, 500);
     });
 });
@@ -580,13 +648,23 @@ async function cargarPedidos() {
         mostrarLoading();
         
         const params = new URLSearchParams();
+        
+        // Agregar parámetro de búsqueda si existe
         if (searchActual) params.append('search', searchActual);
+        
+        // Agregar parámetro de filtro si existe
+        if (currentFilterValue) params.append('filter', currentFilterValue);
+        
+        // Agregar parámetros de paginación
+        params.append('page', currentPage);
+        params.append('per_page', 10);
         
         const response = await fetch(`/despacho/api/pendientes-todos?${params}`);
         const data = await response.json();
         
         if (data.success) {
             renderizarPedidos(data.data);
+            actualizarPaginacion(data.pagination);
         } else {
             mostrarError(data.message);
         }
@@ -606,44 +684,44 @@ function renderizarPedidos(pedidos) {
                 <p>No hay pedidos pendientes</p>
             </div>
         `;
-        return;
-    }
-    
-    container.innerHTML = pedidos.map(pedido => {
-        // Determinar clase de color según estado de entrega
-        let colorClass = '';
-        if (pedido.estado_entrega === 'completo') {
-            colorClass = 'bg-blue-100';
-        } else if (pedido.estado_entrega === 'parcial') {
-            colorClass = 'bg-yellow-100';
-        }
         
-        return `
-        <div class="table-row ${colorClass}">
-            <div>
-                <a href="/despacho/pendientes/${pedido.id}" 
-                   class="btn-action btn-primary">
-                    <span class="material-symbols-rounded">visibility</span>
-                    Ver
-                </a>
+        // Ocultar paginación si no hay datos
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+    } else {
+        container.innerHTML = pedidos.map(pedido => `
+            <div class="table-row">
+                <div>
+                    <a href="/despacho/pendientes/${pedido.id}" class="btn-action btn-primary">
+                        <span class="material-symbols-rounded">visibility</span>
+                        Ver
+                    </a>
+                </div>
+                <div>
+                    ${pedido.numero_pedido ? '#' + pedido.numero_pedido : ''}
+                </div>
+                <div>
+                    <strong>${pedido.cliente}</strong>
+                </div>
+                <div>
+                    <span class="estado-badge ${getEstadoClass(pedido.estado)}">
+                        ${formatEstado(pedido.estado)}
+                    </span>
+                </div>
+                <div>
+                    ${pedido.fecha_creacion}
+                </div>
             </div>
-            <div>
-                #${pedido.numero_pedido}
-            </div>
-            <div>
-                <strong>${pedido.cliente}</strong>
-            </div>
-            <div>
-                <span class="estado-badge ${getEstadoClass(pedido.estado)}">
-                    ${formatEstado(pedido.estado)}
-                </span>
-            </div>
-            <div>
-                ${pedido.fecha_creacion}
-            </div>
-        </div>
-    `;
-    }).join('');
+        `).join('');
+        
+        // Mostrar paginación si hay datos
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'flex';
+        }
+    }
 }
 
 function getEstadoClass(estado) {
@@ -656,10 +734,55 @@ function getEstadoClass(estado) {
 
 function formatEstado(estado) {
     const estados = {
+        'Pendiente': 'Pendiente',
         'PENDIENTE_INSUMOS': 'Pendiente Insumos',
-        'No iniciado': 'No Iniciado'
+        'No iniciado': 'No iniciado',
+        'En Ejecución': 'En Ejecución',
+        'Anulada': 'Anulada',
+        'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
+        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
     };
     return estados[estado] || estado;
+}
+
+// Función para limpiar todos los filtros
+function limpiarTodosLosFiltros() {
+    // Limpiar variables de filtro
+    currentFilterType = '';
+    currentFilterValue = '';
+    searchActual = '';
+    
+    // Limpiar input de búsqueda principal
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Actualizar estado del botón flotante
+    actualizarBotonFlotante();
+    
+    // Recargar pedidos sin filtros
+    cargarPedidos();
+}
+
+// Función para actualizar el estado del botón flotante
+function actualizarBotonFlotante() {
+    const botonFlotante = document.querySelector('.clear-filters-btn');
+    if (!botonFlotante) return;
+    
+    // Verificar si hay filtros activos
+    const tieneFiltros = currentFilterValue || searchActual;
+    
+    if (tieneFiltros) {
+        botonFlotante.classList.add('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros (' + 
+            (currentFilterValue ? 'Filtros activos' : '') + 
+            (currentFilterValue && searchActual ? ' y ' : '') + 
+            (searchActual ? 'Búsqueda activa' : '') + ')';
+    } else {
+        botonFlotante.classList.remove('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros';
+    }
 }
 
 function mostrarLoading() {
@@ -769,12 +892,16 @@ function generateFilterContent(type, data) {
             contentHTML = `
                 <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar..." value="">
                 <div class="filter-options" style="max-height: 300px; overflow-y: auto;">
-                    ${data.length > 0 ? data.map(value => `
+                    ${data.length > 0 ? data.map(value => {
+                        // Extraer solo el número del pedido (quitar el #)
+                        const numeroPedido = value.replace('#', '');
+                        return `
                         <div class="filter-option">
-                            <input type="checkbox" id="filter_${value.replace(/[^a-zA-Z0-9]/g, '_')}" value="${value}">
-                            <label for="filter_${value.replace(/[^a-zA-Z0-9]/g, '_')}">${value}</label>
+                            <input type="checkbox" id="filter_${numeroPedido}" value="${numeroPedido}">
+                            <label for="filter_${numeroPedido}">${value}</label>
                         </div>
-                    `).join('') : '<p class="text-gray-500 text-center">No hay datos disponibles</p>'}
+                    `;
+                    }).join('') : '<p class="text-gray-500 text-center">No hay datos disponibles</p>'}
                 </div>
             `;
             break;
@@ -894,22 +1021,106 @@ function clearFilter() {
 
 function getEstadoClass(estado) {
     const clases = {
+        'Pendiente': 'estado-pendiente',
         'PENDIENTE_INSUMOS': 'estado-pendiente-insumos',
         'No iniciado': 'estado-no-iniciado',
         'En Ejecución': 'estado-en-ejecucion',
-        'Anulado': 'estado-anulado'
+        'Anulada': 'estado-anulado',
+        'PENDIENTE_SUPERVISOR': 'estado-pendiente-supervisor',
+        'DEVUELTO_A_ASESORA': 'estado-devuelto-asesora'
     };
     return clases[estado] || '';
 }
 
 function formatEstado(estado) {
     const estados = {
+        'Pendiente': 'Pendiente',
         'PENDIENTE_INSUMOS': 'Pendiente Insumos',
         'No iniciado': 'No iniciado',
         'En Ejecución': 'En Ejecución',
-        'Anulado': 'Anulado'
+        'Anulada': 'Anulada',
+        'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
+        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
     };
     return estados[estado] || estado;
+}
+
+// Función para limpiar todos los filtros
+function limpiarTodosLosFiltros() {
+    // Limpiar variables de filtro
+    currentFilterType = '';
+    currentFilterValue = '';
+    searchActual = '';
+    
+    // Limpiar input de búsqueda principal
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Actualizar estado del botón flotante
+    actualizarBotonFlotante();
+    
+    // Recargar pedidos sin filtros
+    cargarPedidos();
+}
+
+// Función para actualizar el estado del botón flotante
+function actualizarBotonFlotante() {
+    const botonFlotante = document.querySelector('.clear-filters-btn');
+    if (!botonFlotante) return;
+    
+    // Verificar si hay filtros activos
+    const tieneFiltros = currentFilterValue || searchActual;
+    
+    if (tieneFiltros) {
+        botonFlotante.classList.add('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros (' + 
+            (currentFilterValue ? 'Filtros activos' : '') + 
+            (currentFilterValue && searchActual ? ' y ' : '') + 
+            (searchActual ? 'Búsqueda activa' : '') + ')';
+    } else {
+        botonFlotante.classList.remove('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros';
+    }
+}
+
+function mostrarLoading() {
+    const container = document.getElementById('pedidosContainer');
+    container.innerHTML = `
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Cargando pendientes...</p>
+        </div>
+    `;
+}
+
+function closeFilterModal() {
+    const modal = document.getElementById('filterModal');
+    modal.style.display = 'none';
+}
+
+function clearFilter() {
+    currentFilterValue = '';
+    
+    // Limpiar búsqueda de texto
+    const searchInput = document.getElementById('filterSearch');
+    if (searchInput) searchInput.value = '';
+    
+    // Limpiar checkboxes
+    const checkboxes = document.querySelectorAll('#filterContent input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Limpiar fechas
+    const fechaDesde = document.getElementById('filterFechaDesde');
+    const fechaHasta = document.getElementById('filterFechaHasta');
+    if (fechaDesde) fechaDesde.value = '';
+    if (fechaHasta) fechaHasta.value = '';
+    
+    applyFilter();
+    
+    // Actualizar estado del botón flotante
+    actualizarBotonFlotante();
 }
 
 function applyFilter() {
@@ -959,30 +1170,246 @@ function applyFilter() {
     currentFilterValue = filterValue;
     closeFilterModal();
     cargarPedidos();
+    
+    // Actualizar estado del botón flotante
+    actualizarBotonFlotante();
 }
 
 function getEstadoClass(estado) {
     const clases = {
+        'Pendiente': 'estado-pendiente',
         'PENDIENTE_INSUMOS': 'estado-pendiente-insumos',
         'No iniciado': 'estado-no-iniciado',
         'En Ejecución': 'estado-en-ejecucion',
-        'Anulado': 'estado-anulado'
+        'Anulada': 'estado-anulado',
+        'PENDIENTE_SUPERVISOR': 'estado-pendiente-supervisor',
+        'DEVUELTO_A_ASESORA': 'estado-devuelto-asesora'
     };
     return clases[estado] || '';
 }
 
 function formatEstado(estado) {
     const estados = {
+        'Pendiente': 'Pendiente',
         'PENDIENTE_INSUMOS': 'Pendiente Insumos',
         'No iniciado': 'No iniciado',
         'En Ejecución': 'En Ejecución',
-        'Anulado': 'Anulado'
+        'Anulada': 'Anulada',
+        'PENDIENTE_SUPERVISOR': 'Pendiente Supervisor',
+        'DEVUELTO_A_ASESORA': 'Devuelto a Asesora'
     };
     return estados[estado] || estado;
+}
+
+// Función para limpiar todos los filtros
+function limpiarTodosLosFiltros() {
+    // Limpiar variables de filtro
+    currentFilterType = '';
+    currentFilterValue = '';
+    searchActual = '';
+    
+    // Limpiar input de búsqueda principal
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Actualizar estado del botón flotante
+    actualizarBotonFlotante();
+    
+    // Recargar pedidos sin filtros
+    cargarPedidos();
+}
+
+// Función para actualizar el estado del botón flotante
+function actualizarBotonFlotante() {
+    const botonFlotante = document.querySelector('.clear-filters-btn');
+    if (!botonFlotante) return;
+    
+    // Verificar si hay filtros activos
+    const tieneFiltros = currentFilterValue || searchActual;
+    
+    if (tieneFiltros) {
+        botonFlotante.classList.add('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros (' + 
+            (currentFilterValue ? 'Filtros activos' : '') + 
+            (currentFilterValue && searchActual ? ' y ' : '') + 
+            (searchActual ? 'Búsqueda activa' : '') + ')';
+    } else {
+        botonFlotante.classList.remove('has-filters');
+        botonFlotante.title = 'Limpiar todos los filtros';
+    }
+}
+</script>
+
+<script>
+// Función para cambiar de página
+function cambiarPagina(direction) {
+    const nuevaPagina = currentPage + direction;
+    
+    // Validar que la página esté dentro de los límites
+    if (paginationData && nuevaPagina >= 1 && nuevaPagina <= paginationData.last_page) {
+        currentPage = nuevaPagina;
+        cargarPedidos();
+    }
+}
+
+// Función para actualizar los controles de paginación
+function actualizarPaginacion(pagination) {
+    if (!pagination) return;
+    
+    paginationData = pagination;
+    
+    // Actualizar texto de información
+    const paginationText = document.getElementById('paginationText');
+    if (paginationText) {
+        const from = pagination.from || 0;
+        const to = pagination.to || 0;
+        const total = pagination.total || 0;
+        paginationText.textContent = `Mostrando ${from} a ${to} de ${total} resultados`;
+    }
+    
+    // Actualizar números de página
+    const currentPageSpan = document.getElementById('currentPage');
+    const totalPagesSpan = document.getElementById('totalPages');
+    if (currentPageSpan) currentPageSpan.textContent = pagination.current_page;
+    if (totalPagesSpan) totalPagesSpan.textContent = pagination.last_page;
+    
+    // Actualizar estado de botones
+    const btnPrev = document.getElementById('btnPrevPage');
+    const btnNext = document.getElementById('btnNextPage');
+    
+    if (btnPrev) {
+        btnPrev.disabled = pagination.current_page <= 1;
+    }
+    
+    if (btnNext) {
+        btnNext.disabled = !pagination.has_more;
+    }
 }
 </script>
 
 <style>
+.floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.clear-filters-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.clear-filters-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.clear-filters-btn:active {
+    transform: scale(0.95);
+}
+
+.clear-filters-btn .material-symbols-rounded {
+    font-size: 24px;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+.clear-filters-btn.has-filters {
+    animation: pulse 2s infinite;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    margin-top: 20px;
+}
+
+.pagination-info {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn .material-symbols-rounded {
+    font-size: 18px;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.pagination-separator {
+    color: #9ca3af;
+}
+
+#currentPage {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
 .loading-spinner {
     width: 24px;
     height: 24px;

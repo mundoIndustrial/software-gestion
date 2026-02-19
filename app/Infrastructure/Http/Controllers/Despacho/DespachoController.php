@@ -40,7 +40,7 @@ class DespachoController extends Controller
         $search = $request->input('search', '');
         
         $query = PedidoProduccion::query()
-            ->whereIn('estado', ['Pendiente', 'Entregado', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
+            ->whereIn('estado', ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'])
             ->whereNotNull('numero_pedido') // Excluir pedidos sin número de pedido
             ->where('numero_pedido', '!=', '') // Excluir números de pedido vacíos
             ->orderByDesc('created_at');
@@ -446,7 +446,7 @@ class DespachoController extends Controller
             $query = PedidoProduccion::query()
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '!=', '')
-                ->where('estado', 'PENDIENTE_INSUMOS');
+                ->whereIn('estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA']);
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -708,7 +708,7 @@ class DespachoController extends Controller
             $query = PedidoProduccion::query()
                 ->whereNotNull('numero_pedido')
                 ->where('numero_pedido', '!=', '')
-                ->where('estado', 'No iniciado');
+                ->whereIn('estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA']);
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -745,66 +745,148 @@ class DespachoController extends Controller
      */
     public function obtenerPendientesUnificados(Request $request)
     {
-        \Log::info('[DEBUG] obtenerPendientesUnificados llamado - INICIO ABSOLUTO');
-        
         try {
+            \Log::info('[DEBUG] obtenerPendientesUnificados llamado - INICIO ABSOLUTO');
+            
             $search = $request->query('search', '');
             $tipo = $request->query('tipo', 'todos');
+            $filter = $request->query('filter', '');
+            $page = $request->query('page', 1);
+            $perPage = $request->query('per_page', 10);
             
             \Log::info('[DEBUG] obtenerPendientesUnificados iniciado', [
                 'search' => $search,
-                'tipo' => $tipo
+                'tipo' => $tipo,
+                'filter' => $filter,
+                'page' => $page,
+                'per_page' => $perPage
             ]);
             
             $pendientes = collect();
+            $pedidosProcesados = [];
             
             // Obtener pendientes de costura
             if ($tipo === 'todos' || $tipo === 'costura') {
                 \Log::info('[DEBUG] Obteniendo pendientes de costura');
-                $costuraResponse = $this->obtenerPendientesCostura($request);
-                $costuraData = $costuraResponse->getData();
-                \Log::info('[DEBUG] Respuesta costura:', [
-                    'success' => $costuraData->success ?? 'NO_DATA',
-                    'data_count' => $costuraData->data ? count($costuraData->data) : 0
-                ]);
-                
-                if ($costuraData->success) {
-                    $pendientes = $pendientes->merge($costuraData->data);
-                    \Log::info('[DEBUG] Pendientes costura agregados, total: ' . $pendientes->count());
+                try {
+                    $costuraResponse = $this->obtenerPendientesCostura($request);
+                    $costuraData = $costuraResponse->getData();
+                    \Log::info('[DEBUG] Respuesta costura:', [
+                        'success' => $costuraData->success ?? 'NO_DATA',
+                        'data_count' => $costuraData->data ? count($costuraData->data) : 0
+                    ]);
+                    
+                    if ($costuraData->success) {
+                        $costuraPedidos = collect($costuraData->data);
+                        
+                        // Aplicar filtros si existen
+                        if ($filter) {
+                            $costuraPedidos = $this->aplicarFiltros($costuraPedidos, $filter);
+                            \Log::info('[DEBUG] Costura después de filtros:', [
+                                'total_antes' => count($costuraData->data),
+                                'total_despues' => $costuraPedidos->count()
+                            ]);
+                        }
+                        
+                        foreach ($costuraPedidos as $pedido) {
+                            $pedidoId = $pedido->id;
+                            if (!isset($pedidosProcesados[$pedidoId])) {
+                                $pendientes->push($pedido);
+                                $pedidosProcesados[$pedidoId] = true;
+                            }
+                        }
+                        \Log::info('[DEBUG] Pendientes costura agregados, total: ' . $pendientes->count());
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('[ERROR] Error obteniendo pendientes de costura:', [
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]);
                 }
             }
             
-            // Obtener pendientes de EPP
+            // Obtener pendientes de EPP (solo los que no están ya en costura)
             if ($tipo === 'todos' || $tipo === 'epp') {
                 \Log::info('[DEBUG] Obteniendo pendientes de EPP');
-                $eppResponse = $this->obtenerPendientesEpp($request);
-                $eppData = $eppResponse->getData();
-                \Log::info('[DEBUG] Respuesta EPP:', [
-                    'success' => $eppData->success ?? 'NO_DATA',
-                    'data_count' => $eppData->data ? count($eppData->data) : 0
-                ]);
-                
-                if ($eppData->success) {
-                    $pendientes = $pendientes->merge($eppData->data);
-                    \Log::info('[DEBUG] Pendientes EPP agregados, total: ' . $pendientes->count());
+                try {
+                    $eppResponse = $this->obtenerPendientesEpp($request);
+                    $eppData = $eppResponse->getData();
+                    \Log::info('[DEBUG] Respuesta EPP:', [
+                        'success' => $eppData->success ?? 'NO_DATA',
+                        'data_count' => $eppData->data ? count($eppData->data) : 0
+                    ]);
+                    
+                    if ($eppData->success) {
+                        $eppPedidos = collect($eppData->data);
+                        
+                        // Aplicar filtros si existen
+                        if ($filter) {
+                            $eppPedidos = $this->aplicarFiltros($eppPedidos, $filter);
+                            \Log::info('[DEBUG] EPP después de filtros:', [
+                                'total_antes' => count($eppData->data),
+                                'total_despues' => $eppPedidos->count()
+                            ]);
+                        }
+                        
+                        foreach ($eppPedidos as $pedido) {
+                            $pedidoId = $pedido->id;
+                            if (!isset($pedidosProcesados[$pedidoId])) {
+                                $pendientes->push($pedido);
+                                $pedidosProcesados[$pedidoId] = true;
+                            }
+                        }
+                        \Log::info('[DEBUG] Pendientes EPP agregados, total: ' . $pendientes->count());
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('[ERROR] Error obteniendo pendientes de EPP:', [
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]);
                 }
+            }
+            
+            // Aplicar filtros finales si existen
+            if ($filter && $pendientes->count() > 0) {
+                $pendientes = $this->aplicarFiltros($pendientes, $filter);
+                \Log::info('[DEBUG] Pendientes finales después de filtros globales:', [
+                    'total_antes' => $pendientes->count(),
+                    'total_despues' => $pendientes->count()
+                ]);
             }
             
             // Ordenar por fecha de creación
             $pendientes = $pendientes->sortByDesc('fecha_creacion')->values();
             
+            // Aplicar paginación
+            $total = $pendientes->count();
+            $offset = ($page - 1) * $perPage;
+            $paginated = $pendientes->slice($offset, $perPage);
+            
             \Log::info('[DEBUG] Pendientes finales:', [
-                'total' => $pendientes->count(),
-                'costura_count' => $pendientes->where('tipo', 'costura')->count(),
-                'epp_count' => $pendientes->where('tipo', 'epp')->count()
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'paginated_count' => $paginated->count(),
+                'costura_count' => $paginated->where('tipo', 'costura')->count(),
+                'epp_count' => $paginated->where('tipo', 'epp')->count()
             ]);
             
             return response()->json([
                 'success' => true,
-                'data' => $pendientes,
-                'total' => $pendientes->count(),
-                'costura_count' => $pendientes->where('tipo', 'costura')->count(),
-                'epp_count' => $pendientes->where('tipo', 'epp')->count()
+                'data' => $paginated,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                    'from' => $total > 0 ? $offset + 1 : null,
+                    'to' => min($offset + $perPage, $total),
+                    'has_more' => $page < ceil($total / $perPage)
+                ],
+                'costura_count' => $paginated->where('tipo', 'costura')->count(),
+                'epp_count' => $paginated->where('tipo', 'epp')->count()
             ]);
         } catch (\Exception $e) {
             \Log::error('[ERROR] Error en obtenerPendientesUnificados:', [
@@ -818,6 +900,83 @@ class DespachoController extends Controller
                 'success' => false,
                 'message' => 'Error al obtener pendientes unificados: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Aplicar filtros a una colección de pedidos
+     */
+    private function aplicarFiltros($pedidos, $filterString)
+    {
+        try {
+            \Log::info('[DEBUG] Aplicando filtros:', [
+                'filter_string' => $filterString,
+                'pedidos_count' => $pedidos->count()
+            ]);
+            
+            if (empty($filterString)) {
+                return $pedidos;
+            }
+            
+            $filtros = explode(',', $filterString);
+            $pedidosFiltrados = $pedidos;
+            
+            foreach ($filtros as $filtroItem) {
+                $filtroItem = trim($filtroItem);
+                
+                \Log::info('[DEBUG] Procesando filtro:', [
+                    'filtro_item' => $filtroItem,
+                    'es_numerico' => is_numeric($filtroItem)
+                ]);
+                
+                // Filtro por número de pedido
+                if (is_numeric($filtroItem)) {
+                    $pedidosFiltrados = $pedidosFiltrados->filter(function ($pedido) use ($filtroItem) {
+                        return $pedido->numero_pedido == $filtroItem;
+                    });
+                }
+                
+                // Filtro por cliente (texto)
+                elseif (!is_numeric($filtroItem)) {
+                    $pedidosFiltrados = $pedidosFiltrados->filter(function ($pedido) use ($filtroItem) {
+                        return stripos($pedido->cliente, $filtroItem) !== false;
+                    });
+                }
+                
+                // Filtro por estado
+                $estadosMap = [
+                    'Pendiente' => 'Pendiente',
+                    'PENDIENTE_INSUMOS' => 'PENDIENTE_INSUMOS',
+                    'No iniciado' => 'No iniciado',
+                    'En Ejecución' => 'En Ejecución',
+                    'Anulada' => 'Anulada',
+                    'PENDIENTE_SUPERVISOR' => 'PENDIENTE_SUPERVISOR',
+                    'DEVUELTO_A_ASESORA' => 'DEVUELTO_A_ASESORA'
+                ];
+                
+                if (isset($estadosMap[$filtroItem])) {
+                    $estadoBusqueda = $estadosMap[$filtroItem];
+                    $pedidosFiltrados = $pedidosFiltrados->filter(function ($pedido) use ($estadoBusqueda) {
+                        return $pedido->estado === $estadoBusqueda;
+                    });
+                }
+            }
+            
+            \Log::info('[DEBUG] Resultado de filtros:', [
+                'total_original' => $pedidos->count(),
+                'total_filtrados' => $pedidosFiltrados->count()
+            ]);
+            
+            return $pedidosFiltrados;
+            
+        } catch (\Exception $e) {
+            \Log::error('[ERROR] Error aplicando filtros:', [
+                'error' => $e->getMessage(),
+                'filter_string' => $filterString,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $pedidos;
         }
     }
 
