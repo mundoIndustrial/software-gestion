@@ -5,7 +5,7 @@
  * Usar para probar WebSocket desde supervisor-pedidos
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Events\OrdenUpdated;
 use Illuminate\Support\Facades\Log;
