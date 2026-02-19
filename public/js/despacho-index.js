@@ -9,7 +9,12 @@
 
     // ==================== BADGE FUNCTIONS ====================
     function __clearBadge(pedidoId) {
-        const btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        // Buscar en botones de despacho
+        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        if (!btn) {
+            // Buscar en botones de asesores/pedidos
+            btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+        }
         if (!btn) return;
         const badge = btn.querySelector('.obs-despacho-badge');
         if (badge) badge.remove();
@@ -18,18 +23,35 @@
     function __renderBadge(pedidoId, count) {
         console.log(`[DEBUG] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
         
-        const btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        // Buscar en botones de despacho primero
+        let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
+        if (!btn) {
+            // Buscar en botones de asesores/pedidos
+            btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
+        }
         console.log(`[DEBUG] Botón encontrado para pedido ${pedidoId}:`, btn);
         
         if (!btn) {
             console.warn(`[DEBUG] No se encontró botón para pedido ${pedidoId}`);
             // Buscar todos los botones para debugging
-            const allBtns = document.querySelectorAll('.despacho-obs-btn');
-            console.log(`[DEBUG] Todos los botones encontrados:`, allBtns.length);
-            allBtns.forEach((b, i) => {
-                console.log(`[DEBUG] Botón ${i}:`, {
+            const allDespachoBtns = document.querySelectorAll('.despacho-obs-btn');
+            const allAsesoresBtns = document.querySelectorAll('.btn-ver-dropdown');
+            console.log(`[DEBUG] Botones despacho encontrados:`, allDespachoBtns.length);
+            console.log(`[DEBUG] Botones asesores encontrados:`, allAsesoresBtns.length);
+            
+            // Mostrar botones de despacho
+            allDespachoBtns.forEach((b, i) => {
+                console.log(`[DEBUG] Botón despacho ${i}:`, {
                     'data-pedido-id': b.getAttribute('data-pedido-id'),
                     'onclick': b.getAttribute('onclick'),
+                    'class': b.className
+                });
+            });
+            
+            // Mostrar botones de asesores
+            allAsesoresBtns.forEach((b, i) => {
+                console.log(`[DEBUG] Botón asesores ${i}:`, {
+                    'data-pedido-id': b.getAttribute('data-pedido-id'),
                     'class': b.className
                 });
             });

@@ -470,6 +470,7 @@
     @auth
     @if(auth()->user()->hasRole('asesor'))
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+    <script defer src="{{ asset('js/despacho-index.js') }}"></script>
     @endif
     @endauth
 
