@@ -9,19 +9,35 @@
 
     // ==================== BADGE FUNCTIONS ====================
     function __clearBadge(pedidoId) {
+        console.log(`[DEBUG-BADGE] __clearBadge llamado para pedidoId: ${pedidoId}`);
+        
         // Buscar en botones de despacho
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
         if (!btn) {
             // Buscar en botones de asesores/pedidos
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
         }
-        if (!btn) return;
+        
+        console.log(`[DEBUG-BADGE] Botón encontrado para clear:`, btn);
+        
+        if (!btn) {
+            console.warn(`[DEBUG-BADGE] No se encontró botón para limpiar badge del pedido ${pedidoId}`);
+            return;
+        }
+        
         const badge = btn.querySelector('.obs-despacho-badge');
-        if (badge) badge.remove();
+        console.log(`[DEBUG-BADGE] Badge encontrado:`, badge);
+        
+        if (badge) {
+            console.log(`[DEBUG-BADGE] Eliminando badge del pedido ${pedidoId}`);
+            badge.remove();
+        } else {
+            console.log(`[DEBUG-BADGE] No hay badge para eliminar en el pedido ${pedidoId}`);
+        }
     }
 
     function __renderBadge(pedidoId, count) {
-        console.log(`[DEBUG] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
+        console.log(`[DEBUG-BADGE] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
         
         // Buscar en botones de despacho primero
         let btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
@@ -29,19 +45,19 @@
             // Buscar en botones de asesores/pedidos
             btn = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${pedidoId}"]`);
         }
-        console.log(`[DEBUG] Botón encontrado para pedido ${pedidoId}:`, btn);
+        console.log(`[DEBUG-BADGE] Botón encontrado para render:`, btn);
         
         if (!btn) {
-            console.warn(`[DEBUG] No se encontró botón para pedido ${pedidoId}`);
+            console.warn(`[DEBUG-BADGE] No se encontró botón para pedido ${pedidoId}`);
             // Buscar todos los botones para debugging
             const allDespachoBtns = document.querySelectorAll('.despacho-obs-btn');
             const allAsesoresBtns = document.querySelectorAll('.btn-ver-dropdown');
-            console.log(`[DEBUG] Botones despacho encontrados:`, allDespachoBtns.length);
-            console.log(`[DEBUG] Botones asesores encontrados:`, allAsesoresBtns.length);
+            console.log(`[DEBUG-BADGE] Botones despacho encontrados:`, allDespachoBtns.length);
+            console.log(`[DEBUG-BADGE] Botones asesores encontrados:`, allAsesoresBtns.length);
             
             // Mostrar botones de despacho
             allDespachoBtns.forEach((b, i) => {
-                console.log(`[DEBUG] Botón despacho ${i}:`, {
+                console.log(`[DEBUG-BADGE] Botón despacho ${i}:`, {
                     'data-pedido-id': b.getAttribute('data-pedido-id'),
                     'onclick': b.getAttribute('onclick'),
                     'class': b.className
@@ -50,7 +66,7 @@
             
             // Mostrar botones de asesores
             allAsesoresBtns.forEach((b, i) => {
-                console.log(`[DEBUG] Botón asesores ${i}:`, {
+                console.log(`[DEBUG-BADGE] Botón asesores ${i}:`, {
                     'data-pedido-id': b.getAttribute('data-pedido-id'),
                     'class': b.className
                 });
@@ -58,13 +74,15 @@
             return;
         }
         
+        console.log(`[DEBUG-BADGE] Limpiando badge existente antes de renderizar`);
         __clearBadge(pedidoId);
+        
         if (!count || count <= 0) {
-            console.log(`[DEBUG] No hay badge para mostrar - count: ${count}`);
+            console.log(`[DEBUG-BADGE] No hay badge para mostrar - count: ${count}`);
             return;
         }
 
-        console.log(`[DEBUG] Creando badge para pedido ${pedidoId} con count: ${count}`);
+        console.log(`[DEBUG-BADGE] Creando badge para pedido ${pedidoId} con count: ${count}`);
         
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
@@ -87,7 +105,8 @@
         ].join(';');
         btn.appendChild(badge);
         
-        console.log(`[DEBUG] Badge agregado exitosamente para pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE] Badge agregado exitosamente para pedido ${pedidoId}`);
+        console.log(`[DEBUG-BADGE] Badge HTML:`, badge.outerHTML);
     }
 
     async function refrescarBadgesObservacionesDespacho() {
@@ -147,6 +166,8 @@
 
     // Marcar notificaciones como vistas cuando el usuario hace clic
     async function marcarNotificacionesComoVistas(pedidoId) {
+        console.log(`[DEBUG-BADGE] marcarNotificacionesComoVistas llamado para pedidoId: ${pedidoId}`);
+        
         try {
             // Detectar si estamos en despacho o asesores
             const isDespachoPage = window.location.pathname.includes('/despacho');
@@ -154,7 +175,7 @@
                 ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
                 : `/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
                 
-            console.log(`[DEBUG] Marcando notificaciones como vistas en: ${url}`);
+            console.log(`[DEBUG-BADGE] Marcando notificaciones como vistas en: ${url}`);
             
             const r = await fetch(url, {
                 method: 'POST',
@@ -168,17 +189,21 @@
             });
 
             const data = await r.json().catch(() => null);
+            console.log(`[DEBUG-BADGE] Respuesta del servidor al marcar como vistas:`, data);
+            
             if (data && data.success) {
-                console.log(`[Despacho] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
+                console.log(`[DEBUG-BADGE] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
+                console.log(`[DEBUG-BADGE] Llamando a __clearBadge para pedido ${pedidoId}`);
                 // Ahora sí limpiar el badge
                 __clearBadge(pedidoId);
                 // Refrescar para confirmar
+                console.log(`[DEBUG-BADGE] Refrescando badges después de marcar como vistas`);
                 refrescarBadgesObservacionesDespacho();
             } else {
-                console.warn(`[Despacho] Error marcando notificaciones como vistas para pedido ${pedidoId}`);
+                console.warn(`[DEBUG-BADGE] Error marcando notificaciones como vistas para pedido ${pedidoId}:`, data);
             }
         } catch (e) {
-            console.error('Error marcando notificaciones como vistas:', e);
+            console.error(`[DEBUG-BADGE] Error en marcarNotificacionesComoVistas:`, e);
         }
     }
     // =========================================================
@@ -275,12 +300,18 @@
     }
 
     async function abrirModalObservacionesDespachoIndex(pedidoId, numeroPedido) {
+        console.log(`[DEBUG-BADGE] abrirModalObservacionesDespachoIndex llamado - pedidoId: ${pedidoId}, numeroPedido: ${numeroPedido}`);
+        
         window.__despachoObsCtx = { pedidoId };
         const modal = document.getElementById('modalObservacionesDespachoIndex');
         const title = document.getElementById('modalObsDespachoTitle');
         if (title) title.textContent = `Observaciones - Pedido ${numeroPedido || ''}`;
-        if (!modal) return;
+        if (!modal) {
+            console.warn(`[DEBUG-BADGE] No se encontró el modal modalObservacionesDespachoIndex`);
+            return;
+        }
 
+        console.log(`[DEBUG-BADGE] Abriendo modal y cargando observaciones`);
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.style.display = 'flex';
@@ -290,9 +321,10 @@
 
         await cargarObservacionesDespachoIndex();
 
+        console.log(`[DEBUG-BADGE] Llamando a marcarNotificacionesComoVistas desde abrirModal`);
         // Marcar notificaciones como vistas cuando el usuario abre el modal
         await marcarNotificacionesComoVistas(pedidoId);
-        refrescarBadgesObservacionesDespacho();
+        console.log(`[DEBUG-BADGE] Modal abierto y notificaciones marcadas como vistas`);
     }
 
     function cerrarModalObservacionesDespachoIndex() {
@@ -726,21 +758,29 @@
         // Escuchar canal general de despacho (observaciones)
         window.EchoInstance.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
-                console.log('[Despacho] Evento recibido:', e);
+                console.log(`[DEBUG-BADGE] 🚨 Evento WebSocket recibido en canal despacho.observaciones:`, e);
+                console.log(`[DEBUG-BADGE] Pedido ID: ${e?.pedido_id}, Action: ${e?.action}`);
+                
                 const pedidoId = e?.pedido_id;
-                if (!pedidoId) return;
+                if (!pedidoId) {
+                    console.warn(`[DEBUG-BADGE] Evento sin pedido_id, ignorando`);
+                    return;
+                }
 
+                console.log(`[DEBUG-BADGE] 📢 Llamando a __renderBadge con count=1 para pedido ${pedidoId}`);
                 // Actualizar badge para el pedido afectado
                 __renderBadge(pedidoId, 1); // Mostrar al menos 1
 
                 // Si el modal está abierto para este pedido, recargar observaciones
                 const currentPedidoId = window.__despachoObsCtx?.pedidoId;
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
+                    console.log(`[DEBUG-BADGE] Modal abierto para este pedido, recargando observaciones`);
                     cargarObservacionesDespachoIndex();
                     // NO marcar automáticamente como leídas - esperar acción del usuario
                 }
 
                 // Recargar el preview del textarea
+                console.log(`[DEBUG-BADGE] Recargando preview de observaciones para pedido ${pedidoId}`);
                 cargarPreviewObservacionesDespacho(pedidoId);
             });
 
