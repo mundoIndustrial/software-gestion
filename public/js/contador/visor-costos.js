@@ -411,6 +411,7 @@ function mostrarPrendaVisor(indice) {
     
     // DETECTAR SI ES COTIZACIÓN COMBINADA (tiene logo_cotizacion)
     const esCotizacionCombinada = visorCostosActual.cotizacionData && visorCostosActual.cotizacionData.logo_cotizacion;
+    const esCotizacionTipoPrenda = !esCotizacionCombinada;
     const tecnicas = visorCostosActual?.cotizacionData?.logo_cotizacion?.tecnicas_prendas;
     const esPrendaLogo = Array.isArray(tecnicas) ? tecnicas.some(tp => tp.prenda_id === prenda.id) : false;
 
@@ -500,17 +501,19 @@ function mostrarPrendaVisor(indice) {
         }
         
         // Recolectar imágenes de tela para esta prenda
-        if (detalles.tela_fotos && detalles.tela_fotos.length > 0) {
-            detalles.tela_fotos.forEach((foto, idx) => {
-                if (foto) {
-                    imagenesParaMostrar.push({
-                        grupo: 'Tela',
-                        url: foto,
-                        titulo: `Tela ${idx + 1}`,
-                        color: '#1e5ba8'
-                    });
-                }
-            });
+        if (!esCotizacionTipoPrenda) {
+            if (detalles.tela_fotos && detalles.tela_fotos.length > 0) {
+                detalles.tela_fotos.forEach((foto, idx) => {
+                    if (foto) {
+                        imagenesParaMostrar.push({
+                            grupo: 'Tela',
+                            url: foto,
+                            titulo: `Tela ${idx + 1}`,
+                            color: '#1e5ba8'
+                        });
+                    }
+                });
+            }
         }
         
         // Recolectar imágenes de prenda
