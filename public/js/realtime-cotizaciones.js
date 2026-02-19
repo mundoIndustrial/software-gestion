@@ -275,10 +275,20 @@ if (window.realtimeCotizacionesLoaded) {
      * Handle quotation status change
      */
     function handleEstadoCambiado(event) {
+        console.log('[REALTIME-COT] 🔄 Evento estado.cambiado recibido:', event);
+        
         if (!shouldProcessEstadoEvent(event)) {
+            console.log('[REALTIME-COT] ❌ Evento duplicado, ignorando');
             return;
         }
+        
         const { cotizacion_id, nuevo_estado, estado_anterior, cotizacion } = event;
+        console.log('[REALTIME-COT] 📊 Detalles del cambio:', {
+            cotizacion_id,
+            estado_anterior,
+            nuevo_estado,
+            pagina_actual: window.location.pathname
+        });
 
         // Badge Pendientes global: si entra/sale de ENVIADA_CONTADOR
         if (isOnContadorPage()) {
@@ -348,25 +358,33 @@ if (window.realtimeCotizacionesLoaded) {
      * Update quotation row in the table
      */
     function actualizarFilaCotizacion(cotizacionId, nuevoEstado, cotizacion) {
+        console.log('[REALTIME-COT] 🔄 Actualizando fila cotización:', cotizacionId, 'nuevo estado:', nuevoEstado);
+        
         const row = document.querySelector(`[data-cotizacion-id="${cotizacionId}"]`);
         
         if (!row) {
-
+            console.log('[REALTIME-COT] ❌ No se encontró la fila para cotización:', cotizacionId);
             return;
         }
 
+        console.log('[REALTIME-COT] ✅ Fila encontrada, actualizando estado...');
 
-
-        // Update status badge
-        const estadoCell = row.querySelector('[data-estado]');
+        // Update status badge - buscar en la columna de estado (data-filter-column="estado")
+        const estadoCell = row.querySelector('[data-filter-column="estado"]');
         if (estadoCell) {
-            estadoCell.setAttribute('data-estado', nuevoEstado);
+            console.log('[REALTIME-COT] ✅ Celda de estado encontrada');
             const badge = estadoCell.querySelector('span');
             if (badge) {
+                console.log('[REALTIME-COT] ✅ Badge encontrado, actualizando texto y colores');
                 badge.textContent = nuevoEstado.replace(/_/g, ' ');
                 badge.style.background = getEstadoColor(nuevoEstado).bg;
                 badge.style.color = getEstadoColor(nuevoEstado).color;
+                console.log('[REALTIME-COT] ✅ Badge actualizado a:', nuevoEstado);
+            } else {
+                console.log('[REALTIME-COT] ❌ No se encontró el badge dentro de la celda de estado');
             }
+        } else {
+            console.log('[REALTIME-COT] ❌ No se encontró la celda de estado');
         }
 
         // Add animation to highlight the change
@@ -374,6 +392,8 @@ if (window.realtimeCotizacionesLoaded) {
         setTimeout(() => {
             row.classList.remove('row-updated');
         }, 2000);
+        
+        console.log('[REALTIME-COT] ✅ Actualización completada para cotización:', cotizacionId);
     }
 
     /**
