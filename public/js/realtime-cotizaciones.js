@@ -152,13 +152,25 @@ if (window.realtimeCotizacionesLoaded) {
             console.warn('[REALTIME-COT] Buscando alternativas...');
             if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
                 console.warn('[REALTIME-COT] ✅ Encontrado window.EchoInstance con channel');
+                console.warn('[REALTIME-COT] 🔄 Reemplazando window.Echo con EchoInstance');
                 window.Echo = window.EchoInstance; // Usar EchoInstance
+                console.warn('[REALTIME-COT] ✅ window.Echo ahora es EchoInstance');
+                console.warn('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
             } else if (window.Echo && typeof window.Echo.listen === 'function') {
                 console.warn('[REALTIME-COT] ✅ Encontrado Echo con método listen');
             } else {
                 console.error('[REALTIME-COT] ❌ No se encontró ninguna alternativa válida');
                 return; // Este return ahora está dentro de la función
             }
+        }
+        
+        console.warn('[REALTIME-COT] 🔍 VERIFICACIÓN POST-CAMBIO:');
+        console.warn('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
+        console.warn('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
+        
+        if (typeof window.Echo.channel !== 'function') {
+            console.error('[REALTIME-COT] ❌ AÚN NO ES FUNCIÓN DESPUÉS DEL CAMBIO');
+            return;
         }
         
         console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
