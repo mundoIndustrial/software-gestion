@@ -117,7 +117,7 @@ function initializeEcho() {
     let useProxy = isProduction;
     let wsPortFinal = useProxy ? (window.location.protocol === 'https:' ? 443 : 80) : wsPort;
     let wsHostFinal = useProxy ? window.location.hostname : wsHost;
-    let forceTLSFinal = useProxy ? (window.location.protocol === 'https:') : forceTLS;
+    let forceTLSFinal = useProxy ? (window.location.protocol === 'https:') : false;
 
     try {
         // Debug: Verificar estado antes de crear instancia

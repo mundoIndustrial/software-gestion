@@ -107,21 +107,32 @@
 
         await cargarObservacionesDespachoAsesores();
 
+        // Marcar notificaciones como vistas cuando el usuario abre el modal
         try {
-            await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
+            const r = await fetch(`/despacho/${pedidoId}/observaciones/marcar-vistas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': __csrfToken(),
                     'Accept': 'application/json',
                 },
+                body: JSON.stringify({}),
+                cache: 'no-store',
             });
-        } catch (_) {
-            // ignore
-        }
 
-        __clearBadge(pedidoId);
-        refrescarBadgesObservacionesDespachoAsesores();
+            const data = await r.json().catch(() => null);
+            if (data && data.success) {
+                console.log(`[Asesores] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
+                // Ahora sí limpiar el badge
+                __clearBadge(pedidoId);
+                // Refrescar para confirmar
+                refrescarBadgesObservacionesDespachoAsesores();
+            } else {
+                console.warn(`[Asesores] Error marcando notificaciones como vistas para pedido ${pedidoId}`);
+            }
+        } catch (e) {
+            console.error('Error marcando notificaciones como vistas:', e);
+        }
     }
 
     function cerrarModalObservacionesDespachoAsesores() {
@@ -131,11 +142,12 @@
         modal.classList.remove('flex');
         modal.style.display = '';
 
-        const pedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
-        if (pedidoId) {
-            __clearBadge(pedidoId);
-            refrescarBadgesObservacionesDespachoAsesores();
-        }
+        // NO limpiar badge automáticamente - ya se limpió al abrir
+        // const pedidoId = window.__asesoresObsDespachoCtx?.pedidoId;
+        // if (pedidoId) {
+        //     __clearBadge(pedidoId);
+        //     refrescarBadgesObservacionesDespachoAsesores();
+        // }
     }
 
     async function cargarObservacionesDespachoAsesores() {

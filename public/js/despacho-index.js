@@ -16,11 +16,34 @@
     }
 
     function __renderBadge(pedidoId, count) {
+        console.log(`[DEBUG] __renderBadge llamado - pedidoId: ${pedidoId}, count: ${count}`);
+        
         const btn = document.querySelector(`.despacho-obs-btn[data-pedido-id="${pedidoId}"]`);
-        if (!btn) return;
+        console.log(`[DEBUG] Botón encontrado para pedido ${pedidoId}:`, btn);
+        
+        if (!btn) {
+            console.warn(`[DEBUG] No se encontró botón para pedido ${pedidoId}`);
+            // Buscar todos los botones para debugging
+            const allBtns = document.querySelectorAll('.despacho-obs-btn');
+            console.log(`[DEBUG] Todos los botones encontrados:`, allBtns.length);
+            allBtns.forEach((b, i) => {
+                console.log(`[DEBUG] Botón ${i}:`, {
+                    'data-pedido-id': b.getAttribute('data-pedido-id'),
+                    'onclick': b.getAttribute('onclick'),
+                    'class': b.className
+                });
+            });
+            return;
+        }
+        
         __clearBadge(pedidoId);
-        if (!count || count <= 0) return;
+        if (!count || count <= 0) {
+            console.log(`[DEBUG] No hay badge para mostrar - count: ${count}`);
+            return;
+        }
 
+        console.log(`[DEBUG] Creando badge para pedido ${pedidoId} con count: ${count}`);
+        
         const badge = document.createElement('span');
         badge.className = 'obs-despacho-badge';
         badge.textContent = count > 99 ? '99+' : String(count);
@@ -41,6 +64,8 @@
             'box-shadow:0 2px 6px rgba(0,0,0,0.25)'
         ].join(';');
         btn.appendChild(badge);
+        
+        console.log(`[DEBUG] Badge agregado exitosamente para pedido ${pedidoId}`);
     }
 
     async function refrescarBadgesObservacionesDespacho() {
@@ -51,6 +76,8 @@
                 .filter(Boolean)
                 .map(v => parseInt(v, 10))
                 .filter(n => Number.isFinite(n));
+
+            console.log(`[DEBUG] refrescarBadges - IDs encontrados:`, ids);
 
             if (ids.length === 0) return;
 
@@ -66,10 +93,14 @@
             });
 
             const data = await r.json().catch(() => null);
+            console.log(`[DEBUG] Respuesta del servidor:`, data);
+            
             const map = (data && data.success && data.data) ? data.data : {};
+            console.log(`[DEBUG] Map de unread counts:`, map);
 
             ids.forEach((pedidoId) => {
                 const unread = parseInt(map?.[pedidoId]?.unread ?? '0', 10) || 0;
+                console.log(`[DEBUG] Pedido ${pedidoId} - unread: ${unread}`);
                 __renderBadge(pedidoId, unread);
             });
         } catch (e) {
