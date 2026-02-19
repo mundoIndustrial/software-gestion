@@ -103,7 +103,15 @@
 
             if (ids.length === 0) return;
 
-            const r = await fetch('/despacho/observaciones/resumen', {
+            // Detectar si estamos en despacho o asesores
+            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const url = isDespachoPage 
+                ? '/despacho/observaciones/resumen'
+                : '/pedidos/observaciones-despacho/resumen';
+                
+            console.log(`[DEBUG] Refrescando badges desde: ${url}`);
+
+            const r = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -140,7 +148,15 @@
     // Marcar notificaciones como vistas cuando el usuario hace clic
     async function marcarNotificacionesComoVistas(pedidoId) {
         try {
-            const r = await fetch(`/despacho/${pedidoId}/observaciones/marcar-vistas`, {
+            // Detectar si estamos en despacho o asesores
+            const isDespachoPage = window.location.pathname.includes('/despacho');
+            const url = isDespachoPage 
+                ? `/despacho/${pedidoId}/observaciones/marcar-vistas`
+                : `/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`;
+                
+            console.log(`[DEBUG] Marcando notificaciones como vistas en: ${url}`);
+            
+            const r = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -168,7 +184,15 @@
     // =========================================================
 
     async function __fetchObservacionesDespacho(pedidoId) {
-        const r = await fetch(`/despacho/${pedidoId}/observaciones`, {
+        // Detectar si estamos en despacho o asesores
+        const isDespachoPage = window.location.pathname.includes('/despacho');
+        const url = isDespachoPage 
+            ? `/despacho/${pedidoId}/observaciones`
+            : `/pedidos/${pedidoId}/observaciones-despacho`;
+            
+        console.log(`[DEBUG] Obteniendo observaciones desde: ${url}`);
+        
+        const r = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
