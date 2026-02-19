@@ -137,9 +137,9 @@ if (window.realtimeCotizacionesLoaded) {
                 return; // Este return ahora está dentro de la función
             }
         }
-    
-    console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
-    window.Echo.channel('cotizaciones')
+        
+        console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
+        window.Echo.channel('cotizaciones')
         .listen('.cotizacion.creada', (event) => {
             console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal cotizaciones:', event);
             handleNuevaCotizacion(event);
@@ -191,7 +191,9 @@ if (window.realtimeCotizacionesLoaded) {
         .subscribed(() => console.log('[REALTIME-COT] ✅ Subscrito a canal: cotizaciones.contador'))
         .error((err) => console.error('[REALTIME-COT] ❌ Error canal cotizaciones.contador:', err));
 
-    console.log('[REALTIME-COT] Suscripciones a canales completadas');
+        console.log('[REALTIME-COT] Suscripciones a canales completadas');
+        console.log('[REALTIME-COT] 🎉 Sistema de tiempo real inicializado correctamente');
+    } // Cierra la función initializeRealtimeCotizaciones
 
     /**
      * Handle new quotation created
@@ -1005,8 +1007,6 @@ if (window.realtimeCotizacionesLoaded) {
     function isOnContadorPendientesPage() {
         return window.location.pathname.includes('/contador/dashboard');
     }
-
-    } // Cierra la función initializeRealtimeCotizaciones
 
 } // Cierra el bloque else principal
 
