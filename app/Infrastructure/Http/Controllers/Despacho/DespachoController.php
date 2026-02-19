@@ -1293,4 +1293,39 @@ class DespachoController extends Controller
             ]);
         }
     }
+
+    /**
+     * Marcar observaciones de un pedido como vistas (para badges)
+     */
+    public function marcarObservacionesComoVistas($pedidoId)
+    {
+        try {
+            // Actualizar todas las observaciones no leídas del pedido
+            $updated = \DB::table('pedido_observaciones_despacho')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('estado', 0) // 0 = no leída
+                ->update(['estado' => 1]); // 1 = leída
+
+            \Log::info('[DespachoController] Observaciones marcadas como vistas', [
+                'pedido_id' => $pedidoId,
+                'updated_count' => $updated
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Observaciones marcadas como vistas',
+                'updated_count' => $updated
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[DespachoController] Error marcando observaciones como vistas', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar observaciones como vistas'
+            ], 500);
+        }
+    }
 }

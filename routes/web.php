@@ -2609,6 +2609,13 @@ Route::middleware(['auth'])->post('procesos/{procesoId}/activar-recibo', functio
 })->name('procesos.activar-recibo-simple');
 
 // ========================================
+// DESPACHO - OBSERVACIONES BADGES
+// ========================================
+Route::post('/despacho/{pedido_id}/observaciones/marcar-vistas', [\App\Http\Controllers\DespachoController::class, 'marcarObservacionesComoVistas'])
+    ->name('despacho.observaciones.marcar-vistas')
+    ->where('pedido_id', '[0-9]+');
+
+// ========================================
 // BROADCASTING AUTH ROUTES (WebSocket)
 // ========================================
 use Illuminate\Support\Facades\Broadcast;
