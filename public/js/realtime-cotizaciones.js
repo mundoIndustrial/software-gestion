@@ -106,12 +106,32 @@ if (window.realtimeCotizacionesLoaded) {
         console.log('[REALTIME-COT] Verificando Echo antes de suscribirse...');
         
         // Verificar que Echo tenga el método channel
+        console.log('[REALTIME-COT] 🔍 DIAGNÓSTICO COMPLETO DE ECHO:');
+        console.log('[REALTIME-COT] window.Echo existe:', !!window.Echo);
+        console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
+        console.log('[REALTIME-COT] window.Echo:', window.Echo);
+        console.log('[REALTIME-COT] window.Echo.constructor:', window.Echo?.constructor?.name);
+        console.log('[REALTIME-COT] window.Echo.channel:', window.Echo?.channel);
+        console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
+        console.log('[REALTIME-COT] Métodos disponibles en Echo:', Object.getOwnPropertyNames(window.Echo || {}));
+        
         if (typeof window.Echo.channel !== 'function') {
-            console.error('[REALTIME-COT] ERROR: window.Echo.channel no es una función');
+            console.error('[REALTIME-COT] ❌ ERROR: window.Echo.channel no es una función');
             console.log('[REALTIME-COT] window.Echo:', window.Echo);
             console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
             console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo.channel);
-            return; // Este return ahora está dentro de la función
+            
+            // Intentar ver si hay otra propiedad que pueda ser el canal
+            console.log('[REALTIME-COT] Buscando alternativas...');
+            if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
+                console.log('[REALTIME-COT] ✅ Encontrado window.EchoInstance con channel');
+                window.Echo = window.EchoInstance; // Usar EchoInstance
+            } else if (window.Echo && typeof window.Echo.listen === 'function') {
+                console.log('[REALTIME-COT] ✅ Encontrado Echo con método listen');
+            } else {
+                console.error('[REALTIME-COT] ❌ No se encontró ninguna alternativa válida');
+                return; // Este return ahora está dentro de la función
+            }
         }
     
     console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
