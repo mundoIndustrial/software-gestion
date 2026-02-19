@@ -551,6 +551,93 @@
             }
         });
 
+        function cargarBadgeSidebarPedidos() {
+            const badgePendientes = document.getElementById('ordenesPendientesCount');
+            if (!badgePendientes) return;
+
+            fetch('{{ route("supervisor-pedidos.ordenes-pendientes-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !data.success) {
+                        badgePendientes.style.display = 'none';
+                        return;
+                    }
+
+                    const countRegulares = (data.count || 0) - (data.pendientesLogo || 0);
+                    if (countRegulares > 0) {
+                        badgePendientes.textContent = countRegulares;
+                        badgePendientes.style.display = 'inline-flex';
+                    } else {
+                        badgePendientes.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    badgePendientes.style.display = 'none';
+                });
+        }
+
+        function isSupervisorPedidosIndexView() {
+            const path = (window.location.pathname || '').replace(/\/+$/, '');
+            const search = window.location.search || '';
+            return path === '/supervisor-pedidos' && search === '';
+        }
+
+        function isCarteraRoute() {
+            const path = (window.location.pathname || '');
+            return path.startsWith('/cartera');
+        }
+
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        const refreshBadgeDebounced = debounce(() => {
+            if (isCarteraRoute()) return;
+            if (isSupervisorPedidosIndexView()) return;
+            cargarBadgeSidebarPedidos();
+        }, 300);
+
+        function iniciarRealtimeBadgeSidebarPedidos() {
+            if (isCarteraRoute()) return;
+            if (isSupervisorPedidosIndexView()) return;
+
+            const echo = window.EchoInstance;
+            if (!echo || typeof echo.channel !== 'function') return;
+
+            try {
+                echo.channel('despacho.pedidos')
+                    .listen('.pedido.actualizado', () => refreshBadgeDebounced());
+
+                echo.channel('pedidos.creados')
+                    .listen('.pedido.creado', () => refreshBadgeDebounced());
+            } catch (e) {
+                // noop
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isCarteraRoute()) return;
+            if (isSupervisorPedidosIndexView()) return;
+
+            cargarBadgeSidebarPedidos();
+
+            let tries = 0;
+            const maxTries = 100;
+            const timer = setInterval(() => {
+                tries++;
+                if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
+                    clearInterval(timer);
+                    iniciarRealtimeBadgeSidebarPedidos();
+                } else if (tries >= maxTries) {
+                    clearInterval(timer);
+                }
+            }, 200);
+        });
+
         // Recargar contador cada 30 segundos (solo en supervisores)
         if (typeof isCartera === 'undefined' || !isCartera) {
             // setInterval(cargarContadorOrdenesPendientes, 30000);

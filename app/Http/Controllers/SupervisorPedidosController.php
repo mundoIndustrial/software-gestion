@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\TipoCotizacion;
 
 class SupervisorPedidosController extends Controller
 {
@@ -1032,13 +1033,19 @@ class SupervisorPedidosController extends Controller
             // Contar órdenes con estado 'PENDIENTE_SUPERVISOR' (todas)
             $totalPendientes = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
                 ->count();
-                
+
+            $logoTipoId = TipoCotizacion::getIdPorCodigo('logo');
+
             // Contar solo las órdenes de logo pendientes
-            $pendientesLogo = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
-                ->whereHas('cotizacion', function($q) {
-                    $q->where('tipo', 'logo');
-                })
-                ->count();
+            // Nota: En cotizaciones no existe columna "tipo"; se usa tipo_cotizacion_id
+            $pendientesLogo = 0;
+            if ($logoTipoId) {
+                $pendientesLogo = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
+                    ->whereHas('cotizacion', function ($q) use ($logoTipoId) {
+                        $q->where('tipo_cotizacion_id', $logoTipoId);
+                    })
+                    ->count();
+            }
 
             return response()->json([
                 'success' => true,

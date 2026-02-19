@@ -20,7 +20,7 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ !request()->query('aprobacion') && !request()->query('estado') ? 'active' : '' }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') !== 'Anulada' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
                         <span class="menu-label">Pedidos</span>

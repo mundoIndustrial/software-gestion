@@ -1159,6 +1159,7 @@
     
     <!-- Scripts para funcionalidad de asesores - Módulos Desacoplados -->
     <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+    <script src="{{ asset('js/asesores/observaciones-despacho.js') }}"></script>
     <script src="{{ asset('js/asesores/pedidos-modal-edit.js') }}"></script>
     <!-- Scripts para Vista Previa en Vivo de Factura - Módulos Desacoplados -->
     <script src="{{ asset('js/modulos/invoice/ImageGalleryManager.js') }}?v={{ time() }}"></script>
@@ -1723,8 +1724,8 @@
          */
         function mostrarNotificacionEnTiempoReal(orden, action) {
             const mensajes = {
-                'created': `✨ Nueva orden creada: #${orden.numero_pedido}`,
-                'updated': ` Orden actualizada: #${orden.numero_pedido}`,
+                'created': `🆕 Nuevo pedido #${orden.numero_pedido}`,
+                'updated': `Pedido #${orden.numero_pedido} actualizado`,
                 'deleted': ` Orden eliminada: #${orden.numero_pedido}`
             };
 
@@ -1810,71 +1811,89 @@
             console.log('[Realtime Supervisor]  window.waitForEcho está disponible, inicializando listener...');
             
             window.waitForEcho(() => {
-                console.log('[Realtime Supervisor]  Echo está listo, inicializando suscripción...');
+                console.log('[Realtime Supervisor] ✅ Echo está listo, inicializando suscripción...');
                 
                 try {
-                    // Usar EchoInstance que es la instancia real, no el constructor
-                    const echoInstance = window.EchoInstance || window.Echo;
-                    console.log('[Realtime Supervisor] 🔧 EchoInstance disponible:', !!echoInstance);
-                    console.log('[Realtime Supervisor] 🔧 Tipo de EchoInstance:', typeof echoInstance);
-                    
-                    const channel = echoInstance.channel('supervisor-pedidos');
-                    console.log('[Realtime Supervisor] 📡 Canal creado:', channel);
-                    
-                    channel.subscribed(() => {
+                    const echo = window.EchoInstance || window.Echo;
+                    if (!echo || typeof echo.channel !== 'function') {
+                        console.error('[Realtime Supervisor] ❌ EchoInstance no disponible o inválido');
+                        return;
+                    }
+
+                    const refreshTabla = async (payload, eventName) => {
+                        console.log(`[Realtime Supervisor] 🔄 Refresh solicitado por ${eventName}:`, payload);
+
+                        if (window.__realtimeSupervisorRefreshTimeout) {
+                            clearTimeout(window.__realtimeSupervisorRefreshTimeout);
+                        }
+
+                        window.__realtimeSupervisorRefreshTimeout = setTimeout(async () => {
+                            try {
+                                const response = await fetch(window.location.href, {
+                                    method: 'GET',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    }
+                                });
+
+                                if (!response.ok) {
+                                    console.error('[Realtime Supervisor] ❌ No se pudo refrescar la tabla:', response.status);
+                                    return;
+                                }
+
+                                const html = await response.text();
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+
+                                const nuevaTabla = doc.querySelector('.table-scroll-container');
+                                const tablaActual = document.querySelector('.table-scroll-container');
+
+                                if (!nuevaTabla || !tablaActual) {
+                                    console.warn('[Realtime Supervisor] ⚠️ No se encontró .table-scroll-container para refrescar');
+                                    return;
+                                }
+
+                                tablaActual.innerHTML = nuevaTabla.innerHTML;
+
+                                const pedido = payload?.pedido || payload?.orden || payload || {};
+                                const ordenNoti = {
+                                    id: pedido.id,
+                                    numero_pedido: pedido.numero_pedido || payload?.numero_pedido || 'N/A',
+                                    cliente: pedido.cliente || '',
+                                    estado: pedido.estado || ''
+                                };
+                                if (typeof mostrarNotificacionEnTiempoReal === 'function') {
+                                    mostrarNotificacionEnTiempoReal(ordenNoti, 'created');
+                                }
+                            } catch (error) {
+                                console.error('[Realtime Supervisor] ❌ Error refrescando tabla:', error);
+                            }
+                        }, 450);
+                    };
+
+                    // Canal principal (cuando el pedido cambia de estado desde despacho/cartera)
+                    echo.channel('despacho.pedidos')
+                        .listen('.pedido.actualizado', (data) => refreshTabla(data, 'despacho.pedidos:.pedido.actualizado'))
+                        .on('pusher:subscription_succeeded', () => {
+                            console.log('[Realtime Supervisor] ✅ Subscripción exitosa al canal despacho.pedidos');
+                        })
+                        .on('pusher:subscription_error', (error) => {
+                            console.error('[Realtime Supervisor] ❌ Error en subscripción despacho.pedidos:', error);
+                        });
+
+                    // Canal legado/alterno (si existe en el backend)
+                    const channelSupervisor = echo.channel('supervisor-pedidos');
+                    channelSupervisor.subscribed(() => {
                         console.log('[Realtime Supervisor] ✅ Suscripción exitosa al canal supervisor-pedidos');
                     });
-                    
-                    channel.error((error) => {
-                        console.error('[Realtime Supervisor] ❌ Error en suscripción al canal:', error);
+                    channelSupervisor.error((error) => {
+                        console.error('[Realtime Supervisor] ❌ Error en suscripción al canal supervisor-pedidos:', error);
                     });
+                    channelSupervisor.listen('OrdenUpdated', (data) => refreshTabla(data, 'supervisor-pedidos:OrdenUpdated'));
                     
-                    channel.listen('OrdenUpdated', (data) => {
-                        console.log('[Realtime Supervisor] 📨 Evento OrdenUpdated recibido:', data);
-                            
-                            if (!data.orden) {
-                                console.warn('[Realtime Supervisor]  Evento sin datos de orden');
-                                return;
-                            }
-
-                            const orden = data.orden;
-                            const numeroPedido = orden.numero_pedido || orden.numero_pedido || orden.pedido;
-                            const action = data.action || 'updated';
-                            
-                            console.log(`[Realtime Supervisor]  Procesando ${action}: Pedido #${numeroPedido}`);
-
-                            // Buscar la fila en la tabla correspondiente al pedido
-                            const filas = document.querySelectorAll('[data-pedido-id]');
-                            let filaEncontrada = null;
-
-                            for (let fila of filas) {
-                                const pedidoIdAttr = fila.getAttribute('data-pedido-id');
-                                if (pedidoIdAttr == orden.id) {
-                                    filaEncontrada = fila;
-                                    break;
-                                }
-                            }
-
-                            if (filaEncontrada) {
-                                console.log('[Realtime Supervisor]  Fila encontrada, actualizando...');
-                                actualizarFilaEnTabla(filaEncontrada, orden, action);
-                            } else {
-                                console.log('[Realtime Supervisor]  Fila no encontrada, agregando nueva fila...');
-                                agregarNuevaFilaATabla(orden, action);
-                            }
-
-                            // Notificar al usuario
-                            mostrarNotificacionEnTiempoReal(orden, action);
-                            
-                            // Actualizar contador de órdenes pendientes si es necesario
-                            if (typeof actualizarContadorPendientes === 'function') {
-                                actualizarContadorPendientes();
-                            }
-                        });
-                    
-                    console.log('[Realtime Supervisor]  Sistema de tiempo real inicializado correctamente');
+                    console.log('[Realtime Supervisor] ✅ Sistema de tiempo real inicializado correctamente');
                 } catch (error) {
-                    console.error('[Realtime Supervisor]  Error inicializando listener:', error);
+                    console.error('[Realtime Supervisor] ❌ Error inicializando listener:', error);
                 }
             });
         }

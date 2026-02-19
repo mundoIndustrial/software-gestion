@@ -108,7 +108,7 @@
         }
 
         .table-head {
-            background: #3b82f6 !important;
+            background: linear-gradient(135deg, var(--primary) 0%, #2b7ec9 100%) !important;
             border-bottom: 2px solid #1e40af !important;
             padding: 0 !important;
             position: sticky !important;
@@ -124,7 +124,7 @@
             width: 100% !important;
             gap: 0 !important;
             padding: 14px 8px !important;
-            background: #3b82f6 !important;
+            background: transparent !important;
         }
 
         .table-header-cell-cartera {

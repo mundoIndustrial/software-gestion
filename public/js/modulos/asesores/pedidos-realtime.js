@@ -36,6 +36,10 @@ class PedidosRealtimeRefresh {
         // Detección de página
         this.isCarteraPage = window.location.pathname.includes('/cartera/pedidos');
         this.isAnyCarteraPage = window.location.pathname.includes('/cartera/');
+        this.isSupervisorPedidosPage = window.location.pathname.includes('/supervisor-pedidos');
+
+        // Debounce para reload en vistas server-rendered
+        this.reloadTimeout = null;
         
         // No ejecutar realtime en páginas de cartera (excepto /cartera/pedidos)
         if (this.isAnyCarteraPage && !this.isCarteraPage) {
@@ -109,6 +113,42 @@ class PedidosRealtimeRefresh {
             return;
         }
 
+        // /supervisor-pedidos: vista server-rendered, recargar cuando haya cambios relevantes
+        if (this.isSupervisorPedidosPage) {
+            try {
+                if (this.debug) {
+                    console.log('🔌 [PedidosRealtime] Supervisor-pedidos detectado, suscribiendo a canal público despacho.pedidos');
+                }
+
+                this.echoChannel = window.EchoInstance.channel('despacho.pedidos')
+                    .listen('.pedido.actualizado', (event) => {
+                        if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (supervisor):', event?.pedido?.id);
+
+                        // Vista con paginación renderizada en servidor: reload con debounce
+                        if (this.reloadTimeout) clearTimeout(this.reloadTimeout);
+                        this.reloadTimeout = setTimeout(() => {
+                            window.location.reload();
+                        }, 600);
+                    })
+                    .error((error) => {
+                        console.error(' [PedidosRealtime] Error en canal despacho.pedidos (supervisor):', error);
+                        this.usingWebSockets = false;
+                        this.showConnectionIndicator('Echo Error', 'error');
+                        this.startPollingFallback();
+                    });
+
+                this.usingWebSockets = true;
+                if (this.debug) console.log(' [PedidosRealtime] WebSockets activo para supervisor-pedidos - SIN POLLING');
+                return;
+
+            } catch (error) {
+                console.error(' [PedidosRealtime] Error configurando WebSocket (supervisor-pedidos):', error);
+                this.usingWebSockets = false;
+                this.startPollingFallback();
+                return;
+            }
+        }
+
         // /cartera/pedidos: escuchar canal público de pedidos creados (pendiente_cartera)
         if (this.isCarteraPage) {
             try {
@@ -120,6 +160,9 @@ class PedidosRealtimeRefresh {
                 this.echoChannel = window.EchoInstance.channel('pedidos.creados')
                     .listen('.pedido.creado', (event) => {
                         if (this.debug) console.log('➕ [PedidosRealtime] Pedido creado recibido (cartera):', event?.pedido?.id);
+
+                        const numero = event?.pedido?.numero_pedido || '';
+                        this.showRealtimeToast(`Nuevo pedido ${numero ? '#' + numero : ''} recibido`, 'success');
 
                         // Refrescar lista (la API ya filtra por pendiente_cartera)
                         if (typeof window.cargarPedidos === 'function') {
@@ -137,6 +180,13 @@ class PedidosRealtimeRefresh {
                 window.EchoInstance.channel('despacho.pedidos')
                     .listen('.pedido.actualizado', (event) => {
                         if (this.debug) console.log('🔄 [PedidosRealtime] Pedido actualizado recibido (cartera):', event?.pedido?.id);
+
+                        const numero = event?.pedido?.numero_pedido || '';
+                        const estado = event?.pedido?.estado || '';
+                        this.showRealtimeToast(
+                            `Pedido ${numero ? '#' + numero : ''} actualizado${estado ? ' (' + estado + ')' : ''}`,
+                            'info'
+                        );
                         if (typeof window.cargarPedidos === 'function') {
                             window.cargarPedidos();
                         }
@@ -335,6 +385,56 @@ class PedidosRealtimeRefresh {
         }, 3000);
     }
 
+    showRealtimeToast(message, type = 'info') {
+        try {
+            const bg = type === 'success'
+                ? '#16a34a'
+                : type === 'error'
+                    ? '#dc2626'
+                    : type === 'warning'
+                        ? '#f59e0b'
+                        : '#2563eb';
+
+            const container = document.getElementById('toastContainer') || (() => {
+                let div = document.getElementById('toastContainer');
+                if (div) return div;
+                div = document.createElement('div');
+                div.id = 'toastContainer';
+                div.className = 'toast-container';
+                div.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;';
+                document.body.appendChild(div);
+                return div;
+            })();
+
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                background: ${bg};
+                color: white;
+                padding: 12px 14px;
+                border-radius: 10px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+                font-size: 13px;
+                font-weight: 600;
+                max-width: 360px;
+                transform: translateX(120%);
+                transition: transform 0.25s ease;
+            `;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.style.transform = 'translateX(0)';
+            });
+
+            setTimeout(() => {
+                toast.style.transform = 'translateX(120%)';
+                setTimeout(() => toast.remove(), 250);
+            }, 3500);
+        } catch (e) {
+            // silencioso
+        }
+    }
+
     /**
      * Ocultar indicador de conexión
      */
@@ -493,6 +593,11 @@ class PedidosRealtimeRefresh {
         if (this.userActivityTimeout) {
             clearTimeout(this.userActivityTimeout);
             this.userActivityTimeout = null;
+        }
+
+        if (this.reloadTimeout) {
+            clearTimeout(this.reloadTimeout);
+            this.reloadTimeout = null;
         }
         
         if (this.activityDebounceTimeout) {
