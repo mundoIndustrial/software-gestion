@@ -105,6 +105,9 @@
     }
 </script>
 
+<!-- Vite App Bundle (incluye Bootstrap.js con Echo initialization) -->
+@vite(['resources/js/app.js'])
+
 @endsection
 
 @push('styles')
@@ -123,9 +126,11 @@
     <script src="{{ asset('js/contador/visor-costos.js') }}"></script>
     <script src="{{ asset('js/contador/lightbox-imagenes.js') }}"></script>
     <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>
+    <script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
     <script>
         /**
-         * Cargar contador de cotizaciones pendientes
+         * Cargar contador de cotizaciones pendientes - Solo al inicio
+         * El tiempo real se maneja via WebSocket en realtime-cotizaciones.js
          */
         function cargarContadorPendientes() {
             fetch('{{ route("contador.cotizaciones-pendientes-count") }}')
@@ -142,10 +147,10 @@
                 .catch(error => console.error('Error al cargar contador:', error));
         }
 
-        // Cargar contador al cargar la página
+        // Cargar contador al cargar la página (solo una vez)
         document.addEventListener('DOMContentLoaded', cargarContadorPendientes);
 
-        // Recargar contador cada 30 segundos
-        setInterval(cargarContadorPendientes, 30000);
+        // NOTA: La actualización en tiempo real del badge se maneja via WebSocket
+        // en el archivo realtime-cotizaciones.js
     </script>
 @endpush

@@ -120,19 +120,40 @@ final class CrearCotizacionHandler
                 $this->prendaService->guardarProductosEnCotizacion($cotizacionModel, $prendas);
             }
 
+            // Cargar relaciones necesarias para que el payload de tiempo real tenga datos completos
+            $cotizacionModel->loadMissing(['cliente', 'asesor']);
+
             // Retornar DTO con datos de la cotización guardada
             $cotizacionArray = $cotizacionModel->toArray();
             $cotizacionArray['cliente_id'] = $datos->clienteId;
             $cotizacionArray['tipo_venta'] = $datos->tipoVenta;
             $cotizacionArray['especificaciones'] = $datos->especificaciones;
 
+            // Campos extra para compatibilidad con render de tabla/modales en frontend
+            $cotizacionArray['asesora'] = $cotizacionModel->asesor?->name;
+            $cotizacionArray['usuario'] = [
+                'name' => $cotizacionModel->asesor?->name,
+            ];
+            $cotizacionArray['nombre_cliente'] = $cotizacionModel->cliente?->nombre;
+
             // Disparar evento de broadcast en tiempo real
-            broadcast(new CotizacionCreada(
+            Log::info('[BROADCAST] Emitiendo evento CotizacionCreada', [
+                'cotizacion_id' => $cotizacionModel->id,
+                'estado' => $cotizacionModel->estado,
+                'asesor_id' => $datos->usuarioId,
+            ]);
+
+            $broadcastResult = broadcast(new CotizacionCreada(
                 $cotizacionModel->id,
                 $datos->usuarioId,
                 $cotizacionModel->estado,
                 $cotizacionArray
-            ))->toOthers();
+            ));
+
+            Log::info('[BROADCAST] Evento emitido correctamente', [
+                'cotizacion_id' => $cotizacionModel->id,
+                'result' => $broadcastResult ? 'success' : 'failed'
+            ]);
 
             return CotizacionDTO::desdeArray($cotizacionArray);
         } catch (\Exception $e) {

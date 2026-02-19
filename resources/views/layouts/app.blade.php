@@ -161,6 +161,7 @@
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
     <script src="{{ asset('js/nav-search.js') }}"></script>
     @if(Route::currentRouteName() === 'cotizaciones.pendientes')
+        <script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
         <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>
         <script>
             // Inicializar búsqueda para cotizaciones pendientes

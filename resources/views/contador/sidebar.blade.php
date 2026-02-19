@@ -54,9 +54,11 @@
            aria-label="Ver Cotizaciones a Revisar">
           <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
           <span class="menu-label">Cotizaciones a Revisar</span>
-          @if(isset($cotizacionesRechazadas) && $cotizacionesRechazadas->count() > 0)
-            <span class="badge-alert">{{ $cotizacionesRechazadas->count() }}</span>
-          @endif
+          <span
+            class="badge-alert"
+            id="cotizacionesPorRevisarCount"
+            style="display: {{ (isset($cotizacionesRechazadas) && $cotizacionesRechazadas->count() > 0) ? 'inline-flex' : 'none' }};"
+          >{{ isset($cotizacionesRechazadas) ? $cotizacionesRechazadas->count() : 0 }}</span>
         </a>
       </li>
 
@@ -68,9 +70,11 @@
            aria-label="Ver Cotizaciones Aprobadas">
           <span class="material-symbols-rounded" aria-hidden="true">verified</span>
           <span class="menu-label">Aprobadas</span>
-          @if(isset($cotizacionesAprobadas) && $cotizacionesAprobadas->count() > 0)
-            <span class="badge-alert">{{ $cotizacionesAprobadas->count() }}</span>
-          @endif
+          <span
+            class="badge-alert"
+            id="cotizacionesAprobadasCount"
+            style="display: {{ (isset($cotizacionesAprobadas) && $cotizacionesAprobadas->count() > 0) ? 'inline-flex' : 'none' }};"
+          >{{ isset($cotizacionesAprobadas) ? $cotizacionesAprobadas->count() : 0 }}</span>
         </a>
       </li>
     </ul>

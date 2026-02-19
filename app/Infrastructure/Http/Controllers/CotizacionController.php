@@ -31,6 +31,7 @@ use App\Infrastructure\Http\Mappers\ActualizarCotizacionRequestMapper;
 use App\Infrastructure\Http\Mappers\StoreCotizacionRequestMapper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCotizacionRequest;
+use App\Events\CotizacionCreada;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -339,6 +340,9 @@ final class CotizacionController extends Controller
         try {
             $cotizacion = \App\Models\Cotizacion::findOrFail($id);
 
+            $estadoAnterior = $cotizacion->estado;
+            $eraBorradorAntes = (bool) $cotizacion->es_borrador;
+
             // Verificar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
@@ -362,6 +366,39 @@ final class CotizacionController extends Controller
                 'prendas.variantes',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
+
+            // Si se envió (de BORRADOR -> ENVIADA_CONTADOR), emitir realtime para módulo contador
+            if (($eraBorradorAntes || $estadoAnterior === 'BORRADOR') && $cotizacionCompleta->estado === 'ENVIADA_CONTADOR') {
+                try {
+                    $cotizacionCompleta->loadMissing(['cliente', 'asesor']);
+                    $payload = $cotizacionCompleta->toArray();
+                    $payload['asesora'] = $cotizacionCompleta->asesor?->name;
+                    $payload['usuario'] = [
+                        'name' => $cotizacionCompleta->asesor?->name,
+                    ];
+                    $payload['nombre_cliente'] = $cotizacionCompleta->cliente?->nombre;
+
+                    Log::info('[BROADCAST-BORRADOR] Emitiendo CotizacionCreada desde CotizacionController@update', [
+                        'cotizacion_id' => $cotizacionCompleta->id,
+                        'estado_anterior' => $estadoAnterior,
+                        'estado_nuevo' => $cotizacionCompleta->estado,
+                        'asesor_id' => $cotizacionCompleta->asesor_id,
+                        'tipo_cotizacion_id' => $cotizacionCompleta->tipo_cotizacion_id,
+                    ]);
+
+                    broadcast(new CotizacionCreada(
+                        $cotizacionCompleta->id,
+                        $cotizacionCompleta->asesor_id,
+                        $cotizacionCompleta->estado,
+                        $payload
+                    ));
+                } catch (\Exception $e) {
+                    Log::warning('[BROADCAST-BORRADOR] Falló broadcast en CotizacionController@update', [
+                        'cotizacion_id' => $id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             Log::info('CotizacionController@update: Cotización actualizada', [
                 'cotizacion_id' => $id,

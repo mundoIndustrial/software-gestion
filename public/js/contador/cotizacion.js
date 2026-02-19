@@ -30,14 +30,16 @@ function openCotizacionModal(cotizacionId) {
                     document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
                 }
 
-                const esCombinada = !!(payload.tiene_prendas && payload.tiene_logo);
+                const esCombinadaRaw = !!(payload.tiene_prendas && payload.tiene_logo);
                 const esSoloLogo = !!(!payload.tiene_prendas && payload.tiene_logo);
                 const moduloActual = (typeof document !== 'undefined' && document.body && document.body.dataset)
                     ? document.body.dataset.module
                     : '';
                 const isVisualizadorLogo = moduloActual === 'visualizador-logo';
                 const hideSelector = isVisualizadorLogo || !!window.__cotizacionModalHideSelector;
-                let modo = viewMode || (esCombinada ? (window.__cotizacionModalViewMode || 'prenda') : null);
+                // Nota: no referenciar esCombinada aquí porque aún no está inicializada.
+                // Se decide el modo final después de detectar combinada vs solo-logo.
+                let modo = viewMode || (window.__cotizacionModalViewMode || null);
                 // Helper: identifica si una prenda tiene técnicas de logo
                 const prendaTieneLogo = (prendaObj) => {
                     const tecnicas = (payload.logo_cotizacion && Array.isArray(payload.logo_cotizacion.tecnicas_prendas))
@@ -57,11 +59,22 @@ function openCotizacionModal(cotizacionId) {
                     prendasAll.every(p => prendaTieneLogo(p))
                 );
 
+                // Caso especial: si parece "combinada" por flags pero por contenido es SOLO LOGO,
+                // NO debemos mostrar el selector Prenda/Logo.
+                const esCombinada = esCombinadaRaw && !esSoloLogoPorContenido;
+
                 // Si es COMBINADA, aunque todas las prendas tengan logo, igual necesitamos permitir
                 // ver ambas vistas (Prenda/Logo) sobre la misma prenda.
                 const esSoloLogoFinal = esCombinada
                     ? false
                     : (esSoloLogo || esSoloLogoPorContenido);
+
+                // Modo por defecto cuando no viene explícito:
+                // - combinada: recordar selector (default prenda)
+                // - no combinada: no aplica selector, pero si es solo logo forzaremos abajo
+                if (!modo && esCombinada) {
+                    modo = 'prenda';
+                }
 
                 if (esSoloLogoFinal) {
                     modo = 'logo';

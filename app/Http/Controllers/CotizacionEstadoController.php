@@ -7,6 +7,7 @@ use App\Models\CotizacionAprobacion;
 use App\Models\User;
 use App\Models\Role;
 use App\Events\CotizacionEstadoCambiado;
+use App\Services\CotizacionEstadoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,8 @@ class CotizacionEstadoController extends Controller
                 ]);
             }
 
+            $estadoAnterior = $cotizacion->estado;
+
             // Actualizar estado a APROBADA_CONTADOR
             $cotizacion->update([
                 'estado' => 'APROBADA_CONTADOR',
@@ -52,8 +55,25 @@ class CotizacionEstadoController extends Controller
             Log::info('Cotización aprobada por contador', [
                 'cotizacion_id' => $cotizacion->id,
                 'nuevo_estado' => 'APROBADA_CONTADOR',
-                'estado_anterior' => $cotizacion->getOriginal('estado')
+                'estado_anterior' => $estadoAnterior
             ]);
+
+            // Broadcast realtime para que desaparezca de "Pendientes" en Contador sin recargar
+            try {
+                $cotizacion->loadMissing(['cliente', 'asesor']);
+                broadcast(new CotizacionEstadoCambiado(
+                    $cotizacion->id,
+                    'APROBADA_CONTADOR',
+                    $estadoAnterior,
+                    $cotizacion->asesor_id,
+                    $cotizacion->toArray()
+                ));
+            } catch (\Exception $e) {
+                Log::warning('No se pudo emitir broadcast CotizacionEstadoCambiado (aprobarContador)', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -137,6 +157,23 @@ class CotizacionEstadoController extends Controller
 
                 $mensaje = 'Cotización aprobada completamente. Todos los aprobadores han dado su visto bueno.';
 
+                // Broadcast realtime para actualizar módulo Contador (Aprobadas) sin recargar
+                try {
+                    $cotizacion->loadMissing(['cliente', 'asesor']);
+                    broadcast(new CotizacionEstadoCambiado(
+                        $cotizacion->id,
+                        'APROBADA_POR_APROBADOR',
+                        $estadoAnterior,
+                        $cotizacion->asesor_id,
+                        $cotizacion->toArray()
+                    ));
+                } catch (\Exception $e) {
+                    Log::warning('No se pudo emitir broadcast CotizacionEstadoCambiado (aprobarAprobador)', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 Log::info('Cotización aprobada por todos los aprobadores', [
                     'cotizacion_id' => $cotizacion->id,
                     'estado_anterior' => $estadoAnterior,
@@ -202,19 +239,18 @@ class CotizacionEstadoController extends Controller
                 ], 422);
             }
 
-            // Actualizar estado a ENVIADA
-            $cotizacion->update([
-                'estado' => 'ENVIADA'
-            ]);
+            // Enviar a contador (BORRADOR -> ENVIADA_CONTADOR) y emitir realtime
+            app(CotizacionEstadoService::class)->enviarACOntador($cotizacion);
 
             Log::info('Cotización enviada exitosamente', [
-                'cotizacion_id' => $cotizacion->id
+                'cotizacion_id' => $cotizacion->id,
+                'nuevo_estado' => $cotizacion->fresh()->estado,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización enviada exitosamente',
-                'cotizacion' => $cotizacion
+                'cotizacion' => $cotizacion->fresh()
             ]);
 
         } catch (\Exception $e) {
@@ -242,6 +278,8 @@ class CotizacionEstadoController extends Controller
                 'usuario_id' => auth()->id(),
                 'estado_actual' => $cotizacion->estado
             ]);
+
+            $estadoAnterior = $cotizacion->estado;
 
             // Validar que la cotización esté en estados válidos para rechazar
             $estadosValidos = ['ENVIADO A APROBADOR', 'APROBADA_CONTADOR'];
@@ -282,6 +320,23 @@ class CotizacionEstadoController extends Controller
                 'observaciones' => $observaciones,
                 'aprobaciones_eliminadas' => $aprobacionesEliminadas
             ]);
+
+            // Broadcast realtime para que aparezca en /contador/por-revisar sin recargar
+            try {
+                $cotizacion->loadMissing(['cliente', 'asesor']);
+                broadcast(new CotizacionEstadoCambiado(
+                    $cotizacion->id,
+                    'EN_CORRECCION',
+                    $estadoAnterior,
+                    $cotizacion->asesor_id,
+                    $cotizacion->toArray()
+                ));
+            } catch (\Exception $e) {
+                Log::warning('No se pudo emitir broadcast CotizacionEstadoCambiado (rechazar)', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

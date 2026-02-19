@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Cotizacion;
 use App\Models\Cliente;
 use App\Models\NumeroSecuencia;
+use App\Events\CotizacionCreada;
+use App\Services\CotizacionEstadoService;
 use Intervention\Image\ImageManager;
 use App\Infrastructure\Http\Controllers\LogoCotizacionTecnicaController;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -357,6 +359,38 @@ class CotizacionBordadoController extends Controller
                 'numero' => $resultado['numero_cotizacion'] ?? null,
                 'queue' => 'cotizaciones'
             ]);
+
+            // Broadcast realtime para que aparezca inmediatamente en el módulo Contador
+            try {
+                $cotizacionRealtime = Cotizacion::with(['cliente', 'asesor'])->find($id);
+                if ($cotizacionRealtime) {
+                    $payload = $cotizacionRealtime->toArray();
+                    $payload['asesora'] = $cotizacionRealtime->asesor?->name;
+                    $payload['usuario'] = [
+                        'name' => $cotizacionRealtime->asesor?->name,
+                    ];
+                    $payload['nombre_cliente'] = $cotizacionRealtime->cliente?->nombre;
+
+                    Log::info('[BROADCAST-BORRADOR] Emitiendo CotizacionCreada desde updateBorrador (LOGO)', [
+                        'cotizacion_id' => $cotizacionRealtime->id,
+                        'estado' => $cotizacionRealtime->estado,
+                        'asesor_id' => $cotizacionRealtime->asesor_id,
+                        'tipo_cotizacion_id' => $cotizacionRealtime->tipo_cotizacion_id,
+                    ]);
+
+                    broadcast(new CotizacionCreada(
+                        $cotizacionRealtime->id,
+                        $cotizacionRealtime->asesor_id,
+                        $cotizacionRealtime->estado,
+                        $payload
+                    ));
+                }
+            } catch (\Exception $e) {
+                Log::warning('[BROADCAST-BORRADOR] Falló broadcast desde updateBorrador (LOGO)', [
+                    'cotizacion_id' => $id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         
         // DESPUÉS de la transacción, borrar imágenes
@@ -911,6 +945,33 @@ class CotizacionBordadoController extends Controller
 
                 // Convertir a array y asegurar que los accessors estén incluidos
                 $resultado = $cotizacionCompleta->toArray();
+
+                // Broadcast en tiempo real para contador (solo si NO es borrador)
+                if (!$esBorrador) {
+                    $cotizacionCompleta->loadMissing(['cliente', 'asesor']);
+                    $payload = $cotizacionCompleta->toArray();
+
+                    // Campos extra para compatibilidad con render en frontend
+                    $payload['asesora'] = $cotizacionCompleta->asesor?->name;
+                    $payload['usuario'] = [
+                        'name' => $cotizacionCompleta->asesor?->name,
+                    ];
+                    $payload['nombre_cliente'] = $cotizacionCompleta->cliente?->nombre;
+
+                    Log::info('[BROADCAST-LOGO] Emitiendo evento CotizacionCreada', [
+                        'cotizacion_id' => $cotizacionCompleta->id,
+                        'estado' => $cotizacionCompleta->estado,
+                        'asesor_id' => $cotizacionCompleta->asesor_id,
+                        'tipo_cotizacion_id' => $cotizacionCompleta->tipo_cotizacion_id,
+                    ]);
+
+                    broadcast(new CotizacionCreada(
+                        $cotizacionCompleta->id,
+                        $cotizacionCompleta->asesor_id,
+                        $cotizacionCompleta->estado,
+                        $payload
+                    ));
+                }
                 
                 // Asegurar que las URLs de las fotos estén correctas
                 if (isset($resultado['logo_cotizacion']['fotos'])) {
@@ -1098,7 +1159,44 @@ class CotizacionBordadoController extends Controller
      */
     public function enviar(Request $request, $id)
     {
-        return redirect()->route('cotizaciones.index')->with('success', 'Cotización enviada exitosamente');
+        try {
+            $cotizacion = Cotizacion::findOrFail($id);
+
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para enviar esta cotización'
+                ], 403);
+            }
+
+            if ($cotizacion->estado !== 'BORRADOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cotización no está en estado borrador'
+                ], 422);
+            }
+
+            app(CotizacionEstadoService::class)->enviarACOntador($cotizacion);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cotización enviada exitosamente',
+                'cotizacion_id' => $cotizacion->id,
+                'cotizacion' => $cotizacion->fresh(),
+                'pedido_id' => null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar cotización de bordado', [
+                'cotizacion_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar la cotización: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

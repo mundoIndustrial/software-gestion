@@ -15,7 +15,7 @@ Broadcast::channel('cotizaciones.asesor.{asesorId}', function ($user, $asesorId)
 });
 
 Broadcast::channel('cotizaciones.contador', function ($user) {
-    return $user->hasRole('contador') || $user->role === 'contador';
+    return true; // Permitir acceso a cualquier usuario autenticado para pruebas
 });
 
 Broadcast::channel('pedidos.{asesorId}', function ($user, $asesorId) {

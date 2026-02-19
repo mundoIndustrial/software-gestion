@@ -12,25 +12,26 @@ document.addEventListener('DOMContentLoaded', function() {
  * Inicializar acciones de tabla
  */
 function initializeTableActions() {
-    // Manejar clics en botones de acción
-    document.querySelectorAll('.action-view-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cotizacionId = this.getAttribute('data-cotizacion-id');
-            const menu = document.querySelector(`.action-menu[data-cotizacion-id="${cotizacionId}"]`);
+    // Manejar clics en botones de acción (delegación para soportar filas dinámicas)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.action-view-btn');
+        if (!btn) return;
+
+        e.stopPropagation();
+        const accionesCell = btn.closest('.acciones-column') || btn.parentElement;
+        const menu = accionesCell ? accionesCell.querySelector('.action-menu') : null;
             
-            // Cerrar otros menús
-            document.querySelectorAll('.action-menu.active').forEach(m => {
-                if (m !== menu) {
-                    m.classList.remove('active');
-                }
-            });
-            
-            // Toggle menú actual
-            if (menu) {
-                menu.classList.toggle('active');
+        // Cerrar otros menús
+        document.querySelectorAll('.action-menu.active').forEach(m => {
+            if (m !== menu) {
+                m.classList.remove('active');
             }
         });
+
+        // Toggle menú actual
+        if (menu) {
+            menu.classList.toggle('active');
+        }
     });
     
     // Cerrar menú al hacer clic fuera
@@ -42,14 +43,15 @@ function initializeTableActions() {
         }
     });
     
-    // Cerrar menú al hacer clic en un item
-    document.querySelectorAll('.action-menu-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const menu = this.closest('.action-menu');
-            if (menu) {
-                menu.classList.remove('active');
-            }
-        });
+    // Cerrar menú al hacer clic en un item (delegación para soportar filas dinámicas)
+    document.addEventListener('click', function(e) {
+        const item = e.target.closest('.action-menu-item');
+        if (!item) return;
+
+        const menu = item.closest('.action-menu');
+        if (menu) {
+            menu.classList.remove('active');
+        }
     });
     
     // Manejar clics en celdas de la tabla

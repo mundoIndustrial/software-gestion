@@ -121,10 +121,14 @@ class AppServiceProvider extends ServiceProvider
 
         // View Composer para el sidebar del contador
         View::composer('contador.sidebar', function ($view) {
-            $cotizacionesAprobadas = Cotizacion::where('estado', 'APROBADA_CONTADOR')
+            $cotizacionesAprobadas = Cotizacion::where('estado', 'APROBADA_POR_APROBADOR')
+                ->where('es_borrador', 0)
+                ->get();
+            $cotizacionesRechazadas = Cotizacion::where('estado', 'EN_CORRECCION')
                 ->where('es_borrador', 0)
                 ->get();
             $view->with('cotizacionesAprobadas', $cotizacionesAprobadas);
+            $view->with('cotizacionesRechazadas', $cotizacionesRechazadas);
         });
     }
 }

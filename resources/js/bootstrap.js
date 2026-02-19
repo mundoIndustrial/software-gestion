@@ -63,6 +63,12 @@ window.waitForEcho = function(callback) {
 };
 
 /**
+ * Callbacks pendientes a ejecutar cuando Echo esté listo
+ */
+window.echoReadyCallbacks = window.echoReadyCallbacks || [];
+window.echoReady = window.echoReady || false;
+
+/**
  * Notificar que Echo está listo (llamado al final de inicializeEcho)
  */
 window.notifyEchoReady = function() {
@@ -75,14 +81,14 @@ window.notifyEchoReady = function() {
     console.log('[DEBUG] typeof window.EchoInstance:', typeof window.EchoInstance);
     
     window.echoReady = true;
-    
+
     // Ejecutar todos los callbacks pendientes
     while (window.echoReadyCallbacks.length > 0) {
         const callback = window.echoReadyCallbacks.shift();
         try {
             callback();
         } catch (error) {
-            console.error('[Echo]  Error ejecutando callback:', error);
+            console.error('[Echo] Error ejecutando callback:', error);
         }
     }
 };

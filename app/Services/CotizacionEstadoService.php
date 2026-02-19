@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Enums\EstadoCotizacion;
+use App\Events\CotizacionCreada;
 use App\Models\Cotizacion;
 use App\Models\HistorialCambiosCotizacion;
 use App\Jobs\AsignarNumeroCotizacionJob;
 use App\Jobs\EnviarCotizacionAAprobadorJob;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Database\Eloquent\Collection;
 use Exception;
@@ -50,6 +52,36 @@ class CotizacionEstadoService extends BaseService
 
             // Disparar notificación a Contador (Job)
             dispatch(new \App\Jobs\EnviarCotizacionAContadorJob($cotizacion));
+
+            // Broadcast realtime para que aparezca inmediatamente en el módulo Contador
+            try {
+                $cotizacion->loadMissing(['cliente', 'asesor']);
+                $payload = $cotizacion->toArray();
+                $payload['asesora'] = $cotizacion->asesor?->name;
+                $payload['usuario'] = [
+                    'name' => $cotizacion->asesor?->name,
+                ];
+                $payload['nombre_cliente'] = $cotizacion->cliente?->nombre;
+
+                Log::info('[BROADCAST-BORRADOR] Emitiendo CotizacionCreada por envío a contador', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'estado' => $cotizacion->estado,
+                    'asesor_id' => $cotizacion->asesor_id,
+                    'tipo_cotizacion_id' => $cotizacion->tipo_cotizacion_id,
+                ]);
+
+                broadcast(new CotizacionCreada(
+                    $cotizacion->id,
+                    $cotizacion->asesor_id,
+                    $cotizacion->estado,
+                    $payload
+                ));
+            } catch (Exception $e) {
+                Log::warning('[BROADCAST-BORRADOR] Falló broadcast al enviar a contador', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return true;
         } catch (Exception $e) {
