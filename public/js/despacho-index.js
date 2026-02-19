@@ -621,14 +621,14 @@
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtime() {
-        if (!window.Echo) {
-            console.warn('[Despacho] Echo no disponible, reintentando en 2s...');
+        if (!window.EchoInstance) {
+            console.warn('[Despacho] EchoInstance no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtime, 2000);
             return;
         }
 
         // Escuchar canal general de despacho (observaciones)
-        window.Echo.channel('despacho.observaciones')
+        window.EchoInstance.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log('[Despacho] Evento recibido:', e);
                 const pedidoId = e?.pedido_id;
@@ -658,7 +658,7 @@
             });
 
         // Escuchar canal de ordenes para nuevos pedidos aprobados
-        window.Echo.channel('ordenes')
+        window.EchoInstance.channel('ordenes')
             .listen('.orden.updated', (e) => {
                 console.log('[Despacho] Evento orden.updated recibido:', e);
 
@@ -693,7 +693,7 @@
             const pedidoId = row.getAttribute('data-pedido-id');
             if (!pedidoId) return;
 
-            window.Echo.channel(`pedido.${pedidoId}`)
+            window.EchoInstance.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
 

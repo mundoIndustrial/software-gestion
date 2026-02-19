@@ -217,6 +217,124 @@
 <script>
 window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
+
+// WebSocket para actualizaciones en tiempo real
+let socket = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function connectWebSocket() {
+    try {
+        // Usar WebSocket de Reverb con clave desde meta tags
+        socket = new window.Echo({
+            broadcaster: 'reverb',
+            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
+            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
+            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
+            enabledTransports: ['ws', 'wss'],
+        });
+
+        // Escuchar eventos de pedidos entregados
+        socket.channel('despacho.pedidos')
+            .listen('.pedido.actualizado', (event) => {
+                console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+                
+                // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
+                if (event.nuevo_estado === 'Entregado') {
+                    console.log('🔄 Eliminando pedido entregado de la lista:', event.numero_pedido);
+                    
+                    // Buscar el pedido en la tabla y eliminarlo con animación
+                    const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
+                    if (pedidoRow) {
+                        // Agregar animación de fade out usando CSS transitions
+                        pedidoRow.style.transition = 'all 0.3s ease';
+                        pedidoRow.style.opacity = '0';
+                        pedidoRow.style.transform = 'translateX(-20px)';
+                        
+                        // Eliminar después de que la animación complete
+                        pedidoRow.addEventListener('transitionend', function() {
+                            pedidoRow.remove();
+                            
+                            // Mostrar notificación
+                            mostrarNotificacionPedidoEntregado(event.numero_pedido);
+                            
+                            // Verificar si no quedan pedidos
+                            const tbody = document.querySelector('tbody');
+                            if (tbody && tbody.children.length === 0) {
+                                tbody.innerHTML = `
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-slate-500">
+                                            No hay pedidos pendientes
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                        }, { once: true }); // Solo se ejecuta una vez
+                    }
+                }
+                // Si el pedido volvió a "Pendiente" y no está en la lista, recargar la página
+                else if (event.nuevo_estado === 'Pendiente' && event.anterior_estado === 'Entregado') {
+                    console.log('🔄 Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
+                    
+                    // Verificar si el pedido NO está en la lista actual
+                    const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
+                    if (!pedidoRow) {
+                        // Recargar la página para mostrar el pedido que volvió
+                        window.location.reload();
+                    }
+                }
+            })
+            .error((error) => {
+                console.error('❌ Error en WebSocket:', error);
+            });
+
+        console.log('✅ WebSocket conectado para lista de despacho');
+    } catch (error) {
+        console.error('❌ Error al conectar WebSocket:', error);
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+        }
+    }
+}
+
+function mostrarNotificacionPedidoEntregado(numeroPedido) {
+    // Crear notificación flotante
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+    notificacion.innerHTML = `
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-rounded">check_circle</span>
+            <span>Pedido #${numeroPedido} marcado como entregado</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Mostrar notificación
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notificacion);
+        }, 300);
+    }, 3000);
+}
+
+// Inicializar cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+    window.waitForEcho(function() {
+        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+        connectWebSocket();
+    });
+});
 </script>
 <script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection

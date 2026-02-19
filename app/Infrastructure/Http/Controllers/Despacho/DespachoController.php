@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Http\Controllers\Despacho;
 
+use App\Events\DespachoPedidoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoObservacionesDespacho;
@@ -273,6 +274,9 @@ class DespachoController extends Controller
                 'fecha_entrega' => now(),
             ]);
 
+            // Verificar si todos los ítems del pedido están entregados
+            $this->verificarYActualizarEstadoPedido($pedido);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Ítem marcado como entregado',
@@ -388,6 +392,9 @@ class DespachoController extends Controller
                 'entregado_nuevo' => $despacho->entregado,
                 'fecha_entrega_nueva' => $despacho->fecha_entrega,
             ]);
+
+            // Verificar si el estado del pedido debe cambiar de "Entregado" a "Pendiente"
+            $this->verificarYActualizarEstadoPedido($pedido);
 
             return response()->json([
                 'success' => true,
@@ -1088,6 +1095,111 @@ class DespachoController extends Controller
             
             return redirect()->route('despacho.pendientes')
                 ->with('error', 'Error al cargar el pedido: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Verificar si todos los ítems de un pedido están entregados y actualizar el estado del pedido
+     */
+    private function verificarYActualizarEstadoPedido(PedidoProduccion $pedido)
+    {
+        try {
+            // Obtener todos los ítems del pedido (prendas y EPP)
+            $itemsPendientes = collect();
+            
+            // Obtener prendas
+            $prendas = $pedido->prendas()->with(['tallas'])->get();
+            foreach ($prendas as $prenda) {
+                foreach ($prenda->tallas as $talla) {
+                    $itemsPendientes->push([
+                        'tipo' => 'prenda',
+                        'item_id' => $talla->id,
+                        'talla_id' => $talla->talla_id,
+                    ]);
+                }
+            }
+            
+            // Obtener EPPs
+            $epps = $pedido->epps()->get();
+            foreach ($epps as $epp) {
+                $itemsPendientes->push([
+                    'tipo' => 'epp',
+                    'item_id' => $epp->id,
+                    'talla_id' => null,
+                ]);
+            }
+            
+            // Verificar cuántos ítems están entregados
+            $itemsEntregados = DesparChoParcialesModel::where('pedido_id', $pedido->id)
+                ->where('entregado', true)
+                ->count();
+            
+            $totalItems = $itemsPendientes->count();
+            $itemsRestantes = $totalItems - $itemsEntregados;
+            
+            \Log::info('[DespachoController] Verificación de estado del pedido', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'total_items' => $totalItems,
+                'items_entregados' => $itemsEntregados,
+                'items_restantes' => $itemsRestantes,
+            ]);
+            
+            // Si todos los ítems están entregados, actualizar el estado del pedido
+            if ($itemsRestantes === 0 && $totalItems > 0) {
+                $estadoAnterior = $pedido->estado;
+                
+                $pedido->update([
+                    'estado' => 'Entregado',
+                    'updated_at' => now(),
+                ]);
+                
+                // Disparar evento WebSocket para notificar en tiempo real
+                event(new DespachoPedidoActualizado($pedido, [
+                    'accion' => 'estado_cambiado',
+                    'nuevo_estado' => 'Entregado',
+                    'anterior_estado' => $estadoAnterior,
+                    'mensaje' => 'Pedido marcado como entregado'
+                ]));
+                
+                \Log::info('[Despacho] Pedido marcado como Entregado y evento WebSocket despacho disparado', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => 'Entregado',
+                ]);
+            }
+            
+            // Si el pedido estaba en "Entregado" pero ya no todos los ítems están entregados, volver a "Pendiente"
+            elseif ($pedido->estado === 'Entregado' && $itemsRestantes > 0) {
+                $estadoAnterior = $pedido->estado;
+                
+                $pedido->update([
+                    'estado' => 'Pendiente',
+                    'updated_at' => now(),
+                ]);
+                
+                // Disparar evento WebSocket para notificar en tiempo real
+                event(new DespachoPedidoActualizado($pedido, [
+                    'accion' => 'estado_cambiado',
+                    'nuevo_estado' => 'Pendiente',
+                    'anterior_estado' => $estadoAnterior,
+                    'mensaje' => 'Pedido vuelto a pendiente'
+                ]));
+                
+                \Log::info('[Despacho] Pedido vuelto a Pendiente y evento WebSocket despacho disparado', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => 'Pendiente',
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('[DespachoController] Error verificando estado del pedido', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

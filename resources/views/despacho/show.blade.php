@@ -2,6 +2,98 @@
 
 @section('title', "Despacho - Pedido {$pedido->numero_pedido}")
 
+@push('scripts')
+<script>
+// Conexión WebSocket para actualizaciones en tiempo real
+let socket = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function connectWebSocket() {
+    try {
+        // Usar WebSocket de Reverb con clave desde meta tags
+        socket = new window.Echo({
+            broadcaster: 'reverb',
+            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
+            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
+            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
+            enabledTransports: ['ws', 'wss'],
+        });
+
+        // Unirse al canal público de despacho
+        socket.channel('despacho.pedidos')
+            .listen('.pedido.actualizado', (event) => {
+                console.log('🔄 Pedido actualizado en tiempo real (despacho):', event);
+                
+                // Si el pedido cambió a "Entregado" y es el pedido actual, mostrar notificación
+                if (event.nuevo_estado === 'Entregado' && event.pedido_id == window.pedidoId) {
+                    console.log('📦 Pedido actual marcado como entregado');
+                    
+                    // Mostrar notificación local
+                    mostrarNotificacionPedidoEntregadoLocal(event.numero_pedido);
+                }
+            })
+            .error((error) => {
+                console.error('❌ Error en WebSocket (despacho):', error);
+            });
+
+        console.log('✅ WebSocket conectado para pedido:', window.pedidoId);
+    } catch (error) {
+        console.error('❌ Error al conectar WebSocket:', error);
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+        }
+    }
+}
+
+// Función para mostrar notificación local
+function mostrarNotificacionPedidoEntregadoLocal(numeroPedido) {
+    // Crear notificación flotante
+    const notificacion = document.createElement('div');
+    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+    notificacion.innerHTML = `
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-rounded">check_circle</span>
+            <span>Pedido #${numeroPedido} marcado como entregado</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Mostrar notificación inmediatamente
+    requestAnimationFrame(() => {
+        notificacion.style.transform = 'translateX(0)';
+    });
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (document.body.contains(notificacion)) {
+                document.body.removeChild(notificacion);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Inicializar cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Pasar datos del pedido a JavaScript
+    window.pedidoId = {{ $pedido->id }};
+    window.numeroPedido = '{{ $pedido->numero_pedido }}';
+    
+    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+    window.waitForEcho(function() {
+        console.log('🚀 Echo está listo, conectando WebSocket...');
+        connectWebSocket();
+    });
+});
+</script>
+@endpush
+
 @section('content')
 <div class="min-h-screen bg-white">
     <div class="max-w-6xl mx-auto">
@@ -377,6 +469,9 @@ async function marcarEntregado(button) {
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
             button.classList.add('bg-orange-500', 'hover:bg-orange-600');
             button.onclick = function() { deshacerEntregado(this); };
+            
+            // Importante: habilitar el botón para permitir deshacer
+            button.disabled = false;
             
             // Agregar efecto visual a la fila: color azul pastel
             fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
