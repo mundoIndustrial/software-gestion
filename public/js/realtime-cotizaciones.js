@@ -21,11 +21,15 @@ if (window.realtimeCotizacionesLoaded) {
         echoCheckAttempts++;
         console.log(`[REALTIME-COT] Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
         console.log('[REALTIME-COT] window.Echo disponible:', typeof window.Echo);
+        console.log('[REALTIME-COT] window.Echo existe:', !!window.Echo);
         console.log('[REALTIME-COT] window.waitForEcho disponible:', typeof window.waitForEcho);
+        console.log('[REALTIME-COT] window.Echo completo:', window.Echo);
 
         // Si Echo está disponible, inicializar
         if (typeof window.Echo !== 'undefined' && window.Echo) {
             console.log('[REALTIME-COT] ✅ Echo encontrado, inicializando...');
+            console.log('[REALTIME-COT] Tipo de Echo:', typeof window.Echo);
+            console.log('[REALTIME-COT] Echo tiene channel:', typeof window.Echo?.channel);
             initializeRealtimeCotizaciones();
             return;
         }
