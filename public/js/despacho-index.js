@@ -737,16 +737,7 @@
                 const currentPedidoId = window.__despachoObsCtx?.pedidoId;
                 if (currentPedidoId && String(currentPedidoId) === String(pedidoId)) {
                     cargarObservacionesDespachoIndex();
-                    // Marcar como leídas automáticamente
-                    fetch(`/despacho/${pedidoId}/observaciones/marcar-leidas`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': __despachoObsCsrfToken(),
-                            'Accept': 'application/json',
-                        },
-                    }).catch(() => {});
-                    __clearBadge(pedidoId);
+                    // NO marcar automáticamente como leídas - esperar acción del usuario
                 }
 
                 // Recargar el preview del textarea

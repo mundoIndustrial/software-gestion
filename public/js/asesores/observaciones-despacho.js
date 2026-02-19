@@ -41,6 +41,12 @@
     }
 
     async function refrescarBadgesObservacionesDespachoAsesores() {
+        // DESACTIVADO: Usar sistema unificado de despacho-index.js
+        // Esto evita conflictos entre múltiples sistemas de badges
+        console.log('[DEBUG] refrescarBadgesObservacionesDespachoAsesores desactivado - usando despacho-index.js');
+        return;
+        
+        /* Código original comentado para evitar conflictos
         try {
             const rows = Array.from(document.querySelectorAll('[data-pedido-row][data-pedido-id]'));
             const ids = rows
@@ -72,6 +78,7 @@
         } catch (e) {
             console.error('Error refrescando badges de observaciones despacho:', e);
         }
+        */ // Fin del código comentado
     }
 
     window.__asesoresObsDespachoCtx = window.__asesoresObsDespachoCtx || { pedidoId: null, pedidoNumero: null };
@@ -109,7 +116,7 @@
 
         // Marcar notificaciones como vistas cuando el usuario abre el modal
         try {
-            const r = await fetch(`/despacho/${pedidoId}/observaciones/marcar-vistas`, {
+            const r = await fetch(`/asesores/pedidos/${pedidoId}/observaciones-despacho/marcar-leidas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
