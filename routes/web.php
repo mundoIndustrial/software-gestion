@@ -2586,6 +2586,10 @@ Route::prefix('seguimiento-proceso')->name('seguimiento-proceso.')->group(functi
     Route::put('/{procesoId}/estado', [App\Http\Controllers\ProcesoSeguimientoController::class, 'actualizarEstado'])
         ->name('actualizar-estado');
     
+    // Actualizar un proceso completo
+    Route::put('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'actualizar'])
+        ->name('actualizar');
+    
     // Eliminar un proceso
     Route::delete('/{procesoId}', [App\Http\Controllers\ProcesoSeguimientoController::class, 'eliminar'])
         ->name('eliminar');
