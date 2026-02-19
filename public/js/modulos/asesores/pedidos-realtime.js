@@ -123,8 +123,8 @@ class PedidosRealtimeRefresh {
                 console.log('  - User ID:', userId);
             }
             
-            // Suscribir al canal privado usando Laravel Echo
-            this.echoChannel = window.Echo.private(`pedidos.${userId}`)
+            // Suscribir al canal privado usando Laravel Echo Instance
+            this.echoChannel = window.EchoInstance.private(`pedidos.${userId}`)
                 .listen('.PedidoActualizado', (event) => {
                     if (this.debug) console.log('📡 [PedidosRealtime] Evento recibido:', event.pedido.id);
                     this.handlePedidoUpdate(event.pedido, 'pedido.actualizado', event.changedFields);

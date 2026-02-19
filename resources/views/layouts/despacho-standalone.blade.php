@@ -10,8 +10,8 @@
     <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
     <meta name="reverb-app-id" content="{{ config('broadcasting.connections.reverb.app_id') }}">
     <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
-    <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
-    <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
+    <meta name="reverb-port" content="{{ app()->environment('production') ? '443' : config('broadcasting.connections.reverb.options.port') }}">
+    <meta name="reverb-scheme" content="{{ app()->environment('production') ? 'https' : config('broadcasting.connections.reverb.options.scheme') }}">
     @endauth
     
     <title>@yield('title', 'Despacho - Mundo Industrial')</title>

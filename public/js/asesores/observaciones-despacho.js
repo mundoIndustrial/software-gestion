@@ -512,14 +512,14 @@
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtimeAsesores() {
-        if (!window.Echo) {
-            console.warn('[Asesores] Echo no disponible, reintentando en 2s...');
+        if (!window.EchoInstance) {
+            console.warn('[Asesores] EchoInstance no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtimeAsesores, 2000);
             return;
         }
 
         // Escuchar canal general de asesores
-        window.Echo.channel('asesores.observaciones')
+        window.EchoInstance.channel('asesores.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log('[Asesores] Evento recibido:', e);
                 const pedidoId = e?.pedido_id;
