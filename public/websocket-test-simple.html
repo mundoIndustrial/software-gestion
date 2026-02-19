@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #status { padding: 10px; margin: 10px 0; border-radius: 5px; font-weight: bold; }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test WebSocket Simple - Supervisor-Pedidos</h1>
+    
+    <div id="status">🔄 Verificando conexión...</div>
+    
+    <div>
+        <button onclick="verificarConexion()">🔍 Verificar Conexión</button>
+        <button onclick="probarEvento()">📡 Probar Evento</button>
+        <button onclick="limpiarLogs()">🧹 Limpiar Logs</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <!-- Meta tags desde el sistema real -->
+    <meta name="user-id" content="93">
+    <meta name="reverb-key" content="mundo-industrial-key">
+    <meta name="reverb-app-id" content="mundo-industrial">
+    <meta name="reverb-host" content="sistemamundoindustrial.online">
+    <meta name="reverb-port" content="443">
+    <meta name="reverb-scheme" content="https">
+    
+    <script>
+        let logs = [];
+        let echoInstance = null;
+        let channel = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push({ message, type, timestamp });
+            renderLogs();
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function renderLogs() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML = logs.map(log => 
+                `<div class="log ${log.type}">
+                    <strong>[${log.timestamp}]</strong> ${log.message}
+                </div>`
+            ).join('');
+        }
+        
+        function limpiarLogs() {
+            logs = [];
+            renderLogs();
+        }
+        
+        function updateStatus(connected, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = connected ? 'connected' : 'disconnected';
+            statusDiv.textContent = message;
+        }
+        
+        function verificarConexion() {
+            log('🔍 Verificando conexión WebSocket...', 'info');
+            
+            // Verificar Echo
+            if (typeof window.Echo === 'undefined') {
+                log('❌ Echo no disponible', 'error');
+                updateStatus(false, '❌ Echo no disponible');
+                return;
+            }
+            
+            if (typeof window.EchoInstance === 'undefined') {
+                log('❌ EchoInstance no disponible', 'error');
+                updateStatus(false, '❌ EchoInstance no disponible');
+                return;
+            }
+            
+            echoInstance = window.EchoInstance;
+            log('✅ EchoInstance disponible', 'success');
+            
+            // Crear canal
+            try {
+                channel = echoInstance.channel('supervisor-pedidos');
+                log('✅ Canal supervisor-pedidos creado', 'success');
+                
+                // Eventos del canal
+                channel.subscribed(() => {
+                    log('✅ Suscripción exitosa a supervisor-pedidos', 'success');
+                    updateStatus(true, '✅ Conectado a supervisor-pedidos');
+                });
+                
+                channel.error((error) => {
+                    log(`❌ Error en suscripción: ${error}`, 'error');
+                    updateStatus(false, `❌ Error: ${error}`);
+                });
+                
+                channel.listen('OrdenUpdated', (data) => {
+                    log('📨 Evento OrdenUpdated recibido:', 'success');
+                    log(`📋 Pedido: ${data?.orden?.id || 'N/A'}`, 'info');
+                    log(`🔄 Acción: ${data?.action || 'N/A'}`, 'info');
+                    log(`📊 Datos: ${JSON.stringify(data, null, 2)}`, 'info');
+                });
+                
+                log('🎯 WebSocket configurado correctamente', 'success');
+                
+            } catch (error) {
+                log(`❌ Error configurando WebSocket: ${error.message}`, 'error');
+                updateStatus(false, `❌ Error: ${error.message}`);
+            }
+        }
+        
+        function probarEvento() {
+            log('📡 Enviando evento de prueba...', 'info');
+            
+            // Simular evento localmente para testing
+            if (channel) {
+                const testData = {
+                    orden: {
+                        id: 99999,
+                        numero_pedido: 'TEST-' + Date.now(),
+                        cliente: 'Cliente Test',
+                        estado: 'Aprobado'
+                    },
+                    action: 'created',
+                    changedFields: ['estado']
+                };
+                
+                // Simular recepción del evento
+                log('📨 Simulando evento OrdenUpdated...', 'info');
+                log(`📋 Datos: ${JSON.stringify(testData, null, 2)}`, 'info');
+                log('✅ Evento simulado recibido', 'success');
+            } else {
+                log('❌ Canal no disponible', 'error');
+            }
+        }
+        
+        // Esperar a que Echo esté disponible
+        function waitForEcho() {
+            if (typeof window.waitForEcho === 'function') {
+                window.waitForEcho(() => {
+                    log('🚀 Echo está listo', 'success');
+                    verificarConexion();
+                });
+            } else if (typeof window.EchoInstance !== 'undefined') {
+                log('🚀 EchoInstance disponible directamente', 'success');
+                verificarConexion();
+            } else {
+                log('⏳ Esperando Echo...', 'info');
+                setTimeout(waitForEcho, 1000);
+            }
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página cargada', 'info');
+            waitForEcho();
+        });
+    </script>
+    
+    <!-- Cargar Echo desde el sistema principal -->
+    <script src="/resources/js/app.js"></script>
+</body>
+</html>

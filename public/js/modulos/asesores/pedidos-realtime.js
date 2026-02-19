@@ -199,15 +199,38 @@ class PedidosRealtimeRefresh {
                 window.EchoInstance.channel('supervisor-pedidos')
                     .listen('OrdenUpdated', (data) => {
                         if (this.debug) console.log('📨 [PedidosRealtime] OrdenUpdated recibido (cartera):', data?.orden?.id);
+                        console.log('[PedidosRealtime] 📋 Datos completos del evento:', JSON.stringify(data, null, 2));
                         
                         // Cuando se aprueba/rechaza un pedido, recargar la lista
                         if (typeof window.cargarPedidos === 'function') {
+                            console.log('[PedidosRealtime] 🔄 Recargando lista de pedidos...');
                             window.cargarPedidos();
+                        } else {
+                            console.warn('[PedidosRealtime] ⚠️ window.cargarPedidos no disponible');
                         }
                     })
                     .error((error) => {
                         console.error(' [PedidosRealtime] Error en canal supervisor-pedidos:', error);
                     });
+
+                // También escuchar el canal privado que sí funciona (como en asesores)
+                if (window.usuarioAutenticado && window.usuarioAutenticado.id) {
+                    const userId = window.usuarioAutenticado.id;
+                    window.EchoInstance.private(`pedidos.${userId}`)
+                        .listen('.PedidoActualizado', (event) => {
+                            if (this.debug) console.log('📡 [PedidosRealtime] PedidoActualizado recibido (cartera):', event.pedido?.id);
+                            console.log('[PedidosRealtime] 📋 Datos completos del evento privado:', JSON.stringify(event, null, 2));
+                            
+                            // Cuando se aprueba/rechaza un pedido, recargar la lista
+                            if (typeof window.cargarPedidos === 'function') {
+                                console.log('[PedidosRealtime] 🔄 Recargando lista por evento privado...');
+                                window.cargarPedidos();
+                            }
+                        })
+                        .error((error) => {
+                            console.error(' [PedidosRealtime] Error en canal privado:', error);
+                        });
+                }
 
                 this.usingWebSockets = true;
                 if (this.debug) console.log(' [PedidosRealtime] WebSockets activo para cartera/pedidos - SIN POLLING');

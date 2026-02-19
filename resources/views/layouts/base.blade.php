@@ -466,11 +466,10 @@
     <script defer src="{{ asset('js/configuraciones/sidebar-notifications.js') }}"></script>
     <script defer src="{{ asset('js/configuraciones/top-nav.js') }}"></script>
     
-    <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para asesores) -->
+    <!-- Laravel Echo - Para actualizaciones en tiempo real (solo para asesores y supervisores) -->
     @auth
-    @if(auth()->user()->hasRole('asesor'))
+    @if(auth()->user()->hasRole('asesor') || auth()->user()->hasRole('supervisor_pedidos'))
     <script defer src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
-    <script defer src="{{ asset('js/despacho-index.js') }}"></script>
     @endif
     @endauth
 
