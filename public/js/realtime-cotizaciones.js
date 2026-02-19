@@ -9,46 +9,48 @@ console.log('[REALTIME-COT] === ARCHIVO CARGADO ===');
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
     console.warn('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
-    return; // Salir si ya fue cargado
-}
-window.realtimeCotizacionesLoaded = true;
+} else {
+    window.realtimeCotizacionesLoaded = true;
 
-// Sistema de retry para esperar a que Echo esté disponible
-let echoCheckAttempts = 0;
-const MAX_ATTEMPTS = 50; // 5 segundos máximo (100ms * 50)
+    // Sistema de retry para esperar a que Echo esté disponible
+    let echoCheckAttempts = 0;
+    const MAX_ATTEMPTS = 50; // 5 segundos máximo (100ms * 50)
 
-function checkAndInitialize() {
-    echoCheckAttempts++;
-    console.log(`[REALTIME-COT] Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
-    console.log('[REALTIME-COT] window.Echo disponible:', typeof window.Echo);
-    console.log('[REALTIME-COT] window.waitForEcho disponible:', typeof window.waitForEcho);
+    function checkAndInitialize() {
+        echoCheckAttempts++;
+        console.log(`[REALTIME-COT] Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
+        console.log('[REALTIME-COT] window.Echo disponible:', typeof window.Echo);
+        console.log('[REALTIME-COT] window.waitForEcho disponible:', typeof window.waitForEcho);
 
-    // Si Echo está disponible, inicializar
-    if (typeof window.Echo !== 'undefined' && window.Echo) {
-        console.log('[REALTIME-COT] ✅ Echo encontrado, inicializando...');
-        initializeRealtimeCotizaciones();
-        return;
+        // Si Echo está disponible, inicializar
+        if (typeof window.Echo !== 'undefined' && window.Echo) {
+            console.log('[REALTIME-COT] ✅ Echo encontrado, inicializando...');
+            initializeRealtimeCotizaciones();
+            return;
+        }
+
+        // Si tenemos waitForEcho, usarlo
+        if (typeof window.waitForEcho === 'function') {
+            console.log('[REALTIME-COT] Usando window.waitForEcho...');
+            window.waitForEcho(initializeRealtimeCotizaciones);
+            return;
+        }
+
+        // Si no está disponible y no hemos llegado al máximo, reintentar
+        if (echoCheckAttempts < MAX_ATTEMPTS) {
+            console.log('[REALTIME-COT] Echo no disponible, reintentando en 100ms...');
+            setTimeout(checkAndInitialize, 100);
+        } else {
+            console.error('[REALTIME-COT] ❌ Echo no disponible después de varios intentos');
+        }
     }
 
-    // Si tenemos waitForEcho, usarlo
-    if (typeof window.waitForEcho === 'function') {
-        console.log('[REALTIME-COT] Usando window.waitForEcho...');
-        window.waitForEcho(initializeRealtimeCotizaciones);
-        return;
-    }
-
-    // Si no está disponible y no hemos llegado al máximo, reintentar
-    if (echoCheckAttempts < MAX_ATTEMPTS) {
-        console.log('[REALTIME-COT] Echo no disponible, reintentando en 100ms...');
-        setTimeout(checkAndInitialize, 100);
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAndInitialize);
     } else {
-        console.error('[REALTIME-COT] ❌ No se pudo conectar a Echo después de', MAX_ATTEMPTS, 'intentos');
+        checkAndInitialize();
     }
-}
-
-// Función principal de inicialización
-function initializeRealtimeCotizaciones() {
-    'use strict';
 
     console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
     console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
@@ -980,10 +982,5 @@ function initializeRealtimeCotizaciones() {
 
 }
 
-// Iniciar sistema de retry cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkAndInitialize);
-} else {
-    // Si el DOM ya está listo, iniciar inmediatamente
-    checkAndInitialize();
-}
+// El sistema ya está inicializado dentro del bloque else anterior
+// No se necesita código adicional aquí
