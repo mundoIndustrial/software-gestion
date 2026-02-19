@@ -360,6 +360,13 @@ if (window.realtimeCotizacionesLoaded) {
     function actualizarFilaCotizacion(cotizacionId, nuevoEstado, cotizacion) {
         console.log('[REALTIME-COT] 🔄 Actualizando fila cotización:', cotizacionId, 'nuevo estado:', nuevoEstado);
         
+        // Debug: mostrar todas las filas disponibles
+        const todasLasFilas = document.querySelectorAll('[data-cotizacion-id]');
+        console.log('[REALTIME-COT] 🔍 Filas encontradas en la página:', todasLasFilas.length);
+        todasLasFilas.forEach((fila, index) => {
+            console.log(`[REALTIME-COT] Fila ${index}: data-cotizacion-id="${fila.getAttribute('data-cotizacion-id')}"`);
+        });
+        
         const row = document.querySelector(`[data-cotizacion-id="${cotizacionId}"]`);
         
         if (!row) {
@@ -376,15 +383,24 @@ if (window.realtimeCotizacionesLoaded) {
             const badge = estadoCell.querySelector('span');
             if (badge) {
                 console.log('[REALTIME-COT] ✅ Badge encontrado, actualizando texto y colores');
+                console.log('[REALTIME-COT] 📝 Texto anterior:', badge.textContent);
                 badge.textContent = nuevoEstado.replace(/_/g, ' ');
                 badge.style.background = getEstadoColor(nuevoEstado).bg;
                 badge.style.color = getEstadoColor(nuevoEstado).color;
                 console.log('[REALTIME-COT] ✅ Badge actualizado a:', nuevoEstado);
+                console.log('[REALTIME-COT] 📝 Texto nuevo:', badge.textContent);
             } else {
                 console.log('[REALTIME-COT] ❌ No se encontró el badge dentro de la celda de estado');
+                console.log('[REALTIME-COT] 📄 Contenido de la celda:', estadoCell.innerHTML);
             }
         } else {
             console.log('[REALTIME-COT] ❌ No se encontró la celda de estado');
+            // Debug: mostrar todas las celdas de la fila
+            const todasLasCeldas = row.querySelectorAll('td');
+            console.log('[REALTIME-COT] 🔍 Celdas en la fila:', todasLasCeldas.length);
+            todasLasCeldas.forEach((celda, index) => {
+                console.log(`[REALTIME-COT] Celda ${index}: data-filter-column="${celda.getAttribute('data-filter-column')}"`);
+            });
         }
 
         // Add animation to highlight the change
