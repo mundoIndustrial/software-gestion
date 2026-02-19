@@ -875,7 +875,7 @@
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
-<script src="{{ asset('js/asesores/observaciones-despacho.js') }}"></script>
+<script src="{{ asset('js/asesores/observaciones-despacho.js') }}?v={{ $v }}"></script>
 
 <!--  TRACKING Y RECIBOS (necesario para funcionalidad completa) -->
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}"></script>

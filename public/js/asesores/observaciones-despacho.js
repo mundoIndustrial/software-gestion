@@ -355,7 +355,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center;
-            z-index: 9999; font-family: system-ui, -apple-system, sans-serif;
+            z-index: 1000000; font-family: system-ui, -apple-system, sans-serif;
         `;
 
         modal.innerHTML = `
@@ -437,7 +437,7 @@
             background: white; border-radius: 12px; padding: 16px 20px;
             box-shadow: 0 20px 25px -5px ${c.shadow}, 0 10px 10px -5px rgba(0,0,0,0.04);
             display: flex; align-items: center; gap: 14px;
-            z-index: 10000; min-width: 300px; max-width: 400px;
+            z-index: 1000001; min-width: 300px; max-width: 400px;
             border-left: 4px solid ${c.icon};
             animation: notifSlideIn 0.3s ease-out;
             font-family: system-ui, -apple-system, sans-serif;
