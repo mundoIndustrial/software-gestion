@@ -77,9 +77,40 @@
         }
     }
 
-    // Clear badge when modal opens
+    // Clear badge when modal opens - SOLO si el usuario hace clic
     function clearBadgeOnOpen(pedidoId) {
-        __clearBadge(pedidoId);
+        // NO limpiar automáticamente - esperar a que el usuario haga clic
+        // __clearBadge(pedidoId);
+        console.log(`[Despacho] Badge mantenido para pedido ${pedidoId} - esperando acción del usuario`);
+    }
+
+    // Marcar notificaciones como vistas cuando el usuario hace clic
+    async function marcarNotificacionesComoVistas(pedidoId) {
+        try {
+            const r = await fetch(`/despacho/${pedidoId}/observaciones/marcar-vistas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': __despachoObsCsrfToken(),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({}),
+                cache: 'no-store',
+            });
+
+            const data = await r.json().catch(() => null);
+            if (data && data.success) {
+                console.log(`[Despacho] Notificaciones marcadas como vistas para pedido ${pedidoId}`);
+                // Ahora sí limpiar el badge
+                __clearBadge(pedidoId);
+                // Refrescar para confirmar
+                refrescarBadgesObservacionesDespacho();
+            } else {
+                console.warn(`[Despacho] Error marcando notificaciones como vistas para pedido ${pedidoId}`);
+            }
+        } catch (e) {
+            console.error('Error marcando notificaciones como vistas:', e);
+        }
     }
     // =========================================================
 
@@ -182,20 +213,8 @@
 
         await cargarObservacionesDespachoIndex();
 
-        // Marcar como leídas y limpiar badge
-        try {
-            await fetch(`/despacho/${pedidoId}/observaciones/marcar-leidas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': __despachoObsCsrfToken(),
-                    'Accept': 'application/json',
-                },
-            });
-        } catch (_) {
-            // ignore
-        }
-        __clearBadge(pedidoId);
+        // Marcar notificaciones como vistas cuando el usuario abre el modal
+        await marcarNotificacionesComoVistas(pedidoId);
         refrescarBadgesObservacionesDespacho();
     }
 
