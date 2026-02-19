@@ -197,11 +197,24 @@ class PedidoProduccionObserver
                 ]);
                 
                 // Despachar evento de forma SÍNCRONA para WebSocket inmediato
-                PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
-                
-                Log::info('[PedidoProduccionObserver] PedidoActualizado::dispatch completado', [
-                    'pedido_id' => $pedido->id,
-                ]);
+                // Envolver en try-catch para evitar que falle toda la operación
+                try {
+                    PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
+                    Log::info('[PedidoProduccionObserver] PedidoActualizado::dispatch completado', [
+                        'pedido_id' => $pedido->id,
+                    ]);
+                } catch (\Exception $broadcastException) {
+                    // Error crítico de broadcast - registrar pero no bloquear
+                    Log::error('Error CRÍTICO en broadcast de PedidoActualizado (posiblemente Reverb no está corriendo)', [
+                        'pedido_id' => $pedido->id,
+                        'action' => $action,
+                        'error' => $broadcastException->getMessage(),
+                        'trace' => $broadcastException->getTraceAsString(),
+                    ]);
+                    
+                    // No lanzar la excepción - el pedido se guardó igual
+                    return;
+                }
                 
             } catch (\Exception $broadcastError) {
                 // Error no crítico - el pedido se guardó igual
