@@ -1438,24 +1438,20 @@ const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
     console.log('🔌 Iniciando conexión WebSocket para despacho...');
-    console.log('🔍 Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
-    console.log('🔍 Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
     
     try {
-        // Usar WebSocket de Reverb con clave desde meta tags
-        socket = new window.Echo({
-            broadcaster: 'reverb',
-            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
-            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
-            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
-            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
-            enabledTransports: ['ws', 'wss'],
-        });
-
-        // Escuchar eventos de pedidos en el canal público de despacho
+        // Usar la instancia existente de Echo en lugar de crear una nueva
+        if (!window.EchoInstance) {
+            console.error('❌ EchoInstance no está disponible');
+            return;
+        }
+        
+        socket = window.EchoInstance;
+        
+        console.log('🔍 Usando EchoInstance existente');
         console.log('🔧 Creando canal despacho.pedidos...');
+        
+        // Escuchar eventos de pedidos en el canal público de despacho
         const despachoChannel = socket.channel('despacho.pedidos');
         
         if (!despachoChannel) {
@@ -1482,10 +1478,10 @@ function connectWebSocket() {
             // Mostrar notificación de que se recibió un evento
             console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
             
-            // Si hay cambios en bodega, recargar para estar seguros
-            if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
-                console.log('🔄 Hay cambios en bodega, recargando página...');
-                window.location.reload();
+            // Si hay cambios relevantes, recargar la lista
+            if (event.changedFields && Object.keys(event.changedFields).length > 0) {
+                console.log('🔄 Hay cambios en el pedido, recargando lista...');
+                cargarPedidos(); // Recargar la lista en lugar de la página completa
             }
         })
         .error((error) => {

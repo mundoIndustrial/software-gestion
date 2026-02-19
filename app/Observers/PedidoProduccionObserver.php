@@ -151,9 +151,8 @@ class PedidoProduccionObserver
     /**
      * Manejar broadcasting de cambios importantes
      * 
-     * DESACTIVADO: El broadcast causa error de CreateProcess en Windows
-     * Se puede reactivar cuando se implemente una solución asincrónica
-     * (ej: Queue, Redis, o WebSocket nativo)
+     * REACTIVADO: Se reactiva el broadcasting para tiempo real en despacho
+     * Se usa dispatch síncrono para evitar problemas de CreateProcess
      */
     private function handleBroadcastingChanges(PedidoProduccion $pedido): void
     {
@@ -161,8 +160,9 @@ class PedidoProduccionObserver
         $changedFields = $this->getChangedFields($pedido);
         
         if (!empty($changedFields)) {
-            // DESACTIVADO: $this->broadcastPedidoChange($pedido, 'updated', $changedFields);
-            Log::debug('[PedidoProduccionObserver] Broadcasting desactivado temporalmente', [
+            // REACTIVADO: Emitir eventos WebSocket para tiempo real
+            $this->broadcastPedidoChange($pedido, 'updated', $changedFields);
+            Log::info('[PedidoProduccionObserver] Broadcasting reactivado - evento emitido', [
                 'pedido_id' => $pedido->id,
                 'changed_fields' => $changedFields,
             ]);
@@ -186,46 +186,30 @@ class PedidoProduccionObserver
                 return;
             }
 
-            // Fire-and-Forget: Ejecutar broadcast en proceso separado sin bloquear
-            // El evento se envía correctamente pero NO bloquea la respuesta HTTP
+            // Usar dispatch síncrono para evitar problemas de Process en Windows
             try {
-                // Serializar datos para pasarlos al comando
-                $pedidoData = json_encode([
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                ]);
-                
-                $asesorData = json_encode([
-                    'id' => $asesor->id,
-                    'name' => $asesor->name,
-                ]);
-                
-                $changedFieldsData = json_encode($changedFields);
-                
-                // Inicia el proceso en BACKGROUND - no espera respuesta
-                Process::start(
-                    sprintf(
-                        'php artisan broadcast:pedido-actualizado %d %d %s %s %s "%s"',
-                        $pedido->id,
-                        $asesor->id,
-                        base64_encode($pedidoData),
-                        base64_encode($asesorData),
-                        base64_encode($changedFieldsData),
-                        $action
-                    )
-                );
-
-                Log::info('PedidoActualizado event queued for broadcast (background)', [
+                Log::info('[PedidoProduccionObserver] 📤 Despachando PedidoActualizado::dispatch', [
                     'pedido_id' => $pedido->id,
                     'asesor_id' => $asesor->id,
+                    'asesor_name' => $asesor->name,
                     'action' => $action,
+                    'changed_fields' => $changedFields,
                 ]);
+                
+                // Despachar evento de forma SÍNCRONA para WebSocket inmediato
+                PedidoActualizado::dispatch($pedido, $asesor, $changedFields, $action);
+                
+                Log::info('[PedidoProduccionObserver] PedidoActualizado::dispatch completado', [
+                    'pedido_id' => $pedido->id,
+                ]);
+                
             } catch (\Exception $broadcastError) {
                 // Error no crítico - el pedido se guardó igual
-                Log::debug('Broadcast process failed', [
+                Log::error('Error al despachar PedidoActualizado', [
                     'pedido_id' => $pedido->id,
                     'action' => $action,
                     'error' => $broadcastError->getMessage(),
+                    'trace' => $broadcastError->getTraceAsString(),
                 ]);
             }
 
