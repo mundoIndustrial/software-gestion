@@ -449,11 +449,62 @@ class DespachoController extends Controller
         try {
             $search = $request->query('search', '');
             
-            // Pedidos pendientes de costura (usar la misma lógica que bodega)
+            // Pedidos pendientes de costura (solo los que tienen registros en bodega_detalles_talla)
             $query = PedidoProduccion::query()
-                ->whereNotNull('numero_pedido')
-                ->where('numero_pedido', '!=', '')
-                ->whereIn('estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA']);
+                ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->whereNotNull('pedidos_produccion.numero_pedido')
+                ->where('pedidos_produccion.numero_pedido', '!=', '')
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado'])
+                ->where('bodega_detalles_talla.area', 'Costura')
+                ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+                ->select('pedidos_produccion.*') // Evitar columnas duplicadas
+                ->distinct(); // Evitar duplicados por múltiples registros en bodega_detalles_talla
+            
+            // Debug: Verificar la consulta SQL
+            \Log::info('[DEBUG] Costura SQL Query:', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+            
+            // Debug: Verificar si hay registros en bodega_detalles_talla
+            $bodegaCount = \DB::table('bodega_detalles_talla')
+                ->where('area', 'Costura')
+                ->where('estado_bodega', 'Pendiente')
+                ->count();
+            
+            \Log::info('[DEBUG] Bodega detalles costura count:', [
+                'count' => $bodegaCount
+            ]);
+            
+            // Debug: Verificar todos los valores únicos en bodega_detalles_talla
+            $areas = \DB::table('bodega_detalles_talla')->distinct()->pluck('area');
+            $estados = \DB::table('bodega_detalles_talla')->distinct()->pluck('estado_bodega');
+            $totalRegistros = \DB::table('bodega_detalles_talla')->count();
+            
+            \Log::info('[DEBUG] Bodega detalles análisis:', [
+                'total_registros' => $totalRegistros,
+                'areas_disponibles' => $areas->toArray(),
+                'estados_disponibles' => $estados->toArray()
+            ]);
+            
+            // Debug: Verificar los pedidos relacionados con los registros de bodega
+            $bodegaPedidosIds = \DB::table('bodega_detalles_talla')
+                ->where('area', 'Costura')
+                ->where('estado_bodega', 'Pendiente')
+                ->pluck('pedido_produccion_id');
+            
+            \Log::info('[DEBUG] Pedidos IDs de bodega (Costura):', [
+                'pedido_ids' => $bodegaPedidosIds->toArray()
+            ]);
+            
+            // Debug: Verificar si esos pedidos existen en pedidos_produccion
+            $pedidosRelacionados = \DB::table('pedidos_produccion')
+                ->whereIn('id', $bodegaPedidosIds)
+                ->get(['id', 'numero_pedido', 'estado', 'deleted_at']);
+            
+            \Log::info('[DEBUG] Pedidos relacionados en pedidos_produccion:', [
+                'pedidos' => $pedidosRelacionados->toArray()
+            ]);
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -711,11 +762,51 @@ class DespachoController extends Controller
         try {
             $search = $request->query('search', '');
             
-            // Pedidos pendientes de EPP (usar la misma lógica que bodega)
+            // Pedidos pendientes de EPP (solo los que tienen registros en bodega_detalles_talla)
             $query = PedidoProduccion::query()
-                ->whereNotNull('numero_pedido')
-                ->where('numero_pedido', '!=', '')
-                ->whereIn('estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA']);
+                ->join('bodega_detalles_talla', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->whereNotNull('pedidos_produccion.numero_pedido')
+                ->where('pedidos_produccion.numero_pedido', '!=', '')
+                ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'Entregado'])
+                ->where('bodega_detalles_talla.area', 'EPP')
+                ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+                ->select('pedidos_produccion.*') // Evitar columnas duplicadas
+                ->distinct(); // Evitar duplicados por múltiples registros en bodega_detalles_talla
+            
+            // Debug: Verificar la consulta SQL
+            \Log::info('[DEBUG] EPP SQL Query:', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+            
+            // Debug: Verificar si hay registros en bodega_detalles_talla
+            $bodegaCount = \DB::table('bodega_detalles_talla')
+                ->where('area', 'EPP')
+                ->where('estado_bodega', 'Pendiente')
+                ->count();
+            
+            \Log::info('[DEBUG] Bodega detalles EPP count:', [
+                'count' => $bodegaCount
+            ]);
+            
+            // Debug: Verificar los pedidos relacionados con los registros de bodega
+            $bodegaPedidosIds = \DB::table('bodega_detalles_talla')
+                ->where('area', 'EPP')
+                ->where('estado_bodega', 'Pendiente')
+                ->pluck('pedido_produccion_id');
+            
+            \Log::info('[DEBUG] Pedidos IDs de bodega (EPP):', [
+                'pedido_ids' => $bodegaPedidosIds->toArray()
+            ]);
+            
+            // Debug: Verificar si esos pedidos existen en pedidos_produccion
+            $pedidosRelacionados = \DB::table('pedidos_produccion')
+                ->whereIn('id', $bodegaPedidosIds)
+                ->get(['id', 'numero_pedido', 'estado', 'deleted_at']);
+            
+            \Log::info('[DEBUG] Pedidos relacionados en pedidos_produccion (EPP):', [
+                'pedidos' => $pedidosRelacionados->toArray()
+            ]);
             
             if ($search) {
                 $query->where(function ($q) use ($search) {

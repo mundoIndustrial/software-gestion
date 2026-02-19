@@ -20,9 +20,16 @@ class PedidoActualizado implements ShouldBroadcastNow
     public function __construct(
         public PedidoProduccion $pedido,
         public User $asesor,
-        public array $changedFields = [],
+        public array $changedFields,
         public string $action = 'updated'
     ) {
+        \Log::info('[PedidoActualizado] Evento creado', [
+            'pedido_id' => $this->pedido->id,
+            'numero_pedido' => $this->pedido->numero_pedido,
+            'asesor_id' => $this->asesor->id,
+            'action' => $this->action,
+            'changedFields' => $this->changedFields,
+        ]);
     }
 
     /**
@@ -31,7 +38,23 @@ class PedidoActualizado implements ShouldBroadcastNow
     public function broadcastOn()
     {
         // Canal privado para el asesor específico
-        return new Channel('pedidos.' . $this->asesor->id);
+        $channels = [
+            new Channel('pedidos.' . $this->asesor->id)
+        ];
+        
+        // También broadcast al canal público de despacho para actualizaciones en tiempo real
+        // Usar Channel público para que todos puedan escuchar sin autenticación
+        $channels[] = new Channel('despacho.pedidos');
+        
+        \Log::info('[PedidoActualizado] Canales de broadcast', [
+            'pedido_id' => $this->pedido->id,
+            'numero_pedido' => $this->pedido->numero_pedido,
+            'canal_privado' => 'pedidos.' . $this->asesor->id,
+            'canal_despacho' => 'despacho.pedidos',
+            'total_canales' => count($channels)
+        ]);
+        
+        return $channels;
     }
 
     /**
@@ -57,6 +80,7 @@ class PedidoActualizado implements ShouldBroadcastNow
         return [
             'pedido' => [
                 'id' => $this->pedido->id,
+                'numero_pedido' => $this->pedido->numero_pedido,
                 'cliente' => $this->pedido->cliente,
                 'estado' => $this->pedido->estado,
                 'novedades' => $this->pedido->novedades,
@@ -64,6 +88,10 @@ class PedidoActualizado implements ShouldBroadcastNow
                 'fecha_estimada' => $this->pedido->fecha_estimada,
                 'updated_at' => $this->pedido->updated_at->toISOString(),
             ],
+            'pedido_id' => $this->pedido->id,
+            'numero_pedido' => $this->pedido->numero_pedido,
+            'nuevo_estado' => $this->changedFields['estado'] ?? $this->pedido->estado,
+            'anterior_estado' => $this->changedFields['estado']['old'] ?? $this->pedido->estado,
             'action' => $this->action,
             'changedFields' => $this->changedFields,
             'timestamp' => now()->toISOString(),

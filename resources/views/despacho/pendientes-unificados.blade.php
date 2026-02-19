@@ -1426,3 +1426,100 @@ function actualizarPaginacion(pagination) {
 }
 </style>
 @endpush
+
+@push('scripts')
+<script>
+console.log('🚀 SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
+
+// WebSocket para actualizaciones en tiempo real
+let socket = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function connectWebSocket() {
+    console.log('🔌 Iniciando conexión WebSocket para despacho...');
+    console.log('🔍 Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
+    console.log('🔍 Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
+    console.log('🔍 Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
+    
+    try {
+        // Usar WebSocket de Reverb con clave desde meta tags
+        socket = new window.Echo({
+            broadcaster: 'reverb',
+            key: document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 'mundo-industrial-key',
+            wsHost: document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || window.location.hostname,
+            wsPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            wssPort: parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content')) || 8080,
+            forceTLS: document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') === 'https',
+            enabledTransports: ['ws', 'wss'],
+        });
+
+        // Escuchar eventos de pedidos en el canal público de despacho
+        console.log('🔧 Creando canal despacho.pedidos...');
+        const despachoChannel = socket.channel('despacho.pedidos');
+        
+        if (!despachoChannel) {
+            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            return;
+        }
+        
+        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        
+        despachoChannel.listen('.pedido.actualizado', (event) => {
+            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            
+            // Log adicional para debugging
+            console.log('🔍 Debug evento recibido:', {
+                'pedido_id': event.pedido_id,
+                'numero_pedido': event.numero_pedido,
+                'nuevo_estado': event.nuevo_estado,
+                'anterior_estado': event.anterior_estado,
+                'action': event.action,
+                'changedFields': event.changedFields,
+                'timestamp': event.timestamp
+            });
+            
+            // Mostrar notificación de que se recibió un evento
+            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            
+            // Si hay cambios en bodega, recargar para estar seguros
+            if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
+                console.log('🔄 Hay cambios en bodega, recargando página...');
+                window.location.reload();
+            }
+        })
+        .error((error) => {
+            console.error('❌ Error en WebSocket (despacho):', error);
+        });
+
+        console.log('✅ WebSocket conectado para lista de despacho');
+    } catch (error) {
+        console.error('❌ Error al conectar WebSocket:', error);
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+        }
+    }
+}
+
+// Inicializar cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
+    console.log('🔍 URL actual:', window.location.href);
+    console.log('🔍 Pathname:', window.location.pathname);
+    
+    // Verificar si estamos en la página correcta
+    if (window.location.pathname.includes('/despacho/pendientes')) {
+        console.log('✅ Estamos en la página de despacho pendientes');
+    } else {
+        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+    }
+    
+    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+    window.waitForEcho(function() {
+        console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');
+        connectWebSocket();
+    });
+});
+</script>
+@endpush

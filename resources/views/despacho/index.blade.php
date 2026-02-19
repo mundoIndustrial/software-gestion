@@ -215,8 +215,13 @@
 </div>
 
 <script>
+console.log('🚀 SCRIPT DESPACHO CARGADO - Iniciando configuración...');
 window.__despachoObsUsuarioActualId = {{ auth()->id() ?? 'null' }};
 window.__despachoObsUsuarioEsAdmin = {{ auth()->user()->hasRole(['Admin','SuperAdmin','admin']) ? 'true' : 'false' }};
+
+console.log('🔍 Variables globales configuradas:');
+console.log('  - Usuario ID:', window.__despachoObsUsuarioActualId);
+console.log('  - Es Admin:', window.__despachoObsUsuarioEsAdmin);
 
 // WebSocket para actualizaciones en tiempo real
 let socket = null;
@@ -224,6 +229,11 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
+    console.log('🔌 Iniciando conexión WebSocket para despacho...');
+    console.log('🔍 Reverb Key:', document.querySelector('meta[name="reverb-key"]')?.getAttribute('content'));
+    console.log('🔍 Reverb Host:', document.querySelector('meta[name="reverb-host"]')?.getAttribute('content'));
+    console.log('🔍 Reverb Port:', document.querySelector('meta[name="reverb-port"]')?.getAttribute('content'));
+    
     try {
         // Usar WebSocket de Reverb con clave desde meta tags
         socket = new window.Echo({
@@ -236,13 +246,36 @@ function connectWebSocket() {
             enabledTransports: ['ws', 'wss'],
         });
 
-        // Escuchar eventos de pedidos entregados
-        socket.channel('despacho.pedidos')
-            .listen('.pedido.actualizado', (event) => {
-                console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
-                
-                // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
-                if (event.nuevo_estado === 'Entregado') {
+        // Escuchar eventos de pedidos en el canal público de despacho
+        console.log('🔧 Creando canal despacho.pedidos...');
+        const despachoChannel = socket.channel('despacho.pedidos');
+        
+        if (!despachoChannel) {
+            console.error('❌ No se pudo crear el canal despacho.pedidos');
+            return;
+        }
+        
+        console.log('✅ Canal despacho.pedidos creado, configurando listener...');
+        
+        despachoChannel.listen('.pedido.actualizado', (event) => {
+            console.log('📦 Pedido actualizado en tiempo real (despacho):', event);
+            
+            // Log adicional para debugging
+            console.log('🔍 Debug evento recibido:', {
+                'pedido_id': event.pedido_id,
+                'numero_pedido': event.numero_pedido,
+                'nuevo_estado': event.nuevo_estado,
+                'anterior_estado': event.anterior_estado,
+                'action': event.action,
+                'changedFields': event.changedFields,
+                'timestamp': event.timestamp
+            });
+            
+            // Mostrar notificación de que se recibió un evento
+            console.log('🎯 Evento recibido - Verificando si hay que actualizar la lista...');
+            
+            // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
+            if (event.nuevo_estado === 'Entregado') {
                     console.log('🔄 Eliminando pedido entregado de la lista:', event.numero_pedido);
                     
                     // Buscar el pedido en la tabla y eliminarlo con animación
@@ -274,7 +307,38 @@ function connectWebSocket() {
                         }, { once: true }); // Solo se ejecuta una vez
                     }
                 }
-                // Si el pedido volvió a "Pendiente" y no está en la lista, recargar la página
+                // Si el pedido cambió a "Pendiente" y no está en la lista, agregarlo o recargar
+                else if (event.nuevo_estado === 'Pendiente') {
+                    console.log('🔄 Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
+                    
+                    // Verificar si el pedido NO está en la lista actual
+                    const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
+                    if (!pedidoRow) {
+                        console.log('📋 Pedido no encontrado en lista, recargando para mostrarlo...');
+                        console.log('🔄 Recargando página por cambio en bodega...');
+                        // Recargar la página para mostrar el nuevo pedido pendiente
+                        window.location.reload();
+                    } else {
+                        console.log('✅ Pedido ya está en la lista');
+                    }
+                }
+                // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
+                else if (event.changedFields && (event.changedFields.bodega_items_count || event.changedFields.bodega_pendientes_count)) {
+                    console.log('🔄 Hay cambios en bodega, verificando si hay que recargar...');
+                    console.log('📊 Info de bodega:', event.changedFields);
+                    
+                    // Si hay items pendientes y el pedido no está en la lista, recargar
+                    if (event.changedFields.bodega_pendientes_count > 0) {
+                        const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
+                        if (!pedidoRow) {
+                            console.log('🔄 Hay items pendientes pero el pedido no está en lista, recargando...');
+                            window.location.reload();
+                        } else {
+                            console.log('✅ Pedido con items pendientes ya está en lista');
+                        }
+                    }
+                }
+                // Si el pedido volvió a "Pendiente" desde "Entregado" y no está en la lista, recargar la página
                 else if (event.nuevo_estado === 'Pendiente' && event.anterior_estado === 'Entregado') {
                     console.log('🔄 Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
                     
@@ -287,10 +351,19 @@ function connectWebSocket() {
                 }
             })
             .error((error) => {
-                console.error('❌ Error en WebSocket:', error);
+                console.error('❌ Error en WebSocket (despacho):', error);
             });
 
         console.log('✅ WebSocket conectado para lista de despacho');
+        console.log('🔍 Verificando canal público de despacho...');
+        
+        // Verificar si podemos suscribirnos al canal público
+        const channel = socket.channel('despacho.pedidos');
+        if (channel) {
+            console.log('✅ Canal público despacho.pedidos creado correctamente');
+        } else {
+            console.error('❌ Error al crear canal público despacho.pedidos');
+        }
     } catch (error) {
         console.error('❌ Error al conectar WebSocket:', error);
         if (reconnectAttempts < maxReconnectAttempts) {
@@ -329,6 +402,17 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
 
 // Inicializar cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM cargado - Iniciando WebSocket de despacho...');
+    console.log('🔍 URL actual:', window.location.href);
+    console.log('🔍 Pathname:', window.location.pathname);
+    
+    // Verificar si estamos en la página correcta
+    if (window.location.pathname.includes('/despacho/pendientes')) {
+        console.log('✅ Estamos en la página de despacho pendientes');
+    } else {
+        console.log('⚠️ No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
+    }
+    
     // Usar el sistema waitForEcho para asegurar que Echo esté disponible
     window.waitForEcho(function() {
         console.log('🚀 Echo está listo, conectando WebSocket para lista de despacho...');

@@ -272,6 +272,9 @@ class BodegaPedidoService
         // Guardar estado específico según rol
         $detalle = $this->guardarEstadoPorRol($validatedData, $pedido, $usuario, $rolesDelUsuario);
         
+        // Verificar y actualizar el estado del pedido - SOLO para "Pendiente"
+        $this->verificarYActualizarEstadoPedido($pedido);
+        
         // Disparar evento de tiempo real
         $this->dispararEventoTiempoReal($validatedData);
         
@@ -323,7 +326,7 @@ class BodegaPedidoService
 
     private function obtenerEstadosPermitidos(): array
     {
-        return ['Pendiente', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'];
+        return ['Pendiente', 'EN EJECUCIÓN', 'NO INICIADO', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'Entregado'];
     }
 
     private function filtrarPedidosPorArea(Collection $pedidos, array $areasPermitidas): Collection
@@ -1166,7 +1169,10 @@ class BodegaPedidoService
                 'area_enviada' => $datosBasicos['area'] ?? 'NO_ENVIADA'
             ]);
             
-            // SINCRONIZACIÓN AUTOMÁTICA
+            // NOTA: SINCRONIZACIÓN AUTOMÁTICA DESHABILITADA
+            // El estado del pedido ahora se maneja exclusivamente por el método verificarYActualizarEstadoPedido()
+            // que solo permite cambios a "Pendiente" desde bodega
+            /*
             if ($estadoBodegaGuardado === 'Entregado') {
                 $this->registrarEntregaPrenda([
                     'prenda_nombre' => $validatedData['prenda_nombre'] ?? '',
@@ -1180,6 +1186,7 @@ class BodegaPedidoService
                 // Si se guarda con estado 'Pendiente', sincronizar el pedido a 'Pendiente'
                 $this->sincronizarEstadoPedido($pedido->id, 'Pendiente');
             }
+            */
             
             return $detalleGuardado;
             
@@ -1506,5 +1513,101 @@ class BodegaPedidoService
         ]);
         
         return $itemsFiltrados;
+    }
+
+    /**
+     * Verificar y actualizar el estado del pedido según los ítems en bodega_detalles_talla
+     */
+    private function verificarYActualizarEstadoPedido(PedidoProduccion $pedido): void
+    {
+        try {
+            // Obtener todos los ítems del pedido en bodega_detalles_talla
+            $itemsBodega = \DB::table('bodega_detalles_talla')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->get();
+            
+            if ($itemsBodega->isEmpty()) {
+                \Log::info('[BodegaPedidoService] No hay ítems en bodega para el pedido', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido
+                ]);
+                return;
+            }
+            
+            // Contar estados de los ítems
+            $estadosCount = $itemsBodega->groupBy('estado_bodega')->map->count();
+            
+            \Log::info('[BodegaPedidoService] Análisis de estados del pedido', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_actual' => $pedido->estado,
+                'estados_count' => $estadosCount->toArray(),
+                'total_items' => $itemsBodega->count(),
+                'hay_pendientes' => isset($estadosCount['Pendiente']) && $estadosCount['Pendiente'] > 0
+            ]);
+            
+            // Determinar el nuevo estado del pedido - SOLO cambiar a "Pendiente"
+            $nuevoEstado = $pedido->estado; // Mantener el actual por defecto
+            
+            // Únicamente cambiar a "Pendiente" si hay ítems pendientes
+            if (isset($estadosCount['Pendiente']) && $estadosCount['Pendiente'] > 0) {
+                $nuevoEstado = 'Pendiente';
+            }
+            // IMPORTANTE: NUNCA cambiar a "Entregado" o "Anulada" desde bodega
+            // Esos cambios solo deben manejarse desde el módulo de despacho
+            // Para otros estados, mantener el estado actual del pedido
+            
+            // Actualizar el estado si cambió
+            if ($nuevoEstado !== $pedido->estado) {
+                $estadoAnterior = $pedido->estado;
+                $pedido->update([
+                    'estado' => $nuevoEstado,
+                    'updated_at' => now()
+                ]);
+                
+                \Log::info('[BodegaPedidoService] Estado del pedido actualizado', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => $nuevoEstado,
+                    'motivo' => 'Cambio desde bodega - Solo permite Pendiente'
+                ]);
+            } else {
+                \Log::info('[BodegaPedidoService] No se actualiza el estado - sin cambios', [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'estado_actual' => $pedido->estado,
+                    'nuevo_estado' => $nuevoEstado
+                ]);
+            }
+            
+            // SIEMPRE disparar evento de actualización cuando hay cambios en bodega
+            // para que el frontend de despacho se actualice en tiempo real
+            \Log::info('[BodegaPedidoService] Disparando evento PedidoActualizado (siempre)', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'estado_actual' => $pedido->estado,
+                'items_pendientes' => isset($estadosCount['Pendiente']) && $estadosCount['Pendiente'] > 0,
+                'total_items' => $itemsBodega->count(),
+                'estados_count' => $estadosCount->toArray()
+            ]);
+            
+            // Incluir información adicional sobre los cambios en bodega
+            $changedFields = [
+                'estado' => $pedido->estado,
+                'bodega_items_count' => $itemsBodega->count(),
+                'bodega_pendientes_count' => $estadosCount['Pendiente'] ?? 0,
+                'bodega_entregados_count' => $estadosCount['Entregado'] ?? 0,
+                'ultima_actualizacion_bodega' => now()->toISOString()
+            ];
+            
+            event(new \App\Events\PedidoActualizado($pedido, auth()->user(), $changedFields, 'updated'));
+            
+        } catch (\Exception $e) {
+            \Log::error('[BodegaPedidoService] Error verificando estado del pedido', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
