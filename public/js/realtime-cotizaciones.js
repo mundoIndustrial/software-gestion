@@ -6,47 +6,47 @@
 console.log('[REALTIME-COT] 📍 LÍNEA 5: Inicio del archivo');
 
 // Log inmediato para verificar que el archivo se carga
-console.log('[REALTIME-COT] 📍 LÍNEA 7: Antes de alert');
+console.warn('[REALTIME-COT] 📍 LÍNEA 7: Antes de alert');
 alert('🚀 REALTIME-COTIZACIONES.JS CARGADO');
-console.log('[REALTIME-COT] 📍 LÍNEA 9: Después de alert');
-console.log('[REALTIME-COT] === ARCHIVO CARGADO ===');
+console.warn('[REALTIME-COT] 📍 LÍNEA 9: Después de alert');
+console.warn('[REALTIME-COT] === ARCHIVO CARGADO ===');
 
-console.log('[REALTIME-COT] 📍 LÍNEA 12: Antes de protección contra cargas múltiples');
+console.warn('[REALTIME-COT] 📍 LÍNEA 12: Antes de protección contra cargas múltiples');
 // Protección contra cargas múltiples
 if (window.realtimeCotizacionesLoaded) {
     console.log('[REALTIME-COT] 📍 LÍNEA 14: Archivo ya fue cargado');
     console.warn('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
     // No usar return aquí, simplemente salir del bloque
 } else {
-    console.log('[REALTIME-COT] 📍 LÍNEA 17: Entrando al bloque else');
+    console.warn('[REALTIME-COT] 📍 LÍNEA 17: Entrando al bloque else');
     window.realtimeCotizacionesLoaded = true;
-    console.log('[REALTIME-COT] 📍 LÍNEA 19: Bandera de carga establecida');
+    console.warn('[REALTIME-COT] 📍 LÍNEA 19: Bandera de carga establecida');
 
     // Sistema de retry para esperar a que Echo esté disponible
-    console.log('[REALTIME-COT] 📍 LÍNEA 22: Declarando variables de retry');
+    console.warn('[REALTIME-COT] 📍 LÍNEA 22: Declarando variables de retry');
     let echoCheckAttempts = 0;
     const MAX_ATTEMPTS = 50; // 5 segundos máximo (100ms * 50)
-    console.log('[REALTIME-COT] 📍 LÍNEA 25: Variables declaradas');
+    console.warn('[REALTIME-COT] 📍 LÍNEA 25: Variables declaradas');
 
-    console.log('[REALTIME-COT] 📍 LÍNEA 27: Antes de declarar checkAndInitialize');
+    console.warn('[REALTIME-COT] 📍 LÍNEA 27: Antes de declarar checkAndInitialize');
     function checkAndInitialize() {
-        console.log('[REALTIME-COT] 📍 LÍNEA 29: Entrando a checkAndInitialize');
+        console.warn('[REALTIME-COT] 📍 LÍNEA 29: Entrando a checkAndInitialize');
         echoCheckAttempts++;
-        console.log(`[REALTIME-COT] 📍 LÍNEA 31: Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
-        console.log('[REALTIME-COT] 📍 LÍNEA 32: window.Echo disponible:', typeof window.Echo);
-        console.log('[REALTIME-COT] 📍 LÍNEA 33: window.Echo existe:', !!window.Echo);
-        console.log('[REALTIME-COT] 📍 LÍNEA 34: window.waitForEcho disponible:', typeof window.waitForEcho);
-        console.log('[REALTIME-COT] 📍 LÍNEA 35: window.Echo completo:', window.Echo);
+        console.warn(`[REALTIME-COT] 📍 LÍNEA 31: Intento ${echoCheckAttempts}/${MAX_ATTEMPTS} - Verificando Echo...`);
+        console.warn('[REALTIME-COT] 📍 LÍNEA 32: window.Echo disponible:', typeof window.Echo);
+        console.warn('[REALTIME-COT] 📍 LÍNEA 33: window.Echo existe:', !!window.Echo);
+        console.warn('[REALTIME-COT] 📍 LÍNEA 34: window.waitForEcho disponible:', typeof window.waitForEcho);
+        console.warn('[REALTIME-COT] 📍 LÍNEA 35: window.Echo completo:', window.Echo);
 
-        console.log('[REALTIME-COT] 📍 LÍNEA 37: Antes de verificar Echo disponible');
+        console.warn('[REALTIME-COT] 📍 LÍNEA 37: Antes de verificar Echo disponible');
         // Si Echo está disponible, inicializar
         if (typeof window.Echo !== 'undefined' && window.Echo) {
-            console.log('[REALTIME-COT] 📍 LÍNEA 39: Echo encontrado, inicializando...');
-            console.log('[REALTIME-COT] 📍 LÍNEA 40: Tipo de Echo:', typeof window.Echo);
-            console.log('[REALTIME-COT] 📍 LÍNEA 41: Echo tiene channel:', typeof window.Echo?.channel);
-            console.log('[REALTIME-COT] 📍 LÍNEA 42: Antes de llamar a initializeRealtimeCotizaciones');
+            console.warn('[REALTIME-COT] 📍 LÍNEA 39: Echo encontrado, inicializando...');
+            console.warn('[REALTIME-COT] 📍 LÍNEA 40: Tipo de Echo:', typeof window.Echo);
+            console.warn('[REALTIME-COT] 📍 LÍNEA 41: Echo tiene channel:', typeof window.Echo?.channel);
+            console.warn('[REALTIME-COT] 📍 LÍNEA 42: Antes de llamar a initializeRealtimeCotizaciones');
             initializeRealtimeCotizaciones();
-            console.log('[REALTIME-COT] 📍 LÍNEA 44: Después de llamar a initializeRealtimeCotizaciones');
+            console.warn('[REALTIME-COT] 📍 LÍNEA 44: Después de llamar a initializeRealtimeCotizaciones');
             return;
         }
 
@@ -79,13 +79,13 @@ if (window.realtimeCotizacionesLoaded) {
     }
 
     function initializeRealtimeCotizaciones() {
-        console.log('[REALTIME-COT] 📍 LÍNEA 82: Entrando a initializeRealtimeCotizaciones');
-        console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
-        console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
+        console.warn('[REALTIME-COT] 📍 LÍNEA 82: Entrando a initializeRealtimeCotizaciones');
+        console.warn('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
+        console.warn('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
 
         // Cache temporal para evitar procesar el mismo evento dos veces
         // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
-        console.log('[REALTIME-COT] 📍 LÍNEA 88: Creando Map para eventos procesados');
+        console.warn('[REALTIME-COT] 📍 LÍNEA 88: Creando Map para eventos procesados');
         const processedEstadoEventKeys = new Map();
         const PROCESSED_EVENT_TTL_MS = 4000;
 
@@ -102,7 +102,7 @@ if (window.realtimeCotizacionesLoaded) {
             cleanupProcessedEstadoEvents();
             const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
             if (processedEstadoEventKeys.has(key)) {
-                console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
+                console.warn('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
                 return false;
             }
             processedEstadoEventKeys.set(key, Date.now());
@@ -112,11 +112,11 @@ if (window.realtimeCotizacionesLoaded) {
         try {
             const connection = window.Echo?.connector?.pusher?.connection;
             if (connection?.state) {
-                console.log('[REALTIME-COT] Estado conexión WS:', connection.state);
+                console.warn('[REALTIME-COT] Estado conexión WS:', connection.state);
             }
             if (typeof connection?.bind === 'function') {
-                connection.bind('connected', () => console.log('[REALTIME-COT] WS connected'));
-                connection.bind('disconnected', () => console.log('[REALTIME-COT] WS disconnected'));
+                connection.bind('connected', () => console.warn('[REALTIME-COT] WS connected'));
+                connection.bind('disconnected', () => console.warn('[REALTIME-COT] WS disconnected'));
                 connection.bind('error', (err) => console.error('[REALTIME-COT] WS error', err));
             }
         } catch (e) {
@@ -125,22 +125,22 @@ if (window.realtimeCotizacionesLoaded) {
 
         // Get current user ID from meta tag or global variable
         const userId = document.querySelector('meta[name="user-id"]')?.content || window.userId;
-        console.log('[REALTIME-COT] User ID:', userId);
-        console.log('[REALTIME-COT] Path actual:', window.location.pathname);
-        console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
+        console.warn('[REALTIME-COT] User ID:', userId);
+        console.warn('[REALTIME-COT] Path actual:', window.location.pathname);
+        console.warn('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
 
         // Listen to general quotations channel
-        console.log('[REALTIME-COT] Verificando Echo antes de suscribirse...');
+        console.warn('[REALTIME-COT] Verificando Echo antes de suscribirse...');
         
         // Verificar que Echo tenga el método channel
-        console.log('[REALTIME-COT] 🔍 DIAGNÓSTICO COMPLETO DE ECHO:');
-        console.log('[REALTIME-COT] window.Echo existe:', !!window.Echo);
-        console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
-        console.log('[REALTIME-COT] window.Echo:', window.Echo);
-        console.log('[REALTIME-COT] window.Echo.constructor:', window.Echo?.constructor?.name);
-        console.log('[REALTIME-COT] window.Echo.channel:', window.Echo?.channel);
-        console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
-        console.log('[REALTIME-COT] Métodos disponibles en Echo:', Object.getOwnPropertyNames(window.Echo || {}));
+        console.warn('[REALTIME-COT] 🔍 DIAGNÓSTICO COMPLETO DE ECHO:');
+        console.warn('[REALTIME-COT] window.Echo existe:', !!window.Echo);
+        console.warn('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
+        console.warn('[REALTIME-COT] window.Echo:', window.Echo);
+        console.warn('[REALTIME-COT] window.Echo.constructor:', window.Echo?.constructor?.name);
+        console.warn('[REALTIME-COT] window.Echo.channel:', window.Echo?.channel);
+        console.warn('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo?.channel);
+        console.warn('[REALTIME-COT] Métodos disponibles en Echo:', Object.getOwnPropertyNames(window.Echo || {}));
         
         if (typeof window.Echo.channel !== 'function') {
             console.error('[REALTIME-COT] ❌ ERROR: window.Echo.channel no es una función');
@@ -149,12 +149,12 @@ if (window.realtimeCotizacionesLoaded) {
             console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo.channel);
             
             // Intentar ver si hay otra propiedad que pueda ser el canal
-            console.log('[REALTIME-COT] Buscando alternativas...');
+            console.warn('[REALTIME-COT] Buscando alternativas...');
             if (window.EchoInstance && typeof window.EchoInstance.channel === 'function') {
-                console.log('[REALTIME-COT] ✅ Encontrado window.EchoInstance con channel');
+                console.warn('[REALTIME-COT] ✅ Encontrado window.EchoInstance con channel');
                 window.Echo = window.EchoInstance; // Usar EchoInstance
             } else if (window.Echo && typeof window.Echo.listen === 'function') {
-                console.log('[REALTIME-COT] ✅ Encontrado Echo con método listen');
+                console.warn('[REALTIME-COT] ✅ Encontrado Echo con método listen');
             } else {
                 console.error('[REALTIME-COT] ❌ No se encontró ninguna alternativa válida');
                 return; // Este return ahora está dentro de la función
