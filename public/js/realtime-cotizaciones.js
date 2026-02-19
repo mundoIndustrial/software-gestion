@@ -53,65 +53,66 @@ if (window.realtimeCotizacionesLoaded) {
         checkAndInitialize();
     }
 
-    console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
-    console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
+    function initializeRealtimeCotizaciones() {
+        console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
+        console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
 
-    // Cache temporal para evitar procesar el mismo evento dos veces
-    // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
-    const processedEstadoEventKeys = new Map();
-    const PROCESSED_EVENT_TTL_MS = 4000;
+        // Cache temporal para evitar procesar el mismo evento dos veces
+        // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
+        const processedEstadoEventKeys = new Map();
+        const PROCESSED_EVENT_TTL_MS = 4000;
 
-    function cleanupProcessedEstadoEvents() {
-        const now = Date.now();
-        for (const [key, ts] of processedEstadoEventKeys.entries()) {
-            if (now - ts > PROCESSED_EVENT_TTL_MS) {
-                processedEstadoEventKeys.delete(key);
+        function cleanupProcessedEstadoEvents() {
+            const now = Date.now();
+            for (const [key, ts] of processedEstadoEventKeys.entries()) {
+                if (now - ts > PROCESSED_EVENT_TTL_MS) {
+                    processedEstadoEventKeys.delete(key);
+                }
             }
         }
-    }
 
-    function shouldProcessEstadoEvent(event) {
-        cleanupProcessedEstadoEvents();
-        const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
-        if (processedEstadoEventKeys.has(key)) {
-            console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
-            return false;
+        function shouldProcessEstadoEvent(event) {
+            cleanupProcessedEstadoEvents();
+            const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
+            if (processedEstadoEventKeys.has(key)) {
+                console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
+                return false;
+            }
+            processedEstadoEventKeys.set(key, Date.now());
+            return true;
         }
-        processedEstadoEventKeys.set(key, Date.now());
-        return true;
-    }
 
-    try {
-        const connection = window.Echo?.connector?.pusher?.connection;
-        if (connection?.state) {
-            console.log('[REALTIME-COT] Estado conexión WS:', connection.state);
+        try {
+            const connection = window.Echo?.connector?.pusher?.connection;
+            if (connection?.state) {
+                console.log('[REALTIME-COT] Estado conexión WS:', connection.state);
+            }
+            if (typeof connection?.bind === 'function') {
+                connection.bind('connected', () => console.log('[REALTIME-COT] WS connected'));
+                connection.bind('disconnected', () => console.log('[REALTIME-COT] WS disconnected'));
+                connection.bind('error', (err) => console.error('[REALTIME-COT] WS error', err));
+            }
+        } catch (e) {
+            console.warn('[REALTIME-COT] No se pudo enlazar eventos de conexión:', e);
         }
-        if (typeof connection?.bind === 'function') {
-            connection.bind('connected', () => console.log('[REALTIME-COT] WS connected'));
-            connection.bind('disconnected', () => console.log('[REALTIME-COT] WS disconnected'));
-            connection.bind('error', (err) => console.error('[REALTIME-COT] WS error', err));
+
+        // Get current user ID from meta tag or global variable
+        const userId = document.querySelector('meta[name="user-id"]')?.content || window.userId;
+        console.log('[REALTIME-COT] User ID:', userId);
+        console.log('[REALTIME-COT] Path actual:', window.location.pathname);
+        console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
+
+        // Listen to general quotations channel
+        console.log('[REALTIME-COT] Verificando Echo antes de suscribirse...');
+        
+        // Verificar que Echo tenga el método channel
+        if (typeof window.Echo.channel !== 'function') {
+            console.error('[REALTIME-COT] ERROR: window.Echo.channel no es una función');
+            console.log('[REALTIME-COT] window.Echo:', window.Echo);
+            console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
+            console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo.channel);
+            return; // Este return ahora está dentro de la función
         }
-    } catch (e) {
-        console.warn('[REALTIME-COT] No se pudo enlazar eventos de conexión:', e);
-    }
-
-    // Get current user ID from meta tag or global variable
-    const userId = document.querySelector('meta[name="user-id"]')?.content || window.userId;
-    console.log('[REALTIME-COT] User ID:', userId);
-    console.log('[REALTIME-COT] Path actual:', window.location.pathname);
-    console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
-
-    // Listen to general quotations channel
-    console.log('[REALTIME-COT] Verificando Echo antes de suscribirse...');
-    
-    // Verificar que Echo tenga el método channel
-    if (typeof window.Echo.channel !== 'function') {
-        console.error('[REALTIME-COT] ERROR: window.Echo.channel no es una función');
-        console.log('[REALTIME-COT] window.Echo:', window.Echo);
-        console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
-        console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo.channel);
-        return;
-    }
     
     console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
     window.Echo.channel('cotizaciones')
@@ -981,7 +982,9 @@ if (window.realtimeCotizacionesLoaded) {
         return window.location.pathname.includes('/contador/dashboard');
     }
 
-}
+    } // Cierra la función initializeRealtimeCotizaciones
+
+} // Cierra el bloque else principal
 
 // El sistema ya está inicializado dentro del bloque else anterior
 // No se necesita código adicional aquí
