@@ -48,34 +48,34 @@ if (window.realtimeCotizacionesLoaded) {
         checkAndInitialize();
     }
 
+    // Cache temporal para evitar procesar el mismo evento dos veces
+    // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
+    const processedEstadoEventKeys = new Map();
+    const PROCESSED_EVENT_TTL_MS = 4000;
+
+    function cleanupProcessedEstadoEvents() {
+        const now = Date.now();
+        for (const [key, ts] of processedEstadoEventKeys.entries()) {
+            if (now - ts > PROCESSED_EVENT_TTL_MS) {
+                processedEstadoEventKeys.delete(key);
+            }
+        }
+    }
+
+    function shouldProcessEstadoEvent(event) {
+        cleanupProcessedEstadoEvents();
+        const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
+        if (processedEstadoEventKeys.has(key)) {
+            console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
+            return false;
+        }
+        processedEstadoEventKeys.set(key, Date.now());
+        return true;
+    }
+
     function initializeRealtimeCotizaciones() {
         console.log('[REALTIME-COT] === INICIALIZANDO SISTEMA REALTIME ===');
         console.log('[REALTIME-COT] Echo está disponible:', typeof window.Echo);
-
-        // Cache temporal para evitar procesar el mismo evento dos veces
-        // (suele pasar por estar suscritos a cotizaciones + cotizaciones.contador)
-        const processedEstadoEventKeys = new Map();
-        const PROCESSED_EVENT_TTL_MS = 4000;
-
-        function cleanupProcessedEstadoEvents() {
-            const now = Date.now();
-            for (const [key, ts] of processedEstadoEventKeys.entries()) {
-                if (now - ts > PROCESSED_EVENT_TTL_MS) {
-                    processedEstadoEventKeys.delete(key);
-                }
-            }
-        }
-
-        function shouldProcessEstadoEvent(event) {
-            cleanupProcessedEstadoEvents();
-            const key = `${event?.cotizacion_id ?? ''}|${event?.nuevo_estado ?? ''}|${event?.estado_anterior ?? ''}|${event?.timestamp ?? ''}`;
-            if (processedEstadoEventKeys.has(key)) {
-                console.log('[REALTIME-COT] Evento estado.cambiado duplicado, ignorado:', key);
-                return false;
-            }
-            processedEstadoEventKeys.set(key, Date.now());
-            return true;
-        }
 
         try {
             const connection = window.Echo?.connector?.pusher?.connection;
