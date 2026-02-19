@@ -126,7 +126,7 @@
     <script src="{{ asset('js/contador/visor-costos.js') }}"></script>
     <script src="{{ asset('js/contador/lightbox-imagenes.js') }}"></script>
     <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>
-    <script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
+    <!-- realtime-cotizaciones.js se carga en la vista específica, no aquí para evitar duplicación -->
     <script>
         /**
          * Cargar contador de cotizaciones pendientes - Solo al inicio

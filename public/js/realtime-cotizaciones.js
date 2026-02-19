@@ -6,6 +6,13 @@
 // Log inmediato para verificar que el archivo se carga
 console.log('[REALTIME-COT] === ARCHIVO CARGADO ===');
 
+// Protección contra cargas múltiples
+if (window.realtimeCotizacionesLoaded) {
+    console.warn('[REALTIME-COT] ⚠️  El archivo ya fue cargado, evitando duplicación');
+    return; // Salir si ya fue cargado
+}
+window.realtimeCotizacionesLoaded = true;
+
 // Sistema de retry para esperar a que Echo esté disponible
 let echoCheckAttempts = 0;
 const MAX_ATTEMPTS = 50; // 5 segundos máximo (100ms * 50)
@@ -91,14 +98,19 @@ function initializeRealtimeCotizaciones() {
     console.log('[REALTIME-COT] Path actual:', window.location.pathname);
     console.log('[REALTIME-COT] isOnContadorPage:', isOnContadorPage());
 
-    // Check if Echo is available
-    if (typeof window.Echo === 'undefined') {
-        console.error('[REALTIME-COT] ERROR: window.Echo no está definido');
-        return; // Salir si no hay Echo
-    }
-
     // Listen to general quotations channel
-    console.log('[REALTIME-COT] Suscribiéndose a canal: cotizaciones');
+    console.log('[REALTIME-COT] Verificando Echo antes de suscribirse...');
+    
+    // Verificar que Echo tenga el método channel
+    if (typeof window.Echo.channel !== 'function') {
+        console.error('[REALTIME-COT] ERROR: window.Echo.channel no es una función');
+        console.log('[REALTIME-COT] window.Echo:', window.Echo);
+        console.log('[REALTIME-COT] typeof window.Echo:', typeof window.Echo);
+        console.log('[REALTIME-COT] typeof window.Echo.channel:', typeof window.Echo.channel);
+        return;
+    }
+    
+    console.log('[REALTIME-COT] ✅ Echo.channel verificado, suscribiéndose a canal: cotizaciones');
     window.Echo.channel('cotizaciones')
         .listen('.cotizacion.creada', (event) => {
             console.log('[REALTIME-COT] Evento cotizacion.creada recibido en canal cotizaciones:', event);
